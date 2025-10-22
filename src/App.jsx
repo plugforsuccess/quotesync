@@ -371,9 +371,9 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Instant Data Fetch', desc: 'Connect your current auto insurance carrier in seconds using Canopy Connect', delay: '0s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your existing coverages so you get the best personalized rates', delay: '0.2s' },
-        { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated. No typing out your coverage limits, VIN numbers, or claims', delay: '0.4s' },
-        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on. Your data is encrypted and protected', delay: '0.6s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your existing coverages so you get rates based on you, not estimates', delay: '0.2s' },
+        { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated - no typing out your coverage limits, VIN numbers, or claims', delay: '0.4s' },
+        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on so our data is encrypted and protected', delay: '0.6s' },
     ].map((benefit, i) => (
       <div
         key={i}
