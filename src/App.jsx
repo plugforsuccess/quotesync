@@ -191,12 +191,53 @@ export default function AutoInsuranceLanding() {
           />
         ))}
         
-        <style>{`
-          @keyframes fall {
-            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
-            100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
-          }
-        `}</style>
+      <style>{`
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(-3deg); }
+    50% { transform: rotate(3deg); }
+  }
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes blob {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(30px, -50px) scale(1.1); }
+    66% { transform: translate(-20px, 20px) scale(0.9); }
+  }
+
+  .animate-blob {
+    animation: blob 7s infinite;
+  }
+
+  .animation-delay-2000 {
+    animation-delay: 2s;
+  }
+
+  .animation-delay-4000 {
+    animation-delay: 4s;
+  }
+
+  .animation-delay-6000 {
+    animation-delay: 6s;
+  }
+  
+  .logo-track {
+    display: flex;
+    animation: scroll 30s linear infinite;
+  }
+  
+  @keyframes scroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  .logo-track:hover {
+    animation-play-state: paused;
+  }
+`}</style>
         
         <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 max-w-lg w-full text-center relative z-10 border border-white/20">
           <div className="relative">
@@ -242,7 +283,14 @@ export default function AutoInsuranceLanding() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+   <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-900 to-indigo-900 relative overflow-hidden">
+      {/* Animated Gradient Mesh */}
+      <div className="absolute inset-0 opacity-50 overflow-hidden">
+        <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute top-10 right-10 w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-10 left-20 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+        <div className="absolute bottom-10 right-20 w-64 h-64 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-6000"></div>
+      </div>     
       <style>{`
         @keyframes wiggle {
           0%, 100% { transform: rotate(-3deg) scale(1); }
@@ -273,17 +321,22 @@ export default function AutoInsuranceLanding() {
       <div className="container mx-auto px-4 py-16 relative z-10">
         {/* Logo */}
         <div className={`text-center mb-20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="inline-flex items-center gap-4 mb-8">
-            <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16" />
-            <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight">QuoteSync</h1>
+          <div className="inline-flex items-center gap-4 mb-8 relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
+             <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
+              <div className="relative z-10">
+                <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight">QuoteSync</h1>
+                <p className="text-lg md:text-xl text-white/80 font-medium mt-2">Insurance shopping, simplified</p>
+              </div>
           </div>
         </div>
+          <div className={`text-center mb-16 max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
 
         <div className={`text-center mb-16 max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
-          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/10">
+          {/* <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/10">
             <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
             <span className="text-white text-sm font-medium">Rated 4.9/5 by 50,000+ customers</span>
-          </div>
+          </div> */}
           
           <h1 className="text-6xl md:text-7xl font-black text-white mb-6 leading-tight">
             Save Up to{' '}
@@ -294,43 +347,42 @@ export default function AutoInsuranceLanding() {
           </h1>
           
           <p className="text-xl md:text-2xl text-blue-100 mb-4 font-light">
-            Compare personalized quotes from 40+ top-rated insurers
+      
           </p>
           <p className="text-blue-200/80 text-lg">Free. Fast. No obligation.</p>
         </div>
 
-        <div className={`max-w-4xl mx-auto mb-16 bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {[
-              { value: '2M+', label: 'Happy Drivers' },
-              { value: '$427', label: 'Avg. Savings' },
-              { value: '40+', label: 'Insurers' },
-              { value: '2 min', label: 'To Compare' }
-            ].map((stat, i) => (
-              <div key={i} className="text-center transform hover:scale-110 transition-transform duration-300">
-                <div className="text-3xl md:text-4xl font-bold text-white mb-2">{stat.value}</div>
-                <div className="text-blue-200 text-sm">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={`grid md:grid-cols-4 gap-6 mb-16 max-w-6xl mx-auto transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          {[
-                        { icon: Clock, color: 'from-blue-500 to-blue-600', title: '2-Minute Process', desc: 'Shopping for car insurance online has never been easier ', delay: '0s' },
-            { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Instant Data Sync', desc: 'Like Plaid does for banking, we sync to your insurance carrier', delay: '0.4s' },
-            { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Secure Login', desc: 'Bank-level encryption protects your credentials and information', delay: '0.2s' },
-            { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Compare & Save', desc: 'Get personalized rates from a top insurance carrier in seconds', delay: '0.6s' },
-          ].map((benefit, i) => (
-            <div key={i} className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-white/50 group" style={{animation: `float 3s ease-in-out infinite ${benefit.delay}`}}>
-              <div className={`w-16 h-16 bg-gradient-to-br ${benefit.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-lg`}>
-                <benefit.icon className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="font-bold text-gray-900 mb-2 text-lg">{benefit.title}</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">{benefit.desc}</p>
-            </div>
-          ))}
-        </div>
+            <div className={`max-w-4xl mx-auto mb-16 bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
+    {[
+      { value: '2M+', label: 'Happy Drivers' },
+      { value: '$427', label: 'Avg. Savings' },
+      { value: '40+', label: 'Insurers' },
+      { value: '2 min', label: 'To Compare' }
+    ].map((stat, i) => (
+      <div key={i} className="text-center transform hover:scale-110 transition-transform duration-300">
+        <div className="text-4xl md:text-5xl font-black text-white mb-1.5">{stat.value}</div>
+        <div className="text-blue-100/90 text-sm md:text-base">{stat.label}</div>
+      </div>
+    ))}
+  </div>
+</div>
+      <div className={`grid md:grid-cols-4 gap-6 mb-16 max-w-7xl mx-auto transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+  {[
+    { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Instant Data Fetch', desc: 'Connect your current auto insurance carrier in seconds using Canopy Connect', delay: '0s' },
+    { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We  sync your real policy details so you get personalized rates based on you, not estimates', delay: '0.4s' },
+    { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated. No typing out your coverage limits, VIN numbers, or claims', delay: '0.2s' },
+    { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on. Your data is encrypted and protected', delay: '0.6s' },
+  ].map((benefit, i) => (
+    <div key={i} className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-white/50 group" style={{animation: `float 3s ease-in-out infinite ${benefit.delay}`}}>
+      <div className={`w-20 h-20 bg-gradient-to-br ${benefit.color} rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-lg`}>
+        <benefit.icon className="w-10 h-10 text-white" />
+      </div>
+      <h3 className="font-bold text-gray-900 mb-3 text-xl">{benefit.title}</h3>
+      <p className="text-gray-600 text-base leading-relaxed">{benefit.desc}</p>
+    </div>
+  ))}
+</div>
 
         <div className={`max-w-2xl mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 md:p-12 border border-white/50 relative overflow-hidden">
@@ -339,7 +391,7 @@ export default function AutoInsuranceLanding() {
               <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
                 Start Your Free Quote
               </h2>
-              <p className="text-gray-600 text-lg">Compare rates from 40+ top insurers in minutes</p>
+              <p className="text-gray-600 text-lg"></p>
             </div>
 
             {/* Trust Indicators */}
@@ -349,9 +401,7 @@ export default function AutoInsuranceLanding() {
                 <div className="text-left">
                   <h3 className="font-bold text-gray-900 mb-1">Why is this safe?</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    QuoteSync uses <span className="font-semibold">Canopy Connect</span>, a secure technology trusted by thousands of professionals. 
-                    It's the same level of security banks use to protect your account.
-                  </p>
+                    QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, a secure platform that uses 256-bit encryption to protect your personal data the same way your bank does </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -359,7 +409,7 @@ export default function AutoInsuranceLanding() {
                 <div className="text-left">
                   <h3 className="font-bold text-gray-900 mb-1">Your privacy is protected</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    We <span className="font-semibold">never store</span> your insurance login credentials. Your passwords are always encrypted and only used once to retrieve your current policy details.
+                    We <span className="font-semibold">never store</span> your carrier login credentials. Your passwords are always encrypted and only used once to retrieve your current policy details.
                   </p>
                 </div>
               </div>
@@ -373,7 +423,8 @@ export default function AutoInsuranceLanding() {
                   href="https://app.usecanopy.com/c/camwileyagency" 
                   target="_blank"
                 >
-                  <span>Connect My Insurance</span>
+        
+                  <span>Get My Quote</span>
                   <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                 </a>
                 <p className="text-sm text-gray-500 mt-4">Takes less than 2 minutes • No manual forms to fill out</p>
@@ -381,8 +432,8 @@ export default function AutoInsuranceLanding() {
 
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                 <p className="text-xs text-gray-600 text-center leading-relaxed">
-                  <span className="font-semibold text-gray-700">How it works:</span> You'll log into your current insurance provider (like GEICO, State Farm, etc.) through Canopy's secure portal. 
-                  We retrieve your coverage details to provide accurate quotes. No data is sold to third parties.
+                  <span className="font-semibold text-gray-700">How it works:</span> You'll log into your current insurance provider (like GEICO, State Farm, etc.) through Canopy Connect's secure portal. 
+                  We retrieve your policy coverage details to provide accurate quotes. No data is sold to third parties.
                 </p>
               </div>
             </div>
@@ -421,5 +472,6 @@ export default function AutoInsuranceLanding() {
         </div>
       </div>
     </div>
+  </div>
   );
 }
