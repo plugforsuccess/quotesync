@@ -321,7 +321,7 @@ export default function AutoInsuranceLanding() {
         <div className="container mx-auto px-4 py-16 relative z-10">
           {/* Logo */}
           <div className={`text-center mb-20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-            <div className="inline-flex items-center gap-4 mb-8 relative">
+            <div className="inline-flex items-center gap-4 mb-4 relative">
               <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
               <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
                 <div className="relative z-10">
@@ -352,12 +352,12 @@ export default function AutoInsuranceLanding() {
             <p className="text-blue-200/80 text-lg">Free. Fast. No obligation.</p>
           </div>
         </div>  
-      <div className={`max-w-4xl mx-auto mb-16 bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
+      <div className={`max-w-4xl mx-auto mb-24 bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pb-12md:gap-6">
       {[
         { value: '2M+', label: 'Happy Drivers' },
         { value: '$427', label: 'Avg. Savings' },
-        { value: '40+', label: 'Insurers' },
+        { value: '40+', label: 'Carriers' },
         { value: '2 min', label: 'To Compare' }
       ].map((stat, i) => (
         <div key={i} className="text-center transform hover:scale-110 transition-transform duration-300">
@@ -371,9 +371,9 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Instant Data Fetch', desc: 'Connect your current auto insurance carrier in seconds using Canopy Connect', delay: '0s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your existing coverages so you shop personalize rates based on you', delay: '0.2s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your existing coverages so you shop personalize rates based on you, not estimates', delay: '0.2s' },
         { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated - no typing out your coverage limits, VIN numbers, or claims', delay: '0.4s' },
-        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on', delay: '0.6s' },
+        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on to protect their customer data', delay: '0.6s' },
     ].map((benefit, i) => (
       <div
         key={i}
@@ -405,7 +405,7 @@ export default function AutoInsuranceLanding() {
     <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600 flex-shrink-0 mt-1" />
     <div className="text-left flex-1">
       <h3 className="font-bold text-gray-900 mb-1 text-sm md:text-base">Why is this safe?</h3>
-      <p className="text-xs md:text-sm text-gray-700 leading-relaxed">
+      <p className="text-base md:text-base text-gray-700 leading-relaxed">
         QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, a secure platform that uses 256-bit encryption to protect your personal data the same way your bank does.
       </p>
     </div>
@@ -414,7 +414,7 @@ export default function AutoInsuranceLanding() {
     <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0 mt-1" />
     <div className="text-left flex-1">
       <h3 className="font-bold text-gray-900 mb-1 text-sm md:text-base">Your privacy is protected</h3>
-      <p className="text-xs md:text-sm text-gray-700 leading-relaxed">
+      <p className="text-base md:text-base text-gray-700 leading-relaxed">
         We <span className="font-semibold">never store</span> your carrier login credentials. Your passwords are always encrypted and only used once to retrieve your current policy details.
       </p>
     </div>
