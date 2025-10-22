@@ -405,7 +405,6 @@ export default function AutoInsuranceLanding() {
                 <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div className="text-left">
                   <h3 className="font-bold text-gray-900 mb-1">Why is this safe?</h3>
-                  </div>
                   <p className="text-sm text-gray-700 leading-relaxed">
                     QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, a secure platform that uses 256-bit encryption to protect your personal data the same way your bank does. </p>
                 </div>
@@ -430,7 +429,7 @@ export default function AutoInsuranceLanding() {
                   target="_blank"
                 >
         
-                  <span>Get My Quote</span>
+                  <span className="whitespace-nowrap">Get My Quote</span>
                   <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                 </a>
                 <p className="text-sm text-gray-500 mt-4">Takes less than 2 minutes • No manual forms to fill out</p>
