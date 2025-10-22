@@ -448,7 +448,7 @@ export default function AutoInsuranceLanding() {
           <div className="mt-12 text-center">
             <p className="text-blue-100 font-semibold mb-6 text-lg">Partnered with America's Most Trusted Insurers</p>
             <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 overflow-hidden relative shadow-xl">
-              <div className="flex overflow-hidden">
+              <div className="flex overflow-visible">
                 <div className="logo-track">
                   <div className="flex gap-16 items-center min-w-max">
                     <img src="/logos/GEICO.png" alt="GEICO" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
