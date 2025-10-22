@@ -283,108 +283,113 @@ export default function AutoInsuranceLanding() {
   }
 
   return (
-   <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-900 to-indigo-900 relative overflow-hidden">
-      {/* Animated Gradient Mesh */}
-      <div className="absolute inset-0 opacity-50 overflow-hidden">
-        <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-10 right-10 w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-10 left-20 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-        <div className="absolute bottom-10 right-20 w-64 h-64 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-6000"></div>
-      </div>     
-      <style>{`
-        @keyframes wiggle {
-          0%, 100% { transform: rotate(-3deg) scale(1); }
-          50% { transform: rotate(3deg) scale(1.05); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        @keyframes scroll {
-          0% { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .logo-track {
-          animation: scroll 20s linear infinite;
-          display: flex;
-          gap: 4rem;
-        }
-        .logo-track:hover {
-          animation-play-state: paused;
-        }
-      `}</style>
+   <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-00 to-indigo-900 relative overflow-hidden">
+        {/* Animated Gradient Mesh */}
+        <div className="absolute inset-0 opacity-50 overflow-hidden">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+          <div className="absolute top-10 right-10 w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+          <div className="absolute bottom-10 left-20 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+          <div className="absolute bottom-10 right-20 w-64 h-64 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-6000"></div>
+        </div>     
+        <style>{`
+          @keyframes wiggle {
+            0%, 100% { transform: rotate(-3deg) scale(1); }
+            50% { transform: rotate(3deg) scale(1.05); }
+          }
+          @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+          }
+          @keyframes scroll {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .logo-track {
+            animation: scroll 20s linear infinite;
+            display: flex;
+            gap: 4rem;
+          }
+          .logo-track:hover {
+            animation-play-state: paused;
+          }
+        `}</style>
 
-      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '700ms' }}></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
+        <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '700ms' }}></div>
 
-      <div className="container mx-auto px-4 py-16 relative z-10">
-        {/* Logo */}
-        <div className={`text-center mb-20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-          <div className="inline-flex items-center gap-4 mb-8 relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
-             <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
-              <div className="relative z-10">
-                <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight">QuoteSync</h1>
-                <p className="text-lg md:text-xl text-white/80 font-medium mt-2">Insurance shopping, simplified</p>
-              </div>
+        <div className="container mx-auto px-4 py-16 relative z-10">
+          {/* Logo */}
+          <div className={`text-center mb-20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <div className="inline-flex items-center gap-4 mb-8 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
+              <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
+                <div className="relative z-10">
+                  <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight">QuoteSync</h1>
+                  <p className="text-lg md:text-xl text-white/80 font-medium mt-2">Insurance shopping, simplified</p>
+                </div>
+            </div>
           </div>
-        </div>
+            <div className={`text-center mb-16 max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
+
           <div className={`text-center mb-16 max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
-
-        <div className={`text-center mb-16 max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
-          {/* <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/10">
-            <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-            <span className="text-white text-sm font-medium">Rated 4.9/5 by 50,000+ customers</span>
-          </div> */}
-          
-          <h1 className="text-6xl md:text-7xl font-black text-white mb-6 leading-tight">
-            Save Up to{' '}
-            <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent inline-block" style={{animation: 'wiggle 1s ease-in-out infinite'}}>
-              $847
-            </span>
-            <br />on Auto Insurance
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-blue-100 mb-4 font-light">
-      
-          </p>
-          <p className="text-blue-200/80 text-lg">Free. Fast. No obligation.</p>
+            {/* <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/10">
+              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+              <span className="text-white text-sm font-medium">Rated 4.9/5 by 50,000+ customers</span>
+            </div> */}
+            
+            <h1 className="text-6xl md:text-7xl font-black text-white mb-6 leading-tight">
+              Save Up to{' '}
+              <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent inline-block" style={{animation: 'wiggle 1s ease-in-out infinite'}}>
+                $847
+              </span>
+              <br />on Auto Insurance
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-blue-100 mb-4 font-light">
+        
+            </p>
+            <p className="text-blue-200/80 text-lg">Free. Fast. No obligation.</p>
+          </div>
+        </div>  
+      <div className={`max-w-4xl mx-auto mb-16 bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
+      {[
+        { value: '2M+', label: 'Happy Drivers' },
+        { value: '$427', label: 'Avg. Savings' },
+        { value: '40+', label: 'Insurers' },
+        { value: '2 min', label: 'To Compare' }
+      ].map((stat, i) => (
+        <div key={i} className="text-center transform hover:scale-110 transition-transform duration-300">
+          <div className="text-4xl md:text-5xl font-black text-white mb-1.5">{stat.value}</div>
+          <div className="text-blue-100/90 text-sm md:text-base">{stat.label}</div>
         </div>
-
-            <div className={`max-w-4xl mx-auto mb-16 bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-6">
-    {[
-      { value: '2M+', label: 'Happy Drivers' },
-      { value: '$427', label: 'Avg. Savings' },
-      { value: '40+', label: 'Insurers' },
-      { value: '2 min', label: 'To Compare' }
-    ].map((stat, i) => (
-      <div key={i} className="text-center transform hover:scale-110 transition-transform duration-300">
-        <div className="text-4xl md:text-5xl font-black text-white mb-1.5">{stat.value}</div>
-        <div className="text-blue-100/90 text-sm md:text-base">{stat.label}</div>
+      ))}
+    </div>
+  </div>
+  <div className={`w-full px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+      {[
+        { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Instant Data Fetch', desc: 'Connect your current auto insurance carrier in seconds using Canopy Connect', delay: '0s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your real policy details so you get personalized rates based on you, not estimates', delay: '0.2s' },
+        { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated. No typing out your coverage limits, VIN numbers, or claims', delay: '0.4s' },
+        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on. Your data is encrypted and protected', delay: '0.6s' },
+    ].map((benefit, i) => (
+      <div
+        key={i}
+        className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-white/50 group text-left min-h-[176px]"
+        style={{ animation: `float 3s ease-in-out infinite ${benefit.delay}` }}
+      >
+        <div className={`w-10 h-10 bg-gradient-to-br ${benefit.color} rounded-3xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-lg`}>
+          <benefit.icon className="w-6 h-6 text-white" />
+        </div>
+        <h3 className="font-semibold text-gray-900 mb-1 text-lg">{benefit.title}</h3>
+        <p className="text-gray-600 text-m leading-relaxed">{benefit.desc}</p>
       </div>
     ))}
-  </div>
-</div>
-      <div className={`grid md:grid-cols-4 gap-6 mb-16 max-w-7xl mx-auto transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-  {[
-    { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Instant Data Fetch', desc: 'Connect your current auto insurance carrier in seconds using Canopy Connect', delay: '0s' },
-    { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We  sync your real policy details so you get personalized rates based on you, not estimates', delay: '0.4s' },
-    { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated. No typing out your coverage limits, VIN numbers, or claims', delay: '0.2s' },
-    { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on. Your data is encrypted and protected', delay: '0.6s' },
-  ].map((benefit, i) => (
-    <div key={i} className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-white/50 group" style={{animation: `float 3s ease-in-out infinite ${benefit.delay}`}}>
-      <div className={`w-20 h-20 bg-gradient-to-br ${benefit.color} rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-lg`}>
-        <benefit.icon className="w-10 h-10 text-white" />
-      </div>
-      <h3 className="font-bold text-gray-900 mb-3 text-xl">{benefit.title}</h3>
-      <p className="text-gray-600 text-base leading-relaxed">{benefit.desc}</p>
-    </div>
-  ))}
 </div>
 
-        <div className={`max-w-2xl mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className={`max-w-2xl pt-24 mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 md:p-12 border border-white/50 relative overflow-hidden">
             
              <div className="text-center mb-10">
