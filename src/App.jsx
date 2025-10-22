@@ -317,10 +317,10 @@ export default function AutoInsuranceLanding() {
 
         <div className={`grid md:grid-cols-4 gap-6 mb-16 max-w-6xl mx-auto transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           {[
-            { icon: Clock, color: 'from-blue-500 to-blue-600', title: '2-Minute Process', desc: 'Securely log into your current auto insurance provider first ', delay: '0s' },
-            { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Instant Data Sync', desc: 'Like Plaid for banking, we connect to your auto insurer and sync your coverages instantly', delay: '0.4s' },
+                        { icon: Clock, color: 'from-blue-500 to-blue-600', title: '2-Minute Process', desc: 'Shopping for car insurance online has never been easier ', delay: '0s' },
+            { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Instant Data Sync', desc: 'Like Plaid does for banking, we sync to your insurance carrier', delay: '0.4s' },
             { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Secure Login', desc: 'Bank-level encryption protects your credentials and information', delay: '0.2s' },
-            { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Compare & Save', desc: 'Get personalized rates from a top insurance carrier in seconds', delay: '0.6s' }
+            { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Compare & Save', desc: 'Get personalized rates from a top insurance carrier in seconds', delay: '0.6s' },
           ].map((benefit, i) => (
             <div key={i} className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-white/50 group" style={{animation: `float 3s ease-in-out infinite ${benefit.delay}`}}>
               <div className={`w-16 h-16 bg-gradient-to-br ${benefit.color} rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-lg`}>
@@ -359,7 +359,7 @@ export default function AutoInsuranceLanding() {
                 <div className="text-left">
                   <h3 className="font-bold text-gray-900 mb-1">Your privacy is protected</h3>
                   <p className="text-sm text-gray-700 leading-relaxed">
-                    We <span className="font-semibold">never store</span> your insurance login credentials. Your passwords are always encrypted and only used once to retrieve your policy coverage details.
+                    We <span className="font-semibold">never store</span> your insurance login credentials. Your passwords are always encrypted and only used once to retrieve your current policy details.
                   </p>
                 </div>
               </div>
@@ -373,7 +373,7 @@ export default function AutoInsuranceLanding() {
                   href="https://app.usecanopy.com/c/camwileyagency" 
                   target="_blank"
                 >
-                  <span>Sync My Insurance</span>
+                  <span>Connect My Insurance</span>
                   <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                 </a>
                 <p className="text-sm text-gray-500 mt-4">Takes less than 2 minutes • No manual forms to fill out</p>
