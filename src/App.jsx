@@ -404,7 +404,7 @@ export default function AutoInsuranceLanding() {
   <div className="flex items-start gap-3 mb-4">
     <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600 flex-shrink-0 mt-1" />
     <div className="text-left flex-1">
-      <h3 className="font-bold text-gray-900 mb-1 text-sm md:text-base">Why is this safe?</h3>
+      <h3 className="font-bold text-gray-900 mb-1 text-">Why is this safe?</h3>
       <p className="text-base md:text-base text-gray-700 leading-relaxed">
         QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, a secure platform that uses 256-bit encryption to protect your personal data the same way your bank does.
       </p>
@@ -413,7 +413,7 @@ export default function AutoInsuranceLanding() {
   <div className="flex items-start gap-3">
     <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0 mt-1" />
     <div className="text-left flex-1">
-      <h3 className="font-bold text-gray-900 mb-1 text-sm md:text-base">Your privacy is protected</h3>
+      <h3 className="font-bold text-gray-900 mb-1 text-base">Your privacy is protected.</h3>
       <p className="text-base md:text-base text-gray-700 leading-relaxed">
         We <span className="font-semibold">never store</span> your carrier login credentials. Your passwords are always encrypted and only used once to retrieve your current policy details.
       </p>
