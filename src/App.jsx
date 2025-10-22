@@ -371,9 +371,9 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Instant Data Fetch', desc: 'Connect your current auto insurance carrier in seconds using Canopy Connect', delay: '0s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your existing coverages so you get rates based on you, not estimates', delay: '0.2s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your existing coverages so you get rates based on you', delay: '0.2s' },
         { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated - no typing out your coverage limits, VIN numbers, or claims', delay: '0.4s' },
-        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on so our data is encrypted and protected', delay: '0.6s' },
+        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on', delay: '0.6s' },
     ].map((benefit, i) => (
       <div
         key={i}
@@ -405,6 +405,7 @@ export default function AutoInsuranceLanding() {
                 <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div className="text-left">
                   <h3 className="font-bold text-gray-900 mb-1">Why is this safe?</h3>
+                  </div>
                   <p className="text-sm text-gray-700 leading-relaxed">
                     QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, a secure platform that uses 256-bit encryption to protect your personal data the same way your bank does. </p>
                 </div>
