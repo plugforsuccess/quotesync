@@ -370,11 +370,11 @@ export default function AutoInsuranceLanding() {
   <div className={`w-full px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
-        { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Instant Data Fetch', desc: 'Connect your current auto insurance carrier in seconds using Canopy Connect', delay: '0s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'We sync your existing coverages so you shop personalize rates based on you, not estimates', delay: '0.2s' },
-        { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Skip the Forms', desc: 'QuoteSync is fully automated - no typing out your coverage limits, VIN numbers, or claims', delay: '0.4s' },
-        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Enterprise Security', desc: 'We use the same security standards banks rely on to protect their customer data', delay: '0.6s' },
-    ].map((benefit, i) => (
+        { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Skip the Forms', desc: 'Share your current coverages in seconds using Canopy Connect', delay: '0s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'See personalized rates based on your actual coverage details', delay: '0.2s' },
+        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Compare and Save', desc: 'Discover potential discounts when choosing the right plan', delay: '0.6s' },
+        { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Secure and Private', desc: 'Bank-level 256-bit encryption protects your information', delay: '0.4s' },
+      ].map((benefit, i) => (
       <div
         key={i}
         className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-white/50 group text-left min-h-[176px]"
@@ -406,16 +406,16 @@ export default function AutoInsuranceLanding() {
     <div className="text-left flex-1">
       <h3 className="font-bold text-gray-900 mb-1 text-">Why is this safe?</h3>
       <p className="text-base md:text-base text-gray-700 leading-relaxed">
-        QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, a secure platform that uses 256-bit encryption to protect your personal data the same way your bank does.
+        QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, which uses industry-standard encryption to protect your data during submission.
       </p>
     </div>
   </div>
   <div className="flex items-start gap-3">
     <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0 mt-1" />
     <div className="text-left flex-1">
-      <h3 className="font-bold text-gray-900 mb-1 text-base">Your privacy is protected.</h3>
+      <h3 className="font-bold text-gray-900 mb-1 text-base">Your privacy matters</h3>
       <p className="text-base md:text-base text-gray-700 leading-relaxed">
-        We <span className="font-semibold">never store</span> your carrier login credentials. Your passwords are always encrypted and only used once to retrieve your current policy details.
+        Login credentials are <span className="font-semibold">never stored</span>. Your information remains encrypted, used only to retrieve your coverage data for your quote.
       </p>
     </div>
   </div>
