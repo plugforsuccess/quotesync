@@ -412,7 +412,7 @@ export default function AutoInsuranceLanding() {
 
 
         <div className={`max-w-4xl pt-24 mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-  <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 md:p-12 border border-white/50 relative overflow-hidden">
+  <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 border border-white/50 relative overflow-hidden">
     
     <div className="text-center mb-10">
       <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
@@ -422,7 +422,7 @@ export default function AutoInsuranceLanding() {
     </div>
 
 {/* How It Works - ELI5 Style */}
-<div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-8 md:p-8 mb-8">
+<div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-6 md:p-8 mb-8">
   <div className="flex items-start gap-4 mb-8">
     <Shield className="w-7 h-7 text-blue-600 flex-shrink-0 mt-1" />
     <div className="text-left flex-1">
