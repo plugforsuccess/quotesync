@@ -325,7 +325,7 @@ export default function AutoInsuranceLanding() {
               <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
               <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
                 <div className="relative z-10">
-                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">insuredbycam</h1>
+                  <h1 className="text-5xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">insuredbycam</h1>
                   <p className="text-lg md:text-xl text-white/80 font-medium mt-2">Insurance shopping, simplified</p>
                 </div>
             </div>
