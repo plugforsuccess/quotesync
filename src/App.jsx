@@ -357,9 +357,10 @@ export default function AutoInsuranceLanding() {
   <div className="relative">
     <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl ring-4 ring-blue-500/20">
       <img 
-        src="/public/logos/headshot-examples.jpg" 
+        src="/public/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
         alt="Cameron Wiley"
         className="w-full h-full object-cover"
+        style={{ objectPosition: '50% 30%' }}
       />
     </div>
     {/* Verified badge */}
@@ -381,6 +382,7 @@ export default function AutoInsuranceLanding() {
     <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-500">
       <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">Licensed in GA</span>
       <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold"> Low Rates</span>
+      <span className="px-3 py-1 bg-yellow-100 text-yellow-600 rounded-full font-semibold"> Great Service </span>
     </div>
   </div>
 </div>
