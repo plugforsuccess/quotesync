@@ -391,7 +391,7 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your current insurance, I run the numbers and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
+        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your coverage info, I run the numbers and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
         { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through your quote and answer any questions. Can't talk? I'll email it instead.", delay: '0.6s' },
         { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like the price? I can get you switched over as early as tomorrow. Not interested now? No problem.", delay: '0.4s' },
       ].map((benefit, i) => (
