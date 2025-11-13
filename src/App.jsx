@@ -411,7 +411,7 @@ export default function AutoInsuranceLanding() {
 </div>
 
 
-        <div className={`max-w-4xl pt-24 mx-auto px-4 transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className={`max-w-4xl pt-24 mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
   <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 md:p-12 border border-white/50 relative overflow-hidden">
     
     <div className="text-center mb-10">
