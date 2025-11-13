@@ -465,9 +465,6 @@ export default function AutoInsuranceLanding() {
             <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
             <span className="leading-relaxed">Your policy info is sent directly to me (Cameron)</span>
           </li>
-          <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-          </li>
         </ul>
       </div>
     </div>
