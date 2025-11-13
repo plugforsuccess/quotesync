@@ -391,7 +391,7 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your coverage info, I'll run the numbers and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
+        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your policy info, I'll run the numbers and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
         { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through your quote and answer any questions. Can't talk? I'll email it instead.", delay: '0.6s' },
         { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like the price? I can get you switched over as early as tomorrow. Not interested now? No problem.", delay: '0.4s' },
       ].map((benefit, i) => (
@@ -512,7 +512,7 @@ export default function AutoInsuranceLanding() {
 </div>
           <div className="mt-12 text-center">
             <p className="text-blue-100 font-semibold mb-6 text-lg">Partnered with America's Most Trusted Insurers</p>
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 overflow-hidden relative shadow-xl">
+            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20  overflow-x-hidden overflow-y-visible relative shadow-xl">
               <div className="flex overflow-visible">
                 <div className="logo-track">
                   <div className="flex gap-16 items-center min-w-max">
