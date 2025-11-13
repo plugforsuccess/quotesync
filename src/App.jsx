@@ -325,7 +325,7 @@ export default function AutoInsuranceLanding() {
               <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
               <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
                 <div className="relative z-10">
-                  <h1 className="text-5xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">insuredbycam</h1>
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">insuredbycam</h1>
                   <p className="text-lg md:text-xl text-white/80 font-medium mt-2">Insurance shopping, simplified</p>
                 </div>
             </div>
@@ -392,8 +392,8 @@ export default function AutoInsuranceLanding() {
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
         { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "I review your info, run the numbers, and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
-        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call to walk through your quote and answer questions. Can't talk? I'll email it instead.", delay: '0.6s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow. Not interested now? No problem.", delay: '0.4s' },
+        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through your quote and answer any questions. Can't talk? I'll email it instead.", delay: '0.6s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like the price? I can get you switched over as early as tomorrow. Not interested now? No problem.", delay: '0.4s' },
       ].map((benefit, i) => (
       
       <div
@@ -421,7 +421,7 @@ export default function AutoInsuranceLanding() {
       <p className="text-gray-600 text-lg">No forms. No spam.</p>
     </div>
 
-  {/* How It Works - ELI5 Style */}
+{/* How It Works - ELI5 Style */}
 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-8 md:p-8 mb-8">
   <div className="flex items-start gap-4 mb-8">
     <Shield className="w-7 h-7 text-blue-600 flex-shrink-0 mt-1" />
@@ -430,12 +430,12 @@ export default function AutoInsuranceLanding() {
       
       {/* The Comparison */}
       <div className="space-y-5 text-gray-700 text-base leading-relaxed">
-        <div className="bg-white/60 rounded-xl p-5 border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+        <div className="bg-white/60 rounded-xl p-5 border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
           <p className="text-sm text-gray-500 font-semibold mb-2">The Old Way:</p>
-          <p className="text-base leading-relaxed">Manually fill out 20 minutes of online forms before getting <span className="font-semibold text-gray-900">spammed by calls from unknown numbers.</span> Your personal data is sold to others.</p>
+          <p className="text-base leading-relaxed">Manually fill out 20 minutes of online forms before getting <span className="font-semibold text-gray-900"> spammed </span> by calls from unknown numbers.Your personal data is sold to others.</p>
         </div>
         
-        <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-lg hover:shadow-blue-400/60 hover:scale-[1.02] hover:border-blue-500 active:scale-[0.98] cursor-pointer">
+        <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-400 active:scale-[0.98] cursor-pointer">
           <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
           <p className="text-base leading-relaxed">Securely connect your insurance account. The technology pulls your info automatically and sends it directly to me. <span className="font-semibold text-gray-900">Takes only 60 seconds.</span></p>
         </div>
@@ -447,27 +447,27 @@ export default function AutoInsuranceLanding() {
     </div>
   </div>
 
-  {/* Security Details */}
+  {/* Security Details - FIXED SPACING */}
   <div className="border-t border-blue-200 pt-8 mt-8">
     <div className="flex items-start gap-4">
-      <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+      <CheckCircle className="w-7 h-7 text-green-600 flex-shrink-0 mt-1" />
       <div className="text-left flex-1">
-        <h4 className="font-bold text-gray-900 mb-4 text-lg">Your Security Matters</h4>
-        <ul className="space-y-3 text-base text-gray-700">
+        <h4 className="font-bold text-gray-900 mb-5 text-xl">Your Security Matters</h4>
+        <ul className="space-y-5 text-base text-gray-700">
           <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
             <span className="leading-relaxed">Your login credentials are <span className="font-semibold text-gray-900">never stored</span></span>
           </li>
           <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
             <span className="leading-relaxed">Bank-level encryption (same tech that protects your banking apps)</span>
           </li>
           <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
             <span className="leading-relaxed">Your policy info is sent directly to me (Cameron)</span>
           </li>
           <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
             <span className="leading-relaxed">Nothing is shared or sold to anyone. Ever.</span>
           </li>
         </ul>
@@ -475,7 +475,6 @@ export default function AutoInsuranceLanding() {
     </div>
   </div>
 </div>
-
     <div className="space-y-6">
       {/* Canopy Connect Embed */}
       <div className="text-center py-4">
