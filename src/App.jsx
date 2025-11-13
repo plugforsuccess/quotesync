@@ -450,7 +450,7 @@ export default function AutoInsuranceLanding() {
   <div className="border-t border-blue-200 pt-8 mt-8">
     <div className="flex items-start gap-4 text-left w-full justify-start">
       <CheckCircle className="w-7 h-7 text-green-600 flex-shrink-0 mt-1" />
-      <div className="text-left flex-1">
+      <div className="text-left flex-1 w-full">
         <h4 className="font-bold text-gray-900 mb-5 text-xl">Your Security Matters</h4>
         <ul className="space-y-5 text-base text-gray-700">
           <li className="flex items-start gap-3">
