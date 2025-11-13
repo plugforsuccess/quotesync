@@ -455,7 +455,7 @@ export default function AutoInsuranceLanding() {
         <ul className="space-y-5 text-base text-gray-700">
           <li className="flex items-start gap-3">
             <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-            <span className="leading-relaxed">Your login credentials are <span className="font-semibold text-gray-900">never stored</span></span>
+            <span className="leading-relaxed">Your data is <span className="font-semibold text-gray-900">secure</span></span>
           </li>
           <li className="flex items-start gap-3">
             <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
@@ -467,7 +467,6 @@ export default function AutoInsuranceLanding() {
           </li>
           <li className="flex items-start gap-3">
             <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-            <span className="leading-relaxed">Nothing is shared or sold to anyone. Ever.</span>
           </li>
         </ul>
       </div>
@@ -503,7 +502,7 @@ export default function AutoInsuranceLanding() {
             <li><span className="font-semibold">Finicity</span> (owned by Mastercard)</li>
           </ul>
           <p className="mt-3">
-            Your data is encrypted end-to-end. Your username and password are never stored or accessible to anyone - not me, not Canopy, not anyone. It's the same level of security that major banks trust.
+            Your data is encrypted end-to-end. Your username and password are never stored or accessible to anyone - not me, not Canopy Connect, not anyone. It's the same level of security that major banks trust.
           </p>
         </div>
       </details>
