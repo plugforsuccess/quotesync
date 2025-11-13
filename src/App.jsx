@@ -391,9 +391,9 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your policy info I'll run the numbers and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
-        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through your quote and answer any questions. Can't talk? I'll email it instead.", delay: '0.6s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like the price? I can get you switched over as early as tomorrow. Not interested now? No problem.", delay: '0.4s' },
+        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your information I'll finish your quote same day. You'll have it within 24 hours.", delay: '0.2s' },
+        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through your quote and answer any questions. Can't talk? I will email it instead.", delay: '0.6s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow, or any future effective date you choose.", delay: '0.4s' },
       ].map((benefit, i) => (
       
       <div
@@ -411,9 +411,8 @@ export default function AutoInsuranceLanding() {
 </div>
 
 
-        <div className={`max-w-4xl pt-24 mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+<div className={`max-w-4xl pt-24 mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
   <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 border border-white/50 relative overflow-hidden">
-    
     <div className="text-center mb-10 pt-4 sm:pt-6">
       <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
         Start Your Free Quote
@@ -421,55 +420,55 @@ export default function AutoInsuranceLanding() {
       <p className="text-gray-600 text-lg">No forms. No spam.</p>
     </div>
 
-{/* How It Works - ELI5 Style */}
-<div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-6 md:p-8 mb-8">
- <div className="flex items-start gap-4 w-full">
-    <div className="text-left flex-1">
-      <h3 className="font-bold text-gray-900 mb-6 text-xl">How Does This Work?</h3>
-      
-      {/* The Comparison */}
-      <div className="space-y-5 text-gray-700 text-base leading-relaxed">
-        <div className="bg-white/60 rounded-xl p-5 border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
-          <p className="text-sm text-gray-500 font-semibold mb-2">The Old Way:</p>
-          <p className="text-base leading-relaxed">Manually fill out 20 minutes of online forms before getting <span className="font-semibold text-gray-900"> spammed </span> by calls from unknown numbers. Your personal data is sold to others.</p>
-        </div>
-        
-        <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-400 active:scale-[0.98] cursor-pointer">
-          <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
-          <p className="text-base leading-relaxed">Technology makes it easier than ever to shop for insurance. <span className="font-semibold text-gray-900">Takes only 60 seconds</span> to start your quote.</p>
-        </div>
-      </div>
+        {/* How It Works - ELI5 Style */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-6 md:p-8 mb-8">
+          <div className="flex items-start gap-4 w-full">
+              <div className="text-left flex-1">
+                <h3 className="font-bold text-gray-900 mb-6 text-xl">How Does This Work?</h3>
+                
+                {/* The Comparison */}
+                <div className="space-y-5 text-gray-700 text-base leading-relaxed">
+                  <div className="bg-white/60 rounded-xl p-5 border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
+                    <p className="text-sm text-gray-500 font-semibold mb-2">The Old Way:</p>
+                    <p className="text-base leading-relaxed">Manually fill out 20 minutes of online forms before getting <span className="font-semibold text-gray-900"> spammed </span> by calls from unknown numbers. Your personal data is sold to others.</p>
+                  </div>
+                  
+                  <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-400 active:scale-[0.98] cursor-pointer">
+                    <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
+                    <p className="text-base leading-relaxed">Technology makes it easier than ever to shop for insurance. <span className="font-semibold text-gray-900">Takes only 60 seconds</span> to start your quote.</p>
+                  </div>
+                </div>
 
-      <p className="text-base text-gray-600 mt-6 leading-relaxed">
-        Think of it like Plaid to link your bank account to Venmo or Cash App - same security, way faster than typing everything out manually.
-      </p>
-    </div>
-  </div>
+                <p className="text-base text-gray-600 mt-6 leading-relaxed">
+                  Think of it like Plaid to link your bank account to Venmo or Cash App - same security, way faster than typing everything out manually.
+                </p>
+              </div>
+            </div>
 
-  {/* Security Details - FIXED SPACING */}
-  <div className="border-t border-blue-200 pt-8 mt-8">
-    <div className="flex items-start gap-4 text-left w-full justify-start">
-      <CheckCircle className="w-7 h-7 text-green-600 flex-shrink-0 mt-0.5" />
-      <div className="text-left flex-1">
-        <h4 className="font-bold text-gray-900 mb-5 text-xl">Your Security Matters</h4>
-        <ul className="space-y-5 text-base text-gray-700">
-          <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-            <span className="leading-relaxed">Your data is <span className="font-semibold text-gray-900">secure</span></span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-            <span className="leading-relaxed">Bank-level encryption (same tech that protects your banking apps)</span>
-          </li>
-          <li className="flex items-start gap-3">
-            <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-            <span className="leading-relaxed">Your policy info is sent directly to me (Cameron)</span>
-          </li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
+            {/* Security Details - FIXED SPACING */}
+            <div className="border-t border-blue-200 pt-8 mt-8">
+              <div className="flex items-start gap-4 text-left w-full justify-start">
+                <CheckCircle className="w-7 h-7 text-green-600 flex-shrink-0 mt-0.5" />
+                <div className="text-left flex-1">
+                  <h4 className="font-bold text-gray-900 mb-5 text-xl">Your Security Matters</h4>
+                  <ul className="space-y-5 text-base text-gray-700">
+                    <li className="flex items-start gap-3">
+                      <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
+                      <span className="leading-relaxed">Your data is <span className="font-semibold text-gray-900">secure</span></span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
+                      <span className="leading-relaxed">Bank-level encryption (same tech that protects your banking apps)</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
+                      <span className="leading-relaxed">Your policy info is sent directly to me (Cameron)</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
     <div className="space-y-6">
       {/* Canopy Connect Embed */}
       <div className="text-center py-4">
@@ -484,14 +483,14 @@ export default function AutoInsuranceLanding() {
       </div>
 
       {/* What is Canopy Connect - Expandable */}
-      <details className="bg-gray-50 rounded-lg border border-gray-200">
+       <div className="bg-gray-50 rounded-lg border border-gray-200">
         <summary className="cursor-pointer p-4 font-semibold text-gray-700 hover:text-gray-900 text-sm flex items-center justify-between">
           <span>What is Canopy Connect?</span>
           <span className="text-gray-400">▼</span>
         </summary>
         <div className="px-4 pb-4 text-xs text-gray-600 leading-relaxed space-y-2">
           <p>
-            Canopy Connect is a secure data-sharing tool used by insurance and financial companies. It's similar to:
+            Canopy Connect is a secure data-sharing tool used by insurance and financial companies enabling consumers to retrieve relevant information from their own insurance accounts and securely transfer that information to your agent. Linking your insurance accounts with Canopy Connect enables the sharing of key information they need to tailor advice just for you. This cutting-edge technology works similar to:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
             <li><span className="font-semibold">Plaid</span> (used by Venmo, Cash App, Robinhood, Coinbase)</li>
@@ -499,46 +498,44 @@ export default function AutoInsuranceLanding() {
             <li><span className="font-semibold">Finicity</span> (owned by Mastercard)</li>
           </ul>
           <p className="mt-3">
-            Your data is encrypted end-to-end. Your username and password are never stored or accessible to anyone - not me, not Canopy Connect, not anyone. It's the same level of security that major banks trust.
-          </p>
-        </div>
-      </details>
-    </div>
+           Your username and password are never stored or accessible to anyone. Ever. Canopy Connect uses some of the most advanced security and encryption methods available to safely connect your insurance account. It protects your information at all times with 256-bit AES encryption. </p>
+      </div>
+      </div>
   </div>
 </div>
-          <div className="mt-12 text-center">
-            <p className="text-blue-100 font-semibold mb-6 text-lg">Partnered with America's Most Trusted Insurers</p>
-            <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20  overflow-x-hidden overflow-y-visible relative shadow-xl">
-              <div className="flex overflow-visible">
-                <div className="logo-track">
-                  <div className="flex gap-16 items-center min-w-max">
-                    <img src="/logos/GEICO.png" alt="GEICO" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Progressive.png" alt="Progressive" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/State-Farm.png" alt="State Farm" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Allstate.png" alt="Allstate" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Nationwide.png" alt="Nationwide" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/USAA.png" alt="USAA" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Farmers.png" alt="Farmers" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Liberty-Mutual.png" alt="Liberty Mutual" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                  </div>
-                  {/* Duplicate set for seamless loop */}
-                  <div className="flex gap-16 items-center min-w-max">
-                    <img src="/logos/GEICO.png" alt="GEICO" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Progressive.png" alt="Progressive" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/State-Farm.png" alt="State Farm" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Allstate.png" alt="Allstate" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Nationwide.png" alt="Nationwide" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/USAA.png" alt="USAA" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Farmers.png" alt="Farmers" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                    <img src="/logos/Liberty-Mutual.png" alt="Liberty Mutual" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
-                  </div>
-                </div>
+
+      <div className="mt-12 text-center">
+        <p className="text-blue-100 font-semibold mb-6 text-lg">Partnered with America's Most Trusted Insurers</p>
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20  overflow-x-hidden overflow-y-visible relative shadow-xl">
+          <div className="flex overflow-visible">
+            <div className="logo-track">
+              <div className="flex gap-16 items-center min-w-max">
+                <img src="/logos/GEICO.png" alt="GEICO" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Progressive.png" alt="Progressive" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/State-Farm.png" alt="State Farm" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Allstate.png" alt="Allstate" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Nationwide.png" alt="Nationwide" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/USAA.png" alt="USAA" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Farmers.png" alt="Farmers" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Liberty-Mutual.png" alt="Liberty Mutual" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+              </div>
+              {/* Duplicate set for seamless loop */}
+              <div className="flex gap-16 items-center min-w-max">
+                <img src="/logos/GEICO.png" alt="GEICO" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Progressive.png" alt="Progressive" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/State-Farm.png" alt="State Farm" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Allstate.png" alt="Allstate" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Nationwide.png" alt="Nationwide" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/USAA.png" alt="USAA" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Farmers.png" alt="Farmers" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
+                <img src="/logos/Liberty-Mutual.png" alt="Liberty Mutual" className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
               </div>
             </div>
           </div>
         </div>
+        </div>
       </div>
-    
-  
-  );
+    </div>
+  </div> 
+);
 }
