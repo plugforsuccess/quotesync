@@ -391,7 +391,7 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "Upon receiving your policy information I'll run the numbers and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
+        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your policy info I'll run the numbers and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
         { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through your quote and answer any questions. Can't talk? I'll email it instead.", delay: '0.6s' },
         { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like the price? I can get you switched over as early as tomorrow. Not interested now? No problem.", delay: '0.4s' },
       ].map((benefit, i) => (
@@ -436,7 +436,7 @@ export default function AutoInsuranceLanding() {
         
         <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-400 active:scale-[0.98] cursor-pointer">
           <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
-          <p className="text-base leading-relaxed">Securely connect your current insurance policy. The technology pulls your info automatically and sends it directly to me. <span className="font-semibold text-gray-900">Takes only 60 seconds.</span></p>
+          <p className="text-base leading-relaxed">Technology makes it easier to shop for insurance better. <span className="font-semibold text-gray-900">Takes only 60 seconds.</span></p>
         </div>
       </div>
 
