@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Clock, CheckCircle, ArrowRight, Star, Award, TrendingDown, AlertCircle } from 'lucide-react';
+import { Shield, Clock, CheckCircle, ArrowRight, Star, Award, TrendingDown, AlertCircle, PhoneCallIcon, BriefcaseBusiness } from 'lucide-react';
 
 // Move InputField component outside to prevent recreation
 const InputField = ({ label, name, type = 'text', placeholder, maxLength, isSelect, options, formData, errors, touched, onInputChange, onInputBlur }) => (
@@ -325,7 +325,7 @@ export default function AutoInsuranceLanding() {
               <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
               <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
                 <div className="relative z-10">
-                  <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight">QuoteSync</h1>
+                  <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight">insuredbycam</h1>
                   <p className="text-lg md:text-xl text-white/80 font-medium mt-2">Insurance shopping, simplified</p>
                 </div>
             </div>
@@ -352,29 +352,48 @@ export default function AutoInsuranceLanding() {
             <p className="text-blue-200/80 text-lg">Free. Fast. No obligation.</p>
           </div>
         </div>  
-      <div className={`max-w-4xl mx-auto mb-24 bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 transition-all duration-1000 delay-200 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pb-12md:gap-6">
-      {[
-        { value: '2M+', label: 'Happy Drivers' },
-        { value: '$427', label: 'Avg. Savings' },
-        { value: '40+', label: 'Carriers' },
-        { value: '2 min', label: 'To Compare' }
-      ].map((stat, i) => (
-        <div key={i} className="text-center transform hover:scale-110 transition-transform duration-300">
-          <div className="text-4xl md:text-5xl font-black text-white mb-1.5">{stat.value}</div>
-          <div className="text-blue-100/90 text-sm md:text-base">{stat.label}</div>
-        </div>
-      ))}
+    <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">
+  {/* Photo */}
+  <div className="relative">
+    <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl ring-4 ring-blue-500/20">
+      <img 
+        src="/public/logos/headshot-examples.jpg" 
+        alt="Cameron Wiley"
+        className="w-full h-full object-cover"
+      />
     </div>
+    {/* Verified badge */}
+    <div className="absolute -bottom-2 -right-2 bg-blue-600 text-white rounded-full p-2 shadow-lg">
+      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+      </svg>
+    </div>
+  </div>
+  
+  {/* Text */}
+  <div className="text-center md:text-left">
+    <h1 className="text-4xl md:text-5xl font-black text-white mb-2">
+      I'm Cameron
+    </h1>
+    <p className="text-xl text-white mb-4">
+      Allstate Agency Owner
+    </p>
+    <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-500">
+      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full font-semibold">Licensed in GA</span>
+      <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full font-semibold"> Low Rates</span>
+    </div>
+  </div>
+</div>
   </div>
   <div className={`w-full px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
-        { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Skip the Forms', desc: 'Share your current coverages in seconds using Canopy Connect', delay: '0s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'Accurate Quotes', desc: 'See personalized rates based on your actual coverage details', delay: '0.2s' },
-        { icon: TrendingDown, color: 'from-orange-500 to-orange-600', title: 'Compare and Save', desc: 'Discover potential discounts when choosing the right plan', delay: '0.6s' },
-        { icon: Shield, color: 'from-purple-500 to-purple-600', title: 'Secure and Private', desc: 'Bank-level 256-bit encryption protects your information', delay: '0.4s' },
+        { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
+        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "I review your info, run the numbers, and finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
+        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call to walk through your quote and answer questions. Can't talk? I'll email it instead.", delay: '0.6s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow. Not interested now? No problem.", delay: '0.4s' },
       ].map((benefit, i) => (
+      
       <div
         key={i}
         className="bg-white/95 backdrop-blur-sm p-8 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 border border-white/50 group text-left min-h-[176px]"
@@ -389,62 +408,106 @@ export default function AutoInsuranceLanding() {
     ))}
 </div>
 
+
         <div className={`max-w-2xl pt-24 mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-          <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 md:p-12 border border-white/50 relative overflow-hidden">
-            
-             <div className="text-center mb-10">
-              <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
-                Start Your Free Quote
-              </h2>
-              <p className="text-gray-600 text-lg"></p>
+  <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 md:p-12 border border-white/50 relative overflow-hidden">
+    
+    <div className="text-center mb-10">
+      <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
+        Start Your Free Quote
+      </h2>
+      <p className="text-gray-600 text-lg">No forms. No spam. No obligation.</p>
+    </div>
+
+    {/* How It Works - ELI5 Style */}
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 md:p-8 mb-8">
+      <div className="flex items-start gap-3 mb-6">
+        <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+        <div className="text-left flex-1">
+          <h3 className="font-bold text-gray-900 mb-3 text-lg">How Does This Work?</h3>
+          
+          {/* The Comparison */}
+          <div className="space-y-4 text-gray-700 text-base leading-relaxed">
+            <div className="bg-white/60 rounded-lg p-4 border border-gray-200">
+              <p className="text-sm text-gray-500 font-semibold mb-1">The Old Way:</p>
+              <p className="text-sm">Manually fill out 20 minutes of online forms before getting
+              <span className="font-semibold text-gray-900"> spammed</span>  by calls from unknown numbers. Your personal data is sold to others.  </p>
             </div>
-
-            {/* Trust Indicators */}
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 md:p-6 mb-8">
-  <div className="flex items-start gap-3 mb-4">
-    <Shield className="w-5 h-5 md:w-6 md:h-6 text-blue-600 flex-shrink-0 mt-1" />
-    <div className="text-left flex-1">
-      <h3 className="font-bold text-gray-900 mb-1 text-">Why is this safe?</h3>
-      <p className="text-base md:text-base text-gray-700 leading-relaxed">
-        QuoteSync is powered by <span className="font-semibold">Canopy Connect</span>, which uses industry-standard encryption to protect your data during submission.
-      </p>
-    </div>
-  </div>
-  <div className="flex items-start gap-3">
-    <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-600 flex-shrink-0 mt-1" />
-    <div className="text-left flex-1">
-      <h3 className="font-bold text-gray-900 mb-1 text-base">Your privacy matters</h3>
-      <p className="text-base md:text-base text-gray-700 leading-relaxed">
-        Login credentials are <span className="font-semibold">never stored</span>. Your information remains encrypted, used only to retrieve your coverage data for your quote.
-      </p>
-    </div>
-  </div>
-</div>
-
-            <div className="space-y-6">
-              {/* Canopy Connect Embed */}
-              <div className="text-center py-4">
-                <a 
-                  className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-blue-500/50 group no-underline"
-                  href="https://app.usecanopy.com/c/camwileyagency" 
-                  target="_blank"
-                >
-        
-                  <span className="whitespace-nowrap">Get My Quote</span>
-                  <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
-                </a>
-                <p className="text-sm text-gray-500 mt-4">Takes less than 2 minutes • No manual forms to fill out</p>
-              </div>
-
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <p className="text-xs text-gray-600 text-center leading-relaxed">
-                  <span className="font-semibold text-gray-700">How it works:</span> You'll log into your current insurance provider (like GEICO, State Farm, etc.) through Canopy Connect's secure portal. 
-                  We retrieve your policy coverage details to provide accurate quotes. No data is sold to third parties.
-                </p>
-              </div>
+            
+            <div className="bg-white/60 rounded-lg p-4 border-2 border-blue-300">
+              <p className="text-sm text-blue-600 font-semibold mb-1">✓ The Modern Way:</p>
+              <p className="text-sm">Securely connect your insurance account. The technology pulls your info automatically and sends it directly to me. 
+              <span className="font-semibold text-gray-900"> Takes only 60 seconds.</span></p>
             </div>
           </div>
 
+          <p className="text-sm text-gray-600 mt-4 leading-relaxed">
+            Think of it like Plaid which is used to link your bank account to Venmo or Cash App - same security, way faster than typing everything out manually.
+          </p>
+        </div>
+      </div>
+
+      {/* Security Details */}
+      <div className="border-t border-blue-200 pt-6 mt-6">
+        <div className="flex items-start gap-3 mb-4">
+          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
+          <div className="text-left flex-1">
+            <h4 className="font-bold text-gray-900 mb-2 text-base">Your Security Matters</h4>
+            <ul className="space-y-2 text-sm text-gray-700">
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold mt-0.5">✓</span>
+                <span>Your login credentials are <span className="font-semibold text-gray-900">never stored</span></span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold mt-0.5">✓</span>
+                <span>Bank-level encryption (same tech that protects your banking apps)</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-600 font-bold mt-0.5">✓</span>
+                <span> Nothing is shared or sold to anyone. Ever.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="space-y-6">
+      {/* Canopy Connect Embed */}
+      <div className="text-center py-4">
+        <a 
+          className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-blue-500/50 group no-underline"
+          href="https://app.usecanopy.com/c/camwileyagency" 
+          target="_blank"
+        >
+          <span className="whitespace-nowrap">Start My Quote</span>
+          <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+        </a>
+      </div>
+
+      {/* What is Canopy Connect - Expandable */}
+      <details className="bg-gray-50 rounded-lg border border-gray-200">
+        <summary className="cursor-pointer p-4 font-semibold text-gray-700 hover:text-gray-900 text-sm flex items-center justify-between">
+          <span>What is Canopy Connect?</span>
+          <span className="text-gray-400">▼</span>
+        </summary>
+        <div className="px-4 pb-4 text-xs text-gray-600 leading-relaxed space-y-2">
+          <p>
+            Canopy Connect is a secure data-sharing tool used by insurance and financial companies. It's similar to:
+          </p>
+          <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
+            <li><span className="font-semibold">Plaid</span> (used by Venmo, Robinhood, Coinbase)</li>
+            <li><span className="font-semibold">Yodlee</span> (used by major banks)</li>
+            <li><span className="font-semibold">Finicity</span> (owned by Mastercard)</li>
+          </ul>
+          <p className="mt-3">
+            Your data is encrypted end-to-end. Your username and password are never stored or accessible to anyone - not me, not Canopy, not anyone. It's the same level of security that major banks trust.
+          </p>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
           <div className="mt-12 text-center">
             <p className="text-blue-100 font-semibold mb-6 text-lg">Partnered with America's Most Trusted Insurers</p>
             <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 overflow-hidden relative shadow-xl">
@@ -477,7 +540,7 @@ export default function AutoInsuranceLanding() {
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    
+  
   );
 }
