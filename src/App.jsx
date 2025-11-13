@@ -325,7 +325,7 @@ export default function AutoInsuranceLanding() {
               <div className="absolute inset-0 bg-gradient-to-r from-green-400/20 to-blue-400/20 blur-3xl rounded-full"></div>
               <img src="/quotesync-logo.svg" alt="QuoteSync Logo" className="w-16 h-16 relative z-10" />
                 <div className="relative z-10">
-                  <h1 className="text-6xl md:text-7xl font-black text-white tracking-tight">insuredbycam</h1>
+                  <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tight">insuredbycam</h1>
                   <p className="text-lg md:text-xl text-white/80 font-medium mt-2">Insurance shopping, simplified</p>
                 </div>
             </div>
@@ -357,7 +357,7 @@ export default function AutoInsuranceLanding() {
   <div className="relative">
     <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl ring-4 ring-blue-500/20">
       <img 
-        src="/public/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
+        src="/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
         alt="Cameron Wiley"
         className="w-full h-full object-cover"
         style={{ objectPosition: '50% 30%' }}
@@ -418,61 +418,63 @@ export default function AutoInsuranceLanding() {
       <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
         Start Your Free Quote
       </h2>
-      <p className="text-gray-600 text-lg">No forms. No spam. No obligation.</p>
+      <p className="text-gray-600 text-lg">No forms. No spam.</p>
     </div>
 
-    {/* How It Works - ELI5 Style */}
-    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 md:p-8 mb-8">
-      <div className="flex items-start gap-3 mb-6">
-        <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-        <div className="text-left flex-1">
-          <h3 className="font-bold text-gray-900 mb-3 text-lg">How Does This Work?</h3>
-          
-          {/* The Comparison */}
-          <div className="space-y-4 text-gray-700 text-base leading-relaxed">
-            <div className="bg-white/60 rounded-lg p-4 border border-gray-200">
-              <p className="text-sm text-gray-500 font-semibold mb-1">The Old Way:</p>
-              <p className="text-sm">Manually fill out 20 minutes of online forms before getting
-              <span className="font-semibold text-gray-900"> spammed</span>  by calls from unknown numbers. Your personal data is sold to others.  </p>
-            </div>
-            
-            <div className="bg-white/60 rounded-lg p-4 border-2 border-blue-300">
-              <p className="text-sm text-blue-600 font-semibold mb-1">✓ The Modern Way:</p>
-              <p className="text-sm">Securely connect your insurance account. The technology pulls your info automatically and sends it directly to me. 
-              <span className="font-semibold text-gray-900"> Takes only 60 seconds.</span></p>
-            </div>
-          </div>
-
-          <p className="text-sm text-gray-600 mt-4 leading-relaxed">
-            Think of it like Plaid which is used to link your bank account to Venmo or Cash App - same security, way faster than typing everything out manually.
-          </p>
+  {/* How It Works - ELI5 Style */}
+<div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-8 md:p-8 mb-8">
+  <div className="flex items-start gap-4 mb-8">
+    <Shield className="w-7 h-7 text-blue-600 flex-shrink-0 mt-1" />
+    <div className="text-left flex-1">
+      <h3 className="font-bold text-gray-900 mb-6 text-xl">How Does This Work?</h3>
+      
+      {/* The Comparison */}
+      <div className="space-y-5 text-gray-700 text-base leading-relaxed">
+        <div className="bg-white/60 rounded-xl p-5 border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] cursor-pointer">
+          <p className="text-sm text-gray-500 font-semibold mb-2">The Old Way:</p>
+          <p className="text-base leading-relaxed">Manually fill out 20 minutes of online forms before getting <span className="font-semibold text-gray-900">spammed by calls from unknown numbers.</span> Your personal data is sold to others.</p>
+        </div>
+        
+        <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-lg hover:shadow-blue-400/60 hover:scale-[1.02] hover:border-blue-500 active:scale-[0.98] cursor-pointer">
+          <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
+          <p className="text-base leading-relaxed">Securely connect your insurance account. The technology pulls your info automatically and sends it directly to me. <span className="font-semibold text-gray-900">Takes only 60 seconds.</span></p>
         </div>
       </div>
 
-      {/* Security Details */}
-      <div className="border-t border-blue-200 pt-6 mt-6">
-        <div className="flex items-start gap-3 mb-4">
-          <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-          <div className="text-left flex-1">
-            <h4 className="font-bold text-gray-900 mb-2 text-base">Your Security Matters</h4>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 font-bold mt-0.5">✓</span>
-                <span>Your login credentials are <span className="font-semibold text-gray-900">never stored</span></span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 font-bold mt-0.5">✓</span>
-                <span>Bank-level encryption (same tech that protects your banking apps)</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-600 font-bold mt-0.5">✓</span>
-                <span> Nothing is shared or sold to anyone. Ever.</span>
-              </li>
-            </ul>
-          </div>
-        </div>
+      <p className="text-base text-gray-600 mt-6 leading-relaxed">
+        Think of it like Plaid which is used to link your bank account to Venmo or Cash App - same security, way faster than typing everything out manually.
+      </p>
+    </div>
+  </div>
+
+  {/* Security Details */}
+  <div className="border-t border-blue-200 pt-8 mt-8">
+    <div className="flex items-start gap-4">
+      <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0 mt-1" />
+      <div className="text-left flex-1">
+        <h4 className="font-bold text-gray-900 mb-4 text-lg">Your Security Matters</h4>
+        <ul className="space-y-3 text-base text-gray-700">
+          <li className="flex items-start gap-3">
+            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="leading-relaxed">Your login credentials are <span className="font-semibold text-gray-900">never stored</span></span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="leading-relaxed">Bank-level encryption (same tech that protects your banking apps)</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="leading-relaxed">Your policy info is sent directly to me (Cameron)</span>
+          </li>
+          <li className="flex items-start gap-3">
+            <span className="text-green-600 font-bold mt-1 text-lg">✓</span>
+            <span className="leading-relaxed">Nothing is shared or sold to anyone. Ever.</span>
+          </li>
+        </ul>
       </div>
     </div>
+  </div>
+</div>
 
     <div className="space-y-6">
       {/* Canopy Connect Embed */}
@@ -498,7 +500,7 @@ export default function AutoInsuranceLanding() {
             Canopy Connect is a secure data-sharing tool used by insurance and financial companies. It's similar to:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
-            <li><span className="font-semibold">Plaid</span> (used by Venmo, Robinhood, Coinbase)</li>
+            <li><span className="font-semibold">Plaid</span> (used by Venmo, Cash App, Robinhood, Coinbase)</li>
             <li><span className="font-semibold">Yodlee</span> (used by major banks)</li>
             <li><span className="font-semibold">Finicity</span> (owned by Mastercard)</li>
           </ul>
