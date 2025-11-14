@@ -391,8 +391,8 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I receive your information I'll finish your quote same day. You'll have it within 24 hours.", delay: '0.2s' },
-        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through your quote and answer any questions. Can't talk? I will email it instead.", delay: '0.6s' },
+        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I retrieve your information, I'll finish your quote. You'll have it within 24 hours.", delay: '0.2s' },
+        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through numbers and answer any questions. Can't talk? I'll email it instead.", delay: '0.6s' },
         { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow, or any future effective date you choose.", delay: '0.4s' },
       ].map((benefit, i) => (
       
@@ -483,14 +483,14 @@ export default function AutoInsuranceLanding() {
       </div>
 
       {/* What is Canopy Connect - Expandable */}
-       <div className="bg-gray-50 rounded-lg border border-gray-200">
+       <details className="bg-gray-50 rounded-lg border border-gray-200">
         <summary className="cursor-pointer p-4 font-semibold text-gray-700 hover:text-gray-900 text-sm flex items-center justify-between">
           <span>What is Canopy Connect?</span>
           <span className="text-gray-400">▼</span>
         </summary>
         <div className="px-4 pb-4 text-xs text-gray-600 leading-relaxed space-y-2">
           <p>
-            Canopy Connect is a secure data-sharing tool used by insurance and financial companies enabling consumers to retrieve relevant information from their own insurance accounts and securely transfer that information to your agent. Linking your insurance accounts with Canopy Connect enables the sharing of key information they need to tailor advice just for you. This cutting-edge technology works similar to:
+            Canopy Connect is a secure data-sharing tool used by insurance and financial companies enabling shoppers to retrieve relevant information from their own insurance accounts and securely transfer that information to your agent. Linking your insurance accounts with Canopy Connect enables the sharing of key information I need to tailor advice just for you. This technology works similar to:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
             <li><span className="font-semibold">Plaid</span> (used by Venmo, Cash App, Robinhood, Coinbase)</li>
@@ -498,9 +498,9 @@ export default function AutoInsuranceLanding() {
             <li><span className="font-semibold">Finicity</span> (owned by Mastercard)</li>
           </ul>
           <p className="mt-3">
-           Your username and password are never stored or accessible to anyone. Ever. Canopy Connect uses some of the most advanced security and encryption methods available to safely connect your insurance account. It protects your information at all times with 256-bit AES encryption. </p>
-      </div>
-      </div>
+           Your username and password are never stored or accessible to anyone. Canopy Connect uses some of the most advanced security and encryption methods available to safely connect your insurance account. It protects your information at all times with 256-bit AES encryption. </p>
+       </div>
+      </details>
   </div>
 </div>
 
