@@ -506,7 +506,7 @@ export default function AutoInsuranceLanding() {
             href="https://app.usecanopy.com/c/insuredbycam" 
             target="_blank"
           >
-            <span className="whitespace-nowrap">Start My Quote</span>
+            <span className="whitespace-nowrap">Compare Rates</span>
             <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
           </a>
         </div>
