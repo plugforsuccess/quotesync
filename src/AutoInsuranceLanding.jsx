@@ -540,7 +540,7 @@ export default function AutoInsuranceLanding() {
 </div>
 
       <div className="mt-12 text-center">
-        <p className="text-blue-100 font-semibold mb-6 text-lg">Helping Customer Save More By Switching from These Carriers </p>
+        <p className="text-blue-100 font-semibold mb-6 text-lg">Helping Customers Save More By Switching from These Carriers </p>
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20  overflow-x-hidden overflow-y-visible relative shadow-xl">
           <div className="flex overflow-visible">
             <div className="logo-track">
