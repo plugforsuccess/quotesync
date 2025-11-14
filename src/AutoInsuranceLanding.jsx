@@ -496,7 +496,7 @@ export default function AutoInsuranceLanding() {
           <div>
             <h3 className="font-bold text-gray-900 mb-2">Important: Do you currently have auto insurance?</h3>
             <p className="text-sm text-gray-700 leading-relaxed">
-              My service works by comparing your <span className="font-semibold">existing policy</span> to an Allstate Insurance quote. If you don't currently have insurance, I won't be able to help you through this process.
+              My service works by comparing your <span className="font-semibold">existing auto policy</span> to an Allstate Insurance quote. If you don't currently have insurance, I won't be able to help you through this process.
             </p>
           </div>
         </div>
