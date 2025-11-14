@@ -87,6 +87,17 @@ const ThankYouPage = () => {
         </div>
       </div>
 
+      {/* Driver Education CTA */}
+      <div className="driver-ed-cta">
+        <div className="driver-ed-content">
+          <h3>💰 Want to Save Even More on Insurance?</h3>
+          <p>While you wait for your quote, check out how Georgia drivers can earn recurring insurance discounts by taking a simple online course.</p>
+          <a href="/defensive-driving" className="driver-ed-button">
+            Explore Driver Education Courses →
+          </a>
+        </div>
+      </div>
+
       {/* Social Proof */}
       <div className="social-proof">
         <p className="social-proof-text">Join hundreds of drivers who've simplified their insurance shopping on insuredbycam.com</p>

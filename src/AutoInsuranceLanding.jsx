@@ -602,6 +602,28 @@ export default function AutoInsuranceLanding() {
         </div>
       </div>
     </div>
+
+    {/* Footer */}
+    <footer className="relative z-10 border-t border-white/10 mt-24">
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-white/60 text-sm">
+            © {new Date().getFullYear()} All rights reserved.
+          </p>
+          <div className="flex items-center gap-6">
+            <a 
+              href="/safedriving" 
+              className="text-white/80 hover:text-white text-sm font-medium transition-colors duration-200 hover:underline"
+            >
+              Driver Education Courses
+            </a>
+          
+          </div>
+        </div>
+      </div>
+    </footer>
   </div> 
 );
 }
+
+
