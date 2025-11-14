@@ -115,7 +115,7 @@ const ThankYouPage = () => {
 
       {/* Back to Homepage */}
       <div className="back-link">
-        <a href="/">← Back to insuredbycam.com</a>
+        <a href="/">← Back to Home</a>
       </div>
     </div>
   );
