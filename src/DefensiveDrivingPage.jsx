@@ -96,7 +96,7 @@ export default function GeorgiaDriverEducationPage() {
 
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-xs line-through text-slate-500">$59.95</span>
-              <span className="text-2xl font-bold text-emerald-300">~$24.95*</span>
+              <span className="text-2xl font-bold text-emerald-300">$37.00*</span>
             </div>
 
             <button
