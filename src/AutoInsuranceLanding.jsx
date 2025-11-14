@@ -612,7 +612,7 @@ export default function AutoInsuranceLanding() {
           </p>
           <div className="flex items-center gap-6">
             <a 
-              href="/defensive-driving" 
+              href="/DefensiveDrivingPage" 
               className="text-white/80 hover:text-white text-sm font-medium transition-colors duration-200 hover:underline"
             >
               Driver Education Courses
