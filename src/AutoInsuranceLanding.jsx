@@ -423,9 +423,20 @@ export default function AutoInsuranceLanding() {
       <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
         Start Your Free Quote
       </h2>
+      {/* Canopy Connect Embed */}
+      <div className="text-center py-4">
+        <a 
+          className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-blue-500/50 group no-underline"
+          href="https://app.usecanopy.com/c/insuredbycam" 
+          target="_blank"
+        >
+          <span className="whitespace-nowrap">I'm Ready</span>
+          <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+        </a>
+      </div>
       <p className="text-gray-600 text-lg">Free. Fast. No obligation.</p>
+      
     </div>
-
         {/* How It Works - ELI5 Style */}
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-4 sm:p-6 md:p-8 mb-8">
           <div className="flex items-start gap-4 w-full">
@@ -485,7 +496,7 @@ export default function AutoInsuranceLanding() {
           <div>
             <h3 className="font-bold text-gray-900 mb-2">Important: Do you currently have auto insurance?</h3>
             <p className="text-sm text-gray-700 leading-relaxed">
-              My service works by comparing your <span className="font-semibold">existing policy</span> to an Allstate quote. If you don't currently have active insurance, I won't be able to help you through this process.
+              My service works by comparing your <span className="font-semibold">existing policy</span> to an Allstate quote. If you don't currently have <span className="font-semibold">active</span> insurance, I won't be able to help you through this process.
             </p>
           </div>
         </div>
