@@ -397,7 +397,7 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-orange-500 to-orange-600', title: 'I Do the Work', desc: "Once I retrieve your information, I'll have everything I need to complete your quote within 24 hours.", delay: '0.2s' },
+        { icon: BriefcaseBusiness, color: 'from-orange-500 to-orange-600', title: 'I Do the Work', desc: "Once your information is retrieved, I'll have everything I need to complete your quote within 24 hours.", delay: '0.2s' },
         { icon: PhoneCallIcon, color: 'from-purple-500 to-purple-600', title: 'We Connect', desc: "I'll call you to walk through the numbers and answer any questions. Can't talk? I'll email your proposal.", delay: '0.4s' },
         { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow, or any future effective date you choose.", delay: '0.6s' },
       ].map((benefit, i) => (
@@ -430,7 +430,7 @@ export default function AutoInsuranceLanding() {
           href="https://app.usecanopy.com/c/insuredbycam" 
           target="_blank"
         >
-          <span className="whitespace-nowrap">I'm Ready</span>
+          <span className="whitespace-nowrap">I'm Ready to Compare</span>
           <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
         </a>
       </div>
@@ -496,7 +496,7 @@ export default function AutoInsuranceLanding() {
           <div>
             <h3 className="font-bold text-gray-900 mb-2">Important: Do you currently have auto insurance?</h3>
             <p className="text-sm text-gray-700 leading-relaxed">
-              My service works by comparing your <span className="font-semibold">existing policy</span> to an Allstate quote. If you don't currently have insurance, I won't be able to help you through this process.
+              My service works by comparing your <span className="font-semibold">existing policy</span> to an Allstate Insurance quote. If you don't currently have insurance, I won't be able to help you through this process.
             </p>
           </div>
         </div>
