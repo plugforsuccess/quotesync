@@ -449,7 +449,7 @@ export default function AutoInsuranceLanding() {
                     
                     <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-400 active:scale-[0.98] cursor-pointer">
                       <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
-                      <p className="text-base leading-relaxed">Skip the forms and the spam callers. Just link your current insurance policy once. It takes <span className="font-semibold text-gray-900"> less than a minute</span>.</p>
+                      <p className="text-base leading-relaxed">Skip the forms and the spam callers. Just link your current insurance policy once. It takes <span className="font-semibold text-gray-900"> less than a minute</span> to finish.</p>
                     </div>
                   </div>
 
@@ -542,7 +542,7 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. That's it. No forms. No hassle.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-orange-500 to-orange-600', title: 'I Do the Work', desc: "Once your details sync, I'll take it from there and finish your quote within 24 hours.", delay: '0.2s' },
+        { icon: BriefcaseBusiness, color: 'from-orange-500 to-orange-600', title: 'I Do the Work', desc: "Once your details sync, I'll take it from there and complete your quote within 24 hours.", delay: '0.2s' },
         { icon: PhoneCallIcon, color: 'from-purple-500 to-purple-600', title: 'We Connect', desc: "I'll call you to walk through the numbers and answer any questions. Can't talk? I'll email the proposal.", delay: '0.4s' },
         { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow, or any future effective date you choose.", delay: '0.6s' },
       ].map((benefit, i) => (
