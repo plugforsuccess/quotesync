@@ -449,7 +449,7 @@ export default function AutoInsuranceLanding() {
                     
                     <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-400 active:scale-[0.98] cursor-pointer">
                       <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
-                      <p className="text-base leading-relaxed">Technology makes it easier than ever to shop online for insurance. <span className="font-semibold text-gray-900">Takes only 60 seconds </span> to start your quote.</p>
+                      <p className="text-base leading-relaxed">Skip the forms and the spam callers. Just link your current insurance policy once. It takes <span className="font-semibold text-gray-900"> less than a minute</span>.</p>
                     </div>
                   </div>
 
