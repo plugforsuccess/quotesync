@@ -283,7 +283,7 @@ export default function AutoInsuranceLanding() {
   }
 
   return (
-   <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-00 to-indigo-900 relative overflow-hidden">
+   <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-900 to-indigo-900 relative overflow-hidden">
         {/* Animated Gradient Mesh */}
         <div className="absolute inset-0 opacity-50 overflow-hidden">
           <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
@@ -318,6 +318,18 @@ export default function AutoInsuranceLanding() {
         <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '700ms' }}></div>
 
+        {/* DEV ONLY: Preview Button */}
+        {import.meta.env.DEV && (
+          <div className="fixed bottom-4 right-4 z-50">
+            <a 
+              href="/success" 
+              className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-red-600 inline-block"
+            >
+              Preview Thank You Page
+            </a>
+          </div>
+        )}
+
         <div className="container mx-auto px-4 py-16 relative z-10">
           {/* Logo */}
           <div className={`text-center mb-20 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
@@ -330,28 +342,22 @@ export default function AutoInsuranceLanding() {
                 </div>
             </div>
           </div>
-            <div className={`text-center mb-16 max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
-
           <div className={`text-center mb-16 max-w-4xl mx-auto transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'}`}>
-            {/* <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full mb-8 border border-white/10">
-              <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-              <span className="text-white text-sm font-medium">Rated 4.9/5 by 50,000+ customers</span>
-            </div> */}
-            
             <h1 className="text-6xl md:text-7xl font-black text-white mb-6 leading-tight">
               Save Up to{' '}
+              <br />
               <span className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent inline-block" style={{animation: 'wiggle 1s ease-in-out infinite'}}>
                 $847
               </span>
-              <br />on Auto Insurance
+              <br/> on Auto Insurance
             </h1>
             
             <p className="text-xl md:text-2xl text-blue-100 mb-4 font-light">
-        
+              Connect your current insurance policy and see if Allstate can beat your rate
             </p>
-            <p className="text-blue-200/80 text-lg">Free. Fast. No obligation.</p>
+            <p className="text-blue-200/80 text-lg">Free comparison. No spam calls.</p>
           </div>
-        </div>  
+  
     <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">
   {/* Photo */}
   <div className="relative">
@@ -391,9 +397,9 @@ export default function AutoInsuranceLanding() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
       {[
         { icon: Clock, color: 'from-blue-500 to-blue-600', title: 'Start Your Quote', desc: "Connect your current insurance instantly using our secure portal. Takes only 60 seconds. That's it.", delay: '0s' },
-        { icon: BriefcaseBusiness, color: 'from-tan-500 to tan-600', title: 'I Do the Work', desc: "After I retrieve your information, I'll have everything I need to complete your quote within 24 hours.", delay: '0.2s' },
-        { icon: PhoneCallIcon, color: 'from-orange-500 to-orange-600', title: 'We Connect', desc: "I'll call you to walk through the numbers and answer any questions. Can't talk? I'll email the proposal.", delay: '0.6s' },
-        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow, or any future effective date you choose.", delay: '0.4s' },
+        { icon: BriefcaseBusiness, color: 'from-orange-500 to-orange-600', title: 'I Do the Work', desc: "After I retrieve your information, I'll have everything I need to complete your quote within 24 hours.", delay: '0.2s' },
+        { icon: PhoneCallIcon, color: 'from-purple-500 to-purple-600', title: 'We Connect', desc: "I'll call you to walk through the numbers and answer any questions. Can't talk? I'll email the proposal.", delay: '0.4s' },
+        { icon: CheckCircle, color: 'from-green-500 to-emerald-600', title: 'You Decide', desc: "Like it? I can get you switched over as early as tomorrow, or any future effective date you choose.", delay: '0.6s' },
       ].map((benefit, i) => (
       
       <div
@@ -417,7 +423,7 @@ export default function AutoInsuranceLanding() {
       <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
         Start Your Free Quote
       </h2>
-      <p className="text-gray-600 text-lg">No forms. No spam.</p>
+      <p className="text-gray-600 text-lg">Free. Fast. No obligation.</p>
     </div>
 
         {/* How It Works - ELI5 Style */}
@@ -430,12 +436,12 @@ export default function AutoInsuranceLanding() {
                 <div className="space-y-5 text-gray-700 text-base leading-relaxed">
                   <div className="bg-white/60 rounded-xl p-5 border border-gray-200 transition-all duration-300 hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] cursor-pointer">
                     <p className="text-sm text-gray-500 font-semibold mb-2">The Old Way to Quote:</p>
-                    <p className="text-base leading-relaxed">Manually fill out 20 minutes of online forms before getting <span className="font-semibold text-gray-900"> spammed</span> by telemarketers calling from unknown numbers.</p>
+                    <p className="text-base leading-relaxed">Manually fill out 20 minutes of online forms before getting <span className="font-semibold text-gray-900">spammed</span> by telemarketers.</p>
                   </div>
                   
                   <div className="bg-white/80 rounded-xl p-5 border-2 border-blue-300 transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-blue-400 active:scale-[0.98] cursor-pointer">
                     <p className="text-sm text-blue-600 font-semibold mb-2">✓ The Modern Way:</p>
-                    <p className="text-base leading-relaxed">Technology makes it easier than ever to shop for insurance. <span className="font-semibold text-gray-900">Takes only 60 seconds</span> to start your quote.</p>
+                    <p className="text-base leading-relaxed">Technology makes it easier than ever to shop online for insurance. <span className="font-semibold text-gray-900">Takes only 60 seconds </span> to start your quote.</p>
                   </div>
                 </div>
 
@@ -456,13 +462,13 @@ export default function AutoInsuranceLanding() {
                       <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
                       <span className="leading-relaxed">Your data is <span className="font-semibold text-gray-900">secure</span></span>
                     </li>
-                    <li className="flex items-start gap-3">
+                     <li className="flex items-start gap-3">
                       <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-                      <span className="leading-relaxed">Bank-level encryption (same tech that protects your banking apps)</span>
+                      <span className="leading-relaxed">Your policy info is sent directly to me (Cameron)</span>
                     </li>
                     <li className="flex items-start gap-3">
                       <span className="text-green-600 font-bold mt-0.5 text-xl flex-shrink-0">✓</span>
-                      <span className="leading-relaxed">Your policy info is sent directly to me (Cameron)</span>
+                      <span className="leading-relaxed">Bank-level encryption (same tech that protects your banking apps)</span>
                     </li>
                   </ul>
                 </div>
@@ -470,6 +476,21 @@ export default function AutoInsuranceLanding() {
             </div>
           </div>
     <div className="space-y-6">
+      {/* Qualifier Warning */}
+      <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-6 mb-6">
+        <div className="flex items-start gap-3">
+          <svg className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          <div>
+            <h3 className="font-bold text-gray-900 mb-2">Important: Do you currently have auto insurance?</h3>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              My service works by comparing your <span className="font-semibold">existing policy</span> to an Allstate quote. If you don't currently have active insurance, I won't be able to help you through this process.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Canopy Connect Embed */}
       <div className="text-center py-4">
         <a 
@@ -490,7 +511,10 @@ export default function AutoInsuranceLanding() {
         </summary>
         <div className="px-4 pb-4 text-xs text-gray-600 leading-relaxed space-y-2">
           <p>
-            Canopy Connect is a secure data-sharing tool used by insurance and financial companies enabling shoppers to retrieve relevant information from their own insurance accounts and securely transfer that information to your agent. Linking your insurance accounts with Canopy Connect enables the sharing of key information I need to tailor advice just for you. This technology works similar to:
+            Canopy Connect is a secure data-sharing tool used by insurance and financial companies enabling consumers to retrieve relevant information from their own insurance accounts and securely transfer that information to their agent. Linking your insurance accounts with Canopy Connect enables the sharing of key information I need to tailor advice just for you. 
+          </p>
+          <p>
+            This technology works similar to:
           </p>
           <ul className="list-disc list-inside space-y-1 ml-2 text-gray-600">
             <li><span className="font-semibold">Plaid</span> (used by Venmo, Cash App, Robinhood, Coinbase)</li>
@@ -498,14 +522,14 @@ export default function AutoInsuranceLanding() {
             <li><span className="font-semibold">Finicity</span> (owned by Mastercard)</li>
           </ul>
           <p className="mt-3">
-           Your username and password are never stored or accessible to anyone. Canopy Connect uses some of the most advanced security and encryption methods available to safely connect your insurance account. It protects your information at all times with 256-bit AES encryption. </p>
+           Your username and password are never stored or accessible to anyone. We use the most advanced security and encryption methods available to safely connect your insurance account, guaranteeing your information is protected at all times with 256-bit encryption. </p>
        </div>
       </details>
   </div>
 </div>
 
       <div className="mt-12 text-center">
-        <p className="text-blue-100 font-semibold mb-6 text-lg">Helping Customers Switch from These Carriers to Save More</p>
+        <p className="text-blue-100 font-semibold mb-6 text-lg">Helping Customer Save More By Switching from These Carriers </p>
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20  overflow-x-hidden overflow-y-visible relative shadow-xl">
           <div className="flex overflow-visible">
             <div className="logo-track">
@@ -536,18 +560,6 @@ export default function AutoInsuranceLanding() {
         </div>
       </div>
     </div>
-    
-// Add this anywhere in your AutoInsuranceLanding component (maybe at the bottom)
-{process.env.NODE_ENV === 'development' && (
-  <div className="fixed bottom-4 right-4 z-50">
-    <a 
-      href="/success" 
-      className="bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-red-600"
-    >
-      Preview Thank You Page
-    </a>
-  </div>
-)}
   </div> 
 );
 }
