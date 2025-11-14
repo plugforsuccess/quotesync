@@ -419,7 +419,7 @@ export default function AutoInsuranceLanding() {
   <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-4 sm:p-6 md:p-10 border border-white/50 relative overflow-hidden">
     <div className="text-center mb-10 pt-4 sm:pt-6">
             <h2 className="text-4xl font-black bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
-              Start Your Free Quote
+              Start Your Quote
             </h2>
             {/* Canopy Connect Embed */}
             <div className="text-center py-4">
@@ -428,7 +428,7 @@ export default function AutoInsuranceLanding() {
                 href="https://app.usecanopy.com/c/insuredbycam" 
                 target="_blank"
               >
-                <span className="whitespace-nowrap">I'm Ready to Compare Rates</span>
+                <span className="whitespace-nowrap">Continue</span>
                 <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
               </a>
             </div>
