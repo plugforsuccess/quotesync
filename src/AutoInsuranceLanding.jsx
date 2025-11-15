@@ -413,6 +413,7 @@ export default function AutoInsuranceLanding() {
     </div>
   </div>
   
+  {/* WHITE CARD SECTION STARTS */}
   <div className={`w-full px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
     
 <div className={`max-w-4xl pt-0 mx-auto transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>    
@@ -535,7 +536,90 @@ export default function AutoInsuranceLanding() {
         </details>
   </div>
 </div>
-<div className={`w-full px-12 pb-24 mb-12 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}></div>
+  </div>
+</div>
+  {/* WHITE CARD SECTION ENDS */}
+
+{/* WHY MY QUOTES ARE DIFFERENT SECTION - TAILWIND VERSION */}
+<div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 my-16 px-12 pb-24 mb-12">
+  <div className="relative bg-gradient-to-br from-[#1e3a5f] to-[#2d4a6f] rounded-2xl shadow-2xl p-8 sm:p-12 overflow-hidden">
+    {/* Gradient border effect */}
+    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl -m-[3px] -z-10"></div>
+    
+    {/* Heading */}
+    <h2 className="text-white text-3xl md:text-4xl font-bold text-center mb-10">
+      Why My Quotes Are Different
+    </h2>
+    
+    {/* Features Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      
+      {/* Feature 1 */}
+      <div className="flex items-start gap-4 text-left">
+        <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+          <span className="text-white font-bold text-xl">✓</span>
+        </div>
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-2">
+            I verify your actual vehicle details
+          </h3>
+          <p className="text-white/85 text-base leading-relaxed">
+            VIN, trim level, safety features - not what you remember
+          </p>
+        </div>
+      </div>
+
+      {/* Feature 2 */}
+      <div className="flex items-start gap-4 text-left">
+        <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+          <span className="text-white font-bold text-xl">✓</span>
+        </div>
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-2">
+            I check your real policy coverage
+          </h3>
+          <p className="text-white/85 text-base leading-relaxed">
+            Apples-to-apples comparison, no guessing
+          </p>
+        </div>
+      </div>
+
+      {/* Feature 3 */}
+      <div className="flex items-start gap-4 text-left">
+        <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+          <span className="text-white font-bold text-xl">✓</span>
+        </div>
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-2">
+            No surprises at sign-up
+          </h3>
+          <p className="text-white/85 text-base leading-relaxed">
+            The price you see is the price you pay (unlike online aggregators that lowball you)
+          </p>
+        </div>
+      </div>
+
+      {/* Feature 4 */}
+      <div className="flex items-start gap-4 text-left">
+        <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
+          <span className="text-white font-bold text-xl">✓</span>
+        </div>
+        <div>
+          <h3 className="text-white text-lg font-semibold mb-2">
+            All Allstate discounts included
+          </h3>
+          <p className="text-white/85 text-base leading-relaxed">
+            I catch discounts you might not even know you qualify for
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{/* A SMARTER FASTER WAY SECTION */}
+<div className={`w-full px-12 pb-24 mb-12 transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
 <h2 className="text-center text-white font-extrabold text-4xl md:text-5xl tracking-tight mb-24">
               A Smarter, Faster Way to Shop Insurance
             </h2>
@@ -561,18 +645,10 @@ export default function AutoInsuranceLanding() {
     ))}
 </div>
 
-
-
-
-
-
-
-
-
       <div className="mt-12 pt-24 text-center">
         <p className="text-blue-100 font-semibold mb-6 text-lg">Helping Customers Save More By Switching from These Carriers </p>
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20  overflow-x-hidden overflow-y-visible relative shadow-xl">
-          <div className="flex overflow-visible">.
+          <div className="flex overflow-visible">
             <div className="logo-track">
               <div className="flex gap-16 items-center min-w-max">
                 <img src="/logos/GEICO.png" alt="GEICO" className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg" />
@@ -601,7 +677,6 @@ export default function AutoInsuranceLanding() {
         </div>
         </div>
       </div>
-    </div>
 
     {/* Footer */}
     <footer className="relative z-10 border-t border-white/10 mt-24">
@@ -625,5 +700,3 @@ export default function AutoInsuranceLanding() {
   </div> 
 );
 }
-
-
