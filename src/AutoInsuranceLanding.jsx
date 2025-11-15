@@ -541,7 +541,7 @@ export default function AutoInsuranceLanding() {
   {/* WHITE CARD SECTION ENDS */}
 
 {/* WHY MY QUOTES ARE DIFFERENT SECTION - TAILWIND VERSION */}
-<div className="relative mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 my-16 px-12 pb-24 mb-12">
+<div className="relative mx-auto max-w-6xl sm:px-6 lg:px-8 my-16 pt-12 pb-24 mb-12">
   <div className="relative bg-gradient-to-br from-[#1e3a5f] to-[#2d4a6f] rounded-2xl shadow-2xl p-8 sm:p-12 overflow-hidden">
     {/* Gradient border effect */}
     <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl -m-[3px] -z-10"></div>
@@ -594,7 +594,7 @@ export default function AutoInsuranceLanding() {
             No surprises at sign-up
           </h3>
           <p className="text-white/85 text-base leading-relaxed">
-            The price you see is the price you pay (unlike online aggregators that lowball you)
+            The price you see is the price you pay (unlike online aggregators that lowball you). No time wasted.
           </p>
         </div>
       </div>
