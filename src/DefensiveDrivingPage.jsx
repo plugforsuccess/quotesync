@@ -215,6 +215,7 @@ export default function GeorgiaDriverEducationPage() {
                 <li>• Must complete before applying for Class D license</li>
                 <li>• No in-person classroom attendance needed</li>
                 <li>• Self-paced with 12-month access</li>
+                <li>• 30-day money-back guarantee</li>
               </ul>
             </div>
 
