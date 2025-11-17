@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './ThankYouPage.css';
 
 const ThankYouPage = () => {
@@ -21,7 +22,6 @@ const ThankYouPage = () => {
         <div className="video-section">
           <h2 className="video-title">A Quick Message from Cameron</h2>
           <div className="video-wrapper">
-            {/* Replace the src with your actual video URL */}
             <iframe
               src="https://www.youtube.com/embed/CBmtFPMUcr0"
               title="Message from Cameron"
@@ -29,11 +29,6 @@ const ThankYouPage = () => {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
-            {/* Alternative: If using a direct video file */}
-            {/* <video controls>
-              <source src="/path-to-your-video.mp4" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video> */}
           </div>
         </div>
         
@@ -92,15 +87,20 @@ const ThankYouPage = () => {
         <div className="driver-ed-content">
           <h3>💰 Want to Save Even More on Insurance?</h3>
           <p>While you wait for your quote, check out how Georgia drivers can earn recurring insurance discounts by taking a simple online course.</p>
-          <a href="/defensive-driving" className="driver-ed-button">
+          <Link to="/drivers-ed" className="driver-ed-button">
             Explore Driver Education Courses →
-          </a>
+          </Link>
+          {/* If you prefer the old path, you can instead use:
+              <Link to="/defensive-driving" className="driver-ed-button">...</Link>
+           */}
         </div>
       </div>
 
       {/* Social Proof */}
       <div className="social-proof">
-        <p className="social-proof-text">Join hundreds of drivers who've simplified their insurance shopping on insuredbycam.com</p>
+        <p className="social-proof-text">
+          Join hundreds of drivers who've simplified their insurance shopping on insuredbycam.com
+        </p>
         <div className="trust-badges">
           <div className="trust-badge">
             <svg viewBox="0 0 24 24">
@@ -126,7 +126,8 @@ const ThankYouPage = () => {
 
       {/* Back to Homepage */}
       <div className="back-link">
-        <a href="/">← Back to Home</a>
+        <Link to="/quotes">← Back to Home</Link>
+        {/* or `to="/"` if you prefer the root as your primary quote page */}
       </div>
     </div>
   );

@@ -266,12 +266,13 @@ export default function GeorgiaDriverEducationPage() {
             <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
               Skip the long forms. Compares rates in less than a minute.
             </p>
-            <a
-              href="/"
-              className="inline-block rounded-full px-8 py-3.5 text-sm font-semibold bg-blue-500 hover:bg-blue-400 text-white transition-all shadow-lg hover:shadow-blue-500/20"
-            >
-              Get Started →
-            </a>
+             <a 
+              className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-blue-500/50 group no-underline"
+              href="https://app.usecanopy.com/c/insuredbycam" 
+              target="_blank"
+                >
+               <span className="whitespace-nowrap">Get Started →</span>
+                </a>
           </div>
         </section>
 
