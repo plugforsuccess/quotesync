@@ -5,7 +5,7 @@ const WhyQuotesDifferent = () => {
   return (
     <div className="relative mx-auto max-w-6xl sm:px-6 lg:px-8 my-16 pt-12 pb-24 mb-12">
       <div className="relative bg-gradient-to-br from-[#1e3a5f] to-[#2d4a6f] rounded-2xl shadow-2xl p-8 sm:p-12 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl -m-[3px] -z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl -m-[3px] -z-10 animate-pulse" style={{ animationDuration: '3s' }}></div>
 
         <h2 className="text-white text-3xl md:text-4xl font-bold text-center mb-10">
           Why My Quotes Are Different
@@ -30,7 +30,7 @@ const WhyQuotesDifferent = () => {
               desc: 'I catch discounts you might not even know you qualify for',
             },
           ].map((item, i) => (
-            <div key={i} className="flex items-start gap-4 text-left">
+            <div key={i} className="flex items-start gap-4 text-left bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300">
               <div className="flex-shrink-0 w-9 h-9 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow-lg">
                 <span className="text-white font-bold text-xl">✓</span>
               </div>
