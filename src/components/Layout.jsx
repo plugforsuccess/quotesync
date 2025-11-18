@@ -2,6 +2,7 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Menu, X, Sparkles } from 'lucide-react';
+import Footer from './Footer';
 
 function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -75,7 +76,7 @@ function Layout() {
             {/* Desktop Navigation with Advanced Effects */}
             <nav className="hidden md:flex items-center gap-2">
               <TabLink to="/quotes" end label="Insurance Quotes" scrollToQuote />
-              <TabLink to="/drivers-ed" label="Drivers Ed Courses" />
+              <TabLink to="/courses" label="Drivers Ed Courses" />
               <TabLink to="/store" label="Online Store" />
             </nav>
 
@@ -134,16 +135,8 @@ function Layout() {
         <Outlet />
       </main>
 
-      {/* Advanced Footer */}
-      <footer className="relative border-t border-white/5 text-xs sm:text-sm text-gray-500 py-6 sm:py-8 text-center px-4 overflow-hidden">
-        {/* Animated gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-emerald-500/5 to-transparent animate-shimmer"></div>
-        
-        <div className="relative z-10">
-          <p className="mb-2">© {new Date().getFullYear()} insuredbycam · All rights reserved.</p>
-          <p className="text-gray-600 text-xs">Built with ❤️ for smarter insurance shopping</p>
-        </div>
-      </footer>
+      {/* ADD FOOTER HERE - Replace the old footer with the new Footer component */}
+      <Footer />
 
       {/* Global Styles */}
       <style>{`
