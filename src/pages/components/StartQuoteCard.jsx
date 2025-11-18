@@ -1,8 +1,8 @@
-// src/components/StartQuoteCard.jsx - ULTRA ADVANCED VERSION
+// src/components/StartQuoteCard.jsx - WITH ZIP VALIDATION
 import React, { useState } from 'react';
 import { ArrowRight, CheckCircle, Shield, Zap, Lock, Eye } from 'lucide-react';
 
-const StartQuoteCard = ({ isVisible, setModalStep }) => {
+const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
   return (
     <div
       className={`w-full px-4 sm:px-6 lg:px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${
@@ -44,12 +44,11 @@ const StartQuoteCard = ({ isVisible, setModalStep }) => {
                   </span>
                 </h2>
 
-                {/* Primary CTA with Advanced Styling */}
+                {/* Primary CTA with Advanced Styling - NOW USES onGetQuote */}
                 <div className="max-w-xl mx-auto">
-                  <a
-                    className="canopy-connect-embed group relative inline-flex items-center justify-center gap-3 w-full overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] no-underline"
-                    href="https://app.usecanopy.com/c/insuredbycam"
-                    target="_blank"
+                  <button
+                    onClick={onGetQuote}
+                    className="group relative inline-flex items-center justify-center gap-3 w-full overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border-0"
                   >
                     {/* Animated Gradient Border */}
                     <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient-x"></div>
@@ -64,7 +63,7 @@ const StartQuoteCard = ({ isVisible, setModalStep }) => {
                       </span>
                       <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:translate-x-2" />
                     </div>
-                  </a>
+                  </button>
 
                   <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-600">
                     <span className="flex items-center gap-1">
@@ -78,12 +77,12 @@ const StartQuoteCard = ({ isVisible, setModalStep }) => {
                   </div>
                 </div>
               </div>
-st
+
               {/* Process Steps with Advanced Design */}
-              <ProcessSteps setModalStep={setModalStep} />
+              <ProcessSteps setModalStep={setModalStep} onGetQuote={onGetQuote} />
 
               {/* How it works + Security */}
-              <HowItWorks />
+              <HowItWorks onGetQuote={onGetQuote} />
             </div>
           </div>
         </div>
@@ -145,7 +144,7 @@ st
   );
 };
 
-const ProcessSteps = ({ setModalStep }) => {
+const ProcessSteps = ({ setModalStep, onGetQuote }) => {
   const [hoveredStep, setHoveredStep] = useState(null);
 
   const steps = [
@@ -223,43 +222,26 @@ const ProcessSteps = ({ setModalStep }) => {
                   }`}>
                     {item.icon}
                   </div>
-
-                  {/* Click Indicator
-                  <div className="absolute top-1/2 right-4 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <Eye className="w-5 h-5 text-indigo-500" />
-                  </div> */}
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Bottom CTA */}
+          {/* Bottom CTA - NOW USES onGetQuote */}
           <div className="mt-8 text-center">
-            <a
-              className="group inline-flex items-center justify-center gap-3 relative overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-105 active:scale-95 no-underline"
-              href="https://app.usecanopy.com/c/insuredbycam"
-              target="_blank"
+            <button
+              onClick={onGetQuote}
+              className="group inline-flex items-center justify-center gap-3 relative overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer border-0 bg-transparent"
             >
               {/* Animated Border */}
               <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 animate-gradient-x"></div>
               
               {/* Button Content */}
-                <a
-                 className="canopy-connect-embed group relative flex items-center justify-center gap-3 
-                                bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 
-                                px-8 py-4 rounded-2xl text-white font-black text-lg
-                                hover:from-emerald-600 hover:via-green-600 hover:to-teal-600
-                                transition-all duration-300 transform hover:scale-105 active:scale-95
-                                shadow-xl hover:shadow-emerald-500/50 no-underline"
-                    href="https://app.usecanopy.com/c/insuredbycam"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => setModalStep(1)}   // open modal at step 1
-                    >
-                 <span className="text-white font-black text-lg whitespace-nowrap">Start My Quote</span>
+              <div className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-8 py-4 rounded-2xl transition-all duration-300 transform">
+                <span className="text-white font-black text-lg whitespace-nowrap">Start My Quote</span>
                 <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:translate-x-2" />
-                </a>
-            </a>
+              </div>
+            </button>
             <p className="text-xs text-gray-500 mt-3 flex items-center justify-center gap-4">
               <span className="flex items-center gap-1">
                 <CheckCircle className="w-3 h-3 text-green-600" />
@@ -292,7 +274,7 @@ const ProcessSteps = ({ setModalStep }) => {
   );
 };
 
-const HowItWorks = () => {
+const HowItWorks = ({ onGetQuote }) => {
   return (
     <div className="mt-12 space-y-8">
       {/* How it works Section */}
@@ -355,36 +337,6 @@ const HowItWorks = () => {
         </div>
       </div>
 
-      {/* Security Section
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 border-2 border-green-200 p-8 shadow-xl">
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-green-400/10 to-transparent rounded-full blur-3xl"></div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Shield className="w-6 h-6 text-white" />
-            </div>
-            <h4 className="text-2xl font-black text-gray-900">Your Security Matters</h4>
-          </div>
-
-          <div className="grid sm:grid-cols-3 gap-4">
-            {[
-              { icon: '🔒', text: 'Your data is secure' },
-              { icon: '👤', text: 'Sent directly to Cameron' },
-              { icon: '🏦', text: 'Bank-level encryption' },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-green-200 hover:shadow-lg transition-all duration-300 hover:scale-105"
-              >
-                <div className="text-3xl mb-3">{item.icon}</div>
-                <p className="text-gray-700 font-medium leading-relaxed">{item.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div> */}
-
       {/* Important Qualifier */}
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 p-6 shadow-lg">
         <div className="flex items-start gap-4">
@@ -404,12 +356,11 @@ const HowItWorks = () => {
         </div>
       </div>
 
-      {/* Final CTA */}
+      {/* Final CTA - NOW USES onGetQuote */}
       <div className="text-center">
-        <a
-          className="group inline-flex items-center justify-center gap-3 relative overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-105 active:scale-95 no-underline w-full max-w-2xl mx-auto"
-          href="https://app.usecanopy.com/c/insuredbycam"
-          target="_blank"
+        <button
+          onClick={onGetQuote}
+          className="group inline-flex items-center justify-center gap-3 relative overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer border-0 bg-transparent w-full max-w-2xl mx-auto"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 animate-gradient-x"></div>
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-8 py-5 rounded-2xl">
@@ -417,7 +368,7 @@ const HowItWorks = () => {
             <span className="relative z-10 text-white font-black text-lg whitespace-nowrap">Compare Rates Now</span>
             <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform group-hover:translate-x-2" />
           </div>
-        </a>
+        </button>
       </div>
 
       {/* Canopy FAQ */}

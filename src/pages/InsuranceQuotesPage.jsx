@@ -7,12 +7,22 @@ import QuoteHero from './components/QuoteHero';
 import StartQuoteCard from './components/StartQuoteCard';
 import WhyQuotesDifferent from './components/WhyQuotesDifferent';
 import SmarterFasterSection from './components/SmarterFasterSection';
+import ZipValidator from '../components/ZipValidator';
+import { useZipValidation } from '../hooks/ZipValidation';
 
 export default function InsuranceQuotesPage() {
   const [submitted, setSubmitted] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [confetti, setConfetti] = useState([]);
   const [modalStep, setModalStep] = useState(null);
+
+  // ZIP Validation
+  const {
+    showValidator,
+    requestCanopyConnect,
+    handleValidatorSuccess,
+    closeValidator
+  } = useZipValidation();
 
   // these exist for your future form logic; success screen currently just resets them
   const [formData, setFormData] = useState({
@@ -41,6 +51,30 @@ export default function InsuranceQuotesPage() {
       setConfetti(newConfetti);
     }
   }, [submitted]);
+
+  const openCanopyConnect = () => {
+  // Create a hidden link element with Canopy's embed class
+  const canopyLink = document.createElement('a');
+  canopyLink.className = 'canopy-connect-embed';
+  canopyLink.href = 'https://app.usecanopy.com/c/insuredbycam';
+  canopyLink.style.display = 'none';
+  
+  // Add to DOM
+  document.body.appendChild(canopyLink);
+  
+  // Trigger click to open Canopy modal
+  canopyLink.click();
+  
+  // Clean up
+  setTimeout(() => {
+    document.body.removeChild(canopyLink);
+  }, 100);
+};
+
+  // Wrapper function that validates ZIP first, then opens Canopy
+  const handleGetQuoteClick = () => {
+    requestCanopyConnect(openCanopyConnect);
+  };
 
   // Step details for modal (unchanged)
   const stepDetails = {
@@ -113,7 +147,7 @@ export default function InsuranceQuotesPage() {
     7: {
       title: 'Done! Your policy is sent to Cameron',
       description:
-        'That’s it! Your complete policy information is now securely transmitted to Cameron, who will prepare your personalized Allstate quote within 24 hours. You’ll receive a call or email with your custom comparison.',
+        "That's it! Your complete policy information is now securely transmitted to Cameron, who will prepare your personalized Allstate quote within 24 hours. You'll receive a call or email with your custom comparison.",
       screenshot: '/screenshots/step7-complete.png',
       tips: [
         'Expect a call or email within 24 hours',
@@ -202,6 +236,14 @@ export default function InsuranceQuotesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-900 to-indigo-900 relative overflow-hidden">
+      {/* ZIP Validator Modal - shows when needed */}
+      {showValidator && (
+        <ZipValidator
+          onValidZip={handleValidatorSuccess}
+          onClose={closeValidator}
+        />
+      )}
+
       {/* Modal */}
       {modalStep && (
         <StepModal
@@ -272,8 +314,12 @@ export default function InsuranceQuotesPage() {
       {/* HERO */}
       <QuoteHero isVisible={isVisible} />
 
-      {/* MAIN QUOTE CARD + PROCESS */}
-      <StartQuoteCard isVisible={isVisible} setModalStep={setModalStep} />
+      {/* MAIN QUOTE CARD + PROCESS - Pass handleGetQuoteClick down */}
+      <StartQuoteCard 
+        isVisible={isVisible} 
+        setModalStep={setModalStep}
+        onGetQuote={handleGetQuoteClick}
+      />
 
       {/* WHY QUOTES ARE DIFFERENT */}
       <WhyQuotesDifferent />
