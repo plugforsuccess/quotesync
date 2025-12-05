@@ -8,6 +8,7 @@ import StartQuoteCard from './components/StartQuoteCard';
 import WhyQuotesDifferent from './components/WhyQuotesDifferent';
 import SmarterFasterSection from './components/SmarterFasterSection';
 import ZipValidator from '../components/ZipValidator';
+import StickyQuoteBar from '../components/StickyQuoteBar';
 import { useZipValidation } from '../hooks/ZipValidation';
 
 export default function InsuranceQuotesPage() {
@@ -236,6 +237,9 @@ export default function InsuranceQuotesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-900 to-indigo-900 relative overflow-hidden">
+      {/* Sticky Quote Bar - appears below navbar when scrolling */}
+      <StickyQuoteBar onGetQuote={handleGetQuoteClick} />
+
       {/* ZIP Validator Modal - shows when needed */}
       {showValidator && (
         <ZipValidator
