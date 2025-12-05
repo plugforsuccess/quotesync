@@ -51,10 +51,10 @@ const StickyQuoteBar = ({ onGetQuote }) => {
               <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-300 flex-shrink-0" />
               <div>
                 <p className="text-white font-bold text-sm sm:text-base leading-tight">
-                  Save Up to $847 on Insurance
+                  Save Up to $647 on Insurance
                 </p>
                 <p className="text-white/80 text-xs sm:text-sm hidden sm:block">
-                  Free quote • No obligation • 2-minute process
+                  Free quote • No obligation • Fast and easy
                 </p>
               </div>
             </div>

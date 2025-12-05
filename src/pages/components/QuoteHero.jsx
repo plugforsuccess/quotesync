@@ -16,7 +16,7 @@ const QuoteHero = ({ isVisible }) => {
             className="bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400 bg-clip-text text-transparent inline-block"
             style={{ animation: 'wiggle 1s ease-in-out infinite' }}
           >
-            $847
+            $647
           </span>
           <br /> by Switching
         </h1>
