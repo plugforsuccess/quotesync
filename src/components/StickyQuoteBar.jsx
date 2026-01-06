@@ -1,34 +1,48 @@
 // src/components/StickyQuoteBar.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowRight, Shield } from 'lucide-react';
 
 const StickyQuoteBar = ({ onGetQuote }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [hasScrolledPast, setHasScrolledPast] = useState(false);
+  const scrollTimeoutRef = useRef(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollPosition = window.scrollY;
-
-      // Get the QuoteHero section height (approximate)
-      // The hero section is roughly 600-700px tall
-      const heroSectionHeight = 650;
-
-      // Show the sticky bar when scrolled past the hero section
-      // Hide it when scrolling back up to the hero section
-      if (scrollPosition > heroSectionHeight) {
-        setHasScrolledPast(true);
-        setIsVisible(true);
-      } else {
-        setHasScrolledPast(false);
-        setIsVisible(false);
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
       }
+
+      // Throttle scroll updates to every 100ms
+      scrollTimeoutRef.current = setTimeout(() => {
+        const scrollPosition = window.scrollY;
+
+        // Get the QuoteHero section height (approximate)
+        // The hero section is roughly 600-700px tall
+        const heroSectionHeight = 650;
+
+        // Show the sticky bar when scrolled past the hero section
+        // Hide it when scrolling back up to the hero section
+        if (scrollPosition > heroSectionHeight) {
+          setHasScrolledPast(true);
+          setIsVisible(true);
+        } else {
+          setHasScrolledPast(false);
+          setIsVisible(false);
+        }
+      }, 100);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll(); // Check initial scroll position
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, []);
 
   return (
@@ -73,17 +87,6 @@ const StickyQuoteBar = ({ onGetQuote }) => {
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes gradient-x {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-gradient-x {
-          background-size: 200% 200%;
-          animation: gradient-x 3s ease infinite;
-        }
-      `}</style>
     </div>
   );
 };

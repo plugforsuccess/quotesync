@@ -231,28 +231,6 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
 
       {/* STYLES */}
       <style>{`
-        @keyframes fadeIn { from {opacity:0;} to {opacity:1;} }
-        @keyframes scaleSpring {
-          0% { opacity:0; transform:scale(0.9) translateY(20px); }
-          50% { transform:scale(1.02) translateY(-5px); }
-          100% { opacity:1; transform:scale(1) translateY(0); }
-        }
-        @keyframes float {
-          0%,100% { transform:translate(0,0) rotate(0deg); }
-          33% { transform:translate(30px,-30px) rotate(120deg); }
-          66% { transform:translate(-20px,20px) rotate(240deg); }
-        }
-        @keyframes shimmer {
-          0% {transform:translateX(-100%);}
-          100% {transform:translateX(100%);}
-        }
-
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-        .animate-scaleSpring { animation: scaleSpring 0.5s cubic-bezier(0.34,1.56,0.64,1); }
-        .animate-float { animation: float 20s ease-in-out infinite; }
-        .animate-float-delayed { animation: float 25s ease-in-out infinite; animation-delay: -5s; }
-        .animate-shimmer { animation: shimmer 3s ease-in-out infinite; }
-
         /* Scrollbar */
         .custom-scrollbar::-webkit-scrollbar { width:10px; }
         .custom-scrollbar::-webkit-scrollbar-track {

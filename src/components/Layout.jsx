@@ -1,6 +1,6 @@
 // components/Layout.jsx - ULTRA ADVANCED VERSION
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Sparkles } from 'lucide-react';
 import Footer from './Footer';
 
@@ -8,14 +8,29 @@ function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+  const scrollTimeoutRef = useRef(null);
 
-  // Handle scroll for nav blur effect
+  // Handle scroll for nav blur effect with throttling
   useEffect(() => {
     const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Throttle scroll updates to every 100ms
+      scrollTimeoutRef.current = setTimeout(() => {
+        setScrolled(window.scrollY > 10);
+      }, 100);
     };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Close mobile menu on route change
@@ -137,37 +152,6 @@ function Layout() {
 
       {/* ADD FOOTER HERE - Replace the old footer with the new Footer component */}
       <Footer />
-
-      {/* Global Styles */}
-      <style>{`
-        @keyframes gradient-x {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes float {
-          0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          33% { transform: translate(20px, -20px) rotate(5deg); }
-          66% { transform: translate(-20px, 20px) rotate(-5deg); }
-        }
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        .animate-gradient-x { background-size: 200% 200%; animation: gradient-x 3s ease infinite; }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
-        .animate-slideUp { animation: slideUp 0.4s ease-out; }
-        .animate-float { animation: float 8s ease-in-out infinite; }
-        .animate-float-delayed { animation: float 10s ease-in-out infinite; animation-delay: -5s; }
-        .animate-shimmer { animation: shimmer 8s ease-in-out infinite; }
-      `}</style>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 // src/pages/InsuranceQuotesPage.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CheckCircle } from 'lucide-react';
 
 import StepModal from './components/StepModal';
@@ -43,7 +43,8 @@ export default function InsuranceQuotesPage() {
 
   useEffect(() => {
     if (submitted) {
-      const newConfetti = Array.from({ length: 30 }, (_, i) => ({
+      // Reduced from 30 to 15 elements for better performance
+      const newConfetti = Array.from({ length: 15 }, (_, i) => ({
         id: i,
         left: Math.random() * 100,
         delay: Math.random() * 0.5,
@@ -53,32 +54,32 @@ export default function InsuranceQuotesPage() {
     }
   }, [submitted]);
 
-  const openCanopyConnect = () => {
+  const openCanopyConnect = useCallback(() => {
   // Create a hidden link element with Canopy's embed class
   const canopyLink = document.createElement('a');
   canopyLink.className = 'canopy-connect-embed';
   canopyLink.href = 'https://app.usecanopy.com/c/insuredbycam';
   canopyLink.style.display = 'none';
-  
+
   // Add to DOM
   document.body.appendChild(canopyLink);
-  
+
   // Trigger click to open Canopy modal
   canopyLink.click();
-  
+
   // Clean up
   setTimeout(() => {
     document.body.removeChild(canopyLink);
   }, 100);
-};
+}, []);
 
   // Wrapper function that validates ZIP first, then opens Canopy
-  const handleGetQuoteClick = () => {
+  const handleGetQuoteClick = useCallback(() => {
     requestCanopyConnect(openCanopyConnect);
-  };
+  }, [requestCanopyConnect, openCanopyConnect]);
 
-  // Step details for modal (unchanged)
-  const stepDetails = {
+  // Step details for modal (memoized for performance)
+  const stepDetails = useMemo(() => ({
     1: {
       title: 'Select your current insurance company',
       description:
@@ -156,7 +157,7 @@ export default function InsuranceQuotesPage() {
         'Cameron will explain all your options',
       ],
     },
-  };
+  }), []);
 
   // Success screen (unchanged visually)
   if (submitted) {
@@ -258,12 +259,10 @@ export default function InsuranceQuotesPage() {
         />
       )}
 
-      {/* Animated blobs + background (unchanged) */}
-      <div className="absolute inset-0 opacity-50 overflow-hidden">
-        <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-        <div className="absolute top-10 right-10 w-64 h-64 bg-yellow-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-        <div className="absolute bottom-10 left-20 w-64 h-64 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-        <div className="absolute bottom-10 right-20 w-64 h-64 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-6000"></div>
+      {/* Animated blobs + background (optimized for performance) */}
+      <div className="absolute inset-0 opacity-30 overflow-hidden pointer-events-none">
+        <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob" style={{ willChange: 'transform' }}></div>
+        <div className="absolute bottom-10 right-20 w-64 h-64 bg-cyan-400 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000" style={{ willChange: 'transform' }}></div>
       </div>
 
       <style>{`
@@ -271,23 +270,10 @@ export default function InsuranceQuotesPage() {
           0%, 100% { transform: rotate(-3deg) scale(1); }
           50% { transform: rotate(3deg) scale(1.05); }
         }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
         @keyframes scroll {
           0% { transform: translateX(0); }
           100% { transform: translateX(-50%); }
         }
-        @keyframes blob {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          33% { transform: translate(30px, -50px) scale(1.1); }
-          66% { transform: translate(-20px, 20px) scale(0.9); }
-        }
-        .animate-blob { animation: blob 7s infinite; }
-        .animation-delay-2000 { animation-delay: 2s; }
-        .animation-delay-4000 { animation-delay: 4s; }
-        .animation-delay-6000 { animation-delay: 6s; }
         .logo-track {
           animation: scroll 20s linear infinite;
           display: flex;
