@@ -231,7 +231,7 @@ export default function TermsPage() {
             <p className="text-gray-700 leading-relaxed mb-4">
               If you have any questions about these Terms of Service, please contact us:
             </p>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
+            <div className="bg-primary-50 border-l-4 border-primary-500 p-6 rounded-r-lg">
               <p className="text-gray-900 font-semibold mb-2">insuredbycam</p>
               <p className="text-gray-700">Email: cameron@insuredbycam.com</p>
               <p className="text-gray-700">Instagram: @insuredbycam</p>
@@ -242,7 +242,7 @@ export default function TermsPage() {
 
           {/* Acknowledgment */}
           <section className="mb-8">
-            <div className="bg-yellow-50 border-l-4 border-yellow-500 p-6 rounded-r-lg">
+            <div className="bg-accent-50 border-l-4 border-accent-500 p-6 rounded-r-lg">
               <h3 className="text-lg font-bold text-gray-900 mb-2">Acknowledgment</h3>
               <p className="text-gray-700 leading-relaxed">
                 By using insuredbycam.com, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.

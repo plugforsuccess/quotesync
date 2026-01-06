@@ -225,7 +225,7 @@ export default function PrivacyPage() {
             <p className="text-gray-700 leading-relaxed mb-4">
               If you have any questions, concerns, or requests regarding this Privacy Policy or our privacy practices, please contact us:
             </p>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-r-lg">
+            <div className="bg-primary-50 border-l-4 border-primary-500 p-6 rounded-r-lg">
               <p className="text-gray-900 font-semibold mb-2">insuredbycam</p>
               <p className="text-gray-700">Email: cameron@insuredbycam.com</p>
               <p className="text-gray-700">Instagram: @insuredbycam</p>

@@ -57,14 +57,14 @@ export default function GeorgiaDriverEducationPage() {
         {/* Course Cards */}
         <div className="grid gap-6 lg:grid-cols-2 mb-12">
           {/* Defensive Driving Card - Featured */}
-          <div className="bg-gradient-to-br from-emerald-500/10 to-slate-900/60 border-2 border-emerald-500/40 rounded-2xl p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-success-500/10 to-slate-900/60 border-2 border-success-500/40 rounded-2xl p-6 relative overflow-hidden">
             {/* Popular badge */}
-            <div className="absolute top-4 right-4 bg-emerald-400 text-slate-950 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+            <div className="absolute top-4 right-4 bg-success-400 text-slate-950 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
               Most Popular
             </div>
-            
+
             <div className="mb-4">
-              <p className="text-xs font-semibold text-emerald-300 mb-2 uppercase tracking-[0.18em]">
+              <p className="text-xs font-semibold text-success-300 mb-2 uppercase tracking-[0.18em]">
                 Insurance Discount
               </p>
               <h2 className="text-2xl font-bold mb-2">
@@ -77,31 +77,31 @@ export default function GeorgiaDriverEducationPage() {
 
             <div className="space-y-2 text-sm text-slate-300 mb-6">
               <div className="flex items-start gap-2">
-                <span className="text-emerald-400 mt-0.5">✓</span>
+                <span className="text-success-400 mt-0.5">✓</span>
                 <span>6-hour online course, complete at your own pace</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-emerald-400 mt-0.5">✓</span>
+                <span className="text-success-400 mt-0.5">✓</span>
                 <span>Eligible for insurance discounts with most carriers</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-emerald-400 mt-0.5">✓</span>
+                <span className="text-success-400 mt-0.5">✓</span>
                 <span>Downloadable completion certificate</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-emerald-400 mt-0.5">✓</span>
+                <span className="text-success-400 mt-0.5">✓</span>
                 <span>Available for all ages 18+</span>
               </div>
             </div>
 
             <div className="flex items-baseline gap-2 mb-4">
               <span className="text-xs line-through text-slate-500">$59.95</span>
-              <span className="text-2xl font-bold text-emerald-300">$37.00*</span>
+              <span className="text-2xl font-bold text-success-300">$37.00*</span>
             </div>
 
             <button
               onClick={handleDefensiveDrivingClick}
-              className="w-full rounded-full py-3.5 text-sm font-semibold bg-emerald-400 hover:bg-emerald-300 text-slate-950 transition-all shadow-lg hover:shadow-emerald-400/20"
+              className="w-full rounded-full py-3.5 text-sm font-semibold bg-success-400 hover:bg-success-300 text-slate-950 transition-all shadow-lg hover:shadow-success-400/20"
             >
               Start Defensive Driving Course
             </button>
@@ -110,7 +110,7 @@ export default function GeorgiaDriverEducationPage() {
           {/* Joshua's Law Card */}
           <div className="bg-slate-900/60 border border-slate-700 hover:border-slate-600 rounded-2xl p-6 transition-all">
             <div className="mb-4">
-              <p className="text-xs font-semibold text-blue-300 mb-2 uppercase tracking-[0.18em]">
+              <p className="text-xs font-semibold text-primary-300 mb-2 uppercase tracking-[0.18em]">
                 Teen Drivers (15-17)
               </p>
               <h2 className="text-2xl font-bold mb-2">

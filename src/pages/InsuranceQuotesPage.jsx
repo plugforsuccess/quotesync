@@ -195,10 +195,10 @@ export default function InsuranceQuotesPage() {
 
         <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl p-10 max-w-lg w-full text-center relative z-10 border border-white/20">
           <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce">
+            <div className="w-20 h-20 bg-gradient-to-br from-success-400 to-success-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg animate-bounce">
               <CheckCircle className="w-12 h-12 text-white" />
             </div>
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-green-400/20 rounded-full blur-2xl -z-10 animate-pulse"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-success-400/20 rounded-full blur-2xl -z-10 animate-pulse"></div>
           </div>
 
           <h2 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-3">
@@ -208,7 +208,7 @@ export default function InsuranceQuotesPage() {
             Our insurance specialists are reviewing your information. Expect personalized quotes from top providers within 24 hours.
           </p>
 
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 mb-8 border border-blue-100">
+          <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-2xl p-6 mb-8 border border-primary-100">
             <p className="text-sm text-gray-700 mb-2">📧 Check your email for confirmation</p>
             <p className="text-sm text-gray-700">📱 Watch for our call with your quotes</p>
           </div>
@@ -227,7 +227,7 @@ export default function InsuranceQuotesPage() {
               setErrors({});
               setTouched({});
             }}
-            className="text-blue-600 hover:text-blue-700 font-semibold hover:underline transition"
+            className="text-primary-600 hover:text-primary-700 font-semibold hover:underline transition"
           >
             ← Get Another Quote
           </button>
@@ -237,7 +237,7 @@ export default function InsuranceQuotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-900 to-indigo-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-primary-900 to-secondary-900 relative overflow-hidden">
       {/* Sticky Quote Bar - appears below navbar when scrolling */}
       <StickyQuoteBar onGetQuote={handleGetQuoteClick} />
 
@@ -261,8 +261,8 @@ export default function InsuranceQuotesPage() {
 
       {/* Animated blobs + background (optimized for performance) */}
       <div className="absolute inset-0 opacity-30 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-64 h-64 bg-purple-500 rounded-full mix-blend-multiply filter blur-xl animate-blob" style={{ willChange: 'transform' }}></div>
-        <div className="absolute bottom-10 right-20 w-64 h-64 bg-cyan-400 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000" style={{ willChange: 'transform' }}></div>
+        <div className="absolute top-10 left-10 w-64 h-64 bg-primary-500 rounded-full mix-blend-multiply filter blur-xl animate-blob" style={{ willChange: 'transform' }}></div>
+        <div className="absolute bottom-10 right-20 w-64 h-64 bg-secondary-400 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-4000" style={{ willChange: 'transform' }}></div>
       </div>
 
       <style>{`
@@ -283,9 +283,9 @@ export default function InsuranceQuotesPage() {
       `}</style>
 
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
-      <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
+      <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>
       <div
-        className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse"
+        className="absolute bottom-20 right-10 w-96 h-96 bg-secondary-500/20 rounded-full blur-3xl animate-pulse"
         style={{ animationDelay: '700ms' }}
       ></div>
 

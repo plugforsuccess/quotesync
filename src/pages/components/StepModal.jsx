@@ -207,7 +207,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
             className={`px-6 py-3 font-semibold rounded-xl transition-all shadow-md ${
               step === 1
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg hover:shadow-indigo-500/30 transform hover:scale-105 active:scale-95'
+                : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-lg hover:shadow-primary-500/30 transform hover:scale-105 active:scale-95'
             }`}
           >
             ← Previous
@@ -219,14 +219,14 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
             className={`px-6 py-3 font-semibold rounded-xl transition-all shadow-md ${
               step === 7
                 ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg hover:shadow-indigo-500/30 transform hover:scale-105 active:scale-95'
+                : 'bg-primary-600 hover:bg-primary-700 text-white hover:shadow-lg hover:shadow-primary-500/30 transform hover:scale-105 active:scale-95'
             }`}
           >
             Next →
           </button>
         </div>
 
-        <div className="h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600" />
+        <div className="h-1 bg-gradient-to-r from-primary-600 via-secondary-600 to-accent-600" />
       </div>
 
       {/* STYLES */}
