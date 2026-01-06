@@ -261,13 +261,13 @@ export default function GeorgiaDriverEducationPage() {
 
         {/* Insurance Quote CTA */}
         <section className="my-12">
-          <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/30 rounded-2xl p-8 text-center">
+          <div className="bg-brand/10 border border-brand/30 rounded-2xl p-8 text-center">
             <h3 className="text-2xl font-bold mb-3">Need an Insurance Quote?</h3>
             <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
               Skip the long forms. Compares rates in less than a minute.
             </p>
-             <a 
-              className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-blue-700 hover:via-indigo-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-blue-500/50 group no-underline"
+             <a
+              className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-brand text-white font-black text-lg py-5 px-8 rounded-xl hover:bg-brand-dark transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-brand/50 group no-underline"
               href="https://app.usecanopy.com/c/insuredbycam" 
               target="_blank"
                 >
