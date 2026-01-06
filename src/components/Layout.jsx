@@ -1,8 +1,9 @@
-// components/Layout.jsx - ULTRA ADVANCED VERSION
+// components/Layout.jsx - Direction 2: Modern Professional
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Sparkles } from 'lucide-react';
 import Footer from './Footer';
+import DesignPreviewBanner from './DesignPreviewBanner';
 
 function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -51,17 +52,20 @@ function Layout() {
   }, [mobileMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white flex flex-col">
-      {/* Advanced Header with Glassmorphism */}
+    <div className="min-h-screen bg-brand-navy text-white flex flex-col">
+      {/* Design Preview Banner */}
+      <DesignPreviewBanner />
+
+      {/* Modern Professional Header */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        className={`fixed top-[48px] left-0 right-0 z-40 transition-all duration-500 ${
           scrolled
-            ? 'bg-[#0f172a]/80 backdrop-blur-2xl shadow-2xl border-b border-white/10'
-            : 'bg-[#0f172a]/50 backdrop-blur-xl border-b border-white/5'
+            ? 'bg-brand-navy/90 backdrop-blur-2xl shadow-2xl border-b border-white/10'
+            : 'bg-brand-navy/70 backdrop-blur-xl border-b border-white/5'
         }`}
       >
-        {/* Animated gradient line at top */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x"></div>
+        {/* Teal accent line at top */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-brand-teal via-brand-ocean to-brand-teal"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
           <div className="flex items-center justify-between">
@@ -142,8 +146,8 @@ function Layout() {
         </div>
       )}
 
-      {/* Spacer for fixed header */}
-      <div className="h-[73px] sm:h-[81px]"></div>
+      {/* Spacer for fixed banner + header */}
+      <div className="h-[121px] sm:h-[129px]"></div>
 
       {/* Main content */}
       <main className="flex-1">
