@@ -46,12 +46,12 @@ const ZipValidator = ({ onValidZip, onClose }) => {
   }, [error]);
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-in fade-in zoom-in duration-200">
+    <div className="fixed inset-0 bg-brand-navy/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-card shadow-2xl max-w-md w-full p-8 relative animate-in fade-in zoom-in duration-200 border border-slate-200">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
           aria-label="Close"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,13 +61,13 @@ const ZipValidator = ({ onValidZip, onClose }) => {
 
         {/* Header */}
         <div className="text-center mb-6">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-gradient-to-br from-brand-ocean to-brand-teal rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-2xl">📍</span>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+          <h2 className="text-2xl font-headline font-bold text-slate-900 mb-2">
             What's your ZIP code?
           </h2>
-          <p className="text-gray-600">
+          <p className="text-slate-600 font-body">
             I need to make sure I can write policies in your area
           </p>
         </div>
@@ -82,11 +82,11 @@ const ZipValidator = ({ onValidZip, onClose }) => {
               value={zip}
               onChange={handleZipChange}
               placeholder="Enter ZIP code"
-              className="w-full px-4 py-3 text-lg text-center text-gray-900 border-2 border-gray-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all"
+              className="w-full px-4 py-3 text-lg text-center text-slate-900 border-2 border-slate-200 rounded-modern focus:border-brand-ocean focus:ring-2 focus:ring-brand-ocean/20 outline-none transition-all font-body"
               autoFocus
             />
             {error && (
-              <p className="mt-2 text-sm text-red-600 text-center">
+              <p className="mt-2 text-sm text-red-600 text-center font-body">
                 {error}
               </p>
             )}
@@ -95,14 +95,14 @@ const ZipValidator = ({ onValidZip, onClose }) => {
           <button
             type="submit"
             disabled={isValidating || zip.length !== 5}
-            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="w-full bg-brand-ocean text-white font-semibold py-3 px-6 rounded-modern hover:bg-brand-ocean/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl font-body"
           >
             {isValidating ? 'Checking...' : 'Continue'}
           </button>
         </form>
 
         {/* Info text */}
-        <p className="mt-4 text-xs text-gray-500 text-center">
+        <p className="mt-4 text-xs text-slate-500 text-center font-body">
           Currently serving Georgia residents only
         </p>
       </div>

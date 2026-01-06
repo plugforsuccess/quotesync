@@ -237,7 +237,7 @@ export default function InsuranceQuotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-blue-900 to-indigo-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-brand-navy via-brand-ocean to-brand-navy relative overflow-hidden">
       {/* Sticky Quote Bar - appears below navbar when scrolling */}
       <StickyQuoteBar onGetQuote={handleGetQuoteClick} />
 

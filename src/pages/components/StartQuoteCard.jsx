@@ -14,64 +14,52 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
         }`}
       >
-        {/* Main Card with Advanced Glassmorphism */}
+        {/* Main Card with Modern Professional Styling */}
         <div className="relative group">
-          {/* Animated Gradient Border */}
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-[2rem] opacity-75 group-hover:opacity-100 blur-sm group-hover:blur-md transition duration-1000 animate-gradient-x"></div>
-          
+          {/* Teal Accent Border */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-brand-ocean via-brand-teal to-brand-ocean rounded-[2rem] opacity-60 group-hover:opacity-80 blur-sm transition duration-500"></div>
+
           {/* Card Content */}
-          <div className="relative bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-2xl p-6 sm:p-8 md:p-12 border border-white/50 overflow-hidden">
-            {/* Animated Mesh Background */}
-            <div className="absolute inset-0 opacity-[0.03]">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 animate-mesh"></div>
+          <div className="relative bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-2xl p-6 sm:p-8 md:p-12 border border-slate-200 overflow-hidden">
+            {/* Subtle Background Pattern */}
+            <div className="absolute inset-0 opacity-[0.02]">
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-navy via-brand-ocean to-brand-teal"></div>
             </div>
 
-            {/* Floating Orbs */}
-            <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-float"></div>
-            <div className="absolute bottom-10 left-10 w-40 h-40 bg-gradient-to-br from-purple-400/20 to-pink-400/20 rounded-full blur-3xl animate-float-delayed"></div>
+            {/* Subtle Floating Orbs */}
+            <div className="absolute top-10 right-10 w-32 h-32 bg-brand-teal/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-10 left-10 w-40 h-40 bg-brand-ocean/10 rounded-full blur-3xl"></div>
 
             {/* Content */}
             <div className="relative z-10">
-              {/* Header with Gradient Text */}
+              {/* Header with Modern Typography */}
               <div className="text-center mb-4">
-                <div className="inline-block mb-4">
-              
-                </div>
-
-                <h2 className="text-4xl sm:text-5xl font-black mb-4 leading-tight">
-                  <span className="bg-gradient-to-r from-gray-900 via-blue-900 to-purple-900 bg-clip-text text-transparent animate-gradient-x">
-                    Start Your Quote
-                  </span>
+                <h2 className="text-4xl sm:text-5xl font-headline font-bold mb-4 leading-tight text-slate-900">
+                  Start Your Quote
                 </h2>
 
-                {/* Primary CTA with Advanced Styling - NOW USES onGetQuote */}
+                {/* Primary CTA with Direction 2 Styling */}
                 <div className="max-w-xl mx-auto">
                   <button
                     onClick={onGetQuote}
-                    className="group relative inline-flex items-center justify-center gap-3 w-full overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border-0"
+                    className="group relative inline-flex items-center justify-center gap-3 w-full overflow-hidden rounded-modern p-0.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border-0"
                   >
-                    {/* Animated Gradient Border */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 animate-gradient-x"></div>
-                    
-                    {/* Button Content */}
-                    <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 px-8 py-5 rounded-2xl transition-all duration-300">
-                      {/* Shine Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                      
-                      <span className="relative z-10 text-white font-black text-lg tracking-wide whitespace-nowrap">
+                    {/* Solid Ocean Blue Background */}
+                    <div className="relative flex items-center justify-center gap-3 w-full bg-brand-ocean hover:bg-brand-ocean/90 px-8 py-5 rounded-modern transition-all duration-300 shadow-lg hover:shadow-xl">
+                      <span className="relative z-10 text-white font-headline font-bold text-lg tracking-wide whitespace-nowrap">
                         Continue
                       </span>
                       <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:translate-x-2" />
                     </div>
                   </button>
 
-                  <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-600">
+                  <div className="flex items-center justify-center gap-6 mt-4 text-sm text-slate-600 font-body">
                     <span className="flex items-center gap-1">
-                      <Shield className="w-4 h-4 text-green-600" />
+                      <Shield className="w-4 h-4 text-brand-sage" />
                       Bank-level security
                     </span>
                     <span className="flex items-center gap-1">
-                      <Zap className="w-4 h-4 text-blue-600" />
+                      <Zap className="w-4 h-4 text-brand-teal" />
                       Takes 2-3 minutes
                     </span>
                   </div>

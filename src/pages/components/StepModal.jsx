@@ -38,38 +38,38 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-indigo-900/85 to-purple-900/95 backdrop-blur-xl animate-fadeIn" />
+      {/* Backdrop - Modern Professional */}
+      <div className="absolute inset-0 bg-brand-navy/90 backdrop-blur-xl animate-fadeIn" />
 
-      {/* Orbs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-full blur-3xl animate-float-delayed" />
+      {/* Subtle Orbs */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand-teal/20 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-brand-ocean/20 rounded-full blur-3xl" />
 
       {/* Modal */}
       <div
-        className="relative bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-xl w-full max-h-[85vh] flex flex-col border border-white/20 overflow-hidden animate-scaleSpring"
+        className="relative bg-white/95 backdrop-blur-2xl rounded-card shadow-2xl max-w-xl w-full max-h-[85vh] flex flex-col border border-slate-200 overflow-hidden animate-scaleSpring"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Gradient Glow */}
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-20 blur-xl -z-10" />
+        {/* Teal Accent Glow */}
+        <div className="absolute inset-0 rounded-card bg-brand-teal/10 blur-xl -z-10" />
 
-        {/* HEADER */}
-        <div className="top-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-purple-700 text-white p-6 rounded-t-3xl flex items-start justify-between relative z-10">
-          {/* Shimmer overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+        {/* HEADER - Modern Professional */}
+        <div className="top-0 bg-gradient-to-r from-brand-ocean to-brand-navy text-white p-6 rounded-t-card flex items-start justify-between relative z-10">
+          {/* Teal accent line */}
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-brand-teal" />
 
           <div className="flex items-center gap-4 relative z-10">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center font-bold text-xl shadow-lg ring-2 ring-white/30">
+            <div className="w-12 h-12 bg-brand-teal/30 backdrop-blur-sm rounded-full flex items-center justify-center font-headline font-bold text-xl shadow-lg ring-2 ring-brand-teal/50">
               {step}
             </div>
             <div>
               <h3
                 id="modal-title"
-                className="text-2xl font-black tracking-tight leading-snug"
+                className="text-2xl font-headline font-bold tracking-tight leading-snug"
               >
                 {detail.title}
               </h3>
-              <p className="text-indigo-100 text-sm mt-1">Step {step} of 7</p>
+              <p className="text-slate-200 text-sm mt-1 font-body">Step {step} of 7</p>
             </div>
           </div>
 
@@ -137,13 +137,13 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 5 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-brand-ocean to-brand-teal rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">✓</span>
                     </div>
-                    <p className="text-gray-700 font-semibold text-lg">
+                    <p className="text-slate-700 font-headline font-semibold text-lg">
                       Contact Information
                     </p>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-sm text-slate-500 mt-2 font-body">
                       Verify your contact details
                     </p>
                   </div>
@@ -153,11 +153,11 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 6 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-brand-ocean to-brand-teal rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">👥</span>
                     </div>
-                    <p className="text-gray-700 font-semibold text-lg">Add Drivers</p>
-                    <p className="text-sm text-gray-500 mt-2">
+                    <p className="text-slate-700 font-headline font-semibold text-lg">Add Drivers</p>
+                    <p className="text-sm text-slate-500 mt-2 font-body">
                       Confirm all drivers on your policy
                     </p>
                   </div>
@@ -167,7 +167,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 7 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-brand-sage to-brand-teal rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">🎉</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">All Done!</p>
@@ -200,14 +200,14 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
         </div>
 
         {/* FOOTER */}
-        <div className="border-t border-gray-200 p-6 flex justify-between items-center bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-3xl">
+        <div className="border-t border-slate-200 p-6 flex justify-between items-center bg-slate-50 rounded-b-card">
           <button
             onClick={() => step > 1 && setModalStep(step - 1)}
             disabled={step === 1}
-            className={`px-6 py-3 font-semibold rounded-xl transition-all shadow-md ${
+            className={`px-6 py-3 font-headline font-semibold rounded-modern transition-all shadow-md ${
               step === 1
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg hover:shadow-indigo-500/30 transform hover:scale-105 active:scale-95'
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-brand-ocean hover:bg-brand-ocean/90 text-white hover:shadow-lg hover:shadow-brand-ocean/30 transform hover:scale-105 active:scale-95'
             }`}
           >
             ← Previous
@@ -216,17 +216,17 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
           <button
             onClick={() => step < 7 && setModalStep(step + 1)}
             disabled={step === 7}
-            className={`px-6 py-3 font-semibold rounded-xl transition-all shadow-md ${
+            className={`px-6 py-3 font-headline font-semibold rounded-modern transition-all shadow-md ${
               step === 7
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-indigo-600 hover:bg-indigo-700 text-white hover:shadow-lg hover:shadow-indigo-500/30 transform hover:scale-105 active:scale-95'
+                ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                : 'bg-brand-ocean hover:bg-brand-ocean/90 text-white hover:shadow-lg hover:shadow-brand-ocean/30 transform hover:scale-105 active:scale-95'
             }`}
           >
             Next →
           </button>
         </div>
 
-        <div className="h-1 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600" />
+        <div className="h-1 bg-gradient-to-r from-brand-ocean via-brand-teal to-brand-ocean" />
       </div>
 
       {/* STYLES */}
