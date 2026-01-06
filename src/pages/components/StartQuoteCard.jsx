@@ -87,59 +87,6 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes gradient-x {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-
-        @keyframes mesh {
-          0%, 100% {
-            transform: translate(0, 0) scale(1);
-          }
-          33% {
-            transform: translate(5%, -5%) scale(1.05);
-          }
-          66% {
-            transform: translate(-5%, 5%) scale(0.95);
-          }
-        }
-
-        @keyframes float {
-          0%, 100% {
-            transform: translate(0, 0) rotate(0deg);
-          }
-          33% {
-            transform: translate(10px, -10px) rotate(5deg);
-          }
-          66% {
-            transform: translate(-10px, 10px) rotate(-5deg);
-          }
-        }
-
-        .animate-gradient-x {
-          background-size: 200% 200%;
-          animation: gradient-x 3s ease infinite;
-        }
-
-        .animate-mesh {
-          animation: mesh 20s ease-in-out infinite;
-        }
-
-        .animate-float {
-          animation: float 8s ease-in-out infinite;
-        }
-
-        .animate-float-delayed {
-          animation: float 10s ease-in-out infinite;
-          animation-delay: -5s;
-        }
-      `}</style>
     </div>
   );
 };

@@ -84,41 +84,49 @@ const LogoRow = () => (
     <img
       src="/logos/GEICO.png"
       alt="GEICO"
+      loading="lazy"
       className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
       src="/logos/Progressive.png"
       alt="Progressive"
+      loading="lazy"
       className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
       src="/logos/State-Farm.png"
       alt="State Farm"
+      loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
       src="/logos/AutoOwners.png"
       alt="AutoOwners"
+      loading="lazy"
       className="h-6 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
       src="/logos/Nationwide.png"
       alt="Nationwide"
+      loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
       src="/logos/USAA.png"
       alt="USAA"
+      loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
       src="/logos/Farmers.png"
       alt="Farmers"
+      loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
       src="/logos/Liberty-Mutual.png"
       alt="Liberty Mutual"
+      loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
   </div>

@@ -1,5 +1,5 @@
 // src/hooks/zipValidation.js
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 const STORAGE_KEY = 'insuredbycam_validated_zip';
 const EXPIRY_HOURS = 24;
@@ -7,6 +7,7 @@ const EXPIRY_HOURS = 24;
 export const useZipValidation = () => {
   const [validatedZip, setValidatedZip] = useState(null);
   const [showValidator, setShowValidator] = useState(false);
+  const callbackRef = useRef(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -38,22 +39,29 @@ export const useZipValidation = () => {
       onProceed();
     } else {
       setShowValidator(true);
-      window.__canopyConnectCallback = onProceed;
+      callbackRef.current = onProceed;
     }
   };
 
   const handleValidatorSuccess = (zip) => {
     handleValidZip(zip);
-    if (window.__canopyConnectCallback) {
-      window.__canopyConnectCallback();
-      window.__canopyConnectCallback = null;
+    if (callbackRef.current) {
+      callbackRef.current();
+      callbackRef.current = null;
     }
   };
 
   const closeValidator = () => {
     setShowValidator(false);
-    window.__canopyConnectCallback = null;
+    callbackRef.current = null;
   };
+
+  // Cleanup callback on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      callbackRef.current = null;
+    };
+  }, []);
 
   return {
     validatedZip,

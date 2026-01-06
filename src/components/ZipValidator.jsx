@@ -1,5 +1,5 @@
 // src/components/ZipValidator.jsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 
 const ZipValidator = ({ onValidZip, onClose }) => {
   const [zip, setZip] = useState('');
@@ -12,7 +12,7 @@ const ZipValidator = ({ onValidZip, onClose }) => {
     return (zip >= 30000 && zip <= 31999) || (zip >= 39800 && zip <= 39901);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     setError('');
 
@@ -36,13 +36,14 @@ const ZipValidator = ({ onValidZip, onClose }) => {
       setIsValidating(false);
       onValidZip(zip);
     }, 300);
-  };
+  }, [zip, onValidZip]);
 
-  const handleZipChange = (e) => {
+  const handleZipChange = useCallback((e) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 5);
     setZip(value);
+    // Only clear error if there is one to avoid unnecessary state update
     if (error) setError('');
-  };
+  }, [error]);
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
