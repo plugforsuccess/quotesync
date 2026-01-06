@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand - Navy (Trust & Professionalism) */
+    --brand: #033973;
+    --brand-foreground: #ffffff;
+    --brand-weak: #e6f0f9;
+    --brand-light: #4a7ba7;
+    --brand-dark: #022854;
+
+    /* Brand Secondary - Teal Accent (Modern complement) */
+    --brand-2: #0d9488;
+    --brand-2-foreground: #ffffff;
+    --brand-2-weak: #ccfbf1;
+
+    /* Accent - Amber (Highlights & CTAs) */
+    --accent: #f59e0b;
+    --accent-foreground: #ffffff;
+    --accent-weak: #fef3c7;
+
+    /* Success - Emerald */
+    --success: #10b981;
+    --success-foreground: #ffffff;
+    --success-weak: #d1fae5;
+
+    /* Surface & Backgrounds */
+    --surface: #ffffff;
+    --surface-2: #f8fafc;
+    --surface-3: #f1f5f9;
+
+    /* Borders */
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+
+    /* Text */
+    --text: #0f172a;
+    --text-muted: #64748b;
+    --text-subtle: #94a3b8;
+
+    /* Overlays */
+    --overlay: rgba(15, 23, 42, 0.6);
+  }
+}

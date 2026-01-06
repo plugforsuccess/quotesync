@@ -39,11 +39,11 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
       aria-labelledby="modal-title"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-indigo-900/85 to-purple-900/95 backdrop-blur-xl animate-fadeIn" />
+      <div className="absolute inset-0 bg-[var(--overlay)] backdrop-blur-xl animate-fadeIn" />
 
       {/* Orbs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-full blur-3xl animate-float-delayed" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-brand/20 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-brand2/20 rounded-full blur-3xl animate-float-delayed" />
 
       {/* Modal */}
       <div
@@ -51,10 +51,10 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Gradient Glow */}
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-20 blur-xl -z-10" />
+        <div className="absolute inset-0 rounded-3xl bg-brand/20 blur-xl -z-10" />
 
         {/* HEADER */}
-        <div className="top-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-purple-700 text-white p-6 rounded-t-3xl flex items-start justify-between relative z-10">
+        <div className="top-0 bg-gradient-to-r from-brand to-brand-dark text-white p-6 rounded-t-3xl flex items-start justify-between relative z-10">
           {/* Shimmer overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
 
@@ -69,7 +69,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               >
                 {detail.title}
               </h3>
-              <p className="text-indigo-100 text-sm mt-1">Step {step} of 7</p>
+              <p className="text-white/80 text-sm mt-1">Step {step} of 7</p>
             </div>
           </div>
 
@@ -88,7 +88,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
           className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar"
         >
           <div className="p-6 space-y-6">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-indigo-100 shadow-sm">
+            <div className="bg-brand-weak rounded-2xl p-5 border border-border shadow-sm">
               <p className="text-gray-700 leading-relaxed">{detail.description}</p>
             </div>
 
@@ -113,7 +113,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 3 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-brand-light to-brand rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">📱</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">
@@ -137,7 +137,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 5 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-brand-light to-brand rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">✓</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">
@@ -153,7 +153,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 6 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-brand-light to-brand rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">👥</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">Add Drivers</p>
@@ -167,7 +167,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 7 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-success rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">🎉</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">All Done!</p>
@@ -238,16 +238,16 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
           border-radius:10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom,#8b5cf6,#6366f1);
+          background: var(--brand);
           border-radius:10px;
           border:2px solid #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom,#7c3aed,#4f46e5);
+          background: var(--brand-dark);
         }
         .custom-scrollbar {
           scrollbar-width: thin;
-          scrollbar-color: #8b5cf6 #f1f5f9;
+          scrollbar-color: var(--brand) #f1f5f9;
         }
       `}</style>
     </div>

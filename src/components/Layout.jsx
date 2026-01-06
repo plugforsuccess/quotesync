@@ -119,13 +119,13 @@ function Layout() {
         <div className="fixed inset-0 z-40 md:hidden">
           {/* Backdrop with blur */}
           <div
-            className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-indigo-900/90 to-purple-900/95 backdrop-blur-2xl animate-fadeIn"
+            className="absolute inset-0 bg-[var(--overlay)] backdrop-blur-2xl animate-fadeIn"
             onClick={() => setMobileMenuOpen(false)}
           />
 
           {/* Floating gradient orbs */}
-          <div className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-20 left-20 w-64 h-64 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float-delayed"></div>
+          <div className="absolute top-20 right-20 w-64 h-64 bg-success/20 rounded-full blur-3xl animate-float"></div>
+          <div className="absolute bottom-20 left-20 w-64 h-64 bg-brand2/20 rounded-full blur-3xl animate-float-delayed"></div>
 
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp">

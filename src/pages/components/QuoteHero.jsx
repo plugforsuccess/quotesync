@@ -13,7 +13,7 @@ const QuoteHero = ({ isVisible }) => {
           Save Up to
           <br />
           <span
-            className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent inline-block"
+            className="bg-gradient-to-r from-accent via-accent to-accent bg-clip-text text-transparent inline-block"
             style={{ animation: 'wiggle 1s ease-in-out infinite' }}
           >
             $647
@@ -21,15 +21,15 @@ const QuoteHero = ({ isVisible }) => {
           <br /> by Switching
         </h1>
 
-        <p className="text-xl md:text-2xl text-primary-100 mb-4 font-light">
+        <p className="text-xl md:text-2xl text-white/90 mb-4 font-light">
           Connect your current insurance policy and see if Allstate can beat your rate
         </p>
-        <p className="text-primary-200/80 text-lg">Free comparison. No spam calls.</p>
+        <p className="text-white/70 text-lg">Free comparison. No spam calls.</p>
       </div>
 
       <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">
         <div className="relative">
-          <div className="w-36 h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl ring-4 ring-primary-500/20">
+          <div className="w-36 h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl ring-4 ring-brand/20">
             <img
               src="/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
               alt="Cameron Wiley"
@@ -37,7 +37,7 @@ const QuoteHero = ({ isVisible }) => {
               style={{ objectPosition: '50% 30%' }}
             />
           </div>
-          <div className="absolute -bottom-2 -right-2 bg-primary-600 text-white rounded-full p-2 shadow-lg">
+          <div className="absolute -bottom-2 -right-2 bg-brand text-white rounded-full p-2 shadow-lg">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path
                 fillRule="evenodd"
@@ -52,13 +52,13 @@ const QuoteHero = ({ isVisible }) => {
           <h1 className="text-4xl md:text-5xl font-black text-white mb-2">I'm Cameron</h1>
           <p className="text-xl text-white mb-4">Allstate Agency Owner in Georgia</p>
           <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-500">
-            <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full font-semibold">
+            <span className="px-3 py-1 bg-brand-weak text-brand-dark rounded-full font-semibold">
               Licensed Agent
             </span>
-            <span className="px-3 py-1 bg-success-100 text-success-700 rounded-full font-semibold">
+            <span className="px-3 py-1 bg-success-weak text-gray-900 rounded-full font-semibold">
               Low Rates
             </span>
-            <span className="px-3 py-1 bg-secondary-100 text-secondary-700 rounded-full font-semibold">
+            <span className="px-3 py-1 bg-brand2-weak text-gray-900 rounded-full font-semibold">
               Great Service
             </span>
           </div>
