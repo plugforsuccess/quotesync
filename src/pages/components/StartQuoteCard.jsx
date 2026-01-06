@@ -340,14 +340,14 @@ const HowItWorks = ({ onGetQuote }) => {
               { name: 'Yodlee', used: 'Major banks' },
               { name: 'Finicity', used: 'Mastercard' },
             ].map((tech) => (
-              <div key={tech.name} className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
+              <div key={tech.name} className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-lg p-3 border border-primary-200">
                 <p className="font-bold text-gray-900 mb-1">{tech.name}</p>
                 <p className="text-xs text-gray-600">{tech.used}</p>
               </div>
             ))}
           </div>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-4">
-            <p className="font-semibold text-green-900 mb-2">🔒 Security Guarantee</p>
+          <div className="bg-success-50 border border-success-200 rounded-lg p-4 mt-4">
+            <p className="font-semibold text-success-900 mb-2">🔒 Security Guarantee</p>
             <p className="text-xs text-gray-700">
               Your credentials are never stored. We use 256-bit encryption—the same security standard used by banks and financial institutions.
             </p>
