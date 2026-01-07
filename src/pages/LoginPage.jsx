@@ -64,7 +64,12 @@ const LoginPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+<<<<<<< HEAD
 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"              placeholder="admin@example.com"
+=======
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              placeholder="admin@example.com"
+>>>>>>> c120c9e65af580c41361e3308d50b96a881d2818
             />
           </div>
 
@@ -77,7 +82,12 @@ className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+<<<<<<< HEAD
 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"              placeholder="Enter your password"
+=======
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              placeholder="Enter your password"
+>>>>>>> c120c9e65af580c41361e3308d50b96a881d2818
             />
           </div>
 
@@ -97,5 +107,3 @@ className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus
     </div>
   );
 };
-
-export default LoginPage
