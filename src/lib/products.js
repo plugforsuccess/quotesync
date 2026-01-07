@@ -6,7 +6,7 @@ export const products = [
     id: 'coverage-mistakes-guide',
     name: 'The Coverage Mistakes Guide',
     slug: 'coverage-mistakes-guide',
-    tagline: 'Stop paying for insurance you don't understand',
+    tagline: 'Stop paying for insurance you don\'t understand',
     description: 'A complete breakdown of the 7 most common coverage mistakes that cost drivers thousands in claims that should have been covered.',
     longDescription: `
       <p>Most drivers overpay for insurance while being underprotected. This guide shows you exactly what to look for.</p>
@@ -17,7 +17,7 @@ export const products = [
         <li><strong>Deductible Math:</strong> When higher deductibles cost you more</li>
         <li><strong>The Gap Nobody Explains:</strong> What happens between your policy and actual repair costs</li>
         <li><strong>Coverage Stacking:</strong> How duplicate coverage wastes $200+ per year</li>
-        <li><strong>The Rental Car Mistake:</strong> When you're paying twice for the same coverage</li>
+        <li><strong>The Rental Car Mistake:</strong> When you\'re paying twice for the same coverage</li>
         <li><strong>Underinsured Motorist Protection:</strong> The coverage 60% of drivers skip (and regret)</li>
         <li><strong>Declarations Page Decoder:</strong> How to actually read your policy</li>
       </ul>
@@ -42,7 +42,7 @@ export const products = [
       'Lifetime access & updates'
     ],
     benefits: [
-      'Understand exactly what you're paying for',
+      'Understand exactly what you\'re paying for',
       'Identify gaps in your current coverage',
       'Stop overpaying for duplicate protection',
       'Know what questions to ask your agent',
@@ -54,19 +54,19 @@ export const products = [
     name: 'The Insurance Shopping Playbook',
     slug: 'insurance-shopping-playbook',
     tagline: 'Get better quotes without getting spammed',
-    description: 'Step-by-step tactics for comparing insurance quotes the smart way — including how to spot fake discounts and negotiate with agents.',
+    description: 'Step-by-step tactics for comparing insurance quotes the smart way - including how to spot fake discounts and negotiate with agents.',
     longDescription: `
       <p>Shopping for insurance is broken. This playbook shows you how to get accurate quotes without falling into the lead-gen trap.</p>
 
       <h3>What's Inside:</h3>
       <ul>
         <li><strong>The Quote Comparison Framework:</strong> How to compare apples-to-apples</li>
-        <li><strong>Discount Decoder:</strong> Which discounts actually matter (most don't)</li>
+        <li><strong>Discount Decoder:</strong> Which discounts actually matter (most don\'t)</li>
         <li><strong>Agent Negotiation Scripts:</strong> Exact questions that get better rates</li>
         <li><strong>Red Flags Checklist:</strong> How to spot predatory insurance offers</li>
         <li><strong>The Switching Timeline:</strong> When to switch vs. when to stay</li>
         <li><strong>Claims History Impact:</strong> How your record affects pricing (and what you can do)</li>
-        <li><strong>Bundle Strategy:</strong> When bundling saves money and when it doesn't</li>
+        <li><strong>Bundle Strategy:</strong> When bundling saves money and when it doesn\'t</li>
       </ul>
 
       <p><strong>Format:</strong> 32-page PDF guide with templates, scripts, and worksheets</p>
@@ -101,7 +101,7 @@ export const products = [
     name: 'The Claims Survival Guide',
     slug: 'claims-survival-guide',
     tagline: 'What to do when you actually need your insurance',
-    description: 'Everything you need to know about filing claims, dealing with adjusters, and getting paid what you're owed — without getting lowballed.',
+    description: 'Everything you need to know about filing claims, dealing with adjusters, and getting paid what you\'re owed - without getting lowballed.',
     longDescription: `
       <p>Filing a claim is when your insurance actually matters. This guide ensures you get what you paid for.</p>
 
@@ -114,7 +114,7 @@ export const products = [
         <li><strong>Total Loss Scenarios:</strong> Getting fair market value for your car</li>
         <li><strong>Rental Car Claims:</strong> Maximizing your rental coverage</li>
         <li><strong>Injury Claims:</strong> Medical bills, lost wages, and pain/suffering</li>
-        <li><strong>When to Hire a Lawyer:</strong> And when it's not worth it</li>
+        <li><strong>When to Hire a Lawyer:</strong> And when it\'s not worth it</li>
       </ul>
 
       <p><strong>Format:</strong> 28-page PDF guide with templates and scripts</p>
