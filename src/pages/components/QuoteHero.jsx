@@ -9,22 +9,53 @@ const QuoteHero = ({ isVisible }) => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-10'
         }`}
       >
-        <h1 className="text-6xl md:text-7xl font-black text-white mb-12 leading-tight">
-          Save Up to
+        {/* Strong, Opinionated Value Prop */}
+        <div className="inline-block mb-6 px-6 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
+          <p className="text-sm md:text-base font-semibold text-white/90">
+            🎯 Compare coverage, not just price
+          </p>
+        </div>
+
+        <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight">
+          Stop Overpaying for
           <br />
-          <span
-            className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent inline-block"
-            style={{ animation: 'wiggle 1s ease-in-out infinite' }}
-          >
-            $647
+          <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent inline-block">
+            Insurance You Don't
           </span>
-          <br /> by Switching
+          <br />
+          Understand
         </h1>
 
-        <p className="text-xl md:text-2xl text-primary-100 mb-4 font-light">
-          Connect your current insurance policy and see if Allstate can beat your rate
+        <p className="text-xl md:text-2xl text-white/90 mb-6 font-medium max-w-3xl mx-auto leading-relaxed">
+          See exactly where your policy is overpriced — without filling out forms or getting spammed by 12 agents.
         </p>
-        <p className="text-primary-200/80 text-lg">Free comparison. No spam calls.</p>
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-base text-white/80">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-success-400 rounded-full flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <span className="font-semibold">Real coverage comparison</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-success-400 rounded-full flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <span className="font-semibold">No spam calls</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 bg-success-400 rounded-full flex items-center justify-center">
+              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <span className="font-semibold">Takes 2 minutes</span>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row items-center justify-center gap-8 mb-12">

@@ -89,10 +89,10 @@ function Layout() {
             </NavLink>
 
             {/* Desktop Navigation with Advanced Effects */}
-            <nav className="hidden md:flex items-center gap-2">
-              <TabLink to="/quotes" end label="Insurance Quotes" scrollToQuote />
-              <TabLink to="/courses" label="Drivers Ed Courses" />
-              <TabLink to="/store" label="Online Store" />
+            <nav className="hidden md:flex items-center gap-3">
+              <TabLink to="/quotes" end label="Get Quote" scrollToQuote isPrimary />
+              <TabLink to="/courses" label="Courses" />
+              <TabLink to="/store" label="Store" />
             </nav>
 
             {/* Mobile Menu Button with Animation */}
@@ -129,9 +129,9 @@ function Layout() {
 
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp">
-            <MobileTabLink to="/quotes" end label="Insurance Quotes" icon="📊" scrollToQuote />
-            <MobileTabLink to="/drivers-ed" label="Drivers Ed Courses" icon="🚗" />
-            <MobileTabLink to="/store" label="Online Store" icon="🛍️" />
+            <MobileTabLink to="/quotes" end label="Get Quote" icon="🎯" scrollToQuote isPrimary />
+            <MobileTabLink to="/courses" label="Courses" icon="🚗" />
+            <MobileTabLink to="/store" label="Store" icon="🛍️" />
 
             {/* Decorative element */}
             <div className="mt-8 flex items-center gap-2 text-sm text-white/50">
@@ -156,7 +156,7 @@ function Layout() {
   );
 }
 
-function TabLink({ to, label, end, scrollToQuote }) {
+function TabLink({ to, label, end, scrollToQuote, isPrimary }) {
   const handleClick = (e) => {
     if (scrollToQuote && to === '/quotes') {
       // Small delay to allow navigation to complete
@@ -177,7 +177,13 @@ function TabLink({ to, label, end, scrollToQuote }) {
       className={({ isActive }) => {
         return [
           'relative px-4 lg:px-6 py-2.5 rounded-full font-semibold transition-all text-sm lg:text-base whitespace-nowrap group overflow-hidden',
-          isActive ? 'text-slate-900' : 'text-gray-300 hover:text-white',
+          isPrimary
+            ? isActive
+              ? 'text-white'
+              : 'text-white hover:text-white'
+            : isActive
+            ? 'text-slate-900'
+            : 'text-gray-300 hover:text-white',
         ].join(' ');
       }}
     >
@@ -186,14 +192,18 @@ function TabLink({ to, label, end, scrollToQuote }) {
           {/* Animated Background */}
           <div
             className={`absolute inset-0 transition-all duration-500 ${
-              isActive
+              isPrimary
+                ? isActive
+                  ? 'bg-gradient-to-r from-primary-600 to-secondary-600 shadow-xl scale-100'
+                  : 'bg-gradient-to-r from-primary-600 to-secondary-600 opacity-90 group-hover:opacity-100 scale-100'
+                : isActive
                 ? 'bg-white shadow-lg scale-100'
                 : 'bg-white/0 group-hover:bg-white/10 scale-95 group-hover:scale-100'
             } rounded-full`}
           ></div>
 
           {/* Gradient Border on Active */}
-          {isActive && (
+          {isActive && !isPrimary && (
             <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 rounded-full opacity-50 blur-sm animate-pulse"></div>
           )}
 
@@ -208,7 +218,7 @@ function TabLink({ to, label, end, scrollToQuote }) {
   );
 }
 
-function MobileTabLink({ to, label, end, icon, scrollToQuote }) {
+function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
   const handleClick = (e) => {
     if (scrollToQuote && to === '/quotes') {
       // Small delay to allow navigation and menu close
@@ -232,13 +242,21 @@ function MobileTabLink({ to, label, end, icon, scrollToQuote }) {
         <div className="relative">
           {/* Glow effect on active */}
           {isActive && (
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 rounded-2xl opacity-50 blur-lg animate-pulse"></div>
+            <div className={`absolute -inset-1 ${
+              isPrimary
+                ? 'bg-gradient-to-r from-primary-500 to-secondary-500'
+                : 'bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500'
+            } rounded-2xl opacity-50 blur-lg animate-pulse`}></div>
           )}
 
           {/* Card */}
           <div
             className={`relative px-8 py-5 rounded-2xl font-bold text-lg text-left transition-all duration-300 flex items-center gap-4 ${
-              isActive
+              isPrimary
+                ? isActive
+                  ? 'bg-gradient-to-r from-primary-600 to-secondary-600 text-white shadow-2xl scale-105'
+                  : 'bg-gradient-to-r from-primary-600 to-secondary-600 text-white backdrop-blur-sm hover:scale-105 opacity-90 hover:opacity-100'
+                : isActive
                 ? 'bg-white text-slate-900 shadow-2xl scale-105'
                 : 'bg-white/10 text-white backdrop-blur-sm hover:bg-white/20 hover:scale-105 border border-white/10'
             }`}
