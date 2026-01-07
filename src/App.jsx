@@ -16,12 +16,16 @@ import NewsroomPage from './pages/NewsroomPage';
 import StoryDetailPage from './pages/StoryDetailPage';
 import NewsroomDashboardPage from './pages/NewsroomDashboardPage';
 import NewsroomEditorPage from './pages/NewsroomEditorPage';
+import LoginPage from './pages/LoginPage';
 
 function App() {
   return (
     <BrowserRouter>
      <ScrollToTop />
       <Routes>
+        {/* Login page (no layout) */}
+        <Route path="/login" element={<LoginPage />} />
+
         {/* Use Layout to wrap all main pages with the nav/tabs */}
         <Route path="/" element={<Layout />}>
           {/* Default route – homepage = Insurance Quotes */}
