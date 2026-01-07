@@ -1,6 +1,7 @@
 // src/components/EmailCapture.jsx
 import React, { useState } from 'react';
 import { Mail, CheckCircle, ArrowRight } from 'lucide-react';
+import { trackEmailCapture } from '../lib/analytics';
 
 const EmailCapture = ({ context = 'general' }) => {
   const [email, setEmail] = useState('');
@@ -18,6 +19,9 @@ const EmailCapture = ({ context = 'general' }) => {
     setTimeout(() => {
       setIsLoading(false);
       setIsSubmitted(true);
+
+      // Track email capture
+      trackEmailCapture(context);
     }, 1000);
   };
 

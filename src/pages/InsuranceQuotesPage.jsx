@@ -12,6 +12,7 @@ import SmarterFasterSection from './components/SmarterFasterSection';
 import ZipValidator from '../components/ZipValidator';
 import StickyQuoteBar from '../components/StickyQuoteBar';
 import { useZipValidation } from '../hooks/ZipValidation';
+import { trackQuoteStarted } from '../lib/analytics';
 
 export default function InsuranceQuotesPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -57,6 +58,9 @@ export default function InsuranceQuotesPage() {
   }, [submitted]);
 
   const openCanopyConnect = useCallback(() => {
+  // Track quote started event
+  trackQuoteStarted();
+
   // Create a hidden link element with Canopy's embed class
   const canopyLink = document.createElement('a');
   canopyLink.className = 'canopy-connect-embed';

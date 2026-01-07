@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { CheckCircle, Download, Mail, ArrowRight, FileText } from 'lucide-react';
 import { getProductById } from '../lib/products';
+import { trackPurchase } from '../lib/analytics';
 
 const PurchaseSuccessPage = () => {
   const [searchParams] = useSearchParams();
@@ -12,6 +13,11 @@ const PurchaseSuccessPage = () => {
   const [confetti, setConfetti] = useState([]);
 
   useEffect(() => {
+    // Track purchase event
+    if (product) {
+      trackPurchase(product, `txn_${Date.now()}_${product.id}`);
+    }
+
     // Confetti animation
     const newConfetti = Array.from({ length: 20 }, (_, i) => ({
       id: i,
@@ -20,7 +26,7 @@ const PurchaseSuccessPage = () => {
       duration: 2 + Math.random() * 2,
     }));
     setConfetti(newConfetti);
-  }, []);
+  }, [product]);
 
   if (!product) {
     return (

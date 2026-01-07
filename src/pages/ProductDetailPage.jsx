@@ -1,14 +1,22 @@
 // src/pages/ProductDetailPage.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Download, Shield, Star, FileText, AlertCircle } from 'lucide-react';
 import { getProductBySlug } from '../lib/products';
+import { trackProductView, trackBeginCheckout } from '../lib/analytics';
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const product = getProductBySlug(slug);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Track product view on page load
+  useEffect(() => {
+    if (product) {
+      trackProductView(product);
+    }
+  }, [product]);
 
   if (!product) {
     return (
@@ -44,6 +52,9 @@ const ProductDetailPage = () => {
 
   const handleCheckout = async () => {
     setIsProcessing(true);
+
+    // Track begin checkout event
+    trackBeginCheckout(product);
 
     // IMPORTANT: In production, this should call your backend API to create a Stripe checkout session
     // For now, we'll simulate the checkout flow

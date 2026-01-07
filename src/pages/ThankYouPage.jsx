@@ -1,10 +1,16 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import EmailCapture from '../components/EmailCapture';
 import ProductUpsell from '../components/ProductUpsell';
+import { trackQuoteCompleted } from '../lib/analytics';
 import './ThankYouPage.css';
 
 const ThankYouPage = () => {
+  // Track quote completed on page load
+  useEffect(() => {
+    trackQuoteCompleted();
+  }, []);
+
   return (
     <div className="thank-you-container">
       {/* Main Success Card */}
