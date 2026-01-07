@@ -25,8 +25,8 @@ export const products = [
       <p><strong>Format:</strong> 24-page PDF guide with real examples, checklists, and action items</p>
       <p><strong>Delivery:</strong> Instant download after purchase</p>
     `,
-    price: 29,
-    originalPrice: 49,
+    price: 0,
+    originalPrice: 0,
     category: 'guides',
     format: 'PDF',
     pages: 24,
@@ -72,8 +72,8 @@ export const products = [
       <p><strong>Format:</strong> 32-page PDF guide with templates, scripts, and worksheets</p>
       <p><strong>Delivery:</strong> Instant download after purchase</p>
     `,
-    price: 39,
-    originalPrice: 59,
+    price: 0,
+    originalPrice: 0,
     category: 'guides',
     format: 'PDF',
     pages: 32,

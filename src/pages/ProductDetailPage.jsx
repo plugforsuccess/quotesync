@@ -48,13 +48,22 @@ const ProductDetailPage = () => {
     benefits
   } = product;
 
-  const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const isFree = price === 0;
+  const discount = originalPrice && price > 0 ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
   const handleCheckout = async () => {
     setIsProcessing(true);
 
     // Track begin checkout event
     trackBeginCheckout(product);
+
+    // For free products, skip payment and go straight to download
+    if (isFree) {
+      setTimeout(() => {
+        navigate(`/store/purchase-success?product=${product.id}`);
+      }, 1000);
+      return;
+    }
 
     // IMPORTANT: In production, this should call your backend API to create a Stripe checkout session
     // For now, we'll simulate the checkout flow
@@ -105,7 +114,12 @@ const ProductDetailPage = () => {
                   Bestseller
                 </div>
               )}
-              {discount > 0 && (
+              {isFree && (
+                <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
+                  FREE
+                </div>
+              )}
+              {discount > 0 && !isFree && (
                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
                   {discount}% OFF Today
                 </div>
@@ -189,16 +203,16 @@ const ProductDetailPage = () => {
 
                   {/* Price */}
                   <div className="mb-6 text-center">
-                    {originalPrice && (
+                    {!isFree && originalPrice > price && (
                       <div className="text-2xl text-white/40 line-through mb-2">
                         ${originalPrice}
                       </div>
                     )}
                     <div className="text-5xl font-black text-white mb-2">
-                      ${price}
+                      {isFree ? 'Free' : `$${price}`}
                     </div>
                     <div className="text-sm text-white/60">
-                      One-time payment • Lifetime access
+                      {isFree ? 'Free download • Lifetime access' : 'One-time payment • Lifetime access'}
                     </div>
                   </div>
 
@@ -208,23 +222,27 @@ const ProductDetailPage = () => {
                     disabled={isProcessing}
                     className="w-full py-4 px-6 bg-gradient-to-r from-accent-500 to-accent-600 hover:from-accent-600 hover:to-accent-700 text-white font-black text-lg rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-accent-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-6"
                   >
-                    {isProcessing ? 'Processing...' : 'Buy Now'}
+                    {isProcessing ? 'Processing...' : (isFree ? 'Get Free Guide' : 'Buy Now')}
                   </button>
 
                   {/* Trust Badges */}
                   <div className="space-y-3 mb-6">
-                    <div className="flex items-center gap-3 text-sm text-white/70">
-                      <Shield className="w-5 h-5 text-success-400 flex-shrink-0" />
-                      <span>Secure checkout with Stripe</span>
-                    </div>
+                    {!isFree && (
+                      <div className="flex items-center gap-3 text-sm text-white/70">
+                        <Shield className="w-5 h-5 text-success-400 flex-shrink-0" />
+                        <span>Secure checkout with Stripe</span>
+                      </div>
+                    )}
                     <div className="flex items-center gap-3 text-sm text-white/70">
                       <Download className="w-5 h-5 text-primary-400 flex-shrink-0" />
-                      <span>Instant download after purchase</span>
+                      <span>Instant download after {isFree ? 'signup' : 'purchase'}</span>
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-white/70">
-                      <Check className="w-5 h-5 text-success-400 flex-shrink-0" />
-                      <span>30-day money-back guarantee</span>
-                    </div>
+                    {!isFree && (
+                      <div className="flex items-center gap-3 text-sm text-white/70">
+                        <Check className="w-5 h-5 text-success-400 flex-shrink-0" />
+                        <span>30-day money-back guarantee</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Info Box */}
@@ -232,7 +250,10 @@ const ProductDetailPage = () => {
                     <div className="flex items-start gap-3">
                       <AlertCircle className="w-5 h-5 text-primary-400 flex-shrink-0 mt-0.5" />
                       <p className="text-xs text-white/70 leading-relaxed">
-                        After purchase, you'll receive an email with your download link. No account required.
+                        {isFree
+                          ? "After signup, you'll receive an email with your download link. No account or payment required."
+                          : "After purchase, you'll receive an email with your download link. No account required."
+                        }
                       </p>
                     </div>
                   </div>
