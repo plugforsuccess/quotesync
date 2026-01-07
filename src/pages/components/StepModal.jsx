@@ -39,11 +39,11 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
       aria-labelledby="modal-title"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-indigo-900/85 to-purple-900/95 backdrop-blur-xl animate-fadeIn" />
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-primary-900/85 to-secondary-900/95 backdrop-blur-xl animate-fadeIn" />
 
       {/* Orbs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-indigo-500/30 to-purple-500/30 rounded-full blur-3xl animate-float" />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-full blur-3xl animate-float-delayed" />
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-primary-500/30 to-secondary-500/30 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-gradient-to-br from-secondary-500/30 to-primary-400/30 rounded-full blur-3xl animate-float-delayed" />
 
       {/* Modal */}
       <div
@@ -51,10 +51,10 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Gradient Glow */}
-        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 opacity-20 blur-xl -z-10" />
+        <div className="absolute inset-0 rounded-3xl bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 opacity-20 blur-xl -z-10" />
 
         {/* HEADER */}
-        <div className="top-0 bg-gradient-to-r from-indigo-600 via-purple-600 to-purple-700 text-white p-6 rounded-t-3xl flex items-start justify-between relative z-10">
+        <div className="top-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 text-white p-6 rounded-t-3xl flex items-start justify-between relative z-10">
           {/* Shimmer overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
 
@@ -113,7 +113,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 3 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-secondary-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">📱</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">
@@ -137,7 +137,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 5 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-secondary-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">✓</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">
@@ -153,7 +153,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
               {step === 6 && (
                 <div className="aspect-[9/16] flex items-center justify-center p-8 text-center">
                   <div>
-                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
+                    <div className="w-20 h-20 bg-gradient-to-br from-primary-400 to-secondary-500 rounded-full mx-auto mb-4 flex items-center justify-center shadow-lg">
                       <span className="text-3xl">👥</span>
                     </div>
                     <p className="text-gray-700 font-semibold text-lg">Add Drivers</p>
@@ -238,16 +238,16 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
           border-radius:10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: linear-gradient(to bottom,#8b5cf6,#6366f1);
+          background: linear-gradient(to bottom,#2563eb,#14b8a6);
           border-radius:10px;
           border:2px solid #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(to bottom,#7c3aed,#4f46e5);
+          background: linear-gradient(to bottom,#1d4ed8,#0d9488);
         }
         .custom-scrollbar {
           scrollbar-width: thin;
-          scrollbar-color: #8b5cf6 #f1f5f9;
+          scrollbar-color: #2563eb #f1f5f9;
         }
       `}</style>
     </div>

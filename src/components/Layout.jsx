@@ -119,7 +119,7 @@ function Layout() {
         <div className="fixed inset-0 z-40 md:hidden">
           {/* Backdrop with blur */}
           <div
-            className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-indigo-900/90 to-purple-900/95 backdrop-blur-2xl animate-fadeIn"
+            className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-primary-900/90 to-secondary-900/95 backdrop-blur-2xl animate-fadeIn"
             onClick={() => setMobileMenuOpen(false)}
           />
 

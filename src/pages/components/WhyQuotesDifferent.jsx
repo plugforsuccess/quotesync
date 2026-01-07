@@ -5,7 +5,7 @@ const WhyQuotesDifferent = () => {
   return (
     <div className="relative mx-auto max-w-6xl sm:px-6 lg:px-8 my-16 pt-12 pb-24 mb-12">
       <div className="relative bg-gradient-to-br from-[#1e3a5f] to-[#2d4a6f] rounded-2xl shadow-2xl p-8 sm:p-12 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl -m-[3px] -z-10 animate-pulse" style={{ animationDuration: '3s' }}></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-primary-500 to-secondary-600 rounded-2xl -m-[3px] -z-10 animate-pulse" style={{ animationDuration: '3s' }}></div>
 
         <h2 className="text-white text-3xl md:text-4xl font-bold text-center mb-10">
           Why My Quotes Are Different

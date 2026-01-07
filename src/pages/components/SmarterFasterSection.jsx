@@ -18,7 +18,7 @@ const SmarterFasterSection = ({ isVisible }) => {
     },
     {
       icon: PhoneCallIcon,
-      color: 'from-purple-500 to-purple-600',
+      color: 'from-secondary-500 to-secondary-600',
       title: 'We Connect',
       desc: "I'll call you to walk through the numbers and answer any questions. Can't talk? I'll email the proposal.",
     },
