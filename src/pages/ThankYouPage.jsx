@@ -1,5 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import EmailCapture from '../components/EmailCapture';
+import ProductUpsell from '../components/ProductUpsell';
 import './ThankYouPage.css';
 
 const ThankYouPage = () => {
@@ -80,6 +82,16 @@ const ThankYouPage = () => {
             <p><strong>Zero Pressure:</strong> If Allstate saves you money, that's great! If not, I'll tell you honestly. You're in complete control. </p>
           </div>
         </div>
+
+        {/* NEW: Product Upsell */}
+        <div style={{ marginTop: '2rem' }}>
+          <ProductUpsell context="post-quote" />
+        </div>
+      </div>
+
+      {/* NEW: Email Capture */}
+      <div style={{ maxWidth: '600px', margin: '0 auto', marginBottom: '2rem' }}>
+        <EmailCapture context="post-quote" />
       </div>
 
       {/* Driver Education CTA */}
@@ -87,12 +99,9 @@ const ThankYouPage = () => {
         <div className="driver-ed-content">
           <h3>💰 Want to Save Even More on Insurance?</h3>
           <p>While you wait for your quote, check out how Georgia drivers can earn recurring insurance discounts by taking a simple online course.</p>
-          <Link to="/drivers-ed" className="driver-ed-button">
+          <Link to="/courses" className="driver-ed-button">
             Explore Driver Education Courses →
           </Link>
-          {/* If you prefer the old path, you can instead use:
-              <Link to="/defensive-driving" className="driver-ed-button">...</Link>
-           */}
         </div>
       </div>
 
