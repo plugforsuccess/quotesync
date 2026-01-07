@@ -276,7 +276,7 @@ const NewsroomEditorPage = () => {
               type="text"
               value={story.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold text-gray-900"
               placeholder="Enter story title..."
             />
           </div>
@@ -290,7 +290,7 @@ const NewsroomEditorPage = () => {
               type="text"
               value={story.slug}
               onChange={(e) => handleChange('slug', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900"
               placeholder="story-url-slug"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -306,7 +306,7 @@ const NewsroomEditorPage = () => {
             <textarea
               value={story.preview_hook}
               onChange={(e) => handleChange('preview_hook', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               rows={3}
               placeholder="Write a compelling preview that appears in the feed..."
             />
@@ -323,7 +323,7 @@ const NewsroomEditorPage = () => {
             <textarea
               value={story.body}
               onChange={(e) => handleChange('body', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900"
               rows={15}
               placeholder="Write the full article body... (Use double line breaks for paragraphs)"
             />
@@ -338,7 +338,7 @@ const NewsroomEditorPage = () => {
               <select
                 value={story.category}
                 onChange={(e) => handleChange('category', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 <option value="litigation">Litigation</option>
                 <option value="law">Law</option>
@@ -356,7 +356,7 @@ const NewsroomEditorPage = () => {
                 type="text"
                 value={story.region}
                 onChange={(e) => handleChange('region', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 placeholder="GA, ATL, or specific ZIP"
               />
             </div>
@@ -373,7 +373,7 @@ const NewsroomEditorPage = () => {
               <select
                 value={story.video_type || ''}
                 onChange={(e) => handleChange('video_type', e.target.value || null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
                 <option value="">No video</option>
                 <option value="youtube_embed">YouTube</option>
@@ -392,7 +392,7 @@ const NewsroomEditorPage = () => {
                     type="url"
                     value={story.video_url}
                     onChange={(e) => handleChange('video_url', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     placeholder="https://youtube.com/watch?v=..."
                   />
                 </div>
@@ -405,7 +405,7 @@ const NewsroomEditorPage = () => {
                     type="url"
                     value={story.video_thumbnail}
                     onChange={(e) => handleChange('video_thumbnail', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     placeholder="https://example.com/thumbnail.jpg"
                   />
                 </div>
@@ -426,7 +426,7 @@ const NewsroomEditorPage = () => {
                   type="text"
                   value={story.source_name}
                   onChange={(e) => handleChange('source_name', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   placeholder="WSB-TV Atlanta"
                 />
               </div>
@@ -439,7 +439,7 @@ const NewsroomEditorPage = () => {
                   type="url"
                   value={story.source_url}
                   onChange={(e) => handleChange('source_url', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                   placeholder="https://..."
                 />
               </div>
@@ -458,7 +458,7 @@ const NewsroomEditorPage = () => {
                 type="text"
                 value={story.meta_title}
                 onChange={(e) => handleChange('meta_title', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 placeholder="SEO-optimized title"
               />
             </div>
@@ -470,7 +470,7 @@ const NewsroomEditorPage = () => {
               <textarea
                 value={story.meta_description}
                 onChange={(e) => handleChange('meta_description', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 rows={2}
                 placeholder="SEO meta description"
               />
@@ -484,7 +484,7 @@ const NewsroomEditorPage = () => {
                 type="url"
                 value={story.og_image}
                 onChange={(e) => handleChange('og_image', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 placeholder="https://example.com/og-image.jpg"
               />
             </div>

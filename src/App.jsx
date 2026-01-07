@@ -16,6 +16,7 @@ import NewsroomPage from './pages/NewsroomPage';
 import StoryDetailPage from './pages/StoryDetailPage';
 import NewsroomDashboardPage from './pages/NewsroomDashboardPage';
 import NewsroomEditorPage from './pages/NewsroomEditorPage';
+import LoginPage from './pages/LoginPage';
 
 function App() {
   return (
@@ -54,6 +55,9 @@ function App() {
           {/* Privacy Policy and Terms of Service */}
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="terms" element={<TermsPage />} />
+          
+          {/*Editor Dashboard Login Page */}
+          <Route path="/login" element={<LoginPage />} />
 
           {/* Catch-all – redirect bad URLs to home */}
           <Route path="*" element={<Navigate to="/" replace />} />
