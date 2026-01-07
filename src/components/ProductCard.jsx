@@ -17,7 +17,8 @@ const ProductCard = ({ product }) => {
     image
   } = product;
 
-  const discount = originalPrice ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const discount = originalPrice && price > 0 ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const isFree = price === 0;
 
   return (
     <Link
@@ -36,7 +37,12 @@ const ProductCard = ({ product }) => {
               Bestseller
             </div>
           )}
-          {discount > 0 && (
+          {isFree && (
+            <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
+              FREE
+            </div>
+          )}
+          {discount > 0 && !isFree && (
             <div className="inline-flex items-center gap-1 px-3 py-1 bg-success-500/20 border border-success-500/50 rounded-full text-xs font-bold text-success-300">
               {discount}% OFF
             </div>
@@ -76,13 +82,13 @@ const ProductCard = ({ product }) => {
         {/* Price & CTA */}
         <div className="flex items-center justify-between pt-4 border-t border-white/10">
           <div>
-            {originalPrice && (
+            {!isFree && originalPrice > price && (
               <span className="text-sm text-white/40 line-through mr-2">
                 ${originalPrice}
               </span>
             )}
             <span className="text-2xl font-black text-white">
-              ${price}
+              {isFree ? 'Free' : `$${price}`}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm font-semibold text-accent-400 group-hover:text-accent-300 transition-colors">
