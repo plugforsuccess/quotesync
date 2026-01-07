@@ -23,8 +23,8 @@ function App() {
     <BrowserRouter>
      <ScrollToTop />
       <Routes>
-        {/* Login page (no layout) */}
-        <Route path="/login" element={<LoginPage />} />
+        {/* Admin login page (no layout) - obscured path for security */}
+        <Route path="/admin-access-8by2X" element={<LoginPage />} />
 
         {/* Use Layout to wrap all main pages with the nav/tabs */}
         <Route path="/" element={<Layout />}>
@@ -58,9 +58,6 @@ function App() {
           {/* Privacy Policy and Terms of Service */}
           <Route path="privacy" element={<PrivacyPage />} />
           <Route path="terms" element={<TermsPage />} />
-          
-          {/*Editor Dashboard Login Page */}
-          <Route path="/login" element={<LoginPage />} />
 
           {/* Catch-all – redirect bad URLs to home */}
           <Route path="*" element={<Navigate to="/" replace />} />

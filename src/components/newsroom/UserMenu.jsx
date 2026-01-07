@@ -41,19 +41,11 @@ const UserMenu = () => {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    navigate('/admin-access-8by2X');
   };
 
   if (!user) {
-    return (
-      <button
-        onClick={() => navigate('/login')}
-        className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
-      >
-        <User className="w-4 h-4" />
-        Login
-      </button>
-    );
+    return null; // Don't show login button to public users
   }
 
   return (
