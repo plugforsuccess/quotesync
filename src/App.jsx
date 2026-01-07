@@ -8,6 +8,8 @@ import InsuranceQuotesPage from './pages/InsuranceQuotesPage';
 import ThankYouPage from './pages/ThankYouPage';
 import DriversEdPage from './pages/DriversEdPage';
 import StorePage from './pages/StorePage';
+import ProductDetailPage from './pages/ProductDetailPage';
+import PurchaseSuccessPage from './pages/PurchaseSuccessPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 
@@ -28,8 +30,10 @@ function App() {
           {/* Keep your old route working too if it's already linked */}
           <Route path="defensive-driving" element={<DriversEdPage />} />
 
-          {/* Online Store tab */}
+          {/* Online Store */}
           <Route path="store" element={<StorePage />} />
+          <Route path="store/:slug" element={<ProductDetailPage />} />
+          <Route path="store/purchase-success" element={<PurchaseSuccessPage />} />
 
           {/* Thank you page (after form / Canopy redirect) */}
           <Route path="success" element={<ThankYouPage />} />

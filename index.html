@@ -203,7 +203,33 @@
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon-new.ico" />
     <link rel="shortcut icon" href="/favicon-new.ico" />
-    
+
+    <!-- Google Analytics 4 -->
+    <!-- TODO: Replace G-XXXXXXXXXX with your actual GA4 Measurement ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-XXXXXXXXXX');
+      window.GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
+    </script>
+
+    <!-- Meta Pixel (Facebook Pixel) -->
+    <!-- TODO: Replace YOUR_PIXEL_ID with your actual Meta Pixel ID -->
+    <script>
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('init', 'YOUR_PIXEL_ID');
+      fbq('track', 'PageView');
+    </script>
+
     <!-- Canopy Connect Script -->
     <script src="https://cdn.usecanopy.com/v2/embed.js" async></script>
   </head>

@@ -5,11 +5,14 @@ import { CheckCircle } from 'lucide-react';
 import StepModal from './components/StepModal';
 import QuoteHero from './components/QuoteHero';
 import StartQuoteCard from './components/StartQuoteCard';
+import TrustBuilder from './components/TrustBuilder';
+import EducationPreview from './components/EducationPreview';
 import WhyQuotesDifferent from './components/WhyQuotesDifferent';
 import SmarterFasterSection from './components/SmarterFasterSection';
 import ZipValidator from '../components/ZipValidator';
 import StickyQuoteBar from '../components/StickyQuoteBar';
 import { useZipValidation } from '../hooks/ZipValidation';
+import { trackQuoteStarted } from '../lib/analytics';
 
 export default function InsuranceQuotesPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -55,6 +58,9 @@ export default function InsuranceQuotesPage() {
   }, [submitted]);
 
   const openCanopyConnect = useCallback(() => {
+  // Track quote started event
+  trackQuoteStarted();
+
   // Create a hidden link element with Canopy's embed class
   const canopyLink = document.createElement('a');
   canopyLink.className = 'canopy-connect-embed';
@@ -301,18 +307,24 @@ export default function InsuranceQuotesPage() {
         </div>
       )}
 
-      {/* HERO */}
+      {/* HERO - Primary Value Prop */}
       <QuoteHero isVisible={isVisible} />
 
-      {/* MAIN QUOTE CARD + PROCESS - Pass handleGetQuoteClick down */}
-      <StartQuoteCard 
-        isVisible={isVisible} 
+      {/* MAIN QUOTE CARD + PROCESS - Primary CTA */}
+      <StartQuoteCard
+        isVisible={isVisible}
         setModalStep={setModalStep}
         onGetQuote={handleGetQuoteClick}
       />
 
+      {/* TRUST BUILDER - Why This Is Different */}
+      <TrustBuilder />
+
       {/* WHY QUOTES ARE DIFFERENT */}
       <WhyQuotesDifferent />
+
+      {/* EDUCATION PREVIEW - Secondary Path to Store */}
+      <EducationPreview />
 
       {/* SMARTER FASTER SECTION */}
       <SmarterFasterSection isVisible={isVisible} />
