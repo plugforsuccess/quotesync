@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Send, Trash2, Plus } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
+import UserMenu from '../components/newsroom/UserMenu';
 
 const NewsroomEditorPage = () => {
   const { id } = useParams(); // If editing existing story
@@ -205,7 +206,7 @@ const NewsroomEditorPage = () => {
         <div className="max-w-5xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <button
-              onClick={() => navigate('/news/editor')}
+              onClick={() => navigate('/news/dashboard')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium"
             >
               <ArrowLeft className="w-4 h-4" />
@@ -213,6 +214,7 @@ const NewsroomEditorPage = () => {
             </button>
 
             <div className="flex items-center gap-2">
+              <UserMenu />
               <button
                 onClick={handlePreview}
                 className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"

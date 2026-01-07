@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Edit, Eye, CheckCircle, XCircle, BarChart3, Star } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
+import UserMenu from '../components/newsroom/UserMenu';
 
 const NewsroomDashboardPage = () => {
   const navigate = useNavigate();
@@ -182,6 +183,8 @@ const NewsroomDashboardPage = () => {
                 <Plus className="w-4 h-4" />
                 New Story
               </Link>
+
+              <UserMenu />
             </div>
           </div>
 
