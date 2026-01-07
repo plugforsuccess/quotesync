@@ -67,24 +67,24 @@ const EducationPreview = () => {
               {/* Content */}
               <div className="relative">
                 {/* Icon */}
-                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${guide.color} mb-4 shadow-lg`}>
+                <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${guide.color} mb-5 shadow-lg`}>
                   <guide.icon className="w-6 h-6 text-white" />
                 </div>
 
                 {/* Tag */}
-                <div className="inline-block mb-3">
+                <div className="mb-3">
                   <span className="text-xs font-semibold text-accent-300 uppercase tracking-wider">
                     {guide.tag}
                   </span>
                 </div>
 
                 {/* Title */}
-                <h3 className="text-xl font-bold text-white mb-3 leading-tight group-hover:text-accent-300 transition-colors">
+                <h3 className="text-xl font-bold text-white mb-4 leading-tight group-hover:text-accent-300 transition-colors">
                   {guide.title}
                 </h3>
 
                 {/* Description */}
-                <p className="text-sm text-white/70 mb-4 leading-relaxed">
+                <p className="text-sm text-white/70 mb-6 leading-relaxed">
                   {guide.description}
                 </p>
 
