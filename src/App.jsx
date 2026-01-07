@@ -12,6 +12,10 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import PurchaseSuccessPage from './pages/PurchaseSuccessPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import NewsroomPage from './pages/NewsroomPage';
+import StoryDetailPage from './pages/StoryDetailPage';
+import NewsroomDashboardPage from './pages/NewsroomDashboardPage';
+import NewsroomEditorPage from './pages/NewsroomEditorPage';
 
 function App() {
   return (
@@ -29,6 +33,15 @@ function App() {
 
           {/* Keep your old route working too if it's already linked */}
           <Route path="defensive-driving" element={<DriversEdPage />} />
+
+          {/* Newsroom - Insurance News Feed */}
+          <Route path="news" element={<NewsroomPage />} />
+          <Route path="news/:slug" element={<StoryDetailPage />} />
+
+          {/* Newsroom CMS - Editor & Admin */}
+          <Route path="news/dashboard" element={<NewsroomDashboardPage />} />
+          <Route path="news/editor" element={<NewsroomEditorPage />} />
+          <Route path="news/editor/:id" element={<NewsroomEditorPage />} />
 
           {/* Online Store */}
           <Route path="store" element={<StorePage />} />
