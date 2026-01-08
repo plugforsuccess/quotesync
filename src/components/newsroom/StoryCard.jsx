@@ -29,15 +29,16 @@ const formatTimestamp = (publishedAt) => {
 };
 
 /**
- * Category chip with color coding
+ * Category chip with unified design system colors
  */
 const CategoryChip = ({ category }) => {
+  // Mapping to unified design tokens - maintains visual distinction while using brand palette
   const colors = {
-    litigation: 'bg-red-100 text-red-700',
-    law: 'bg-blue-100 text-blue-700',
-    accident: 'bg-orange-100 text-orange-700',
-    data: 'bg-purple-100 text-purple-700',
-    policy: 'bg-green-100 text-green-700'
+    litigation: 'bg-[#fee2e2] text-[#b91c1c] border border-[#fecaca]',
+    law: 'bg-primary-100 text-primary-800 border border-primary-200',
+    accident: 'bg-[#fed7aa] text-[#c2410c] border border-[#fdba74]',
+    data: 'bg-[#e9d5ff] text-[#6b21a8] border border-[#d8b4fe]',
+    policy: 'bg-success-100 text-success-800 border border-success-200'
   };
 
   const labels = {
@@ -49,7 +50,7 @@ const CategoryChip = ({ category }) => {
   };
 
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[category] || 'bg-gray-100 text-gray-700'}`}>
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[category] || 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
       {labels[category] || category}
     </span>
   );
@@ -150,10 +151,10 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
       ref={cardRef}
       className="bg-white border-b border-gray-200 py-6 px-4 md:px-6 hover:bg-gray-50 transition-colors"
     >
-      {/* Featured badge */}
+      {/* Featured badge - using accent color from design system */}
       {story.is_featured && (
         <div className="mb-3">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-yellow-100 text-yellow-800">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-accent-100 text-accent-800 border border-accent-200">
             ⭐ Featured
           </span>
         </div>
@@ -221,7 +222,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
         <div className="flex items-center gap-3">
           <button
             onClick={handleReadMore}
-            className="text-blue-600 hover:text-blue-700 font-semibold text-sm transition-colors"
+            className="text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors"
           >
             Read more →
           </button>
@@ -235,18 +236,18 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
           </button>
         </div>
 
-        {/* Subtle CTA */}
+        {/* Subtle CTA - using primary color from design system */}
         <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => handleCTAClick('compare_policy')}
-            className="text-xs text-gray-500 hover:text-blue-600 transition-colors"
+            className="text-xs text-gray-500 hover:text-primary-600 transition-colors"
           >
             Compare your policy
           </button>
           <span className="text-gray-300">•</span>
           <button
             onClick={() => handleCTAClick('webinar')}
-            className="text-xs text-gray-500 hover:text-blue-600 transition-colors"
+            className="text-xs text-gray-500 hover:text-primary-600 transition-colors"
           >
             Join next live breakdown
           </button>

@@ -7,7 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary - Deep Blue (trust, professionalism)
+        // PRIMARY BRAND COLOR - Deep Blue (trust, professionalism, authority)
+        // Use for: Main CTAs, navigation, primary actions, brand elements
         primary: {
           50: '#eff6ff',
           100: '#dbeafe',
@@ -15,47 +16,50 @@ export default {
           300: '#93c5fd',
           400: '#60a5fa',
           500: '#3b82f6',
-          600: '#2563eb',
+          600: '#2563eb',  // Primary brand color
           700: '#1d4ed8',
           800: '#1e40af',
           900: '#1e3a8a',
           950: '#172554',
         },
-        // Secondary - Teal (modern, fresh)
+        // SECONDARY BRAND COLOR - Teal (modern, fresh, trust)
+        // Use for: Gradients with primary, secondary CTAs, accents
         secondary: {
           50: '#f0fdfa',
           100: '#ccfbf1',
           200: '#99f6e4',
           300: '#5eead4',
           400: '#2dd4bf',
-          500: '#14b8a6',
+          500: '#14b8a6',  // Secondary brand color
           600: '#0d9488',
           700: '#0f766e',
           800: '#115e59',
           900: '#134e4a',
           950: '#042f2e',
         },
-        // Accent - Amber (highlights, savings)
+        // ACCENT COLOR - Amber/Gold (warmth, savings, highlights, featured)
+        // Use for: Badges, highlights, savings indicators, featured items, special offers
         accent: {
           50: '#fffbeb',
           100: '#fef3c7',
           200: '#fde68a',
           300: '#fcd34d',
           400: '#fbbf24',
-          500: '#f59e0b',
+          500: '#f59e0b',  // Main accent color
           600: '#d97706',
           700: '#b45309',
           800: '#92400e',
           900: '#78350f',
           950: '#451a03',
         },
-        // Success - Emerald
+        // SUCCESS COLOR - Emerald (positive actions, confirmations, success states)
+        // Use for: Success messages, checkmarks, completion states, discounts
         success: {
           50: '#ecfdf5',
           100: '#d1fae5',
           200: '#a7f3d0',
           300: '#6ee7b7',
-          400: '#34d399',
+          400: '#34d399',  // Main success color
           500: '#10b981',
           600: '#059669',
           700: '#047857',
@@ -63,10 +67,68 @@ export default {
           900: '#064e3b',
           950: '#022c22',
         },
+        // SEMANTIC CATEGORY COLORS - For newsroom categories
+        // These provide visual distinction while staying within brand palette
+        category: {
+          litigation: {
+            bg: '#fee2e2',      // red-100
+            text: '#b91c1c',    // red-700
+            border: '#fecaca',  // red-200
+          },
+          law: {
+            bg: '#dbeafe',      // primary-100
+            text: '#1e40af',    // primary-800
+            border: '#bfdbfe',  // primary-200
+          },
+          accident: {
+            bg: '#fed7aa',      // orange-200
+            text: '#c2410c',    // orange-700
+            border: '#fdba74',  // orange-300
+          },
+          data: {
+            bg: '#e9d5ff',      // purple-200
+            text: '#6b21a8',    // purple-800
+            border: '#d8b4fe',  // purple-300
+          },
+          policy: {
+            bg: '#d1fae5',      // success-100
+            text: '#065f46',    // success-800
+            border: '#a7f3d0',  // success-200
+          },
+        },
+      },
+      fontFamily: {
+        // Unified font family across entire site
+        sans: [
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
+          'Roboto',
+          '"Helvetica Neue"',
+          'Arial',
+          'sans-serif',
+        ],
+      },
+      fontSize: {
+        // Standardized typography scale
+        'display': ['4rem', { lineHeight: '1.1', fontWeight: '900' }],      // Hero headlines
+        'h1': ['3rem', { lineHeight: '1.2', fontWeight: '800' }],           // Page titles
+        'h2': ['2.25rem', { lineHeight: '1.25', fontWeight: '700' }],       // Section headers
+        'h3': ['1.875rem', { lineHeight: '1.3', fontWeight: '700' }],       // Subsection headers
+        'h4': ['1.5rem', { lineHeight: '1.4', fontWeight: '600' }],         // Card titles
+        'body-lg': ['1.125rem', { lineHeight: '1.75', fontWeight: '400' }], // Large body text
+        'body': ['1rem', { lineHeight: '1.625', fontWeight: '400' }],       // Default body
+        'body-sm': ['0.875rem', { lineHeight: '1.5', fontWeight: '400' }],  // Small text
       },
       animation: {
         'wiggle': 'wiggle 1s ease-in-out infinite',
         'float': 'float 3s ease-in-out infinite',
+        'float-delayed': 'float 3s ease-in-out 1.5s infinite',
+        'gradient-x': 'gradient-x 3s ease infinite',
+        'blob': 'blob 7s infinite',
+        'shimmer': 'shimmer 2s infinite',
       },
       keyframes: {
         wiggle: {
@@ -76,6 +138,19 @@ export default {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-20px)' },
+        },
+        'gradient-x': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        blob: {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(30px, -50px) scale(1.1)' },
+          '66%': { transform: 'translate(-20px, 20px) scale(0.9)' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' },
         },
       },
     },
