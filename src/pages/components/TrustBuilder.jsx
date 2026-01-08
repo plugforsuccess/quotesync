@@ -57,7 +57,7 @@ const TrustBuilder = () => {
                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-success-400 to-success-600 flex items-center justify-center shadow-lg">
                     <span className="text-2xl">✨</span>
                   </div>
-                  <h3 className="text-2xl font-bold text-white">insuredbycam</h3>
+                  <h3 className="text-2xl font-bold text-white">insuredbycam.com</h3>
                 </div>
 
                 <ul className="space-y-4">
