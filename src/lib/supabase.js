@@ -11,7 +11,25 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '');
+export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'quotesync-newsroom'
+    }
+  },
+  db: {
+    schema: 'public'
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 10
+    }
+  }
+});
 
 /**
  * Check if user is authenticated and get their role
