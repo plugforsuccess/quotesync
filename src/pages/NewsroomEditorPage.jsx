@@ -120,8 +120,8 @@ const NewsroomEditorPage = () => {
 
   // Save draft
   const handleSave = async () => {
-    if (!story.title || !story.slug || !story.preview_hook || !story.body) {
-      alert('Please fill in all required fields: Title, Slug, Preview Hook, and Body');
+    if (!story.title || !story.slug || !story.preview_hook || !story.body || !story.meta_title || !story.meta_description) {
+      alert('Please fill in all required fields: Title, Slug, Preview Hook, Body, Meta Title, and Meta Description');
       return;
     }
 
@@ -483,32 +483,40 @@ const NewsroomEditorPage = () => {
 
           {/* SEO */}
           <div className="mb-6 border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">SEO & Social (Optional)</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">SEO & Social</h3>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Meta Title (defaults to story title)
+                Meta Title <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={story.meta_title}
                 onChange={(e) => handleChange('meta_title', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                placeholder="SEO-optimized title"
+                placeholder="SEO-optimized title (50-60 characters)"
+                maxLength={60}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {story.meta_title.length}/60 characters - Appears in Google search results
+              </p>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Meta Description (defaults to preview hook)
+                Meta Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={story.meta_description}
                 onChange={(e) => handleChange('meta_description', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                rows={2}
-                placeholder="SEO meta description"
+                rows={3}
+                placeholder="SEO meta description (150-160 characters)"
+                maxLength={160}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {story.meta_description.length}/160 characters - Appears in Google search results
+              </p>
             </div>
 
             <div>

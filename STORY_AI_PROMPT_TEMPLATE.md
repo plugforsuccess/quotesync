@@ -2,40 +2,54 @@
 
 Use this prompt to quickly generate newsroom stories in the correct format for the editor.
 
+## Workflow
+1. Find a recent insurance story on another publication (e.g., Atlanta Journal-Constitution, Insurance Journal, local news)
+2. Use that story as source material to write an **original** story with a Georgia angle
+3. Use this prompt to generate all required fields
+
 ---
 
 ## Prompt Template
 
 ```
-Write an insurance news story for Georgia drivers with the following specifications:
+Write an original insurance news story for Georgia drivers based on the following source material:
 
-TOPIC: [Your topic here - e.g., "New Georgia homeowners insurance law", "Atlanta storm damage claims", "Rate increases in Fulton County"]
+SOURCE ARTICLE: [Paste URL or key details from the source story]
+
+SOURCE NAME: [e.g., "Atlanta Journal-Constitution", "Insurance Journal"]
 
 CATEGORY: [Choose one: litigation, law, accident, data, policy]
 
-REGION: [GA, ATL, or specific location]
+REGION: [GA, ATL, or specific location - make sure there's a Georgia angle]
 
-FORMAT REQUIREMENTS:
-1. Title: Compelling headline (10-15 words) that captures attention
-2. Preview Hook: 2-3 sentences that hook the reader and appear in the feed (50-100 words)
-3. Body: Full article with:
+FORMAT REQUIREMENTS - Generate ALL of the following:
+
+1. **Title**: Compelling headline (10-15 words) that captures attention
+2. **Preview Hook**: 2-3 sentences that hook the reader and appear in the feed (50-100 words)
+3. **Body**: Full article with:
    - Clear sections using ## headings
    - 400-800 words total
    - Use double line breaks between paragraphs
    - Practical, actionable information
    - "What This Means" or "How This Affects You" section
    - "What You Should Do" actionable steps
+4. **Meta Title**: SEO-optimized version (50-60 characters max, include "Georgia" or "GA")
+5. **Meta Description**: SEO description for Google (150-160 characters max)
+
+IMPORTANT:
+- Write an ORIGINAL story, don't copy from the source
+- Focus on the Georgia angle and how it affects Georgia drivers
+- Be conversational but professional
+- Include specific, actionable advice
 
 TONE: Professional but conversational, empathetic, focused on helping Georgia drivers protect themselves
 
 STRUCTURE:
 - Opening: Hook with the news/issue
 - Context: Background and why it matters
-- Impact: What this means for readers
+- Impact: What this means for Georgia readers
 - Action: Clear steps readers should take
 - Conclusion: Looking ahead or key takeaway
-
-DO NOT include meta descriptions, SEO fields, or formatting - just the title, preview hook, and body content.
 ```
 
 ---
@@ -43,35 +57,44 @@ DO NOT include meta descriptions, SEO fields, or formatting - just the title, pr
 ## Example Prompt (Ready to Use)
 
 ```
-Write an insurance news story for Georgia drivers with the following specifications:
+Write an original insurance news story for Georgia drivers based on the following source material:
 
-TOPIC: Georgia insurance carriers are leaving the state due to increased storm claims, leaving homeowners scrambling for coverage
+SOURCE ARTICLE: "State Farm Announces Non-Renewals in Multiple Southern States" - Insurance Journal article about State Farm not renewing homeowners policies in Florida, Louisiana, and considering Georgia
+
+SOURCE NAME: Insurance Journal
 
 CATEGORY: policy
 
 REGION: Georgia
 
-FORMAT REQUIREMENTS:
-1. Title: Compelling headline (10-15 words) that captures attention
-2. Preview Hook: 2-3 sentences that hook the reader and appear in the feed (50-100 words)
-3. Body: Full article with:
+FORMAT REQUIREMENTS - Generate ALL of the following:
+
+1. **Title**: Compelling headline (10-15 words) that captures attention
+2. **Preview Hook**: 2-3 sentences that hook the reader and appear in the feed (50-100 words)
+3. **Body**: Full article with:
    - Clear sections using ## headings
    - 400-800 words total
    - Use double line breaks between paragraphs
    - Practical, actionable information
    - "What This Means" or "How This Affects You" section
    - "What You Should Do" actionable steps
+4. **Meta Title**: SEO-optimized version (50-60 characters max, include "Georgia" or "GA")
+5. **Meta Description**: SEO description for Google (150-160 characters max)
+
+IMPORTANT:
+- Write an ORIGINAL story, don't copy from the source
+- Focus on the Georgia angle and how it affects Georgia drivers
+- Be conversational but professional
+- Include specific, actionable advice
 
 TONE: Professional but conversational, empathetic, focused on helping Georgia drivers protect themselves
 
 STRUCTURE:
 - Opening: Hook with the news/issue
 - Context: Background and why it matters
-- Impact: What this means for readers
+- Impact: What this means for Georgia readers
 - Action: Clear steps readers should take
 - Conclusion: Looking ahead or key takeaway
-
-DO NOT include meta descriptions, SEO fields, or formatting - just the title, preview hook, and body content.
 ```
 
 ---
@@ -105,12 +128,27 @@ DO NOT include meta descriptions, SEO fields, or formatting - just the title, pr
 
 ## After AI Generates Content
 
-Simply copy-paste into the editor:
+Copy-paste into the editor:
 1. **Title** → Title field
 2. **Preview Hook** → Preview Hook field (2-3 sentences)
 3. **Body** → Article Body field (full text with ## headings)
-4. **Category** → Select from dropdown
-5. **Region** → Enter "Georgia", "GA", "Atlanta", "ATL", or specific area
-6. **Status** → Keep as "draft" until reviewed
+4. **Meta Title** → Meta Title field (required)
+5. **Meta Description** → Meta Description field (required)
+6. **Category** → Select from dropdown
+7. **Region** → Enter "Georgia", "GA", "Atlanta", "ATL", or specific area
+8. **Source Name** → Enter the original publication name
+9. **Source URL** → Paste the original article URL
+10. **Status** → Keep as "draft" until reviewed
 
-The slug will auto-generate from the title. Add video URLs, source attribution, and SEO fields manually if needed.
+The slug will auto-generate from the title. Add video URLs and OpenGraph images if available.
+
+### Required Fields Checklist:
+- ✅ Title
+- ✅ Slug (auto-generated)
+- ✅ Preview Hook
+- ✅ Body
+- ✅ Meta Title (50-60 characters)
+- ✅ Meta Description (150-160 characters)
+- ✅ Category
+- Region (optional but recommended)
+- Source attribution (recommended)
