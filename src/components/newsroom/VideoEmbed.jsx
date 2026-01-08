@@ -63,13 +63,16 @@ const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, onThumbnailClick,
           alt="Video thumbnail"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all">
-          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
-            <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-white border-b-8 border-b-transparent ml-1"></div>
-          </div>
+        {/* Darkened overlay on hover */}
+        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all"></div>
+
+        {/* Play button - bottom right corner */}
+        <div className="absolute bottom-4 right-4 w-12 h-12 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
+          <div className="w-0 h-0 border-t-6 border-t-transparent border-l-8 border-l-white border-b-6 border-b-transparent ml-0.5"></div>
         </div>
+
         {/* Tooltip hint */}
-        <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-3 left-3 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
           Click to read story
         </div>
       </div>
