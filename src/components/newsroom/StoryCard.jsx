@@ -172,7 +172,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
 
       {/* Embedded video (optional) */}
       {story.video_url && (
-        <div className="mb-4">
+        <div className="mb-4 cursor-pointer" onClick={handleReadMore}>
           <VideoEmbed
             videoType={story.video_type}
             videoUrl={story.video_url}
@@ -180,6 +180,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
             isActive={isActive}
             onPlay={handleVideoPlay}
             muted={true}
+            onThumbnailClick={handleReadMore}
           />
           {story.source_name && (
             <div className="mt-2 flex items-center text-xs text-gray-500">
@@ -191,6 +192,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="ml-1 underline hover:text-gray-700"
+                  onClick={(e) => e.stopPropagation()}
                 >
                   View original
                 </a>
