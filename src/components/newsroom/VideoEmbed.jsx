@@ -31,7 +31,7 @@ const getTwitterId = (url) => {
 /**
  * YouTube embed component
  */
-const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, muted = true }) => {
+const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, onThumbnailClick, muted = true }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const videoId = getYouTubeId(videoUrl);
 
@@ -39,9 +39,16 @@ const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, muted = true }) =
     return <div className="text-red-500">Invalid YouTube URL</div>;
   }
 
-  const handlePlay = () => {
-    setIsPlaying(true);
-    if (onPlay) onPlay();
+  const handleThumbnailClick = (e) => {
+    e.stopPropagation();
+    // If onThumbnailClick is provided, call it (opens story)
+    // Otherwise, play the video
+    if (onThumbnailClick) {
+      onThumbnailClick();
+    } else {
+      setIsPlaying(true);
+      if (onPlay) onPlay();
+    }
   };
 
   // Show thumbnail until user clicks play
@@ -49,7 +56,7 @@ const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, muted = true }) =
     return (
       <div
         className="relative w-full aspect-video bg-gray-900 cursor-pointer group overflow-hidden"
-        onClick={handlePlay}
+        onClick={handleThumbnailClick}
       >
         <img
           src={thumbnail || `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`}
@@ -57,9 +64,13 @@ const YouTubeEmbed = ({ videoUrl, thumbnail, isActive, onPlay, muted = true }) =
           className="w-full h-full object-cover"
         />
         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 group-hover:bg-opacity-40 transition-all">
-          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform shadow-lg">
             <div className="w-0 h-0 border-t-8 border-t-transparent border-l-12 border-l-white border-b-8 border-b-transparent ml-1"></div>
           </div>
+        </div>
+        {/* Tooltip hint */}
+        <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+          Click to read story
         </div>
       </div>
     );
@@ -222,7 +233,7 @@ const HostedVideoEmbed = ({ videoUrl, thumbnail, isActive, onPlay, muted = true 
 /**
  * Main VideoEmbed component - routes to appropriate embed type
  */
-const VideoEmbed = ({ videoType, videoUrl, thumbnail, isActive = false, onPlay, muted = true }) => {
+const VideoEmbed = ({ videoType, videoUrl, thumbnail, isActive = false, onPlay, onThumbnailClick, muted = true }) => {
   if (!videoType || !videoUrl) {
     return null;
   }
@@ -235,6 +246,7 @@ const VideoEmbed = ({ videoType, videoUrl, thumbnail, isActive = false, onPlay, 
           thumbnail={thumbnail}
           isActive={isActive}
           onPlay={onPlay}
+          onThumbnailClick={onThumbnailClick}
           muted={muted}
         />
       );
