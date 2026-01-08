@@ -200,10 +200,10 @@ const NewsroomPage = () => {
       {/* Story Feed */}
       <div className="max-w-4xl mx-auto">
         {loading && page === 0 ? (
-          // Initial loading state
+          // Initial loading state - using primary brand color
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mb-4"></div>
               <p className="text-gray-600">Loading stories...</p>
             </div>
           </div>
@@ -231,21 +231,21 @@ const NewsroomPage = () => {
               </div>
             ))}
 
-            {/* Load more trigger */}
+            {/* Load more trigger - using primary brand color */}
             {hasMore && (
               <div ref={loadMoreRef} className="py-8 text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
                 <p className="text-gray-500 text-sm mt-2">Loading more stories...</p>
               </div>
             )}
 
-            {/* End of feed */}
+            {/* End of feed - using primary brand color */}
             {!hasMore && stories.length > 0 && (
               <div className="py-8 text-center border-t border-gray-200">
                 <p className="text-gray-500">You've reached the end of the feed</p>
                 <button
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="mt-3 text-blue-600 hover:text-blue-700 font-medium text-sm"
+                  className="mt-3 text-primary-600 hover:text-primary-700 font-medium text-sm"
                 >
                   Back to top ↑
                 </button>

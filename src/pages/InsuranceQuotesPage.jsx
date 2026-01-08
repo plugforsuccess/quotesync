@@ -173,7 +173,7 @@ export default function InsuranceQuotesPage() {
         {confetti.map((item) => (
           <div
             key={item.id}
-            className="absolute w-2 h-2 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full"
+            className="absolute w-2 h-2 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full"
             style={{
               left: `${item.left}%`,
               top: '-10%',
