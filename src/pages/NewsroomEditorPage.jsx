@@ -203,50 +203,53 @@ const NewsroomEditorPage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-5xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <button
               onClick={() => navigate('/news/dashboard')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 font-medium text-sm sm:text-base"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to Dashboard
+              <span className="hidden sm:inline">Back to Dashboard</span>
+              <span className="sm:hidden">Back</span>
             </button>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto w-full sm:w-auto pb-2 sm:pb-0">
               <button
                 onClick={handlePreview}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
               >
                 <Eye className="w-4 h-4" />
-                Preview
+                <span className="hidden sm:inline">Preview</span>
               </button>
 
               {id && userRole === 'admin' && (
                 <button
                   onClick={handleDelete}
-                  className="flex items-center gap-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  <span className="hidden sm:inline">Delete</span>
                 </button>
               )}
 
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save Draft'}
+                <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Draft'}</span>
+                <span className="sm:hidden">Save</span>
               </button>
 
               <button
                 onClick={handleSubmitForReview}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
               >
                 <Send className="w-4 h-4" />
-                Submit for Review
+                <span className="hidden sm:inline">Submit for Review</span>
+                <span className="sm:hidden">Submit</span>
               </button>
             </div>
           </div>
@@ -265,8 +268,8 @@ const NewsroomEditorPage = () => {
       </div>
 
       {/* Editor Form */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6">
           {/* Title */}
           <div className="mb-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
