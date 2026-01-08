@@ -3,6 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Sparkles } from 'lucide-react';
 import Footer from './Footer';
+import UserMenu from './newsroom/UserMenu';
 
 function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -91,8 +92,10 @@ function Layout() {
             {/* Desktop Navigation with Advanced Effects */}
             <nav className="hidden md:flex items-center gap-3">
               <TabLink to="/quotes" end label="Get Quote" scrollToQuote isPrimary />
+              <TabLink to="/news" label="Newsroom" />
               <TabLink to="/courses" label="Courses" />
               <TabLink to="/store" label="Store" />
+              <UserMenu />
             </nav>
 
             {/* Mobile Menu Button with Animation */}
@@ -130,8 +133,14 @@ function Layout() {
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp">
             <MobileTabLink to="/quotes" end label="Get Quote" icon="🎯" scrollToQuote isPrimary />
+            <MobileTabLink to="/news" label="Newsroom" icon="📰" />
             <MobileTabLink to="/courses" label="Courses" icon="🚗" />
             <MobileTabLink to="/store" label="Store" icon="🛍️" />
+
+            {/* User Menu for Mobile */}
+            <div className="mt-4">
+              <UserMenu />
+            </div>
 
             {/* Decorative element */}
             <div className="mt-8 flex items-center gap-2 text-sm text-white/50">
