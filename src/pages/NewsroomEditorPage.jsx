@@ -116,12 +116,28 @@ const NewsroomEditorPage = () => {
         slug: generateSlug(value)
       }));
     }
+
+    // Auto-populate meta title from title if meta title is empty
+    if (field === 'title' && !story.meta_title) {
+      setStory((prev) => ({
+        ...prev,
+        meta_title: value.slice(0, 60)
+      }));
+    }
+
+    // Auto-populate meta description from preview hook if meta description is empty
+    if (field === 'preview_hook' && !story.meta_description) {
+      setStory((prev) => ({
+        ...prev,
+        meta_description: value.slice(0, 160)
+      }));
+    }
   };
 
   // Save draft
   const handleSave = async () => {
-    if (!story.title || !story.slug || !story.preview_hook || !story.body) {
-      alert('Please fill in all required fields: Title, Slug, Preview Hook, and Body');
+    if (!story.title || !story.slug || !story.preview_hook || !story.body || !story.meta_title || !story.meta_description) {
+      alert('Please fill in all required fields: Title, Slug, Preview Hook, Body, Meta Title, and Meta Description');
       return;
     }
 
@@ -387,13 +403,22 @@ const NewsroomEditorPage = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Region
               </label>
-              <input
-                type="text"
+              <select
                 value={story.region}
                 onChange={(e) => handleChange('region', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                placeholder="GA, ATL, or specific ZIP"
-              />
+              >
+                <option value="">Select region...</option>
+                <option value="Georgia">Georgia (Statewide)</option>
+                <option value="Atlanta">Atlanta</option>
+                <option value="Savannah">Savannah</option>
+                <option value="Augusta">Augusta</option>
+                <option value="Columbus">Columbus</option>
+                <option value="Macon">Macon</option>
+                <option value="Athens">Athens</option>
+                <option value="Albany">Albany</option>
+                <option value="Valdosta">Valdosta</option>
+              </select>
             </div>
           </div>
 
@@ -483,32 +508,40 @@ const NewsroomEditorPage = () => {
 
           {/* SEO */}
           <div className="mb-6 border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">SEO & Social (Optional)</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">SEO & Social</h3>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Meta Title (defaults to story title)
+                Meta Title <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={story.meta_title}
                 onChange={(e) => handleChange('meta_title', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                placeholder="SEO-optimized title"
+                placeholder="Auto-populated from title (edit as needed)"
+                maxLength={60}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {story.meta_title.length}/60 characters - Appears in Google search results
+              </p>
             </div>
 
             <div className="mb-4">
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Meta Description (defaults to preview hook)
+                Meta Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 value={story.meta_description}
                 onChange={(e) => handleChange('meta_description', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                rows={2}
-                placeholder="SEO meta description"
+                rows={3}
+                placeholder="Auto-populated from preview hook (edit as needed)"
+                maxLength={160}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                {story.meta_description.length}/160 characters - Appears in Google search results
+              </p>
             </div>
 
             <div>
