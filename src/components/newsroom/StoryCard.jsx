@@ -208,13 +208,6 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
         </span>
 
         <button
-          onClick={handleReadMore}
-          className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
-        >
-          Read more →
-        </button>
-
-        <button
           onClick={handleShare}
           className="flex items-center gap-1 text-gray-600 hover:text-gray-800 transition-colors"
         >
