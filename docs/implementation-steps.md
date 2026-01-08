@@ -15,11 +15,19 @@
 
 ## Prerequisites
 
+> **💰 Want to use 100% free options?** See [FREE_TIER_SETUP.md](./FREE_TIER_SETUP.md) for Docker + Render + Resend setup.
+
 ### Required Accounts
-- [ ] PostgreSQL database (Railway, Neon, or Supabase)
-- [ ] Email service provider (ConvertKit recommended, or Resend for free tier)
-- [ ] Stripe account (for payments)
-- [ ] Hosting platform (Railway, Render, or Vercel with Serverless Functions)
+
+**Local Development (Free):**
+- [ ] Docker Desktop (for PostgreSQL + Redis locally)
+
+**Production Deployment (Free Options):**
+- [ ] Database: Supabase (500MB free forever) OR Render (90 days free)
+- [ ] Email: Resend (3,000/month free) OR ConvertKit ($29/month)
+- [ ] Backend Hosting: Render.com (free tier) OR Vercel Serverless
+- [ ] Stripe account (free, 2.9% + 30¢ per transaction)
+- [ ] Zapier account (100 tasks/month free - for Canopy integration)
 
 ### Development Tools
 ```bash
@@ -177,23 +185,16 @@ JWT_SECRET=your_random_secure_secret_key_here
 
 ## Phase 2: Database Setup
 
+> **💡 Recommended:** Use Docker for local development (100% free, no signup). See [FREE_TIER_SETUP.md](./FREE_TIER_SETUP.md) for detailed Docker setup.
+
 ### Step 2.1: Set Up PostgreSQL Database
 
-**Option A: Using Railway (Recommended)**
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
+**Option A: Using Docker (Recommended - 100% Free for Local)**
+This is the **recommended option for local development and learning**.
 
-# Login and create project
-railway login
-railway init
-railway add postgresql
+> **Full Docker setup instructions:** See [FREE_TIER_SETUP.md - Phase 2](./FREE_TIER_SETUP.md#phase-2-database-setup-free-with-docker)
 
-# Get database URL
-railway variables
-```
-
-**Option B: Using Docker (Local Development)**
+**Quick start:**
 ```bash
 # Create docker-compose.yml
 cat > docker-compose.yml << 'EOF'
@@ -999,6 +1000,7 @@ router.use(require('./emailCapture'));
 router.use(require('./storeWaitlist'));
 router.use(require('./driversEd'));
 router.use(require('./stripe'));
+router.use(require('./canopyZapier')); // Canopy via Zapier
 
 module.exports = router;
 ```
@@ -1093,44 +1095,60 @@ async function handleCheckoutComplete(session) {
 module.exports = router;
 ```
 
-### Step 4.7: Canopy Webhook Handler (If Available)
+### Step 4.7: Canopy Integration via Zapier
 
-**File: `backend/routes/webhooks/canopy.js`**
+> **Note:** Since you don't have direct Canopy API access, we'll use Zapier as a middleman. This is actually **simpler** than direct webhooks!
+
+**File: `backend/routes/api/canopyZapier.js`**
 ```javascript
 const express = require('express');
 const router = express.Router();
 const ContactOrchestrationService = require('../../services/contactOrchestration');
 
-router.post('/canopy', async (req, res) => {
-  // TODO: Verify Canopy webhook signature if available
-  const { event, data } = req.body;
-
+// Receives data from Zapier (Canopy → Zapier → This endpoint)
+router.post('/canopy-zapier', async (req, res) => {
   try {
-    if (event === 'policy.shared' || event === 'connection.completed') {
-      await ContactOrchestrationService.upsertContact({
-        email: data.email || data.contact?.email,
-        phone: data.phone || data.contact?.phone,
-        firstName: data.first_name || data.contact?.first_name,
-        lastName: data.last_name || data.contact?.last_name,
-        source: 'policy_share',
-        metadata: {
-          canopy_session_id: data.session_id,
-          policy_data: data.policy || {}
-        }
-      });
+    const { email, phone, firstName, lastName, policyData } = req.body;
 
-      console.log('✅ Canopy policy share captured:', data.email);
-    }
+    console.log('📥 Canopy data received via Zapier:', { email, firstName, lastName });
 
-    res.json({ received: true });
+    // Upsert contact
+    await ContactOrchestrationService.upsertContact({
+      email,
+      phone,
+      firstName,
+      lastName,
+      source: 'policy_share',
+      metadata: {
+        canopy_data: policyData,
+        via: 'zapier',
+        received_at: new Date().toISOString()
+      }
+    });
+
+    console.log('✅ Canopy policy share captured:', email);
+
+    res.json({
+      success: true,
+      message: 'Contact captured successfully'
+    });
   } catch (error) {
-    console.error('Canopy webhook error:', error);
-    res.status(500).json({ error: 'Webhook handler failed' });
+    console.error('❌ Canopy Zapier error:', error);
+    res.status(500).json({
+      error: 'Failed to process',
+      message: error.message
+    });
   }
 });
 
 module.exports = router;
 ```
+
+**Zapier Setup (Phase 6):**
+1. Create Zap: Canopy Connect trigger → Webhooks by Zapier action
+2. POST to: `https://your-backend.onrender.com/api/canopy-zapier`
+3. Map Canopy fields to JSON payload
+4. Full instructions in [FREE_TIER_SETUP.md](./FREE_TIER_SETUP.md#integration-3-canopy-via-zapier-free-tier)
 
 ### Step 4.8: Webhook Router
 
@@ -1140,7 +1158,7 @@ const express = require('express');
 const router = express.Router();
 
 router.use(require('./stripe'));
-router.use(require('./canopy'));
+// Note: Canopy uses Zapier → API route instead of direct webhook
 
 module.exports = router;
 ```
@@ -1459,7 +1477,16 @@ const handleCheckout = async () => {
 
 ## Phase 6: External Integrations
 
-### Step 6.1: ConvertKit Setup
+> **💰 Using free tier?** See detailed setup instructions in [FREE_TIER_SETUP.md - Phase 6](./FREE_TIER_SETUP.md#phase-6-external-integrations-free-tier) for:
+> - **Resend** (free email service, 3,000/month)
+> - **Zapier** (Canopy integration, 100 tasks/month free)
+> - **Stripe** (payment processing)
+
+### Step 6.1: Email Service Setup
+
+**Option A: ConvertKit (Paid - $29/month)**
+
+Full-featured email marketing platform with sequences and automation.
 
 1. **Create ConvertKit account** at https://convertkit.com
 2. **Get API credentials:**
@@ -1510,14 +1537,39 @@ const handleCheckout = async () => {
    - Select events: `checkout.session.completed`, `payment_intent.succeeded`
    - Copy webhook signing secret
 
-### Step 6.3: Canopy Integration
+### Step 6.3: Canopy Integration via Zapier
 
-1. **Contact Canopy support** to enable webhooks
-2. **Request webhook events:**
-   - `policy.shared`
-   - `connection.completed`
-3. **Get webhook signing secret**
-4. **Add webhook URL:** `https://yourdomain.com/webhooks/canopy`
+> **Note:** Since direct Canopy API access isn't available, we use Zapier as a bridge. This is actually simpler!
+
+**Overview:** Canopy → Zapier Webhook → Your Backend API
+
+**Setup Steps:**
+
+1. **Create Zapier account:** https://zapier.com/sign-up (free tier: 100 tasks/month)
+
+2. **Create new Zap:**
+   - Trigger: Canopy Connect (select your webhook event)
+   - Action: Webhooks by Zapier → POST
+
+3. **Configure POST action:**
+   - URL: `https://your-backend.onrender.com/api/canopy-zapier`
+   - Payload Type: JSON
+   - Data: Map Canopy fields to your backend format
+   ```json
+   {
+     "email": "{{canopy_email}}",
+     "phone": "{{canopy_phone}}",
+     "firstName": "{{canopy_first_name}}",
+     "lastName": "{{canopy_last_name}}",
+     "policyData": "{{canopy_policy_data}}"
+   }
+   ```
+
+4. **Test the Zap** - Zapier will send test data to your backend
+
+5. **Turn on the Zap**
+
+**Full Zapier setup guide:** [FREE_TIER_SETUP.md - Canopy via Zapier](./FREE_TIER_SETUP.md#integration-3-canopy-via-zapier-free-tier)
 
 ---
 
@@ -1561,7 +1613,23 @@ stripe trigger checkout.session.completed
 
 ### Step 7.3: Deploy Backend
 
-**Option A: Railway**
+> **💰 Free deployment options:** See [FREE_TIER_SETUP.md - Phase 7](./FREE_TIER_SETUP.md#phase-7-deployment-free-options) for:
+> - **Render.com** (free tier, recommended)
+> - **Supabase + Vercel Serverless** (100% free forever)
+
+**Option A: Render.com (Recommended Free Option)**
+
+**Quick setup:**
+1. Go to https://render.com
+2. Create PostgreSQL database (free 90 days)
+3. Create Web Service (free, sleeps after 15min)
+4. Deploy from GitHub
+5. Add environment variables
+6. Run migration
+
+**Full Render setup:** [FREE_TIER_SETUP.md - Render Deployment](./FREE_TIER_SETUP.md#option-a-render-recommended---easiest)
+
+**Option B: Railway** (No longer free, but included for reference)
 ```bash
 # Install Railway CLI
 npm install -g @railway/cli
