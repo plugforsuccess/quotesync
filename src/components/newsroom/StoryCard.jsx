@@ -203,7 +203,7 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
       )}
 
       {/* Meta row */}
-      <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+      <div className="flex flex-wrap items-center gap-2 text-sm">
         <CategoryChip category={story.category} />
 
         {story.region && (
@@ -217,36 +217,14 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
         <span className="text-gray-500">
           {formatTimestamp(story.published_at)}
         </span>
-      </div>
 
-      {/* Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleShare}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm transition-colors"
-          >
-            <Share2 className="w-4 h-4" />
-            <span>Share</span>
-          </button>
-        </div>
-
-        {/* Subtle CTA - using primary color from design system */}
-        <div className="hidden md:flex items-center gap-2">
-          <button
-            onClick={() => handleCTAClick('compare_policy')}
-            className="text-xs text-gray-500 hover:text-primary-600 transition-colors"
-          >
-            Compare your policy
-          </button>
-          <span className="text-gray-300">•</span>
-          <button
-            onClick={() => handleCTAClick('webinar')}
-            className="text-xs text-gray-500 hover:text-primary-600 transition-colors"
-          >
-            Join next live breakdown
-          </button>
-        </div>
+        <button
+          onClick={handleShare}
+          className="flex items-center gap-1 text-gray-600 hover:text-gray-800 transition-colors"
+        >
+          <Share2 className="w-4 h-4" />
+          <span>Share</span>
+        </button>
       </div>
     </div>
   );
