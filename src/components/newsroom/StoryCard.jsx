@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Share2, ExternalLink } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
-import { trackStoryImpression, trackVideoPlay, trackReadMoreOpen, trackNewsroomShare, trackNewsroomCTAClick } from '../../lib/newsroomAnalytics';
+import { trackStoryImpression, trackVideoPlay, trackReadMoreOpen, trackNewsroomShare } from '../../lib/newsroomAnalytics';
 
 /**
  * Format timestamp to relative time (e.g., "2h ago", "Today")
@@ -135,17 +135,6 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
     alert('Link copied to clipboard!');
   };
 
-  // Handle CTA click
-  const handleCTAClick = (ctaType) => {
-    trackNewsroomCTAClick(story, ctaType);
-    // Navigate to appropriate page based on CTA
-    if (ctaType === 'compare_policy') {
-      window.location.href = '/quotes';
-    } else if (ctaType === 'webinar') {
-      window.location.href = '/courses';
-    }
-  };
-
   return (
     <div
       ref={cardRef}
@@ -217,6 +206,13 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
         <span className="text-gray-500">
           {formatTimestamp(story.published_at)}
         </span>
+
+        <button
+          onClick={handleReadMore}
+          className="text-primary-600 hover:text-primary-700 font-semibold transition-colors"
+        >
+          Read more →
+        </button>
 
         <button
           onClick={handleShare}
