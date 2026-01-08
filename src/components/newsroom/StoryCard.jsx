@@ -223,13 +223,6 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
-            onClick={handleReadMore}
-            className="text-primary-600 hover:text-primary-700 font-semibold text-sm transition-colors"
-          >
-            Read more →
-          </button>
-
-          <button
             onClick={handleShare}
             className="flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm transition-colors"
           >
