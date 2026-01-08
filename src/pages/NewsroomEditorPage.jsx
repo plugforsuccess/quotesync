@@ -55,14 +55,21 @@ const NewsroomEditorPage = () => {
     checkAuth();
   }, [id, navigate]);
 
-  // Fetch existing story
-  const fetchStory = async (storyId) => {
+  // Fetch existing story with timeout
+  const fetchStory = async (storyId, retries = 2) => {
     try {
-      const { data, error } = await supabase
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 8000)
+      );
+
+      const queryPromise = supabase
         .from('stories')
         .select('*')
         .eq('id', storyId)
         .single();
+
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
 
       if (error) throw error;
 
@@ -74,7 +81,15 @@ const NewsroomEditorPage = () => {
       }
     } catch (error) {
       console.error('Error fetching story:', error);
-      alert('Failed to load story');
+
+      // Retry with delay
+      if (retries > 0) {
+        console.log(`Retrying... (${retries} retries left)`);
+        setTimeout(() => fetchStory(storyId, retries - 1), 2000);
+        return;
+      }
+
+      alert('Failed to load story after multiple attempts. Please check your connection.');
       navigate('/news/editor');
     }
   };
@@ -140,6 +155,9 @@ const NewsroomEditorPage = () => {
           .eq('id', id);
 
         if (error) throw error;
+
+        // Refetch the story to ensure UI is in sync with database
+        await fetchStory(id);
         alert('Story saved successfully!');
       } else {
         // Create new

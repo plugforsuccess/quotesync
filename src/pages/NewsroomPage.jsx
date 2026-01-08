@@ -30,8 +30,8 @@ const NewsroomPage = () => {
     trackFeedView();
   }, []);
 
-  // Fetch stories from Supabase
-  const fetchStories = useCallback(async (pageNum, category = 'all') => {
+  // Fetch stories from Supabase with retry logic
+  const fetchStories = useCallback(async (pageNum, category = 'all', retries = 3) => {
     try {
       setLoading(true);
 
@@ -48,7 +48,12 @@ const NewsroomPage = () => {
         query = query.eq('category', category);
       }
 
-      const { data, error } = await query;
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timeout')), 10000)
+      );
+
+      const { data, error } = await Promise.race([query, timeoutPromise]);
 
       if (error) throw error;
 
@@ -61,9 +66,21 @@ const NewsroomPage = () => {
       setHasMore(data && data.length === STORIES_PER_PAGE);
     } catch (error) {
       console.error('Error fetching stories:', error);
-      // Show fallback UI or error message
-      setStories([]);
+
+      // Retry with exponential backoff
+      if (retries > 0) {
+        const delay = (4 - retries) * 1000; // 1s, 2s, 3s
+        console.log(`Retrying in ${delay}ms... (${retries} retries left)`);
+        setTimeout(() => fetchStories(pageNum, category, retries - 1), delay);
+        return;
+      }
+
+      // Show fallback UI or error message after all retries exhausted
+      if (pageNum === 0) {
+        setStories([]);
+      }
       setHasMore(false);
+      console.error('Failed to load stories after all retries');
     } finally {
       setLoading(false);
     }
