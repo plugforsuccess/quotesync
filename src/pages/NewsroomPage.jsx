@@ -149,32 +149,45 @@ const NewsroomPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header */}
-      <div className="sticky top-0 z-30 bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-                <TrendingUp className="w-8 h-8 text-blue-600" />
+      {/* Header with subtle brand gradient */}
+      <div className="sticky top-0 z-30 bg-gradient-to-r from-blue-50/80 via-teal-50/60 to-blue-50/80 border-b border-gray-200 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 py-5">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex-1">
+              {/* Live updates indicator */}
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="relative flex items-center justify-center">
+                    <span className="absolute inline-flex h-3 w-3 rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </div>
+                  <span className="text-xs font-semibold text-emerald-700 tracking-wide uppercase">Live updates</span>
+                </div>
+              </div>
+
+              {/* Main headline - stronger hierarchy */}
+              <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight leading-tight mb-1.5">
                 Insurance Newsroom
               </h1>
-              <p className="text-gray-600 text-sm mt-1">
+
+              {/* Tighter editorial subhead */}
+              <p className="text-sm text-gray-700 font-medium leading-snug">
                 Real-time coverage intelligence for Georgia drivers
               </p>
             </div>
           </div>
 
-          {/* Category Filter */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2">
-            <Filter className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          {/* Category Filter - Editorial sections style */}
+          <div className="flex items-center gap-1 overflow-x-auto pb-2 pt-2 border-t border-gray-200/50">
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mr-2 flex-shrink-0">Sections</span>
             {categories.map((cat) => (
               <button
                 key={cat.value}
                 onClick={() => handleCategoryChange(cat.value)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                className={`px-3 py-1.5 text-sm font-semibold whitespace-nowrap transition-all border-b-2 ${
                   selectedCategory === cat.value
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    ? 'text-blue-700 border-blue-600'
+                    : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
                 {cat.label}
