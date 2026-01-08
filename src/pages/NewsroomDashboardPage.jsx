@@ -158,29 +158,31 @@ const NewsroomDashboardPage = () => {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Newsroom Dashboard</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Newsroom Dashboard</h1>
               <p className="text-gray-600 text-sm mt-1">
                 Role: <span className="font-semibold capitalize">{userRole}</span>
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <Link
                 to="/news"
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm whitespace-nowrap"
               >
                 <Eye className="w-4 h-4" />
-                View Newsroom
+                <span className="hidden sm:inline">View Newsroom</span>
+                <span className="sm:hidden">View</span>
               </Link>
 
               <Link
                 to="/news/editor"
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
               >
                 <Plus className="w-4 h-4" />
-                New Story
+                <span className="hidden sm:inline">New Story</span>
+                <span className="sm:hidden">New</span>
               </Link>
             </div>
           </div>
@@ -279,7 +281,9 @@ const NewsroomDashboardPage = () => {
           </div>
         ) : (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="w-full">
+            {/* Horizontal scroll wrapper for mobile */}
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -398,6 +402,7 @@ const NewsroomDashboardPage = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
       </div>
