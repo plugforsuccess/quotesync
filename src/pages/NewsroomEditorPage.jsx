@@ -116,6 +116,22 @@ const NewsroomEditorPage = () => {
         slug: generateSlug(value)
       }));
     }
+
+    // Auto-populate meta title from title if meta title is empty
+    if (field === 'title' && !story.meta_title) {
+      setStory((prev) => ({
+        ...prev,
+        meta_title: value.slice(0, 60)
+      }));
+    }
+
+    // Auto-populate meta description from preview hook if meta description is empty
+    if (field === 'preview_hook' && !story.meta_description) {
+      setStory((prev) => ({
+        ...prev,
+        meta_description: value.slice(0, 160)
+      }));
+    }
   };
 
   // Save draft
@@ -387,13 +403,22 @@ const NewsroomEditorPage = () => {
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Region
               </label>
-              <input
-                type="text"
+              <select
                 value={story.region}
                 onChange={(e) => handleChange('region', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                placeholder="GA, ATL, or specific ZIP"
-              />
+              >
+                <option value="">Select region...</option>
+                <option value="Georgia">Georgia (Statewide)</option>
+                <option value="Atlanta">Atlanta</option>
+                <option value="Savannah">Savannah</option>
+                <option value="Augusta">Augusta</option>
+                <option value="Columbus">Columbus</option>
+                <option value="Macon">Macon</option>
+                <option value="Athens">Athens</option>
+                <option value="Albany">Albany</option>
+                <option value="Valdosta">Valdosta</option>
+              </select>
             </div>
           </div>
 
@@ -494,7 +519,7 @@ const NewsroomEditorPage = () => {
                 value={story.meta_title}
                 onChange={(e) => handleChange('meta_title', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                placeholder="SEO-optimized title (50-60 characters)"
+                placeholder="Auto-populated from title (edit as needed)"
                 maxLength={60}
               />
               <p className="text-xs text-gray-500 mt-1">
@@ -511,7 +536,7 @@ const NewsroomEditorPage = () => {
                 onChange={(e) => handleChange('meta_description', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                 rows={3}
-                placeholder="SEO meta description (150-160 characters)"
+                placeholder="Auto-populated from preview hook (edit as needed)"
                 maxLength={160}
               />
               <p className="text-xs text-gray-500 mt-1">

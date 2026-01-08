@@ -20,7 +20,7 @@ SOURCE NAME: [e.g., "Atlanta Journal-Constitution", "Insurance Journal"]
 
 CATEGORY: [Choose one: litigation, law, accident, data, policy]
 
-REGION: [GA, ATL, or specific location - make sure there's a Georgia angle]
+REGION: [Choose one: Georgia, Atlanta, Savannah, Augusta, Columbus, Macon, Athens, Albany, Valdosta]
 
 FORMAT REQUIREMENTS - Generate ALL of the following:
 
@@ -133,9 +133,9 @@ Copy-paste into the editor:
 2. **Preview Hook** → Preview Hook field (2-3 sentences)
 3. **Body** → Article Body field (full text with ## headings)
 4. **Meta Title** → Meta Title field (required)
-5. **Meta Description** → Meta Description field (required)
+5. **Meta Description** → Meta Description field (required - auto-populated from preview hook)
 6. **Category** → Select from dropdown
-7. **Region** → Enter "Georgia", "GA", "Atlanta", "ATL", or specific area
+7. **Region** → Select from dropdown (Georgia, Atlanta, Savannah, etc.)
 8. **Source Name** → Enter the original publication name
 9. **Source URL** → Paste the original article URL
 10. **Status** → Keep as "draft" until reviewed
