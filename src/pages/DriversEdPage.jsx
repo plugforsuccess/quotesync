@@ -39,8 +39,8 @@ export default function GeorgiaDriverEducationPage() {
           </div>
         </div>
 
-        {/* Tag */}
-        <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
+        {/* Tag - using success color from design system */}
+        <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-4">
           Driver Education · Georgia
         </p>
 
@@ -64,7 +64,7 @@ export default function GeorgiaDriverEducationPage() {
             </div>
 
             <div className="mb-4">
-              <p className="text-xs font-semibold text-success-300 mb-2 uppercase tracking-[0.18em]">
+              <p className="text-xs font-semibold text-success-400 mb-2 uppercase tracking-[0.18em]">
                 Insurance Discount
               </p>
               <h2 className="text-2xl font-bold mb-2">
@@ -123,19 +123,19 @@ export default function GeorgiaDriverEducationPage() {
 
             <div className="space-y-2 text-sm text-slate-300 mb-6">
               <div className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">✓</span>
+                <span className="text-primary-400 mt-0.5">✓</span>
                 <span>30-hour state-approved curriculum</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">✓</span>
+                <span className="text-primary-400 mt-0.5">✓</span>
                 <span>Required for Class D license (ages 15-17)</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">✓</span>
+                <span className="text-primary-400 mt-0.5">✓</span>
                 <span>Certificate sent directly to DDS</span>
               </div>
               <div className="flex items-start gap-2">
-                <span className="text-blue-400 mt-0.5">✓</span>
+                <span className="text-primary-400 mt-0.5">✓</span>
                 <span>Complete 100% online at your own pace</span>
               </div>
             </div>
@@ -162,7 +162,7 @@ export default function GeorgiaDriverEducationPage() {
             </h3>
             
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-emerald-300">How It Works</h4>
+              <h4 className="text-sm font-semibold text-success-400">How It Works</h4>
               <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside pl-1">
                 <li>Check with your insurer to confirm they accept this course</li>
                 <li>Enroll and complete the 6-hour program at your own pace</li>
@@ -173,7 +173,7 @@ export default function GeorgiaDriverEducationPage() {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-emerald-300">Course Features</h4>
+              <h4 className="text-sm font-semibold text-success-400">Course Features</h4>
               <ul className="text-sm text-slate-300 space-y-2">
                 <li>• Works on mobile, tablet, or desktop</li>
                 <li>• Mix of text, videos, and animations</li>
@@ -198,7 +198,7 @@ export default function GeorgiaDriverEducationPage() {
             </h3>
             
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-blue-300">How It Works</h4>
+              <h4 className="text-sm font-semibold text-primary-400">How It Works</h4>
               <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside pl-1">
                 <li>Enroll in the 30-hour online course</li>
                 <li>Complete interactive lessons and quizzes</li>
@@ -209,7 +209,7 @@ export default function GeorgiaDriverEducationPage() {
             </div>
 
             <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-blue-300">Requirements</h4>
+              <h4 className="text-sm font-semibold text-primary-400">Requirements</h4>
               <ul className="text-sm text-slate-300 space-y-2">
                 <li>• Required for teens ages 15-17 in Georgia</li>
                 <li>• Must complete before applying for Class D license</li>
@@ -259,9 +259,9 @@ export default function GeorgiaDriverEducationPage() {
           </div>
         </section>
 
-        {/* Insurance Quote CTA */}
+        {/* Insurance Quote CTA - using primary/secondary brand colors */}
         <section className="my-12">
-          <div className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/30 rounded-2xl p-8 text-center">
+          <div className="bg-gradient-to-r from-primary-500/10 to-secondary-500/10 border border-primary-500/30 rounded-2xl p-8 text-center">
             <h3 className="text-2xl font-bold mb-3">Need an Insurance Quote?</h3>
             <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
               Skip the long forms. Compares rates in less than a minute.

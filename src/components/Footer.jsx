@@ -13,9 +13,9 @@ const Footer = () => {
           
           {/* Brand */}
           <div>
-            <h3 className="text-xl font-bold mb-3">insuredbycam</h3>
+            <h3 className="text-xl font-bold mb-3">insuredbycam.com</h3>
             <p className="text-gray-400 text-sm leading-relaxed">
-              Personal auto insurance quotes from Cameron, your exclusive Allstate agent in Georgia.
+              Personal home and auto insurance quotes from Cameron, your exclusive Allstate agent in Georgia.
             </p>
             <p className="text-gray-400 text-sm mt-2">
               Real data. Real savings. Real simple.
@@ -53,7 +53,7 @@ const Footer = () => {
                   href="mailto:cameron@insuredbycam.com" 
                   className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-2"
                 >
-                  📧 cameron@insuredbycam.com
+                  📧 contact@insuredbycam.com
                 </a>
               </li>
               <li>
