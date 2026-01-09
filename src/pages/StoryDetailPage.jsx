@@ -116,8 +116,9 @@ const StoryDetailPage = () => {
       try {
         setLoading(true);
 
+        // Fetch story with author information
         const { data, error } = await supabase
-          .from('stories')
+          .from('stories_with_authors')
           .select('*')
           .eq('slug', slug)
           .eq('status', 'published')
@@ -253,9 +254,16 @@ const StoryDetailPage = () => {
           )}
 
           {/* Title */}
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 leading-tight">
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3 leading-tight">
             {story.title}
           </h1>
+
+          {/* Author Byline */}
+          {story.author_name && (
+            <div className="text-lg text-gray-600 mb-6">
+              By <span className="font-medium text-gray-900">{story.author_name}</span>
+            </div>
+          )}
 
           {/* Meta */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200">

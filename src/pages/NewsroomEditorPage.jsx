@@ -259,7 +259,7 @@ const NewsroomEditorPage = () => {
 
   // Submit for review
   const handleSubmitForReview = async () => {
-    await handleSave('review');
+    await handleSave('in_review');
   };
 
   // Preview story
@@ -304,6 +304,9 @@ const NewsroomEditorPage = () => {
     );
   }
 
+  // Check if content is immutable (in_review status and user is not admin)
+  const isContentImmutable = story.status === 'in_review' && userRole !== 'admin';
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -338,35 +341,39 @@ const NewsroomEditorPage = () => {
                 </button>
               )}
 
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Save className="w-4 h-4" />
-                <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Draft'}</span>
-                <span className="sm:hidden">Save</span>
-              </button>
+              {!isContentImmutable && (
+                <>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span className="hidden sm:inline">{saving ? 'Saving...' : 'Save Draft'}</span>
+                    <span className="sm:hidden">Save</span>
+                  </button>
 
-              <button
-                onClick={handleSubmitForReview}
-                disabled={saving}
-                className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
-              >
-                <Send className="w-4 h-4" />
-                <span className="hidden sm:inline">Submit for Review</span>
-                <span className="sm:hidden">Submit</span>
-              </button>
+                  <button
+                    onClick={handleSubmitForReview}
+                    disabled={saving}
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span className="hidden sm:inline">Submit for Review</span>
+                    <span className="sm:hidden">Submit</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <span className={`px-2 py-1 rounded text-xs font-medium ${
               story.status === 'published' ? 'bg-green-100 text-green-700' :
-              story.status === 'review' ? 'bg-yellow-100 text-yellow-700' :
+              story.status === 'in_review' ? 'bg-yellow-100 text-yellow-700' :
               'bg-gray-100 text-gray-700'
             }`}>
-              {story.status.toUpperCase()}
+              {story.status === 'in_review' ? 'IN REVIEW' : story.status.toUpperCase()}
             </span>
             {id && <span>• Story ID: {id}</span>}
           </div>
@@ -375,6 +382,22 @@ const NewsroomEditorPage = () => {
 
       {/* Editor Form */}
       <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+        {isContentImmutable && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  <strong>Story is under review.</strong> Content cannot be edited while in review. An admin will either publish or return it to draft status.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-3 sm:p-6">
           {/* Title */}
           <div className="mb-6">
@@ -385,7 +408,8 @@ const NewsroomEditorPage = () => {
               type="text"
               value={story.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold text-gray-900"
+              disabled={isContentImmutable}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="Enter story title..."
             />
           </div>
@@ -399,7 +423,8 @@ const NewsroomEditorPage = () => {
               type="text"
               value={story.slug}
               onChange={(e) => handleChange('slug', e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900"
+              disabled={isContentImmutable}
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="story-url-slug"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -415,7 +440,8 @@ const NewsroomEditorPage = () => {
             <textarea
               value={story.preview_hook}
               onChange={(e) => handleChange('preview_hook', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              disabled={isContentImmutable}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               rows={3}
               placeholder="Write a compelling preview that appears in the feed..."
             />
@@ -432,7 +458,8 @@ const NewsroomEditorPage = () => {
             <textarea
               value={story.body}
               onChange={(e) => handleChange('body', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900"
+              disabled={isContentImmutable}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               rows={15}
               placeholder="Write the full article body... (Use double line breaks for paragraphs)"
             />
