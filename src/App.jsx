@@ -36,6 +36,7 @@ import LoginPage from './pages/LoginPage';
 const NewsroomDashboardPage = lazy(() => import('./pages/NewsroomDashboardPage'));
 const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
 const ArchivedStoriesPage = lazy(() => import('./pages/ArchivedStoriesPage'));
+const StoryPreviewPage = lazy(() => import('./pages/StoryPreviewPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -72,6 +73,18 @@ function App() {
             {/* Newsroom - Insurance News Feed */}
             <Route path="news" element={<NewsroomPage />} />
             <Route path="news/:slug" element={<StoryDetailPage />} />
+
+            {/* Story Preview (Protected - Editor/Admin only) */}
+            <Route
+              path="news/preview/:id"
+              element={
+                <ProtectedRoute requiredRole="editor">
+                  <Suspense fallback={<PageLoader />}>
+                    <StoryPreviewPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Newsroom CMS - Editor & Admin (Protected & Lazy Loaded) */}
             <Route
