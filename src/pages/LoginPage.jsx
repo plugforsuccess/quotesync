@@ -11,18 +11,26 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [existingSession, setExistingSession] = useState(false);
 
   // Check if already logged in on mount
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/news/dashboard');
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        // Show message if already logged in, but don't auto-redirect
+        if (session?.user && !error) {
+          console.log('[LoginPage] Existing session detected');
+          setExistingSession(true);
+        }
+      } catch (error) {
+        console.error('[LoginPage] Error checking session:', error);
       }
     };
 
     checkSession();
-  }, [navigate]);
+  }, []);
 
   // Listen for auth changes and redirect when user is logged in
   useEffect(() => {
@@ -48,17 +56,31 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
 
+    console.log('[LoginPage] Attempting login...');
+
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[LoginPage] Login error:', error);
+        throw error;
+      }
 
+      console.log('[LoginPage] Login successful, waiting for auth state change...');
       // Don't navigate here - let the auth state change listener handle it
     } catch (error) {
-      setError(error.message);
+      console.error('[LoginPage] Login failed:', error);
+
+      // Check if it's a network error (could be ad blocker)
+      if (error.message?.includes('Failed to fetch') || error.message?.includes('network')) {
+        setError('Network error: Please check your internet connection or disable ad blockers/extensions that may be blocking Supabase.');
+      } else {
+        setError(error.message || 'Login failed. Please try again.');
+      }
+
       setLoading(false);
     }
   };
@@ -76,8 +98,22 @@ const LoginPage = () => {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
+          {existingSession && (
+            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm">
+              <strong>Already logged in.</strong> You can{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/news/dashboard')}
+                className="underline font-semibold hover:text-blue-900"
+              >
+                go to dashboard
+              </button>{' '}
+              or log in as a different user below.
+            </div>
+          )}
+
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
               {error}
             </div>
           )}
@@ -119,8 +155,11 @@ const LoginPage = () => {
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-xs text-gray-500 space-y-2">
           <p>First time? Create a user in Supabase dashboard first.</p>
+          <p className="border-t border-gray-200 pt-2">
+            <strong>Tip:</strong> If login fails, disable ad blockers or privacy extensions for this site.
+          </p>
         </div>
       </div>
     </div>
