@@ -11,11 +11,11 @@ const NewsroomDashboardPage = () => {
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState([]);
-  const [filter, setFilter] = useState('all'); // all, draft, review, published
+  const [filter, setFilter] = useState('all'); // all, draft, in_review, published
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
-    review: 0,
+    in_review: 0,
     draft: 0
   });
 
@@ -65,7 +65,7 @@ const NewsroomDashboardPage = () => {
         setStats({
           total: allStories.length,
           published: allStories.filter(s => s.status === 'published').length,
-          review: allStories.filter(s => s.status === 'review').length,
+          in_review: allStories.filter(s => s.status === 'in_review').length,
           draft: allStories.filter(s => s.status === 'draft').length
         });
       }
@@ -200,7 +200,7 @@ const NewsroomDashboardPage = () => {
             </div>
 
             <div className="bg-yellow-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-yellow-700">{stats.review}</div>
+              <div className="text-2xl font-bold text-yellow-700">{stats.in_review}</div>
               <div className="text-sm text-yellow-600">In Review</div>
             </div>
 
@@ -237,9 +237,9 @@ const NewsroomDashboardPage = () => {
               Drafts
             </button>
             <button
-              onClick={() => setFilter('review')}
+              onClick={() => setFilter('in_review')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                filter === 'review'
+                filter === 'in_review'
                   ? 'bg-blue-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
@@ -327,10 +327,10 @@ const NewsroomDashboardPage = () => {
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         story.status === 'published' ? 'bg-green-100 text-green-700' :
-                        story.status === 'review' ? 'bg-yellow-100 text-yellow-700' :
+                        story.status === 'in_review' ? 'bg-yellow-100 text-yellow-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {story.status}
+                        {story.status === 'in_review' ? 'in review' : story.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">

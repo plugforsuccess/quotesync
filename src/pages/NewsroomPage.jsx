@@ -36,7 +36,7 @@ const NewsroomPage = () => {
       setLoading(true);
 
       let query = supabase
-        .from('stories')
+        .from('stories_with_authors')
         .select('*')
         .eq('status', 'published')
         .order('is_featured', { ascending: false })

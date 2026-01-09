@@ -8,14 +8,16 @@ const UserMenu = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
 
   useEffect(() => {
     // Get current user
     const fetchUser = async () => {
-      const { user: currentUser, role: currentRole } = await getUserRole();
+      const { user: currentUser, role: currentRole, profile: currentProfile } = await getUserRole();
       setUser(currentUser);
       setRole(currentRole);
+      setProfile(currentProfile);
     };
 
     fetchUser();
@@ -24,12 +26,14 @@ const UserMenu = () => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_IN') {
-          const { user: currentUser, role: currentRole } = await getUserRole();
+          const { user: currentUser, role: currentRole, profile: currentProfile } = await getUserRole();
           setUser(currentUser);
           setRole(currentRole);
+          setProfile(currentProfile);
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setRole(null);
+          setProfile(null);
         }
       }
     );
@@ -48,6 +52,9 @@ const UserMenu = () => {
     return null; // Don't show login button to public users
   }
 
+  // Display name: use full_name if available, otherwise fall back to email
+  const displayName = profile?.full_name || user?.email || 'User';
+
   return (
     <div className="relative">
       <button
@@ -57,7 +64,7 @@ const UserMenu = () => {
         <User className="w-4 h-4 text-gray-700" />
         <div className="text-left">
           <div className="text-sm font-medium text-gray-900">
-            {user.email.split('@')[0]}
+            {displayName}
           </div>
           <div className="text-xs text-gray-500 capitalize">{role}</div>
         </div>
@@ -66,7 +73,10 @@ const UserMenu = () => {
       {showDropdown && (
         <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
           <div className="px-4 py-2 border-b border-gray-200">
-            <div className="text-sm font-medium text-gray-900">{user.email}</div>
+            <div className="text-sm font-medium text-gray-900">{displayName}</div>
+            {user?.email && profile?.full_name && (
+              <div className="text-xs text-gray-400">{user.email}</div>
+            )}
             <div className="text-xs text-gray-500 capitalize">Role: {role}</div>
           </div>
           {(role === 'admin' || role === 'editor') && (

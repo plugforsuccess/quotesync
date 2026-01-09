@@ -32,29 +32,30 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
 });
 
 /**
- * Check if user is authenticated and get their role
+ * Check if user is authenticated and get their profile (role + full_name)
  */
 export const getUserRole = async () => {
   try {
     const { data: { user }, error } = await supabase.auth.getUser();
 
     if (error || !user) {
-      return { user: null, role: 'viewer' };
+      return { user: null, role: 'viewer', profile: null };
     }
 
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('id, email, full_name, role')
+      .eq('id', user.id)
       .single();
 
     return {
       user,
-      role: roleData?.role || 'viewer'
+      role: profileData?.role || 'viewer',
+      profile: profileData
     };
   } catch (error) {
-    console.error('Error getting user role:', error);
-    return { user: null, role: 'viewer' };
+    console.error('Error getting user profile:', error);
+    return { user: null, role: 'viewer', profile: null };
   }
 };
 

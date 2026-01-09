@@ -154,6 +154,13 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
         {story.title}
       </h2>
 
+      {/* Author Byline */}
+      {story.author_name && (
+        <div className="text-sm text-gray-600 mb-3">
+          By <span className="font-medium text-gray-900">{story.author_name}</span>
+        </div>
+      )}
+
       {/* Preview hook - 2-3 sentences */}
       <p className="text-gray-700 text-base md:text-lg mb-4 leading-relaxed">
         {story.preview_hook}
