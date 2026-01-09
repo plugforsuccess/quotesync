@@ -261,18 +261,18 @@ const NewsroomEditorPage = () => {
           updated_at: new Date().toISOString()
         };
 
-        // Clean up video fields - if video_type is set but no URL, clear both
-        // This ensures database constraint is satisfied
-        if (storyData.video_type && !storyData.video_url) {
+        // Clean up video fields for database constraint (both must be NULL or both NOT NULL)
+        // Convert empty strings to null
+        const videoType = storyData.video_type || null;
+        const videoUrl = storyData.video_url?.trim() || null;
+
+        if (!videoType || !videoUrl) {
           storyData.video_type = null;
           storyData.video_url = null;
           storyData.video_thumbnail = null;
-        }
-        // If video_url is set but no type, clear all
-        if (storyData.video_url && !storyData.video_type) {
-          storyData.video_type = null;
-          storyData.video_url = null;
-          storyData.video_thumbnail = null;
+        } else {
+          storyData.video_type = videoType;
+          storyData.video_url = videoUrl;
         }
 
         console.log('Attempting to save story:', { id, status: storyData.status });

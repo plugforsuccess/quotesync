@@ -15,6 +15,20 @@ const STORE_NAME = 'story_drafts';
 const NEW_STORY_KEY = 'new-story';
 const MAX_DRAFT_AGE_DAYS = 90;
 
+// Safe JSON stringify that handles circular references
+function safeStringify(obj) {
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}
+
 /**
  * Initialize IndexedDB database
  * @returns {Promise<IDBDatabase>}
@@ -304,7 +318,7 @@ async function saveDraftToLocalStorage(storyId, draftData, authorId) {
       updatedAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(key, JSON.stringify(draft));
+    localStorage.setItem(key, safeStringify(draft));
     console.log(`Draft saved to localStorage: ${key}`);
   } catch (error) {
     // localStorage quota exceeded or disabled
