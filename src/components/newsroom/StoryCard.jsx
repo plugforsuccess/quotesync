@@ -2,7 +2,7 @@
 // Story card component for newsroom feed with video embedding and analytics
 
 import { useState, useEffect, useRef } from 'react';
-import { Share2, ExternalLink } from 'lucide-react';
+import { Share2, ExternalLink, ChevronRight } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
 import { trackStoryImpression, trackVideoPlay, trackReadMoreOpen, trackNewsroomShare } from '../../lib/newsroomAnalytics';
 
@@ -165,6 +165,15 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
       <p className="text-gray-700 text-base md:text-lg mb-4 leading-relaxed">
         {story.preview_hook}
       </p>
+
+      {/* Read More button */}
+      <button
+        onClick={handleReadMore}
+        className="inline-flex items-center gap-1 text-primary-600 hover:text-primary-700 font-semibold text-sm mb-4 transition-colors"
+      >
+        Read more
+        <ChevronRight className="w-4 h-4" />
+      </button>
 
       {/* Embedded video (optional) */}
       {story.video_url && (
