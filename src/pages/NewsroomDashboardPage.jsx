@@ -556,26 +556,19 @@ const NewsroomDashboardPage = () => {
                             </Link>
 
                             {/* Preview button - works for all statuses */}
-                            {story.status === 'published' ? (
-                              <a
-                                href={`/news/${story.slug}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                title="View Published Story"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </a>
-                            ) : (
-                              <Link
-                                to={`/news/preview/${story.id}`}
-                                target="_blank"
-                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                                title="Preview (Draft/In Review)"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Link>
-                            )}
+                            <button
+                              onClick={() => {
+                                if (story.status === 'published') {
+                                  navigate(`/news/${story.slug}`);
+                                } else {
+                                  navigate(`/news/preview/${story.id}`);
+                                }
+                              }}
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title={story.status === 'published' ? 'View Published Story' : 'Preview (Draft/In Review)'}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
 
                             {userRole === 'admin' && (
                               <>
