@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Edit, Eye, CheckCircle, XCircle, BarChart3, Star } from 'lucide-react';
+import { Plus, Edit, Eye, CheckCircle, XCircle, BarChart3, Star, Archive } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
 
 const NewsroomDashboardPage = () => {
@@ -142,6 +142,42 @@ const NewsroomDashboardPage = () => {
     }
   };
 
+  // Archive story (admin only)
+  const handleArchive = async (storyId, title) => {
+    if (userRole !== 'admin') {
+      alert('Only admins can archive stories');
+      return;
+    }
+
+    if (!confirm(`Archive "${title}"?\n\nArchived stories are hidden from public view and can be restored later.`)) {
+      return;
+    }
+
+    try {
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert('You must be logged in to archive stories');
+        return;
+      }
+
+      // Call archive_story function
+      const { error } = await supabase.rpc('archive_story', {
+        story_id_param: storyId,
+        archived_by_param: user.id,
+      });
+
+      if (error) throw error;
+
+      alert('Story archived successfully!');
+      fetchStories();
+    } catch (error) {
+      console.error('Error archiving story:', error);
+      alert('Failed to archive story: ' + error.message);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -175,6 +211,17 @@ const NewsroomDashboardPage = () => {
                 <span className="hidden sm:inline">View Newsroom</span>
                 <span className="sm:hidden">View</span>
               </Link>
+
+              {userRole === 'admin' && (
+                <Link
+                  to="/news/archived"
+                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm whitespace-nowrap"
+                >
+                  <Archive className="w-4 h-4" />
+                  <span className="hidden sm:inline">Archived</span>
+                  <span className="sm:hidden">Archive</span>
+                </Link>
+              )}
 
               <Link
                 to="/news/editor"
@@ -394,6 +441,14 @@ const NewsroomDashboardPage = () => {
                                 <XCircle className="w-4 h-4" />
                               </button>
                             )}
+
+                            <button
+                              onClick={() => handleArchive(story.id, story.title)}
+                              className="p-2 text-orange-600 hover:bg-orange-50 rounded transition-colors"
+                              title="Archive"
+                            >
+                              <Archive className="w-4 h-4" />
+                            </button>
                           </>
                         )}
                       </div>

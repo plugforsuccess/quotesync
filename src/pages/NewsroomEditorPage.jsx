@@ -2,16 +2,25 @@
 // CMS interface for editors to create and manage stories
 
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Send, Trash2, Plus } from 'lucide-react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { ArrowLeft, Save, Eye, Send, Archive, Plus, Clock, CheckCircle, AlertCircle, Wifi, WifiOff } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+import { useDraftAutosave } from '../hooks/useDraftAutosave';
+import { useNavigationBlock } from '../hooks/useNavigationBlock';
+import DraftRestoreModal from '../components/DraftRestoreModal';
 
 const NewsroomEditorPage = () => {
   const { id } = useParams(); // If editing existing story
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [draftToRestore, setDraftToRestore] = useState(null);
+  const [draftSource, setDraftSource] = useState(null);
   const [story, setStory] = useState({
     title: '',
     slug: '',
@@ -31,6 +40,20 @@ const NewsroomEditorPage = () => {
     og_image: ''
   });
 
+  // Draft autosave integration
+  const autosave = useDraftAutosave(
+    story,
+    id,
+    user?.id,
+    !loading && user?.id // Only enable after loading and when user is authenticated
+  );
+
+  // Navigation protection (warn on unsaved changes)
+  const navigationBlock = useNavigationBlock(
+    autosave.isDirty,
+    'You have unsaved changes. They will be auto-saved locally, but are you sure you want to leave?'
+  );
+
   // Check authentication and role
   useEffect(() => {
     const checkAuth = async () => {
@@ -47,6 +70,9 @@ const NewsroomEditorPage = () => {
       // If editing, fetch story
       if (id) {
         await fetchStory(id);
+      } else {
+        // New story - check for drafts
+        await checkForDrafts();
       }
 
       setLoading(false);
@@ -54,6 +80,88 @@ const NewsroomEditorPage = () => {
 
     checkAuth();
   }, [id, navigate]);
+
+  // Check for existing drafts and offer restore
+  const checkForDrafts = async () => {
+    try {
+      // Check URL for draft parameter
+      const urlParams = new URLSearchParams(location.search);
+      const draftId = urlParams.get('draft');
+
+      if (draftId) {
+        // Load specific draft from URL
+        const { data: serverDraft, error } = await supabase
+          .from('story_drafts')
+          .select('*')
+          .eq('id', draftId)
+          .single();
+
+        if (serverDraft && !error) {
+          setDraftToRestore(serverDraft);
+          setDraftSource('server');
+          setShowRestoreModal(true);
+          return;
+        }
+      }
+
+      // Otherwise, check for any existing drafts
+      const draftResult = await autosave.loadDraft();
+
+      if (draftResult) {
+        setDraftToRestore(draftResult.draft);
+        setDraftSource(draftResult.source);
+        setShowRestoreModal(true);
+      }
+    } catch (error) {
+      console.error('Error checking for drafts:', error);
+    }
+  };
+
+  // Handle draft restore
+  const handleRestoreDraft = () => {
+    if (!draftToRestore) return;
+
+    // Map draft fields to story state
+    const restoredStory = {
+      title: draftToRestore.title || '',
+      slug: draftToRestore.slug || '',
+      preview_hook: draftToRestore.preview_hook || '',
+      body: draftToRestore.body || '',
+      category: draftToRestore.category || 'policy',
+      region: draftToRestore.region || 'GA',
+      tags: draftToRestore.tags || [],
+      video_type: draftToRestore.video_type || null,
+      video_url: draftToRestore.video_url || '',
+      video_thumbnail: draftToRestore.video_thumbnail || '',
+      source_name: draftToRestore.source_name || '',
+      source_url: draftToRestore.source_url || '',
+      status: 'draft',
+      meta_title: draftToRestore.meta_title || '',
+      meta_description: draftToRestore.meta_description || '',
+      og_image: draftToRestore.og_image || '',
+    };
+
+    setStory(restoredStory);
+    setShowRestoreModal(false);
+    setDraftToRestore(null);
+  };
+
+  // Handle discard draft
+  const handleDiscardDraft = async () => {
+    if (!confirm('Are you sure you want to discard this draft? This action cannot be undone.')) {
+      return;
+    }
+
+    await autosave.discardDraft();
+    setShowRestoreModal(false);
+    setDraftToRestore(null);
+  };
+
+  // Handle start fresh (cancel restore modal)
+  const handleStartFresh = () => {
+    setShowRestoreModal(false);
+    setDraftToRestore(null);
+  };
 
   // Fetch existing story with timeout
   const fetchStory = async (storyId, retries = 2) => {
@@ -184,6 +292,10 @@ const NewsroomEditorPage = () => {
 
           // Refetch the story to ensure UI is in sync with database
           await fetchStory(id);
+
+          // Discard autosaved draft since story is now saved to database
+          await autosave.discardDraft();
+
           alert('Story saved successfully!');
         } else {
           // Create new
@@ -220,6 +332,10 @@ const NewsroomEditorPage = () => {
           }
 
           console.log('Story created successfully:', data);
+
+          // Discard autosaved draft since story is now saved to database
+          await autosave.discardDraft();
+
           alert('Story created successfully!');
           navigate(`/news/editor/${data.id}`);
         }
@@ -271,25 +387,41 @@ const NewsroomEditorPage = () => {
     }
   };
 
-  // Delete story
-  const handleDelete = async () => {
+  // Archive story (admin only - replaces delete)
+  const handleArchive = async () => {
     if (!id) return;
 
-    if (!confirm('Are you sure you want to delete this story?')) return;
+    if (userRole !== 'admin') {
+      alert('Only admins can archive stories');
+      return;
+    }
+
+    if (!confirm(`Archive "${story.title}"?\n\nArchived stories are hidden but can be restored later from the Archived Stories page.`)) {
+      return;
+    }
 
     try {
-      const { error } = await supabase
-        .from('stories')
-        .delete()
-        .eq('id', id);
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert('You must be logged in to archive stories');
+        return;
+      }
+
+      // Call archive_story function
+      const { error } = await supabase.rpc('archive_story', {
+        story_id_param: id,
+        archived_by_param: user.id,
+      });
 
       if (error) throw error;
 
-      alert('Story deleted successfully');
-      navigate('/news/editor');
+      alert('Story archived successfully!');
+      navigate('/news/dashboard');
     } catch (error) {
-      console.error('Error deleting story:', error);
-      alert('Failed to delete story');
+      console.error('Error archiving story:', error);
+      alert('Failed to archive story: ' + error.message);
     }
   };
 
@@ -333,11 +465,11 @@ const NewsroomEditorPage = () => {
 
               {id && userRole === 'admin' && (
                 <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
+                  onClick={handleArchive}
+                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors text-xs sm:text-sm whitespace-nowrap"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Delete</span>
+                  <Archive className="w-4 h-4" />
+                  <span className="hidden sm:inline">Archive</span>
                 </button>
               )}
 
@@ -367,7 +499,7 @@ const NewsroomEditorPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
             <span className={`px-2 py-1 rounded text-xs font-medium ${
               story.status === 'published' ? 'bg-green-100 text-green-700' :
               story.status === 'in_review' ? 'bg-yellow-100 text-yellow-700' :
@@ -376,6 +508,41 @@ const NewsroomEditorPage = () => {
               {story.status === 'in_review' ? 'IN REVIEW' : story.status.toUpperCase()}
             </span>
             {id && <span>• Story ID: {id}</span>}
+
+            {/* Autosave Status Indicator */}
+            {!loading && user && (
+              <>
+                <span>•</span>
+                <div className="flex items-center gap-1">
+                  {autosave.isSaving && (
+                    <>
+                      <Clock className="w-4 h-4 animate-spin text-blue-500" />
+                      <span className="text-blue-600">Saving...</span>
+                    </>
+                  )}
+                  {autosave.hasSaved && !autosave.isSaving && (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                      <span className="text-green-600">
+                        Saved {autosave.lastSavedAt && new Date(autosave.lastSavedAt).toLocaleTimeString()}
+                      </span>
+                    </>
+                  )}
+                  {autosave.hasError && !autosave.isSaving && (
+                    <>
+                      <AlertCircle className="w-4 h-4 text-red-500" />
+                      <span className="text-red-600">Save failed</span>
+                    </>
+                  )}
+                  {!autosave.isOnline && (
+                    <>
+                      <WifiOff className="w-4 h-4 text-orange-500" />
+                      <span className="text-orange-600">Offline</span>
+                    </>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -644,6 +811,16 @@ const NewsroomEditorPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Draft Restore Modal */}
+      <DraftRestoreModal
+        isOpen={showRestoreModal}
+        draft={draftToRestore}
+        source={draftSource}
+        onRestore={handleRestoreDraft}
+        onDiscard={handleDiscardDraft}
+        onCancel={handleStartFresh}
+      />
     </div>
   );
 };

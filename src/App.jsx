@@ -35,6 +35,7 @@ import LoginPage from './pages/LoginPage';
 // Admin pages - lazy loaded for code splitting
 const NewsroomDashboardPage = lazy(() => import('./pages/NewsroomDashboardPage'));
 const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
+const ArchivedStoriesPage = lazy(() => import('./pages/ArchivedStoriesPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -99,6 +100,16 @@ function App() {
                 <ProtectedRoute requiredRole="editor">
                   <Suspense fallback={<PageLoader />}>
                     <NewsroomEditorPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="news/archived"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <ArchivedStoriesPage />
                   </Suspense>
                 </ProtectedRoute>
               }
