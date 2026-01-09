@@ -1,11 +1,13 @@
 // App.jsx
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
+import { validateCacheVersion } from './utils/cacheVersion';
 
 // Configure React Query
 const queryClient = new QueryClient({
@@ -49,12 +51,22 @@ const PageLoader = () => (
 );
 
 function App() {
+  // Validate cache version on mount
+  useEffect(() => {
+    console.log('[App] Validating cache version...');
+    const cacheInvalidated = validateCacheVersion();
+    if (cacheInvalidated) {
+      console.log('[App] Cache was invalidated due to version mismatch');
+    }
+  }, []);
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>
-          <ScrollToTop />
-          <Routes>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <AuthProvider>
+            <ScrollToTop />
+            <Routes>
           {/* Admin login page (no layout) - obscured path for security */}
           <Route path="/admin-access-8by2X" element={<LoginPage />} />
 
@@ -144,9 +156,10 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
           </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+          </AuthProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
