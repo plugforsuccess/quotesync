@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Edit, Eye, CheckCircle, XCircle, BarChart3, Star } from 'lucide-react';
+import { Plus, Edit, Eye, CheckCircle, XCircle, BarChart3, Star, Archive } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
 
 const NewsroomDashboardPage = () => {
@@ -11,13 +11,15 @@ const NewsroomDashboardPage = () => {
   const [userRole, setUserRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [stories, setStories] = useState([]);
-  const [filter, setFilter] = useState('all'); // all, draft, in_review, published
+  const [filter, setFilter] = useState('all'); // all, draft, in_review, published, archived
   const [stats, setStats] = useState({
     total: 0,
     published: 0,
     in_review: 0,
-    draft: 0
+    draft: 0,
+    archived: 0
   });
+  const [actionLoading, setActionLoading] = useState(null); // Track which story action is in progress
 
   // Check authentication and role
   useEffect(() => {
@@ -41,12 +43,17 @@ const NewsroomDashboardPage = () => {
   // Fetch stories
   const fetchStories = async () => {
     try {
+      // Fetch from stories_with_authors view to get author names
       let query = supabase
-        .from('stories')
+        .from('stories_with_authors')
         .select('*')
         .order('updated_at', { ascending: false });
 
-      if (filter !== 'all') {
+      // Apply filter
+      if (filter === 'all') {
+        // Exclude archived from 'all' view
+        query = query.neq('status', 'archived');
+      } else {
         query = query.eq('status', filter);
       }
 
@@ -56,21 +63,24 @@ const NewsroomDashboardPage = () => {
 
       setStories(data || []);
 
-      // Calculate stats
+      // Calculate stats (including archived)
       const { data: allStories } = await supabase
         .from('stories')
         .select('status');
 
       if (allStories) {
+        const totalNonArchived = allStories.filter(s => s.status !== 'archived').length;
         setStats({
-          total: allStories.length,
+          total: totalNonArchived,
           published: allStories.filter(s => s.status === 'published').length,
           in_review: allStories.filter(s => s.status === 'in_review').length,
-          draft: allStories.filter(s => s.status === 'draft').length
+          draft: allStories.filter(s => s.status === 'draft').length,
+          archived: allStories.filter(s => s.status === 'archived').length
         });
       }
     } catch (error) {
       console.error('Error fetching stories:', error);
+      alert('Failed to load stories: ' + error.message);
     }
   };
 
@@ -142,6 +152,116 @@ const NewsroomDashboardPage = () => {
     }
   };
 
+  // Archive story (admin only)
+  const handleArchive = async (storyId, title) => {
+    if (userRole !== 'admin') {
+      alert('Only admins can archive stories');
+      return;
+    }
+
+    if (!confirm(`Archive "${title}"?\n\nArchived stories are hidden from public view and can be restored later from the Archived tab.`)) {
+      return;
+    }
+
+    setActionLoading(storyId);
+
+    try {
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        alert('You must be logged in to archive stories');
+        setActionLoading(null);
+        return;
+      }
+
+      // Call archive_story function
+      const { error } = await supabase.rpc('archive_story', {
+        story_id_param: storyId,
+        archived_by_param: user.id,
+      });
+
+      if (error) throw error;
+
+      // Success - refresh list
+      await fetchStories();
+    } catch (error) {
+      console.error('Error archiving story:', error);
+      alert('Failed to archive story: ' + error.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Restore story from archive (admin only)
+  const handleRestore = async (storyId, title) => {
+    if (userRole !== 'admin') {
+      alert('Only admins can restore stories');
+      return;
+    }
+
+    if (!confirm(`Restore "${title}"?\n\nThis story will return to its previous status.`)) {
+      return;
+    }
+
+    setActionLoading(storyId);
+
+    try {
+      // Call restore_story function
+      const { error } = await supabase.rpc('restore_story', {
+        story_id_param: storyId,
+      });
+
+      if (error) throw error;
+
+      // Success - refresh list
+      await fetchStories();
+    } catch (error) {
+      console.error('Error restoring story:', error);
+      alert('Failed to restore story: ' + error.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  // Permanently delete story (admin only, requires confirmation)
+  const handleHardDelete = async (storyId, title) => {
+    if (userRole !== 'admin') {
+      alert('Only admins can permanently delete stories');
+      return;
+    }
+
+    // First confirmation
+    if (!confirm(`PERMANENTLY DELETE "${title}"?\n\nThis action CANNOT be undone. The story will be deleted from the database forever.\n\nAre you absolutely sure?`)) {
+      return;
+    }
+
+    // Second confirmation (double-check)
+    if (!confirm(`Final confirmation:\n\nDelete "${title}" permanently?\n\nThis is your last chance to cancel.`)) {
+      return;
+    }
+
+    setActionLoading(storyId);
+
+    try {
+      // Hard delete - directly delete from database
+      const { error } = await supabase
+        .from('stories')
+        .delete()
+        .eq('id', storyId);
+
+      if (error) throw error;
+
+      // Success - refresh list
+      await fetchStories();
+    } catch (error) {
+      console.error('Error deleting story:', error);
+      alert('Failed to delete story: ' + error.message);
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -175,6 +295,17 @@ const NewsroomDashboardPage = () => {
                 <span className="hidden sm:inline">View Newsroom</span>
                 <span className="sm:hidden">View</span>
               </Link>
+
+              {userRole === 'admin' && (
+                <Link
+                  to="/news/archived"
+                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm whitespace-nowrap"
+                >
+                  <Archive className="w-4 h-4" />
+                  <span className="hidden sm:inline">Archived</span>
+                  <span className="sm:hidden">Archive</span>
+                </Link>
+              )}
 
               <Link
                 to="/news/editor"
@@ -215,7 +346,7 @@ const NewsroomDashboardPage = () => {
       {/* Filters */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -256,6 +387,18 @@ const NewsroomDashboardPage = () => {
             >
               Published
             </button>
+            {userRole === 'admin' && (
+              <button
+                onClick={() => setFilter('archived')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  filter === 'archived'
+                    ? 'bg-orange-600 text-white'
+                    : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                }`}
+              >
+                Archived ({stats.archived})
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -290,6 +433,9 @@ const NewsroomDashboardPage = () => {
                     Story
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Editor
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                     Category
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -320,6 +466,16 @@ const NewsroomDashboardPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
+                      <div className="text-sm">
+                        <div className="font-medium text-gray-900">
+                          {story.author_name || story.author_email || 'Unknown'}
+                        </div>
+                        {story.author_name && story.author_email && (
+                          <div className="text-xs text-gray-500">{story.author_email}</div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
                       <span className="text-sm text-gray-600 capitalize">
                         {story.category}
                       </span>
@@ -343,56 +499,106 @@ const NewsroomDashboardPage = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link
-                          to={`/news/editor/${story.id}`}
-                          className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                          title="Edit"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Link>
-
-                        {story.status === 'published' && (
-                          <a
-                            href={`/news/${story.slug}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            title="View"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </a>
-                        )}
-
-                        {userRole === 'admin' && (
+                        {story.status === 'archived' ? (
+                          // Archived story actions
+                          userRole === 'admin' && (
+                            <>
+                              <button
+                                onClick={() => handleRestore(story.id, story.title)}
+                                disabled={actionLoading === story.id}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Restore"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => handleHardDelete(story.id, story.title)}
+                                disabled={actionLoading === story.id}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Permanently Delete"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            </>
+                          )
+                        ) : (
+                          // Normal story actions
                           <>
-                            <button
-                              onClick={() => handleToggleFeatured(story.id, story.is_featured)}
-                              className={`p-2 rounded transition-colors ${
-                                story.is_featured
-                                  ? 'text-yellow-600 hover:bg-yellow-50'
-                                  : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
-                              }`}
-                              title={story.is_featured ? 'Unfeature' : 'Feature'}
+                            <Link
+                              to={`/news/editor/${story.id}`}
+                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="Edit"
                             >
-                              <Star className={`w-4 h-4 ${story.is_featured ? 'fill-yellow-600' : ''}`} />
-                            </button>
+                              <Edit className="w-4 h-4" />
+                            </Link>
 
-                            {story.status !== 'published' ? (
-                              <button
-                                onClick={() => handlePublish(story.id)}
-                                className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
-                                title="Publish"
+                            {/* Preview button - works for all statuses */}
+                            {story.status === 'published' ? (
+                              <a
+                                href={`/news/${story.slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="View Published Story"
                               >
-                                <CheckCircle className="w-4 h-4" />
-                              </button>
+                                <Eye className="w-4 h-4" />
+                              </a>
                             ) : (
-                              <button
-                                onClick={() => handleUnpublish(story.id)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                title="Unpublish"
+                              <Link
+                                to={`/news/preview/${story.id}`}
+                                target="_blank"
+                                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                                title="Preview (Draft/In Review)"
                               >
-                                <XCircle className="w-4 h-4" />
-                              </button>
+                                <Eye className="w-4 h-4" />
+                              </Link>
+                            )}
+
+                            {userRole === 'admin' && (
+                              <>
+                                <button
+                                  onClick={() => handleToggleFeatured(story.id, story.is_featured)}
+                                  className={`p-2 rounded transition-colors ${
+                                    story.is_featured
+                                      ? 'text-yellow-600 hover:bg-yellow-50'
+                                      : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
+                                  }`}
+                                  title={story.is_featured ? 'Unfeature' : 'Feature'}
+                                >
+                                  <Star className={`w-4 h-4 ${story.is_featured ? 'fill-yellow-600' : ''}`} />
+                                </button>
+
+                                {story.status !== 'published' ? (
+                                  <button
+                                    onClick={() => handlePublish(story.id)}
+                                    className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                    title="Publish"
+                                  >
+                                    <CheckCircle className="w-4 h-4" />
+                                  </button>
+                                ) : (
+                                  <button
+                                    onClick={() => handleUnpublish(story.id)}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    title="Unpublish"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </button>
+                                )}
+
+                                <button
+                                  onClick={() => handleArchive(story.id, story.title)}
+                                  disabled={actionLoading === story.id}
+                                  className="p-2 text-orange-600 hover:bg-orange-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Archive"
+                                >
+                                  <Archive className="w-4 h-4" />
+                                </button>
+                              </>
                             )}
                           </>
                         )}
