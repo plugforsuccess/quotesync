@@ -4,14 +4,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
-const AuthContext = createContext({
-  user: null,
-  profile: null,
-  role: 'viewer',
-  loading: true,
-  signOut: async () => {},
-  refreshUser: async () => {}
-});
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
