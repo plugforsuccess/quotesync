@@ -1,7 +1,7 @@
 // src/pages/LoginPage.jsx
 // Simple login page for newsroom admin access
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
@@ -12,26 +12,53 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Check if already logged in on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/news/dashboard');
+      }
+    };
+
+    checkSession();
+  }, [navigate]);
+
+  // Listen for auth changes and redirect when user is logged in
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('[LoginPage] Auth event:', event, session?.user?.email);
+
+      if (event === 'SIGNED_IN' && session) {
+        // Delay to ensure AuthProvider has processed the change
+        setTimeout(() => {
+          console.log('[LoginPage] Navigating to dashboard');
+          navigate('/news/dashboard');
+        }, 300);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
 
       if (error) throw error;
 
-      if (data.user) {
-        // Successful login - redirect to dashboard
-        navigate('/news/dashboard');
-      }
+      // Don't navigate here - let the auth state change listener handle it
     } catch (error) {
       setError(error.message);
-    } finally {
       setLoading(false);
     }
   };
