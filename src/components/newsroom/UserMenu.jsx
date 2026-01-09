@@ -1,50 +1,16 @@
 // src/components/newsroom/UserMenu.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
-import { supabase, getUserRole } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 
 const UserMenu = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [profile, setProfile] = useState(null);
+  const { user, role, profile, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
 
-  useEffect(() => {
-    // Get current user
-    const fetchUser = async () => {
-      const { user: currentUser, role: currentRole, profile: currentProfile } = await getUserRole();
-      setUser(currentUser);
-      setRole(currentRole);
-      setProfile(currentProfile);
-    };
-
-    fetchUser();
-
-    // Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN') {
-          const { user: currentUser, role: currentRole, profile: currentProfile } = await getUserRole();
-          setUser(currentUser);
-          setRole(currentRole);
-          setProfile(currentProfile);
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-          setRole(null);
-          setProfile(null);
-        }
-      }
-    );
-
-    return () => {
-      authListener?.subscription?.unsubscribe();
-    };
-  }, []);
-
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     navigate('/admin-access-8by2X');
   };
 
