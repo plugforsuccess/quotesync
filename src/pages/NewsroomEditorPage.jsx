@@ -135,64 +135,123 @@ const NewsroomEditorPage = () => {
   };
 
   // Save draft
-  const handleSave = async () => {
+  const handleSave = async (statusOverride = null) => {
     if (!story.title || !story.slug || !story.preview_hook || !story.body || !story.meta_title || !story.meta_description) {
       alert('Please fill in all required fields: Title, Slug, Preview Hook, Body, Meta Title, and Meta Description');
+      setSaving(false);
       return;
     }
 
     setSaving(true);
 
     try {
-      const storyData = {
-        ...story,
-        updated_at: new Date().toISOString()
+      // Add timeout to prevent hanging
+      const saveWithTimeout = async () => {
+        const storyData = {
+          ...story,
+          status: statusOverride || story.status,
+          updated_at: new Date().toISOString()
+        };
+
+        // Clean up video fields - if video_type is set but no URL, clear both
+        // This ensures database constraint is satisfied
+        if (storyData.video_type && !storyData.video_url) {
+          storyData.video_type = null;
+          storyData.video_url = null;
+          storyData.video_thumbnail = null;
+        }
+        // If video_url is set but no type, clear all
+        if (storyData.video_url && !storyData.video_type) {
+          storyData.video_type = null;
+          storyData.video_url = null;
+          storyData.video_thumbnail = null;
+        }
+
+        console.log('Attempting to save story:', { id, status: storyData.status });
+
+        if (id) {
+          // Update existing
+          console.log('Updating existing story:', id);
+          const { error } = await supabase
+            .from('stories')
+            .update(storyData)
+            .eq('id', id);
+
+          if (error) {
+            console.error('Update error:', error);
+            throw error;
+          }
+
+          // Refetch the story to ensure UI is in sync with database
+          await fetchStory(id);
+          alert('Story saved successfully!');
+        } else {
+          // Create new
+          console.log('Creating new story...');
+
+          // Get authenticated user
+          const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+          if (authError) {
+            console.error('Auth error:', authError);
+            throw new Error('Authentication failed. Please log in again.');
+          }
+
+          if (!user) {
+            console.error('No user found');
+            throw new Error('You must be logged in to create stories. Please log in.');
+          }
+
+          console.log('User authenticated:', user.id);
+          storyData.author_id = user.id;
+
+          console.log('Inserting story with data:', JSON.stringify(storyData, null, 2));
+
+          const { data, error } = await supabase
+            .from('stories')
+            .insert([storyData])
+            .select()
+            .single();
+
+          if (error) {
+            console.error('Insert error:', error);
+            console.error('Error details:', JSON.stringify(error, null, 2));
+            throw error;
+          }
+
+          console.log('Story created successfully:', data);
+          alert('Story created successfully!');
+          navigate(`/news/editor/${data.id}`);
+        }
       };
 
-      // Clean up video fields - if video_type is set but no URL, clear both
-      // This ensures database constraint is satisfied
-      if (storyData.video_type && !storyData.video_url) {
-        storyData.video_type = null;
-        storyData.video_url = null;
-        storyData.video_thumbnail = null;
-      }
-      // If video_url is set but no type, clear all
-      if (storyData.video_url && !storyData.video_type) {
-        storyData.video_type = null;
-        storyData.video_url = null;
-        storyData.video_thumbnail = null;
-      }
+      // Set timeout of 15 seconds for save operation
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Save operation timed out. Please check your connection and try again.')), 15000)
+      );
 
-      if (id) {
-        // Update existing
-        const { error } = await supabase
-          .from('stories')
-          .update(storyData)
-          .eq('id', id);
+      await Promise.race([saveWithTimeout(), timeoutPromise]);
 
-        if (error) throw error;
-
-        // Refetch the story to ensure UI is in sync with database
-        await fetchStory(id);
-        alert('Story saved successfully!');
-      } else {
-        // Create new
-        const { data: { user } } = await supabase.auth.getUser();
-        storyData.author_id = user.id;
-
-        const { data, error } = await supabase
-          .from('stories')
-          .insert([storyData])
-          .select()
-          .single();
-
-        if (error) throw error;
-        alert('Story created successfully!');
-        navigate(`/news/editor/${data.id}`);
-      }
     } catch (error) {
       console.error('Error saving story:', error);
-      alert('Failed to save story: ' + error.message);
+      console.error('Error stack:', error.stack);
+
+      // More helpful error messages
+      let errorMessage = 'Failed to save story: ';
+
+      if (error.message.includes('timeout')) {
+        errorMessage += 'Request timed out. Please check your internet connection.';
+      } else if (error.message.includes('auth')) {
+        errorMessage += 'Authentication issue. Please refresh the page and log in again.';
+      } else if (error.code === 'PGRST301') {
+        errorMessage += 'Database permission denied. Please ensure you have editor/admin role.';
+      } else if (error.code === '42501') {
+        errorMessage += 'Permission denied. Please check your user role in the database.';
+      } else {
+        errorMessage += error.message;
+      }
+
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -200,8 +259,7 @@ const NewsroomEditorPage = () => {
 
   // Submit for review
   const handleSubmitForReview = async () => {
-    setStory((prev) => ({ ...prev, status: 'review' }));
-    await handleSave();
+    await handleSave('review');
   };
 
   // Preview story
