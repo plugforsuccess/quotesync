@@ -13,14 +13,23 @@ export const useStories = (filter = 'all', page = 0, limit = 50) => {
     queryKey: ['stories', filter, page],
     queryFn: async () => {
       return measureQuery('fetch_stories', async () => {
+        // Fetch from stories_with_authors view to get author names
         let query = supabase
-          .from('stories')
-          .select('id, title, slug, preview_hook, category, status, is_featured, updated_at, author_id')
-          .order('updated_at', { ascending: false })
-          .range(page * limit, (page + 1) * limit - 1);
+          .from('stories_with_authors')
+          .select('*')
+          .order('updated_at', { ascending: false });
 
-        if (filter !== 'all') {
+        // Apply filter
+        if (filter === 'all') {
+          // Exclude archived from 'all' view
+          query = query.neq('status', 'archived');
+        } else {
           query = query.eq('status', filter);
+        }
+
+        // Apply pagination if needed
+        if (limit > 0) {
+          query = query.range(page * limit, (page + 1) * limit - 1);
         }
 
         const { data, error } = await query;
@@ -101,11 +110,14 @@ export const useStoryStats = () => {
         if (error) throw error;
 
         const stories = data || [];
+        const totalNonArchived = stories.filter(s => s.status !== 'archived').length;
+
         return {
-          total: stories.length,
+          total: totalNonArchived,
           published: stories.filter(s => s.status === 'published').length,
           in_review: stories.filter(s => s.status === 'in_review').length,
-          draft: stories.filter(s => s.status === 'draft').length
+          draft: stories.filter(s => s.status === 'draft').length,
+          archived: stories.filter(s => s.status === 'archived').length
         };
       });
     }

@@ -1,87 +1,55 @@
 // src/pages/NewsroomDashboardPage.jsx
 // Admin dashboard for managing stories, approvals, and viewing analytics
+// REFACTORED: Now uses React Query hooks for proper caching and error handling
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Edit, Eye, CheckCircle, XCircle, BarChart3, Star, Archive } from 'lucide-react';
+import { Plus, Edit, Eye, CheckCircle, XCircle, Star, Archive, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
+import { useStories, useStoryStats } from '../hooks/useStories';
+import { useSessionValidation } from '../hooks/useSessionValidation.jsx';
+import { useAuth } from '../contexts/AuthContext';
+import { getBuildString } from '../utils/cacheVersion';
 
 const NewsroomDashboardPage = () => {
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [stories, setStories] = useState([]);
+  const { role: userRole } = useAuth();
   const [filter, setFilter] = useState('all'); // all, draft, in_review, published, archived
-  const [stats, setStats] = useState({
-    total: 0,
-    published: 0,
-    in_review: 0,
-    draft: 0,
-    archived: 0
-  });
-  const [actionLoading, setActionLoading] = useState(null); // Track which story action is in progress
+  const [actionLoading, setActionLoading] = useState(null);
 
-  // Check authentication and role
-  useEffect(() => {
-    const checkAuth = async () => {
-      const { user, role } = await getUserRole();
+  // Session validation with role check
+  const { isValid, isChecking: sessionChecking, error: sessionError, retry: retrySession } = useSessionValidation('editor');
 
-      if (!user || !hasPermission(role, 'editor')) {
-        alert('You must be logged in as an editor or admin to access this page.');
-        navigate('/news');
-        return;
-      }
+  // Fetch stories using React Query
+  const {
+    data: stories = [],
+    isLoading: storiesLoading,
+    error: storiesError,
+    refetch: refetchStories
+  } = useStories(filter);
 
-      setUserRole(role);
-      await fetchStories();
-      setLoading(false);
-    };
+  // Fetch stats using React Query
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    error: statsError,
+    refetch: refetchStats
+  } = useStoryStats();
 
-    checkAuth();
-  }, [navigate, filter]);
+  // Loading state
+  const isLoading = sessionChecking || storiesLoading || statsLoading;
 
-  // Fetch stories
-  const fetchStories = async () => {
-    try {
-      // Fetch from stories_with_authors view to get author names
-      let query = supabase
-        .from('stories_with_authors')
-        .select('*')
-        .order('updated_at', { ascending: false });
+  // Error state
+  const hasError = sessionError || storiesError || statsError;
+  const errorMessage = sessionError || storiesError?.message || statsError?.message;
 
-      // Apply filter
-      if (filter === 'all') {
-        // Exclude archived from 'all' view
-        query = query.neq('status', 'archived');
-      } else {
-        query = query.eq('status', filter);
-      }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setStories(data || []);
-
-      // Calculate stats (including archived)
-      const { data: allStories } = await supabase
-        .from('stories')
-        .select('status');
-
-      if (allStories) {
-        const totalNonArchived = allStories.filter(s => s.status !== 'archived').length;
-        setStats({
-          total: totalNonArchived,
-          published: allStories.filter(s => s.status === 'published').length,
-          in_review: allStories.filter(s => s.status === 'in_review').length,
-          draft: allStories.filter(s => s.status === 'draft').length,
-          archived: allStories.filter(s => s.status === 'archived').length
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching stories:', error);
-      alert('Failed to load stories: ' + error.message);
-    }
+  // Refresh all data
+  const handleRefreshAll = async () => {
+    await Promise.all([
+      refetchStories(),
+      refetchStats(),
+      retrySession()
+    ]);
   };
 
   // Publish story (admin only)
@@ -91,6 +59,7 @@ const NewsroomDashboardPage = () => {
       return;
     }
 
+    setActionLoading(storyId);
     try {
       const { error } = await supabase
         .from('stories')
@@ -100,10 +69,12 @@ const NewsroomDashboardPage = () => {
       if (error) throw error;
 
       alert('Story published successfully!');
-      fetchStories();
+      await handleRefreshAll();
     } catch (error) {
       console.error('Error publishing story:', error);
-      alert('Failed to publish story');
+      alert('Failed to publish story: ' + error.message);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -114,6 +85,7 @@ const NewsroomDashboardPage = () => {
       return;
     }
 
+    setActionLoading(storyId);
     try {
       const { error } = await supabase
         .from('stories')
@@ -123,10 +95,12 @@ const NewsroomDashboardPage = () => {
       if (error) throw error;
 
       alert('Story unpublished');
-      fetchStories();
+      await handleRefreshAll();
     } catch (error) {
       console.error('Error unpublishing story:', error);
-      alert('Failed to unpublish story');
+      alert('Failed to unpublish story: ' + error.message);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -137,6 +111,7 @@ const NewsroomDashboardPage = () => {
       return;
     }
 
+    setActionLoading(storyId);
     try {
       const { error } = await supabase
         .from('stories')
@@ -145,10 +120,12 @@ const NewsroomDashboardPage = () => {
 
       if (error) throw error;
 
-      fetchStories();
+      await handleRefreshAll();
     } catch (error) {
       console.error('Error toggling featured:', error);
-      alert('Failed to toggle featured status');
+      alert('Failed to toggle featured status: ' + error.message);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -164,9 +141,7 @@ const NewsroomDashboardPage = () => {
     }
 
     setActionLoading(storyId);
-
     try {
-      // Get current user ID
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
@@ -175,7 +150,6 @@ const NewsroomDashboardPage = () => {
         return;
       }
 
-      // Call archive_story function
       const { error } = await supabase.rpc('archive_story', {
         story_id_param: storyId,
         archived_by_param: user.id,
@@ -183,8 +157,7 @@ const NewsroomDashboardPage = () => {
 
       if (error) throw error;
 
-      // Success - refresh list
-      await fetchStories();
+      await handleRefreshAll();
     } catch (error) {
       console.error('Error archiving story:', error);
       alert('Failed to archive story: ' + error.message);
@@ -205,17 +178,14 @@ const NewsroomDashboardPage = () => {
     }
 
     setActionLoading(storyId);
-
     try {
-      // Call restore_story function
       const { error } = await supabase.rpc('restore_story', {
         story_id_param: storyId,
       });
 
       if (error) throw error;
 
-      // Success - refresh list
-      await fetchStories();
+      await handleRefreshAll();
     } catch (error) {
       console.error('Error restoring story:', error);
       alert('Failed to restore story: ' + error.message);
@@ -224,27 +194,23 @@ const NewsroomDashboardPage = () => {
     }
   };
 
-  // Permanently delete story (admin only, requires confirmation)
+  // Permanently delete story (admin only)
   const handleHardDelete = async (storyId, title) => {
     if (userRole !== 'admin') {
       alert('Only admins can permanently delete stories');
       return;
     }
 
-    // First confirmation
     if (!confirm(`PERMANENTLY DELETE "${title}"?\n\nThis action CANNOT be undone. The story will be deleted from the database forever.\n\nAre you absolutely sure?`)) {
       return;
     }
 
-    // Second confirmation (double-check)
     if (!confirm(`Final confirmation:\n\nDelete "${title}" permanently?\n\nThis is your last chance to cancel.`)) {
       return;
     }
 
     setActionLoading(storyId);
-
     try {
-      // Hard delete - directly delete from database
       const { error } = await supabase
         .from('stories')
         .delete()
@@ -252,8 +218,7 @@ const NewsroomDashboardPage = () => {
 
       if (error) throw error;
 
-      // Success - refresh list
-      await fetchStories();
+      await handleRefreshAll();
     } catch (error) {
       console.error('Error deleting story:', error);
       alert('Failed to delete story: ' + error.message);
@@ -262,16 +227,60 @@ const NewsroomDashboardPage = () => {
     }
   };
 
-  if (loading) {
+  // Loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-xs text-gray-400 mt-2">{getBuildString()}</p>
         </div>
       </div>
     );
   }
+
+  // Error state with retry
+  if (hasError) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load Dashboard</h2>
+          <p className="text-gray-600 mb-2">
+            {errorMessage || 'An unexpected error occurred while loading the dashboard.'}
+          </p>
+          <p className="text-sm text-gray-500 mb-6">
+            This could be due to network issues, expired session, or server problems.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleRefreshAll}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Retry
+            </button>
+            <button
+              onClick={() => navigate('/news')}
+              className="px-6 py-3 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold rounded-lg transition-colors"
+            >
+              Back to Newsroom
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-6">{getBuildString()}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const displayStats = stats || {
+    total: 0,
+    published: 0,
+    in_review: 0,
+    draft: 0,
+    archived: 0
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -283,10 +292,20 @@ const NewsroomDashboardPage = () => {
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Newsroom Dashboard</h1>
               <p className="text-gray-600 text-sm mt-1">
                 Role: <span className="font-semibold capitalize">{userRole}</span>
+                {' • '}
+                <span className="text-xs text-gray-400">{getBuildString()}</span>
               </p>
             </div>
 
             <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                onClick={handleRefreshAll}
+                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                title="Refresh Data"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+
               <Link
                 to="/news"
                 className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm whitespace-nowrap"
@@ -321,22 +340,22 @@ const NewsroomDashboardPage = () => {
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
+              <div className="text-2xl font-bold text-gray-900">{displayStats.total}</div>
               <div className="text-sm text-gray-600">Total Stories</div>
             </div>
 
             <div className="bg-green-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-700">{stats.published}</div>
+              <div className="text-2xl font-bold text-green-700">{displayStats.published}</div>
               <div className="text-sm text-green-600">Published</div>
             </div>
 
             <div className="bg-yellow-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-yellow-700">{stats.in_review}</div>
+              <div className="text-2xl font-bold text-yellow-700">{displayStats.in_review}</div>
               <div className="text-sm text-yellow-600">In Review</div>
             </div>
 
             <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-700">{stats.draft}</div>
+              <div className="text-2xl font-bold text-gray-700">{displayStats.draft}</div>
               <div className="text-sm text-gray-600">Drafts</div>
             </div>
           </div>
@@ -396,7 +415,7 @@ const NewsroomDashboardPage = () => {
                     : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
                 }`}
               >
-                Archived ({stats.archived})
+                Archived ({displayStats.archived})
               </button>
             )}
           </div>
@@ -562,7 +581,8 @@ const NewsroomDashboardPage = () => {
                               <>
                                 <button
                                   onClick={() => handleToggleFeatured(story.id, story.is_featured)}
-                                  className={`p-2 rounded transition-colors ${
+                                  disabled={actionLoading === story.id}
+                                  className={`p-2 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                                     story.is_featured
                                       ? 'text-yellow-600 hover:bg-yellow-50'
                                       : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
@@ -575,7 +595,8 @@ const NewsroomDashboardPage = () => {
                                 {story.status !== 'published' ? (
                                   <button
                                     onClick={() => handlePublish(story.id)}
-                                    className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                    disabled={actionLoading === story.id}
+                                    className="p-2 text-green-600 hover:bg-green-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Publish"
                                   >
                                     <CheckCircle className="w-4 h-4" />
@@ -583,7 +604,8 @@ const NewsroomDashboardPage = () => {
                                 ) : (
                                   <button
                                     onClick={() => handleUnpublish(story.id)}
-                                    className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                    disabled={actionLoading === story.id}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title="Unpublish"
                                   >
                                     <XCircle className="w-4 h-4" />
