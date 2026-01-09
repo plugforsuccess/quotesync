@@ -2,6 +2,20 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { saveDraftLocally, getDraftLocally, deleteDraftLocally } from '../utils/draftStorage';
 import { supabase } from '../lib/supabase';
 
+// Safe JSON stringify that handles circular references
+function safeStringify(obj) {
+  const seen = new WeakSet();
+  return JSON.stringify(obj, (key, value) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+    }
+    return value;
+  });
+}
+
 /**
  * Two-Layer Draft Autosave Hook
  * Implements both local (IndexedDB) and server (Supabase) draft persistence
@@ -273,7 +287,7 @@ export function useDraftAutosave(storyData, storyId, authorId, enabled = true) {
     if (!enabled || !authorId) return;
 
     // Check if data has actually changed
-    const currentData = JSON.stringify(storyData);
+    const currentData = safeStringify(storyData);
     const previousData = previousDataRef.current;
 
     if (currentData === previousData) {
