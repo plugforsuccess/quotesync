@@ -37,17 +37,28 @@ export const AuthProvider = ({ children }) => {
     }
 
     try {
-      const { data: profileData } = await supabase
+      const { data: profileData, error } = await supabase
         .from('profiles')
         .select('id, email, full_name, role')
         .eq('id', currentUser.id)
         .single();
 
+      if (error) {
+        console.error('[AuthProvider] Error fetching profile:', error);
+        // Still set user even if profile fetch fails
+        setUser(currentUser);
+        setProfile(null);
+        setRole('viewer');
+        return;
+      }
+
       setUser(currentUser);
       setProfile(profileData);
       setRole(profileData?.role || 'viewer');
+      console.log('[AuthProvider] Profile loaded:', profileData?.email, 'role:', profileData?.role);
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('[AuthProvider] Exception fetching profile:', error);
+      // Still set user even if profile fetch fails
       setUser(currentUser);
       setProfile(null);
       setRole('viewer');
