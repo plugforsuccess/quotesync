@@ -124,9 +124,10 @@ const StoryPreviewPage = () => {
             </button>
             <button
               onClick={() => navigate('/news/dashboard')}
-              className="text-sm px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors font-medium"
+              className="text-sm px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 transition-colors font-medium flex items-center gap-1"
             >
-              Close Preview
+              <ArrowLeft className="w-4 h-4" />
+              Back to Dashboard
             </button>
           </div>
         </div>

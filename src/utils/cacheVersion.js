@@ -6,7 +6,7 @@
 // - localStorage schema
 // - IndexedDB schema
 // - Data models
-const CACHE_VERSION = '1.0.0';
+const CACHE_VERSION = '1.1.0'; // Updated for preview navigation fix
 const BUILD_TIMESTAMP = new Date().toISOString();
 
 // Get build info (git SHA will be injected at build time via env var)

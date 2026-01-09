@@ -380,8 +380,12 @@ const NewsroomEditorPage = () => {
 
   // Preview story
   const handlePreview = () => {
-    if (story.slug) {
-      window.open(`/news/${story.slug}`, '_blank');
+    if (id) {
+      // Existing story - navigate to preview page
+      navigate(`/news/preview/${id}`);
+    } else if (story.slug) {
+      // New story with slug - can preview published route
+      navigate(`/news/${story.slug}`);
     } else {
       alert('Please save the story first to preview it');
     }
