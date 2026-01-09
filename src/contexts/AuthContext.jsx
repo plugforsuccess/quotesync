@@ -84,9 +84,13 @@ export const AuthProvider = ({ children }) => {
       async (event, session) => {
         if (!mounted) return;
 
+        console.log('[AuthProvider] Auth state changed:', event, session?.user?.email);
+
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
+            setLoading(true); // Set loading while fetching profile
             await fetchUserProfile(session.user);
+            setLoading(false);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
