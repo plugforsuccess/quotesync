@@ -40,6 +40,11 @@ const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
 const ArchivedStoriesPage = lazy(() => import('./pages/ArchivedStoriesPage'));
 const StoryPreviewPage = lazy(() => import('./pages/StoryPreviewPage'));
 
+// Agency pages
+import AgencyApplyPage from './pages/AgencyApplyPage';
+const AdminAgenciesPage = lazy(() => import('./pages/AdminAgenciesPage'));
+const AdminAgencyDetailPage = lazy(() => import('./pages/AdminAgencyDetailPage'));
+
 // Loading fallback component
 const PageLoader = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -151,6 +156,31 @@ function App() {
             {/* Privacy Policy and Terms of Service */}
             <Route path="privacy" element={<PrivacyPage />} />
             <Route path="terms" element={<TermsPage />} />
+
+            {/* Agency Partnership - Public Application */}
+            <Route path="partners/apply" element={<AgencyApplyPage />} />
+
+            {/* Admin - Agency Management */}
+            <Route
+              path="admin/agencies"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <AdminAgenciesPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="admin/agencies/:id"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <AdminAgencyDetailPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Catch-all – redirect bad URLs to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
