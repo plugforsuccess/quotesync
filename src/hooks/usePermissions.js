@@ -15,10 +15,12 @@ import { useAuth } from '../contexts/AuthContext';
  * - platform_editor: Newsroom content only; NO lead access
  * - platform_auditor: Read-only logs and compliance exports
  *
- * Tenant Plane (agency users):
+ * Tenant Plane (agency users - simplified to 2 roles for now):
  * - owner: Full agency control
+ * - agent: Lead view/update
+ *
+ * Future roles (schema supports, not yet enabled):
  * - manager: Lead routing, user management
- * - agent: Lead view/update only
  * - viewer: Read-only
  */
 export function usePermissions() {
@@ -58,20 +60,19 @@ export function usePermissions() {
   }), [isPlatformUser, platformRole, hasPlatformRole]);
 
   // Agency permission checks (for current agency)
+  // Simplified to owner/agent for now
   const agency = useMemo(() => ({
-    // Role checks
+    // Role checks (only owner/agent active)
     isOwner: hasAgencyRole('owner'),
-    isManager: hasAgencyRole('manager'),
     isAgent: hasAgencyRole('agent'),
-    isViewer: hasAgencyRole('viewer'),
 
-    // Feature access
-    canViewLeads: hasAgencyRole('viewer'),
-    canUpdateLeads: hasAgencyRole('agent'),
-    canDeleteLeads: hasAgencyRole('manager'),
-    canManageRouting: hasAgencyRole('owner'),
-    canInviteMembers: hasAgencyRole('manager'),
-    canRemoveMembers: hasAgencyRole('manager'),
+    // Feature access (owner gets all, agent gets lead work)
+    canViewLeads: hasAgencyRole('agent'),      // agent+
+    canUpdateLeads: hasAgencyRole('agent'),    // agent+
+    canDeleteLeads: hasAgencyRole('owner'),    // owner only (no manager yet)
+    canManageRouting: hasAgencyRole('owner'),  // owner only
+    canInviteMembers: hasAgencyRole('owner'),  // owner only (no manager yet)
+    canRemoveMembers: hasAgencyRole('owner'),  // owner only
     canUpdateMemberRoles: hasAgencyRole('owner'),
     canUpdateAgencySettings: hasAgencyRole('owner'),
 
@@ -168,12 +169,11 @@ export const PLATFORM_ROLES = [
   'platform_auditor'
 ];
 
-export const AGENCY_ROLES = [
-  'owner',
-  'manager',
-  'agent',
-  'viewer'
-];
+// Active agency roles (simplified for now)
+export const AGENCY_ROLES = ['owner', 'agent'];
+
+// Future agency roles (schema supports these)
+export const AGENCY_ROLES_FUTURE = ['owner', 'manager', 'agent', 'viewer'];
 
 /**
  * Audit event types for admin actions

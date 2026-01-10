@@ -47,12 +47,11 @@ const PLATFORM_ROLE_HIERARCHY = {
   platform_master_admin: 5
 };
 
-// Agency role hierarchy
+// Agency role hierarchy (simplified to owner/agent for now)
 const AGENCY_ROLE_HIERARCHY = {
-  viewer: 1,
-  agent: 2,
-  manager: 3,
-  owner: 4
+  agent: 1,
+  owner: 2
+  // Future: viewer: 0, manager: 2 (insert between agent/owner)
 };
 
 export const AuthProvider = ({ children }) => {
