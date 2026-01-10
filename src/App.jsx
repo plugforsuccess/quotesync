@@ -32,6 +32,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import NewsroomPage from './pages/NewsroomPage';
 import StoryDetailPage from './pages/StoryDetailPage';
+import EditorialStandardsPage from './pages/EditorialStandardsPage';
 import LoginPage from './pages/LoginPage';
 
 // Admin pages - lazy loaded for code splitting
@@ -92,6 +93,7 @@ function App() {
 
             {/* Newsroom - Insurance News Feed */}
             <Route path="news" element={<NewsroomPage />} />
+            <Route path="news/editorial-standards" element={<EditorialStandardsPage />} />
             <Route path="news/:slug" element={<StoryDetailPage />} />
 
             {/* Story Preview (Protected - Editor/Admin only) */}
