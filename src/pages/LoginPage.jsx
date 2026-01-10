@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, getUserProfile } from '../lib/supabase';
+import { getDefaultLanding } from '../config/nav.config';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -34,15 +35,22 @@ const LoginPage = () => {
 
   // Listen for auth changes and redirect when user is logged in
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[LoginPage] Auth event:', event, session?.user?.email);
 
       if (event === 'SIGNED_IN' && session) {
-        // Delay to ensure AuthProvider has processed the change
-        setTimeout(() => {
-          console.log('[LoginPage] Navigating to dashboard');
-          navigate('/news/dashboard');
-        }, 300);
+        // Fetch user profile to determine redirect destination
+        try {
+          const profile = await getUserProfile(session.user.id);
+          const platformRole = profile?.platform_role;
+          const destination = getDefaultLanding(platformRole);
+          console.log('[LoginPage] Navigating to:', destination, 'role:', platformRole);
+          // Delay to ensure AuthProvider has processed the change
+          setTimeout(() => navigate(destination), 300);
+        } catch (err) {
+          console.error('[LoginPage] Profile fetch error, defaulting to /news/dashboard');
+          setTimeout(() => navigate('/news/dashboard'), 300);
+        }
       }
     });
 
