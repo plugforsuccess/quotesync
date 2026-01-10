@@ -1,15 +1,36 @@
 // components/Layout.jsx - ULTRA ADVANCED VERSION
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X, Sparkles, RefreshCw } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
+import { useAuth } from '../contexts/AuthContext';
+import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
 
 function Layout() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
   const scrollTimeoutRef = useRef(null);
+
+  // Two-Plane RBAC: Get user context and determine active plane
+  const { user, profile, isPlatformUser, platformRole } = useAuth();
+  const [activePlane, setActivePlane] = useState(
+    isPlatformUser ? PLANES.PLATFORM : PLANES.CONSUMER
+  );
+
+  // Update plane when auth state changes
+  useEffect(() => {
+    if (isPlatformUser) {
+      setActivePlane(PLANES.PLATFORM);
+    } else {
+      setActivePlane(PLANES.CONSUMER);
+    }
+  }, [isPlatformUser]);
+
+  // Get navigation items based on active plane and role
+  const navItems = getNavItems(activePlane, platformRole);
+  const roleLabel = platformRole ? roleDisplayNames[platformRole] : null;
 
   // Handle scroll for nav blur effect with throttling
   useEffect(() => {
@@ -91,10 +112,26 @@ function Layout() {
 
             {/* Desktop Navigation with Advanced Effects */}
             <nav className="hidden md:flex items-center gap-3">
-              <TabLink to="/quotes" end label="Get Quote" scrollToQuote isPrimary />
-              <TabLink to="/news" label="Newsroom" />
-              <TabLink to="/courses" label="Courses" />
-              <TabLink to="/store" label="Store" />
+              {/* Plane Switcher for Platform Users */}
+              {isPlatformUser && (
+                <button
+                  onClick={() => setActivePlane(p => p === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-white/10 hover:bg-white/20 text-gray-300 transition-all"
+                  title="Switch view"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  <span>{activePlane === PLANES.PLATFORM ? 'Admin' : 'Consumer'}</span>
+                </button>
+              )}
+              {navItems.map((item, idx) => (
+                <TabLink
+                  key={item.to}
+                  to={item.to}
+                  label={item.label}
+                  isPrimary={item.isPrimary && idx === 0}
+                  scrollToQuote={item.scrollToQuote}
+                />
+              ))}
               <UserMenu />
             </nav>
 
@@ -132,10 +169,36 @@ function Layout() {
 
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp">
-            <MobileTabLink to="/quotes" end label="Get Quote" icon="🎯" scrollToQuote isPrimary />
-            <MobileTabLink to="/news" label="Newsroom" icon="📰" />
-            <MobileTabLink to="/courses" label="Courses" icon="🚗" />
-            <MobileTabLink to="/store" label="Store" icon="🛍️" />
+            {/* User Badge for Platform Users */}
+            {isPlatformUser && roleLabel && (
+              <div className="mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
+                <span className="text-sm font-medium text-emerald-300">
+                  {profile?.full_name || user?.email} — {roleLabel}
+                </span>
+              </div>
+            )}
+
+            {/* Plane Switcher for Mobile */}
+            {isPlatformUser && (
+              <button
+                onClick={() => setActivePlane(p => p === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM)}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-white/10 hover:bg-white/20 text-gray-300 transition-all mb-2"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span>Viewing: {activePlane === PLANES.PLATFORM ? 'Platform Admin' : 'Consumer Site'}</span>
+              </button>
+            )}
+
+            {navItems.map((item, idx) => (
+              <MobileTabLink
+                key={item.to}
+                to={item.to}
+                label={item.label}
+                icon={item.icon}
+                isPrimary={item.isPrimary && idx === 0}
+                scrollToQuote={item.scrollToQuote}
+              />
+            ))}
 
             {/* User Menu for Mobile */}
             <div className="mt-4">
@@ -145,7 +208,7 @@ function Layout() {
             {/* Decorative element */}
             <div className="mt-8 flex items-center gap-2 text-sm text-white/50">
               <Sparkles className="w-4 h-4" />
-              <span>Choose your path</span>
+              <span>{activePlane === PLANES.PLATFORM ? 'Admin Tools' : 'Choose your path'}</span>
             </div>
           </nav>
         </div>
