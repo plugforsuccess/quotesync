@@ -6,9 +6,9 @@
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS agencies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  slug TEXT UNIQUE NOT NULL,
-  email TEXT NOT NULL,
+  name TEXT,
+  slug TEXT,
+  email TEXT,
   phone TEXT,
   is_active BOOLEAN DEFAULT true,
   is_default BOOLEAN DEFAULT false,
@@ -16,8 +16,18 @@ CREATE TABLE IF NOT EXISTS agencies (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Add is_default column if missing (handles partial migrations)
+-- Add columns if missing (handles partial migrations)
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS slug TEXT;
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true;
 ALTER TABLE agencies ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT false;
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT now();
+
+-- Create unique constraint on slug if not exists
+CREATE UNIQUE INDEX IF NOT EXISTS idx_agencies_slug ON agencies(slug);
 
 -- Create index for default agency lookup
 CREATE INDEX IF NOT EXISTS idx_agencies_default ON agencies(is_default) WHERE is_default = true;
@@ -25,7 +35,7 @@ CREATE INDEX IF NOT EXISTS idx_agencies_default ON agencies(is_default) WHERE is
 -- Insert default agency (insuredbycam)
 INSERT INTO agencies (name, slug, email, is_default)
 VALUES ('Insured by Cam', 'insuredbycam', 'leads@insuredbycam.com', true)
-ON CONFLICT (slug) DO NOTHING;
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- AGENCY_USERS TABLE (links auth.users to agencies)
