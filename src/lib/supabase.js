@@ -1,5 +1,5 @@
 // src/lib/supabase.js
-// Supabase client configuration for newsroom
+// Supabase client configuration for QuoteSync with two-plane RBAC support
 
 import { createClient } from '@supabase/supabase-js';
 
@@ -7,7 +7,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('⚠️ Supabase credentials not found. Newsroom features will not work.');
+  console.warn('Supabase credentials not found. Features will not work.');
   console.warn('Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file');
 }
 
@@ -32,38 +32,217 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   }
 });
 
-/**
- * Check if user is authenticated and get their profile (role + full_name)
- */
-export const getUserRole = async () => {
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser();
+// =============================================================================
+// ROLE HIERARCHIES
+// =============================================================================
 
-    if (error || !user) {
-      return { user: null, role: 'viewer', profile: null };
+// Platform roles (internal staff)
+export const PLATFORM_ROLE_HIERARCHY = {
+  platform_auditor: 1,
+  platform_editor: 2,
+  platform_support: 3,
+  platform_admin: 4,
+  platform_master_admin: 5
+};
+
+// Agency roles (simplified to owner/agent for now)
+export const AGENCY_ROLE_HIERARCHY = {
+  agent: 1,
+  owner: 2
+  // Future: viewer: 0, manager: 2
+};
+
+// Legacy role hierarchy (for backward compatibility)
+const LEGACY_ROLE_HIERARCHY = {
+  viewer: 0,
+  editor: 1,
+  admin: 2
+};
+
+// =============================================================================
+// PERMISSION FUNCTIONS
+// =============================================================================
+
+/**
+ * Check if user has permission level (legacy function for backward compatibility)
+ * @deprecated Use hasPlatformRole or hasAgencyRole from useAuth instead
+ */
+export const hasPermission = (userRole, requiredRole) => {
+  return LEGACY_ROLE_HIERARCHY[userRole] >= LEGACY_ROLE_HIERARCHY[requiredRole];
+};
+
+/**
+ * Check if platform role meets minimum requirement
+ */
+export const hasPlatformPermission = (userPlatformRole, requiredRole) => {
+  if (!userPlatformRole) return false;
+  const userLevel = PLATFORM_ROLE_HIERARCHY[userPlatformRole] || 0;
+  const requiredLevel = PLATFORM_ROLE_HIERARCHY[requiredRole] || 0;
+  return userLevel >= requiredLevel;
+};
+
+/**
+ * Check if agency role meets minimum requirement
+ */
+export const hasAgencyPermission = (userAgencyRole, requiredRole) => {
+  if (!userAgencyRole) return false;
+  const userLevel = AGENCY_ROLE_HIERARCHY[userAgencyRole] || 0;
+  const requiredLevel = AGENCY_ROLE_HIERARCHY[requiredRole] || 0;
+  return userLevel >= requiredLevel;
+};
+
+// =============================================================================
+// USER PROFILE FUNCTIONS
+// =============================================================================
+
+/**
+ * Get user profile with full RBAC info
+ */
+export const getUserProfile = async () => {
+  try {
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return {
+        user: null,
+        profile: null,
+        isPlatformUser: false,
+        platformRole: null,
+        agencyMemberships: []
+      };
     }
 
+    // Fetch profile
     const { data: profileData } = await supabase
       .from('profiles')
-      .select('id, email, full_name, role')
+      .select('id, email, full_name, role, platform_role, is_platform_user')
       .eq('id', user.id)
       .single();
 
+    // Fetch agency memberships
+    const { data: memberships } = await supabase
+      .from('agency_memberships')
+      .select(`
+        id,
+        agency_id,
+        agency_role,
+        status,
+        agencies (
+          id,
+          name,
+          brand_name,
+          status
+        )
+      `)
+      .eq('user_id', user.id)
+      .eq('status', 'active');
+
     return {
       user,
-      role: profileData?.role || 'viewer',
-      profile: profileData
+      profile: profileData,
+      isPlatformUser: profileData?.is_platform_user || false,
+      platformRole: profileData?.platform_role || null,
+      agencyMemberships: memberships || [],
+      // Legacy field
+      role: profileData?.role || 'viewer'
     };
   } catch (error) {
     console.error('Error getting user profile:', error);
-    return { user: null, role: 'viewer', profile: null };
+    return {
+      user: null,
+      profile: null,
+      isPlatformUser: false,
+      platformRole: null,
+      agencyMemberships: [],
+      role: 'viewer'
+    };
   }
 };
 
 /**
- * Check if user has permission level
+ * @deprecated Use getUserProfile instead
  */
-export const hasPermission = (userRole, requiredRole) => {
-  const roleHierarchy = { viewer: 0, editor: 1, admin: 2 };
-  return roleHierarchy[userRole] >= roleHierarchy[requiredRole];
+export const getUserRole = async () => {
+  const result = await getUserProfile();
+  return {
+    user: result.user,
+    role: result.role,
+    profile: result.profile
+  };
+};
+
+// =============================================================================
+// AUDIT LOGGING
+// =============================================================================
+
+/**
+ * Log an admin action to the audit log
+ */
+export const logAdminAction = async (eventType, agencyId = null, leadId = null, metadata = {}) => {
+  try {
+    const { data, error } = await supabase.rpc('log_admin_action', {
+      p_event_type: eventType,
+      p_agency_id: agencyId,
+      p_lead_id: leadId,
+      p_metadata: metadata
+    });
+
+    if (error) {
+      console.error('Error logging admin action:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Exception logging admin action:', error);
+    return null;
+  }
+};
+
+// =============================================================================
+// IMPERSONATION FUNCTIONS
+// =============================================================================
+
+/**
+ * Start an impersonation session
+ * @param {string} targetUserId - UUID of the user to impersonate
+ * @param {string} reason - Required reason for impersonation
+ * @param {boolean} actionsEnabled - Whether write actions are allowed
+ */
+export const startImpersonation = async (targetUserId, reason, actionsEnabled = false) => {
+  const { data, error } = await supabase.rpc('start_impersonation', {
+    p_target_user_id: targetUserId,
+    p_reason: reason,
+    p_actions_enabled: actionsEnabled
+  });
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * End an impersonation session
+ * @param {string} sessionId - Optional session ID (ends current if not specified)
+ */
+export const endImpersonation = async (sessionId = null) => {
+  const { data, error } = await supabase.rpc('end_impersonation', {
+    p_session_id: sessionId
+  });
+
+  if (error) throw error;
+  return data;
+};
+
+/**
+ * Get impersonation history (platform admin only)
+ */
+export const getImpersonationHistory = async (limit = 50) => {
+  const { data, error } = await supabase
+    .from('impersonation_history')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+  return data;
 };

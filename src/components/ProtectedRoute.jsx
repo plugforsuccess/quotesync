@@ -1,12 +1,40 @@
 // src/components/ProtectedRoute.jsx
-// Route protection component for admin/editor pages
+// Route protection component with two-plane RBAC support
+// Supports both platform roles and agency roles
 
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { hasPermission } from '../lib/supabase';
 
-const ProtectedRoute = ({ children, requiredRole = 'editor' }) => {
-  const { user, role, loading } = useAuth();
+/**
+ * ProtectedRoute component for two-plane RBAC
+ *
+ * Props:
+ * - requiredRole: Legacy role check (editor, admin) - for backward compatibility
+ * - requiredPlatformRole: Platform plane role (platform_editor, platform_admin, etc.)
+ * - requiredAgencyRole: Agency plane role (viewer, agent, manager, owner)
+ * - requirePlatformUser: If true, only platform users can access
+ * - requireAgencyMembership: If true, user must have at least one active agency
+ * - redirectTo: Where to redirect on access denied (default: login page)
+ */
+const ProtectedRoute = ({
+  children,
+  requiredRole = null,
+  requiredPlatformRole = null,
+  requiredAgencyRole = null,
+  requirePlatformUser = false,
+  requireAgencyMembership = false,
+  redirectTo = '/admin-access-8by2X'
+}) => {
+  const {
+    user,
+    role,
+    loading,
+    isPlatformUser,
+    hasPlatformRole,
+    hasAgencyRole,
+    agencyMemberships
+  } = useAuth();
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -20,13 +48,71 @@ const ProtectedRoute = ({ children, requiredRole = 'editor' }) => {
     );
   }
 
-  // Redirect to login if not authenticated or insufficient permissions
-  if (!user || !hasPermission(role, requiredRole)) {
-    return <Navigate to="/admin-access-8by2X" replace />;
+  // Must be authenticated
+  if (!user) {
+    return <Navigate to={redirectTo} replace />;
+  }
+
+  // Check platform user requirement
+  if (requirePlatformUser && !isPlatformUser) {
+    return <Navigate to="/unauthorized" replace state={{ reason: 'platform_only' }} />;
+  }
+
+  // Check agency membership requirement
+  if (requireAgencyMembership) {
+    const activeMemberships = agencyMemberships.filter(m => m.status === 'active');
+    if (activeMemberships.length === 0) {
+      return <Navigate to="/no-agency" replace />;
+    }
+  }
+
+  // Check platform role requirement
+  if (requiredPlatformRole) {
+    if (!isPlatformUser || !hasPlatformRole(requiredPlatformRole)) {
+      return <Navigate to="/unauthorized" replace state={{ reason: 'insufficient_platform_role' }} />;
+    }
+  }
+
+  // Check agency role requirement
+  if (requiredAgencyRole) {
+    if (!hasAgencyRole(requiredAgencyRole)) {
+      return <Navigate to="/unauthorized" replace state={{ reason: 'insufficient_agency_role' }} />;
+    }
+  }
+
+  // Legacy role check (for backward compatibility)
+  if (requiredRole && !hasPermission(role, requiredRole)) {
+    return <Navigate to={redirectTo} replace />;
   }
 
   // Render protected content
   return children;
 };
+
+/**
+ * Higher-order component for platform-only routes
+ */
+export const PlatformRoute = ({ children, requiredRole, ...props }) => (
+  <ProtectedRoute
+    requirePlatformUser
+    requiredPlatformRole={requiredRole}
+    {...props}
+  >
+    {children}
+  </ProtectedRoute>
+);
+
+/**
+ * Higher-order component for agency-only routes
+ */
+export const AgencyRoute = ({ children, requiredRole, ...props }) => (
+  <ProtectedRoute
+    requireAgencyMembership
+    requiredAgencyRole={requiredRole}
+    {...props}
+  >
+    {children}
+  </ProtectedRoute>
+);
 
 export default ProtectedRoute;
