@@ -5,9 +5,9 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, Filter, Clock, FileText, ArrowUpDown,
-  ChevronRight, Users, AlertCircle
+  ChevronRight, Users, AlertCircle, Eye, Building2
 } from 'lucide-react';
-import { useCurrentAgency, useAgencyLeads, useAgencySLAMetrics } from '../hooks/useAgencyLeads';
+import { useCurrentAgency, useAgencyLeads, useAgencySLAMetrics, useAllAgencies } from '../hooks/useAgencyLeads';
 import { getScoreColor } from '../lib/leadScoring';
 
 const STATUS_OPTIONS = [
@@ -64,7 +64,20 @@ function formatDuration(date) {
 
 const AgencyLeadsPage = () => {
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
-  const agencyId = currentAgency?.agency_id;
+  const { data: allAgencies } = useAllAgencies();
+
+  // Admin can select which agency to view
+  const [selectedAgencyId, setSelectedAgencyId] = useState(null);
+
+  // Determine effective agency ID and view mode
+  const isAdmin = currentAgency?.isAdmin;
+  const isAdminViewing = isAdmin && selectedAgencyId && selectedAgencyId !== currentAgency?.agency_id;
+  const agencyId = isAdmin ? (selectedAgencyId || currentAgency?.agency_id) : currentAgency?.agency_id;
+
+  // Get selected agency name for admin view
+  const viewingAgencyName = isAdminViewing
+    ? allAgencies?.find(a => a.id === selectedAgencyId)?.name
+    : currentAgency?.agencies?.name;
 
   // Filters
   const [filters, setFilters] = useState({
@@ -119,15 +132,68 @@ const AgencyLeadsPage = () => {
     );
   }
 
+  // Admin with no agency selected - show agency picker
+  if (isAdmin && !agencyId) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-2xl mx-auto px-4 py-16">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+            <Building2 className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Select Agency to View</h2>
+            <p className="text-gray-600 mb-6">As a platform admin, select an agency to view their pipeline.</p>
+            <select
+              value={selectedAgencyId || ''}
+              onChange={(e) => setSelectedAgencyId(e.target.value)}
+              className="w-full max-w-md border border-gray-300 rounded-lg px-4 py-3 text-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Choose an agency...</option>
+              {allAgencies?.map(agency => (
+                <option key={agency.id} value={agency.id}>
+                  {agency.name} {agency.brand_name ? `(${agency.brand_name})` : ''}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Admin Read-Only Banner */}
+      {isAdminViewing && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-800">
+                <Eye className="w-5 h-5" />
+                <span className="font-medium">Viewing as Platform Admin (read-only)</span>
+                <span className="text-amber-600">— {viewingAgencyName}</span>
+              </div>
+              <select
+                value={selectedAgencyId || ''}
+                onChange={(e) => setSelectedAgencyId(e.target.value)}
+                className="text-sm border border-amber-300 rounded px-2 py-1 bg-white"
+              >
+                {allAgencies?.map(agency => (
+                  <option key={agency.id} value={agency.id}>{agency.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-2xl font-bold text-gray-900">
-            {currentAgency.agencies?.name || 'Agency'} Pipeline
+            {viewingAgencyName || 'Agency'} Pipeline
           </h1>
-          <p className="text-gray-600 mt-1">Manage and track your leads</p>
+          <p className="text-gray-600 mt-1">
+            {isAdminViewing ? 'Viewing agency leads (read-only)' : 'Manage and track your leads'}
+          </p>
         </div>
 
         {/* SLA Metrics Cards */}
@@ -361,6 +427,7 @@ const AgencyLeadsPage = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <Link
                             to={`/agency/leads/${lead.id}`}
+                            state={{ agencyId, isAdminViewing }}
                             className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-sm"
                           >
                             View <ChevronRight className="w-4 h-4" />

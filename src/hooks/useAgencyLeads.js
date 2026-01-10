@@ -6,9 +6,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { computeLeadScore } from '../lib/leadScoring';
 
-// Fetch current user's agency ID
+// Fetch current user's agency ID and role context
 export const useCurrentAgency = () => {
-  const { user } = useAuth();
+  const { user, role: platformRole } = useAuth();
 
   return useQuery({
     queryKey: ['current_agency', user?.id],
@@ -22,10 +22,35 @@ export const useCurrentAgency = () => {
         .limit(1)
         .single();
 
+      // If user is admin but not in an agency, return admin-only context
+      if (error && platformRole === 'admin') {
+        return { agency_id: null, role: null, agencies: null, isAdmin: true };
+      }
+
+      if (error) throw error;
+      return { ...data, isAdmin: platformRole === 'admin' };
+    },
+    enabled: !!user?.id
+  });
+};
+
+// Fetch all agencies (admin only, for agency selector)
+export const useAllAgencies = () => {
+  const { role } = useAuth();
+
+  return useQuery({
+    queryKey: ['all_agencies_list'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agencies')
+        .select('id, name, brand_name, status')
+        .eq('status', 'approved')
+        .order('name');
+
       if (error) throw error;
       return data;
     },
-    enabled: !!user?.id
+    enabled: role === 'admin'
   });
 };
 

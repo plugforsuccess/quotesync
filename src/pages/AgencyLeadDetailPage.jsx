@@ -2,10 +2,10 @@
 // Agency Lead Detail View with Quote Summary and Workflow Actions
 
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, Clock, MapPin, FileText, Tag, Phone,
-  CheckCircle, AlertCircle, ExternalLink, RefreshCw
+  CheckCircle, AlertCircle, ExternalLink, RefreshCw, Eye
 } from 'lucide-react';
 import {
   useCurrentAgency,
@@ -62,10 +62,15 @@ function formatDuration(start, end = new Date()) {
 const AgencyLeadDetailPage = () => {
   const { id: leadId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [updating, setUpdating] = useState(false);
 
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
-  const agencyId = currentAgency?.agency_id;
+
+  // Get agency context from location state (for admin viewing) or current agency
+  const passedAgencyId = location.state?.agencyId;
+  const isAdminViewing = location.state?.isAdminViewing || false;
+  const agencyId = passedAgencyId || currentAgency?.agency_id;
 
   const { data: lead, isLoading: leadLoading, error } = useLeadDetail(leadId, agencyId);
   const { data: auditLog } = useLeadAuditLog(leadId);
@@ -163,10 +168,24 @@ const AgencyLeadDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Admin Read-Only Banner */}
+      {isAdminViewing && (
+        <div className="bg-amber-50 border-b border-amber-200">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center gap-2 text-amber-800">
+              <Eye className="w-5 h-5" />
+              <span className="font-medium">Viewing as Platform Admin (read-only)</span>
+              <span className="text-amber-600">— Actions disabled</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Link */}
         <Link
           to="/agency/leads"
+          state={isAdminViewing ? { agencyId, isAdminViewing } : undefined}
           className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -419,38 +438,47 @@ const AgencyLeadDetailPage = () => {
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
 
-              {/* First Contact Button */}
-              {!lead.first_contact_at && (
-                <button
-                  onClick={handleFirstContact}
-                  disabled={updating}
-                  className="w-full mb-4 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
-                >
-                  <Phone className="w-4 h-4" />
-                  Mark First Contacted
-                </button>
-              )}
+              {isAdminViewing ? (
+                <div className="text-center py-4 text-gray-500">
+                  <Eye className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">Actions disabled in admin view</p>
+                </div>
+              ) : (
+                <>
+                  {/* First Contact Button */}
+                  {!lead.first_contact_at && (
+                    <button
+                      onClick={handleFirstContact}
+                      disabled={updating}
+                      className="w-full mb-4 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                    >
+                      <Phone className="w-4 h-4" />
+                      Mark First Contacted
+                    </button>
+                  )}
 
-              {/* Status Buttons */}
-              <p className="text-sm text-gray-500 mb-3">Update Status:</p>
-              <div className="grid grid-cols-2 gap-2">
-                {STATUS_ACTIONS.map((action) => (
-                  <button
-                    key={action.value}
-                    onClick={() => handleStatusUpdate(action.value)}
-                    disabled={updating || lead.status === action.value}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors
-                      ${lead.status === action.value
-                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }
-                      disabled:opacity-50
-                    `}
-                  >
-                    {action.label}
-                  </button>
-                ))}
-              </div>
+                  {/* Status Buttons */}
+                  <p className="text-sm text-gray-500 mb-3">Update Status:</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {STATUS_ACTIONS.map((action) => (
+                      <button
+                        key={action.value}
+                        onClick={() => handleStatusUpdate(action.value)}
+                        disabled={updating || lead.status === action.value}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                          ${lead.status === action.value
+                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }
+                          disabled:opacity-50
+                        `}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Attribution */}
