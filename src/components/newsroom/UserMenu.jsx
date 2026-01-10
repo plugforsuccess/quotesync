@@ -9,7 +9,8 @@ const UserMenu = () => {
   const { user, role, profile, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = async (e) => {
+    e.stopPropagation();
     await signOut();
     navigate('/admin-access-8by2X');
   };
@@ -37,7 +38,10 @@ const UserMenu = () => {
       </button>
 
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+        <div
+          className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50"
+          onClick={(e) => e.stopPropagation()}
+        >
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
