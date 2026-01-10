@@ -24,11 +24,13 @@ CREATE TYPE platform_role AS ENUM (
 COMMENT ON TYPE platform_role IS 'Platform-level roles for internal staff only';
 
 -- =============================================================================
--- ADD VIEWER TO AGENCY ROLES
+-- AGENCY ROLES NOTE
 -- =============================================================================
--- Add agency_viewer for read-only access (for executives)
-
-ALTER TYPE agency_role ADD VALUE IF NOT EXISTS 'viewer';
+-- The existing agency_role enum already has: owner, manager, agent
+-- We're simplifying to just owner/agent for now.
+-- To add 'viewer' later, create a separate migration:
+--   ALTER TYPE agency_role ADD VALUE 'viewer';
+-- (New enum values must be committed before use in queries)
 
 -- =============================================================================
 -- MEMBERSHIP STATUS ENUM
@@ -230,6 +232,7 @@ AS $$
 $$;
 
 -- Check if user has specific agency role
+-- Simplified hierarchy: agent < owner (manager not used yet)
 CREATE OR REPLACE FUNCTION has_agency_role(target_agency_id UUID, required_role agency_role)
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -243,7 +246,6 @@ AS $$
         AND status = 'active'
         AND (
             CASE required_role
-                WHEN 'viewer' THEN agency_role IN ('viewer', 'agent', 'manager', 'owner')
                 WHEN 'agent' THEN agency_role IN ('agent', 'manager', 'owner')
                 WHEN 'manager' THEN agency_role IN ('manager', 'owner')
                 WHEN 'owner' THEN agency_role = 'owner'
