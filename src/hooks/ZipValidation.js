@@ -28,7 +28,8 @@ export const useZipValidation = () => {
   }, []);
 
   const handleValidZip = (zip) => {
-    const data = { zip, timestamp: Date.now() };
+    // Store zip with state (currently GA-only)
+    const data = { zip, state: 'GA', timestamp: Date.now() };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     setValidatedZip(zip);
     setShowValidator(false);
