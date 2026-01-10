@@ -169,15 +169,6 @@ function Layout() {
 
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp">
-            {/* User Badge for Platform Users */}
-            {isPlatformUser && roleLabel && (
-              <div className="mb-4 px-4 py-2 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30">
-                <span className="text-sm font-medium text-emerald-300">
-                  {profile?.full_name || user?.email} — {roleLabel}
-                </span>
-              </div>
-            )}
-
             {/* Plane Switcher for Mobile */}
             {isPlatformUser && (
               <button
