@@ -26,7 +26,7 @@ export default function EditorialStandardsPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Our Mission</h2>
             <p className="text-gray-700 leading-relaxed mb-4">
-              The InsuredByCam Newsroom exists to educate and empower consumers with accurate, timely, and actionable information about insurance, financial protection, and safe driving. We aim to demystify insurance topics and help readers make informed decisions.
+              The Public Newsroom exists to educate and empower consumers with accurate, timely, and actionable information about insurance, financial protection, and safe driving. We aim to demystify insurance topics and help readers make informed decisions.
             </p>
             <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
               <p className="text-gray-700 italic">
