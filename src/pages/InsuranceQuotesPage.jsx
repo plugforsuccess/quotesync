@@ -12,6 +12,7 @@ import SmarterFasterSection from './components/SmarterFasterSection';
 import ZipValidator from '../components/ZipValidator';
 import StickyQuoteBar from '../components/StickyQuoteBar';
 import { useZipValidation } from '../hooks/ZipValidation';
+import { useCanopyComplete } from '../hooks/useCanopyComplete';
 import { trackQuoteStarted } from '../lib/analytics';
 
 export default function InsuranceQuotesPage() {
@@ -27,6 +28,12 @@ export default function InsuranceQuotesPage() {
     handleValidatorSuccess,
     closeValidator
   } = useZipValidation();
+
+  // Canopy completion handler - creates lead and shows success
+  useCanopyComplete({
+    onSuccess: () => setSubmitted(true),
+    onError: (error) => console.error('Lead creation failed:', error),
+  });
 
   // these exist for your future form logic; success screen currently just resets them
   const [formData, setFormData] = useState({
