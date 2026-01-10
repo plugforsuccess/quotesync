@@ -44,6 +44,7 @@ const StoryPreviewPage = lazy(() => import('./pages/StoryPreviewPage'));
 import AgencyApplyPage from './pages/AgencyApplyPage';
 const AdminAgenciesPage = lazy(() => import('./pages/AdminAgenciesPage'));
 const AdminAgencyDetailPage = lazy(() => import('./pages/AdminAgencyDetailPage'));
+const AdminAuditPage = lazy(() => import('./pages/AdminAuditPage'));
 const AgencyLeadsPage = lazy(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
 
@@ -201,6 +202,18 @@ function App() {
                 <ProtectedRoute requiredRole="admin">
                   <Suspense fallback={<PageLoader />}>
                     <AdminAgencyDetailPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin - Audit Log */}
+            <Route
+              path="admin/audit"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <AdminAuditPage />
                   </Suspense>
                 </ProtectedRoute>
               }
