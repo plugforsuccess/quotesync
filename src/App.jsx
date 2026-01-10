@@ -30,6 +30,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import PurchaseSuccessPage from './pages/PurchaseSuccessPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import DataRequestPage from './pages/DataRequestPage';
 import NewsroomPage from './pages/NewsroomPage';
 import StoryDetailPage from './pages/StoryDetailPage';
 import LoginPage from './pages/LoginPage';
@@ -155,9 +156,10 @@ function App() {
             {/* Thank you page (after form / Canopy redirect) */}
             <Route path="success" element={<ThankYouPage />} />
 
-            {/* Privacy Policy and Terms of Service */}
+            {/* Privacy Policy, Terms of Service, and Data Request */}
             <Route path="privacy" element={<PrivacyPage />} />
             <Route path="terms" element={<TermsPage />} />
+            <Route path="data-request" element={<DataRequestPage />} />
 
             {/* Agency Partnership - Public Application */}
             <Route path="partners/apply" element={<AgencyApplyPage />} />

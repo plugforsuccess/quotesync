@@ -260,6 +260,13 @@ const NewsroomEditorPage = () => {
       return;
     }
 
+    // Source attribution required for publishing (compliance)
+    if (statusOverride === 'published' && (!story.source_name || !story.source_url)) {
+      alert('Source Name and Source URL are required for publishing. Please provide attribution.');
+      setSaving(false);
+      return;
+    }
+
     setSaving(true);
 
     try {

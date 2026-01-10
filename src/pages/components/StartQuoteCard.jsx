@@ -75,6 +75,13 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                       Takes 2-3 minutes
                     </span>
                   </div>
+
+                  {/* Consent Disclosure */}
+                  <p className="text-xs text-gray-500 mt-4 max-w-md mx-auto leading-relaxed">
+                    By continuing, you consent to be contacted about your insurance request.
+                    Your information is shared only with the agency assigned for your area and is not sold.{' '}
+                    <a href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</a>
+                  </p>
                 </div>
               </div>
 

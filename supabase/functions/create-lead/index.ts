@@ -185,7 +185,9 @@ Deno.serve(async (req) => {
       defaultAgencyId
     )
 
-    // Create lead record
+    // Create lead record with consent tracking
+    const consentText = 'By continuing, you consent to be contacted about your insurance request. Your information is shared only with the agency assigned for your area and is not sold.'
+
     const leadData = {
       pull_id,
       agency_id: routing.agencyId,
@@ -202,7 +204,9 @@ Deno.serve(async (req) => {
       landing_page: body.landing_page || null,
       routing_rule_id: routing.routingRuleId,
       routed_via_fallback: routing.viaFallback,
-      status: 'new'
+      status: 'new',
+      consent_at: new Date().toISOString(),
+      consent_text: consentText
     }
 
     const { data: lead, error: leadError } = await supabase

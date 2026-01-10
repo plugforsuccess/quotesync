@@ -360,6 +360,11 @@ const StoryDetailPage = () => {
             </div>
           )}
 
+          {/* Editorial Disclaimer */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-8 text-xs text-gray-500 border border-gray-200">
+            <strong>Disclaimer:</strong> This content is provided for informational purposes only and does not constitute insurance, legal, or financial advice. Information may be summarized or adapted from external sources. Please consult a licensed professional for advice specific to your situation.
+          </div>
+
           {/* CTA Block */}
           <div className="bg-gray-50 rounded-lg p-8 border border-gray-200 mb-12">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
