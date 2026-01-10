@@ -1,0 +1,68 @@
+MANUAL: Function Search Path Fixes (Destructive Operations)
+============================================================
+These functions contain DELETE statements and must be run
+manually in Supabase SQL Editor.
+
+DO NOT run this file as a migration - it is for reference only.
+============================================================
+
+1. cleanup_old_drafts
+---------------------
+Original: 005_create_drafts_table.sql
+Fix: Add SET search_path = public
+
+CREATE OR REPLACE FUNCTION public.cleanup_old_drafts(days_old INTEGER DEFAULT 90)
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  deleted_count INTEGER;
+BEGIN
+  DELETE FROM public.story_drafts
+  WHERE
+    updated_at < NOW() - (days_old || ' days')::INTERVAL
+    AND story_id IS NULL;
+
+  GET DIAGNOSTICS deleted_count = ROW_COUNT;
+  RETURN deleted_count;
+END;
+$$;
+
+2. permanently_delete_archived_story
+------------------------------------
+Original: 006_add_archive_functionality.sql
+Fix: Add SET search_path = public
+
+CREATE OR REPLACE FUNCTION public.permanently_delete_archived_story(
+  story_id_param UUID,
+  min_days_archived INTEGER DEFAULT 30
+)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  story_archived_at TIMESTAMP WITH TIME ZONE;
+  story_status TEXT;
+BEGIN
+  SELECT archived_at, status
+  INTO story_archived_at, story_status
+  FROM public.stories
+  WHERE id = story_id_param;
+
+  IF story_status != 'archived' OR story_archived_at IS NULL THEN
+    RAISE EXCEPTION 'Story must be archived before permanent deletion';
+  END IF;
+
+  IF story_archived_at > NOW() - (min_days_archived || ' days')::INTERVAL THEN
+    RAISE EXCEPTION 'Story must be archived for at least % days before permanent deletion', min_days_archived;
+  END IF;
+
+  DELETE FROM public.stories WHERE id = story_id_param;
+
+  RETURN TRUE;
+END;
+$$;
