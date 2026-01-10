@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS enrichment_jobs (
     completed_at TIMESTAMPTZ
 );
 
-CREATE INDEX idx_enrichment_jobs_status ON enrichment_jobs(status) WHERE status IN ('pending', 'processing');
-CREATE INDEX idx_enrichment_jobs_lead ON enrichment_jobs(lead_id);
-CREATE INDEX idx_enrichment_jobs_pull ON enrichment_jobs(pull_id);
+CREATE INDEX IF NOT EXISTS idx_enrichment_jobs_status ON enrichment_jobs(status) WHERE status IN ('pending', 'processing');
+CREATE INDEX IF NOT EXISTS idx_enrichment_jobs_lead ON enrichment_jobs(lead_id);
+CREATE INDEX IF NOT EXISTS idx_enrichment_jobs_pull ON enrichment_jobs(pull_id);
 
 -- =============================================================================
 -- ADD ENRICHMENT FIELDS TO lead_quotes
@@ -62,12 +62,14 @@ ALTER TABLE enrichment_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE webhook_secrets ENABLE ROW LEVEL SECURITY;
 
 -- Service role only access for enrichment_jobs
+DROP POLICY IF EXISTS "Service role can manage enrichment_jobs" ON enrichment_jobs;
 CREATE POLICY "Service role can manage enrichment_jobs"
     ON enrichment_jobs FOR ALL
     USING (true)
     WITH CHECK (true);
 
 -- Service role only access for webhook_secrets
+DROP POLICY IF EXISTS "Service role can manage webhook_secrets" ON webhook_secrets;
 CREATE POLICY "Service role can manage webhook_secrets"
     ON webhook_secrets FOR ALL
     USING (true)
