@@ -41,6 +41,11 @@ const Footer = () => {
                   Online Store
                 </Link>
               </li>
+              <li>
+                <Link to="/partners/apply" className="text-gray-400 hover:text-white transition-colors text-sm">
+                  Partner With Us
+                </Link>
+              </li>
             </ul>
           </div>
 
