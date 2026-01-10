@@ -220,13 +220,26 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Enqueue enrichment job
+    // Extract enrichment-relevant data from payload (exclude raw PII)
+    // Store only policy/document structure needed for quote_summary
+    const enrichmentPayload = {
+      policies: body.policies || body.data?.policies || [],
+      documents: body.documents || body.data?.documents || [],
+      // Only store state/zip presence, not full consumer data
+      consumer: {
+        state: body.consumer?.state || body.data?.consumer?.state || null,
+        zip: body.consumer?.zip || body.data?.consumer?.zip || null,
+      },
+    }
+
+    // Enqueue enrichment job with payload
     const { data: job, error: jobError } = await supabase
       .from('enrichment_jobs')
       .insert({
         lead_id: lead.id,
         pull_id: pullId,
         event_type: eventType,
+        payload: enrichmentPayload,
         status: 'pending',
       })
       .select('id')
