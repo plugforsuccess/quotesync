@@ -10,6 +10,7 @@ import { useStories, useStoryStats } from '../hooks/useStories';
 import { useSessionValidation } from '../hooks/useSessionValidation.jsx';
 import { useAuth } from '../contexts/AuthContext';
 import { getBuildString } from '../utils/cacheVersion';
+import { getCategoryLabel } from '../lib/categories';
 
 const NewsroomDashboardPage = () => {
   const navigate = useNavigate();
@@ -495,8 +496,8 @@ const NewsroomDashboardPage = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-gray-600 capitalize">
-                        {story.category}
+                      <span className="text-sm text-gray-600">
+                        {getCategoryLabel(story.category)}
                       </span>
                     </td>
                     <td className="px-6 py-4">

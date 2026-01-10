@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Share2, ExternalLink, ChevronRight } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
 import { trackStoryImpression, trackVideoPlay, trackReadMoreOpen, trackNewsroomShare } from '../../lib/newsroomAnalytics';
+import { getCategoryLabel, getCategoryColor, getTagLabel, getTagColor } from '../../lib/categories';
 
 /**
  * Format timestamp to relative time (e.g., "2h ago", "Today")
@@ -30,28 +31,23 @@ const formatTimestamp = (publishedAt) => {
 
 /**
  * Category chip with unified design system colors
+ * Uses centralized category configuration for labels and colors
  */
 const CategoryChip = ({ category }) => {
-  // Mapping to unified design tokens - maintains visual distinction while using brand palette
-  const colors = {
-    litigation: 'bg-[#fee2e2] text-[#b91c1c] border border-[#fecaca]',
-    law: 'bg-primary-100 text-primary-800 border border-primary-200',
-    accident: 'bg-[#fed7aa] text-[#c2410c] border border-[#fdba74]',
-    data: 'bg-[#e9d5ff] text-[#6b21a8] border border-[#d8b4fe]',
-    policy: 'bg-success-100 text-success-800 border border-success-200'
-  };
-
-  const labels = {
-    litigation: 'Litigation',
-    law: 'Law',
-    accident: 'Accident',
-    data: 'Data',
-    policy: 'Policy'
-  };
-
   return (
-    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colors[category] || 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
-      {labels[category] || category}
+    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(category)}`}>
+      {getCategoryLabel(category)}
+    </span>
+  );
+};
+
+/**
+ * Secondary tag chip component
+ */
+const TagChip = ({ tag }) => {
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${getTagColor(tag)}`}>
+      {getTagLabel(tag)}
     </span>
   );
 };
@@ -210,6 +206,11 @@ const StoryCard = ({ story, isActive = false, onReadMore }) => {
       {/* Meta row */}
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <CategoryChip category={story.category} />
+
+        {/* Secondary tags */}
+        {story.secondary_tags?.length > 0 && story.secondary_tags.slice(0, 2).map((tag) => (
+          <TagChip key={tag} tag={tag} />
+        ))}
 
         {story.region && (
           <span className="text-gray-500">

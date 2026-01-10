@@ -3,12 +3,13 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, Save, Eye, Send, Archive, Plus, Clock, CheckCircle, AlertCircle, Wifi, WifiOff } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Send, Archive, Plus, Clock, CheckCircle, AlertCircle, Wifi, WifiOff, X } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useDraftAutosave } from '../hooks/useDraftAutosave';
 import { useNavigationBlock } from '../hooks/useNavigationBlock';
 import DraftRestoreModal from '../components/DraftRestoreModal';
+import { STORY_CATEGORIES, SECONDARY_TAGS, DEFAULT_CATEGORY, getCategoryBySlug } from '../lib/categories';
 
 const NewsroomEditorPage = () => {
   const { id } = useParams(); // If editing existing story
@@ -26,9 +27,10 @@ const NewsroomEditorPage = () => {
     slug: '',
     preview_hook: '',
     body: '',
-    category: 'policy',
+    category: DEFAULT_CATEGORY,
     region: 'GA',
     tags: [],
+    secondary_tags: [],
     video_type: null,
     video_url: '',
     video_thumbnail: '',
@@ -122,14 +124,21 @@ const NewsroomEditorPage = () => {
     if (!draftToRestore) return;
 
     // Map draft fields to story state
+    // Handle legacy category migration
+    let restoredCategory = draftToRestore.category || DEFAULT_CATEGORY;
+    if (!getCategoryBySlug(restoredCategory)) {
+      restoredCategory = DEFAULT_CATEGORY;
+    }
+
     const restoredStory = {
       title: draftToRestore.title || '',
       slug: draftToRestore.slug || '',
       preview_hook: draftToRestore.preview_hook || '',
       body: draftToRestore.body || '',
-      category: draftToRestore.category || 'policy',
+      category: restoredCategory,
       region: draftToRestore.region || 'GA',
       tags: draftToRestore.tags || [],
+      secondary_tags: draftToRestore.secondary_tags || [],
       video_type: draftToRestore.video_type || null,
       video_url: draftToRestore.video_url || '',
       video_thumbnail: draftToRestore.video_thumbnail || '',
@@ -184,7 +193,8 @@ const NewsroomEditorPage = () => {
       if (data) {
         setStory({
           ...data,
-          tags: data.tags || []
+          tags: data.tags || [],
+          secondary_tags: data.secondary_tags || []
         });
       }
     } catch (error) {
@@ -647,12 +657,17 @@ const NewsroomEditorPage = () => {
                 onChange={(e) => handleChange('category', e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
               >
-                <option value="litigation">Litigation</option>
-                <option value="law">Law</option>
-                <option value="accident">Accident</option>
-                <option value="data">Data</option>
-                <option value="policy">Policy</option>
+                {STORY_CATEGORIES.map((cat) => (
+                  <option key={cat.slug} value={cat.slug}>
+                    {cat.label}
+                  </option>
+                ))}
               </select>
+              {getCategoryBySlug(story.category)?.description && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {getCategoryBySlug(story.category).description}
+                </p>
+              )}
             </div>
 
             <div>
@@ -676,6 +691,67 @@ const NewsroomEditorPage = () => {
                 <option value="Valdosta">Valdosta</option>
               </select>
             </div>
+          </div>
+
+          {/* Secondary Tags (Optional) */}
+          <div className="mb-6">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Secondary Tags <span className="text-gray-400 font-normal">(Optional)</span>
+            </label>
+            <p className="text-xs text-gray-500 mb-3">
+              Add optional tags for additional categorization. These help with filtering and SEO.
+            </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {SECONDARY_TAGS.map((tag) => {
+                const isSelected = story.secondary_tags?.includes(tag.slug);
+                return (
+                  <button
+                    key={tag.slug}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        handleChange('secondary_tags', story.secondary_tags.filter(t => t !== tag.slug));
+                      } else {
+                        handleChange('secondary_tags', [...(story.secondary_tags || []), tag.slug]);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      isSelected
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-600 ring-offset-1'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {tag.label}
+                    {isSelected && <span className="ml-1">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {story.secondary_tags?.length > 0 && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Selected:</span>
+                <div className="flex flex-wrap gap-1">
+                  {story.secondary_tags.map((tagSlug) => {
+                    const tag = SECONDARY_TAGS.find(t => t.slug === tagSlug);
+                    return (
+                      <span
+                        key={tagSlug}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs"
+                      >
+                        {tag?.label || tagSlug}
+                        <button
+                          type="button"
+                          onClick={() => handleChange('secondary_tags', story.secondary_tags.filter(t => t !== tagSlug))}
+                          className="hover:text-blue-600"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Video */}

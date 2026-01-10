@@ -85,6 +85,7 @@ export function useDraftAutosave(storyData, storyId, authorId, enabled = true) {
         category: storyData.category || null,
         region: storyData.region || null,
         tags: storyData.tags || null,
+        secondary_tags: storyData.secondary_tags || [],
         video_type: storyData.video_type || null,
         video_url: storyData.video_url || null,
         video_thumbnail: storyData.video_thumbnail || null,

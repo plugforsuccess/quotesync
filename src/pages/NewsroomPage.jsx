@@ -8,6 +8,7 @@ import StoryModal from '../components/newsroom/StoryModal';
 import { supabase } from '../lib/supabase';
 import { trackFeedView } from '../lib/newsroomAnalytics';
 import { Filter, TrendingUp } from 'lucide-react';
+import { getCategoryOptions } from '../lib/categories';
 
 const STORIES_PER_PAGE = 10;
 
@@ -155,14 +156,8 @@ const NewsroomPage = () => {
     setHasMore(true);
   };
 
-  const categories = [
-    { value: 'all', label: 'All Stories' },
-    { value: 'litigation', label: 'Litigation' },
-    { value: 'law', label: 'Law' },
-    { value: 'accident', label: 'Accident' },
-    { value: 'data', label: 'Data' },
-    { value: 'policy', label: 'Policy' }
-  ];
+  // Get categories from centralized config (with "All Stories" option)
+  const categories = getCategoryOptions(true);
 
   return (
     <div className="min-h-screen bg-white">
