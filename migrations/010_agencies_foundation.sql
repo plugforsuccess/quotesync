@@ -208,11 +208,12 @@ CREATE POLICY "Owners and managers can delete leads"
 -- =============================================================================
 
 -- Create default agency for existing data
-INSERT INTO agencies (id, name, brand_name, status, created_at)
+INSERT INTO agencies (id, name, brand_name, email, status, created_at)
 VALUES (
     '00000000-0000-0000-0000-000000000001',
-    'Default Agency',
-    'QuoteSync',
+    'InsuredByCam',
+    'insuredbycam',
+    'admin@insuredbycam.com',
     'approved',
     now()
 );
