@@ -35,7 +35,6 @@ export const platformNav = {
   ],
   platform_editor: [
     { to: '/news/dashboard', label: 'Newsroom', icon: '📰' },
-    { to: '/news/editor', label: 'Editor', icon: '✏️' },
   ],
   platform_auditor: [
     { to: '/admin/audit', label: 'Audit', icon: '🔍' },
