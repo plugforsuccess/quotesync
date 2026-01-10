@@ -327,7 +327,7 @@ const NewsroomEditorPage = () => {
           console.log('User authenticated:', user.id);
           storyData.author_id = user.id;
 
-          console.log('Inserting story with data:', JSON.stringify(storyData, null, 2));
+          console.log('Inserting story with data:', storyData.title, storyData.slug);
 
           const { data, error } = await supabase
             .from('stories')
@@ -337,7 +337,7 @@ const NewsroomEditorPage = () => {
 
           if (error) {
             console.error('Insert error:', error);
-            console.error('Error details:', JSON.stringify(error, null, 2));
+            console.error('Error details:', error.message, error.code);
             throw error;
           }
 
