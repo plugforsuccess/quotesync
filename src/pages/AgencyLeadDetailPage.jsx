@@ -1,0 +1,487 @@
+// src/pages/AgencyLeadDetailPage.jsx
+// Agency Lead Detail View with Quote Summary and Workflow Actions
+
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft, Clock, MapPin, FileText, Tag, Phone,
+  CheckCircle, AlertCircle, ExternalLink, RefreshCw
+} from 'lucide-react';
+import {
+  useCurrentAgency,
+  useLeadDetail,
+  useLeadAuditLog,
+  useUpdateLeadStatus,
+  useSetFirstContact,
+  useRecomputeLeadScore
+} from '../hooks/useAgencyLeads';
+import { getScoreColor, formatScoreFactors } from '../lib/leadScoring';
+
+const STATUS_ACTIONS = [
+  { value: 'contacted', label: 'Contacted', color: 'green' },
+  { value: 'quoted', label: 'Quoted', color: 'purple' },
+  { value: 'advanced', label: 'Advanced', color: 'indigo' },
+  { value: 'inactive', label: 'Inactive', color: 'gray' },
+  { value: 'unknown', label: 'Unknown', color: 'gray' }
+];
+
+function formatDate(date) {
+  if (!date) return '-';
+  return new Date(date).toLocaleString();
+}
+
+function formatTimeAgo(date) {
+  if (!date) return '-';
+  const now = new Date();
+  const then = new Date(date);
+  const diffMs = now - then;
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffMins > 0) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+  return 'Just now';
+}
+
+function formatDuration(start, end = new Date()) {
+  if (!start) return '-';
+  const diffMs = new Date(end) - new Date(start);
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+  if (diffHours > 24) {
+    const days = Math.floor(diffHours / 24);
+    return `${days}d ${diffHours % 24}h`;
+  }
+  if (diffHours > 0) return `${diffHours}h ${diffMins}m`;
+  return `${diffMins}m`;
+}
+
+const AgencyLeadDetailPage = () => {
+  const { id: leadId } = useParams();
+  const navigate = useNavigate();
+  const [updating, setUpdating] = useState(false);
+
+  const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
+  const agencyId = currentAgency?.agency_id;
+
+  const { data: lead, isLoading: leadLoading, error } = useLeadDetail(leadId, agencyId);
+  const { data: auditLog } = useLeadAuditLog(leadId);
+
+  const updateStatus = useUpdateLeadStatus();
+  const setFirstContact = useSetFirstContact();
+  const recomputeScore = useRecomputeLeadScore();
+
+  const quoteData = lead?.lead_quotes?.[0];
+  const quoteSummary = quoteData?.quote_summary || {};
+
+  const handleStatusUpdate = async (newStatus) => {
+    if (!lead || updating) return;
+    setUpdating(true);
+    try {
+      await updateStatus.mutateAsync({
+        leadId: lead.id,
+        agencyId,
+        newStatus,
+        oldStatus: lead.status
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleFirstContact = async () => {
+    if (!lead || lead.first_contact_at || updating) return;
+    setUpdating(true);
+    try {
+      await setFirstContact.mutateAsync({ leadId: lead.id, agencyId });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRecomputeScore = async () => {
+    if (!lead || updating) return;
+    setUpdating(true);
+    try {
+      await recomputeScore.mutateAsync({
+        leadId: lead.id,
+        agencyId,
+        lead,
+        quoteSummary: {
+          ...quoteSummary,
+          has_documents: quoteData?.has_documents
+        }
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  if (agencyLoading || leadLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-600">Loading lead details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentAgency) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="w-12 h-12 text-yellow-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">No Agency Access</h2>
+          <p className="text-gray-600">You are not associated with an agency.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !lead) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Lead Not Found</h2>
+          <p className="text-gray-600 mb-4">This lead does not exist or you do not have access to it.</p>
+          <Link to="/agency/leads" className="text-blue-600 hover:underline">
+            Back to Leads
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const scoreColor = getScoreColor(lead.lead_score || 0);
+  const scoreFactors = formatScoreFactors(lead.score_factors);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Back Link */}
+        <Link
+          to="/agency/leads"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Leads
+        </Link>
+
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-xl font-bold text-gray-900">
+                  Lead {lead.zip || ''} / {lead.state || ''}
+                </h1>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
+                  ${lead.status === 'new' ? 'bg-blue-100 text-blue-700' : ''}
+                  ${lead.status === 'contacted' ? 'bg-green-100 text-green-700' : ''}
+                  ${lead.status === 'quoted' ? 'bg-purple-100 text-purple-700' : ''}
+                  ${lead.status === 'advanced' ? 'bg-indigo-100 text-indigo-700' : ''}
+                  ${lead.status === 'inactive' ? 'bg-gray-100 text-gray-700' : ''}
+                `}>
+                  {lead.status}
+                </span>
+              </div>
+              <p className="text-sm text-gray-500">
+                Created {formatDate(lead.created_at)}
+              </p>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-lg font-bold ${scoreColor}`}>
+                  {lead.lead_score || 0}
+                </span>
+                <button
+                  onClick={handleRecomputeScore}
+                  disabled={updating}
+                  className="p-2 text-gray-400 hover:text-gray-600 rounded"
+                  title="Recalculate score"
+                >
+                  <RefreshCw className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Lead Score</p>
+            </div>
+          </div>
+
+          {/* Score Factors */}
+          {scoreFactors.length > 0 && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {scoreFactors.map((factor, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs"
+                >
+                  {factor}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Lead Identity */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Lead Details</h2>
+              <dl className="grid grid-cols-2 gap-4">
+                <div>
+                  <dt className="text-sm text-gray-500 flex items-center gap-1">
+                    <MapPin className="w-4 h-4" /> Location
+                  </dt>
+                  <dd className="text-gray-900 font-medium">{lead.zip || '-'}, {lead.state || '-'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-gray-500 flex items-center gap-1">
+                    <Tag className="w-4 h-4" /> Product Intent
+                  </dt>
+                  <dd className="text-gray-900 font-medium">{lead.product_intent || 'Not specified'}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-gray-500">Source</dt>
+                  <dd className="text-gray-900 font-medium">
+                    {lead.referral_code ? (
+                      <span className="text-green-600">Referral: {lead.referral_code}</span>
+                    ) : lead.utm_source ? (
+                      lead.utm_source
+                    ) : (
+                      'Direct'
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-gray-500">Campaign</dt>
+                  <dd className="text-gray-900">{lead.utm_campaign || '-'}</dd>
+                </div>
+              </dl>
+
+              {/* Contact Info Note */}
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  <Phone className="w-4 h-4 inline mr-1" />
+                  Contact details captured via Canopy. View full profile in your Canopy dashboard.
+                </p>
+              </div>
+            </div>
+
+            {/* Quote Summary */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Quote Summary</h2>
+
+              {quoteData ? (
+                <div className="space-y-4">
+                  {/* Policy Types */}
+                  {quoteSummary.policy_types && quoteSummary.policy_types.length > 0 && (
+                    <div>
+                      <dt className="text-sm text-gray-500 mb-1">Policy Types</dt>
+                      <dd className="flex flex-wrap gap-2">
+                        {quoteSummary.policy_types.map((type, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
+                            {type}
+                          </span>
+                        ))}
+                      </dd>
+                    </div>
+                  )}
+
+                  {/* Counts */}
+                  <div className="grid grid-cols-3 gap-4">
+                    {quoteSummary.vehicle_count !== undefined && (
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="text-2xl font-bold text-gray-900">{quoteSummary.vehicle_count}</div>
+                        <div className="text-xs text-gray-500">Vehicles</div>
+                      </div>
+                    )}
+                    {quoteSummary.driver_count !== undefined && (
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="text-2xl font-bold text-gray-900">{quoteSummary.driver_count}</div>
+                        <div className="text-xs text-gray-500">Drivers</div>
+                      </div>
+                    )}
+                    {quoteSummary.property_count !== undefined && (
+                      <div className="text-center p-3 bg-gray-50 rounded">
+                        <div className="text-2xl font-bold text-gray-900">{quoteSummary.property_count}</div>
+                        <div className="text-xs text-gray-500">Properties</div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Renewal Proximity */}
+                  {quoteSummary.renewal_days !== undefined && (
+                    <div className="p-3 bg-yellow-50 rounded-lg">
+                      <span className="text-yellow-800 font-medium">
+                        Renewal in {quoteSummary.renewal_days} days
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Documents */}
+                  <div className="flex items-center gap-2">
+                    <FileText className={`w-5 h-5 ${quoteData.has_documents ? 'text-green-600' : 'text-gray-400'}`} />
+                    <span className={quoteData.has_documents ? 'text-green-700' : 'text-gray-500'}>
+                      {quoteData.has_documents ? (
+                        <>Documents available ({quoteSummary.document_count || 'multiple'})</>
+                      ) : (
+                        'No documents'
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Premium (if present, labeled as reported) */}
+                  {quoteSummary.reported_premium && (
+                    <div className="p-3 bg-gray-50 rounded-lg text-sm">
+                      <span className="text-gray-500">Reported in documents: </span>
+                      <span className="text-gray-900 font-medium">
+                        ${quoteSummary.reported_premium.toLocaleString()}
+                      </span>
+                      <span className="text-gray-400 ml-1">(unverified)</span>
+                    </div>
+                  )}
+
+                  <div className="text-xs text-gray-400 mt-2">
+                    Enriched: {quoteData.enriched_at ? formatTimeAgo(quoteData.enriched_at) : 'Pending'}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-gray-500">No enrichment data available yet.</p>
+              )}
+            </div>
+
+            {/* Activity / Audit Log */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Activity</h2>
+              {auditLog && auditLog.length > 0 ? (
+                <div className="space-y-3">
+                  {auditLog.map((entry) => (
+                    <div key={entry.id} className="flex items-start gap-3 text-sm">
+                      <div className="w-2 h-2 mt-1.5 rounded-full bg-gray-400" />
+                      <div className="flex-1">
+                        <p className="text-gray-900 font-medium">{entry.event_type.replace(/_/g, ' ')}</p>
+                        {entry.metadata && (
+                          <p className="text-gray-500 text-xs">
+                            {entry.metadata.old_status && `${entry.metadata.old_status} → ${entry.metadata.new_status}`}
+                          </p>
+                        )}
+                        <p className="text-gray-400 text-xs">{formatTimeAgo(entry.created_at)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">No activity recorded yet.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar - Actions & SLA */}
+          <div className="space-y-6">
+            {/* SLA Metrics */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">SLA Metrics</h2>
+              <dl className="space-y-4">
+                <div>
+                  <dt className="text-sm text-gray-500 flex items-center gap-1">
+                    <Clock className="w-4 h-4" /> Time Since Created
+                  </dt>
+                  <dd className="text-xl font-bold text-gray-900">{formatDuration(lead.created_at)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-gray-500 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" /> Time to First Contact
+                  </dt>
+                  <dd className="text-xl font-bold text-gray-900">
+                    {lead.first_contact_at ? (
+                      formatDuration(lead.created_at, lead.first_contact_at)
+                    ) : (
+                      <span className="text-orange-600">Not contacted</span>
+                    )}
+                  </dd>
+                </div>
+                {lead.first_contact_at && (
+                  <div className="text-xs text-gray-500">
+                    First contact: {formatDate(lead.first_contact_at)}
+                  </div>
+                )}
+              </dl>
+            </div>
+
+            {/* Workflow Actions */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+
+              {/* First Contact Button */}
+              {!lead.first_contact_at && (
+                <button
+                  onClick={handleFirstContact}
+                  disabled={updating}
+                  className="w-full mb-4 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center gap-2"
+                >
+                  <Phone className="w-4 h-4" />
+                  Mark First Contacted
+                </button>
+              )}
+
+              {/* Status Buttons */}
+              <p className="text-sm text-gray-500 mb-3">Update Status:</p>
+              <div className="grid grid-cols-2 gap-2">
+                {STATUS_ACTIONS.map((action) => (
+                  <button
+                    key={action.value}
+                    onClick={() => handleStatusUpdate(action.value)}
+                    disabled={updating || lead.status === action.value}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                      ${lead.status === action.value
+                        ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }
+                      disabled:opacity-50
+                    `}
+                  >
+                    {action.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Attribution */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Attribution</h2>
+              <dl className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">UTM Source</dt>
+                  <dd className="text-gray-900">{lead.utm_source || '-'}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">UTM Medium</dt>
+                  <dd className="text-gray-900">{lead.utm_medium || '-'}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">UTM Campaign</dt>
+                  <dd className="text-gray-900">{lead.utm_campaign || '-'}</dd>
+                </div>
+                <div className="flex justify-between">
+                  <dt className="text-gray-500">Referral Code</dt>
+                  <dd className="text-gray-900 font-medium">
+                    {lead.referral_code || '-'}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AgencyLeadDetailPage;

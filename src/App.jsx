@@ -44,6 +44,8 @@ const StoryPreviewPage = lazy(() => import('./pages/StoryPreviewPage'));
 import AgencyApplyPage from './pages/AgencyApplyPage';
 const AdminAgenciesPage = lazy(() => import('./pages/AdminAgenciesPage'));
 const AdminAgencyDetailPage = lazy(() => import('./pages/AdminAgencyDetailPage'));
+const AgencyLeadsPage = lazy(() => import('./pages/AgencyLeadsPage'));
+const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -159,6 +161,28 @@ function App() {
 
             {/* Agency Partnership - Public Application */}
             <Route path="partners/apply" element={<AgencyApplyPage />} />
+
+            {/* Agency Dashboard - Pipeline Management (Protected for agency users) */}
+            <Route
+              path="agency/leads"
+              element={
+                <ProtectedRoute requiredRole="editor">
+                  <Suspense fallback={<PageLoader />}>
+                    <AgencyLeadsPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="agency/leads/:id"
+              element={
+                <ProtectedRoute requiredRole="editor">
+                  <Suspense fallback={<PageLoader />}>
+                    <AgencyLeadDetailPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
 
             {/* Admin - Agency Management */}
             <Route
