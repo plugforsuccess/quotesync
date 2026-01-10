@@ -204,17 +204,29 @@ AS $$
     );
 $$;
 
--- Get user's agency memberships (updated to use new table)
+-- Get user's agency memberships (queries both tables for safe transition)
+-- Falls back to agency_users if agency_memberships is empty
 CREATE OR REPLACE FUNCTION get_user_agency_ids()
 RETURNS SETOF UUID
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 AS $$
+    -- First try the new agency_memberships table
     SELECT agency_id
     FROM agency_memberships
     WHERE user_id = auth.uid()
-    AND status = 'active';
+    AND status = 'active'
+    UNION
+    -- Fall back to legacy agency_users table for any unmigrated data
+    SELECT agency_id
+    FROM agency_users
+    WHERE user_id = auth.uid()
+    AND NOT EXISTS (
+        SELECT 1 FROM agency_memberships am
+        WHERE am.user_id = auth.uid()
+        AND am.agency_id = agency_users.agency_id
+    );
 $$;
 
 -- Check if user has specific agency role
@@ -358,8 +370,31 @@ CREATE POLICY "Admins can update own impersonation sessions"
     );
 
 -- =============================================================================
+-- VERIFY DATA MIGRATION BEFORE PROCEEDING
+-- =============================================================================
+-- This ensures agency_memberships has data before we update policies
+
+DO $$
+DECLARE
+    v_agency_users_count INTEGER;
+    v_memberships_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO v_agency_users_count FROM agency_users;
+    SELECT COUNT(*) INTO v_memberships_count FROM agency_memberships;
+
+    -- If agency_users has data but memberships is empty, the migration failed
+    IF v_agency_users_count > 0 AND v_memberships_count = 0 THEN
+        RAISE EXCEPTION 'Data migration failed: agency_users has % rows but agency_memberships is empty', v_agency_users_count;
+    END IF;
+
+    RAISE NOTICE 'Data migration verified: % agency_users migrated to % memberships', v_agency_users_count, v_memberships_count;
+END $$;
+
+-- =============================================================================
 -- UPDATED LEADS POLICIES (TWO-PLANE SEPARATION)
 -- =============================================================================
+-- NOTE: DROP POLICY and CREATE POLICY run in the same transaction,
+-- so there's no window where data is unprotected.
 
 -- Drop existing admin lead policies if any
 DROP POLICY IF EXISTS "Admins can view all leads" ON leads;
