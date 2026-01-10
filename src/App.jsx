@@ -39,6 +39,7 @@ const NewsroomDashboardPage = lazy(() => import('./pages/NewsroomDashboardPage')
 const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
 const ArchivedStoriesPage = lazy(() => import('./pages/ArchivedStoriesPage'));
 const StoryPreviewPage = lazy(() => import('./pages/StoryPreviewPage'));
+const EditorialStandardsPage = lazy(() => import('./pages/EditorialStandardsPage'));
 
 // Agency pages
 import AgencyApplyPage from './pages/AgencyApplyPage';
@@ -143,6 +144,16 @@ function App() {
                 <ProtectedRoute requiredRole="admin">
                   <Suspense fallback={<PageLoader />}>
                     <ArchivedStoriesPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="news/standards"
+              element={
+                <ProtectedRoute requiredRole="editor">
+                  <Suspense fallback={<PageLoader />}>
+                    <EditorialStandardsPage />
                   </Suspense>
                 </ProtectedRoute>
               }
