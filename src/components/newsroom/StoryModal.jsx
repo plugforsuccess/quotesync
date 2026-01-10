@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { X, ExternalLink } from 'lucide-react';
 import VideoEmbed from './VideoEmbed';
 import { trackVideoPlay, trackNewsroomCTAClick } from '../../lib/newsroomAnalytics';
+import { getCategoryLabel, getCategoryContextMessage, getTagLabel, getTagColor } from '../../lib/categories';
 
 /**
  * Format body text with basic paragraph support
@@ -95,7 +96,19 @@ const StoryModal = ({ story, isOpen, onClose }) => {
 
               {/* Meta */}
               <div className="flex flex-wrap items-center gap-2 mb-6 text-sm text-gray-600">
-                <span className="font-medium capitalize">{story.category}</span>
+                <span className="font-medium">{getCategoryLabel(story.category)}</span>
+                {story.secondary_tags?.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <div className="flex gap-1">
+                      {story.secondary_tags.map((tag) => (
+                        <span key={tag} className={`px-2 py-0.5 rounded-full text-xs font-medium ${getTagColor(tag)}`}>
+                          {getTagLabel(tag)}
+                        </span>
+                      ))}
+                    </div>
+                  </>
+                )}
                 {story.region && (
                   <>
                     <span>•</span>
@@ -148,11 +161,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                 </h2>
                 <p className="text-gray-700 leading-relaxed">
                   Understanding these developments helps you make informed decisions about your coverage.
-                  {story.category === 'litigation' && ' Legal changes can directly impact your rates and policy terms.'}
-                  {story.category === 'accident' && ' Accident trends in your area can affect insurance premiums and coverage needs.'}
-                  {story.category === 'policy' && ' Policy updates may create opportunities to save money or improve your protection.'}
-                  {story.category === 'data' && ' Data-driven insights reveal how insurance markets are shifting in real-time.'}
-                  {story.category === 'law' && ' New laws can change your rights and requirements as a driver.'}
+                  {getCategoryContextMessage(story.category) && ` ${getCategoryContextMessage(story.category)}`}
                 </p>
               </div>
 
