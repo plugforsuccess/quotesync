@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useDraftAutosave } from '../hooks/useDraftAutosave';
 import { useNavigationBlock } from '../hooks/useNavigationBlock';
 import DraftRestoreModal from '../components/DraftRestoreModal';
+import UserMenu from '../components/newsroom/UserMenu';
 import { STORY_CATEGORIES, SECONDARY_TAGS, DEFAULT_CATEGORY, getCategoryBySlug } from '../lib/categories';
 
 const NewsroomEditorPage = () => {
@@ -510,6 +511,11 @@ const NewsroomEditorPage = () => {
                   </button>
                 </>
               )}
+
+              {/* User Menu / Logout */}
+              <div className="border-l border-gray-300 pl-2 ml-1">
+                <UserMenu />
+              </div>
             </div>
           </div>
 
