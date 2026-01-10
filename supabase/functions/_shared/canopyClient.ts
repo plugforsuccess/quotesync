@@ -1,35 +1,8 @@
-// Canopy API Client - Backend Only
-// Fetches pull data from Canopy API for enrichment
+// Canopy Webhook Payload Normalizer
+// Extracts structured data from Canopy webhook payloads (via Zapier)
 
-const CANOPY_API_BASE = 'https://api.usecanopy.com/v1'
-
-interface CanopyPullResponse {
-  id: string
-  status: string
-  policies?: CanopyPolicy[]
-  documents?: CanopyDocument[]
-  consumer?: {
-    state?: string
-    zip?: string
-  }
-}
-
-interface CanopyPolicy {
-  type: string // 'auto', 'home', 'life', etc.
-  carrier?: string
-  premium?: number
-  effective_date?: string
-  expiration_date?: string
-  vehicles?: unknown[]
-  drivers?: unknown[]
-  properties?: unknown[]
-}
-
-interface CanopyDocument {
-  id: string
-  type: string
-  name?: string
-}
+// deno-lint-ignore no-explicit-any
+type CanopyPayload = Record<string, any>
 
 export interface QuoteSummary {
   policy_types: string[]
@@ -61,33 +34,18 @@ export interface QuoteSummary {
   }
 }
 
-export async function fetchCanopyPull(pullId: string): Promise<CanopyPullResponse> {
-  const apiKey = Deno.env.get('CANOPY_API_KEY')
-  if (!apiKey) {
-    throw new Error('CANOPY_API_KEY not configured')
-  }
-
-  const response = await fetch(`${CANOPY_API_BASE}/pulls/${pullId}`, {
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-  })
-
-  if (!response.ok) {
-    const errorText = await response.text()
-    throw new Error(`Canopy API error: ${response.status} - ${errorText}`)
-  }
-
-  return response.json()
-}
-
-export function normalizeToQuoteSummary(pull: CanopyPullResponse, hasDocuments: boolean): QuoteSummary {
-  const policies = pull.policies || []
-  const documents = pull.documents || []
+// Normalize webhook payload to quote summary
+// Handles various Canopy/Zapier payload formats
+export function normalizeToQuoteSummary(payload: CanopyPayload, hasDocuments: boolean): QuoteSummary {
+  // Extract from various possible payload structures
+  const policies = payload.policies || payload.data?.policies || []
+  const documents = payload.documents || payload.data?.documents || []
+  const consumer = payload.consumer || payload.data?.consumer || {}
 
   // Extract policy types
-  const policyTypes = [...new Set(policies.map(p => p.type?.toLowerCase()).filter(Boolean))]
+  const policyTypes = [...new Set(
+    policies.map((p: CanopyPayload) => p.type?.toLowerCase()).filter(Boolean)
+  )] as string[]
 
   // Count assets
   let vehicleCount = 0
@@ -107,10 +65,11 @@ export function normalizeToQuoteSummary(pull: CanopyPullResponse, hasDocuments: 
 
     // Sum premiums by type
     if (policy.premium) {
-      if (policy.type?.toLowerCase() === 'auto') {
-        autoTotal += policy.premium
-      } else if (policy.type?.toLowerCase() === 'home' || policy.type?.toLowerCase() === 'homeowners') {
-        homeTotal += policy.premium
+      const ptype = policy.type?.toLowerCase()
+      if (ptype === 'auto') {
+        autoTotal += Number(policy.premium) || 0
+      } else if (ptype === 'home' || ptype === 'homeowners') {
+        homeTotal += Number(policy.premium) || 0
       }
     }
 
@@ -141,7 +100,7 @@ export function normalizeToQuoteSummary(pull: CanopyPullResponse, hasDocuments: 
   }
 
   // Check if addresses present
-  const addressesPresent = !!(pull.consumer?.state || pull.consumer?.zip)
+  const addressesPresent = !!(consumer.state || consumer.zip)
 
   return {
     policy_types: policyTypes,
@@ -169,7 +128,7 @@ export function normalizeToQuoteSummary(pull: CanopyPullResponse, hasDocuments: 
     documents: {
       available: hasDocuments && documents.length > 0,
       count: documents.length,
-      pointers: documents.map(d => d.id),
+      pointers: documents.map((d: CanopyPayload) => d.id).filter(Boolean),
     },
   }
 }

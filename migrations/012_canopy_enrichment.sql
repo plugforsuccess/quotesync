@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS enrichment_jobs (
     lead_id UUID NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
     pull_id TEXT NOT NULL,
     event_type TEXT NOT NULL, -- POLICIES_AVAILABLE, COMPLETE, etc.
+    payload JSONB, -- Webhook payload data (no raw PII, normalized)
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
     attempts INTEGER NOT NULL DEFAULT 0,
     last_error TEXT,

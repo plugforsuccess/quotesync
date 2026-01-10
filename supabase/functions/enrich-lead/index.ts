@@ -4,7 +4,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { fetchCanopyPull, normalizeToQuoteSummary } from '../_shared/canopyClient.ts'
+import { normalizeToQuoteSummary } from '../_shared/canopyClient.ts'
 
 const MAX_ATTEMPTS = 3
 
@@ -13,6 +13,7 @@ interface EnrichmentJob {
   lead_id: string
   pull_id: string
   event_type: string
+  payload: Record<string, unknown> | null
   status: string
   attempts: number
 }
@@ -21,7 +22,7 @@ async function processJob(
   supabase: ReturnType<typeof createClient>,
   job: EnrichmentJob
 ): Promise<{ success: boolean; error?: string }> {
-  const { id: jobId, lead_id: leadId, pull_id: pullId, event_type: eventType } = job
+  const { id: jobId, lead_id: leadId, pull_id: pullId, event_type: eventType, payload } = job
 
   // Get lead with agency_id
   const { data: lead } = await supabase
@@ -43,15 +44,16 @@ async function processJob(
   })
 
   try {
-    // Fetch pull data from Canopy
-    const pullData = await fetchCanopyPull(pullId)
+    if (!payload) {
+      throw new Error('No payload data stored for this job')
+    }
 
     // Determine if documents are available based on event type
-    const hasDocuments = eventType === 'COMPLETE' &&
-      (pullData.documents?.length ?? 0) > 0
+    const documents = (payload.documents as unknown[]) || []
+    const hasDocuments = eventType === 'COMPLETE' && documents.length > 0
 
-    // Normalize to quote summary
-    const quoteSummary = normalizeToQuoteSummary(pullData, hasDocuments)
+    // Normalize payload to quote summary
+    const quoteSummary = normalizeToQuoteSummary(payload, hasDocuments)
 
     // Upsert lead_quotes (one row per lead)
     const { error: upsertError } = await supabase
