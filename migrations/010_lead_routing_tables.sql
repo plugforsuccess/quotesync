@@ -11,13 +11,16 @@ CREATE TABLE IF NOT EXISTS agencies (
   email TEXT NOT NULL,
   phone TEXT,
   is_active BOOLEAN DEFAULT true,
-  is_default BOOLEAN DEFAULT false, -- Only one agency should be default (insuredbycam)
+  is_default BOOLEAN DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
+-- Add is_default column if missing (handles partial migrations)
+ALTER TABLE agencies ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT false;
+
 -- Create index for default agency lookup
-CREATE INDEX idx_agencies_default ON agencies(is_default) WHERE is_default = true;
+CREATE INDEX IF NOT EXISTS idx_agencies_default ON agencies(is_default) WHERE is_default = true;
 
 -- Insert default agency (insuredbycam)
 INSERT INTO agencies (name, slug, email, is_default)
@@ -37,8 +40,8 @@ CREATE TABLE IF NOT EXISTS agency_users (
   UNIQUE(user_id, agency_id)
 );
 
-CREATE INDEX idx_agency_users_agency ON agency_users(agency_id);
-CREATE INDEX idx_agency_users_user ON agency_users(user_id);
+CREATE INDEX IF NOT EXISTS idx_agency_users_agency ON agency_users(agency_id);
+CREATE INDEX IF NOT EXISTS idx_agency_users_user ON agency_users(user_id);
 
 -- ============================================================================
 -- ROUTING_RULES TABLE
@@ -55,9 +58,9 @@ CREATE TABLE IF NOT EXISTS routing_rules (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_routing_rules_state ON routing_rules(state);
-CREATE INDEX idx_routing_rules_agency ON routing_rules(agency_id);
-CREATE INDEX idx_routing_rules_priority ON routing_rules(priority_tier DESC);
+CREATE INDEX IF NOT EXISTS idx_routing_rules_state ON routing_rules(state);
+CREATE INDEX IF NOT EXISTS idx_routing_rules_agency ON routing_rules(agency_id);
+CREATE INDEX IF NOT EXISTS idx_routing_rules_priority ON routing_rules(priority_tier DESC);
 
 -- ============================================================================
 -- LEADS TABLE
@@ -97,10 +100,10 @@ CREATE TABLE IF NOT EXISTS leads (
   updated_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_leads_agency ON leads(agency_id);
-CREATE INDEX idx_leads_status ON leads(status);
-CREATE INDEX idx_leads_created ON leads(created_at DESC);
-CREATE INDEX idx_leads_pull_id ON leads(pull_id);
+CREATE INDEX IF NOT EXISTS idx_leads_agency ON leads(agency_id);
+CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
+CREATE INDEX IF NOT EXISTS idx_leads_created ON leads(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_leads_pull_id ON leads(pull_id);
 
 -- ============================================================================
 -- AUDIT_LOG TABLE
@@ -118,9 +121,9 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_audit_log_lead ON audit_log(lead_id);
-CREATE INDEX idx_audit_log_event ON audit_log(event_type);
-CREATE INDEX idx_audit_log_created ON audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_lead ON audit_log(lead_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_event ON audit_log(event_type);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at DESC);
 
 -- ============================================================================
 -- NOTIFICATIONS TABLE (in-app notifications)
@@ -136,8 +139,8 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
-CREATE INDEX idx_notifications_user ON notifications(user_id);
-CREATE INDEX idx_notifications_unread ON notifications(user_id) WHERE read_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id) WHERE read_at IS NULL;
 
 -- ============================================================================
 -- ROW LEVEL SECURITY
@@ -152,6 +155,7 @@ ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 
 -- Agencies: readable by their users
+DROP POLICY IF EXISTS "Agency users can view their agency" ON agencies;
 CREATE POLICY "Agency users can view their agency"
   ON agencies FOR SELECT
   USING (
@@ -160,11 +164,13 @@ CREATE POLICY "Agency users can view their agency"
   );
 
 -- Agency users: can view own memberships
+DROP POLICY IF EXISTS "Users can view their agency memberships" ON agency_users;
 CREATE POLICY "Users can view their agency memberships"
   ON agency_users FOR SELECT
   USING (user_id = auth.uid());
 
 -- Routing rules: agency owners/managers can manage
+DROP POLICY IF EXISTS "Agency managers can view routing rules" ON routing_rules;
 CREATE POLICY "Agency managers can view routing rules"
   ON routing_rules FOR SELECT
   USING (
@@ -175,12 +181,14 @@ CREATE POLICY "Agency managers can view routing rules"
   );
 
 -- Leads: ONLY visible to assigned agency (privacy-first)
+DROP POLICY IF EXISTS "Agency users can view their leads" ON leads;
 CREATE POLICY "Agency users can view their leads"
   ON leads FOR SELECT
   USING (
     agency_id IN (SELECT agency_id FROM agency_users WHERE user_id = auth.uid())
   );
 
+DROP POLICY IF EXISTS "Agency users can update their leads" ON leads;
 CREATE POLICY "Agency users can update their leads"
   ON leads FOR UPDATE
   USING (
@@ -188,6 +196,7 @@ CREATE POLICY "Agency users can update their leads"
   );
 
 -- Audit log: agency users can view their agency's logs
+DROP POLICY IF EXISTS "Agency users can view their audit logs" ON audit_log;
 CREATE POLICY "Agency users can view their audit logs"
   ON audit_log FOR SELECT
   USING (
@@ -195,10 +204,12 @@ CREATE POLICY "Agency users can view their audit logs"
   );
 
 -- Notifications: users see only their own
+DROP POLICY IF EXISTS "Users can view their notifications" ON notifications;
 CREATE POLICY "Users can view their notifications"
   ON notifications FOR SELECT
   USING (user_id = auth.uid());
 
+DROP POLICY IF EXISTS "Users can update their notifications" ON notifications;
 CREATE POLICY "Users can update their notifications"
   ON notifications FOR UPDATE
   USING (user_id = auth.uid());
@@ -208,16 +219,19 @@ CREATE POLICY "Users can update their notifications"
 -- ============================================================================
 
 -- Allow service role to insert leads
+DROP POLICY IF EXISTS "Service role can insert leads" ON leads;
 CREATE POLICY "Service role can insert leads"
   ON leads FOR INSERT
   WITH CHECK (true);
 
 -- Allow service role to insert audit logs
+DROP POLICY IF EXISTS "Service role can insert audit logs" ON audit_log;
 CREATE POLICY "Service role can insert audit logs"
   ON audit_log FOR INSERT
   WITH CHECK (true);
 
 -- Allow service role to insert notifications
+DROP POLICY IF EXISTS "Service role can insert notifications" ON notifications;
 CREATE POLICY "Service role can insert notifications"
   ON notifications FOR INSERT
   WITH CHECK (true);
