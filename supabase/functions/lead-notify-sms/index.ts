@@ -5,47 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-
-// Format phone to E.164 US format
-function formatPhoneUS(phone: string): string | null {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 10) return `+1${digits}`
-  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
-  return null
-}
-
-// Send SMS via Twilio REST API
-async function sendSMS(
-  accountSid: string,
-  authToken: string,
-  from: string,
-  to: string,
-  body: string
-): Promise<{ success: boolean; sid?: string; error?: string }> {
-  const auth = btoa(`${accountSid}:${authToken}`)
-  const params = new URLSearchParams()
-  params.append('To', to)
-  params.append('From', from)
-  params.append('Body', body)
-
-  const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    }
-  )
-
-  const data = await response.json()
-  if (!response.ok) {
-    return { success: false, error: data.message || 'Twilio SMS failed' }
-  }
-  return { success: true, sid: data.sid }
-}
+import { sendSMS, formatPhoneUS, checkRequiredEnvVars } from '../_shared/twilio.ts'
 
 // Initiate outbound call via Twilio REST API
 async function initiateCall(
@@ -55,7 +15,7 @@ async function initiateCall(
   to: string,
   twimlUrl: string,
   timeout: number = 20
-): Promise<{ success: boolean; sid?: string; error?: string }> {
+): Promise<{ success: boolean; sid?: string; error?: string; code?: number }> {
   const auth = btoa(`${accountSid}:${authToken}`)
   const params = new URLSearchParams()
   params.append('To', to)
@@ -79,7 +39,7 @@ async function initiateCall(
 
   const data = await response.json()
   if (!response.ok) {
-    return { success: false, error: data.message || 'Twilio call failed' }
+    return { success: false, error: data.message || 'Twilio call failed', code: data.code }
   }
   return { success: true, sid: data.sid }
 }
@@ -92,6 +52,19 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Validate required env vars
+  const missingVar = checkRequiredEnvVars([
+    'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
+    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER', 'AGENT_PHONE_NUMBER',
+  ])
+  if (missingVar) {
+    console.error(`[LEAD_NOTIFY_SMS] Missing required env var: ${missingVar}`)
+    return new Response(JSON.stringify({ error: `Missing config: ${missingVar}` }), {
+      status: 503,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
@@ -163,99 +136,106 @@ Deno.serve(async (req) => {
         metadata: { twilio_sid: smsResult.sid, message_type: 'initial' },
       })
     } else {
-      console.error('[LEAD_NOTIFY_SMS] SMS send failed:', smsResult.error)
+      console.error('[LEAD_NOTIFY_SMS] SMS send failed:', smsResult.error, 'code:', smsResult.code)
       await supabase.from('audit_log').insert({
         event_type: 'SMS_SENT',
         lead_id,
-        metadata: { error: smsResult.error, message_type: 'initial', success: false },
+        metadata: { error: smsResult.error, code: smsResult.code, message_type: 'initial', success: false },
       })
     }
 
     // ====== STEP 2: Speed-to-call (T+30s) ======
-    // Wait 30 seconds before initiating the call bridge
-    await new Promise((resolve) => setTimeout(resolve, 30000))
+    // Wait 30 seconds before initiating the call bridge.
+    // Safety timeout at 120s to prevent the Edge Function from hanging.
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 120000)
 
-    // Build TwiML webhook URL for the whisper
-    const voiceHandlerUrl = `${supabaseUrl}/functions/v1/twilio-voice-handler`
-    const whisperParams = new URLSearchParams({
-      action: 'whisper',
-      lead_name: name,
-      zip: zip || '',
-      home: owns_home ? 'yes' : 'no',
-      vehicles: (vehicle_count || 1).toString(),
-      lead_phone: formattedPhone,
-    })
-    const twimlUrl = `${voiceHandlerUrl}?${whisperParams.toString()}`
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 30000))
 
-    // Call the agent first
-    const callResult = await initiateCall(
-      TWILIO_ACCOUNT_SID,
-      TWILIO_AUTH_TOKEN,
-      TWILIO_PHONE_NUMBER,
-      AGENT_PHONE_NUMBER,
-      twimlUrl,
-      20 // 20 second timeout
-    )
-
-    if (callResult.success) {
-      // Update lead: call_initiated
-      await supabase
-        .from('leads')
-        .update({ call_initiated: true, call_initiated_at: new Date().toISOString() })
-        .eq('id', lead_id)
-
-      // Log call message
-      await supabase.from('lead_messages').insert({
-        lead_id,
-        direction: 'outbound',
-        channel: 'call',
-        body: `Speed-to-call initiated to agent, bridging to ${formattedPhone}`,
-        twilio_sid: callResult.sid,
-        status: 'initiated',
+      // Build TwiML webhook URL for the whisper
+      const voiceHandlerUrl = `${supabaseUrl}/functions/v1/twilio-voice-handler`
+      const whisperParams = new URLSearchParams({
+        action: 'whisper',
+        lead_name: name,
+        zip: zip || '',
+        home: owns_home ? 'yes' : 'no',
+        vehicles: (vehicle_count || 1).toString(),
+        lead_phone: formattedPhone,
       })
+      const twimlUrl = `${voiceHandlerUrl}?${whisperParams.toString()}`
 
-      // Audit log
-      await supabase.from('audit_log').insert({
-        event_type: 'CALL_INITIATED',
-        lead_id,
-        metadata: { twilio_sid: callResult.sid, agent_phone: AGENT_PHONE_NUMBER },
-      })
-    } else {
-      console.error('[LEAD_NOTIFY_SMS] Call initiation failed:', callResult.error)
-
-      // Agent didn't answer — send follow-up SMS to lead
-      const missedBody =
-        `Hey ${name}, I just tried calling but missed you! I've got your quotes ready. What's a good time to chat tomorrow? Or reply here and I can text you your estimate.`
-
-      const followUpResult = await sendSMS(
+      // Call the agent first
+      const callResult = await initiateCall(
         TWILIO_ACCOUNT_SID,
         TWILIO_AUTH_TOKEN,
         TWILIO_PHONE_NUMBER,
-        formattedPhone,
-        missedBody
+        AGENT_PHONE_NUMBER,
+        twimlUrl,
+        20 // 20 second timeout
       )
 
-      await supabase.from('lead_messages').insert({
-        lead_id,
-        direction: 'outbound',
-        channel: 'sms',
-        body: missedBody,
-        twilio_sid: followUpResult.sid || null,
-        status: followUpResult.success ? 'sent' : 'failed',
-      })
+      if (callResult.success) {
+        // Update lead: call_initiated
+        await supabase
+          .from('leads')
+          .update({ call_initiated: true, call_initiated_at: new Date().toISOString() })
+          .eq('id', lead_id)
 
-      await supabase.from('audit_log').insert({
-        event_type: 'CALL_MISSED',
-        lead_id,
-        metadata: { error: callResult.error, followup_sms_sent: followUpResult.success },
-      })
+        // Log call message
+        await supabase.from('lead_messages').insert({
+          lead_id,
+          direction: 'outbound',
+          channel: 'call',
+          body: `Speed-to-call initiated to agent, bridging to ${formattedPhone}`,
+          twilio_sid: callResult.sid,
+          status: 'initiated',
+        })
+
+        // Audit log
+        await supabase.from('audit_log').insert({
+          event_type: 'CALL_INITIATED',
+          lead_id,
+          metadata: { twilio_sid: callResult.sid },
+        })
+      } else {
+        console.error('[LEAD_NOTIFY_SMS] Call initiation failed:', callResult.error, 'code:', callResult.code)
+
+        // Agent didn't answer — send follow-up SMS to lead
+        const missedBody =
+          `Hey ${name}, I just tried calling but missed you! I've got your quotes ready. What's a good time to chat tomorrow? Or reply here and I can text you your estimate.`
+
+        const followUpResult = await sendSMS(
+          TWILIO_ACCOUNT_SID,
+          TWILIO_AUTH_TOKEN,
+          TWILIO_PHONE_NUMBER,
+          formattedPhone,
+          missedBody
+        )
+
+        await supabase.from('lead_messages').insert({
+          lead_id,
+          direction: 'outbound',
+          channel: 'sms',
+          body: missedBody,
+          twilio_sid: followUpResult.sid || null,
+          status: followUpResult.success ? 'sent' : 'failed',
+        })
+
+        await supabase.from('audit_log').insert({
+          event_type: 'CALL_MISSED',
+          lead_id,
+          metadata: { error: callResult.error, code: callResult.code, followup_sms_sent: followUpResult.success },
+        })
+      }
+    } finally {
+      clearTimeout(timeoutId)
     }
 
     return new Response(JSON.stringify({
       success: true,
       lead_id,
       sms_sent: smsResult.success,
-      call_initiated: callResult.success,
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

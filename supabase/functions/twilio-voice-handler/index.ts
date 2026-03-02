@@ -8,6 +8,7 @@
 //   ?action=status   — Handles call status callbacks (completed, no-answer, etc.)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { validateTwilioSignature, normalizePhoneForStorage, checkRequiredEnvVars } from '../_shared/twilio.ts'
 
 // TwiML response helper
 function twimlResponse(twiml: string): Response {
@@ -18,11 +19,41 @@ function twimlResponse(twiml: string): Response {
 }
 
 Deno.serve(async (req) => {
+  // Validate required env vars
+  const missingVar = checkRequiredEnvVars([
+    'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
+    'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER',
+  ])
+  if (missingVar) {
+    console.error(`[TWILIO_VOICE_HANDLER] Missing required env var: ${missingVar}`)
+    return new Response(JSON.stringify({ error: `Missing config: ${missingVar}` }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const url = new URL(req.url)
   const action = url.searchParams.get('action')
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
+
+  // Validate Twilio signature on POST requests (all Twilio webhooks are POST)
+  if (req.method === 'POST') {
+    // Build the public-facing URL for signature validation
+    // Supabase Edge Functions sit behind a proxy, so use the canonical URL
+    const publicUrl = `${supabaseUrl}/functions/v1/twilio-voice-handler${url.search}`
+
+    const isValid = await validateTwilioSignature(req, TWILIO_AUTH_TOKEN, publicUrl)
+    if (!isValid) {
+      console.error('[TWILIO_VOICE_HANDLER] Invalid Twilio signature — rejecting request')
+      return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+  }
 
   if (action === 'whisper') {
     // Agent answered — play whisper with lead info and gather digit input
@@ -51,17 +82,6 @@ Deno.serve(async (req) => {
     // Agent pressed 1 — bridge the call to the lead
     const leadPhone = url.searchParams.get('lead_phone') || ''
 
-    // Also parse from POST body (Twilio sends form data)
-    let digits = ''
-    if (req.method === 'POST') {
-      try {
-        const formData = await req.formData()
-        digits = formData.get('Digits')?.toString() || ''
-      } catch {
-        // Query param fallback — digits not required for direct bridge
-      }
-    }
-
     if (!leadPhone) {
       const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -85,26 +105,30 @@ Deno.serve(async (req) => {
     try {
       const supabase = createClient(supabaseUrl, supabaseKey)
 
-      // Find lead by phone to log the connection
-      const { data: lead } = await supabase
-        .from('leads')
-        .select('id')
-        .eq('phone', leadPhone.replace('+1', '').replace('+', ''))
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
+      // Normalize the phone to 10-digit for consistent lookup
+      const normalizedPhone = normalizePhoneForStorage(leadPhone)
 
-      if (lead) {
-        await supabase
+      if (normalizedPhone) {
+        const { data: lead } = await supabase
           .from('leads')
-          .update({ call_connected: true, call_connected_at: new Date().toISOString() })
-          .eq('id', lead.id)
+          .select('id')
+          .eq('phone', normalizedPhone)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
 
-        await supabase.from('audit_log').insert({
-          event_type: 'CALL_CONNECTED',
-          lead_id: lead.id,
-          metadata: { lead_phone: leadPhone },
-        })
+        if (lead) {
+          await supabase
+            .from('leads')
+            .update({ call_connected: true, call_connected_at: new Date().toISOString() })
+            .eq('id', lead.id)
+
+          await supabase.from('audit_log').insert({
+            event_type: 'CALL_CONNECTED',
+            lead_id: lead.id,
+            metadata: {},
+          })
+        }
       }
     } catch (err) {
       console.error('[TWILIO_VOICE_HANDLER] Error logging bridge:', err)
@@ -115,7 +139,6 @@ Deno.serve(async (req) => {
 
   if (action === 'status') {
     // Call status callback from Twilio
-    // Twilio sends POST with form-encoded data
     if (req.method === 'POST') {
       try {
         const formData = await req.formData()
@@ -123,9 +146,6 @@ Deno.serve(async (req) => {
         const callSid = formData.get('CallSid')?.toString() || ''
 
         console.log(`[TWILIO_VOICE_HANDLER] Call ${callSid} status: ${callStatus}`)
-
-        // If the call was not answered, we could trigger follow-up logic here
-        // For now, just log it — the lead-notify-sms function handles the no-answer case
       } catch (err) {
         console.error('[TWILIO_VOICE_HANDLER] Status callback error:', err)
       }

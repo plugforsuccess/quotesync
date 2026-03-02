@@ -34,7 +34,7 @@ CREATE INDEX IF NOT EXISTS idx_leads_phone ON leads(phone) WHERE phone IS NOT NU
 -- ============================================================================
 ALTER TABLE leads DROP CONSTRAINT IF EXISTS leads_status_check;
 ALTER TABLE leads ADD CONSTRAINT leads_status_check
-  CHECK (status IN ('new', 'contacted', 'interested', 'qualified', 'closed_won', 'closed_lost'));
+  CHECK (status IN ('partial', 'new', 'contacted', 'interested', 'qualified', 'closed_won', 'closed_lost'));
 
 -- ============================================================================
 -- AUDIT_LOG TABLE: Expand event_type constraint for Twilio events

@@ -5,47 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-
-// Send SMS via Twilio REST API
-async function sendSMS(
-  accountSid: string,
-  authToken: string,
-  from: string,
-  to: string,
-  body: string
-): Promise<{ success: boolean; sid?: string; error?: string }> {
-  const auth = btoa(`${accountSid}:${authToken}`)
-  const params = new URLSearchParams()
-  params.append('To', to)
-  params.append('From', from)
-  params.append('Body', body)
-
-  const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    }
-  )
-
-  const data = await response.json()
-  if (!response.ok) {
-    return { success: false, error: data.message || 'Twilio SMS failed' }
-  }
-  return { success: true, sid: data.sid }
-}
-
-// Format phone to E.164 US format
-function formatPhoneUS(phone: string): string | null {
-  const digits = phone.replace(/\D/g, '')
-  if (digits.length === 10) return `+1${digits}`
-  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`
-  return null
-}
+import { sendSMS, formatPhoneUS, checkRequiredEnvVars } from '../_shared/twilio.ts'
 
 // Drip message templates
 function getDripMessage(
@@ -81,6 +41,19 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Validate required env vars
+  const missingVar = checkRequiredEnvVars([
+    'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
+    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER',
+  ])
+  if (missingVar) {
+    console.error(`[SMS_DRIP] Missing required env var: ${missingVar}`)
+    return new Response(JSON.stringify({ error: `Missing config: ${missingVar}` }), {
+      status: 503,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
@@ -139,12 +112,26 @@ Deno.serve(async (req) => {
 
       const formattedPhone = formatPhoneUS(lead.phone)
       if (!formattedPhone) {
-        console.error(`[SMS_DRIP] Invalid phone for lead ${lead.id}: ${lead.phone}`)
+        console.error(`[SMS_DRIP] Invalid phone for lead ${lead.id}`)
         continue
       }
 
       const message = getDripMessage(nextStage, lead.first_name, lead.zip)
       if (!message) continue
+
+      // Optimistic lock: claim the lead by updating drip_stage first.
+      // Uses eq on current drip_stage as a concurrency guard — if another
+      // invocation already advanced this lead, the update will match 0 rows.
+      const { count: updated } = await supabase
+        .from('leads')
+        .update({ drip_stage: nextStage })
+        .eq('id', lead.id)
+        .eq('drip_stage', lead.drip_stage)
+
+      if (!updated || updated === 0) {
+        // Another invocation already processed this lead — skip
+        continue
+      }
 
       const smsResult = await sendSMS(
         TWILIO_ACCOUNT_SID,
@@ -156,12 +143,6 @@ Deno.serve(async (req) => {
 
       if (smsResult.success) {
         sent++
-
-        // Update drip stage
-        await supabase
-          .from('leads')
-          .update({ drip_stage: nextStage })
-          .eq('id', lead.id)
 
         // Log message
         await supabase.from('lead_messages').insert({
@@ -180,7 +161,13 @@ Deno.serve(async (req) => {
           metadata: { drip_stage: nextStage, twilio_sid: smsResult.sid },
         })
       } else {
-        console.error(`[SMS_DRIP] Failed to send drip ${nextStage} to lead ${lead.id}:`, smsResult.error)
+        console.error(`[SMS_DRIP] Failed to send drip ${nextStage} to lead ${lead.id}:`, smsResult.error, 'code:', smsResult.code)
+
+        // Roll back drip_stage on SMS failure so next run retries
+        await supabase
+          .from('leads')
+          .update({ drip_stage: lead.drip_stage })
+          .eq('id', lead.id)
       }
     }
 
