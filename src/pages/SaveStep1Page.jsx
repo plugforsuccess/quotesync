@@ -139,12 +139,12 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.OWNS_HOME, JSON.stringify(ownsHome));
       sessionStorage.setItem(SESSION_KEYS.VEHICLE_COUNT, String(vehicleCount));
       sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
-      sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, autoDrivingRecord || '');
-      sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, homeClaimsHistory || '');
+      sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, JSON.stringify(autoDrivingRecord));
+      sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, JSON.stringify(homeClaimsHistory));
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
 
       // Fire analytics
-      trackFunnelStep(1, { zip: zipCode, owns_home: ownsHome, vehicle_count: vehicleCount });
+      trackFunnelStep(1, { zip: zipCode, owns_home: ownsHome, vehicle_count: vehicleCount, product_intent: productIntent, auto_driving_record: autoDrivingRecord, home_claims_history: homeClaimsHistory });
 
       navigate('/save/details');
     } catch (err) {
@@ -154,8 +154,8 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.OWNS_HOME, JSON.stringify(ownsHome));
       sessionStorage.setItem(SESSION_KEYS.VEHICLE_COUNT, String(vehicleCount));
       sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
-      sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, autoDrivingRecord || '');
-      sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, homeClaimsHistory || '');
+      sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, JSON.stringify(autoDrivingRecord));
+      sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, JSON.stringify(homeClaimsHistory));
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
       navigate('/save/details');
     } finally {

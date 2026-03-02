@@ -85,8 +85,8 @@ export default function SaveStep2Page() {
       vehicleCount: parseInt(sessionStorage.getItem(SESSION_KEYS.VEHICLE_COUNT) || '1', 10),
       utm: JSON.parse(sessionStorage.getItem(SESSION_KEYS.UTM) || '{}'),
       productIntent: sessionStorage.getItem(SESSION_KEYS.PRODUCT_INTENT) || null,
-      autoDrivingRecord: sessionStorage.getItem(SESSION_KEYS.AUTO_DRIVING_RECORD) || null,
-      homeClaimsHistory: sessionStorage.getItem(SESSION_KEYS.HOME_CLAIMS_HISTORY) || null,
+      autoDrivingRecord: JSON.parse(sessionStorage.getItem(SESSION_KEYS.AUTO_DRIVING_RECORD) || 'null'),
+      homeClaimsHistory: JSON.parse(sessionStorage.getItem(SESSION_KEYS.HOME_CLAIMS_HISTORY) || 'null'),
     };
   });
 
