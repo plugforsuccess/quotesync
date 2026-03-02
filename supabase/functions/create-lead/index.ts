@@ -202,7 +202,14 @@ Deno.serve(async (req) => {
       landing_page: body.landing_page || null,
       routing_rule_id: routing.routingRuleId,
       routed_via_fallback: routing.viaFallback,
-      status: 'new'
+      status: 'new',
+      first_name: body.first_name || null,
+      last_name: body.last_name || null,
+      phone: body.phone || null,
+      email: body.email || null,
+      owns_home: body.owns_home || null,
+      vehicle_count: body.vehicle_count || null,
+      source: body.source || 'canopy',
     }
 
     const { data: lead, error: leadError } = await supabase
@@ -281,6 +288,32 @@ Deno.serve(async (req) => {
     // TODO: Send email notification to agency.email
     // For now, log to console (visible in Supabase logs)
     console.log(`[LEAD NOTIFICATION] New lead ${lead.id} for agency ${agency?.name} (${agency?.email})`)
+
+    // Trigger SMS + speed-to-call automation
+    // Only if lead has a phone number (will be null for Canopy-only leads until enrichment)
+    if (body.phone) {
+      try {
+        const notifyUrl = `${supabaseUrl}/functions/v1/lead-notify-sms`
+        await fetch(notifyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            lead_id: lead.id,
+            first_name: body.first_name || 'there',
+            phone: body.phone,
+            zip: zip,
+            owns_home: body.owns_home || false,
+            vehicle_count: body.vehicle_count || 1,
+          }),
+        })
+      } catch (smsError) {
+        // Don't fail lead creation if SMS fails
+        console.error('[CREATE_LEAD] SMS automation error:', smsError.message)
+      }
+    }
 
     return new Response(JSON.stringify({
       success: true,

@@ -206,3 +206,89 @@ export const trackCTAClick = (ctaName, location) => {
     cta_location: location,
   });
 };
+
+// ===== Google Ads Conversion Tracking =====
+
+/**
+ * Track Google Ads conversion
+ * @param {string} conversionLabel - The conversion label from Google Ads
+ * @param {number} value - Conversion value
+ */
+export const trackGoogleAdsConversion = (conversionLabel, value = 0) => {
+  if (typeof window !== 'undefined' && window.gtag && window.GADS_CONVERSION_ID) {
+    window.gtag('event', 'conversion', {
+      send_to: `${window.GADS_CONVERSION_ID}/${conversionLabel}`,
+      value: value,
+      currency: 'USD',
+    });
+  }
+
+  if (import.meta.env.DEV) {
+    console.log('📊 Google Ads Conversion:', conversionLabel, value);
+  }
+};
+
+// ===== Funnel Tracking (for /save funnel) =====
+
+/**
+ * Track funnel step completion
+ * @param {number} step - Step number (1, 2, 3)
+ * @param {object} data - Step data
+ */
+export const trackFunnelStep = (step, data = {}) => {
+  const eventName = `funnel_step_${step}`;
+
+  // GA4
+  trackEvent(eventName, {
+    event_category: 'funnel',
+    event_label: `step_${step}`,
+    ...data,
+  });
+
+  // Meta Pixel - map to standard events
+  if (typeof window !== 'undefined' && window.fbq) {
+    if (step === 1) {
+      window.fbq('track', 'Lead', { content_name: 'Funnel Step 1 - Qualifier' });
+    } else if (step === 2) {
+      window.fbq('track', 'CompleteRegistration', { content_name: 'Funnel Step 2 - Contact' });
+    } else if (step === 3) {
+      window.fbq('track', 'ViewContent', { content_name: 'Funnel Step 3 - Confirmation' });
+    }
+  }
+
+  if (import.meta.env.DEV) {
+    console.log('📊 Funnel Step:', step, data);
+  }
+};
+
+/**
+ * Track lead form submission (primary conversion event)
+ * @param {object} leadData - Lead data for attribution
+ */
+export const trackLeadSubmission = (leadData = {}) => {
+  // GA4 - primary conversion
+  trackEvent('generate_lead', {
+    event_category: 'conversion',
+    event_label: 'manual_form',
+    value: 60,
+    currency: 'USD',
+    ...leadData,
+  });
+
+  // Google Ads conversion
+  trackGoogleAdsConversion('CONVERSION_LABEL_HERE', 60);
+
+  // Meta Pixel
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('track', 'Lead', {
+      content_name: 'Insurance Lead',
+      content_category: 'Insurance',
+      value: 60,
+      currency: 'USD',
+    });
+  }
+
+  if (import.meta.env.DEV) {
+    console.log('📊 Lead Submission:', leadData);
+  }
+};
