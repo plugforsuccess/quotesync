@@ -1,5 +1,4 @@
 {
-  "_csp_domain_registry": "Canopy: cdn.usecanopy.com (scripts), app.usecanopy.com (frames, connect) | Google Ads: www.googleadservices.com, googleads.g.doubleclick.net, www.google.com, google.com | Google Analytics: www.google-analytics.com, www.googleapis.com | GTM: www.googletagmanager.com (scripts, frames) | Meta Pixel: connect.facebook.net (scripts), www.facebook.com (connect) | Twitter/X: platform.twitter.com, cdn.syndication.twimg.com, twitter.com, x.com | Supabase: *.supabase.co, wss://*.supabase.co | Anthropic: api.anthropic.com | Twilio: api.twilio.com",
   "headers": [
     {
       "source": "/(.*)",
