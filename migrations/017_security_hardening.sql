@@ -1,6 +1,7 @@
--- Migration: 016_security_hardening.sql
+-- Migration: 017_security_hardening.sql
 -- Security hardening for lead acquisition funnel
--- Fixes: F-01 (RLS insert policy), adds TCPA consent columns (F-04)
+-- Fixes: F-01 (RLS insert policy), F-04 (TCPA consent columns),
+--        LEAD_ACTIVATED audit event type
 
 -- ============================================================================
 -- F-01: Restrict RLS insert policy on leads table
@@ -44,3 +45,22 @@ ALTER TABLE leads ADD COLUMN IF NOT EXISTS consent_given_at timestamptz;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS consent_ip text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS consent_version text;
 ALTER TABLE leads ADD COLUMN IF NOT EXISTS consent_user_agent text;
+
+-- ============================================================================
+-- Add LEAD_ACTIVATED to audit_log event_type constraint
+-- The create-lead Edge Function now logs LEAD_ACTIVATED when upgrading a
+-- partial funnel lead to status='new'. Without this, the constraint from
+-- migration 015 would reject the insert and break every Step 2 submission
+-- for returning users.
+-- ============================================================================
+
+ALTER TABLE audit_log DROP CONSTRAINT IF EXISTS audit_log_event_type_check;
+ALTER TABLE audit_log ADD CONSTRAINT audit_log_event_type_check
+  CHECK (event_type IN (
+    'LEAD_CREATED', 'LEAD_ACTIVATED', 'ROUTED', 'NOTIFIED', 'ROUTING_FALLBACK',
+    'STATUS_CHANGED', 'ASSIGNED',
+    'SMS_SENT', 'SMS_INBOUND', 'SMS_DRIP_SENT',
+    'CALL_INITIATED', 'CALL_CONNECTED', 'CALL_MISSED',
+    'CANOPY_WEBHOOK_RECEIVED', 'ENRICHMENT_ORPHAN_PULL',
+    'ADMIN_IMPERSONATE_USER', 'ADMIN_END_IMPERSONATION'
+  ));

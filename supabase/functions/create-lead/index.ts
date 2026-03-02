@@ -228,6 +228,9 @@ Deno.serve(async (req) => {
       utm_term: sanitizeUtm(body.utm_term),
     }
 
+    // F-04 fix: Capture consent_ip server-side from request header (client can't reliably self-report)
+    const consentIp = clientIp !== 'unknown' ? clientIp : null
+
     let lead: any
 
     if (existingPartialLead) {
@@ -249,9 +252,9 @@ Deno.serve(async (req) => {
           owns_home: body.owns_home || null,
           vehicle_count: body.vehicle_count || null,
           lead_score: body.lead_score || null,
-          // F-04: TCPA consent fields
+          // F-04: TCPA consent fields (consent_ip captured server-side)
           consent_given_at: body.consent_given_at || null,
-          consent_ip: body.consent_ip || null,
+          consent_ip: consentIp,
           consent_version: body.consent_version || null,
           consent_user_agent: body.consent_user_agent || null,
         })
@@ -284,9 +287,9 @@ Deno.serve(async (req) => {
         vehicle_count: body.vehicle_count || null,
         source: body.source || 'canopy',
         lead_score: body.lead_score || null,
-        // F-04: TCPA consent fields
+        // F-04: TCPA consent fields (consent_ip captured server-side)
         consent_given_at: body.consent_given_at || null,
-        consent_ip: body.consent_ip || null,
+        consent_ip: consentIp,
         consent_version: body.consent_version || null,
         consent_user_agent: body.consent_user_agent || null,
       }
