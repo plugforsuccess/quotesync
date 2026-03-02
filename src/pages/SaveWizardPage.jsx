@@ -1,6 +1,7 @@
 // src/pages/SaveWizardPage.jsx — Funnel V2: Single-question-at-a-time wizard
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowRight, ArrowLeft, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useWizard, SESSION_KEYS } from '../hooks/useWizard';
 import { supabase } from '../lib/supabase';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion, trackEvent } from '../lib/analytics';
@@ -56,6 +57,7 @@ function computeLeadScore(answers, utmParams) {
 // ─── Component ─────────────────────────────────────────────────────
 
 export default function SaveWizardPage() {
+  const navigate = useNavigate();
   const wizard = useWizard();
   const { answers, setAnswer, currentStepId, currentIndex, direction, isFirstStep, goNext, goBack, persistAll, productIntentOptions } = wizard;
 
@@ -439,6 +441,14 @@ export default function SaveWizardPage() {
 
       <div className="container mx-auto px-4 py-12 sm:py-16 relative z-10">
         <div className="max-w-lg mx-auto">
+          <button
+            type="button"
+            onClick={() => navigate('/quotes')}
+            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition-colors hover:text-white"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to lead form</span>
+          </button>
 
           {/* Progress Bar */}
           {!isConfirmation && (
