@@ -10,12 +10,17 @@ export default function SaveConfirmationPage() {
   useEffect(() => {
     document.title = "You're All Set! | Insured By Cam";
 
-    // Fire analytics
-    trackFunnelStep(3);
+    // F-10 fix: Deduplicate pixel fires — only fire once per funnel completion
+    const TRACKED_KEY = 'qs_confirmation_tracked';
+    if (!sessionStorage.getItem(TRACKED_KEY)) {
+      trackFunnelStep(3);
 
-    // Meta Pixel ViewContent for retargeting pool
-    if (typeof window !== 'undefined' && window.fbq) {
-      window.fbq('track', 'ViewContent', { content_name: 'Funnel Confirmation' });
+      // Meta Pixel ViewContent for retargeting pool
+      if (typeof window !== 'undefined' && window.fbq) {
+        window.fbq('track', 'ViewContent', { content_name: 'Funnel Confirmation' });
+      }
+
+      sessionStorage.setItem(TRACKED_KEY, '1');
     }
   }, []);
 

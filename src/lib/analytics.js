@@ -277,8 +277,12 @@ export const trackLeadSubmission = (leadData = {}) => {
     ...leadData,
   });
 
-  // Google Ads conversion
-  trackGoogleAdsConversion('CONVERSION_LABEL_HERE', 60);
+  // F-11 fix: Use env var for Google Ads conversion label
+  // Set VITE_GADS_CONVERSION_LABEL in .env after creating the conversion action in Google Ads
+  const conversionLabel = import.meta.env.VITE_GADS_CONVERSION_LABEL;
+  if (conversionLabel) {
+    trackGoogleAdsConversion(conversionLabel, 60);
+  }
 
   // Meta Pixel
   if (typeof window !== 'undefined' && window.fbq) {

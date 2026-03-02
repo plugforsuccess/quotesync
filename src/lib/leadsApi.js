@@ -23,19 +23,25 @@ export function getSessionId() {
   return sessionId;
 }
 
+// F-05 fix: Sanitize UTM values — truncate to 256 chars and strip HTML tags
+function sanitizeUtm(val) {
+  if (!val) return null;
+  return val.slice(0, 256).replace(/<[^>]*>/g, '');
+}
+
 /**
- * Extracts UTM parameters from current URL
+ * Extracts UTM parameters from current URL (sanitized)
  * @returns {Object} UTM parameters
  */
 export function getUtmParams() {
   const params = new URLSearchParams(window.location.search);
   return {
-    utm_source: params.get('utm_source') || null,
-    utm_medium: params.get('utm_medium') || null,
-    utm_campaign: params.get('utm_campaign') || null,
-    utm_content: params.get('utm_content') || null,
-    utm_term: params.get('utm_term') || null,
-    referral_code: params.get('ref') || params.get('referral_code') || null,
+    utm_source: sanitizeUtm(params.get('utm_source')),
+    utm_medium: sanitizeUtm(params.get('utm_medium')),
+    utm_campaign: sanitizeUtm(params.get('utm_campaign')),
+    utm_content: sanitizeUtm(params.get('utm_content')),
+    utm_term: sanitizeUtm(params.get('utm_term')),
+    referral_code: sanitizeUtm(params.get('ref') || params.get('referral_code')),
   };
 }
 

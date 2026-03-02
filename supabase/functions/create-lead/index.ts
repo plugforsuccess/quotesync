@@ -1,12 +1,20 @@
 // Supabase Edge Function: create-lead
 // POST /functions/v1/create-lead
-// Creates a lead record from Canopy completion, routes to agency, notifies, logs audit
+// Creates a lead record from Canopy completion or funnel form, routes to agency, notifies, logs audit
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// F-06 fix: Restrict CORS origin
+const allowedOrigin = Deno.env.get('CORS_ALLOWED_ORIGIN') || 'https://insuredbycam.com'
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': allowedOrigin,
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// F-05 fix: Sanitize UTM values (truncate + strip HTML)
+function sanitizeUtm(val: string | null | undefined): string | null {
+  if (!val) return null
+  return val.slice(0, 256).replace(/<[^>]*>/g, '')
 }
 
 // Rate limiting: simple in-memory store (resets on cold start)
@@ -129,7 +137,10 @@ Deno.serve(async (req) => {
 
     // Validate required fields
     const { pull_id, state, zip, session_id } = body
-    if (!pull_id) throw new Error('pull_id is required')
+    const isFunnelLead = body.source === 'funnel'
+
+    // pull_id is required for Canopy leads, optional for funnel leads
+    if (!isFunnelLead && !pull_id) throw new Error('pull_id is required')
     if (!state || state.length !== 2) throw new Error('state must be 2-letter code')
     if (!zip || !/^\d{5}/.test(zip)) throw new Error('zip must be valid 5-digit code')
 
@@ -140,21 +151,38 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Check for duplicate pull_id
-    const { data: existingLead } = await supabase
-      .from('leads')
-      .select('id')
-      .eq('pull_id', pull_id)
-      .single()
+    // F-02 fix: Deduplication — check pull_id (Canopy) or session_id (funnel)
+    if (pull_id) {
+      const { data: existingLead } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('pull_id', pull_id)
+        .single()
 
-    if (existingLead) {
-      return new Response(JSON.stringify({
-        error: 'Lead already exists',
-        lead_id: existingLead.id
-      }), {
-        status: 409,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      })
+      if (existingLead) {
+        return new Response(JSON.stringify({
+          error: 'Lead already exists',
+          lead_id: existingLead.id
+        }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+    }
+
+    // For funnel leads: check if a partial lead with this session_id exists
+    // If so, update it instead of creating a duplicate
+    let existingPartialLead = null
+    if (isFunnelLead && sessionId) {
+      const { data: partialLead } = await supabase
+        .from('leads')
+        .select('id')
+        .eq('session_id', sessionId)
+        .eq('status', 'partial')
+        .eq('source', 'funnel')
+        .single()
+
+      existingPartialLead = partialLead
     }
 
     // Get default agency
@@ -181,7 +209,7 @@ Deno.serve(async (req) => {
       routingRules || [],
       state.toUpperCase(),
       zip,
-      pull_id,
+      pull_id || sessionId,
       defaultAgencyId
     )
 
@@ -191,48 +219,96 @@ Deno.serve(async (req) => {
       : null
     const isValidPhone = normalizedPhone && normalizedPhone.length === 10
 
-    // Create lead record
-    const leadData = {
-      pull_id,
-      agency_id: routing.agencyId,
-      state: state.toUpperCase(),
-      zip,
-      product_intent: body.product_intent || null,
-      session_id: sessionId,
-      utm_source: body.utm_source || null,
-      utm_medium: body.utm_medium || null,
-      utm_campaign: body.utm_campaign || null,
-      utm_content: body.utm_content || null,
-      utm_term: body.utm_term || null,
-      referral_code: body.referral_code || null,
-      landing_page: body.landing_page || null,
-      routing_rule_id: routing.routingRuleId,
-      routed_via_fallback: routing.viaFallback,
-      status: 'new',
-      first_name: body.first_name || null,
-      last_name: body.last_name || null,
-      phone: isValidPhone ? normalizedPhone : null,
-      email: body.email || null,
-      owns_home: body.owns_home || null,
-      vehicle_count: body.vehicle_count || null,
-      source: body.source || 'canopy',
+    // F-05 fix: Sanitize UTM values
+    const sanitizedUtm = {
+      utm_source: sanitizeUtm(body.utm_source),
+      utm_medium: sanitizeUtm(body.utm_medium),
+      utm_campaign: sanitizeUtm(body.utm_campaign),
+      utm_content: sanitizeUtm(body.utm_content),
+      utm_term: sanitizeUtm(body.utm_term),
     }
 
-    const { data: lead, error: leadError } = await supabase
-      .from('leads')
-      .insert(leadData)
-      .select()
-      .single()
+    let lead: any
 
-    if (leadError) throw leadError
+    if (existingPartialLead) {
+      // F-02 fix: Update existing partial lead instead of creating a duplicate
+      const { data: updatedLead, error: updateError } = await supabase
+        .from('leads')
+        .update({
+          agency_id: routing.agencyId,
+          ...sanitizedUtm,
+          referral_code: body.referral_code || null,
+          landing_page: body.landing_page || null,
+          routing_rule_id: routing.routingRuleId,
+          routed_via_fallback: routing.viaFallback,
+          status: 'new',
+          first_name: body.first_name || null,
+          last_name: body.last_name || null,
+          phone: isValidPhone ? normalizedPhone : null,
+          email: body.email || null,
+          owns_home: body.owns_home || null,
+          vehicle_count: body.vehicle_count || null,
+          lead_score: body.lead_score || null,
+          // F-04: TCPA consent fields
+          consent_given_at: body.consent_given_at || null,
+          consent_ip: body.consent_ip || null,
+          consent_version: body.consent_version || null,
+          consent_user_agent: body.consent_user_agent || null,
+        })
+        .eq('id', existingPartialLead.id)
+        .select()
+        .single()
 
-    // Audit: LEAD_CREATED
+      if (updateError) throw updateError
+      lead = updatedLead
+    } else {
+      // Create new lead record (Canopy flow or funnel without partial)
+      const leadData = {
+        pull_id: pull_id || null,
+        agency_id: routing.agencyId,
+        state: state.toUpperCase(),
+        zip,
+        product_intent: body.product_intent || null,
+        session_id: sessionId,
+        ...sanitizedUtm,
+        referral_code: body.referral_code || null,
+        landing_page: body.landing_page || null,
+        routing_rule_id: routing.routingRuleId,
+        routed_via_fallback: routing.viaFallback,
+        status: 'new',
+        first_name: body.first_name || null,
+        last_name: body.last_name || null,
+        phone: isValidPhone ? normalizedPhone : null,
+        email: body.email || null,
+        owns_home: body.owns_home || null,
+        vehicle_count: body.vehicle_count || null,
+        source: body.source || 'canopy',
+        lead_score: body.lead_score || null,
+        // F-04: TCPA consent fields
+        consent_given_at: body.consent_given_at || null,
+        consent_ip: body.consent_ip || null,
+        consent_version: body.consent_version || null,
+        consent_user_agent: body.consent_user_agent || null,
+      }
+
+      const { data: newLead, error: leadError } = await supabase
+        .from('leads')
+        .insert(leadData)
+        .select()
+        .single()
+
+      if (leadError) throw leadError
+      lead = newLead
+    }
+
+    // Audit: LEAD_CREATED (or LEAD_ACTIVATED for funnel upgrades)
     await supabase.from('audit_log').insert({
-      event_type: 'LEAD_CREATED',
+      event_type: existingPartialLead ? 'LEAD_ACTIVATED' : 'LEAD_CREATED',
       lead_id: lead.id,
       agency_id: routing.agencyId,
       metadata: {
-        pull_id,
+        pull_id: pull_id || null,
+        source: body.source || 'canopy',
         state: state.toUpperCase(),
         zip,
         has_utm: !!(body.utm_source || body.utm_medium || body.utm_campaign),
