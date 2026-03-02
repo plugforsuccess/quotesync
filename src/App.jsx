@@ -35,9 +35,8 @@ import NewsroomPage from './pages/NewsroomPage';
 import StoryDetailPage from './pages/StoryDetailPage';
 import LoginPage from './pages/LoginPage';
 
-// Lead generation funnel
-import SaveStep1Page from './pages/SaveStep1Page';
-import SaveStep2Page from './pages/SaveStep2Page';
+// Lead generation funnel — V2 single-question wizard
+import SaveWizardPage from './pages/SaveWizardPage';
 import SaveConfirmationPage from './pages/SaveConfirmationPage';
 
 // Admin pages - lazy loaded for code splitting
@@ -170,9 +169,9 @@ function App() {
             <Route path="store/:slug" element={<ProductDetailPage />} />
             <Route path="store/purchase-success" element={<PurchaseSuccessPage />} />
 
-            {/* Lead generation funnel */}
-            <Route path="save" element={<SaveStep1Page />} />
-            <Route path="save/details" element={<SaveStep2Page />} />
+            {/* Lead generation funnel — V2 single-question wizard */}
+            <Route path="save" element={<SaveWizardPage />} />
+            <Route path="save/details" element={<Navigate to="/save" replace />} />
             <Route path="save/confirmation" element={<SaveConfirmationPage />} />
 
             {/* Thank you page (after form / Canopy redirect) */}

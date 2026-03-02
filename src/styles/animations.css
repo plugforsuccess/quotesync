@@ -153,6 +153,37 @@
   animation: blob 7s ease-in-out infinite;
 }
 
+/* Wizard step transition animations */
+@keyframes wizardSlideInRight {
+  from {
+    transform: translateX(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes wizardSlideInLeft {
+  from {
+    transform: translateX(-30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.wizard-slide-in-right {
+  animation: wizardSlideInRight 0.3s ease-out;
+}
+
+.wizard-slide-in-left {
+  animation: wizardSlideInLeft 0.3s ease-out;
+}
+
 /* Animation delays */
 .animation-delay-2000 {
   animation-delay: 2s;
@@ -181,7 +212,9 @@
   .animate-float-delayed,
   .animate-shimmer,
   .animate-mesh,
-  .animate-blob {
+  .animate-blob,
+  .wizard-slide-in-right,
+  .wizard-slide-in-left {
     animation: none !important;
   }
 }
