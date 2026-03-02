@@ -1,2 +1,5 @@
 [functions.create-lead]
 verify_jwt = false
+
+[functions.canopy-webhook]
+verify_jwt = false
