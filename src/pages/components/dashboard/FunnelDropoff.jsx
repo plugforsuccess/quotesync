@@ -23,8 +23,8 @@ const STEP_RECOMMENDATIONS = {
 };
 
 function CustomBarLabel({ x, y, width, value, index, data }) {
+  if (index == null || !data || !data[index]) return null;
   const step = data[index];
-  if (!step) return null;
   const dropText = index > 0 && step.dropOffPercent > 0
     ? ` (${Math.round(step.dropOffPercent)}% drop)`
     : '';

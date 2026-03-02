@@ -3,7 +3,6 @@
 
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
-  PieChart, Pie,
 } from 'recharts';
 
 const SCORE_COLORS = ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#16a34a'];

@@ -224,11 +224,11 @@ function computeAllMetrics(leads, timeRange) {
   let claims01 = 0, claims2plus = 0;
   completedFunnel.forEach(l => {
     if (l.auto_driving_record === 'clean') cleanDriving++;
-    else if (l.auto_driving_record === '1-2_incidents') incidents12++;
-    else if (l.auto_driving_record === '3+_incidents') incidents3plus++;
+    else if (l.auto_driving_record === '1-2') incidents12++;
+    else if (l.auto_driving_record === '3+') incidents3plus++;
 
-    if (l.home_claims_history === '0-1_claims' || l.home_claims_history === '0_claims' || l.home_claims_history === '1_claim') claims01++;
-    else if (l.home_claims_history === '2+_claims' || l.home_claims_history === '2_claims' || l.home_claims_history === '3+_claims') claims2plus++;
+    if (l.home_claims_history === '0-1') claims01++;
+    else if (l.home_claims_history === '2+') claims2plus++;
   });
 
   // ── Channel Performance ──
