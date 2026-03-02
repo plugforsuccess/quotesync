@@ -271,6 +271,8 @@ const AgencyLeadDetailPage = () => {
                       lead.current_home_carrier === 'allstate' ? 'text-purple-600' : 'text-gray-900'
                     }`}>
                       {lead.current_home_carrier === 'state_farm' ? 'State Farm' :
+                       lead.current_home_carrier === 'geico' ? 'GEICO' :
+                       lead.current_home_carrier === 'progressive' ? 'Progressive' :
                        lead.current_home_carrier === 'allstate' ? 'Allstate' :
                        lead.current_home_carrier === 'liberty_mutual' ? 'Liberty Mutual' :
                        lead.current_home_carrier === 'farmers' ? 'Farmers' :
