@@ -14,12 +14,12 @@ const WhyQuotesDifferent = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {[
             {
-              title: 'I verify your actual vehicle details',
-              desc: 'VIN, trim level, safety features — not what you remember',
+              title: 'Your phone number goes to one person',
+              desc: "Other sites sell your info to 8 different agents who all call you at once. Here, you get one agent — Cam — who personally reviews your policy and gives you a straight answer.",
             },
             {
-              title: 'I check your real policy coverage',
-              desc: 'Apples-to-apples comparison, no guessing',
+              title: 'No bait-and-switch pricing',
+              desc: "No '$60/month' headlines that don't exist. Just honest quotes based on your actual situation.",
             },
             {
               title: 'No surprises at sign-up',
@@ -27,7 +27,7 @@ const WhyQuotesDifferent = () => {
             },
             {
               title: 'All Allstate discounts included',
-              desc: 'I catch discounts you might not even know you qualify for',
+              desc: 'I catch discounts you might not even know you qualify for.',
             },
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-4 text-left bg-white/5 backdrop-blur-sm rounded-xl p-6 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all duration-300">

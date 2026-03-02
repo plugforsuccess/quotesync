@@ -1,8 +1,10 @@
 // src/components/StickyQuoteBar.jsx
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield } from 'lucide-react';
 
 const StickyQuoteBar = ({ onGetQuote }) => {
+  const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
   const [hasScrolledPast, setHasScrolledPast] = useState(false);
   const scrollTimeoutRef = useRef(null);
@@ -65,23 +67,23 @@ const StickyQuoteBar = ({ onGetQuote }) => {
               <Shield className="w-5 h-5 sm:w-6 sm:h-6 text-accent-300 flex-shrink-0" />
               <div>
                 <p className="text-white font-bold text-sm sm:text-base leading-tight">
-                  Save Up to $647 on Insurance
+                  See your savings in 30 seconds
                 </p>
                 <p className="text-white/80 text-xs sm:text-sm hidden sm:block">
-                  Free quote • No obligation • Fast and easy
+                  Free quote • No obligation • No spam
                 </p>
               </div>
             </div>
 
             {/* Right: CTA Button */}
             <button
-              onClick={onGetQuote}
+              onClick={() => navigate('/save')}
               className="group relative px-4 sm:px-6 py-2 sm:py-2.5 bg-white hover:bg-gray-50 text-primary-600 font-bold text-sm sm:text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2 whitespace-nowrap overflow-hidden flex-shrink-0"
             >
               {/* Shimmer effect */}
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary-100/50 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
 
-              <span className="relative z-10">Get Quote</span>
+              <span className="relative z-10">Check My Savings</span>
               <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
             </button>
           </div>

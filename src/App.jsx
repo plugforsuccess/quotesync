@@ -34,6 +34,11 @@ import NewsroomPage from './pages/NewsroomPage';
 import StoryDetailPage from './pages/StoryDetailPage';
 import LoginPage from './pages/LoginPage';
 
+// Lead generation funnel
+import SaveStep1Page from './pages/SaveStep1Page';
+import SaveStep2Page from './pages/SaveStep2Page';
+import SaveConfirmationPage from './pages/SaveConfirmationPage';
+
 // Admin pages - lazy loaded for code splitting
 const NewsroomDashboardPage = lazy(() => import('./pages/NewsroomDashboardPage'));
 const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
@@ -163,6 +168,11 @@ function App() {
             <Route path="store" element={<StorePage />} />
             <Route path="store/:slug" element={<ProductDetailPage />} />
             <Route path="store/purchase-success" element={<PurchaseSuccessPage />} />
+
+            {/* Lead generation funnel */}
+            <Route path="save" element={<SaveStep1Page />} />
+            <Route path="save/details" element={<SaveStep2Page />} />
+            <Route path="save/confirmation" element={<SaveConfirmationPage />} />
 
             {/* Thank you page (after form / Canopy redirect) */}
             <Route path="success" element={<ThankYouPage />} />
