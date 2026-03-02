@@ -1,42 +1,10 @@
 // Supabase Edge Function: twilio-sms-inbound
 // POST /functions/v1/twilio-sms-inbound
 // Handles inbound SMS replies from leads via Twilio webhook
-// Processes keywords (STOP, QUOTE, YES) and forwards other messages to agent
+// Processes keywords (STOP, START, HELP, QUOTE, YES) and forwards other messages to agent
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// Send SMS via Twilio REST API
-async function sendSMS(
-  accountSid: string,
-  authToken: string,
-  from: string,
-  to: string,
-  body: string
-): Promise<{ success: boolean; sid?: string; error?: string }> {
-  const auth = btoa(`${accountSid}:${authToken}`)
-  const params = new URLSearchParams()
-  params.append('To', to)
-  params.append('From', from)
-  params.append('Body', body)
-
-  const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    }
-  )
-
-  const data = await response.json()
-  if (!response.ok) {
-    return { success: false, error: data.message || 'Twilio SMS failed' }
-  }
-  return { success: true, sid: data.sid }
-}
+import { sendSMS, normalizePhoneForStorage, validateTwilioSignature, checkRequiredEnvVars } from '../_shared/twilio.ts'
 
 // Return TwiML response (Twilio expects XML for webhook responses)
 function twimlResponse(message?: string): Response {
@@ -68,12 +36,37 @@ Deno.serve(async (req) => {
     })
   }
 
+  // Validate required env vars
+  const missingVar = checkRequiredEnvVars([
+    'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
+    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER', 'AGENT_PHONE_NUMBER',
+  ])
+  if (missingVar) {
+    console.error(`[SMS_INBOUND] Missing required env var: ${missingVar}`)
+    return new Response(JSON.stringify({ error: `Missing config: ${missingVar}` }), {
+      status: 503,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const supabaseUrl = Deno.env.get('SUPABASE_URL')!
   const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
+
+  // Validate Twilio signature to prevent spoofed webhook calls
+  const publicUrl = `${supabaseUrl}/functions/v1/twilio-sms-inbound`
+  const isValid = await validateTwilioSignature(req, TWILIO_AUTH_TOKEN, publicUrl)
+  if (!isValid) {
+    console.error('[SMS_INBOUND] Invalid Twilio signature — rejecting request')
+    return new Response(JSON.stringify({ error: 'Invalid signature' }), {
+      status: 403,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   const supabase = createClient(supabaseUrl, supabaseKey)
 
   const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
-  const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
   const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
   const AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
 
@@ -88,17 +81,19 @@ Deno.serve(async (req) => {
       return twimlResponse()
     }
 
-    // Normalize phone number for lookup (strip +1 prefix)
-    const normalizedPhone = fromNumber.replace(/^\+1/, '').replace(/\D/g, '')
+    // Normalize phone number to 10-digit canonical format for consistent lookup
+    const normalizedPhone = normalizePhoneForStorage(fromNumber)
 
-    // Look up lead by phone number (most recent match)
-    const { data: lead } = await supabase
-      .from('leads')
-      .select('id, first_name, agency_id, sms_opted_out')
-      .or(`phone.eq.${normalizedPhone},phone.eq.+1${normalizedPhone},phone.eq.${fromNumber}`)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single()
+    // Look up lead by phone number (consistent 10-digit format)
+    const { data: lead } = normalizedPhone
+      ? await supabase
+          .from('leads')
+          .select('id, first_name, agency_id, sms_opted_out')
+          .eq('phone', normalizedPhone)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single()
+      : { data: null }
 
     if (!lead) {
       console.log(`[SMS_INBOUND] No lead found for phone: ${fromNumber}`)
@@ -123,15 +118,14 @@ Deno.serve(async (req) => {
       status: 'received',
     })
 
-    // Audit log
+    // Audit log — no PII, only lead_id reference and keyword classification
+    const keyword = body.toUpperCase()
     await supabase.from('audit_log').insert({
       event_type: 'SMS_INBOUND',
       lead_id: lead.id,
       agency_id: lead.agency_id,
-      metadata: { from: fromNumber, body_preview: body.substring(0, 100), keyword: body.toUpperCase() },
+      metadata: { keyword, is_known_lead: true },
     })
-
-    const keyword = body.toUpperCase()
 
     // Handle STOP — opt out
     if (keyword === 'STOP') {
@@ -154,6 +148,13 @@ Deno.serve(async (req) => {
 
       return twimlResponse(
         'Welcome back! You have been re-subscribed to messages from Insured By Cam.'
+      )
+    }
+
+    // Handle HELP — CTIA compliance requirement
+    if (keyword === 'HELP') {
+      return twimlResponse(
+        'Insured By Cam: Insurance quotes for Georgia residents. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out. Contact: cameron@insuredbycam.com'
       )
     }
 

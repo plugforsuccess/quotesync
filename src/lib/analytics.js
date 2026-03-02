@@ -238,14 +238,16 @@ export const trackGoogleAdsConversion = (conversionLabel, value = 0) => {
 export const trackFunnelStep = (step, data = {}) => {
   const eventName = `funnel_step_${step}`;
 
-  // GA4
-  trackEvent(eventName, {
-    event_category: 'funnel',
-    event_label: `step_${step}`,
-    ...data,
-  });
+  // GA4 only — fire directly to avoid the base trackEvent which also fires fbq
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', eventName, {
+      event_category: 'funnel',
+      event_label: `step_${step}`,
+      ...data,
+    });
+  }
 
-  // Meta Pixel - map to standard events
+  // Meta Pixel - map to standard events (no duplicate custom event)
   if (typeof window !== 'undefined' && window.fbq) {
     if (step === 1) {
       window.fbq('track', 'Lead', { content_name: 'Funnel Step 1 - Qualifier' });

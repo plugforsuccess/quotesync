@@ -185,6 +185,12 @@ Deno.serve(async (req) => {
       defaultAgencyId
     )
 
+    // Normalize phone to 10-digit canonical format for consistent lookups
+    const normalizedPhone = body.phone
+      ? body.phone.replace(/\D/g, '').replace(/^1(\d{10})$/, '$1')
+      : null
+    const isValidPhone = normalizedPhone && normalizedPhone.length === 10
+
     // Create lead record
     const leadData = {
       pull_id,
@@ -205,7 +211,7 @@ Deno.serve(async (req) => {
       status: 'new',
       first_name: body.first_name || null,
       last_name: body.last_name || null,
-      phone: body.phone || null,
+      phone: isValidPhone ? normalizedPhone : null,
       email: body.email || null,
       owns_home: body.owns_home || null,
       vehicle_count: body.vehicle_count || null,
@@ -289,30 +295,28 @@ Deno.serve(async (req) => {
     // For now, log to console (visible in Supabase logs)
     console.log(`[LEAD NOTIFICATION] New lead ${lead.id} for agency ${agency?.name} (${agency?.email})`)
 
-    // Trigger SMS + speed-to-call automation
-    // Only if lead has a phone number (will be null for Canopy-only leads until enrichment)
-    if (body.phone) {
-      try {
-        const notifyUrl = `${supabaseUrl}/functions/v1/lead-notify-sms`
-        await fetch(notifyUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            lead_id: lead.id,
-            first_name: body.first_name || 'there',
-            phone: body.phone,
-            zip: zip,
-            owns_home: body.owns_home || false,
-            vehicle_count: body.vehicle_count || 1,
-          }),
-        })
-      } catch (smsError) {
+    // Trigger SMS + speed-to-call automation (fire-and-forget)
+    // Only if lead has a valid phone number (will be null for Canopy-only leads until enrichment)
+    if (isValidPhone) {
+      const notifyUrl = `${supabaseUrl}/functions/v1/lead-notify-sms`
+      fetch(notifyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          lead_id: lead.id,
+          first_name: body.first_name || 'there',
+          phone: normalizedPhone,
+          zip: zip,
+          owns_home: body.owns_home || false,
+          vehicle_count: body.vehicle_count || 1,
+        }),
+      }).catch(smsError => {
         // Don't fail lead creation if SMS fails
-        console.error('[CREATE_LEAD] SMS automation error:', smsError.message)
-      }
+        console.error('[CREATE_LEAD] SMS automation fire-and-forget error:', smsError.message)
+      })
     }
 
     return new Response(JSON.stringify({
