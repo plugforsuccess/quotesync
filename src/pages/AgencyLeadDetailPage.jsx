@@ -247,6 +247,50 @@ const AgencyLeadDetailPage = () => {
                   </dt>
                   <dd className="text-gray-900 font-medium">{lead.product_intent || 'Not specified'}</dd>
                 </div>
+                {lead.current_auto_carrier && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Current Auto Carrier</dt>
+                    <dd className={`font-medium ${
+                      lead.current_auto_carrier === 'allstate' ? 'text-purple-600' : 'text-gray-900'
+                    }`}>
+                      {lead.current_auto_carrier === 'state_farm' ? 'State Farm' :
+                       lead.current_auto_carrier === 'geico' ? 'GEICO' :
+                       lead.current_auto_carrier === 'progressive' ? 'Progressive' :
+                       lead.current_auto_carrier === 'allstate' ? 'Allstate' :
+                       lead.current_auto_carrier === 'liberty_mutual' ? 'Liberty Mutual' :
+                       lead.current_auto_carrier === 'farmers' ? 'Farmers' :
+                       lead.current_auto_carrier === 'farm_bureau' ? 'GA Farm Bureau' :
+                       lead.current_auto_carrier === 'none' ? 'No current policy' :
+                       'Other'}
+                    </dd>
+                  </div>
+                )}
+                {lead.current_home_carrier && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Current Home Carrier</dt>
+                    <dd className={`font-medium ${
+                      lead.current_home_carrier === 'allstate' ? 'text-purple-600' : 'text-gray-900'
+                    }`}>
+                      {lead.current_home_carrier === 'state_farm' ? 'State Farm' :
+                       lead.current_home_carrier === 'geico' ? 'GEICO' :
+                       lead.current_home_carrier === 'progressive' ? 'Progressive' :
+                       lead.current_home_carrier === 'allstate' ? 'Allstate' :
+                       lead.current_home_carrier === 'liberty_mutual' ? 'Liberty Mutual' :
+                       lead.current_home_carrier === 'farmers' ? 'Farmers' :
+                       lead.current_home_carrier === 'farm_bureau' ? 'GA Farm Bureau' :
+                       lead.current_home_carrier === 'none' ? 'No current policy' :
+                       'Other'}
+                    </dd>
+                  </div>
+                )}
+                {lead.allstate_conflict && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Carrier Conflict</dt>
+                    <dd className="font-bold text-purple-600">
+                      🟣 Allstate — cannot write
+                    </dd>
+                  </div>
+                )}
                 {lead.auto_driving_record && (
                   <div>
                     <dt className="text-gray-500 text-sm">Driving Record (3yr)</dt>

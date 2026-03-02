@@ -11,6 +11,13 @@ function sanitizeUtm(val: string | null | undefined): string | null {
   return val.slice(0, 256).replace(/<[^>]*>/g, '')
 }
 
+function computeAllstateConflict(
+  autoCarrier: string | null,
+  homeCarrier: string | null
+): boolean {
+  return autoCarrier === 'allstate' || homeCarrier === 'allstate'
+}
+
 function computeRiskFlag(
   autoDrivingRecord: string | null,
   homeClaimsHistory: string | null
@@ -273,6 +280,9 @@ Deno.serve(async (req) => {
           auto_driving_record: body.auto_driving_record || null,
           home_claims_history: body.home_claims_history || null,
           risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
+          current_auto_carrier: body.current_auto_carrier || null,
+          current_home_carrier: body.current_home_carrier || null,
+          allstate_conflict: computeAllstateConflict(body.current_auto_carrier, body.current_home_carrier),
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -311,6 +321,9 @@ Deno.serve(async (req) => {
         auto_driving_record: body.auto_driving_record || null,
         home_claims_history: body.home_claims_history || null,
         risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
+        current_auto_carrier: body.current_auto_carrier || null,
+        current_home_carrier: body.current_home_carrier || null,
+        allstate_conflict: computeAllstateConflict(body.current_auto_carrier, body.current_home_carrier),
       }
 
       const { data: newLead, error: leadError } = await supabase

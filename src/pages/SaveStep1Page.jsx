@@ -16,6 +16,8 @@ const SESSION_KEYS = {
   PRODUCT_INTENT: 'qs_funnel_product_intent',
   AUTO_DRIVING_RECORD: 'qs_funnel_auto_driving_record',
   HOME_CLAIMS_HISTORY: 'qs_funnel_home_claims_history',
+  CURRENT_AUTO_CARRIER: 'qs_funnel_current_auto_carrier',
+  CURRENT_HOME_CARRIER: 'qs_funnel_current_home_carrier',
 };
 
 export default function SaveStep1Page() {
@@ -26,6 +28,8 @@ export default function SaveStep1Page() {
   const [productIntent, setProductIntent] = useState(null);
   const [autoDrivingRecord, setAutoDrivingRecord] = useState(null);
   const [homeClaimsHistory, setHomeClaimsHistory] = useState(null);
+  const [currentAutoCarrier, setCurrentAutoCarrier] = useState(null);
+  const [currentHomeCarrier, setCurrentHomeCarrier] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [zipError, setZipError] = useState('');
@@ -80,6 +84,12 @@ export default function SaveStep1Page() {
     if (!productIntent) {
       newErrors.productIntent = 'Please select one.';
     }
+    if (showAutoRisk && !currentAutoCarrier) {
+      newErrors.currentAutoCarrier = 'Please select one.';
+    }
+    if (showHomeRisk && !currentHomeCarrier) {
+      newErrors.currentHomeCarrier = 'Please select one.';
+    }
     if (showAutoRisk && !autoDrivingRecord) {
       newErrors.autoDrivingRecord = 'Please select one.';
     }
@@ -117,6 +127,8 @@ export default function SaveStep1Page() {
           product_intent: productIntent,
           auto_driving_record: autoDrivingRecord || null,
           home_claims_history: homeClaimsHistory || null,
+          current_auto_carrier: currentAutoCarrier || null,
+          current_home_carrier: currentHomeCarrier || null,
           session_id: sessionId,
           utm_source: utmParams.utm_source,
           utm_medium: utmParams.utm_medium,
@@ -141,10 +153,12 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
       sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, JSON.stringify(autoDrivingRecord));
       sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, JSON.stringify(homeClaimsHistory));
+      sessionStorage.setItem(SESSION_KEYS.CURRENT_AUTO_CARRIER, JSON.stringify(currentAutoCarrier));
+      sessionStorage.setItem(SESSION_KEYS.CURRENT_HOME_CARRIER, JSON.stringify(currentHomeCarrier));
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
 
       // Fire analytics
-      trackFunnelStep(1, { zip: zipCode, owns_home: ownsHome, vehicle_count: vehicleCount, product_intent: productIntent, auto_driving_record: autoDrivingRecord, home_claims_history: homeClaimsHistory });
+      trackFunnelStep(1, { zip: zipCode, owns_home: ownsHome, vehicle_count: vehicleCount, product_intent: productIntent, auto_driving_record: autoDrivingRecord, home_claims_history: homeClaimsHistory, current_auto_carrier: currentAutoCarrier, current_home_carrier: currentHomeCarrier });
 
       navigate('/save/details');
     } catch (err) {
@@ -156,6 +170,8 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
       sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, JSON.stringify(autoDrivingRecord));
       sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, JSON.stringify(homeClaimsHistory));
+      sessionStorage.setItem(SESSION_KEYS.CURRENT_AUTO_CARRIER, JSON.stringify(currentAutoCarrier));
+      sessionStorage.setItem(SESSION_KEYS.CURRENT_HOME_CARRIER, JSON.stringify(currentHomeCarrier));
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
       navigate('/save/details');
     } finally {
@@ -278,9 +294,11 @@ export default function SaveStep1Page() {
                           // Reset risk answers when intent changes so stale data isn't submitted
                           if (option.value !== 'auto' && option.value !== 'bundle') {
                             setAutoDrivingRecord(null);
+                            setCurrentAutoCarrier(null);
                           }
                           if (option.value !== 'home' && option.value !== 'bundle') {
                             setHomeClaimsHistory(null);
+                            setCurrentHomeCarrier(null);
                           }
                         }}
                         className={`relative py-3 px-4 rounded-xl border-2 font-semibold text-base transition-all duration-200 ${
@@ -302,6 +320,89 @@ export default function SaveStep1Page() {
                     <p className="mt-1.5 text-sm text-red-600">{errors.productIntent}</p>
                   )}
                 </div>
+
+                {/* Auto Carrier — conditional on auto or bundle */}
+                {showAutoRisk && (
+                  <div className="animate-fadeIn">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Who is your current auto insurance carrier?
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'State Farm', value: 'state_farm' },
+                        { label: 'GEICO', value: 'geico' },
+                        { label: 'Progressive', value: 'progressive' },
+                        { label: 'Allstate', value: 'allstate' },
+                        { label: 'Farmers', value: 'farmers' },
+                        { label: 'GA Farm Bureau', value: 'farm_bureau' },
+                        { label: 'Other', value: 'other' },
+                        { label: 'None', value: 'none' },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setCurrentAutoCarrier(option.value);
+                            if (errors.currentAutoCarrier) setErrors((prev) => ({ ...prev, currentAutoCarrier: null }));
+                          }}
+                          className={`py-3 px-4 rounded-xl border-2 font-semibold text-sm transition-all duration-200 ${
+                            currentAutoCarrier === option.value
+                              ? option.value === 'allstate'
+                                ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-md'
+                                : 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
+                              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    {errors.currentAutoCarrier && (
+                      <p className="mt-1.5 text-sm text-red-600">{errors.currentAutoCarrier}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Home Carrier — conditional on home or bundle */}
+                {showHomeRisk && (
+                  <div className="animate-fadeIn">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Who is your current home insurance carrier?
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'State Farm', value: 'state_farm' },
+                        { label: 'Allstate', value: 'allstate' },
+                        { label: 'Liberty Mutual', value: 'liberty_mutual' },
+                        { label: 'Farmers', value: 'farmers' },
+                        { label: 'GA Farm Bureau', value: 'farm_bureau' },
+                        { label: 'Other', value: 'other' },
+                        { label: 'None', value: 'none' },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setCurrentHomeCarrier(option.value);
+                            if (errors.currentHomeCarrier) setErrors((prev) => ({ ...prev, currentHomeCarrier: null }));
+                          }}
+                          className={`py-3 px-4 rounded-xl border-2 font-semibold text-sm transition-all duration-200 ${
+                            currentHomeCarrier === option.value
+                              ? option.value === 'allstate'
+                                ? 'border-purple-500 bg-purple-50 text-purple-700 shadow-md'
+                                : 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
+                              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    {errors.currentHomeCarrier && (
+                      <p className="mt-1.5 text-sm text-red-600">{errors.currentHomeCarrier}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Auto Risk — conditional on auto or bundle */}
                 {showAutoRisk && (

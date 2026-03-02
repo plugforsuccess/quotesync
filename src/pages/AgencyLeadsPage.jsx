@@ -349,6 +349,11 @@ const AgencyLeadsPage = () => {
                               {'\uD83D\uDFE1'} Review
                             </span>
                           )}
+                          {lead.allstate_conflict && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700" title="Current carrier is Allstate — cannot write">
+                              🟣 Allstate
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                           <span className={source === 'referral' ? 'text-green-600 font-medium' : ''}>

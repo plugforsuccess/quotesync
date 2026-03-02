@@ -14,6 +14,8 @@ const SESSION_KEYS = {
   PRODUCT_INTENT: 'qs_funnel_product_intent',
   AUTO_DRIVING_RECORD: 'qs_funnel_auto_driving_record',
   HOME_CLAIMS_HISTORY: 'qs_funnel_home_claims_history',
+  CURRENT_AUTO_CARRIER: 'qs_funnel_current_auto_carrier',
+  CURRENT_HOME_CARRIER: 'qs_funnel_current_home_carrier',
 };
 
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
@@ -63,6 +65,10 @@ const computeManualLeadScore = (ownsHome, vehicleCount, zip, utmParams, productI
   if (riskData?.homeClaimsHistory === '0-1') score += 10;
   else if (riskData?.homeClaimsHistory === '2+') score -= 15;
 
+  // Carrier scoring — Allstate conflict reduces score
+  if (riskData?.currentAutoCarrier === 'allstate') score -= 10;
+  if (riskData?.currentHomeCarrier === 'allstate') score -= 10;
+
   const hour = new Date().getHours();
   if (hour >= 9 && hour <= 17) score += 10;
   if (utmParams?.utm_campaign) score += 5;
@@ -87,6 +93,8 @@ export default function SaveStep2Page() {
       productIntent: sessionStorage.getItem(SESSION_KEYS.PRODUCT_INTENT) || null,
       autoDrivingRecord: JSON.parse(sessionStorage.getItem(SESSION_KEYS.AUTO_DRIVING_RECORD) || 'null'),
       homeClaimsHistory: JSON.parse(sessionStorage.getItem(SESSION_KEYS.HOME_CLAIMS_HISTORY) || 'null'),
+      currentAutoCarrier: JSON.parse(sessionStorage.getItem(SESSION_KEYS.CURRENT_AUTO_CARRIER) || 'null'),
+      currentHomeCarrier: JSON.parse(sessionStorage.getItem(SESSION_KEYS.CURRENT_HOME_CARRIER) || 'null'),
     };
   });
 
@@ -156,7 +164,12 @@ export default function SaveStep2Page() {
         step1Data.zip,
         step1Data.utm,
         step1Data.productIntent,
-        { autoDrivingRecord: step1Data.autoDrivingRecord, homeClaimsHistory: step1Data.homeClaimsHistory }
+        {
+          autoDrivingRecord: step1Data.autoDrivingRecord,
+          homeClaimsHistory: step1Data.homeClaimsHistory,
+          currentAutoCarrier: step1Data.currentAutoCarrier,
+          currentHomeCarrier: step1Data.currentHomeCarrier,
+        }
       );
 
       // F-02 fix: Single write path through the Edge Function only.
@@ -180,6 +193,8 @@ export default function SaveStep2Page() {
           product_intent: step1Data.productIntent,
           auto_driving_record: step1Data.autoDrivingRecord,
           home_claims_history: step1Data.homeClaimsHistory,
+          current_auto_carrier: step1Data.currentAutoCarrier,
+          current_home_carrier: step1Data.currentHomeCarrier,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('insuredbycam_session_id'),
@@ -212,6 +227,8 @@ export default function SaveStep2Page() {
         product_intent: step1Data.productIntent,
         auto_driving_record: step1Data.autoDrivingRecord,
         home_claims_history: step1Data.homeClaimsHistory,
+        current_auto_carrier: step1Data.currentAutoCarrier,
+        current_home_carrier: step1Data.currentHomeCarrier,
       });
       // F-11: Conversion label read from env var (set VITE_GADS_CONVERSION_LABEL in .env)
       const conversionLabel = import.meta.env.VITE_GADS_CONVERSION_LABEL;
