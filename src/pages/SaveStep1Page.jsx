@@ -29,12 +29,25 @@ export default function SaveStep1Page() {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [zipError, setZipError] = useState('');
+  const [defaultAgencyId, setDefaultAgencyId] = useState(null);
 
   // Capture UTM params on load
   const [utmParams] = useState(() => getUtmParams());
 
   useEffect(() => {
     document.title = 'See How Much You Could Save | Insured By Cam';
+  }, []);
+
+  // Fetch default agency for partial lead insert
+  useEffect(() => {
+    supabase
+      .from('agencies')
+      .select('id')
+      .eq('is_default', true)
+      .single()
+      .then(({ data }) => {
+        if (data) setDefaultAgencyId(data.id);
+      });
   }, []);
 
   const handleZipChange = (e) => {
@@ -90,32 +103,37 @@ export default function SaveStep1Page() {
     try {
       const sessionId = getSessionId();
 
-      // Insert partial lead into Supabase
-      const { data, error } = await supabase.from('leads').insert({
-        status: 'partial',
-        source: 'funnel',
-        zip: zipCode,
-        state: 'GA',
-        owns_home: ownsHome,
-        vehicle_count: vehicleCount,
-        product_intent: productIntent,
-        auto_driving_record: autoDrivingRecord || null,
-        home_claims_history: homeClaimsHistory || null,
-        session_id: sessionId,
-        utm_source: utmParams.utm_source,
-        utm_medium: utmParams.utm_medium,
-        utm_campaign: utmParams.utm_campaign,
-        utm_content: utmParams.utm_content,
-        utm_term: utmParams.utm_term,
-        landing_page: '/save',
-      }).select('id').single();
+      // Insert partial lead into Supabase (only if we have a default agency)
+      let leadId = null;
+      if (defaultAgencyId) {
+        const { data, error } = await supabase.from('leads').insert({
+          status: 'partial',
+          source: 'funnel',
+          agency_id: defaultAgencyId,
+          zip: zipCode,
+          state: 'GA',
+          owns_home: ownsHome,
+          vehicle_count: vehicleCount,
+          product_intent: productIntent,
+          auto_driving_record: autoDrivingRecord || null,
+          home_claims_history: homeClaimsHistory || null,
+          session_id: sessionId,
+          utm_source: utmParams.utm_source,
+          utm_medium: utmParams.utm_medium,
+          utm_campaign: utmParams.utm_campaign,
+          utm_content: utmParams.utm_content,
+          utm_term: utmParams.utm_term,
+          landing_page: '/save',
+        }).select('id').single();
 
-      if (error) {
-        console.error('Failed to create partial lead:', error);
+        if (error) {
+          console.error('Failed to create partial lead:', error);
+        }
+
+        leadId = data?.id || null;
+      } else {
+        console.warn('No default agency found, skipping partial lead insert');
       }
-
-      // Store data in sessionStorage for Step 2
-      const leadId = data?.id || null;
       sessionStorage.setItem(SESSION_KEYS.LEAD_ID, leadId);
       sessionStorage.setItem(SESSION_KEYS.ZIP, zipCode);
       sessionStorage.setItem(SESSION_KEYS.OWNS_HOME, JSON.stringify(ownsHome));
