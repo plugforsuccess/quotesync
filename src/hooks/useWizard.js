@@ -1,5 +1,5 @@
 // src/hooks/useWizard.js — Wizard state + conditional branching for /save funnel v2
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 
 export const SESSION_KEYS = {
   LEAD_ID: 'qs_funnel_lead_id',
@@ -21,6 +21,7 @@ export const SESSION_KEYS = {
   STREET: 'qs_funnel_street',
   APT: 'qs_funnel_unit',
   CITY: 'qs_funnel_city',
+  MARITAL_STATUS: 'qs_funnel_marital_status',
   CURRENT_STEP: 'qs_funnel_current_step',
 };
 
@@ -50,9 +51,11 @@ function restore() {
     lastName: sessionStorage.getItem(SESSION_KEYS.LAST_NAME) || '',
     phone: sessionStorage.getItem(SESSION_KEYS.PHONE) || '',
     email: sessionStorage.getItem(SESSION_KEYS.EMAIL) || '',
+    maritalStatus: sessionStorage.getItem(SESSION_KEYS.MARITAL_STATUS) || null,
   };
 }
 
+// H-5: persistToSession must clear null/empty values
 function persistToSession(a) {
   const pairs = [
     [SESSION_KEYS.ZIP, a.zip],
@@ -72,8 +75,15 @@ function persistToSession(a) {
     [SESSION_KEYS.LAST_NAME, a.lastName],
     [SESSION_KEYS.PHONE, a.phone],
     [SESSION_KEYS.EMAIL, a.email],
+    [SESSION_KEYS.MARITAL_STATUS, a.maritalStatus],
   ];
-  pairs.forEach(([k, v]) => { if (v != null && v !== '') sessionStorage.setItem(k, v); });
+  pairs.forEach(([k, v]) => {
+    if (v != null && v !== '') {
+      sessionStorage.setItem(k, v);
+    } else {
+      sessionStorage.removeItem(k);
+    }
+  });
 }
 
 // ─── Conditional Step Sequence ─────────────────────────────────────
@@ -87,10 +97,11 @@ function persistToSession(a) {
  * Step 4: carrier(s) — conditional, skipped for "unsure"
  * Step 5: risk — conditional, skipped for renters / unsure
  * Step 6: vehicleCount — skipped for home-only
- * Step 7: dob
- * Step 8: address
- * Step 9: contact
- * Step 10: confirmation
+ * Step 7: maritalStatus
+ * Step 8: dob
+ * Step 9: address
+ * Step 10: contact
+ * Step 11: confirmation
  */
 export function computeStepSequence(answers) {
   const steps = ['zip', 'ownsHome', 'productIntent'];
@@ -103,22 +114,21 @@ export function computeStepSequence(answers) {
     steps.push('currentAutoCarrier');
   } else if (intent === 'home' && isOwner) {
     steps.push('currentHomeCarrier');
-  } else if (intent === 'renters') {
-    steps.push('currentRentersCarrier');
+  } else if (intent === 'auto_renters') {
+    steps.push('currentAutoCarrier', 'currentRentersCarrier');
   } else if (intent === 'bundle' && isOwner) {
     steps.push('currentAutoCarrier', 'currentHomeCarrier');
   }
   // 'unsure' → skip carriers entirely
 
   // Step 5: Risk screening
-  if (intent === 'auto') {
+  if (intent === 'auto' || intent === 'auto_renters') {
     steps.push('autoDrivingRecord');
   } else if (intent === 'home' && isOwner) {
     steps.push('homeClaimsHistory');
   } else if (intent === 'bundle' && isOwner) {
     steps.push('autoDrivingRecord', 'homeClaimsHistory');
   }
-  // 'renters' → skip risk
   // 'unsure' → skip risk
 
   // Step 6: Vehicle count — skip if home-only
@@ -126,7 +136,10 @@ export function computeStepSequence(answers) {
     steps.push('vehicleCount');
   }
 
-  // Steps 7-10
+  // Step 7: Marital status (NEW-1)
+  steps.push('maritalStatus');
+
+  // Steps 8-11
   steps.push('dob', 'address', 'contact', 'confirmation');
 
   return steps;
@@ -138,6 +151,7 @@ export function useWizard() {
   const [answers, setAnswers] = useState(restore);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState('forward');
+  const hasRestoredStep = useRef(false);
 
   const stepSequence = useMemo(() => computeStepSequence(answers), [answers]);
   const currentStepId = stepSequence[currentIndex] || 'zip';
@@ -145,6 +159,17 @@ export function useWizard() {
   const progress = totalSteps > 1 ? (currentIndex + 1) / totalSteps : 0;
   const isFirstStep = currentIndex === 0;
   const isLastStep = currentIndex >= stepSequence.length - 1;
+
+  // C-3: Restore step index on page refresh (one-time on mount)
+  useEffect(() => {
+    if (!hasRestoredStep.current) {
+      hasRestoredStep.current = true;
+      const saved = parseInt(sessionStorage.getItem(SESSION_KEYS.CURRENT_STEP) || '0', 10);
+      if (saved > 0 && saved < stepSequence.length) {
+        setCurrentIndex(saved);
+      }
+    }
+  }, [stepSequence.length]);
 
   const setAnswer = useCallback((field, value) => {
     setAnswers(prev => {
@@ -160,7 +185,8 @@ export function useWizard() {
       }
       // Owner → clear renters carrier if switching from renter
       if (field === 'ownsHome' && value === true) {
-        if (prev.productIntent === 'renters') {
+        // 'renters' is legacy pre-v2.1 — kept for in-flight sessions
+        if (prev.productIntent === 'renters' || prev.productIntent === 'auto_renters') {
           next.productIntent = null;
         }
         next.currentRentersCarrier = null;
@@ -168,7 +194,7 @@ export function useWizard() {
 
       // Product intent change → clear irrelevant downstream answers
       if (field === 'productIntent') {
-        if (value !== 'auto' && value !== 'bundle') {
+        if (value !== 'auto' && value !== 'bundle' && value !== 'auto_renters') {
           next.currentAutoCarrier = null;
           next.autoDrivingRecord = null;
         }
@@ -176,7 +202,7 @@ export function useWizard() {
           next.currentHomeCarrier = null;
           next.homeClaimsHistory = null;
         }
-        if (value !== 'renters') {
+        if (value !== 'auto_renters') {
           next.currentRentersCarrier = null;
         }
         if (value === 'home') {
@@ -209,12 +235,12 @@ export function useWizard() {
 
   const persistAll = useCallback(() => persistToSession(answers), [answers]);
 
+  // UX-4: Updated renter product intent options
   const productIntentOptions = useMemo(() => {
     if (answers.ownsHome === false) {
       return [
         { label: 'Auto Only', value: 'auto', emoji: '🚗' },
-        { label: 'Renters', value: 'renters', emoji: '🏠' },
-        { label: 'Not Sure', value: 'unsure', emoji: '🤔' },
+        { label: 'Auto + Renters', value: 'auto_renters', emoji: '🚗🏠' },
       ];
     }
     return [

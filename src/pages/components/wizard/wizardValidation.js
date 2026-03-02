@@ -49,6 +49,11 @@ export function vehicleCountStepValidate(value) {
   return null;
 }
 
+export function maritalStatusStepValidate(value) {
+  if (!value) return 'Please select one.';
+  return null;
+}
+
 export function dobStepValidate(value) {
   if (!value) return 'Please enter your date of birth.';
   const dob = new Date(value + 'T00:00:00');
@@ -107,6 +112,7 @@ export function validateStep(stepId, answers) {
     case 'autoDrivingRecord': return autoDrivingRecordStepValidate(answers.autoDrivingRecord);
     case 'homeClaimsHistory': return homeClaimsHistoryStepValidate(answers.homeClaimsHistory);
     case 'vehicleCount': return vehicleCountStepValidate(answers.vehicleCount);
+    case 'maritalStatus': return maritalStatusStepValidate(answers.maritalStatus);
     case 'dob': return dobStepValidate(answers.dob);
     case 'address': return addressStepValidate(answers.street, answers.city);
     case 'contact': return contactStepValidate(answers.firstName, answers.lastName, answers.phone, answers.email);

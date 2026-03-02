@@ -1,7 +1,6 @@
 // src/pages/SaveWizardPage.jsx — Funnel V2: Single-question-at-a-time wizard
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ArrowRight, ArrowLeft, Lock } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useWizard, SESSION_KEYS } from '../hooks/useWizard';
 import { supabase } from '../lib/supabase';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion, trackEvent } from '../lib/analytics';
@@ -17,6 +16,7 @@ import {
   AutoDrivingRecordStep,
   HomeClaimsHistoryStep,
   VehicleCountStep,
+  MaritalStatusStep,
   DobStep,
   AddressStep,
   ContactStep,
@@ -39,8 +39,9 @@ function computeLeadScore(answers, utmParams) {
   if (answers.vehicleCount >= 3) score += 10;
   if (answers.zip) score += 15;
   if (answers.productIntent === 'bundle') score += 20;
+  else if (answers.productIntent === 'auto_renters') score += 15;
   else if (answers.productIntent === 'auto' || answers.productIntent === 'home') score += 10;
-  else if (answers.productIntent === 'renters') score += 5;
+  else if (answers.productIntent === 'renters') score += 5; // legacy pre-v2.1 — kept for in-flight sessions
   if (answers.autoDrivingRecord === 'clean') score += 15;
   else if (answers.autoDrivingRecord === '1-2') score += 5;
   else if (answers.autoDrivingRecord === '3+') score -= 20;
@@ -48,6 +49,22 @@ function computeLeadScore(answers, utmParams) {
   else if (answers.homeClaimsHistory === '2+') score -= 15;
   if (answers.currentAutoCarrier === 'allstate') score -= 10;
   if (answers.currentHomeCarrier === 'allstate') score -= 10;
+
+  // NEW-2: Age-based scoring (from DOB)
+  if (answers.dob) {
+    const dob = new Date(answers.dob + 'T00:00:00');
+    const age = (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+    if (age < 25) score -= 10;
+    else if (age <= 45) score += 10;
+    else if (age <= 65) score += 15;
+    else score += 5;
+  }
+
+  // NEW-2: Marital status scoring
+  if (answers.maritalStatus === 'married') score += 10;
+  else if (answers.maritalStatus === 'widowed') score += 5;
+  else if (answers.maritalStatus === 'divorced') score += 3;
+
   const hour = new Date().getHours();
   if (hour >= 9 && hour <= 17) score += 10;
   if (utmParams?.utm_campaign) score += 5;
@@ -57,9 +74,8 @@ function computeLeadScore(answers, utmParams) {
 // ─── Component ─────────────────────────────────────────────────────
 
 export default function SaveWizardPage() {
-  const navigate = useNavigate();
   const wizard = useWizard();
-  const { answers, setAnswer, currentStepId, currentIndex, direction, isFirstStep, goNext, goBack, persistAll, productIntentOptions } = wizard;
+  const { answers, setAnswer, currentStepId, currentIndex, direction, isFirstStep, goNext, goBack, productIntentOptions } = wizard;
 
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -182,8 +198,9 @@ export default function SaveWizardPage() {
           current_renters_carrier: answers.currentRentersCarrier || null,
           date_of_birth: answers.dob || null,
           street_address: answers.street?.trim() || null,
-          apt_unit: answers.apt?.trim() || null,
+          address_unit: answers.apt?.trim() || null,
           city: answers.city?.trim() || null,
+          marital_status: answers.maritalStatus || null,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('insuredbycam_session_id'),
@@ -228,8 +245,7 @@ export default function SaveWizardPage() {
         trackGoogleAdsConversion(conversionLabel, 60);
       }
 
-      // Advance to confirmation step
-      persistAll();
+      // Advance to confirmation step (session clear happens in ConfirmationStep mount)
       goNext();
     } catch (err) {
       console.error('Wizard submission error:', err);
@@ -239,7 +255,7 @@ export default function SaveWizardPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, goNext, persistAll]);
+  }, [answers, goNext]);
 
   // ─── Navigation Handlers ───────────────────────────────────────
 
@@ -264,6 +280,7 @@ export default function SaveWizardPage() {
       updatePartialLead({
         current_auto_carrier: answers.currentAutoCarrier,
         current_home_carrier: answers.currentHomeCarrier,
+        current_renters_carrier: answers.currentRentersCarrier,
       });
     } else if (stepId === 'autoDrivingRecord' || stepId === 'homeClaimsHistory') {
       updatePartialLead({
@@ -272,6 +289,8 @@ export default function SaveWizardPage() {
       });
     } else if (stepId === 'vehicleCount') {
       updatePartialLead({ vehicle_count: answers.vehicleCount });
+    } else if (stepId === 'maritalStatus') {
+      updatePartialLead({ marital_status: answers.maritalStatus });
     }
   }, [currentIndex, answers, insertPartialLead, updatePartialLead]);
 
@@ -334,6 +353,7 @@ export default function SaveWizardPage() {
             onChange={(v) => setAnswer('productIntent', v)}
             options={productIntentOptions}
             onAutoAdvance={handleAutoAdvance}
+            isRenter={answers.ownsHome === false}
           />
         );
       case 'currentAutoCarrier':
@@ -384,6 +404,14 @@ export default function SaveWizardPage() {
             onAutoAdvance={handleAutoAdvance}
           />
         );
+      case 'maritalStatus':
+        return (
+          <MaritalStatusStep
+            value={answers.maritalStatus}
+            onChange={(v) => setAnswer('maritalStatus', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
       case 'dob':
         return (
           <DobStep
@@ -426,7 +454,7 @@ export default function SaveWizardPage() {
 
   const isConfirmation = currentStepId === 'confirmation';
   const isContactStep = currentStepId === 'contact';
-  const showNextButton = !isConfirmation && !['ownsHome', 'productIntent', 'currentAutoCarrier', 'currentHomeCarrier', 'currentRentersCarrier', 'autoDrivingRecord', 'homeClaimsHistory', 'vehicleCount'].includes(currentStepId);
+  const showNextButton = !isConfirmation && !['ownsHome', 'productIntent', 'currentAutoCarrier', 'currentHomeCarrier', 'currentRentersCarrier', 'autoDrivingRecord', 'homeClaimsHistory', 'vehicleCount', 'maritalStatus'].includes(currentStepId);
   const showBackButton = !isFirstStep && !isConfirmation;
 
   // Animation class based on direction
@@ -441,14 +469,18 @@ export default function SaveWizardPage() {
 
       <div className="container mx-auto px-4 py-12 sm:py-16 relative z-10">
         <div className="max-w-lg mx-auto">
-          <button
-            type="button"
-            onClick={() => navigate('/quotes')}
-            className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition-colors hover:text-white"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Back to lead form</span>
-          </button>
+          {/* UX-1: Back button navigates between wizard steps only */}
+          {showBackButton && (
+            <button
+              type="button"
+              onClick={handleBack}
+              disabled={isSubmitting}
+              className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition-colors hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+          )}
 
           {/* Progress Bar */}
           {!isConfirmation && (
@@ -511,44 +543,30 @@ export default function SaveWizardPage() {
               {typeof error === 'string' && <ErrorMessage>{error}</ErrorMessage>}
 
               {/* Navigation Buttons */}
-              {(showNextButton || showBackButton) && (
-                <div className="mt-6 flex flex-col gap-3">
-                  {showNextButton && (
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      disabled={isSubmitting}
-                      className="group relative w-full inline-flex items-center justify-center gap-3 overflow-hidden rounded-xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
-                      <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-4 rounded-xl transition-all duration-300">
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                        <span className="relative z-10 text-white font-black text-lg">
-                          {isSubmitting
-                            ? 'Submitting...'
-                            : isContactStep
-                              ? 'Get My Free Quote'
-                              : 'Continue'
-                          }
-                        </span>
-                        {!isSubmitting && (
-                          <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
-                        )}
-                      </div>
-                    </button>
-                  )}
-
-                  {showBackButton && (
-                    <button
-                      type="button"
-                      onClick={handleBack}
-                      disabled={isSubmitting}
-                      className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-white/70 font-semibold text-sm transition-all duration-200 hover:text-white active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      <ArrowLeft className="w-4 h-4" />
-                      <span>Back</span>
-                    </button>
-                  )}
+              {showNextButton && (
+                <div className="mt-6">
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    disabled={isSubmitting}
+                    className="group relative w-full inline-flex items-center justify-center gap-3 overflow-hidden rounded-xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
+                    <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-4 rounded-xl transition-all duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      <span className="relative z-10 text-white font-black text-lg">
+                        {isSubmitting
+                          ? 'Submitting...'
+                          : isContactStep
+                            ? 'Get My Free Quote'
+                            : 'Continue'
+                        }
+                      </span>
+                      {!isSubmitting && (
+                        <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
+                      )}
+                    </div>
+                  </button>
                 </div>
               )}
             </div>
