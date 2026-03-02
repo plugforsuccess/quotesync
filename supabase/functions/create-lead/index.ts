@@ -3,13 +3,7 @@
 // Creates a lead record from Canopy completion or funnel form, routes to agency, notifies, logs audit
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-// F-06 fix: Restrict CORS origin
-const allowedOrigin = Deno.env.get('CORS_ALLOWED_ORIGIN') || 'https://insuredbycam.com'
-const corsHeaders = {
-  'Access-Control-Allow-Origin': allowedOrigin,
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // F-05 fix: Sanitize UTM values (truncate + strip HTML)
 function sanitizeUtm(val: string | null | undefined): string | null {
@@ -111,6 +105,9 @@ function routeLead(
 }
 
 Deno.serve(async (req) => {
+  // Resolve CORS headers once per request (matches Origin against allowlist)
+  const corsHeaders = getCorsHeaders(req)
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
