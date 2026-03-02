@@ -22,14 +22,33 @@ const SESSION_KEYS = {
 
 export default function SaveStep1Page() {
   const navigate = useNavigate();
-  const [zipCode, setZipCode] = useState('');
-  const [ownsHome, setOwnsHome] = useState(null);
-  const [vehicleCount, setVehicleCount] = useState(null);
-  const [productIntent, setProductIntent] = useState(null);
-  const [autoDrivingRecord, setAutoDrivingRecord] = useState(null);
-  const [homeClaimsHistory, setHomeClaimsHistory] = useState(null);
-  const [currentAutoCarrier, setCurrentAutoCarrier] = useState(null);
-  const [currentHomeCarrier, setCurrentHomeCarrier] = useState(null);
+  // Restore form state from sessionStorage when navigating back from Step 2
+  const [zipCode, setZipCode] = useState(() => sessionStorage.getItem(SESSION_KEYS.ZIP) || '');
+  const [ownsHome, setOwnsHome] = useState(() => {
+    const v = sessionStorage.getItem(SESSION_KEYS.OWNS_HOME);
+    return v !== null ? JSON.parse(v) : null;
+  });
+  const [vehicleCount, setVehicleCount] = useState(() => {
+    const v = sessionStorage.getItem(SESSION_KEYS.VEHICLE_COUNT);
+    return v !== null ? parseInt(v, 10) : null;
+  });
+  const [productIntent, setProductIntent] = useState(() => sessionStorage.getItem(SESSION_KEYS.PRODUCT_INTENT) || null);
+  const [autoDrivingRecord, setAutoDrivingRecord] = useState(() => {
+    const v = sessionStorage.getItem(SESSION_KEYS.AUTO_DRIVING_RECORD);
+    return v !== null ? JSON.parse(v) : null;
+  });
+  const [homeClaimsHistory, setHomeClaimsHistory] = useState(() => {
+    const v = sessionStorage.getItem(SESSION_KEYS.HOME_CLAIMS_HISTORY);
+    return v !== null ? JSON.parse(v) : null;
+  });
+  const [currentAutoCarrier, setCurrentAutoCarrier] = useState(() => {
+    const v = sessionStorage.getItem(SESSION_KEYS.CURRENT_AUTO_CARRIER);
+    return v !== null ? JSON.parse(v) : null;
+  });
+  const [currentHomeCarrier, setCurrentHomeCarrier] = useState(() => {
+    const v = sessionStorage.getItem(SESSION_KEYS.CURRENT_HOME_CARRIER);
+    return v !== null ? JSON.parse(v) : null;
+  });
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [zipError, setZipError] = useState('');
