@@ -8,7 +8,7 @@
 //   ?action=status   — Handles call status callbacks (completed, no-answer, etc.)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { validateTwilioSignature, normalizePhoneForStorage, checkRequiredEnvVars } from '../_shared/twilio.ts'
+import { validateTwilioSignature, normalizePhoneForStorage, checkRequiredEnvVars, verifyInternalToken } from '../_shared/twilio.ts'
 
 // TwiML response helper
 function twimlResponse(twiml: string): Response {
@@ -56,6 +56,18 @@ Deno.serve(async (req) => {
   }
 
   if (action === 'whisper') {
+    // Validate internal token to prevent unauthenticated info disclosure on GET
+    const token = url.searchParams.get('token') || ''
+    const leadId = url.searchParams.get('lead_id') || ''
+    const isValidToken = await verifyInternalToken(token, leadId, TWILIO_AUTH_TOKEN)
+    if (!isValidToken) {
+      console.error('[TWILIO_VOICE_HANDLER] Invalid internal token on whisper request')
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     // Agent answered — play whisper with lead info and gather digit input
     const leadName = url.searchParams.get('lead_name') || 'Unknown'
     const zip = url.searchParams.get('zip') || 'unknown'

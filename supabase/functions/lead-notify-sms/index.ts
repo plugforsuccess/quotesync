@@ -5,7 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { sendSMS, formatPhoneUS, checkRequiredEnvVars } from '../_shared/twilio.ts'
+import { sendSMS, formatPhoneUS, checkRequiredEnvVars, generateInternalToken } from '../_shared/twilio.ts'
 
 // Initiate outbound call via Twilio REST API
 async function initiateCall(
@@ -154,9 +154,13 @@ Deno.serve(async (req) => {
       await new Promise((resolve) => setTimeout(resolve, 30000))
 
       // Build TwiML webhook URL for the whisper
+      // Include HMAC token so voice-handler can verify this is a legitimate internal call
+      const whisperToken = await generateInternalToken(lead_id, TWILIO_AUTH_TOKEN)
       const voiceHandlerUrl = `${supabaseUrl}/functions/v1/twilio-voice-handler`
       const whisperParams = new URLSearchParams({
         action: 'whisper',
+        lead_id: lead_id,
+        token: whisperToken,
         lead_name: name,
         zip: zip || '',
         home: owns_home ? 'yes' : 'no',
