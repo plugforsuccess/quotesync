@@ -333,6 +333,8 @@ export default function SaveStep1Page() {
                         { label: 'GEICO', value: 'geico' },
                         { label: 'Progressive', value: 'progressive' },
                         { label: 'Allstate', value: 'allstate' },
+                        { label: 'Farmers', value: 'farmers' },
+                        { label: 'GA Farm Bureau', value: 'farm_bureau' },
                         { label: 'Other', value: 'other' },
                         { label: 'None', value: 'none' },
                       ].map((option) => (
@@ -373,6 +375,7 @@ export default function SaveStep1Page() {
                         { label: 'Allstate', value: 'allstate' },
                         { label: 'Liberty Mutual', value: 'liberty_mutual' },
                         { label: 'Farmers', value: 'farmers' },
+                        { label: 'GA Farm Bureau', value: 'farm_bureau' },
                         { label: 'Other', value: 'other' },
                         { label: 'None', value: 'none' },
                       ].map((option) => (
