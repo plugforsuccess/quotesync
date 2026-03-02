@@ -16,6 +16,10 @@
 --   - idx_stories_slug (needed for URL lookups e.g. /stories/:slug)
 --   - idx_profiles_email (needed for auth flows, invitations, deduplication)
 --   - idx_leads_phone (needed for Twilio inbound SMS matching)
+--   - idx_notifications_user (used by notification RLS: user_id = auth.uid())
+--   - idx_lead_messages_lead (used by lead_messages RLS JOIN on lead_id)
+--   - idx_agency_memberships_user_id (used by has_agency_role() / get_user_agency_ids())
+--   - idx_agency_memberships_agency_id (used by agency membership RLS lookups)
 
 BEGIN;
 
@@ -82,9 +86,9 @@ DROP INDEX IF EXISTS idx_lead_quotes_agency_id;
 DROP INDEX IF EXISTS idx_lead_quotes_enrichment_status;
 
 -- =============================================================================
--- lead_messages (1 index)
+-- lead_messages (0 indexes)
+-- KEPT: idx_lead_messages_lead (used by RLS JOIN: lead_id IN SELECT from leads)
 -- =============================================================================
-DROP INDEX IF EXISTS idx_lead_messages_lead;
 
 -- =============================================================================
 -- audit_log (2 indexes)
@@ -124,16 +128,16 @@ DROP INDEX IF EXISTS idx_profiles_platform_role;
 DROP INDEX IF EXISTS idx_profiles_is_platform_user;
 
 -- =============================================================================
--- notifications (2 indexes)
+-- notifications (1 index)
+-- KEPT: idx_notifications_user (used by RLS: user_id = auth.uid())
 -- =============================================================================
-DROP INDEX IF EXISTS idx_notifications_user;
 DROP INDEX IF EXISTS idx_notifications_unread;
 
 -- =============================================================================
--- agency_memberships (4 indexes)
+-- agency_memberships (2 indexes)
+-- KEPT: idx_agency_memberships_user_id (used by has_agency_role() / get_user_agency_ids())
+-- KEPT: idx_agency_memberships_agency_id (used by agency membership RLS lookups)
 -- =============================================================================
-DROP INDEX IF EXISTS idx_agency_memberships_user_id;
-DROP INDEX IF EXISTS idx_agency_memberships_agency_id;
 DROP INDEX IF EXISTS idx_agency_memberships_status;
 DROP INDEX IF EXISTS idx_agency_memberships_role;
 

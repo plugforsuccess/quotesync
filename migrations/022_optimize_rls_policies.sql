@@ -69,16 +69,20 @@ CREATE POLICY "Anon view published stories"
   USING (status = 'published');
 
 -- SELECT: Single consolidated policy for authenticated users
+-- Intent: All authenticated users with a profile can see non-archived stories.
+-- Admins and platform editors can additionally see archived stories.
+-- The "status = 'published'" branch is technically redundant for non-archived
+-- but kept as a fast-path: Postgres short-circuits OR, so published stories
+-- skip the profiles EXISTS check entirely.
 CREATE POLICY "Authenticated view stories"
   ON public.stories FOR SELECT
   TO authenticated
   USING (
     status = 'published'
     OR (select is_platform_editor())
-    OR author_id = (select auth.uid())
     OR (
-      EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()))
-      AND status != 'archived'
+      status != 'archived'
+      AND EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()))
     )
     OR (
       status = 'archived'
@@ -103,6 +107,7 @@ CREATE POLICY "Authenticated update stories"
     OR (
       (select auth.uid()) = author_id
       AND status IN ('draft', 'in_review')
+      AND EXISTS (SELECT 1 FROM public.profiles WHERE id = (select auth.uid()) AND role = 'editor')
     )
   );
 
@@ -661,23 +666,97 @@ DECLARE
   v_expected INT;
   v_actual INT;
   v_checks TEXT[][] := ARRAY[
-    -- table, expected policy count
-    ['stories', '5'],           -- anon SELECT, auth SELECT, auth UPDATE, auth INSERT, auth DELETE
-    ['story_drafts', '4'],      -- SELECT, INSERT, UPDATE, DELETE
-    ['story_analytics', '2'],   -- SELECT (admin), INSERT (anyone - unchanged)
-    ['profiles', '2'],          -- SELECT (unchanged), UPDATE (consolidated)
-    ['agencies', '5'],          -- anon SELECT, auth SELECT, auth UPDATE, anon INSERT, auth INSERT
-    ['agency_users', '4'],      -- SELECT, INSERT, UPDATE, DELETE
-    ['leads', '5'],             -- auth SELECT, auth UPDATE, auth DELETE, auth INSERT (unchanged), anon INSERT (unchanged)
-    ['lead_quotes', '4'],       -- SELECT/INSERT/UPDATE (unchanged) + DELETE
-    ['routing_rules', '4'],     -- SELECT, INSERT, UPDATE, DELETE
-    ['audit_log', '2'],         -- SELECT, INSERT
-    ['notifications', '2'],     -- SELECT, UPDATE
-    ['story_category_definitions', '4'],  -- SELECT + INSERT/UPDATE/DELETE
-    ['story_tag_definitions', '4'],       -- SELECT + INSERT/UPDATE/DELETE
-    ['agency_memberships', '4'],          -- SELECT/INSERT/DELETE (unchanged) + UPDATE
-    ['impersonation_sessions', '3'],      -- SELECT, INSERT, UPDATE
-    ['user_roles', '2']                   -- SELECT, ALL
+    -- [table, expected_count]
+    -- Each count lists the constituent policy names for traceability.
+    --
+    -- stories (5):
+    --   1. "Anon view published stories" (SELECT, anon) — new
+    --   2. "Authenticated view stories" (SELECT, authenticated) — new consolidated
+    --   3. "Authenticated update stories" (UPDATE, authenticated) — new consolidated
+    --   4. "Editors can create stories" (INSERT, authenticated) — InitPlan fix
+    --   5. "Admins can delete stories" (DELETE, authenticated) — InitPlan fix
+    ['stories', '5'],
+    -- story_drafts (4):
+    --   1. "View story drafts" (SELECT) — consolidated
+    --   2. "Users can create own drafts" (INSERT) — InitPlan fix
+    --   3. "Users can update own drafts" (UPDATE) — InitPlan fix
+    --   4. "Delete story drafts" (DELETE) — consolidated
+    ['story_drafts', '4'],
+    -- story_analytics (2):
+    --   1. "Admins can view analytics" (SELECT) — InitPlan fix, switched to profiles.role
+    --   2. "Anyone can insert analytics" (INSERT) — unchanged from prior migration
+    ['story_analytics', '2'],
+    -- profiles (2):
+    --   1. "Authenticated users can view all profiles" (SELECT) — unchanged
+    --   2. "Update profiles" (UPDATE) — consolidated
+    ['profiles', '2'],
+    -- agencies (5):
+    --   1. "Anon view default agency" (SELECT, anon) — new
+    --   2. "Authenticated view agencies" (SELECT, authenticated) — new consolidated
+    --   3. "Authenticated update agencies" (UPDATE, authenticated) — new consolidated
+    --   4. "Public can submit agency applications" (INSERT, anon) — unchanged
+    --   5. "Authenticated can submit agency applications" (INSERT, authenticated) — unchanged
+    ['agencies', '5'],
+    -- agency_users (4):
+    --   1. "View agency_users" (SELECT) — consolidated
+    --   2. "Insert agency_users" (INSERT) — consolidated
+    --   3. "Update agency_users" (UPDATE) — consolidated
+    --   4. "Delete agency_users" (DELETE) — consolidated
+    ['agency_users', '4'],
+    -- leads (5):
+    --   1. "Authenticated view leads" (SELECT, authenticated) — consolidated
+    --   2. "Authenticated update leads" (UPDATE, authenticated) — consolidated
+    --   3. "Owners and managers can delete leads" (DELETE) — InitPlan fix
+    --   4. "Users can create agency leads" (INSERT, authenticated) — unchanged
+    --   5. "Anon can insert partial leads only" (INSERT, anon) — unchanged
+    ['leads', '5'],
+    -- lead_quotes (4):
+    --   1. "Users can view agency lead_quotes" (SELECT) — unchanged
+    --   2. "Users can create agency lead_quotes" (INSERT) — unchanged
+    --   3. "Users can update agency lead_quotes" (UPDATE) — unchanged
+    --   4. "Owners and managers can delete lead_quotes" (DELETE) — InitPlan fix
+    ['lead_quotes', '4'],
+    -- routing_rules (4):
+    --   1. "View routing_rules" (SELECT) — consolidated
+    --   2. "Create routing_rules" (INSERT) — consolidated
+    --   3. "Update routing_rules" (UPDATE) — consolidated
+    --   4. "Delete routing_rules" (DELETE) — consolidated
+    ['routing_rules', '4'],
+    -- audit_log (2):
+    --   1. "View audit_log" (SELECT) — consolidated
+    --   2. "Create audit_log" (INSERT) — consolidated
+    ['audit_log', '2'],
+    -- notifications (2):
+    --   1. "Users can view their notifications" (SELECT) — InitPlan fix
+    --   2. "Users can update their notifications" (UPDATE) — InitPlan fix
+    ['notifications', '2'],
+    -- story_category_definitions (4):
+    --   1. "Anyone can read category definitions" (SELECT) — recreated
+    --   2. "Admins can insert category definitions" (INSERT) — split from FOR ALL
+    --   3. "Admins can update category definitions" (UPDATE) — split from FOR ALL
+    --   4. "Admins can delete category definitions" (DELETE) — split from FOR ALL
+    ['story_category_definitions', '4'],
+    -- story_tag_definitions (4):
+    --   1. "Anyone can read tag definitions" (SELECT) — recreated
+    --   2. "Admins can insert tag definitions" (INSERT) — split from FOR ALL
+    --   3. "Admins can update tag definitions" (UPDATE) — split from FOR ALL
+    --   4. "Admins can delete tag definitions" (DELETE) — split from FOR ALL
+    ['story_tag_definitions', '4'],
+    -- agency_memberships (4):
+    --   1. "Agency users view own agency members" (SELECT) — unchanged
+    --   2. "Owners/managers can add members" (INSERT) — unchanged
+    --   3. "Owners can update members" (UPDATE) — InitPlan fix
+    --   4. "Owners/managers can remove members" (DELETE) — unchanged
+    ['agency_memberships', '4'],
+    -- impersonation_sessions (3):
+    --   1. "Platform admins view impersonation sessions" (SELECT) — InitPlan fix
+    --   2. "Platform admins create impersonation sessions" (INSERT) — InitPlan fix
+    --   3. "Admins can update own impersonation sessions" (UPDATE) — InitPlan fix
+    ['impersonation_sessions', '3'],
+    -- user_roles (2):
+    --   1. "Users can view their own role" (SELECT) — InitPlan fix
+    --   2. "Admins can manage all roles" (ALL) — InitPlan fix
+    ['user_roles', '2']
   ];
 BEGIN
   FOR i IN 1..array_length(v_checks, 1) LOOP
