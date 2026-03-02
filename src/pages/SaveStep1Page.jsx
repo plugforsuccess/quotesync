@@ -282,7 +282,7 @@ export default function SaveStep1Page() {
                     {[
                       { label: '🚗 Auto', value: 'auto' },
                       { label: '🏠 Home', value: 'home' },
-                      { label: '🚗🏠 Both', value: 'bundle', badge: 'Most Popular' },
+                      { label: '🚗🏠 Both', value: 'bundle' },
                       { label: '🤔 Not Sure', value: 'unsure' },
                     ].map((option) => (
                       <button
@@ -335,6 +335,7 @@ export default function SaveStep1Page() {
                         { label: 'Allstate', value: 'allstate' },
                         { label: 'Farmers', value: 'farmers' },
                         { label: 'GA Farm Bureau', value: 'farm_bureau' },
+                        { label: 'USAA', value: 'usaa' },
                         { label: 'Other', value: 'other' },
                         { label: 'None', value: 'none' },
                       ].map((option) => (
@@ -376,6 +377,8 @@ export default function SaveStep1Page() {
                         { label: 'Liberty Mutual', value: 'liberty_mutual' },
                         { label: 'Farmers', value: 'farmers' },
                         { label: 'GA Farm Bureau', value: 'farm_bureau' },
+                        { label: 'Nationwide', value: 'nationwide' },
+                        { label: 'USAA', value: 'usaa' },
                         { label: 'Other', value: 'other' },
                         { label: 'None', value: 'none' },
                       ].map((option) => (

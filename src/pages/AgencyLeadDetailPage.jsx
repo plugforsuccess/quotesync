@@ -260,6 +260,8 @@ const AgencyLeadDetailPage = () => {
                        lead.current_auto_carrier === 'liberty_mutual' ? 'Liberty Mutual' :
                        lead.current_auto_carrier === 'farmers' ? 'Farmers' :
                        lead.current_auto_carrier === 'farm_bureau' ? 'GA Farm Bureau' :
+                       lead.current_auto_carrier === 'usaa' ? 'USAA' :
+                       lead.current_auto_carrier === 'nationwide' ? 'Nationwide' :
                        lead.current_auto_carrier === 'none' ? 'No current policy' :
                        'Other'}
                     </dd>
@@ -278,6 +280,8 @@ const AgencyLeadDetailPage = () => {
                        lead.current_home_carrier === 'liberty_mutual' ? 'Liberty Mutual' :
                        lead.current_home_carrier === 'farmers' ? 'Farmers' :
                        lead.current_home_carrier === 'farm_bureau' ? 'GA Farm Bureau' :
+                       lead.current_home_carrier === 'usaa' ? 'USAA' :
+                       lead.current_home_carrier === 'nationwide' ? 'Nationwide' :
                        lead.current_home_carrier === 'none' ? 'No current policy' :
                        'Other'}
                     </dd>
