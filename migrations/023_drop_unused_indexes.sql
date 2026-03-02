@@ -10,16 +10,23 @@
 -- Verify with: SELECT indexrelname, idx_scan FROM pg_stat_user_indexes
 --              WHERE schemaname = 'public' ORDER BY idx_scan, indexrelname;
 --
--- Duplicate indexes from Section 3 were already dropped in migration 020.
+-- Excluded from this migration:
+--   - Duplicate indexes already dropped in migration 020
+--   - Indexes that 020 explicitly kept (the non-duplicate counterparts)
+--   - idx_stories_slug (needed for URL lookups e.g. /stories/:slug)
+--   - idx_profiles_email (needed for auth flows, invitations, deduplication)
+--   - idx_leads_phone (needed for Twilio inbound SMS matching)
+
+BEGIN;
 
 -- =============================================================================
--- stories (15 indexes)
+-- stories (12 indexes — kept idx_stories_slug for URL lookups)
 -- =============================================================================
 DROP INDEX IF EXISTS idx_stories_status;
 DROP INDEX IF EXISTS idx_stories_published_at;
 DROP INDEX IF EXISTS idx_stories_category;
 DROP INDEX IF EXISTS idx_stories_region;
-DROP INDEX IF EXISTS idx_stories_slug;
+-- KEPT: idx_stories_slug (URL lookups for /stories/:slug)
 DROP INDEX IF EXISTS idx_stories_featured;
 DROP INDEX IF EXISTS idx_stories_archived;
 DROP INDEX IF EXISTS idx_stories_archived_by;
@@ -50,9 +57,10 @@ DROP INDEX IF EXISTS idx_story_drafts_story_id;
 DROP INDEX IF EXISTS idx_story_drafts_secondary_tags;
 
 -- =============================================================================
--- leads (14 indexes — excludes idx_leads_agency dropped in 020)
+-- leads (10 indexes)
+-- KEPT: idx_leads_agency_id (migration 020 keeps this as the non-duplicate)
+-- KEPT: idx_leads_phone (Twilio inbound SMS matching)
 -- =============================================================================
-DROP INDEX IF EXISTS idx_leads_agency_id;
 DROP INDEX IF EXISTS idx_leads_status;
 DROP INDEX IF EXISTS idx_leads_agency_status;
 DROP INDEX IF EXISTS idx_leads_updated_at;
@@ -65,7 +73,6 @@ DROP INDEX IF EXISTS idx_leads_agency_score;
 DROP INDEX IF EXISTS idx_leads_agency_created;
 DROP INDEX IF EXISTS idx_leads_dashboard_sort;
 DROP INDEX IF EXISTS idx_leads_drip;
-DROP INDEX IF EXISTS idx_leads_phone;
 
 -- =============================================================================
 -- lead_quotes (3 indexes — excludes unique idx_lead_quotes_lead_unique)
@@ -80,18 +87,18 @@ DROP INDEX IF EXISTS idx_lead_quotes_enrichment_status;
 DROP INDEX IF EXISTS idx_lead_messages_lead;
 
 -- =============================================================================
--- audit_log (5 indexes — excludes duplicates dropped in 020)
+-- audit_log (2 indexes)
+-- KEPT: idx_audit_log_lead_id (migration 020 keeps this as the non-duplicate)
+-- KEPT: idx_audit_log_event_type (migration 020 keeps this as the non-duplicate)
+-- KEPT: idx_audit_log_created_at (migration 020 keeps this as the non-duplicate)
 -- =============================================================================
 DROP INDEX IF EXISTS idx_audit_log_agency_id;
-DROP INDEX IF EXISTS idx_audit_log_lead_id;
-DROP INDEX IF EXISTS idx_audit_log_event_type;
-DROP INDEX IF EXISTS idx_audit_log_created_at;
 DROP INDEX IF EXISTS idx_audit_log_actor;
 
 -- =============================================================================
--- routing_rules (4 indexes — excludes duplicate dropped in 020)
+-- routing_rules (3 indexes)
+-- KEPT: idx_routing_rules_agency_id (migration 020 keeps this as the non-duplicate)
 -- =============================================================================
-DROP INDEX IF EXISTS idx_routing_rules_agency_id;
 DROP INDEX IF EXISTS idx_routing_rules_state_zip;
 DROP INDEX IF EXISTS idx_routing_rules_priority;
 DROP INDEX IF EXISTS idx_routing_rules_state;
@@ -103,16 +110,16 @@ DROP INDEX IF EXISTS idx_agencies_status;
 DROP INDEX IF EXISTS idx_agencies_default;
 
 -- =============================================================================
--- agency_users (2 indexes — excludes duplicates dropped in 020)
+-- agency_users (0 indexes)
+-- KEPT: idx_agency_users_user_id (migration 020 keeps this as the non-duplicate)
+-- KEPT: idx_agency_users_agency_id (migration 020 keeps this as the non-duplicate)
 -- =============================================================================
-DROP INDEX IF EXISTS idx_agency_users_user_id;
-DROP INDEX IF EXISTS idx_agency_users_agency_id;
 
 -- =============================================================================
--- profiles (4 indexes)
+-- profiles (2 indexes)
+-- KEPT: idx_profiles_email (auth flows, invitations, deduplication)
+-- KEPT: idx_profiles_role (used in RLS policy EXISTS checks across many tables)
 -- =============================================================================
-DROP INDEX IF EXISTS idx_profiles_email;
-DROP INDEX IF EXISTS idx_profiles_role;
 DROP INDEX IF EXISTS idx_profiles_platform_role;
 DROP INDEX IF EXISTS idx_profiles_is_platform_user;
 
@@ -149,3 +156,5 @@ DROP INDEX IF EXISTS idx_enrichment_jobs_pull;
 -- =============================================================================
 DROP INDEX IF EXISTS idx_story_category_definitions_active;
 DROP INDEX IF EXISTS idx_story_tag_definitions_active;
+
+COMMIT;
