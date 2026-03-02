@@ -338,7 +338,17 @@ const AgencyLeadsPage = () => {
                           {lead.zip || '-'} / {lead.state || '-'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                          {lead.product_intent || '-'}
+                          <span>{lead.product_intent || '-'}</span>
+                          {lead.risk_flag === 'red' && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700" title="Exceeds carrier limits">
+                              {'\uD83D\uDD34'} Risk
+                            </span>
+                          )}
+                          {lead.risk_flag === 'yellow' && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700" title="Needs review">
+                              {'\uD83D\uDFE1'} Review
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                           <span className={source === 'referral' ? 'text-green-600 font-medium' : ''}>

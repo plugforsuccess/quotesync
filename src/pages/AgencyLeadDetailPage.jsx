@@ -247,6 +247,38 @@ const AgencyLeadDetailPage = () => {
                   </dt>
                   <dd className="text-gray-900 font-medium">{lead.product_intent || 'Not specified'}</dd>
                 </div>
+                {lead.auto_driving_record && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Driving Record (3yr)</dt>
+                    <dd className={`font-medium ${
+                      lead.auto_driving_record === '3+' ? 'text-red-600' :
+                      lead.auto_driving_record === '1-2' ? 'text-amber-600' : 'text-green-600'
+                    }`}>
+                      {lead.auto_driving_record === 'clean' ? 'Clean' :
+                       lead.auto_driving_record === '1-2' ? '1\u20132 incidents' : '3+ incidents'}
+                    </dd>
+                  </div>
+                )}
+                {lead.home_claims_history && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Home Claims (5yr)</dt>
+                    <dd className={`font-medium ${
+                      lead.home_claims_history === '2+' ? 'text-red-600' : 'text-green-600'
+                    }`}>
+                      {lead.home_claims_history === '0-1' ? '0\u20131 claims' : '2+ claims'}
+                    </dd>
+                  </div>
+                )}
+                {lead.risk_flag && lead.risk_flag !== 'green' && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Risk Flag</dt>
+                    <dd className={`font-bold ${
+                      lead.risk_flag === 'red' ? 'text-red-600' : 'text-amber-600'
+                    }`}>
+                      {lead.risk_flag === 'red' ? '\uD83D\uDD34 Exceeds carrier limits' : '\uD83D\uDFE1 Needs review'}
+                    </dd>
+                  </div>
+                )}
                 <div>
                   <dt className="text-sm text-gray-500">Source</dt>
                   <dd className="text-gray-900 font-medium">
