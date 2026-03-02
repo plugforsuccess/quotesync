@@ -3,40 +3,12 @@
 // Creates a lead record from Canopy completion or funnel form, routes to agency, notifies, logs audit
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const allowedOrigins = [
-  'https://insuredbycam.com',
-  'https://www.insuredbycam.com',
-  'https://quotesync.vercel.app',
-];
-
-// Also allow Vercel preview deployments
-const origin = req.headers.get("origin") || "";
-if (origin.endsWith(".vercel.app")) {
-  allowedOrigins.push(origin);
-}
-
-function getCorsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get('origin') || ''
-  const matched = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
-  return {
-    'Access-Control-Allow-Origin': matched,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-canopy-signature',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  }
-}
+import { getCorsHeaders } from '../_shared/cors.ts'
 
 // F-05 fix: Sanitize UTM values (truncate + strip HTML)
 function sanitizeUtm(val: string | null | undefined): string | null {
   if (!val) return null
   return val.slice(0, 256).replace(/<[^>]*>/g, '')
-}
-
-function computeAllstateConflict(
-  autoCarrier: string | null,
-  homeCarrier: string | null
-): boolean {
-  return autoCarrier === 'allstate' || homeCarrier === 'allstate'
 }
 
 function computeRiskFlag(
@@ -301,9 +273,6 @@ Deno.serve(async (req) => {
           auto_driving_record: body.auto_driving_record || null,
           home_claims_history: body.home_claims_history || null,
           risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
-          current_auto_carrier: body.current_auto_carrier || null,
-          current_home_carrier: body.current_home_carrier || null,
-          allstate_conflict: computeAllstateConflict(body.current_auto_carrier, body.current_home_carrier),
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -342,9 +311,6 @@ Deno.serve(async (req) => {
         auto_driving_record: body.auto_driving_record || null,
         home_claims_history: body.home_claims_history || null,
         risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
-        current_auto_carrier: body.current_auto_carrier || null,
-        current_home_carrier: body.current_home_carrier || null,
-        allstate_conflict: computeAllstateConflict(body.current_auto_carrier, body.current_home_carrier),
       }
 
       const { data: newLead, error: leadError } = await supabase
