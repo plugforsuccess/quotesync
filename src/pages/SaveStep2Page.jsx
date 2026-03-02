@@ -299,7 +299,7 @@ export default function SaveStep2Page() {
                       if (errors.firstName) setErrors((prev) => ({ ...prev, firstName: null }));
                     }}
                     placeholder="Your first name"
-                    className={`w-full px-4 py-3 rounded-xl border-2 text-base transition-colors focus:outline-none focus:ring-0 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 ${
                       errors.firstName
                         ? 'border-red-400 focus:border-red-500'
                         : 'border-gray-200 focus:border-primary-500'
@@ -325,7 +325,7 @@ export default function SaveStep2Page() {
                       if (errors.lastName) setErrors((prev) => ({ ...prev, lastName: null }));
                     }}
                     placeholder="Your last name"
-                    className={`w-full px-4 py-3 rounded-xl border-2 text-base transition-colors focus:outline-none focus:ring-0 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 ${
                       errors.lastName
                         ? 'border-red-400 focus:border-red-500'
                         : 'border-gray-200 focus:border-primary-500'
@@ -350,7 +350,7 @@ export default function SaveStep2Page() {
                       if (errors.phone) setErrors((prev) => ({ ...prev, phone: null }));
                     }}
                     placeholder="(555) 123-4567"
-                    className={`w-full px-4 py-3 rounded-xl border-2 text-base transition-colors focus:outline-none focus:ring-0 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 ${
                       errors.phone
                         ? 'border-red-400 focus:border-red-500'
                         : 'border-gray-200 focus:border-primary-500'
@@ -376,7 +376,7 @@ export default function SaveStep2Page() {
                       if (errors.email) setErrors((prev) => ({ ...prev, email: null }));
                     }}
                     placeholder="you@example.com"
-                    className={`w-full px-4 py-3 rounded-xl border-2 text-base transition-colors focus:outline-none focus:ring-0 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-base text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 ${
                       errors.email
                         ? 'border-red-400 focus:border-red-500'
                         : 'border-gray-200 focus:border-primary-500'

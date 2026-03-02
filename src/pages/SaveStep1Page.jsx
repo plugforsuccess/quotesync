@@ -164,7 +164,7 @@ export default function SaveStep1Page() {
                     value={zipCode}
                     onChange={handleZipChange}
                     placeholder="Enter your ZIP code"
-                    className={`w-full px-4 py-3 rounded-xl border-2 text-lg font-medium transition-colors focus:outline-none focus:ring-0 ${
+                    className={`w-full px-4 py-3 rounded-xl border-2 text-lg font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 ${
                       errors.zipCode || zipError
                         ? 'border-red-400 focus:border-red-500'
                         : 'border-gray-200 focus:border-primary-500'
