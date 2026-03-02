@@ -13,6 +13,7 @@ const SESSION_KEYS = {
   OWNS_HOME: 'qs_funnel_owns_home',
   VEHICLE_COUNT: 'qs_funnel_vehicle_count',
   UTM: 'qs_funnel_utm',
+  PRODUCT_INTENT: 'qs_funnel_product_intent',
 };
 
 export default function SaveStep1Page() {
@@ -20,6 +21,7 @@ export default function SaveStep1Page() {
   const [zipCode, setZipCode] = useState('');
   const [ownsHome, setOwnsHome] = useState(null);
   const [vehicleCount, setVehicleCount] = useState(null);
+  const [productIntent, setProductIntent] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [zipError, setZipError] = useState('');
@@ -55,6 +57,9 @@ export default function SaveStep1Page() {
     if (ownsHome === null) {
       newErrors.ownsHome = 'Please select one.';
     }
+    if (!productIntent) {
+      newErrors.productIntent = 'Please select one.';
+    }
     if (vehicleCount === null) {
       newErrors.vehicleCount = 'Please select one.';
     }
@@ -80,6 +85,7 @@ export default function SaveStep1Page() {
         state: 'GA',
         owns_home: ownsHome,
         vehicle_count: vehicleCount,
+        product_intent: productIntent,
         session_id: sessionId,
         utm_source: utmParams.utm_source,
         utm_medium: utmParams.utm_medium,
@@ -99,6 +105,7 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.ZIP, zipCode);
       sessionStorage.setItem(SESSION_KEYS.OWNS_HOME, JSON.stringify(ownsHome));
       sessionStorage.setItem(SESSION_KEYS.VEHICLE_COUNT, String(vehicleCount));
+      sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
 
       // Fire analytics
@@ -111,6 +118,7 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.ZIP, zipCode);
       sessionStorage.setItem(SESSION_KEYS.OWNS_HOME, JSON.stringify(ownsHome));
       sessionStorage.setItem(SESSION_KEYS.VEHICLE_COUNT, String(vehicleCount));
+      sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
       navigate('/save/details');
     } finally {
@@ -209,6 +217,45 @@ export default function SaveStep1Page() {
                   </div>
                   {errors.ownsHome && (
                     <p className="mt-1.5 text-sm text-red-600">{errors.ownsHome}</p>
+                  )}
+                </div>
+
+                {/* Product Intent */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    What are you looking to insure?
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: '🚗 Auto', value: 'auto' },
+                      { label: '🏠 Home', value: 'home' },
+                      { label: '🚗🏠 Both', value: 'bundle', badge: 'Most Popular' },
+                      { label: '🤔 Not Sure', value: 'unsure' },
+                    ].map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          setProductIntent(option.value);
+                          if (errors.productIntent) setErrors((prev) => ({ ...prev, productIntent: null }));
+                        }}
+                        className={`relative py-3 px-4 rounded-xl border-2 font-semibold text-base transition-all duration-200 ${
+                          productIntent === option.value
+                            ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {option.badge && (
+                          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-accent-500 text-white text-xs font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+                            {option.badge}
+                          </span>
+                        )}
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                  {errors.productIntent && (
+                    <p className="mt-1.5 text-sm text-red-600">{errors.productIntent}</p>
                   )}
                 </div>
 

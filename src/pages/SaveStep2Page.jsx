@@ -11,6 +11,7 @@ const SESSION_KEYS = {
   OWNS_HOME: 'qs_funnel_owns_home',
   VEHICLE_COUNT: 'qs_funnel_vehicle_count',
   UTM: 'qs_funnel_utm',
+  PRODUCT_INTENT: 'qs_funnel_product_intent',
 };
 
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
@@ -20,42 +21,40 @@ const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
 // TCPA consent version — increment when disclaimer text changes
 const TCPA_CONSENT_VERSION = 'v1.0-2026-03';
 
-const getSavingsEstimate = (ownsHome, vehicleCount) => {
-  if (ownsHome && vehicleCount >= 2) {
-    return { range: '$400 – $1,200/year', message: 'Bundle savings available! Most homeowners with 2+ cars save big.' };
-  }
-  if (ownsHome && vehicleCount === 1) {
+const getSavingsEstimate = (ownsHome, vehicleCount, productIntent) => {
+  if (productIntent === 'bundle' || (ownsHome && productIntent !== 'auto' && productIntent !== 'home')) {
+    if (vehicleCount >= 2) {
+      return { range: '$400 – $1,200/year', message: 'Bundle savings available! Most homeowners with 2+ cars save big.' };
+    }
     return { range: '$300 – $800/year', message: 'Homeowners qualify for exclusive bundle discounts.' };
   }
-  if (vehicleCount >= 2) {
-    return { range: '$200 – $600/year', message: 'Multi-car discounts add up fast — even for renters.' };
+  if (productIntent === 'home') {
+    return { range: '$200 – $500/year', message: 'Homeowner savings are waiting for you.' };
   }
-  return { range: '$150 – $500/year', message: 'Renters insurance + auto bundles save more than you think.' };
+  if (vehicleCount >= 2) {
+    return { range: '$200 – $600/year', message: 'Multi-car discounts add up fast.' };
+  }
+  return { range: '$150 – $500/year', message: 'Let\'s find you a better rate.' };
 };
 
 /**
  * Compute a simplified lead score for manual form leads
  */
-const computeManualLeadScore = (ownsHome, vehicleCount, zip, utmParams) => {
+const computeManualLeadScore = (ownsHome, vehicleCount, zip, utmParams, productIntent) => {
   let score = 0;
 
-  // Owns home: +30
   if (ownsHome) score += 30;
-
-  // Vehicle count 2+: +20
   if (vehicleCount >= 2) score += 20;
-
-  // Vehicle count 3+: +10 additional
   if (vehicleCount >= 3) score += 10;
-
-  // Target ZIP: +15 (all accepted ZIPs count since we validated in Step 1)
   if (zip) score += 15;
 
-  // Business hours: +10
+  // Product intent scoring
+  if (productIntent === 'bundle') score += 20;
+  else if (productIntent === 'auto' || productIntent === 'home') score += 10;
+  // 'unsure' gets no bonus
+
   const hour = new Date().getHours();
   if (hour >= 9 && hour <= 17) score += 10;
-
-  // UTM tracking: +5
   if (utmParams?.utm_campaign) score += 5;
 
   return Math.min(score, 100);
@@ -75,6 +74,7 @@ export default function SaveStep2Page() {
       ownsHome: JSON.parse(sessionStorage.getItem(SESSION_KEYS.OWNS_HOME) || 'false'),
       vehicleCount: parseInt(sessionStorage.getItem(SESSION_KEYS.VEHICLE_COUNT) || '1', 10),
       utm: JSON.parse(sessionStorage.getItem(SESSION_KEYS.UTM) || '{}'),
+      productIntent: sessionStorage.getItem(SESSION_KEYS.PRODUCT_INTENT) || null,
     };
   });
 
@@ -100,7 +100,7 @@ export default function SaveStep2Page() {
 
   if (!step1Data) return null;
 
-  const savings = getSavingsEstimate(step1Data.ownsHome, step1Data.vehicleCount);
+  const savings = getSavingsEstimate(step1Data.ownsHome, step1Data.vehicleCount, step1Data.productIntent);
 
   const validate = () => {
     const newErrors = {};
@@ -142,7 +142,8 @@ export default function SaveStep2Page() {
         step1Data.ownsHome,
         step1Data.vehicleCount,
         step1Data.zip,
-        step1Data.utm
+        step1Data.utm,
+        step1Data.productIntent
       );
 
       // F-02 fix: Single write path through the Edge Function only.
@@ -163,6 +164,7 @@ export default function SaveStep2Page() {
           state: 'GA',
           owns_home: step1Data.ownsHome,
           vehicle_count: step1Data.vehicleCount,
+          product_intent: step1Data.productIntent,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('insuredbycam_session_id'),
@@ -192,6 +194,7 @@ export default function SaveStep2Page() {
         source: 'funnel',
         owns_home: step1Data.ownsHome,
         vehicle_count: step1Data.vehicleCount,
+        product_intent: step1Data.productIntent,
       });
       // F-11: Conversion label read from env var (set VITE_GADS_CONVERSION_LABEL in .env)
       const conversionLabel = import.meta.env.VITE_GADS_CONVERSION_LABEL;
