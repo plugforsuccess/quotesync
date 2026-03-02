@@ -75,10 +75,11 @@ export default function SaveConfirmationPage() {
                     Cameron is a licensed Allstate agent in Georgia who personally reviews every quote.
                   </p>
                   <div className="flex items-center gap-1 mt-1">
-                    {[...Array(5)].map((_, i) => (
+                    {[...Array(4)].map((_, i) => (
                       <Star key={i} className="w-4 h-4 text-accent-500 fill-accent-500" />
                     ))}
-                    <span className="text-sm text-gray-500 ml-1">5.0 on Google</span>
+                    <Star className="w-4 h-4 text-gray-300" />
+                    <span className="text-sm text-gray-500 ml-1">4.1 (265 reviews) on Google</span>
                   </div>
                 </div>
               </div>
