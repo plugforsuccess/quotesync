@@ -11,6 +11,21 @@ function sanitizeUtm(val: string | null | undefined): string | null {
   return val.slice(0, 256).replace(/<[^>]*>/g, '')
 }
 
+function computeRiskFlag(
+  autoDrivingRecord: string | null,
+  homeClaimsHistory: string | null
+): 'green' | 'yellow' | 'red' {
+  // Red: exceeds carrier limits
+  if (autoDrivingRecord === '3+') return 'red'    // At carrier per-driver incident max
+  if (homeClaimsHistory === '2+') return 'red'     // Exceeds carrier 1-claim limit
+
+  // Yellow: has some history but within limits
+  if (autoDrivingRecord === '1-2') return 'yellow'
+
+  // Green: clean record or no data provided
+  return 'green'
+}
+
 // Rate limiting: simple in-memory store (resets on cold start)
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 const RATE_LIMIT = 10 // requests per minute
@@ -254,6 +269,9 @@ Deno.serve(async (req) => {
           consent_ip: consentIp,
           consent_version: body.consent_version || null,
           consent_user_agent: body.consent_user_agent || null,
+          auto_driving_record: body.auto_driving_record || null,
+          home_claims_history: body.home_claims_history || null,
+          risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -289,6 +307,9 @@ Deno.serve(async (req) => {
         consent_ip: consentIp,
         consent_version: body.consent_version || null,
         consent_user_agent: body.consent_user_agent || null,
+        auto_driving_record: body.auto_driving_record || null,
+        home_claims_history: body.home_claims_history || null,
+        risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
       }
 
       const { data: newLead, error: leadError } = await supabase

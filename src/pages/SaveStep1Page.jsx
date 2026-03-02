@@ -14,6 +14,8 @@ const SESSION_KEYS = {
   VEHICLE_COUNT: 'qs_funnel_vehicle_count',
   UTM: 'qs_funnel_utm',
   PRODUCT_INTENT: 'qs_funnel_product_intent',
+  AUTO_DRIVING_RECORD: 'qs_funnel_auto_driving_record',
+  HOME_CLAIMS_HISTORY: 'qs_funnel_home_claims_history',
 };
 
 export default function SaveStep1Page() {
@@ -22,6 +24,8 @@ export default function SaveStep1Page() {
   const [ownsHome, setOwnsHome] = useState(null);
   const [vehicleCount, setVehicleCount] = useState(null);
   const [productIntent, setProductIntent] = useState(null);
+  const [autoDrivingRecord, setAutoDrivingRecord] = useState(null);
+  const [homeClaimsHistory, setHomeClaimsHistory] = useState(null);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [zipError, setZipError] = useState('');
@@ -42,6 +46,9 @@ export default function SaveStep1Page() {
     }
   };
 
+  const showAutoRisk = productIntent === 'auto' || productIntent === 'bundle';
+  const showHomeRisk = productIntent === 'home' || productIntent === 'bundle';
+
   const validate = () => {
     const newErrors = {};
 
@@ -59,6 +66,12 @@ export default function SaveStep1Page() {
     }
     if (!productIntent) {
       newErrors.productIntent = 'Please select one.';
+    }
+    if (showAutoRisk && !autoDrivingRecord) {
+      newErrors.autoDrivingRecord = 'Please select one.';
+    }
+    if (showHomeRisk && homeClaimsHistory === null) {
+      newErrors.homeClaimsHistory = 'Please select one.';
     }
     if (vehicleCount === null) {
       newErrors.vehicleCount = 'Please select one.';
@@ -86,6 +99,8 @@ export default function SaveStep1Page() {
         owns_home: ownsHome,
         vehicle_count: vehicleCount,
         product_intent: productIntent,
+        auto_driving_record: autoDrivingRecord || null,
+        home_claims_history: homeClaimsHistory || null,
         session_id: sessionId,
         utm_source: utmParams.utm_source,
         utm_medium: utmParams.utm_medium,
@@ -106,6 +121,8 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.OWNS_HOME, JSON.stringify(ownsHome));
       sessionStorage.setItem(SESSION_KEYS.VEHICLE_COUNT, String(vehicleCount));
       sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
+      sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, autoDrivingRecord || '');
+      sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, homeClaimsHistory || '');
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
 
       // Fire analytics
@@ -119,6 +136,8 @@ export default function SaveStep1Page() {
       sessionStorage.setItem(SESSION_KEYS.OWNS_HOME, JSON.stringify(ownsHome));
       sessionStorage.setItem(SESSION_KEYS.VEHICLE_COUNT, String(vehicleCount));
       sessionStorage.setItem(SESSION_KEYS.PRODUCT_INTENT, productIntent);
+      sessionStorage.setItem(SESSION_KEYS.AUTO_DRIVING_RECORD, autoDrivingRecord || '');
+      sessionStorage.setItem(SESSION_KEYS.HOME_CLAIMS_HISTORY, homeClaimsHistory || '');
       sessionStorage.setItem(SESSION_KEYS.UTM, JSON.stringify(utmParams));
       navigate('/save/details');
     } finally {
@@ -238,6 +257,13 @@ export default function SaveStep1Page() {
                         onClick={() => {
                           setProductIntent(option.value);
                           if (errors.productIntent) setErrors((prev) => ({ ...prev, productIntent: null }));
+                          // Reset risk answers when intent changes so stale data isn't submitted
+                          if (option.value !== 'auto' && option.value !== 'bundle') {
+                            setAutoDrivingRecord(null);
+                          }
+                          if (option.value !== 'home' && option.value !== 'bundle') {
+                            setHomeClaimsHistory(null);
+                          }
                         }}
                         className={`relative py-3 px-4 rounded-xl border-2 font-semibold text-base transition-all duration-200 ${
                           productIntent === option.value
@@ -258,6 +284,79 @@ export default function SaveStep1Page() {
                     <p className="mt-1.5 text-sm text-red-600">{errors.productIntent}</p>
                   )}
                 </div>
+
+                {/* Auto Risk — conditional on auto or bundle */}
+                {showAutoRisk && (
+                  <div className="animate-fadeIn">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Any accidents or tickets in the last 3 years?
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { label: 'None', value: 'clean' },
+                        { label: '1\u20132', value: '1-2' },
+                        { label: '3+', value: '3+' },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setAutoDrivingRecord(option.value);
+                            if (errors.autoDrivingRecord) setErrors((prev) => ({ ...prev, autoDrivingRecord: null }));
+                          }}
+                          className={`py-3 px-4 rounded-xl border-2 font-semibold text-base transition-all duration-200 ${
+                            autoDrivingRecord === option.value
+                              ? option.value === '3+'
+                                ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-md'
+                                : 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
+                              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    {errors.autoDrivingRecord && (
+                      <p className="mt-1.5 text-sm text-red-600">{errors.autoDrivingRecord}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Home Claims — conditional on home or bundle */}
+                {showHomeRisk && (
+                  <div className="animate-fadeIn">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      More than 1 home insurance claim in the last 5 years?
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { label: 'No', value: '0-1' },
+                        { label: 'Yes', value: '2+' },
+                      ].map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            setHomeClaimsHistory(option.value);
+                            if (errors.homeClaimsHistory) setErrors((prev) => ({ ...prev, homeClaimsHistory: null }));
+                          }}
+                          className={`py-3 px-4 rounded-xl border-2 font-semibold text-base transition-all duration-200 ${
+                            homeClaimsHistory === option.value
+                              ? option.value === '2+'
+                                ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-md'
+                                : 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
+                              : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    {errors.homeClaimsHistory && (
+                      <p className="mt-1.5 text-sm text-red-600">{errors.homeClaimsHistory}</p>
+                    )}
+                  </div>
+                )}
 
                 {/* Vehicle Count */}
                 <div>
