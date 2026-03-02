@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, Filter, Clock, FileText, ArrowUpDown,
-  ChevronRight, Users, AlertCircle
+  ChevronRight, Users, AlertCircle, BarChart3
 } from 'lucide-react';
 import { useCurrentAgency, useAgencyLeads, useAgencySLAMetrics } from '../hooks/useAgencyLeads';
 import { getScoreColor } from '../lib/leadScoring';
@@ -127,7 +127,16 @@ const AgencyLeadsPage = () => {
           <h1 className="text-2xl font-bold text-gray-900">
             {currentAgency.agencies?.name || 'Agency'} Pipeline
           </h1>
-          <p className="text-gray-600 mt-1">Manage and track your leads</p>
+          <div className="flex items-center gap-4 mt-1">
+            <p className="text-gray-600">Manage and track your leads</p>
+            <Link
+              to="/agency/dashboard"
+              className="text-sm text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Funnel Dashboard
+            </Link>
+          </div>
         </div>
 
         {/* SLA Metrics Cards */}

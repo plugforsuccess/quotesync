@@ -19,18 +19,21 @@ export const consumerNav = [
 export const platformNav = {
   platform_master_admin: [
     { to: '/admin/agencies', label: 'Agencies', icon: '🏢' },
+    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
     { to: '/agency/leads', label: 'Leads', icon: '📋' },
     { to: '/news/dashboard', label: 'Newsroom', icon: '📰' },
     { to: '/admin/audit', label: 'Audit', icon: '🔍' },
   ],
   platform_admin: [
     { to: '/admin/agencies', label: 'Agencies', icon: '🏢' },
+    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
     { to: '/agency/leads', label: 'Leads', icon: '📋' },
     { to: '/news/dashboard', label: 'Newsroom', icon: '📰' },
     { to: '/admin/audit', label: 'Audit', icon: '🔍' },
   ],
   platform_support: [
     { to: '/admin/agencies', label: 'Agencies', icon: '🏢' },
+    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
     { to: '/agency/leads', label: 'Leads', icon: '📋' },
   ],
   platform_editor: [
