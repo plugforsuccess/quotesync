@@ -292,6 +292,11 @@ Deno.serve(async (req) => {
           auto_driving_record: body.auto_driving_record || null,
           home_claims_history: body.home_claims_history || null,
           risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
+          // V2 wizard fields
+          date_of_birth: body.date_of_birth || null,
+          street_address: body.street_address || null,
+          address_unit: body.address_unit || null,
+          city: body.city || null,
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -330,6 +335,11 @@ Deno.serve(async (req) => {
         auto_driving_record: body.auto_driving_record || null,
         home_claims_history: body.home_claims_history || null,
         risk_flag: computeRiskFlag(body.auto_driving_record, body.home_claims_history),
+        // V2 wizard fields
+        date_of_birth: body.date_of_birth || null,
+        street_address: body.street_address || null,
+        address_unit: body.address_unit || null,
+        city: body.city || null,
       }
 
       const { data: newLead, error: leadError } = await supabase
