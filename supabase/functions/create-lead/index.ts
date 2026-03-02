@@ -261,8 +261,9 @@ Deno.serve(async (req) => {
           last_name: body.last_name || null,
           phone: isValidPhone ? normalizedPhone : null,
           email: body.email || null,
-          owns_home: body.owns_home || null,
-          vehicle_count: body.vehicle_count || null,
+          product_intent: body.product_intent ?? null,
+          owns_home: body.owns_home ?? null,
+          vehicle_count: body.vehicle_count ?? null,
           lead_score: body.lead_score || null,
           // F-04: TCPA consent fields (consent_ip captured server-side)
           consent_given_at: body.consent_given_at || null,
