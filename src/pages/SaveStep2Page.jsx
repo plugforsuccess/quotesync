@@ -1,7 +1,7 @@
 // src/pages/SaveStep2Page.jsx — Funnel Step 2: Contact Capture
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
+import { ArrowRight, ArrowLeft, CheckCircle, AlertTriangle } from 'lucide-react';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion } from '../lib/analytics';
 import { formatPhoneInput, toE164, isValidPhone } from '../utils/phoneFormat';
 
@@ -16,6 +16,10 @@ const SESSION_KEYS = {
   HOME_CLAIMS_HISTORY: 'qs_funnel_home_claims_history',
   CURRENT_AUTO_CARRIER: 'qs_funnel_current_auto_carrier',
   CURRENT_HOME_CARRIER: 'qs_funnel_current_home_carrier',
+  FIRST_NAME: 'qs_funnel_first_name',
+  LAST_NAME: 'qs_funnel_last_name',
+  PHONE: 'qs_funnel_phone',
+  EMAIL: 'qs_funnel_email',
 };
 
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
@@ -105,10 +109,10 @@ export default function SaveStep2Page() {
     }
   }, [step1Data, navigate]);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState('');
+  const [firstName, setFirstName] = useState(() => sessionStorage.getItem(SESSION_KEYS.FIRST_NAME) || '');
+  const [lastName, setLastName] = useState(() => sessionStorage.getItem(SESSION_KEYS.LAST_NAME) || '');
+  const [phone, setPhone] = useState(() => sessionStorage.getItem(SESSION_KEYS.PHONE) || '');
+  const [email, setEmail] = useState(() => sessionStorage.getItem(SESSION_KEYS.EMAIL) || '');
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   // F-12: Error state for submission failures
@@ -147,6 +151,15 @@ export default function SaveStep2Page() {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleBack = () => {
+    // Persist contact info so nothing is lost when navigating back
+    sessionStorage.setItem(SESSION_KEYS.FIRST_NAME, firstName);
+    sessionStorage.setItem(SESSION_KEYS.LAST_NAME, lastName);
+    sessionStorage.setItem(SESSION_KEYS.PHONE, phone);
+    sessionStorage.setItem(SESSION_KEYS.EMAIL, email);
+    navigate('/save');
   };
 
   const handleSubmit = async (e) => {
@@ -424,23 +437,36 @@ export default function SaveStep2Page() {
                   )}
                 </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="group relative w-full inline-flex items-center justify-center gap-3 overflow-hidden rounded-xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
-                  <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-4 rounded-xl transition-all duration-300">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                    <span className="relative z-10 text-white font-black text-lg">
-                      {isSubmitting ? 'Submitting...' : 'Get My Free Quote'}
-                    </span>
-                    {!isSubmitting && (
-                      <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
-                    )}
-                  </div>
-                </button>
+                {/* Navigation Buttons */}
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="group relative w-full inline-flex items-center justify-center gap-3 overflow-hidden rounded-xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
+                    <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-4 rounded-xl transition-all duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      <span className="relative z-10 text-white font-black text-lg">
+                        {isSubmitting ? 'Submitting...' : 'Get My Free Quote'}
+                      </span>
+                      {!isSubmitting && (
+                        <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
+                      )}
+                    </div>
+                  </button>
+
+                  {/* Back Button */}
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    disabled={isSubmitting}
+                    className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl border-2 border-gray-200 text-gray-600 font-semibold text-sm transition-all duration-200 hover:border-gray-300 hover:bg-gray-50 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>Back</span>
+                  </button>
+                </div>
 
                 {/* TCPA Consent Disclaimer */}
                 <p className="text-xs text-gray-500 leading-relaxed">
