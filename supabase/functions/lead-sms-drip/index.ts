@@ -45,6 +45,16 @@ Deno.serve(async (req) => {
     })
   }
 
+  // F-07 fix: Authenticate — only allow calls with service role key (pg_cron passes this)
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const authHeader = req.headers.get('Authorization')
+  if (!serviceRoleKey || authHeader !== `Bearer ${serviceRoleKey}`) {
+    return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
   // Validate required env vars
   const missingVar = checkRequiredEnvVars([
     'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',

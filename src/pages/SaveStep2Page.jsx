@@ -1,8 +1,7 @@
 // src/pages/SaveStep2Page.jsx — Funnel Step 2: Contact Capture
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, CheckCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { ArrowRight, CheckCircle, AlertTriangle } from 'lucide-react';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion } from '../lib/analytics';
 import { formatPhoneInput, toE164, isValidPhone } from '../utils/phoneFormat';
 
@@ -17,6 +16,9 @@ const SESSION_KEYS = {
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-lead`
   : '/functions/v1/create-lead';
+
+// TCPA consent version — increment when disclaimer text changes
+const TCPA_CONSENT_VERSION = 'v1.0-2026-03';
 
 const getSavingsEstimate = (ownsHome, vehicleCount) => {
   if (ownsHome && vehicleCount >= 2) {
@@ -76,7 +78,7 @@ export default function SaveStep2Page() {
     };
   });
 
-  // Guard: redirect to /save if no Step 1 data
+  // F-09: Guard — redirect to /save if no Step 1 data in sessionStorage
   useEffect(() => {
     if (!step1Data) {
       navigate('/save', { replace: true });
@@ -89,6 +91,8 @@ export default function SaveStep2Page() {
   const [email, setEmail] = useState('');
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // F-12: Error state for submission failures
+  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
     document.title = 'Your Savings Estimate | Insured By Cam';
@@ -130,6 +134,7 @@ export default function SaveStep2Page() {
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     try {
       const phoneE164 = toE164(phone);
@@ -140,23 +145,10 @@ export default function SaveStep2Page() {
         step1Data.utm
       );
 
-      // Update the existing partial lead in Supabase
-      if (step1Data.leadId) {
-        await supabase
-          .from('leads')
-          .update({
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-            phone: phoneE164,
-            email: email.trim(),
-            status: 'new',
-            lead_score: leadScore,
-          })
-          .eq('id', step1Data.leadId);
-      }
-
-      // Call create-lead Edge Function to trigger Twilio automation
-      await fetch(EDGE_FUNCTION_URL, {
+      // F-02 fix: Single write path through the Edge Function only.
+      // The Edge Function handles dedup via session_id — it will find and
+      // update the partial lead from Step 1 instead of creating a duplicate.
+      const response = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,9 +167,20 @@ export default function SaveStep2Page() {
           lead_score: leadScore,
           session_id: sessionStorage.getItem('insuredbycam_session_id'),
           landing_page: '/save',
+          // F-04: TCPA consent metadata
+          consent_given_at: new Date().toISOString(),
+          consent_version: TCPA_CONSENT_VERSION,
+          consent_user_agent: navigator.userAgent,
+          // UTM params (sanitized server-side via F-05)
           ...step1Data.utm,
         }),
       });
+
+      // F-12: Check for actual success before navigating
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Server error (${response.status})`);
+      }
 
       // Fire analytics events
       trackFunnelStep(2, {
@@ -190,7 +193,11 @@ export default function SaveStep2Page() {
         owns_home: step1Data.ownsHome,
         vehicle_count: step1Data.vehicleCount,
       });
-      trackGoogleAdsConversion('CONVERSION_LABEL_HERE', 60);
+      // F-11: Conversion label read from env var (set VITE_GADS_CONVERSION_LABEL in .env)
+      const conversionLabel = import.meta.env.VITE_GADS_CONVERSION_LABEL;
+      if (conversionLabel) {
+        trackGoogleAdsConversion(conversionLabel, 60);
+      }
 
       // Clear sessionStorage
       Object.values(SESSION_KEYS).forEach((key) => sessionStorage.removeItem(key));
@@ -198,9 +205,10 @@ export default function SaveStep2Page() {
       navigate('/save/confirmation');
     } catch (err) {
       console.error('Step 2 submission error:', err);
-      // Navigate anyway — the lead data was likely saved
-      Object.values(SESSION_KEYS).forEach((key) => sessionStorage.removeItem(key));
-      navigate('/save/confirmation');
+      // F-12: Show error UI instead of silently navigating to success
+      setSubmitError(
+        'Something went wrong submitting your quote request. Please try again, or call us directly.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -260,6 +268,22 @@ export default function SaveStep2Page() {
           <div className="relative group">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 rounded-2xl opacity-75 blur-sm"></div>
             <div className="relative bg-white rounded-2xl shadow-2xl p-6 sm:p-8">
+              {/* F-12: Error banner */}
+              {submitError && (
+                <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm text-red-700 font-medium">{submitError}</p>
+                    <button
+                      onClick={() => setSubmitError(null)}
+                      className="text-sm text-red-600 underline mt-1 bg-transparent border-0 cursor-pointer p-0"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* First Name */}
                 <div>
