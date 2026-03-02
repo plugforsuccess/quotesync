@@ -17,17 +17,17 @@ const QuoteHero = ({ isVisible }) => {
         </div>
 
         <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight">
-          Stop Overpaying for
+          Georgia Families Are
           <br />
           <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent inline-block">
-            Insurance You Don't
+            Overpaying for Insurance.
           </span>
           <br />
-          Understand
+          Are You?
         </h1>
 
         <p className="text-xl md:text-2xl text-white/90 mb-6 font-medium max-w-3xl mx-auto leading-relaxed">
-          See exactly where your policy is overpriced — without filling out forms or getting spammed by 12 agents.
+          Find out in 30 seconds — no forms, no spam, no obligation.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-base text-white/80">

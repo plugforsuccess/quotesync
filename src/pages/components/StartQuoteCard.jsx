@@ -1,8 +1,11 @@
-// src/components/StartQuoteCard.jsx - WITH ZIP VALIDATION
+// src/components/StartQuoteCard.jsx - WITH ZIP VALIDATION + DUAL CTA
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight, CheckCircle, Shield, Zap, Lock, Eye } from 'lucide-react';
 
 const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
+  const navigate = useNavigate();
+
   return (
     <div
       className={`w-full px-4 sm:px-6 lg:px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${
@@ -18,7 +21,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
         <div className="relative group">
           {/* Animated Gradient Border */}
           <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 rounded-[2rem] opacity-75 group-hover:opacity-100 blur-sm group-hover:blur-md transition duration-1000 animate-gradient-x"></div>
-          
+
           {/* Card Content */}
           <div className="relative bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-2xl p-6 sm:p-8 md:p-12 border border-white/50 overflow-hidden">
             {/* Animated Mesh Background */}
@@ -35,7 +38,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
               {/* Header with Gradient Text */}
               <div className="text-center mb-4">
                 <div className="inline-block mb-4">
-              
+
                 </div>
 
                 <h2 className="text-4xl sm:text-5xl font-black mb-4 leading-tight">
@@ -44,10 +47,11 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                   </span>
                 </h2>
 
-                {/* Primary CTA with Advanced Styling - NOW USES onGetQuote */}
+                {/* Dual CTA Approach */}
                 <div className="max-w-xl mx-auto">
+                  {/* PRIMARY CTA: Check My Savings → /save */}
                   <button
-                    onClick={onGetQuote}
+                    onClick={() => navigate('/save')}
                     className="group relative inline-flex items-center justify-center gap-3 w-full overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border-0"
                   >
                     {/* Animated Gradient Border */}
@@ -57,12 +61,20 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                     <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-5 rounded-2xl transition-all duration-300">
                       {/* Shine Effect */}
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
-                      
+
                       <span className="relative z-10 text-white font-black text-lg tracking-wide whitespace-nowrap">
-                        Continue
+                        Check My Savings
                       </span>
                       <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:translate-x-2" />
                     </div>
+                  </button>
+
+                  {/* SECONDARY CTA: Canopy Connect */}
+                  <button
+                    onClick={onGetQuote}
+                    className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors cursor-pointer bg-transparent border-0"
+                  >
+                    Already have your policy handy? Sync it now &rarr;
                   </button>
 
                   <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-600">
@@ -72,7 +84,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                     </span>
                     <span className="flex items-center gap-1">
                       <Zap className="w-4 h-4 text-blue-600" />
-                      Takes 2-3 minutes
+                      Takes 30 seconds
                     </span>
                   </div>
                 </div>

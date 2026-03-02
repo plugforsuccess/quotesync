@@ -1,6 +1,6 @@
 // src/pages/components/TrustBuilder.jsx
 import React from 'react';
-import { Shield, Users, Award, CheckCircle } from 'lucide-react';
+import { Shield, Users, Award, CheckCircle, Lock, Star } from 'lucide-react';
 
 const TrustBuilder = () => {
   return (
@@ -80,34 +80,54 @@ const TrustBuilder = () => {
         </div>
 
         {/* Trust Indicators */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 lg:grid-cols-5 gap-6 max-w-6xl mx-auto">
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 text-center">
             <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Shield className="w-7 h-7 text-white" />
+              <Award className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Bank-Level Security</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Licensed Allstate Agent</h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Canopy Connect uses 256-bit encryption — the same security standard as Plaid, Venmo, and major banks.
+              Licensed Allstate agent in Georgia. A real person, not a call center.
             </p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 text-center">
             <div className="w-14 h-14 bg-gradient-to-br from-success-500 to-success-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Lock className="w-7 h-7 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Info Never Sold</h3>
+            <p className="text-sm text-white/70 leading-relaxed">
+              Your info is never sold to third parties. One agent, zero spam.
+            </p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 text-center">
+            <div className="w-14 h-14 bg-gradient-to-br from-secondary-500 to-secondary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
               <Users className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">Real Agent, Real Service</h3>
+            <h3 className="text-lg font-bold text-white mb-2">500+ Quotes Delivered</h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Cameron is a licensed Allstate agent in Georgia. Not a call center. Not a bot. A real person.
+              Hundreds of Georgia families already trust Cam with their insurance.
             </p>
           </div>
 
           <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 text-center">
             <div className="w-14 h-14 bg-gradient-to-br from-accent-500 to-accent-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-              <Award className="w-7 h-7 text-white" />
+              <Star className="w-7 h-7 text-white" />
             </div>
-            <h3 className="text-xl font-bold text-white mb-2">No Obligation</h3>
+            <h3 className="text-lg font-bold text-white mb-2">Rated 5.0 on Google</h3>
             <p className="text-sm text-white/70 leading-relaxed">
-              Get your comparison. If Allstate saves you money, great. If not, Cameron will tell you honestly.
+              Top-rated by real customers on Google Reviews.
+            </p>
+          </div>
+
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 text-center">
+            <div className="w-14 h-14 bg-gradient-to-br from-primary-500 to-primary-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Shield className="w-7 h-7 text-white" />
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">256-bit Encryption</h3>
+            <p className="text-sm text-white/70 leading-relaxed">
+              Bank-level security standard used by Plaid, Venmo, and major banks.
             </p>
           </div>
         </div>
