@@ -22,14 +22,42 @@ BEGIN;
 
 DROP POLICY IF EXISTS "Users can view their own role" ON public.user_roles;
 DROP POLICY IF EXISTS "Allow authenticated users to read their own role" ON public.user_roles;
+DROP POLICY IF EXISTS "Allow public read for testing" ON public.user_roles;
 DROP POLICY IF EXISTS "Admins can manage all roles" ON public.user_roles;
 
-CREATE POLICY "Users can view their own role"
+-- SELECT: Consolidated (user sees own + admin sees all)
+CREATE POLICY "View user_roles"
   ON public.user_roles FOR SELECT
-  USING ((select auth.uid()) = user_id);
+  USING (
+    (select auth.uid()) = user_id
+    OR EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_id = (select auth.uid()) AND role = 'admin'
+    )
+  );
 
-CREATE POLICY "Admins can manage all roles"
-  ON public.user_roles FOR ALL
+-- Split admin FOR ALL into per-action policies (same rationale as
+-- story_category_definitions: FOR ALL creates a redundant permissive SELECT)
+CREATE POLICY "Admins can insert roles"
+  ON public.user_roles FOR INSERT
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_id = (select auth.uid()) AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can update roles"
+  ON public.user_roles FOR UPDATE
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles
+      WHERE user_id = (select auth.uid()) AND role = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can delete roles"
+  ON public.user_roles FOR DELETE
   USING (
     EXISTS (
       SELECT 1 FROM public.user_roles
@@ -753,10 +781,12 @@ DECLARE
     --   2. "Platform admins create impersonation sessions" (INSERT) — InitPlan fix
     --   3. "Admins can update own impersonation sessions" (UPDATE) — InitPlan fix
     ['impersonation_sessions', '3'],
-    -- user_roles (2):
-    --   1. "Users can view their own role" (SELECT) — InitPlan fix
-    --   2. "Admins can manage all roles" (ALL) — InitPlan fix
-    ['user_roles', '2']
+    -- user_roles (4):
+    --   1. "View user_roles" (SELECT) — consolidated user + admin
+    --   2. "Admins can insert roles" (INSERT) — split from FOR ALL
+    --   3. "Admins can update roles" (UPDATE) — split from FOR ALL
+    --   4. "Admins can delete roles" (DELETE) — split from FOR ALL
+    ['user_roles', '4']
   ];
 BEGIN
   FOR i IN 1..array_length(v_checks, 1) LOOP
