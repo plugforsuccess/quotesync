@@ -1,4 +1,4 @@
--- Migration: 022_optimize_rls_policies.sql
+-- Migration: 027_optimize_rls_policies.sql
 -- Purpose: Fix RLS InitPlan performance + consolidate multiple permissive policies
 --
 -- Two optimizations applied:
@@ -24,10 +24,14 @@ DROP POLICY IF EXISTS "Users can view their own role" ON public.user_roles;
 DROP POLICY IF EXISTS "Allow authenticated users to read their own role" ON public.user_roles;
 DROP POLICY IF EXISTS "Allow public read for testing" ON public.user_roles;
 DROP POLICY IF EXISTS "Admins can manage all roles" ON public.user_roles;
+DROP POLICY IF EXISTS "View user_roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Admins can insert roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Admins can update roles" ON public.user_roles;
+DROP POLICY IF EXISTS "Admins can delete roles" ON public.user_roles;
 
--- SELECT: Consolidated (user sees own + admin sees all)
 CREATE POLICY "View user_roles"
   ON public.user_roles FOR SELECT
+  TO authenticated
   USING (
     (select auth.uid()) = user_id
     OR EXISTS (
@@ -36,11 +40,10 @@ CREATE POLICY "View user_roles"
     )
   );
 
--- Split admin FOR ALL into per-action policies (same rationale as
--- story_category_definitions: FOR ALL creates a redundant permissive SELECT)
 CREATE POLICY "Admins can insert roles"
   ON public.user_roles FOR INSERT
-  USING (
+  TO authenticated
+  WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.user_roles
       WHERE user_id = (select auth.uid()) AND role = 'admin'
@@ -49,6 +52,7 @@ CREATE POLICY "Admins can insert roles"
 
 CREATE POLICY "Admins can update roles"
   ON public.user_roles FOR UPDATE
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM public.user_roles
@@ -58,6 +62,7 @@ CREATE POLICY "Admins can update roles"
 
 CREATE POLICY "Admins can delete roles"
   ON public.user_roles FOR DELETE
+  TO authenticated
   USING (
     EXISTS (
       SELECT 1 FROM public.user_roles
@@ -782,10 +787,10 @@ DECLARE
     --   3. "Admins can update own impersonation sessions" (UPDATE) — InitPlan fix
     ['impersonation_sessions', '3'],
     -- user_roles (4):
-    --   1. "View user_roles" (SELECT) — consolidated user + admin
-    --   2. "Admins can insert roles" (INSERT) — split from FOR ALL
-    --   3. "Admins can update roles" (UPDATE) — split from FOR ALL
-    --   4. "Admins can delete roles" (DELETE) — split from FOR ALL
+    --   1. "View user_roles" (SELECT, authenticated) — consolidated user + admin
+    --   2. "Admins can insert roles" (INSERT, authenticated) — split from FOR ALL
+    --   3. "Admins can update roles" (UPDATE, authenticated) — split from FOR ALL
+    --   4. "Admins can delete roles" (DELETE, authenticated) — split from FOR ALL
     ['user_roles', '4']
   ];
 BEGIN
