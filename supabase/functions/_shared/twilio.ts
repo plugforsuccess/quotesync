@@ -120,3 +120,34 @@ export function checkRequiredEnvVars(varNames: string[]): string | null {
   }
   return null
 }
+
+/**
+ * Generate an HMAC-SHA256 token for internal function-to-function auth.
+ * Used by lead-notify-sms to sign the whisper TwiML URL so that
+ * twilio-voice-handler can verify the request is legitimate on GET.
+ */
+export async function generateInternalToken(data: string, secret: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  const sig = await crypto.subtle.sign('HMAC', key, encoder.encode(data))
+  // URL-safe base64
+  return btoa(String.fromCharCode(...new Uint8Array(sig)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '')
+}
+
+/**
+ * Verify an internal HMAC-SHA256 token.
+ */
+export async function verifyInternalToken(token: string, data: string, secret: string): Promise<boolean> {
+  if (!token || !data) return false
+  const expected = await generateInternalToken(data, secret)
+  return token === expected
+}
