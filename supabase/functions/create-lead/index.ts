@@ -3,7 +3,28 @@
 // Creates a lead record from Canopy completion or funnel form, routes to agency, notifies, logs audit
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getCorsHeaders } from '../_shared/cors.ts'
+
+const allowedOrigins = [
+  'https://insuredbycam.com',
+  'https://www.insuredbycam.com',
+  'https://quotesync.vercel.app',
+];
+
+// Also allow Vercel preview deployments
+const origin = req.headers.get("origin") || "";
+if (origin.endsWith(".vercel.app")) {
+  allowedOrigins.push(origin);
+}
+
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') || ''
+  const matched = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  return {
+    'Access-Control-Allow-Origin': matched,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-canopy-signature',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
+}
 
 // F-05 fix: Sanitize UTM values (truncate + strip HTML)
 function sanitizeUtm(val: string | null | undefined): string | null {
