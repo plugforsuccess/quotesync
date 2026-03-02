@@ -10,6 +10,12 @@
 --
 -- Note: Leaked password protection (W-04) is a Supabase Dashboard toggle,
 --       not a SQL migration. Enable it at: Authentication → Settings → Password Security.
+--
+-- Troubleshooting: All functions use auth.uid() which is schema-qualified
+-- (auth is a schema, not a search_path entry), so it resolves correctly with
+-- search_path = ''. If a function raises "function auth.uid() does not exist"
+-- in your environment, change SET search_path = '' to SET search_path = 'auth'
+-- on the affected function(s).
 
 -- =============================================================================
 -- E-01 & E-02: FIX SECURITY DEFINER VIEWS
