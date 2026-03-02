@@ -185,6 +185,7 @@ export function useWizard() {
       }
       // Owner → clear renters carrier if switching from renter
       if (field === 'ownsHome' && value === true) {
+        // 'renters' is legacy pre-v2.1 — kept for in-flight sessions
         if (prev.productIntent === 'renters' || prev.productIntent === 'auto_renters') {
           next.productIntent = null;
         }

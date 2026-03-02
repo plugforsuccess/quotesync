@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { isTargetZip } from '../../../config/targetZips';
 import { formatPhoneInput } from '../../../utils/phoneFormat';
 import { useCanopyLauncher } from '../../../hooks/useCanopyLauncher';
+import { SESSION_KEYS } from '../../../hooks/useWizard';
 import { trackEvent } from '../../../lib/analytics';
 
 // ─── Shared UI Primitives ──────────────────────────────────────────
@@ -233,8 +234,6 @@ export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isR
     setTimeout(() => onAutoAdvance?.(), 300);
   };
 
-  const cols = options.length <= 3 ? 'grid-cols-2' : 'grid-cols-2';
-
   return (
     <div>
       <StepHeading>What are you looking to insure?</StepHeading>
@@ -243,7 +242,7 @@ export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isR
           ? "We'll find you the best rate for your situation."
           : 'Bundling auto + home typically saves the most.'}
       </StepDescription>
-      <div className={`grid ${cols} gap-3 max-w-sm mx-auto`}>
+      <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
         {options.map((opt) => (
           <ChoiceButton
             key={opt.value}
@@ -727,6 +726,12 @@ const getSavingsEstimate = (ownsHome, vehicleCount, productIntent) => {
 export function ConfirmationStep({ answers }) {
   const { launchCanopy } = useCanopyLauncher();
   const savings = getSavingsEstimate(answers.ownsHome, answers.vehicleCount, answers.productIntent);
+
+  // H-2: Clear PII from sessionStorage once confirmation renders
+  // (data is already in React state and submitted to server)
+  useEffect(() => {
+    Object.values(SESSION_KEYS).forEach((key) => sessionStorage.removeItem(key));
+  }, []);
 
   const handleCanopyClick = () => {
     trackEvent('canopy_upsell_clicked', { page: 'wizard_confirmation' });

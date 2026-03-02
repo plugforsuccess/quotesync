@@ -41,7 +41,7 @@ function computeLeadScore(answers, utmParams) {
   if (answers.productIntent === 'bundle') score += 20;
   else if (answers.productIntent === 'auto_renters') score += 15;
   else if (answers.productIntent === 'auto' || answers.productIntent === 'home') score += 10;
-  else if (answers.productIntent === 'renters') score += 5;
+  else if (answers.productIntent === 'renters') score += 5; // legacy pre-v2.1 — kept for in-flight sessions
   if (answers.autoDrivingRecord === 'clean') score += 15;
   else if (answers.autoDrivingRecord === '1-2') score += 5;
   else if (answers.autoDrivingRecord === '3+') score -= 20;
@@ -75,7 +75,7 @@ function computeLeadScore(answers, utmParams) {
 
 export default function SaveWizardPage() {
   const wizard = useWizard();
-  const { answers, setAnswer, currentStepId, currentIndex, direction, isFirstStep, goNext, goBack, persistAll, productIntentOptions } = wizard;
+  const { answers, setAnswer, currentStepId, currentIndex, direction, isFirstStep, goNext, goBack, productIntentOptions } = wizard;
 
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -245,11 +245,7 @@ export default function SaveWizardPage() {
         trackGoogleAdsConversion(conversionLabel, 60);
       }
 
-      // H-2: Clear PII from sessionStorage after successful submission
-      Object.values(SESSION_KEYS).forEach((key) => sessionStorage.removeItem(key));
-
-      // Advance to confirmation step
-      persistAll();
+      // Advance to confirmation step (session clear happens in ConfirmationStep mount)
       goNext();
     } catch (err) {
       console.error('Wizard submission error:', err);
@@ -259,7 +255,7 @@ export default function SaveWizardPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }, [answers, goNext, persistAll]);
+  }, [answers, goNext]);
 
   // ─── Navigation Handlers ───────────────────────────────────────
 
@@ -478,7 +474,8 @@ export default function SaveWizardPage() {
             <button
               type="button"
               onClick={handleBack}
-              className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition-colors hover:text-white"
+              disabled={isSubmitting}
+              className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition-colors hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Back</span>
