@@ -19,7 +19,8 @@ if (envOrigin && !allowedOrigins.includes(envOrigin)) {
  */
 export function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('origin') || ''
-  const matched = allowedOrigins.includes(origin) ? origin : allowedOrigins[0]
+  const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')
+  const matched = isAllowed ? origin : allowedOrigins[0]
   return {
     'Access-Control-Allow-Origin': matched,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-canopy-signature',
