@@ -3,7 +3,26 @@
 // Creates a lead record from Canopy completion or funnel form, routes to agency, notifies, logs audit
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getCorsHeaders } from '../_shared/cors.ts'
+// CORS — inline to avoid _shared bundling issues during deployment
+const allowedOrigins = [
+  'https://insuredbycam.com',
+  'https://www.insuredbycam.com',
+  'https://quotesync.vercel.app',
+]
+const envOrigin = Deno.env.get('CORS_ALLOWED_ORIGIN')
+if (envOrigin && !allowedOrigins.includes(envOrigin)) {
+  allowedOrigins.push(envOrigin)
+}
+function getCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('origin') || ''
+  const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')
+  const matched = isAllowed ? origin : allowedOrigins[0]
+  return {
+    'Access-Control-Allow-Origin': matched,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-canopy-signature',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
+}
 
 // F-05 fix: Sanitize UTM values (truncate + strip HTML)
 function sanitizeUtm(val: string | null | undefined): string | null {
