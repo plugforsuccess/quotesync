@@ -5,7 +5,6 @@ import { CheckCircle, Zap, Shield, Clock, ArrowRight, Star, MapPin, XCircle } fr
 import { useNavigate } from 'react-router-dom';
 import { isTargetZip } from '../../../config/targetZips';
 import { formatPhoneInput } from '../../../utils/phoneFormat';
-import { dobStepValidate } from './wizardValidation';
 import { useCanopyLauncher } from '../../../hooks/useCanopyLauncher';
 import { trackEvent } from '../../../lib/analytics';
 
@@ -13,9 +12,18 @@ import { trackEvent } from '../../../lib/analytics';
 
 function StepHeading({ children }) {
   return (
-    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-6 text-center leading-tight">
+    <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 text-center leading-tight">
       {children}
     </h2>
+  );
+}
+
+// UX-3: Contextual description under each step heading
+function StepDescription({ children }) {
+  return (
+    <p className="text-sm text-gray-500 text-center mb-5 leading-relaxed">
+      {children}
+    </p>
   );
 }
 
@@ -78,11 +86,24 @@ function InputField({ id, label, type = 'text', value, onChange, placeholder, er
 
 // ─── Step 1: ZIP Code ──────────────────────────────────────────────
 
+// UX-2: ZIP step supports editing when navigating back
 export function ZipStep({ value, onChange, onAutoAdvance }) {
   const navigate = useNavigate();
   const [isValid, setIsValid] = useState(false);
   const [isRejected, setIsRejected] = useState(false);
   const validated = useRef(false);
+
+  // When returning to this step, reset validation state so user can edit
+  useEffect(() => {
+    if (value.length === 5) {
+      // User navigated back — show the ZIP but don't auto-advance
+      validated.current = true;
+      if (isTargetZip(value)) {
+        setIsValid(true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
 
   const handleChange = (e) => {
     const digits = e.target.value.replace(/\D/g, '').slice(0, 5);
@@ -92,7 +113,7 @@ export function ZipStep({ value, onChange, onAutoAdvance }) {
     onChange(digits);
   };
 
-  // Validate immediately when 5 digits entered
+  // Validate when 5 digits entered for the FIRST TIME (not on back-nav)
   useEffect(() => {
     if (value.length === 5 && !validated.current) {
       validated.current = true;
@@ -149,6 +170,7 @@ export function ZipStep({ value, onChange, onAutoAdvance }) {
   return (
     <div>
       <StepHeading>What&apos;s your ZIP code?</StepHeading>
+      <StepDescription>We use this to find discounts specific to your area.</StepDescription>
       <div className="max-w-[200px] mx-auto">
         <input
           type="text"
@@ -190,6 +212,7 @@ export function OwnsHomeStep({ value, onChange, onAutoAdvance }) {
   return (
     <div>
       <StepHeading>Do you own or rent your home?</StepHeading>
+      <StepDescription>Homeowners often qualify for bundled savings.</StepDescription>
       <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
         <ChoiceButton selected={value === true} onClick={() => handleSelect(true)}>
           I Own
@@ -204,17 +227,22 @@ export function OwnsHomeStep({ value, onChange, onAutoAdvance }) {
 
 // ─── Step 3: Product Intent ────────────────────────────────────────
 
-export function ProductIntentStep({ value, onChange, options, onAutoAdvance }) {
+export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isRenter }) {
   const handleSelect = (val) => {
     onChange(val);
     setTimeout(() => onAutoAdvance?.(), 300);
   };
 
-  const cols = options.length <= 3 ? 'grid-cols-3' : 'grid-cols-2';
+  const cols = options.length <= 3 ? 'grid-cols-2' : 'grid-cols-2';
 
   return (
     <div>
       <StepHeading>What are you looking to insure?</StepHeading>
+      <StepDescription>
+        {isRenter
+          ? "We'll find you the best rate for your situation."
+          : 'Bundling auto + home typically saves the most.'}
+      </StepDescription>
       <div className={`grid ${cols} gap-3 max-w-sm mx-auto`}>
         {options.map((opt) => (
           <ChoiceButton
@@ -254,6 +282,7 @@ export function CurrentAutoCarrierStep({ value, onChange, onAutoAdvance }) {
   return (
     <div>
       <StepHeading>Who is your current auto insurance carrier?</StepHeading>
+      <StepDescription>This helps us compare apples to apples.</StepDescription>
       <div className="grid grid-cols-3 gap-3">
         {AUTO_CARRIERS.map((opt) => (
           <ChoiceButton
@@ -294,6 +323,7 @@ export function CurrentHomeCarrierStep({ value, onChange, onAutoAdvance }) {
   return (
     <div>
       <StepHeading>Who is your current home insurance carrier?</StepHeading>
+      <StepDescription>Knowing your current carrier helps us find real savings.</StepDescription>
       <div className="grid grid-cols-3 gap-3">
         {HOME_CARRIERS.map((opt) => (
           <ChoiceButton
@@ -323,27 +353,43 @@ const RENTERS_CARRIERS = [
   { label: 'None', value: 'none' },
 ];
 
+// UX-5: "None" centered in its own row below the main grid
 export function CurrentRentersCarrierStep({ value, onChange, onAutoAdvance }) {
   const handleSelect = (val) => {
     onChange(val);
     setTimeout(() => onAutoAdvance?.(), 300);
   };
 
+  const carriers = RENTERS_CARRIERS.filter(c => c.value !== 'none');
+
   return (
     <div>
       <StepHeading>Who is your current renters insurance carrier?</StepHeading>
-      <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
-        {RENTERS_CARRIERS.map((opt) => (
+      <StepDescription>This helps us compare apples to apples.</StepDescription>
+      <div className="max-w-sm mx-auto">
+        <div className="grid grid-cols-3 gap-3">
+          {carriers.map((opt) => (
+            <ChoiceButton
+              key={opt.value}
+              selected={value === opt.value}
+              variant={value === opt.value && opt.value === 'allstate' ? 'purple' : 'default'}
+              onClick={() => handleSelect(opt.value)}
+              className="text-sm"
+            >
+              {opt.label}
+            </ChoiceButton>
+          ))}
+        </div>
+        {/* "None" centered below the grid */}
+        <div className="flex justify-center mt-3">
           <ChoiceButton
-            key={opt.value}
-            selected={value === opt.value}
-            variant={value === opt.value && opt.value === 'allstate' ? 'purple' : 'default'}
-            onClick={() => handleSelect(opt.value)}
-            className="text-sm"
+            selected={value === 'none'}
+            onClick={() => handleSelect('none')}
+            className="text-sm px-8"
           >
-            {opt.label}
+            None
           </ChoiceButton>
-        ))}
+        </div>
       </div>
     </div>
   );
@@ -360,6 +406,7 @@ export function AutoDrivingRecordStep({ value, onChange, onAutoAdvance }) {
   return (
     <div>
       <StepHeading>Any accidents or tickets in the last 3 years?</StepHeading>
+      <StepDescription>Please answer accurately — this affects your quote.</StepDescription>
       <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
         {[
           { label: 'None', value: 'clean' },
@@ -391,6 +438,7 @@ export function HomeClaimsHistoryStep({ value, onChange, onAutoAdvance }) {
   return (
     <div>
       <StepHeading>More than 1 home insurance claim in the last 5 years?</StepHeading>
+      <StepDescription>Please answer accurately — this affects your quote.</StepDescription>
       <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
         {[
           { label: 'No', value: '0-1' },
@@ -421,6 +469,7 @@ export function VehicleCountStep({ value, onChange, onAutoAdvance }) {
   return (
     <div>
       <StepHeading>How many vehicles do you insure?</StepHeading>
+      <StepDescription>Include all cars, trucks, and SUVs in your household.</StepDescription>
       <div className="grid grid-cols-4 gap-3 max-w-sm mx-auto">
         {[1, 2, 3, 4].map((count) => (
           <ChoiceButton
@@ -436,7 +485,39 @@ export function VehicleCountStep({ value, onChange, onAutoAdvance }) {
   );
 }
 
-// ─── Step 7: Date of Birth ─────────────────────────────────────────
+// ─── Step 7: Marital Status (NEW-1) ───────────────────────────────
+
+export function MaritalStatusStep({ value, onChange, onAutoAdvance }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>What is your marital status?</StepHeading>
+      <StepDescription>Married drivers often qualify for lower rates.</StepDescription>
+      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+        {[
+          { label: 'Single', value: 'single' },
+          { label: 'Married', value: 'married' },
+          { label: 'Divorced', value: 'divorced' },
+          { label: 'Widowed', value: 'widowed' },
+        ].map((opt) => (
+          <ChoiceButton
+            key={opt.value}
+            selected={value === opt.value}
+            onClick={() => handleSelect(opt.value)}
+          >
+            {opt.label}
+          </ChoiceButton>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 8: Date of Birth ─────────────────────────────────────────
 
 /**
  * Format DOB input as user types: MM/DD/YYYY
@@ -470,7 +551,8 @@ function isoToDobDisplay(iso) {
   return `${mm}/${dd}/${yyyy}`;
 }
 
-export function DobStep({ value, onChange, onAutoAdvance }) {
+// H-3: DOB does NOT auto-advance — requires "Continue" button
+export function DobStep({ value, onChange }) {
   // value is stored as ISO (YYYY-MM-DD), display as MM/DD/YYYY
   const [display, setDisplay] = useState(() => isoToDobDisplay(value));
 
@@ -487,23 +569,10 @@ export function DobStep({ value, onChange, onAutoAdvance }) {
     }
   };
 
-  // Auto-advance when a valid full date is entered
-  useEffect(() => {
-    if (value && value.length === 10) {
-      const err = dobStepValidate(value);
-      if (!err && onAutoAdvance) {
-        const timer = setTimeout(() => onAutoAdvance(), 500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [value, onAutoAdvance]);
-
   return (
     <div>
       <StepHeading>What is your date of birth?</StepHeading>
-      <p className="text-sm text-gray-500 text-center mb-4">
-        Required to generate an accurate quote
-      </p>
+      <StepDescription>Required to generate an accurate quote.</StepDescription>
       <div className="max-w-[200px] mx-auto">
         <input
           type="text"
@@ -520,12 +589,13 @@ export function DobStep({ value, onChange, onAutoAdvance }) {
   );
 }
 
-// ─── Step 8: Street Address ────────────────────────────────────────
+// ─── Step 9: Street Address ────────────────────────────────────────
 
 export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChange, onCityChange }) {
   return (
     <div>
       <StepHeading>What is your home address?</StepHeading>
+      <StepDescription>Used to calculate your exact rate — never shared.</StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <InputField
           id="street"
@@ -568,7 +638,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
   );
 }
 
-// ─── Step 9: Contact Information ───────────────────────────────────
+// ─── Step 10: Contact Information ───────────────────────────────────
 
 export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, errors }) {
   const handlePhoneChange = (e) => {
@@ -578,6 +648,7 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
   return (
     <div>
       <StepHeading>Where should we send your personalized quote?</StepHeading>
+      <StepDescription>Cam will personally review your info within minutes.</StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <div className="grid grid-cols-2 gap-3">
           <InputField
@@ -628,7 +699,7 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
   );
 }
 
-// ─── Step 10: Confirmation ─────────────────────────────────────────
+// ─── Step 11: Confirmation ─────────────────────────────────────────
 
 const getSavingsEstimate = (ownsHome, vehicleCount, productIntent) => {
   if (productIntent === 'bundle' || (ownsHome && productIntent !== 'auto' && productIntent !== 'home')) {
@@ -639,6 +710,13 @@ const getSavingsEstimate = (ownsHome, vehicleCount, productIntent) => {
   }
   if (productIntent === 'home') {
     return { range: '$200 – $500/year', message: 'Homeowner savings are waiting for you.' };
+  }
+  // UX-4: auto_renters savings estimate
+  if (productIntent === 'auto_renters') {
+    if (vehicleCount >= 2) {
+      return { range: '$200 – $500/year', message: 'Multi-car + renters discounts add up.' };
+    }
+    return { range: '$100 – $350/year', message: "Let's find you the best auto + renters rate." };
   }
   if (vehicleCount >= 2) {
     return { range: '$200 – $600/year', message: 'Multi-car discounts add up fast.' };
@@ -752,4 +830,3 @@ export function ConfirmationStep({ answers }) {
     </div>
   );
 }
-

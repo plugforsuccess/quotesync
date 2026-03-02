@@ -297,6 +297,9 @@ Deno.serve(async (req) => {
           street_address: body.street_address || null,
           address_unit: body.address_unit || null,
           city: body.city || null,
+          // V2.1 fields
+          current_renters_carrier: body.current_renters_carrier || null,
+          marital_status: body.marital_status || null,
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -340,6 +343,9 @@ Deno.serve(async (req) => {
         street_address: body.street_address || null,
         address_unit: body.address_unit || null,
         city: body.city || null,
+        // V2.1 fields
+        current_renters_carrier: body.current_renters_carrier || null,
+        marital_status: body.marital_status || null,
       }
 
       const { data: newLead, error: leadError } = await supabase
