@@ -1,0 +1,2 @@
+[functions.create-lead]
+verify_jwt = false
