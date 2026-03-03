@@ -16,7 +16,7 @@ function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
           min={min}
           max={max}
           step={step}
-          className="w-20 text-right text-sm font-semibold border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
       </div>
@@ -39,7 +39,28 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
     quotingAllocation, qualificationRate, workingDays,
   } = staffingInputs;
 
-  const { targetSubmissions, closeRate, avgPremium, commissionRate } = plannerInputs;
+  const { targetSubmissions, closeRate, policyMix, commissionMatrix, baseCommission } = plannerInputs;
+
+  // Derive blended avgPremium and commissionRate from policy mix
+  const { avgPremium, commissionRate } = useMemo(() => {
+    if (!policyMix || policyMix.length === 0) {
+      return { avgPremium: 0, commissionRate: 0 };
+    }
+    const blendedPremium = policyMix.reduce(
+      (sum, r) => sum + (r.mixPct / 100) * r.avgPremium, 0
+    );
+    const matrix = commissionMatrix || {};
+    const base = baseCommission || 9;
+    const blendedCommission = blendedPremium > 0
+      ? policyMix.reduce((sum, r) => {
+          const mix = r.mixPct / 100;
+          const rates = matrix[r.productLine];
+          const rate = rates ? (rates[r.tier] ?? base) : base;
+          return sum + (mix * r.avgPremium * rate);
+        }, 0) / blendedPremium
+      : 0;
+    return { avgPremium: blendedPremium, commissionRate: blendedCommission };
+  }, [policyMix, commissionMatrix, baseCommission]);
 
   // Computed outputs
   const outputs = useMemo(() => {
