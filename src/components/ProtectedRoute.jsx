@@ -30,6 +30,7 @@ const ProtectedRoute = ({
     user,
     role,
     loading,
+    authError,
     isPlatformUser,
     hasPlatformRole,
     hasAgencyRole,
@@ -43,6 +44,25 @@ const ProtectedRoute = ({
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // RBAC resolution error: fail closed with visible error state
+  if (authError) {
+    return (
+      <div className="min-h-screen bg-red-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white border border-red-200 rounded-lg shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-red-700 mb-2">Permissions could not be loaded</h2>
+          <p className="text-sm text-gray-700 mb-4">We couldn't load your permissions. Please retry.</p>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+          >
+            Retry
+          </button>
         </div>
       </div>
     );
