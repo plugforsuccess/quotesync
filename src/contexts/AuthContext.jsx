@@ -25,6 +25,7 @@ const AuthContext = createContext({
   authError: null,
   // Actions
   signOut: async () => {},
+  resetSession: async () => {},
   refreshUser: async () => {},
   setCurrentAgency: () => {},
   startImpersonation: async () => {},
@@ -55,10 +56,43 @@ const AGENCY_ROLE_HIERARCHY = {
   // Future: viewer: 0, manager: 2 (insert between producer/agent)
 };
 
+// --- Boot helpers ---
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+function isAbortError(e) {
+  return e?.name === 'AbortError';
+}
+
+// Supabase stores under: sb-<project-ref>-auth-token
+function clearSupabaseAuthTokenFromStorage() {
+  try {
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
+        localStorage.removeItem(k);
+      }
+    }
+  } catch (_) {
+    // ignore (SSR / sandboxed iframe)
+  }
+}
+
+// A safe getSession that retries on Supabase lock aborts
+async function safeGetSession(retries = 2) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await supabase.auth.getSession();
+    } catch (e) {
+      if (!isAbortError(e) || attempt === retries) throw e;
+      await sleep(150);
+    }
+  }
+}
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [role, setRole] = useState('viewer'); // Legacy
+  const [role, setRole] = useState(null); // Legacy — null until RBAC resolves
   const [isPlatformUser, setIsPlatformUser] = useState(false);
   const [platformRole, setPlatformRole] = useState(null);
   const [agencyMemberships, setAgencyMemberships] = useState([]);
@@ -183,9 +217,13 @@ export const AuthProvider = ({ children }) => {
         message: error?.message || 'Unknown authz error',
         error
       });
+
+      // Fail closed: keep user set (so we know *who* is authenticated)
+      // but do NOT grant any role — no fake "viewer" fallback.
+      // The app should render a blocking error screen with Retry / Reset Session.
       setUser(currentUser);
       setProfile(null);
-      setRole('viewer');
+      setRole(null);
       setIsPlatformUser(false);
       setPlatformRole(null);
       setAgencyMemberships([]);
@@ -195,9 +233,11 @@ export const AuthProvider = ({ children }) => {
       setImpersonationSession(null);
       setAuthError({
         code: 'AUTHZ_RESOLUTION_FAILED',
-        message: "We couldn't load your permissions. Please retry.",
+        message: "We couldn't load your permissions. Please retry or reset your session.",
         timestamp: new Date().toISOString(),
-        details: error?.message || 'Unknown error'
+        details: error?.message || 'Unknown error',
+        canRetry: true,
+        canReset: true
       });
     }
   };
@@ -205,7 +245,7 @@ export const AuthProvider = ({ children }) => {
   const resetState = () => {
     setUser(null);
     setProfile(null);
-    setRole('viewer');
+    setRole(null);
     setIsPlatformUser(false);
     setPlatformRole(null);
     setAgencyMemberships([]);
@@ -216,28 +256,71 @@ export const AuthProvider = ({ children }) => {
     setAuthError(null);
   };
 
-  // Initialize auth state on mount
+  // Initialize auth state on mount (self-healing boot)
   useEffect(() => {
     let mounted = true;
 
     const initAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        setLoading(true);
 
-        if (mounted) {
-          console.log('[AUTH] session loaded', { hasSession: !!session, uid: session?.user?.id || null });
-          if (session?.user) {
-            await fetchUserProfile(session.user);
-          } else {
+        // 1) Rehydrate session (retry on Supabase lock abort)
+        const { data, error } = await safeGetSession(2);
+        if (error) throw error;
+
+        const session = data?.session;
+
+        if (!mounted) return;
+
+        console.log('[AUTH] session loaded', { hasSession: !!session, uid: session?.user?.id || null });
+
+        // 2) If we have a session, resolve RBAC
+        if (session?.user) {
+          await fetchUserProfile(session.user);
+          if (!mounted) return;
+          setLoading(false);
+          return;
+        }
+
+        // 3) No session => clean reset
+        resetState();
+        setLoading(false);
+      } catch (e) {
+        console.error('[AUTH] initAuth failed:', e);
+
+        if (!mounted) return;
+
+        // If Supabase session state is corrupted or lock-aborted repeatedly,
+        // self-heal to a clean signed-out state.
+        if (isAbortError(e)) {
+          console.warn('[AUTH] init aborted; retrying once after delay');
+          await sleep(200);
+          if (!mounted) return;
+          try {
+            const { data } = await safeGetSession(1);
+            if (data?.session?.user) {
+              await fetchUserProfile(data.session.user);
+            } else {
+              resetState();
+            }
+          } catch (e2) {
+            console.warn('[AUTH] init retry failed; resetting session storage', e2);
+            // Hard reset only Supabase token (not all localStorage)
+            clearSupabaseAuthTokenFromStorage();
+            try { await supabase.auth.signOut(); } catch (_) {}
             resetState();
+          } finally {
+            if (mounted) setLoading(false);
           }
-          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (mounted) {
-          setLoading(false);
-        }
+
+        // Non-abort init errors: clear only Supabase token + sign out
+        // to avoid "bricked" loops from corrupted stored session
+        clearSupabaseAuthTokenFromStorage();
+        try { await supabase.auth.signOut(); } catch (_) {}
+        resetState();
+        setLoading(false);
       }
     };
 
@@ -251,16 +334,26 @@ export const AuthProvider = ({ children }) => {
         console.log('[AUTH] state changed', { event, email: session?.user?.email || null });
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          if (session?.user) {
-            setLoading(true);
+          if (!session?.user) return;
+
+          setLoading(true);
+          try {
             await fetchUserProfile(session.user);
-            setLoading(false);
+          } catch (e) {
+            // AbortError here is benign (superseded by a newer request)
+            if (!isAbortError(e)) {
+              console.error('[AUTHZ] fetchUserProfile failed on auth change:', e);
+            }
+          } finally {
+            if (mounted) setLoading(false);
           }
-        } else if (event === 'SIGNED_OUT') {
-          resetState();
+          return;
         }
 
-        setLoading(false);
+        if (event === 'SIGNED_OUT') {
+          resetState();
+          return;
+        }
       }
     );
 
@@ -282,6 +375,22 @@ export const AuthProvider = ({ children }) => {
       resetState();
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  // Hard-reset session: clears corrupted Supabase token + signs out + reloads
+  // Exposes the manual "localStorage.clear()" workaround as a safe UI action.
+  const resetSession = async () => {
+    try {
+      clearSupabaseAuthTokenFromStorage();
+      localStorage.removeItem('currentAgencyId');
+      try { await supabase.auth.signOut(); } catch (_) {}
+      resetState();
+      window.location.reload();
+    } catch (error) {
+      console.error('Error resetting session:', error);
+      // Last resort: full reload anyway
+      window.location.reload();
     }
   };
 
@@ -397,6 +506,7 @@ export const AuthProvider = ({ children }) => {
     authError,
     // Actions
     signOut,
+    resetSession,
     refreshUser,
     setCurrentAgency,
     startImpersonation,
