@@ -174,7 +174,7 @@ const AdminTimeAttendancePage = () => {
             <div className="flex items-center gap-3">
               <Clock className="w-8 h-8 text-blue-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Attendance</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Time &amp; Attendance</h1>
                 <p className="text-gray-600 text-sm">Weekly time entry for all employees</p>
               </div>
             </div>
