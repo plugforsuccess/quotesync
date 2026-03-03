@@ -11,11 +11,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn('Please add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to your .env file');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+const browserStorage = typeof window !== 'undefined' ? window.localStorage : undefined;
+
+const createSupabaseClient = () => createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    storage: browserStorage
   },
   global: {
     headers: {
@@ -31,6 +34,14 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     }
   }
 });
+
+const SUPABASE_SINGLETON_KEY = '__quotesync_supabase_client__';
+
+export const supabase = globalThis[SUPABASE_SINGLETON_KEY] || createSupabaseClient();
+
+if (!globalThis[SUPABASE_SINGLETON_KEY]) {
+  globalThis[SUPABASE_SINGLETON_KEY] = supabase;
+}
 
 // =============================================================================
 // ROLE HIERARCHIES
