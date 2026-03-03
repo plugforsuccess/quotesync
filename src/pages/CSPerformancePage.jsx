@@ -3,11 +3,11 @@
 // Route: /admin/cs-performance
 // Access: platform_master_admin, platform_admin, agency_admin (agent) only
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { BarChart3, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { supabase } from '../lib/supabase';
+import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import CSScorecard from './components/time-attendance/CSScorecard';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
@@ -44,79 +44,34 @@ const CSPerformancePage = () => {
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Data
-  const [entries, setEntries] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [rcData, setRcData] = useState([]);
+  // ── React Query hooks (shared cache keys with T&A page) ────────────────────
 
-  // ── Fetch time entries (needed for cross-check / days-worked calc) ─────────
+  const {
+    data: timeData,
+    isLoading: entriesLoading,
+    error: entriesError,
+    refetch: refetchEntries,
+  } = useTimeEntries(weekStart, selectedEmployee);
 
-  const fetchEntries = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const {
+    data: rcData = [],
+    isLoading: rcLoading,
+    refetch: refetchRC,
+  } = useRCData(weekStart, selectedEmployee);
 
-    try {
-      // Use same query key structure as T&A page for React Query cache consistency
-      let query = supabase
-        .from('employee_time_entries')
-        .select('*')
-        .eq('week_start', weekStart)
-        .order('work_date', { ascending: true });
+  const { data: allEmployees = [] } = useAllEmployees();
+  const { invalidateRCData } = useInvalidateTimeData();
 
-      if (selectedEmployee !== 'all') {
-        query = query.eq('employee_user_id', selectedEmployee);
-      }
+  const entries = timeData?.entries || [];
+  const employees = timeData?.employees || [];
+  const isLoading = entriesLoading || rcLoading;
+  const error = entriesError;
 
-      const { data, error: fetchError } = await query;
-      if (fetchError) throw fetchError;
-      setEntries(data || []);
-
-      // Build employee list from unique user IDs
-      const uniqueIds = [...new Set((data || []).map((e) => e.employee_user_id))];
-      if (uniqueIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', uniqueIds);
-
-        if (profiles) setEmployees(profiles);
-      }
-    } catch (err) {
-      console.error('Error fetching time entries:', err);
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [weekStart, selectedEmployee]);
-
-  // ── Fetch RC performance data ──────────────────────────────────────────────
-
-  const fetchRCData = useCallback(async () => {
-    try {
-      let query = supabase
-        .from('rc_performance_data')
-        .select('*')
-        .eq('week_start', weekStart);
-
-      if (selectedEmployee !== 'all') {
-        query = query.eq('employee_user_id', selectedEmployee);
-      }
-
-      const { data, error: fetchError } = await query;
-      if (fetchError) throw fetchError;
-      setRcData(data || []);
-    } catch (err) {
-      console.error('Error fetching RC data:', err);
-    }
-  }, [weekStart, selectedEmployee]);
-
-  useEffect(() => {
-    fetchEntries();
-    fetchRCData();
-  }, [fetchEntries, fetchRCData]);
+  function refetchAll() {
+    refetchEntries();
+    refetchRC();
+  }
 
   // ── Employee name resolver ─────────────────────────────────────────────────
 
@@ -129,30 +84,24 @@ const CSPerformancePage = () => {
 
   const employeeMap = useMemo(() => {
     const map = {};
-    employees.forEach((p) => {
+    // Use allEmployees for the upload mapping (broader set than just those with entries)
+    const source = allEmployees.length > 0 ? allEmployees : employees;
+    source.forEach((p) => {
       if (p.full_name) map[p.full_name] = p.id;
       if (p.email) map[p.email] = p.id;
     });
     return map;
-  }, [employees]);
+  }, [allEmployees, employees]);
 
-  // ── CS-rep employee filter (all platform users for now) ────────────────────
+  // ── Employee dropdown options ──────────────────────────────────────────────
 
-  const [csEmployees, setCsEmployees] = useState([]);
+  const employeeOptions = allEmployees.length > 0 ? allEmployees : employees;
 
-  useEffect(() => {
-    async function fetchCSEmployees() {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .eq('is_platform_user', true)
-        .order('full_name');
-      if (data) setCsEmployees(data);
-    }
-    fetchCSEmployees();
-  }, []);
+  // ── RC upload callback — invalidate cache so both pages see fresh data ─────
 
-  const employeeOptions = csEmployees.length > 0 ? csEmployees : employees;
+  function handleRCUploaded() {
+    invalidateRCData(weekStart, selectedEmployee);
+  }
 
   // ── Permission Check ───────────────────────────────────────────────────────
 
@@ -189,7 +138,7 @@ const CSPerformancePage = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
-            onClick={() => { fetchEntries(); fetchRCData(); }}
+            onClick={refetchAll}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
@@ -214,7 +163,7 @@ const CSPerformancePage = () => {
               </div>
             </div>
             <button
-              onClick={() => { fetchEntries(); fetchRCData(); }}
+              onClick={refetchAll}
               disabled={isLoading}
               className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
               title="Refresh"
@@ -282,7 +231,7 @@ const CSPerformancePage = () => {
             orgId={user?.id}
             weekStart={weekStart}
             employeeMap={employeeMap}
-            onUploaded={fetchRCData}
+            onUploaded={handleRCUploaded}
           />
 
           {/* Scorecards */}

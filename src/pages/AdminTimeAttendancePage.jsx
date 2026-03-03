@@ -2,10 +2,10 @@
 // Admin Time & Attendance Dashboard (standalone — CS Performance split to its own page)
 // Route: /admin/time-attendance
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
+import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { supabase } from '../lib/supabase';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
@@ -63,119 +63,55 @@ function exportToCSV(entries, weekStart) {
 // ── Page Component ─────────────────────────────────────────────────────────────
 
 const AdminTimeAttendancePage = () => {
-  const { user } = useAuth();
   const { platform } = usePermissions();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('all');
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Data
-  const [entries, setEntries] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [rcData, setRcData] = useState([]);
+  // ── React Query hooks (shared cache keys with CS Performance page) ─────────
 
-  // ── Fetch Data ─────────────────────────────────────────────────────────────
+  const {
+    data: timeData,
+    isLoading: entriesLoading,
+    error: entriesError,
+    refetch: refetchEntries,
+  } = useTimeEntries(weekStart, selectedEmployee);
 
-  const fetchEntries = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  const {
+    data: rcData = [],
+    refetch: refetchRC,
+  } = useRCData(weekStart, selectedEmployee);
 
-    try {
-      let query = supabase
-        .from('employee_time_entries')
-        .select('*')
-        .eq('week_start', weekStart)
-        .order('work_date', { ascending: true });
+  const { data: allEmployees = [] } = useAllEmployees();
+  const { invalidateTimeEntries } = useInvalidateTimeData();
 
-      if (selectedEmployee !== 'all') {
-        query = query.eq('employee_user_id', selectedEmployee);
-      }
+  const entries = timeData?.entries || [];
+  const employees = timeData?.employees || [];
+  const isLoading = entriesLoading;
+  const error = entriesError;
 
-      const { data, error: fetchError } = await query;
-      if (fetchError) throw fetchError;
-      setEntries(data || []);
+  function refetchAll() {
+    refetchEntries();
+    refetchRC();
+  }
 
-      // Build employee list from unique user IDs across all entries
-      const uniqueEmployees = {};
-      (data || []).forEach((e) => {
-        if (!uniqueEmployees[e.employee_user_id]) {
-          uniqueEmployees[e.employee_user_id] = e.employee_user_id;
-        }
-      });
-
-      // Also fetch profiles for display names
-      const ids = Object.keys(uniqueEmployees);
-      if (ids.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, full_name, email')
-          .in('id', ids);
-
-        if (profiles) {
-          setEmployees(profiles);
-        }
-      }
-    } catch (err) {
-      console.error('Error fetching time entries:', err);
-      setError(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [weekStart, selectedEmployee]);
-
-  // Fetch RC data for cross-check alerts (DiscrepancyAlerts needs it)
-  const fetchRCData = useCallback(async () => {
-    try {
-      let query = supabase
-        .from('rc_performance_data')
-        .select('*')
-        .eq('week_start', weekStart);
-
-      if (selectedEmployee !== 'all') {
-        query = query.eq('employee_user_id', selectedEmployee);
-      }
-
-      const { data, error: fetchError } = await query;
-      if (fetchError) throw fetchError;
-      setRcData(data || []);
-    } catch (err) {
-      console.error('Error fetching RC data:', err);
-    }
-  }, [weekStart, selectedEmployee]);
-
-  useEffect(() => {
-    fetchEntries();
-    fetchRCData();
-  }, [fetchEntries, fetchRCData]);
-
-  // ── Approval Toggle (optimistic with rollback) ──────────────────────────
+  // ── Approval Toggle (optimistic update via direct mutation + invalidate) ────
 
   async function toggleApproval(entryId, approved) {
-    const prevEntries = entries;
-    setEntries((prev) =>
-      prev.map((e) => (e.id === entryId ? { ...e, approved } : e))
-    );
-
     const { error } = await supabase
       .from('employee_time_entries')
       .update({ approved })
       .eq('id', entryId);
 
     if (error) {
-      setEntries(prevEntries);
       console.error('Failed to update approval:', error);
     }
+    // Invalidate to refetch and reconcile
+    invalidateTimeEntries(weekStart, selectedEmployee);
   }
 
   async function bulkApproval(entryIds, approved) {
     if (!entryIds || entryIds.length === 0) return;
-
-    const prevEntries = entries;
-    setEntries((prev) =>
-      prev.map((e) => (entryIds.includes(e.id) ? { ...e, approved } : e))
-    );
 
     const { error } = await supabase
       .from('employee_time_entries')
@@ -183,11 +119,9 @@ const AdminTimeAttendancePage = () => {
       .in('id', entryIds);
 
     if (error) {
-      setEntries(prevEntries);
       console.error('Failed to bulk update approval:', error);
-    } else {
-      fetchEntries();
     }
+    invalidateTimeEntries(weekStart, selectedEmployee);
   }
 
   // ── Employee name resolver ─────────────────────────────────────────────────
@@ -208,21 +142,7 @@ const AdminTimeAttendancePage = () => {
     return groups;
   }, [entries]);
 
-  // ── All employees for the dropdown ─────────────────────────────────────────
-
-  const [allEmployees, setAllEmployees] = useState([]);
-
-  useEffect(() => {
-    async function fetchAllEmployees() {
-      const { data } = await supabase
-        .from('profiles')
-        .select('id, full_name, email')
-        .eq('is_platform_user', true)
-        .order('full_name');
-      if (data) setAllEmployees(data);
-    }
-    fetchAllEmployees();
-  }, []);
+  // ── Employee dropdown options ──────────────────────────────────────────────
 
   const employeeOptions = allEmployees.length > 0 ? allEmployees : employees;
 
@@ -261,7 +181,7 @@ const AdminTimeAttendancePage = () => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
-            onClick={() => { fetchEntries(); fetchRCData(); }}
+            onClick={refetchAll}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
@@ -287,7 +207,7 @@ const AdminTimeAttendancePage = () => {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => { fetchEntries(); fetchRCData(); }}
+                onClick={refetchAll}
                 disabled={isLoading}
                 className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
                 title="Refresh"
