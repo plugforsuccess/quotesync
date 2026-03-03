@@ -11,11 +11,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
-import { useInvalidateAlertCount } from '../hooks/useAlertCount';
+import { useTimeEntries, useRCData, useProactivityData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import {
   useEmployeeTargets, useSaveTargets,
-  useProactivityManual, useSaveProactivity,
+  useSaveProactivity,
   useOutboundBreakdown, useSaveOutboundBreakdown,
   useTrendData, useTeamData,
 } from '../hooks/useCSPerformance';
@@ -28,7 +27,6 @@ import TrendsView from './components/time-attendance/TrendsView';
 import DailyBreakdown from './components/time-attendance/DailyBreakdown';
 import OutboundBreakdownForm from './components/time-attendance/OutboundBreakdownForm';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
-
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -88,16 +86,20 @@ const CSPerformancePage = () => {
     refetch: refetchRC,
   } = useRCData(weekStart, selectedEmployee);
 
-  const { data: allEmployees = [] } = useAllEmployees();
-  const { invalidateRCData } = useInvalidateTimeData();
-  const { invalidateAlertCount } = useInvalidateAlertCount();
+  // Shared proactivity query — fetches all employees for the week
+  const {
+    data: proactivityList = [],
+    refetch: refetchProactivity,
+  } = useProactivityData(weekStart, selectedEmployee);
 
-  // v2 hooks — only for individual view with a single employee selected
+  const { data: allEmployees = [] } = useAllEmployees();
+  const { invalidateRCData, invalidateProactivity } = useInvalidateTimeData();
+
+  // v2 hooks — per-employee targets, outbound breakdown, trends, team
   const singleEmployee = selectedEmployee !== 'all' ? selectedEmployee : (rcData.length === 1 ? rcData[0]?.employee_user_id : null);
 
   const { data: employeeTargets } = useEmployeeTargets(singleEmployee, weekStart);
   const { mutate: saveTargets, isPending: savingTargets } = useSaveTargets();
-  const { data: proactivityData } = useProactivityManual(singleEmployee, weekStart);
   const { mutate: saveProactivity, isPending: savingProactivity } = useSaveProactivity();
   const { data: outboundBreakdownData } = useOutboundBreakdown(singleEmployee, weekStart);
   const { mutate: saveOutboundBreakdown, isPending: savingOutboundBreakdown } = useSaveOutboundBreakdown();
@@ -112,6 +114,7 @@ const CSPerformancePage = () => {
   function refetchAll() {
     refetchEntries();
     refetchRC();
+    refetchProactivity();
   }
 
   // ── Employee name resolver ───────────────────────────────────────────────
@@ -143,26 +146,29 @@ const CSPerformancePage = () => {
     invalidateAlertCount();
   }
 
-  // ── Proactivity save handler ─────────────────────────────────────────────
+  // ── Proactivity save handler (uses React Query mutation + cache invalidation)
 
   const handleProactivityChange = useCallback((field, value) => {
     if (!singleEmployee) return;
+    const current = proactivityList.find((p) => p.employee_user_id === singleEmployee);
     saveProactivity({
       org_id: currentAgencyId,
       employee_user_id: singleEmployee,
       week_start: weekStart,
-      followup_notes_logged: field === 'followup_notes_logged' ? value : (proactivityData?.followup_notes_logged || false),
-      queue_participation: field === 'queue_participation' ? value : (proactivityData?.queue_participation || false),
-      updated_by: user?.id,
+      follow_up_notes_logged: field === 'follow_up_notes_logged' ? value : (current?.follow_up_notes_logged || false),
+      queue_participation: field === 'queue_participation' ? value : (current?.queue_participation || false),
+      reviewed_by: user?.id,
+      reviewed_at: new Date().toISOString(),
+    }, {
+      onSuccess: () => invalidateProactivity(weekStart, selectedEmployee),
     });
-  }, [singleEmployee, weekStart, user, currentAgencyId, proactivityData, saveProactivity]);
+  }, [singleEmployee, weekStart, user, proactivityList, saveProactivity, invalidateProactivity, selectedEmployee]);
 
   // ── PDF export handler ───────────────────────────────────────────────────
 
   async function handleDownloadPDF(rc) {
     setPdfGenerating(true);
     try {
-      // Dynamic import — @react-pdf/renderer only loaded when user clicks download
       const [{ pdf }, { default: ScorecardPDF }] = await Promise.all([
         import('@react-pdf/renderer'),
         import('./components/time-attendance/ScorecardPDF'),
@@ -170,13 +176,14 @@ const CSPerformancePage = () => {
 
       const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
       const daysWorked = empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length || 5;
+      const empProactivity = proactivityList.find((p) => p.employee_user_id === rc.employee_user_id);
 
       const blob = await pdf(
         <ScorecardPDF
           rcData={rc}
           daysWorked={daysWorked}
           targets={employeeTargets}
-          proactivity={proactivityData}
+          proactivity={empProactivity}
           alerts={[]}
           weekStart={weekStart}
         />
@@ -404,6 +411,9 @@ const CSPerformancePage = () => {
                 const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
                 const daysWorked = empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length;
                 const isSelectedEmployee = singleEmployee === rc.employee_user_id;
+                const empProactivity = proactivityList.find(
+                  (p) => p.employee_user_id === rc.employee_user_id
+                );
 
                 return (
                   <div key={rc.id} className="space-y-4">
@@ -437,7 +447,7 @@ const CSPerformancePage = () => {
                       rcData={rc}
                       daysWorked={daysWorked || 5}
                       targets={isSelectedEmployee ? employeeTargets : null}
-                      proactivity={isSelectedEmployee ? proactivityData : null}
+                      proactivity={empProactivity}
                       onProactivityChange={isSelectedEmployee ? handleProactivityChange : null}
                       savingProactivity={savingProactivity}
                     />

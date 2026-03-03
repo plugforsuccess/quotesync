@@ -1,25 +1,15 @@
 -- =============================================================================
--- CS Performance Dashboard v2 — New tables + RC column additions
+-- CS Performance Dashboard v2 — Per-employee targets + outbound breakdown
 -- =============================================================================
-
--- 1. Add new columns to rc_performance_data for Efficiency & Quality metrics
-ALTER TABLE public.rc_performance_data
-  ADD COLUMN IF NOT EXISTS answered_calls int NOT NULL DEFAULT 0
-    CHECK (answered_calls >= 0 AND answered_calls <= 10000),
-  ADD COLUMN IF NOT EXISTS missed_calls int NOT NULL DEFAULT 0
-    CHECK (missed_calls >= 0 AND missed_calls <= 10000),
-  ADD COLUMN IF NOT EXISTS avg_hold_time_minutes numeric(6,2) NOT NULL DEFAULT 0
-    CHECK (avg_hold_time_minutes >= 0 AND avg_hold_time_minutes <= 1440),
-  ADD COLUMN IF NOT EXISTS avg_speed_of_answer_seconds numeric(8,2) NOT NULL DEFAULT 0
-    CHECK (avg_speed_of_answer_seconds >= 0),
-  ADD COLUMN IF NOT EXISTS transfers int NOT NULL DEFAULT 0
-    CHECK (transfers >= 0 AND transfers <= 10000),
-  ADD COLUMN IF NOT EXISTS total_handle_time_minutes numeric(8,2) NOT NULL DEFAULT 0
-    CHECK (total_handle_time_minutes >= 0 AND total_handle_time_minutes <= 10080);
+-- Depends on: 20260303500000_rc_performance_redesign.sql
+-- That migration already created cs_proactivity_manual and added all
+-- efficiency/quality columns to rc_performance_data.
+-- This migration adds: cs_performance_targets, cs_outbound_breakdown,
+-- and an admin_notes column to cs_proactivity_manual.
 
 
 -- =============================================================================
--- 2. Per-Employee Performance Targets
+-- 1. Per-Employee Performance Targets
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.cs_performance_targets (
@@ -85,7 +75,7 @@ WITH CHECK (
 
 
 -- =============================================================================
--- 3. Outbound Call Type Breakdown (manual entry)
+-- 2. Outbound Call Type Breakdown (manual entry)
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.cs_outbound_breakdown (
@@ -128,41 +118,8 @@ WITH CHECK (
 
 
 -- =============================================================================
--- 4. Manual Proactivity Assessments
+-- 3. Add admin_notes to cs_proactivity_manual (created in prior migration)
 -- =============================================================================
 
-CREATE TABLE IF NOT EXISTS public.cs_proactivity_manual (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  org_id uuid NOT NULL,
-  employee_user_id uuid NOT NULL,
-  week_start date NOT NULL,
-  followup_notes_logged boolean NOT NULL DEFAULT false,
-  queue_participation boolean NOT NULL DEFAULT false,
-  admin_notes text,
-  updated_by uuid NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  updated_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (employee_user_id, week_start)
-);
-
-ALTER TABLE public.cs_proactivity_manual ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "admin_all_proactivity_manual"
-ON public.cs_proactivity_manual
-FOR ALL
-USING (
-  EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.id = auth.uid()
-      AND p.is_platform_user = true
-      AND p.platform_role IN ('platform_admin', 'platform_master_admin')
-  )
-)
-WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM public.profiles p
-    WHERE p.id = auth.uid()
-      AND p.is_platform_user = true
-      AND p.platform_role IN ('platform_admin', 'platform_master_admin')
-  )
-);
+ALTER TABLE public.cs_proactivity_manual
+  ADD COLUMN IF NOT EXISTS admin_notes text;

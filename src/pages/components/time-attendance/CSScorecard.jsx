@@ -1,8 +1,10 @@
 // src/pages/components/time-attendance/CSScorecard.jsx
-// CS Performance Dashboard — Sections A, B, C + A-F weekly grade
-// v2: Per-employee targets, answer rate grading, manual proactivity checkboxes
+// CS Performance Dashboard — Sections A (Activity), B (Efficiency & Quality),
+// C (Proactivity) + A-F weekly grade.
+// v2: Per-employee targets, answer rate grading, manual proactivity checkboxes.
+// Column names match the rc_performance_redesign migration (XLSX-based schema).
 
-import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, CheckCircle, XCircle, Shield } from 'lucide-react';
+import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, CheckCircle, XCircle, Shield, Edit3 } from 'lucide-react';
 import { GRADE_CONFIG, DEFAULT_TARGETS, calculateGrade, computeMetrics } from '../../../config/csPerformanceDefaults';
 
 // ── Metric Display Components ──────────────────────────────────────────────────
@@ -52,15 +54,28 @@ function MetricRow({ label, target, actual, unit, inverse }) {
   );
 }
 
-function PassFailRow({ label, passed, manual }) {
+function PassFailRow({ label, passed, manual, onToggle }) {
   return (
     <tr className="hover:bg-gray-50 transition-colors">
       <td className="px-4 py-3 text-sm text-gray-900 font-medium">
         {label}
-        {manual && <span className="ml-1.5 text-xs text-gray-400 font-normal">(manual)</span>}
+        {manual && <span className="ml-1.5 text-xs text-gray-400">(manual)</span>}
       </td>
       <td className="px-4 py-3">
-        {passed ? (
+        {manual && onToggle ? (
+          <button
+            onClick={onToggle}
+            className={`inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded transition-colors ${
+              passed
+                ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                : 'text-red-600 bg-red-50 hover:bg-red-100'
+            }`}
+          >
+            {passed ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+            {passed ? 'Pass' : 'Fail'}
+            <Edit3 className="w-3 h-3 ml-1 text-gray-400" />
+          </button>
+        ) : passed ? (
           <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium">
             <CheckCircle className="w-4 h-4" /> Pass
           </span>
@@ -69,31 +84,6 @@ function PassFailRow({ label, passed, manual }) {
             <XCircle className="w-4 h-4" /> Fail
           </span>
         )}
-      </td>
-    </tr>
-  );
-}
-
-function ManualCheckboxRow({ label, checked, onChange, disabled }) {
-  return (
-    <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-        {label}
-        <span className="ml-1.5 text-xs text-gray-400 font-normal">(manual)</span>
-      </td>
-      <td className="px-4 py-3">
-        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={checked}
-            onChange={(e) => onChange(e.target.checked)}
-            disabled={disabled}
-            className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 disabled:opacity-50"
-          />
-          <span className={`text-sm font-medium ${checked ? 'text-green-600' : 'text-gray-400'}`}>
-            {checked ? 'Yes' : 'No'}
-          </span>
-        </label>
       </td>
     </tr>
   );
@@ -123,6 +113,21 @@ export default function CSScorecard({
   const metrics = computeMetrics(rcData, daysWorked);
   const grade = calculateGrade(rcData.outbound_calls, metrics.answerRate, metrics.hasZeroCallDays, t);
   const gradeConfig = GRADE_CONFIG[grade];
+
+  // Direct columns from RC data (pre-computed by RC or upload)
+  const avgCallsPerDay = rcData.avg_calls_per_day || metrics.avgCallsPerDay;
+  const avgHandleTime = rcData.avg_handle_time_minutes || 0;
+  const avgHoldTime = rcData.avg_hold_time_minutes || 0;
+  const avgSpeedOfAnswer = rcData.avg_speed_of_answer_seconds || 0;
+  const totalHandleTimeHours = (rcData.total_handle_time_minutes || 0) / 60;
+
+  // Use direct pct columns if available (from RC export), else compute
+  const transferRate = rcData.transfer_pct != null && rcData.transfer_pct > 0
+    ? rcData.transfer_pct
+    : metrics.transferRate;
+  const missedRate = rcData.missed_pct != null && rcData.missed_pct > 0
+    ? rcData.missed_pct
+    : metrics.missedCallRate;
 
   return (
     <div className="space-y-6">
@@ -158,14 +163,15 @@ export default function CSScorecard({
             <MetricRow label="Total Calls" target={`≥ ${t.total_calls_weekly}`} actual={rcData.total_calls} />
             <MetricRow label="Inbound Calls" target="Track only" actual={rcData.inbound_calls} />
             <MetricRow label="Outbound Calls" target={`≥ ${t.outbound_calls_weekly}`} actual={rcData.outbound_calls} />
-            <MetricRow label="Avg Calls/Day" target={`≥ ${t.avg_calls_per_day}`} actual={metrics.avgCallsPerDay.toFixed(1)} />
-            <MetricRow label="Talk Time" target="≥ 8" actual={metrics.talkTimeHours.toFixed(1)} unit="h" />
+            <MetricRow label="Avg Calls/Day" target={`≥ ${t.avg_calls_per_day}`} actual={typeof avgCallsPerDay === 'number' ? avgCallsPerDay.toFixed(1) : avgCallsPerDay} />
+            <MetricRow label="Answered Calls" target="Track only" actual={rcData.answered_calls} />
             <MetricRow
               label="Avg Handle Time"
               target={`${t.avg_handle_time_min_low}–${t.avg_handle_time_min_high}`}
-              actual={(rcData.avg_handle_time_minutes || 0).toFixed(1)}
+              actual={avgHandleTime.toFixed(1)}
               unit=" min"
             />
+            <MetricRow label="Total Handle Time" target="Track only" actual={totalHandleTimeHours.toFixed(1)} unit="h" />
           </tbody>
         </table>
       </div>
@@ -195,34 +201,34 @@ export default function CSScorecard({
             <MetricRow
               label="Avg Speed of Answer"
               target={`< ${t.avg_speed_of_answer_sec}`}
-              actual={(rcData.avg_speed_of_answer_seconds || 0).toFixed(0)}
+              actual={avgSpeedOfAnswer.toFixed(0)}
               unit="s"
               inverse
             />
             <MetricRow
               label="Avg Handle Time"
               target={`${t.avg_handle_time_min_low}–${t.avg_handle_time_min_high}`}
-              actual={(rcData.avg_handle_time_minutes || 0).toFixed(1)}
+              actual={avgHandleTime.toFixed(1)}
               unit=" min"
             />
             <MetricRow
               label="Avg Hold Time"
               target={`< ${t.avg_hold_time_min}`}
-              actual={(rcData.avg_hold_time_minutes || 0).toFixed(1)}
+              actual={avgHoldTime.toFixed(1)}
               unit=" min"
               inverse
             />
             <MetricRow
               label="Transfer Rate"
               target={`< ${t.transfer_rate_pct}`}
-              actual={metrics.transferRate.toFixed(1)}
+              actual={typeof transferRate === 'number' ? transferRate.toFixed(1) : transferRate}
               unit="%"
               inverse
             />
             <MetricRow
               label="Missed Call Rate"
               target={`< ${t.missed_call_rate_pct}`}
-              actual={metrics.missedCallRate.toFixed(1)}
+              actual={typeof missedRate === 'number' ? missedRate.toFixed(1) : missedRate}
               unit="%"
               inverse
             />
@@ -244,22 +250,23 @@ export default function CSScorecard({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {/* Auto-computed flags */}
             <PassFailRow label="Outbound Every Day" passed={metrics.outboundEveryDay} />
             <PassFailRow label="No 0-Call Days" passed={!metrics.hasZeroCallDays} />
-
-            {/* Manual checkbox flags */}
-            <ManualCheckboxRow
+            <PassFailRow
               label="Follow-Up Notes Logged"
-              checked={proactivity?.followup_notes_logged || false}
-              onChange={(checked) => onProactivityChange?.('followup_notes_logged', checked)}
-              disabled={savingProactivity}
+              passed={proactivity?.follow_up_notes_logged || false}
+              manual
+              onToggle={onProactivityChange && !savingProactivity
+                ? () => onProactivityChange('follow_up_notes_logged', !proactivity?.follow_up_notes_logged)
+                : null}
             />
-            <ManualCheckboxRow
+            <PassFailRow
               label="Queue Participation"
-              checked={proactivity?.queue_participation || false}
-              onChange={(checked) => onProactivityChange?.('queue_participation', checked)}
-              disabled={savingProactivity}
+              passed={proactivity?.queue_participation || false}
+              manual
+              onToggle={onProactivityChange && !savingProactivity
+                ? () => onProactivityChange('queue_participation', !proactivity?.queue_participation)
+                : null}
             />
           </tbody>
         </table>
