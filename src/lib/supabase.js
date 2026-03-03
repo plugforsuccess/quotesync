@@ -164,9 +164,20 @@ export const getUserProfile = async () => {
  */
 export const getUserRole = async () => {
   const result = await getUserProfile();
+
+  // Bridge: derive effective legacy role from platform_role if available
+  let effectiveRole = result.role;
+  if (result.isPlatformUser && result.platformRole) {
+    if (['platform_admin', 'platform_master_admin'].includes(result.platformRole)) {
+      effectiveRole = 'admin';
+    } else if (['platform_editor', 'platform_support', 'platform_auditor'].includes(result.platformRole)) {
+      effectiveRole = 'editor';
+    }
+  }
+
   return {
     user: result.user,
-    role: result.role,
+    role: effectiveRole,
     profile: result.profile
   };
 };
