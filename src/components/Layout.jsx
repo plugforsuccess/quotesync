@@ -14,23 +14,35 @@ function Layout() {
   const scrollTimeoutRef = useRef(null);
 
   // Two-Plane RBAC: Get user context and determine active plane
-  const { user, profile, isPlatformUser, platformRole } = useAuth();
-  const [activePlane, setActivePlane] = useState(
-    isPlatformUser ? PLANES.PLATFORM : PLANES.CONSUMER
-  );
+  const {
+    user, profile, isPlatformUser, platformRole,
+    activePlane: authPlane, currentAgencyRole, agencyMemberships
+  } = useAuth();
 
-  // Update plane when auth state changes
+  // Platform users can toggle between platform and consumer views
+  // Agency users see agency plane, everyone else sees consumer
+  const [planeOverride, setPlaneOverride] = useState(null);
+  const activePlane = planeOverride || authPlane;
+
+  // Reset override when auth state changes
   useEffect(() => {
-    if (isPlatformUser) {
-      setActivePlane(PLANES.PLATFORM);
-    } else {
-      setActivePlane(PLANES.CONSUMER);
-    }
-  }, [isPlatformUser]);
+    setPlaneOverride(null);
+  }, [authPlane]);
 
   // Get navigation items based on active plane and role
-  const navItems = getNavItems(activePlane, platformRole);
-  const roleLabel = platformRole ? roleDisplayNames[platformRole] : null;
+  const navItems = getNavItems(activePlane, platformRole, currentAgencyRole);
+  const roleLabel = platformRole
+    ? roleDisplayNames[platformRole]
+    : currentAgencyRole
+    ? roleDisplayNames[currentAgencyRole]
+    : null;
+
+  // Agency brand name for header (when in agency plane)
+  const agencyBrandName = activePlane === PLANES.AGENCY
+    ? agencyMemberships.find(m => m.status === 'active')?.agencies?.brand_name
+      || agencyMemberships.find(m => m.status === 'active')?.agencies?.name
+      || null
+    : null;
 
   // Handle scroll for nav blur effect with throttling
   useEffect(() => {
@@ -105,7 +117,7 @@ function Layout() {
                   insuredbycam
                 </div>
                 <div className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                  Insurance shopping, simplified
+                  {agencyBrandName || 'Insurance shopping, simplified'}
                 </div>
               </div>
             </NavLink>
@@ -115,7 +127,10 @@ function Layout() {
               {/* Plane Switcher for Platform Users */}
               {isPlatformUser && (
                 <button
-                  onClick={() => setActivePlane(p => p === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM)}
+                  onClick={() => setPlaneOverride(p => {
+                    const current = p || authPlane;
+                    return current === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM;
+                  })}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-white/10 hover:bg-white/20 text-gray-300 transition-all"
                   title="Switch view"
                 >
@@ -172,7 +187,10 @@ function Layout() {
             {/* Plane Switcher for Mobile */}
             {isPlatformUser && (
               <button
-                onClick={() => setActivePlane(p => p === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM)}
+                onClick={() => setPlaneOverride(p => {
+                  const current = p || authPlane;
+                  return current === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM;
+                })}
                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-white/10 hover:bg-white/20 text-gray-300 transition-all mb-2"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -199,7 +217,7 @@ function Layout() {
             {/* Decorative element */}
             <div className="mt-8 flex items-center gap-2 text-sm text-white/50">
               <Sparkles className="w-4 h-4" />
-              <span>{activePlane === PLANES.PLATFORM ? 'Admin Tools' : 'Choose your path'}</span>
+              <span>{activePlane === PLANES.PLATFORM ? 'Admin Tools' : activePlane === PLANES.AGENCY ? 'Agency Portal' : 'Choose your path'}</span>
             </div>
           </nav>
         </div>

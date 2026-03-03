@@ -15,9 +15,9 @@ import { useAuth } from '../contexts/AuthContext';
  * - platform_editor: Newsroom content only; NO lead access
  * - platform_auditor: Read-only logs and compliance exports
  *
- * Tenant Plane (agency users - simplified to 2 roles for now):
- * - owner: Full agency control
- * - agent: Lead view/update
+ * Tenant Plane (agency users - Allstate terminology):
+ * - agent: Agency principal — owns the book, manages producers, full control
+ * - producer: Licensed staff who work leads and write policies
  *
  * Future roles (schema supports, not yet enabled):
  * - manager: Lead routing, user management
@@ -60,21 +60,21 @@ export function usePermissions() {
   }), [isPlatformUser, platformRole, hasPlatformRole]);
 
   // Agency permission checks (for current agency)
-  // Simplified to owner/agent for now
+  // Allstate terminology: agent = principal, producer = staff
   const agency = useMemo(() => ({
-    // Role checks (only owner/agent active)
-    isOwner: hasAgencyRole('owner'),
-    isAgent: hasAgencyRole('agent'),
+    // Role checks (only agent/producer active)
+    isPrincipal: hasAgencyRole('agent'),
+    isProducer: hasAgencyRole('producer'),
 
-    // Feature access (owner gets all, agent gets lead work)
-    canViewLeads: hasAgencyRole('agent'),      // agent+
-    canUpdateLeads: hasAgencyRole('agent'),    // agent+
-    canDeleteLeads: hasAgencyRole('owner'),    // owner only (no manager yet)
-    canManageRouting: hasAgencyRole('owner'),  // owner only
-    canInviteMembers: hasAgencyRole('owner'),  // owner only (no manager yet)
-    canRemoveMembers: hasAgencyRole('owner'),  // owner only
-    canUpdateMemberRoles: hasAgencyRole('owner'),
-    canUpdateAgencySettings: hasAgencyRole('owner'),
+    // Feature access (agent/principal gets all, producer gets lead work)
+    canViewLeads: hasAgencyRole('producer'),      // producer+
+    canUpdateLeads: hasAgencyRole('producer'),    // producer+
+    canDeleteLeads: hasAgencyRole('agent'),    // agent only (no manager yet)
+    canManageRouting: hasAgencyRole('agent'),  // agent only
+    canInviteMembers: hasAgencyRole('agent'),  // agent only (no manager yet)
+    canRemoveMembers: hasAgencyRole('agent'),  // agent only
+    canUpdateMemberRoles: hasAgencyRole('agent'),
+    canUpdateAgencySettings: hasAgencyRole('agent'),
 
     // Current agency info
     currentAgencyId,
@@ -132,8 +132,8 @@ export function usePermissions() {
     if (!can.performWriteActions) return false;
     // Platform master admin can modify any lead
     if (platform.canUpdateLeads) return true;
-    // Agency agents+ can modify their agency's leads
-    return hasAgencyRole('agent', leadAgencyId);
+    // Agency producers+ can modify their agency's leads
+    return hasAgencyRole('producer', leadAgencyId);
   };
 
   return {
@@ -169,11 +169,11 @@ export const PLATFORM_ROLES = [
   'platform_auditor'
 ];
 
-// Active agency roles (simplified for now)
-export const AGENCY_ROLES = ['owner', 'agent'];
+// Active agency roles (Allstate terminology)
+export const AGENCY_ROLES = ['agent', 'producer'];
 
 // Future agency roles (schema supports these)
-export const AGENCY_ROLES_FUTURE = ['owner', 'manager', 'agent', 'viewer'];
+export const AGENCY_ROLES_FUTURE = ['agent', 'manager', 'producer', 'viewer'];
 
 /**
  * Audit event types for admin actions

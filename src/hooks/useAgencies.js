@@ -65,7 +65,7 @@ export const useAgencyRoutingRules = (agencyId) => {
   });
 };
 
-// Fetch agency users
+// Fetch agency members (from agency_memberships, the authoritative source)
 export const useAgencyUsers = (agencyId) => {
   return useQuery({
     queryKey: ['agency_users', agencyId],
@@ -73,18 +73,20 @@ export const useAgencyUsers = (agencyId) => {
       if (!agencyId) return [];
 
       const { data, error } = await supabase
-        .from('agency_users')
+        .from('agency_memberships')
         .select(`
           user_id,
           agency_id,
-          role,
+          agency_role,
+          status,
           created_at
         `)
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data;
+      // Map agency_role to role for backward compat with AdminAgencyDetailPage
+      return (data || []).map(m => ({ ...m, role: m.agency_role }));
     },
     enabled: !!agencyId
   });
@@ -214,16 +216,12 @@ export const useDeleteRoutingRule = () => {
   });
 };
 
-// Invite/create agency user mutation
+// Invite/create agency user mutation (writes to agency_memberships)
 export const useInviteAgencyUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ email, role, agencyId, actorUserId }) => {
-      // For Supabase Auth invite flow, we use admin API
-      // This requires service role key on backend
-      // For now, we'll create a placeholder that works with existing users
-
       // First check if user exists
       const { data: profiles } = await supabase
         .from('profiles')
@@ -232,13 +230,14 @@ export const useInviteAgencyUser = () => {
         .single();
 
       if (profiles) {
-        // User exists, add to agency
+        // User exists, add to agency via agency_memberships
         const { error } = await supabase
-          .from('agency_users')
+          .from('agency_memberships')
           .insert({
             user_id: profiles.id,
             agency_id: agencyId,
-            role: role
+            agency_role: role,
+            status: 'active'
           });
 
         if (error) throw error;
@@ -269,14 +268,14 @@ export const useInviteAgencyUser = () => {
   });
 };
 
-// Delete agency user mutation
+// Delete agency user mutation (removes from agency_memberships)
 export const useDeleteAgencyUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ userId, agencyId }) => {
       const { error } = await supabase
-        .from('agency_users')
+        .from('agency_memberships')
         .delete()
         .eq('user_id', userId)
         .eq('agency_id', agencyId);

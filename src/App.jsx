@@ -54,6 +54,7 @@ const AdminAuditPage = lazy(() => import('./pages/AdminAuditPage'));
 const AgencyLeadsPage = lazy(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
 const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
+const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -214,6 +215,18 @@ function App() {
                 <ProtectedRoute requiredRole="editor">
                   <Suspense fallback={<PageLoader />}>
                     <AgencyLeadDetailPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Agency Settings (agency principals only) */}
+            <Route
+              path="agency/settings"
+              element={
+                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                  <Suspense fallback={<PageLoader />}>
+                    <AgencySettingsPage />
                   </Suspense>
                 </ProtectedRoute>
               }

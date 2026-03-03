@@ -12,7 +12,7 @@ import { hasPermission } from '../lib/supabase';
  * Props:
  * - requiredRole: Legacy role check (editor, admin) - for backward compatibility
  * - requiredPlatformRole: Platform plane role (platform_editor, platform_admin, etc.)
- * - requiredAgencyRole: Agency plane role (viewer, agent, manager, owner)
+ * - requiredAgencyRole: Agency plane role (viewer, producer, manager, agent)
  * - requirePlatformUser: If true, only platform users can access
  * - requireAgencyMembership: If true, user must have at least one active agency
  * - redirectTo: Where to redirect on access denied (default: login page)
@@ -81,8 +81,13 @@ const ProtectedRoute = ({
   }
 
   // Legacy role check (for backward compatibility)
+  // Agency agents/producers accessing agency routes pass through if they have agency membership
   if (requiredRole && !hasPermission(role, requiredRole)) {
-    return <Navigate to={redirectTo} replace />;
+    // Allow agency users to access routes they have agency-level permission for
+    const hasAgencyAccess = agencyMemberships.some(m => m.status === 'active');
+    if (!hasAgencyAccess) {
+      return <Navigate to={redirectTo} replace />;
+    }
   }
 
   // Render protected content

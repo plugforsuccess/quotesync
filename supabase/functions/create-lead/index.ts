@@ -83,6 +83,11 @@ interface RoutingRule {
   exclusivity_level: 'none' | 'zip' | 'state'
   priority_tier: number
   capacity_enabled: boolean
+  // Quality routing fields
+  min_score: number | null
+  max_score: number | null
+  carrier_filter: string | null
+  rule_type: 'geographic' | 'quality' | 'combined'
 }
 
 interface RouteResult {
@@ -136,6 +141,61 @@ function routeLead(
   const hash = deterministicHash(pullId)
   const winner = topRules[hash % topRules.length]
   return { agencyId: winner.agency_id, routingRuleId: winner.id, viaFallback: false }
+}
+
+// Pass 2: Quality-based routing (runs after lead score and carrier data are available)
+function routeLeadByQuality(
+  qualityRules: RoutingRule[],
+  state: string,
+  zip: string,
+  leadScore: number | null,
+  autoCarrier: string | null,
+  homeCarrier: string | null,
+  rentersCarrier: string | null,
+  currentAgencyId: string
+): RouteResult {
+  if (!qualityRules || qualityRules.length === 0) {
+    return { agencyId: currentAgencyId, routingRuleId: null, viaFallback: false }
+  }
+
+  const matching = qualityRules
+    .filter(r => {
+      if (!r.capacity_enabled) return false
+
+      // Geographic conditions (for 'combined' type)
+      if (r.rule_type === 'combined') {
+        if (r.state && r.state !== state) return false
+        if (r.zip_prefix && !zip.startsWith(r.zip_prefix)) return false
+      }
+
+      // Score conditions
+      if (r.min_score != null && (leadScore == null || leadScore < r.min_score)) return false
+      if (r.max_score != null && (leadScore == null || leadScore > r.max_score)) return false
+
+      // Carrier filter
+      if (r.carrier_filter) {
+        const carrierMatch = autoCarrier === r.carrier_filter
+          || homeCarrier === r.carrier_filter
+          || rentersCarrier === r.carrier_filter
+        if (!carrierMatch) return false
+      }
+
+      // Don't reroute to the same agency
+      if (r.agency_id === currentAgencyId) return false
+
+      return true
+    })
+    .sort((a, b) => b.priority_tier - a.priority_tier)
+
+  if (matching.length === 0) {
+    return { agencyId: currentAgencyId, routingRuleId: null, viaFallback: false }
+  }
+
+  return {
+    agencyId: matching[0].agency_id,
+    routingRuleId: matching[0].id,
+    viaFallback: false
+  }
 }
 
 Deno.serve(async (req) => {
@@ -235,14 +295,51 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('capacity_enabled', true)
 
-    // Route the lead
+    // Pass 1: Geographic routing (state + ZIP prefix)
+    const geographicRules = (routingRules || []).filter(
+      (r: RoutingRule) => !r.rule_type || r.rule_type === 'geographic'
+    )
     const routing = routeLead(
-      routingRules || [],
+      geographicRules,
       state.toUpperCase(),
       zip,
       pull_id || sessionId,
       defaultAgencyId
     )
+
+    // Pass 2: Quality-based routing (carrier + score)
+    // Only applies when we have carrier/score data (full submission, not partial)
+    const hasQualityData = body.lead_score != null
+      || body.current_auto_carrier != null
+      || body.current_home_carrier != null
+      || body.current_renters_carrier != null
+    const qualityRules = (routingRules || []).filter(
+      (r: RoutingRule) => r.rule_type === 'quality' || r.rule_type === 'combined'
+    )
+
+    let finalAgencyId = routing.agencyId
+    let finalRoutingRuleId = routing.routingRuleId
+    let finalViaFallback = routing.viaFallback
+
+    if (hasQualityData && qualityRules.length > 0) {
+      const qualityRouting = routeLeadByQuality(
+        qualityRules,
+        state.toUpperCase(),
+        zip,
+        body.lead_score ?? null,
+        body.current_auto_carrier ?? null,
+        body.current_home_carrier ?? null,
+        body.current_renters_carrier ?? null,
+        routing.agencyId
+      )
+
+      if (qualityRouting.agencyId !== routing.agencyId) {
+        finalAgencyId = qualityRouting.agencyId
+        finalRoutingRuleId = qualityRouting.routingRuleId
+        finalViaFallback = false
+        console.log(`[QUALITY_ROUTING] Lead rerouted from agency ${routing.agencyId} to ${finalAgencyId} via quality rule ${finalRoutingRuleId}`)
+      }
+    }
 
     // Normalize phone to 10-digit canonical format for consistent lookups
     const normalizedPhone = body.phone
@@ -269,12 +366,12 @@ Deno.serve(async (req) => {
       const { data: updatedLead, error: updateError } = await supabase
         .from('leads')
         .update({
-          agency_id: routing.agencyId,
+          agency_id: finalAgencyId,
           ...sanitizedUtm,
           referral_code: body.referral_code || null,
           landing_page: body.landing_page || null,
-          routing_rule_id: routing.routingRuleId,
-          routed_via_fallback: routing.viaFallback,
+          routing_rule_id: finalRoutingRuleId,
+          routed_via_fallback: finalViaFallback,
           status: 'new',
           first_name: body.first_name || null,
           last_name: body.last_name || null,
@@ -311,7 +408,7 @@ Deno.serve(async (req) => {
       // Create new lead record (Canopy flow or funnel without partial)
       const leadData = {
         pull_id: pull_id || null,
-        agency_id: routing.agencyId,
+        agency_id: finalAgencyId,
         state: state.toUpperCase(),
         zip,
         product_intent: body.product_intent ?? null,
@@ -319,8 +416,8 @@ Deno.serve(async (req) => {
         ...sanitizedUtm,
         referral_code: body.referral_code || null,
         landing_page: body.landing_page || null,
-        routing_rule_id: routing.routingRuleId,
-        routed_via_fallback: routing.viaFallback,
+        routing_rule_id: finalRoutingRuleId,
+        routed_via_fallback: finalViaFallback,
         status: 'new',
         first_name: body.first_name || null,
         last_name: body.last_name || null,
@@ -362,7 +459,7 @@ Deno.serve(async (req) => {
     await supabase.from('audit_log').insert({
       event_type: existingPartialLead ? 'LEAD_ACTIVATED' : 'LEAD_CREATED',
       lead_id: lead.id,
-      agency_id: routing.agencyId,
+      agency_id: finalAgencyId,
       metadata: {
         pull_id: pull_id || null,
         source: body.source || 'canopy',
@@ -375,11 +472,13 @@ Deno.serve(async (req) => {
 
     // Audit: ROUTED (or ROUTING_FALLBACK)
     await supabase.from('audit_log').insert({
-      event_type: routing.viaFallback ? 'ROUTING_FALLBACK' : 'ROUTED',
+      event_type: finalViaFallback ? 'ROUTING_FALLBACK' : 'ROUTED',
       lead_id: lead.id,
-      agency_id: routing.agencyId,
+      agency_id: finalAgencyId,
       metadata: {
-        routing_rule_id: routing.routingRuleId,
+        routing_rule_id: finalRoutingRuleId,
+        geographic_agency_id: routing.agencyId,
+        quality_rerouted: finalAgencyId !== routing.agencyId,
         state: state.toUpperCase(),
         zip
       }
@@ -389,8 +488,8 @@ Deno.serve(async (req) => {
     const { data: agencyUsers } = await supabase
       .from('agency_users')
       .select('user_id, role')
-      .eq('agency_id', routing.agencyId)
-      .in('role', ['owner', 'manager'])
+      .eq('agency_id', finalAgencyId)
+      .in('role', ['agent', 'manager'])
       .eq('receives_notifications', true)
 
     // Create in-app notifications
@@ -409,7 +508,7 @@ Deno.serve(async (req) => {
       await supabase.from('audit_log').insert({
         event_type: 'NOTIFIED',
         lead_id: lead.id,
-        agency_id: routing.agencyId,
+        agency_id: finalAgencyId,
         metadata: {
           notified_users: agencyUsers.length,
           notification_type: 'in_app'
@@ -421,7 +520,7 @@ Deno.serve(async (req) => {
     const { data: agency } = await supabase
       .from('agencies')
       .select('email, name')
-      .eq('id', routing.agencyId)
+      .eq('id', finalAgencyId)
       .single()
 
     // TODO: Send email notification to agency.email
@@ -455,8 +554,9 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       lead_id: lead.id,
-      agency_id: routing.agencyId,
-      routed_via_fallback: routing.viaFallback
+      agency_id: finalAgencyId,
+      routed_via_fallback: finalViaFallback,
+      quality_rerouted: finalAgencyId !== routing.agencyId
     }), {
       status: 201,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

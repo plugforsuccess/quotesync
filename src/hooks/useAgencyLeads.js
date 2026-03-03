@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { computeLeadScore } from '../lib/leadScoring';
 
-// Fetch current user's agency ID
+// Fetch current user's agency ID (from agency_memberships, the authoritative source)
 export const useCurrentAgency = () => {
   const { user } = useAuth();
 
@@ -16,14 +16,16 @@ export const useCurrentAgency = () => {
       if (!user?.id) return null;
 
       const { data, error } = await supabase
-        .from('agency_users')
-        .select('agency_id, role, agencies(id, name, brand_name)')
+        .from('agency_memberships')
+        .select('agency_id, agency_role, agencies(id, name, brand_name)')
         .eq('user_id', user.id)
+        .eq('status', 'active')
         .limit(1)
         .single();
 
       if (error) throw error;
-      return data;
+      // Map agency_role to role for backward compat with consumers of this hook
+      return data ? { ...data, role: data.agency_role } : null;
     },
     enabled: !!user?.id
   });
