@@ -110,6 +110,10 @@ const FunnelDashboardPage = () => {
       delete planner.avgPremium;
       delete planner.commissionRate;
     }
+    // Fallbacks for corrupted/partial localStorage
+    if (!planner.policyMix) planner.policyMix = DEFAULT_POLICY_MIX;
+    if (!planner.commissionMatrix) planner.commissionMatrix = COMMISSION_MATRIX;
+    if (planner.baseCommission == null) planner.baseCommission = BASE_COMMISSION;
     return planner;
   });
 
@@ -145,10 +149,10 @@ const FunnelDashboardPage = () => {
   }, []);
 
   const handleMixRemove = useCallback((index) => {
-    setPlannerInputs(prev => ({
-      ...prev,
-      policyMix: prev.policyMix.filter((_, i) => i !== index),
-    }));
+    setPlannerInputs(prev => {
+      if (prev.policyMix.length <= 1) return prev;
+      return { ...prev, policyMix: prev.policyMix.filter((_, i) => i !== index) };
+    });
   }, []);
 
   const handleStaffingChange = useCallback((key, value) => {

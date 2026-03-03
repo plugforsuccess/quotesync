@@ -3,14 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Calculator, ChevronDown, ChevronUp, Plus, X, CheckCircle, AlertCircle } from 'lucide-react';
-
-// ─── Helper: look up commission rate from matrix ─────────────────────────────
-
-function getCommissionRate(productLine, tier, matrix, baseRate) {
-  const rates = matrix[productLine];
-  if (!rates) return baseRate;
-  return rates[tier] ?? baseRate;
-}
+import { getCommissionRate } from '../../../lib/commissionUtils';
 
 // ─── Reusable rows ──────────────────────────────────────────────────────────
 
@@ -184,7 +177,8 @@ function PolicyMixTable({
             <button
               type="button"
               onClick={() => onMixRemove(idx)}
-              className="p-0.5 text-gray-400 hover:text-red-500"
+              disabled={policyMix.length <= 1}
+              className={`p-0.5 ${policyMix.length <= 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}
               title="Remove row"
             >
               <X className="w-4 h-4" />
@@ -230,8 +224,10 @@ export default function CapacityPlanner({
 
   const { submissions, conversionRate, avgScore, runRate, projectedMonthly, gapTo700 } = kpis;
   const {
-    targetSubmissions, avgCPC, landingPageConvRate,
-    closeRate, policyMix, commissionMatrix, baseCommission,
+    targetSubmissions, avgCPC, landingPageConvRate, closeRate,
+    policyMix = [],
+    commissionMatrix = {},
+    baseCommission = 9,
   } = plannerInputs;
 
   // Computed outputs
@@ -287,6 +283,8 @@ export default function CapacityPlanner({
     };
   }, [targetSubmissions, avgCPC, landingPageConvRate, closeRate, policyMix, commissionMatrix, baseCommission]);
 
+  const totalMix = policyMix.reduce((s, r) => s + r.mixPct, 0);
+  const mixValid = Math.abs(totalMix - 100) < 0.01;
   const gapColor = gapTo700 >= 0 ? 'text-green-600' : 'text-red-600';
   const roiColor = outputs.monthlyROI >= 0 ? 'text-green-600' : 'text-red-600';
 
@@ -371,7 +369,7 @@ export default function CapacityPlanner({
             {/* Blended summary */}
             <div className="flex items-center justify-between mt-3 pt-2 border-t border-blue-200 text-sm text-gray-700">
               <span>Blended Premium: <span className="font-semibold text-gray-900">${outputs.blendedPremium.toLocaleString()}</span></span>
-              <span>Blended Commission: <span className="font-semibold text-gray-900">{outputs.blendedCommission}%</span></span>
+              <span title="Premium-weighted average across your product mix">Blended Commission: <span className="font-semibold text-gray-900">{outputs.blendedCommission}%</span></span>
             </div>
           </div>
 
@@ -399,6 +397,11 @@ export default function CapacityPlanner({
             />
             <StatRow label="Blended Premium" value={`$${outputs.blendedPremium.toLocaleString()}`} />
             <StatRow label="Blended Commission" value={`${outputs.blendedCommission}%`} />
+            {!mixValid && (
+              <p className="text-xs text-red-500 mt-1">
+                Mix total is {Math.round(totalMix)}%. Adjust to 100% for accurate projections.
+              </p>
+            )}
           </div>
         </div>
       </div>
