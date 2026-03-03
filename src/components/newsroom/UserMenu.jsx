@@ -85,7 +85,7 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 transition-colors"
               >
                 <ArrowLeftRight className="w-4 h-4" />
-                {isAdminView ? 'Switch to Consumer View' : 'Switch to Admin View'}
+                {isAdminView ? 'Switch to Consumer' : 'Switch to Admin'}
               </button>
               <div className="mx-3 my-1 border-t border-white/10"></div>
             </>
