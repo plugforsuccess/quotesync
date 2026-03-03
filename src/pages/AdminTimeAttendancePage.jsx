@@ -1,12 +1,14 @@
 // src/pages/AdminTimeAttendancePage.jsx
-// Admin Time & Attendance Dashboard (standalone — CS Performance split to its own page)
+// Admin Attendance Page — Cameron enters weekly time for each employee.
+// No employee self-service, no approval workflow. Admin-only data entry.
 // Route: /admin/time-attendance
 
 import { useState, useMemo } from 'react';
-import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
+import { useAuth } from '../contexts/AuthContext';
 import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
-import { supabase } from '../lib/supabase';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
 
@@ -29,14 +31,15 @@ function addWeeks(dateStr, n) {
 function formatWeekLabel(weekStart) {
   const start = new Date(weekStart + 'T00:00:00');
   const end = new Date(start);
-  end.setDate(end.getDate() + 6);
+  end.setDate(end.getDate() + 4); // Mon–Fri
   const opts = { month: 'short', day: 'numeric' };
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
 
 function exportToCSV(entries, weekStart) {
-  const headers = ['Date', 'Location', 'Code', 'Start', 'Lunch Out', 'Lunch In', 'End', 'Break (min)', 'Hours Worked', 'Notes', 'Approved'];
+  const headers = ['Employee', 'Date', 'Location', 'Code', 'Start', 'Lunch Out', 'Lunch In', 'End', 'Break (min)', 'Hours Worked', 'Notes'];
   const rows = entries.map((e) => [
+    e.employee_user_id,
     e.work_date,
     e.location,
     e.code,
@@ -47,7 +50,6 @@ function exportToCSV(entries, weekStart) {
     e.unpaid_break_minutes,
     e.hours_worked || '',
     (e.notes || '').replace(/,/g, ';'),
-    e.approved ? 'Yes' : 'No',
   ]);
 
   const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
@@ -55,7 +57,7 @@ function exportToCSV(entries, weekStart) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `time-entries-${weekStart}.csv`;
+  a.download = `attendance-${weekStart}.csv`;
   a.click();
   URL.revokeObjectURL(url);
 }
@@ -63,90 +65,80 @@ function exportToCSV(entries, weekStart) {
 // ── Page Component ─────────────────────────────────────────────────────────────
 
 const AdminTimeAttendancePage = () => {
-  const { platform } = usePermissions();
+  const { platform, agency } = usePermissions();
+  const { currentAgencyId } = useAuth();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
-  const [selectedEmployee, setSelectedEmployee] = useState('all');
+  const [selectedEmployee, setSelectedEmployee] = useState('');
 
-  // ── React Query hooks (shared cache keys with CS Performance page) ─────────
+  // ── Data hooks ────────────────────────────────────────────────────────────
+
+  const { data: allEmployees = [] } = useAllEmployees();
+  // Active employees from the employees table (for dropdown — only active employees)
+  const { data: rosterEmployees = [] } = useActiveEmployees(currentAgencyId);
 
   const {
     data: timeData,
     isLoading: entriesLoading,
     error: entriesError,
     refetch: refetchEntries,
-  } = useTimeEntries(weekStart, selectedEmployee);
+  } = useTimeEntries(weekStart, selectedEmployee || 'all');
 
   const {
     data: rcData = [],
     refetch: refetchRC,
-  } = useRCData(weekStart, selectedEmployee);
+  } = useRCData(weekStart, selectedEmployee || 'all');
 
-  const { data: allEmployees = [] } = useAllEmployees();
   const { invalidateTimeEntries } = useInvalidateTimeData();
 
   const entries = timeData?.entries || [];
-  const employees = timeData?.employees || [];
   const isLoading = entriesLoading;
   const error = entriesError;
+
+  // Entries for the selected employee/week (for the editable table)
+  const selectedEntries = useMemo(() => {
+    if (!selectedEmployee) return [];
+    return entries.filter((e) => e.employee_user_id === selectedEmployee);
+  }, [entries, selectedEmployee]);
+
+  // RC data for the selected employee
+  const selectedRC = useMemo(() => {
+    if (!selectedEmployee) return null;
+    return rcData.find((r) => r.employee_user_id === selectedEmployee) || null;
+  }, [rcData, selectedEmployee]);
 
   function refetchAll() {
     refetchEntries();
     refetchRC();
   }
 
-  // ── Approval Toggle (optimistic update via direct mutation + invalidate) ────
-
-  async function toggleApproval(entryId, approved) {
-    const { error } = await supabase
-      .from('employee_time_entries')
-      .update({ approved })
-      .eq('id', entryId);
-
-    if (error) {
-      console.error('Failed to update approval:', error);
-    }
-    // Invalidate to refetch and reconcile
+  function handleSaved() {
     invalidateTimeEntries(weekStart, selectedEmployee);
+    invalidateTimeEntries(weekStart, 'all');
   }
 
-  async function bulkApproval(entryIds, approved) {
-    if (!entryIds || entryIds.length === 0) return;
+  // ── Summary stats (all employees for the week) ────────────────────────────
 
-    const { error } = await supabase
-      .from('employee_time_entries')
-      .update({ approved })
-      .in('id', entryIds);
+  const totalEntries = entries.length;
+  const totalHours = entries.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0);
+  const employeesWithEntries = new Set(entries.map((e) => e.employee_user_id)).size;
 
-    if (error) {
-      console.error('Failed to bulk update approval:', error);
-    }
-    invalidateTimeEntries(weekStart, selectedEmployee);
+  // ── Get employee name ─────────────────────────────────────────────────────
+  // Use roster employees (employees table) for dropdown display
+  const dropdownEmployees = rosterEmployees.length > 0 ? rosterEmployees : allEmployees;
+
+  function getEmployeeName(id) {
+    // Check roster employees first
+    const roster = rosterEmployees.find((e) => e.id === id || e.auth_user_id === id);
+    if (roster) return roster.preferred_name || roster.first_name + ' ' + roster.last_name;
+    const emp = allEmployees.find((e) => e.id === id);
+    return emp?.full_name || emp?.email || id?.substring(0, 8) || '';
   }
 
-  // ── Employee name resolver ─────────────────────────────────────────────────
+  // orgId for upserts — prefer currentAgencyId from auth context
+  const orgId = currentAgencyId || agency.currentAgencyId || '';
 
-  function getEmployeeName(userId) {
-    const profile = employees.find((p) => p.id === userId);
-    return profile?.full_name || profile?.email || userId.substring(0, 8);
-  }
-
-  // ── Group entries by employee ──────────────────────────────────────────────
-
-  const groupedEntries = useMemo(() => {
-    const groups = {};
-    entries.forEach((e) => {
-      if (!groups[e.employee_user_id]) groups[e.employee_user_id] = [];
-      groups[e.employee_user_id].push(e);
-    });
-    return groups;
-  }, [entries]);
-
-  // ── Employee dropdown options ──────────────────────────────────────────────
-
-  const employeeOptions = allEmployees.length > 0 ? allEmployees : employees;
-
-  // ── Permission Check ───────────────────────────────────────────────────────
+  // ── Permission Check ─────────────────────────────────────────────────────
 
   if (!platform.isAdmin) {
     return (
@@ -160,18 +152,7 @@ const AdminTimeAttendancePage = () => {
     );
   }
 
-  // ── Loading / Error States ─────────────────────────────────────────────────
-
-  if (isLoading && entries.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4" />
-          <p className="text-gray-600">Loading time entries...</p>
-        </div>
-      </div>
-    );
-  }
+  // ── Loading / Error States ───────────────────────────────────────────────
 
   if (error) {
     return (
@@ -201,8 +182,8 @@ const AdminTimeAttendancePage = () => {
             <div className="flex items-center gap-3">
               <Clock className="w-8 h-8 text-blue-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Time & Attendance</h1>
-                <p className="text-gray-600 text-sm">Employee time tracking and approval</p>
+                <h1 className="text-2xl font-bold text-gray-900">Time &amp; Attendance</h1>
+                <p className="text-gray-600 text-sm">Weekly time entry for all employees</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -228,9 +209,28 @@ const AdminTimeAttendancePage = () => {
         </div>
       </div>
 
-      {/* Filters bar */}
+      {/* Controls bar: Employee selector + Week navigator */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap">
+          {/* Employee selector */}
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-gray-500" />
+            <select
+              value={selectedEmployee}
+              onChange={(e) => setSelectedEmployee(e.target.value)}
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+            >
+              <option value="">Select Employee...</option>
+              {dropdownEmployees.map((emp) => (
+                <option key={emp.id} value={emp.auth_user_id || emp.id}>
+                  {emp.preferred_name || emp.first_name
+                    ? `${emp.preferred_name || emp.first_name} ${emp.last_name || ''}`
+                    : emp.full_name || emp.email || emp.id.substring(0, 8)}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* Week selector */}
           <div className="flex items-center gap-2">
             <button
@@ -250,23 +250,6 @@ const AdminTimeAttendancePage = () => {
             </button>
           </div>
 
-          {/* Employee filter */}
-          <div className="flex items-center gap-2">
-            <Filter className="w-4 h-4 text-gray-500" />
-            <select
-              value={selectedEmployee}
-              onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Employees</option>
-              {employeeOptions.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.full_name || emp.email || emp.id.substring(0, 8)}
-                </option>
-              ))}
-            </select>
-          </div>
-
           {/* Quick jump to current week */}
           <button
             onClick={() => setWeekStart(toMonday(new Date()))}
@@ -281,62 +264,70 @@ const AdminTimeAttendancePage = () => {
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="space-y-6">
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="text-2xl font-bold text-gray-900">{entries.length}</div>
+              <div className="text-2xl font-bold text-gray-900">{totalEntries}</div>
               <div className="text-sm text-gray-600">Total Entries</div>
             </div>
             <div className="bg-blue-50 rounded-lg border border-blue-100 p-4">
               <div className="text-2xl font-bold text-blue-700">
-                {entries.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0).toFixed(1)}h
+                {totalHours.toFixed(1)}h
               </div>
               <div className="text-sm text-blue-600">Total Hours</div>
             </div>
             <div className="bg-green-50 rounded-lg border border-green-100 p-4">
               <div className="text-2xl font-bold text-green-700">
-                {entries.filter((e) => e.approved).length}
+                {employeesWithEntries} / {allEmployees.length}
               </div>
-              <div className="text-sm text-green-600">Approved</div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg border border-yellow-100 p-4">
-              <div className="text-2xl font-bold text-yellow-700">
-                {entries.filter((e) => !e.approved).length}
-              </div>
-              <div className="text-sm text-yellow-600">Pending</div>
+              <div className="text-sm text-green-600">Employees Entered</div>
             </div>
           </div>
 
-          {/* Entries by employee */}
-          {Object.keys(groupedEntries).length === 0 ? (
+          {/* Editable weekly table for selected employee */}
+          {!selectedEmployee ? (
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">No time entries</h2>
-              <p className="text-gray-600">No entries have been logged for this week.</p>
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">Select an employee</h2>
+              <p className="text-gray-600">Choose an employee from the dropdown above to enter their weekly time.</p>
             </div>
           ) : (
-            Object.entries(groupedEntries).map(([userId, userEntries]) => (
-              <div key={userId}>
+            <>
+              <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Users className="w-5 h-5 text-gray-400" />
-                  {getEmployeeName(userId)}
+                  {getEmployeeName(selectedEmployee)}
+                  <span className="text-sm font-normal text-gray-500">
+                    &middot; Week of {formatWeekLabel(weekStart)}
+                  </span>
                 </h3>
 
-                {/* Cross-check alerts for this employee */}
-                <div className="mb-4">
-                  <DiscrepancyAlerts
-                    timeEntries={userEntries}
-                    rcData={rcData.find((r) => r.employee_user_id === userId)}
-                    weekStart={weekStart}
-                  />
-                </div>
+                {/* Discrepancy alerts */}
+                {selectedRC && (
+                  <div className="mb-4">
+                    <DiscrepancyAlerts
+                      timeEntries={selectedEntries}
+                      rcData={selectedRC}
+                      weekStart={weekStart}
+                    />
+                  </div>
+                )}
 
-                <WeeklyTimeTable
-                  entries={userEntries}
-                  onToggleApproval={toggleApproval}
-                  onBulkApproval={bulkApproval}
-                />
+                {isLoading ? (
+                  <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3" />
+                    <p className="text-gray-600 text-sm">Loading entries...</p>
+                  </div>
+                ) : (
+                  <WeeklyTimeTable
+                    weekStart={weekStart}
+                    employeeId={selectedEmployee}
+                    orgId={orgId}
+                    existingEntries={selectedEntries}
+                    onSaved={handleSaved}
+                  />
+                )}
               </div>
-            ))
+            </>
           )}
         </div>
       </div>

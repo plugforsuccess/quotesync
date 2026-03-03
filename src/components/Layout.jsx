@@ -6,6 +6,7 @@ import { Menu, X, Sparkles } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
+import VerificationBanner from './VerificationBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
 
@@ -242,6 +243,9 @@ function Layout() {
 
       {/* Spacer for fixed header */}
       <div className="h-[73px] sm:h-[81px]"></div>
+
+      {/* Verification overdue banner — admin only */}
+      <VerificationBanner />
 
       {/* Main content */}
       <main className="flex-1">
