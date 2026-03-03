@@ -8,6 +8,7 @@ import { BarChart3, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Fi
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useInvalidateAlertCount } from '../hooks/useAlertCount';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import CSScorecard from './components/time-attendance/CSScorecard';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
@@ -62,6 +63,7 @@ const CSPerformancePage = () => {
 
   const { data: allEmployees = [] } = useAllEmployees();
   const { invalidateRCData } = useInvalidateTimeData();
+  const { invalidateAlertCount } = useInvalidateAlertCount();
 
   const entries = timeData?.entries || [];
   const employees = timeData?.employees || [];
@@ -101,6 +103,9 @@ const CSPerformancePage = () => {
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
+    // Alert count will update after the edge function runs detection (fire-and-forget)
+    // Add a short delay to let the edge function process, then invalidate badge count
+    setTimeout(() => invalidateAlertCount(), 3000);
   }
 
   // ── Permission Check ───────────────────────────────────────────────────────
@@ -258,6 +263,7 @@ const CSPerformancePage = () => {
                     timeEntries={empEntries}
                     rcData={rc}
                     weekStart={weekStart}
+                    employeeId={rc.employee_user_id}
                   />
 
                   <CSScorecard rcData={rc} daysWorked={daysWorked || 5} />

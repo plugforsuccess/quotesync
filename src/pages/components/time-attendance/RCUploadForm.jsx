@@ -244,6 +244,13 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       setWarnings([]);
       if (fileRef.current) fileRef.current.value = '';
       if (onUploaded) onUploaded();
+
+      // Fire-and-forget: trigger discrepancy detection after successful upload
+      supabase.functions.invoke('detect-discrepancies', {
+        body: { scope: 'upload', week_start: weekStart, org_id: orgId },
+      }).catch((err) => {
+        console.error('[RC_UPLOAD] Discrepancy detection failed (non-blocking):', err);
+      });
     }
   }
 
