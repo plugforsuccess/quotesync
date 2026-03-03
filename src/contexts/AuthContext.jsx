@@ -333,16 +333,15 @@ export const AuthProvider = ({ children }) => {
 
         console.log('[AUTH] state changed', { event, email: session?.user?.email || null });
 
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (event === 'SIGNED_IN') {
+          // Full RBAC resolution only on initial sign-in
           if (!session?.user) return;
-
           setLoading(true);
           try {
             await fetchUserProfile(session.user);
           } catch (e) {
-            // AbortError here is benign (superseded by a newer request)
             if (!isAbortError(e)) {
-              console.error('[AUTHZ] fetchUserProfile failed on auth change:', e);
+              console.error('[AUTHZ] fetchUserProfile failed on sign-in:', e);
             }
           } finally {
             if (mounted) setLoading(false);
@@ -350,8 +349,21 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
+        if (event === 'TOKEN_REFRESHED') {
+          // Token rotation does NOT change the user's role/profile.
+          // Just update the user object (for fresh access token metadata)
+          // without re-running RBAC queries.
+          if (session?.user) {
+            console.log('[AUTH] token refreshed, keeping existing RBAC state');
+            setUser(session.user);
+          }
+          return;
+        }
+
         if (event === 'SIGNED_OUT') {
           resetState();
+          // Ensure loading is false so ProtectedRoute evaluates and redirects
+          setLoading(false);
           return;
         }
       }
@@ -371,10 +383,14 @@ export const AuthProvider = ({ children }) => {
         await endImpersonation();
       }
       await supabase.auth.signOut();
-      localStorage.removeItem('currentAgencyId');
-      resetState();
     } catch (error) {
       console.error('Error signing out:', error);
+      // Continue anyway — cleanup runs in finally
+    } finally {
+      // Always clear local state, even if signOut failed
+      localStorage.removeItem('currentAgencyId');
+      clearSupabaseAuthTokenFromStorage();
+      resetState();
     }
   };
 
