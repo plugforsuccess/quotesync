@@ -1,146 +1,338 @@
 // src/pages/components/time-attendance/WeeklyTimeTable.jsx
-// Admin-facing weekly breakdown table for a single employee
+// Admin editable weekly time entry table — pre-filled with REG/OFFICE defaults
+// Cameron enters the full week and only modifies exception days.
 
-import { CheckCircle, XCircle, Clock } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 
-const CODE_LABELS = {
-  REG: { label: 'Regular', bg: 'bg-green-100', text: 'text-green-700' },
-  WFH: { label: 'WFH', bg: 'bg-blue-100', text: 'text-blue-700' },
-  SICK: { label: 'Sick', bg: 'bg-red-100', text: 'text-red-700' },
-  SICK_PART: { label: 'Sick (Part)', bg: 'bg-orange-100', text: 'text-orange-700' },
-  PTO: { label: 'PTO', bg: 'bg-purple-100', text: 'text-purple-700' },
-  APPT: { label: 'Appt', bg: 'bg-yellow-100', text: 'text-yellow-700' },
-  EARLY: { label: 'Early', bg: 'bg-amber-100', text: 'text-amber-700' },
+const CODES = [
+  { value: 'REG', label: 'Regular' },
+  { value: 'WFH', label: 'WFH' },
+  { value: 'SICK', label: 'Sick' },
+  { value: 'SICK_PART', label: 'Sick (Part)' },
+  { value: 'PTO', label: 'PTO' },
+  { value: 'APPT', label: 'Appointment' },
+  { value: 'EARLY', label: 'Early' },
+];
+
+const LOCATIONS = [
+  { value: 'OFFICE', label: 'Office' },
+  { value: 'WFH', label: 'WFH' },
+];
+
+// Full-day absence codes — no time fields needed
+const NO_TIME_CODES = ['PTO', 'SICK'];
+// Codes that require notes
+const NOTES_REQUIRED_CODES = ['SICK_PART', 'APPT', 'EARLY'];
+
+const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+const DEFAULT_ROW = {
+  code: 'REG',
+  location: 'OFFICE',
+  startTime: '09:00',
+  lunchOut: '12:00',
+  lunchIn: '13:00',
+  endTime: '18:00',
+  unpaidBreak: 0,
+  notes: '',
 };
 
-function formatTime(t) {
-  if (!t) return '-';
-  // t is like "09:00:00" — show "9:00 AM"
-  const [h, m] = t.split(':');
-  const hour = parseInt(h, 10);
-  const ampm = hour >= 12 ? 'PM' : 'AM';
-  const h12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-  return `${h12}:${m} ${ampm}`;
+function getWeekDates(weekStart) {
+  const dates = [];
+  for (let i = 0; i < 5; i++) {
+    const d = new Date(weekStart + 'T00:00:00');
+    d.setDate(d.getDate() + i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  return dates;
 }
 
-const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+function formatDayLabel(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const dayIdx = (d.getDay() + 6) % 7; // Mon=0 .. Sun=6
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${DAY_LABELS[dayIdx]} ${month}/${day}`;
+}
 
-export default function WeeklyTimeTable({ entries, onToggleApproval, onBulkApproval }) {
-  if (!entries || entries.length === 0) {
-    return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-        <Clock className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-500">No time entries for this week.</p>
-      </div>
-    );
+// Strip seconds from time strings like "09:00:00" → "09:00"
+function normalizeTime(t) {
+  if (!t) return '';
+  return t.slice(0, 5);
+}
+
+export default function WeeklyTimeTable({
+  weekStart,
+  employeeId,
+  orgId,
+  existingEntries,
+  onSaved,
+}) {
+  const weekDates = getWeekDates(weekStart);
+
+  // Build initial rows: use existing entries if available, else defaults
+  const buildRows = useCallback(() => {
+    return weekDates.map((date) => {
+      const existing = existingEntries?.find((e) => e.work_date === date);
+      if (existing) {
+        return {
+          date,
+          code: existing.code,
+          location: existing.location,
+          startTime: normalizeTime(existing.start_time),
+          lunchOut: normalizeTime(existing.lunch_out),
+          lunchIn: normalizeTime(existing.lunch_in),
+          endTime: normalizeTime(existing.end_time),
+          unpaidBreak: existing.unpaid_break_minutes || 0,
+          notes: existing.notes || '',
+        };
+      }
+      return { date, ...DEFAULT_ROW };
+    });
+  }, [weekDates, existingEntries]);
+
+  const [rows, setRows] = useState(buildRows);
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  // Re-initialize when employee/week/existingEntries change
+  useEffect(() => {
+    setRows(buildRows());
+    setMsg(null);
+  }, [buildRows]);
+
+  function updateRow(idx, field, value) {
+    setRows((prev) => {
+      const next = [...prev];
+      const row = { ...next[idx], [field]: value };
+
+      // Auto-adjust logic when code changes
+      if (field === 'code') {
+        if (NO_TIME_CODES.includes(value)) {
+          // Full-day absence — clear time fields
+          row.startTime = '';
+          row.lunchOut = '';
+          row.lunchIn = '';
+          row.endTime = '';
+        } else if (value === 'WFH') {
+          // WFH code → auto-set location
+          row.location = 'WFH';
+          // Restore defaults if times were cleared
+          if (!row.startTime) {
+            row.startTime = DEFAULT_ROW.startTime;
+            row.lunchOut = DEFAULT_ROW.lunchOut;
+            row.lunchIn = DEFAULT_ROW.lunchIn;
+            row.endTime = DEFAULT_ROW.endTime;
+          }
+        } else {
+          // Restore time defaults if switching from a no-time code
+          if (!row.startTime) {
+            row.startTime = DEFAULT_ROW.startTime;
+            row.lunchOut = DEFAULT_ROW.lunchOut;
+            row.lunchIn = DEFAULT_ROW.lunchIn;
+            row.endTime = DEFAULT_ROW.endTime;
+          }
+        }
+      }
+
+      next[idx] = row;
+      return next;
+    });
+    setMsg(null);
   }
 
-  // Sort by work_date
-  const sorted = [...entries].sort((a, b) => a.work_date.localeCompare(b.work_date));
+  // Validation: notes required for certain codes
+  const validationErrors = rows.reduce((errs, row, idx) => {
+    if (NOTES_REQUIRED_CODES.includes(row.code) && !row.notes.trim()) {
+      errs.push(`${formatDayLabel(row.date)}: Notes required for ${row.code}`);
+    }
+    if (!NO_TIME_CODES.includes(row.code) && (!row.startTime || !row.endTime)) {
+      errs.push(`${formatDayLabel(row.date)}: Start and End time required`);
+    }
+    return errs;
+  }, []);
 
-  // Totals
-  const totalHours = sorted.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0);
-  const ptoDays = sorted.filter((e) => e.code === 'PTO').length;
-  const sickDays = sorted.filter((e) => e.code === 'SICK' || e.code === 'SICK_PART').length;
-  const wfhDays = sorted.filter((e) => e.location === 'WFH' || e.code === 'WFH').length;
+  const canSave = validationErrors.length === 0 && !saving;
 
-  const pendingCount = sorted.filter((e) => !e.approved).length;
-  const allApproved = pendingCount === 0;
+  async function saveWeek() {
+    if (!canSave) return;
+    setSaving(true);
+    setMsg(null);
+
+    const entries = rows.map((row) => ({
+      org_id: orgId,
+      employee_user_id: employeeId,
+      week_start: weekStart,
+      work_date: row.date,
+      location: row.location,
+      code: row.code,
+      start_time: row.startTime || null,
+      lunch_out: row.lunchOut || null,
+      lunch_in: row.lunchIn || null,
+      end_time: row.endTime || null,
+      unpaid_break_minutes: row.unpaidBreak || 0,
+      notes: row.notes?.trim() || null,
+    }));
+
+    const { error } = await supabase
+      .from('employee_time_entries')
+      .upsert(entries, { onConflict: 'employee_user_id,work_date' });
+
+    setSaving(false);
+
+    if (error) {
+      setMsg({ type: 'error', text: `Error: ${error.message}` });
+    } else {
+      setMsg({ type: 'success', text: 'Week saved successfully.' });
+      if (onSaved) onSaved();
+    }
+  }
+
+  const isNoTime = (code) => NO_TIME_CODES.includes(code);
+
+  const inputCls =
+    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
+  const selectCls =
+    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
+  const disabledInputCls =
+    'w-full px-2 py-1.5 text-sm border border-gray-200 rounded bg-gray-100 text-gray-400 cursor-not-allowed';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      {/* Bulk actions bar */}
-      {onBulkApproval && sorted.length > 1 && (
-        <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-          <span className="text-xs text-gray-500">
-            {allApproved ? 'All entries approved' : `${pendingCount} pending approval`}
-          </span>
-          <button
-            onClick={() => onBulkApproval(sorted.map((e) => e.id), !allApproved)}
-            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
-              allApproved
-                ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200'
-                : 'text-green-700 bg-green-100 hover:bg-green-200'
-            }`}
-          >
-            {allApproved ? 'Unapprove All' : 'Approve All'}
-          </button>
-        </div>
-      )}
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[900px]">
+        <table className="w-full min-w-[950px]">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Date</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Day</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Location</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Code</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Start</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Lunch Out</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Lunch In</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">End</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Break</th>
-              <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Hours</th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Notes</th>
-              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Approved</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Day</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[120px]">Code</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[100px]">Location</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Start</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Lunch Out</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Lunch In</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">End</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase flex-1">Notes</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {sorted.map((entry) => {
-              const codeConfig = CODE_LABELS[entry.code] || { label: entry.code, bg: 'bg-gray-100', text: 'text-gray-700' };
-              const dayOfWeek = DAYS[new Date(entry.work_date + 'T00:00:00').getDay() === 0 ? 6 : new Date(entry.work_date + 'T00:00:00').getDay() - 1];
+            {rows.map((row, idx) => {
+              const noTime = isNoTime(row.code);
+              const needsNotes = NOTES_REQUIRED_CODES.includes(row.code);
 
               return (
-                <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-medium">{entry.work_date}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{dayOfWeek}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{entry.location}</td>
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${codeConfig.bg} ${codeConfig.text}`}>
-                      {codeConfig.label}
-                    </span>
+                <tr key={row.date} className="hover:bg-gray-50/50">
+                  <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                    {formatDayLabel(row.date)}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{formatTime(entry.start_time)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{formatTime(entry.lunch_out)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{formatTime(entry.lunch_in)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{formatTime(entry.end_time)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{entry.unpaid_break_minutes > 0 ? `${entry.unpaid_break_minutes}m` : '-'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-900 font-medium text-right">
-                    {entry.hours_worked != null ? parseFloat(entry.hours_worked).toFixed(2) : '-'}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-gray-600 max-w-[200px] truncate" title={entry.notes || ''}>
-                    {entry.notes || '-'}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <button
-                      onClick={() => onToggleApproval && onToggleApproval(entry.id, !entry.approved)}
-                      className="inline-flex items-center justify-center"
-                      title={entry.approved ? 'Click to unapprove' : 'Click to approve'}
+                  <td className="px-3 py-2">
+                    <select
+                      value={row.code}
+                      onChange={(e) => updateRow(idx, 'code', e.target.value)}
+                      className={selectCls}
                     >
-                      {entry.approved ? (
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                      ) : (
-                        <XCircle className="w-5 h-5 text-gray-400 hover:text-green-600 transition-colors" />
-                      )}
-                    </button>
+                      {CODES.map((c) => (
+                        <option key={c.value} value={c.value}>{c.label}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
+                    <select
+                      value={row.location}
+                      onChange={(e) => updateRow(idx, 'location', e.target.value)}
+                      className={selectCls}
+                    >
+                      {LOCATIONS.map((loc) => (
+                        <option key={loc.value} value={loc.value}>{loc.label}</option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="time"
+                      value={row.startTime}
+                      onChange={(e) => updateRow(idx, 'startTime', e.target.value)}
+                      disabled={noTime}
+                      className={noTime ? disabledInputCls : inputCls}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="time"
+                      value={row.lunchOut}
+                      onChange={(e) => updateRow(idx, 'lunchOut', e.target.value)}
+                      disabled={noTime}
+                      className={noTime ? disabledInputCls : inputCls}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="time"
+                      value={row.lunchIn}
+                      onChange={(e) => updateRow(idx, 'lunchIn', e.target.value)}
+                      disabled={noTime}
+                      className={noTime ? disabledInputCls : inputCls}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="time"
+                      value={row.endTime}
+                      onChange={(e) => updateRow(idx, 'endTime', e.target.value)}
+                      disabled={noTime}
+                      className={noTime ? disabledInputCls : inputCls}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    <input
+                      type="text"
+                      value={row.notes}
+                      onChange={(e) => updateRow(idx, 'notes', e.target.value)}
+                      placeholder={needsNotes ? 'Required...' : ''}
+                      className={`${inputCls} ${needsNotes && !row.notes.trim() ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}`}
+                    />
                   </td>
                 </tr>
               );
             })}
           </tbody>
-          {/* Summary row */}
-          <tfoot className="bg-gray-50 border-t-2 border-gray-300">
-            <tr>
-              <td colSpan={9} className="px-4 py-3 text-sm font-semibold text-gray-700">
-                Weekly Total &middot; PTO: {ptoDays} &middot; Sick: {sickDays} &middot; WFH: {wfhDays}
-              </td>
-              <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
-                {totalHours.toFixed(2)}h
-              </td>
-              <td colSpan={2} />
-            </tr>
-          </tfoot>
         </table>
+      </div>
+
+      {/* Validation errors */}
+      {validationErrors.length > 0 && (
+        <div className="px-4 py-3 bg-red-50 border-t border-red-200">
+          <ul className="text-sm text-red-700 space-y-1">
+            {validationErrors.map((err, i) => (
+              <li key={i} className="flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                {err}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Save bar */}
+      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center gap-3">
+        <button
+          disabled={!canSave}
+          onClick={saveWeek}
+          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {saving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+          {saving ? 'Saving...' : 'Save Week'}
+        </button>
+        {msg && (
+          <div className={`flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+            {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+            {msg.text}
+          </div>
+        )}
       </div>
     </div>
   );
