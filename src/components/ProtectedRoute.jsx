@@ -2,6 +2,7 @@
 // Route protection component with two-plane RBAC support
 // Supports both platform roles and agency roles
 
+import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { hasPermission } from '../lib/supabase';
@@ -34,8 +35,12 @@ const ProtectedRoute = ({
     isPlatformUser,
     hasPlatformRole,
     hasAgencyRole,
-    agencyMemberships
+    agencyMemberships,
+    refreshUser,
+    resetSession
   } = useAuth();
+
+  const [retrying, setRetrying] = useState(false);
 
   // Show loading spinner while checking auth
   if (loading) {
@@ -49,20 +54,61 @@ const ProtectedRoute = ({
     );
   }
 
-  // RBAC resolution error: fail closed with visible error state
+  // RBAC resolution error: fail closed with actionable recovery options
   if (authError) {
+    const handleRetry = async () => {
+      setRetrying(true);
+      try {
+        await refreshUser();
+      } catch (_) {
+        // refreshUser failure is already captured in authError by AuthContext
+      } finally {
+        setRetrying(false);
+      }
+    };
+
     return (
       <div className="min-h-screen bg-red-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white border border-red-200 rounded-lg shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-red-700 mb-2">Permissions could not be loaded</h2>
-          <p className="text-sm text-gray-700 mb-4">We couldn't load your permissions. Please retry.</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-          >
-            Retry
-          </button>
+          <h2 className="text-xl font-semibold text-red-700 mb-2">
+            Permissions could not be loaded
+          </h2>
+          <p className="text-sm text-gray-700 mb-4">
+            {authError.message || "We couldn't verify your access. Please retry or reset your session."}
+          </p>
+
+          {authError.details && (
+            <details className="mb-4 text-xs text-gray-500">
+              <summary className="cursor-pointer hover:text-gray-700">
+                Technical details
+              </summary>
+              <pre className="mt-1 p-2 bg-gray-50 rounded overflow-auto max-h-24">
+                {authError.details}
+              </pre>
+            </details>
+          )}
+
+          <div className="flex gap-3">
+            {authError.canRetry !== false && (
+              <button
+                type="button"
+                onClick={handleRetry}
+                disabled={retrying}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded text-sm font-medium transition-colors"
+              >
+                {retrying ? 'Retrying\u2026' : 'Retry'}
+              </button>
+            )}
+            {authError.canReset !== false && (
+              <button
+                type="button"
+                onClick={resetSession}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded text-sm font-medium transition-colors"
+              >
+                Reset Session
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -71,6 +117,22 @@ const ProtectedRoute = ({
   // Must be authenticated
   if (!user) {
     return <Navigate to={redirectTo} replace />;
+  }
+
+  // Defensive: if role is null (RBAC didn't resolve but no authError was set),
+  // fail closed rather than letting undefined behavior through hasPermission.
+  // This should not normally happen — authError gate above should catch it —
+  // but guards against edge cases like state update ordering.
+  if (role === null && (requiredRole || requiredPlatformRole || requiredAgencyRole)) {
+    console.warn('[ProtectedRoute] role is null without authError — failing closed');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white border border-gray-200 rounded-lg shadow-sm p-6 text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+          <p className="text-sm text-gray-600">Verifying permissions…</p>
+        </div>
+      </div>
+    );
   }
 
   // Check platform user requirement
