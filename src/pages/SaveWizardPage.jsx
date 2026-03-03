@@ -50,6 +50,11 @@ function computeLeadScore(answers, utmParams) {
   if (answers.currentAutoCarrier === 'allstate') score -= 10;
   if (answers.currentHomeCarrier === 'allstate') score -= 10;
 
+  // NEW-3: No prior insurance penalty
+  if (answers.currentAutoCarrier === 'none') score -= 15;
+  if (answers.currentHomeCarrier === 'none') score -= 10;
+  if (answers.currentRentersCarrier === 'none') score -= 5;
+
   // NEW-2: Age-based scoring (from DOB)
   if (answers.dob) {
     const dob = new Date(answers.dob + 'T00:00:00');
@@ -69,6 +74,26 @@ function computeLeadScore(answers, utmParams) {
   if (hour >= 9 && hour <= 17) score += 10;
   if (utmParams?.utm_campaign) score += 5;
   return Math.max(0, Math.min(score, 100));
+}
+
+// UX-6: Helper to determine if the current step has a value (for showing Continue button)
+function hasValueForCurrentStep(stepId, answers) {
+  switch (stepId) {
+    case 'zip': return answers.zip?.length === 5;
+    case 'ownsHome': return answers.ownsHome != null;
+    case 'productIntent': return answers.productIntent != null;
+    case 'currentAutoCarrier': return answers.currentAutoCarrier != null;
+    case 'currentHomeCarrier': return answers.currentHomeCarrier != null;
+    case 'currentRentersCarrier': return answers.currentRentersCarrier != null;
+    case 'autoDrivingRecord': return answers.autoDrivingRecord != null;
+    case 'homeClaimsHistory': return answers.homeClaimsHistory != null;
+    case 'vehicleCount': return answers.vehicleCount != null;
+    case 'maritalStatus': return answers.maritalStatus != null;
+    case 'dob': return answers.dob?.length === 10;
+    case 'address': return answers.street?.trim()?.length > 0 && answers.city?.trim()?.length > 0;
+    case 'contact': return true;
+    default: return false;
+  }
 }
 
 // ─── Component ─────────────────────────────────────────────────────
@@ -454,7 +479,8 @@ export default function SaveWizardPage() {
 
   const isConfirmation = currentStepId === 'confirmation';
   const isContactStep = currentStepId === 'contact';
-  const showNextButton = !isConfirmation && !['ownsHome', 'productIntent', 'currentAutoCarrier', 'currentHomeCarrier', 'currentRentersCarrier', 'autoDrivingRecord', 'homeClaimsHistory', 'vehicleCount', 'maritalStatus'].includes(currentStepId);
+  // UX-6: Show Continue button on ALL steps (including auto-advance) once a value is selected
+  const showNextButton = !isConfirmation && hasValueForCurrentStep(currentStepId, answers);
   const showBackButton = !isFirstStep && !isConfirmation;
 
   // Animation class based on direction
@@ -542,9 +568,9 @@ export default function SaveWizardPage() {
               {/* Validation error for non-object errors (single string) */}
               {typeof error === 'string' && <ErrorMessage>{error}</ErrorMessage>}
 
-              {/* Navigation Buttons */}
+              {/* Navigation Buttons — UX-6: visible on all steps after selection */}
               {showNextButton && (
-                <div className="mt-6">
+                <div className="mt-6 animate-fadeInUp">
                   <button
                     type="button"
                     onClick={handleNext}

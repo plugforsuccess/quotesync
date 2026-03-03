@@ -129,6 +129,16 @@
   animation: fadeIn 0.5s ease-out;
 }
 
+/* UX-6: Subtle fade-in with upward motion for Continue button on auto-advance steps */
+@keyframes fadeInUp-btn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeInUp {
+  animation: fadeInUp-btn 200ms ease-out forwards;
+}
+
 .animate-slideUp {
   animation: slideUp 0.6s ease-out;
 }
