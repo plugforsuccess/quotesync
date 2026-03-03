@@ -151,23 +151,47 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-1">
-            Insured<span className="text-blue-600">ByCam</span>
-          </h1>
-          <p className="text-sm text-gray-500 mb-6">Agency Admin Portal</p>
-          <h2 className="text-xl font-semibold text-gray-800">
+    <div
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{
+        backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(56, 189, 148, 0.03) 0%, transparent 50%), linear-gradient(135deg, #0f1117 0%, #1a1d28 50%, #0f1117 100%)'
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl p-8"
+        style={{
+          background: 'rgba(255, 255, 255, 0.04)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.06)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+        }}
+      >
+        {/* Logo — matches global header */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span className="text-xl font-black tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent">
+              insuredbycam
+            </span>
+          </div>
+          <p className="text-sm text-gray-400">Agency Admin Portal</p>
+        </div>
+
+        <div className="text-center mb-6">
+          <h2 className="text-xl font-semibold text-white">
             {mode === 'login' ? 'Sign In' : 'Reset Password'}
           </h2>
-          <p className="text-gray-600 text-sm mt-1">
+          <p className="text-gray-400 text-sm mt-1">
             {mode === 'login' ? 'Access your dashboard' : 'Enter your email to receive a reset link'}
           </p>
         </div>
 
         {existingSession && mode === 'login' && (
-          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm mb-6">
+          <div className="bg-emerald-900/30 border border-emerald-700/40 text-emerald-300 px-4 py-3 rounded-lg text-sm mb-6">
             <strong>Already logged in.</strong> You can{' '}
             <button
               type="button"
@@ -186,7 +210,7 @@ const LoginPage = () => {
                   navigate('/');
                 }
               }}
-              className="underline font-semibold hover:text-blue-900"
+              className="underline font-semibold hover:text-emerald-200"
             >
               go to dashboard
             </button>{' '}
@@ -195,21 +219,21 @@ const LoginPage = () => {
         )}
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-6">
+          <div className="bg-red-900/30 border border-red-700/40 text-red-300 px-4 py-3 rounded-lg text-sm mb-6">
             {error}
           </div>
         )}
 
         {resetSuccess && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-6">
+          <div className="bg-emerald-900/30 border border-emerald-700/40 text-emerald-300 px-4 py-3 rounded-lg text-sm mb-6">
             {resetSuccess}
           </div>
         )}
 
         {mode === 'login' ? (
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
@@ -217,13 +241,13 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-white placeholder-gray-500"
                 placeholder="admin@example.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Password
               </label>
               <input
@@ -231,13 +255,13 @@ const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-white placeholder-gray-500"
                 placeholder="Enter your password"
               />
               <button
                 type="button"
                 onClick={() => { setMode('reset'); setError(''); setResetSuccess(''); }}
-                className="text-sm text-blue-600 hover:text-blue-800 mt-2"
+                className="text-sm text-emerald-400 hover:text-emerald-300 mt-2"
               >
                 Forgot password?
               </button>
@@ -246,15 +270,15 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
         ) : (
-          <form onSubmit={handleResetPassword} className="space-y-6">
+          <form onSubmit={handleResetPassword} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-300 mb-2">
                 Email
               </label>
               <input
@@ -262,7 +286,7 @@ const LoginPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-white placeholder-gray-500"
                 placeholder="admin@example.com"
               />
             </div>
@@ -270,7 +294,7 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Sending...' : 'Send Reset Link'}
             </button>
@@ -279,7 +303,7 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={() => { setMode('login'); setError(''); setResetSuccess(''); }}
-                className="text-sm text-blue-600 hover:text-blue-800"
+                className="text-sm text-emerald-400 hover:text-emerald-300"
               >
                 Back to Sign In
               </button>
@@ -287,9 +311,9 @@ const LoginPage = () => {
           </form>
         )}
 
-        <div className="mt-6 text-center text-xs text-gray-400 space-y-2">
-          <p className="border-t border-gray-200 pt-4">
-            <strong>Tip:</strong> If login fails, disable ad blockers or privacy extensions for this site.
+        <div className="mt-8 text-center text-xs text-gray-500 space-y-2">
+          <p className="border-t border-white/10 pt-4">
+            <strong className="text-gray-400">Tip:</strong> If login fails, disable ad blockers or privacy extensions for this site.
           </p>
           <p>&copy; {new Date().getFullYear()} InsuredByCam</p>
         </div>
