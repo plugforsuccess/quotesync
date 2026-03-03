@@ -1,5 +1,6 @@
 // src/config/nav.config.js
 // Two-Plane RBAC Navigation Configuration
+// Primary nav = always-visible links; Secondary nav = hamburger menu items
 
 export const PLANES = {
   CONSUMER: 'consumer',
@@ -15,67 +16,131 @@ export const consumerNav = [
   { to: '/store', label: 'Store', icon: '🛍️' },
 ];
 
-// Platform plane navigation by role
+// ── Primary nav items (always visible in top bar) ────────────────────────────
+
+const primaryItems = {
+  funnel:         { to: '/agency/dashboard',      label: 'Funnel',             icon: '📊' },
+  leads:          { to: '/agency/leads',           label: 'Leads',              icon: '📋' },
+  timeAttendance: { to: '/admin/time-attendance',  label: 'Time & Attendance',  icon: '⏱️' },
+  csPerformance:  { to: '/admin/cs-performance',   label: 'CS Performance',     icon: '📈' },
+};
+
+// ── Secondary nav items (inside hamburger menu) ──────────────────────────────
+
+const secondaryItems = {
+  agencyMgmt: { to: '/admin/agencies', label: 'Agency Management', icon: '🏢' },
+  newsroom:   { to: '/news/dashboard', label: 'Newsroom',          icon: '📰' },
+  audit:      { to: '/admin/audit',    label: 'Audit',             icon: '🔍' },
+};
+
+// ── Platform plane navigation by role ────────────────────────────────────────
+// Each role gets { primary: [...], secondary: [...] }
+
 export const platformNav = {
-  platform_master_admin: [
-    { to: '/admin/agencies', label: 'Agencies', icon: '🏢' },
-    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
-    { to: '/agency/leads', label: 'Leads', icon: '📋' },
-    { to: '/admin/time-attendance', label: 'Operations', icon: '⏱️' },
-    { to: '/news/dashboard', label: 'Newsroom', icon: '📰' },
-    { to: '/admin/audit', label: 'Audit', icon: '🔍' },
-  ],
-  platform_admin: [
-    { to: '/admin/agencies', label: 'Agencies', icon: '🏢' },
-    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
-    { to: '/agency/leads', label: 'Leads', icon: '📋' },
-    { to: '/admin/time-attendance', label: 'Operations', icon: '⏱️' },
-    { to: '/news/dashboard', label: 'Newsroom', icon: '📰' },
-    { to: '/admin/audit', label: 'Audit', icon: '🔍' },
-  ],
-  platform_support: [
-    { to: '/admin/agencies', label: 'Agencies', icon: '🏢' },
-    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
-    { to: '/agency/leads', label: 'Leads', icon: '📋' },
-  ],
-  platform_editor: [
-    { to: '/news/dashboard', label: 'Newsroom', icon: '📰' },
-    { to: '/news/standards', label: 'Standards', icon: '📋' },
-  ],
-  platform_auditor: [
-    { to: '/admin/audit', label: 'Audit', icon: '🔍' },
-  ],
+  platform_master_admin: {
+    primary: [
+      primaryItems.funnel,
+      primaryItems.leads,
+      primaryItems.timeAttendance,
+      primaryItems.csPerformance,
+    ],
+    secondary: [
+      secondaryItems.agencyMgmt,
+      secondaryItems.newsroom,
+      secondaryItems.audit,
+    ],
+  },
+  platform_admin: {
+    primary: [
+      primaryItems.funnel,
+      primaryItems.leads,
+      primaryItems.timeAttendance,
+      primaryItems.csPerformance,
+    ],
+    secondary: [
+      secondaryItems.agencyMgmt,
+      secondaryItems.newsroom,
+      secondaryItems.audit,
+    ],
+  },
+  platform_support: {
+    primary: [
+      primaryItems.funnel,
+      primaryItems.leads,
+    ],
+    secondary: [
+      secondaryItems.audit,
+    ],
+  },
+  platform_editor: {
+    primary: [],
+    secondary: [
+      secondaryItems.newsroom,
+      { to: '/news/standards', label: 'Standards', icon: '📋' },
+    ],
+  },
+  platform_auditor: {
+    primary: [],
+    secondary: [
+      secondaryItems.audit,
+    ],
+  },
 };
 
-// Agency plane navigation by role (Allstate terminology)
+// ── Agency plane navigation by role (Allstate terminology) ───────────────────
 // agent = agency principal (owns the book), producer = licensed staff
+
 export const agencyNav = {
-  agent: [
-    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
-    { to: '/agency/leads', label: 'Leads', icon: '📋' },
-    { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
-  ],
-  producer: [
-    { to: '/agency/leads', label: 'My Leads', icon: '📋' },
-  ],
+  agent: {
+    primary: [
+      primaryItems.funnel,
+      primaryItems.leads,
+      primaryItems.timeAttendance,
+      primaryItems.csPerformance,
+    ],
+    secondary: [
+      { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
+    ],
+  },
+  producer: {
+    primary: [
+      primaryItems.leads,
+      primaryItems.timeAttendance,
+    ],
+    secondary: [],
+  },
 };
 
-// Get navigation items based on plane and role
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+// Get structured nav { primary, secondary } based on plane and role
 export function getNavItems(plane, platformRole, agencyRole) {
   if (plane === PLANES.PLATFORM && platformRole) {
-    return platformNav[platformRole] || platformNav.platform_editor;
+    const nav = platformNav[platformRole];
+    if (nav) return nav;
+    // Fallback for unknown platform roles
+    return platformNav.platform_editor;
   }
   if (plane === PLANES.AGENCY && agencyRole) {
-    return agencyNav[agencyRole] || agencyNav.producer;
+    const nav = agencyNav[agencyRole];
+    if (nav) return nav;
+    return agencyNav.producer;
   }
-  return consumerNav;
+  // Consumer plane — no primary/secondary split, return flat for compatibility
+  return { primary: consumerNav, secondary: [] };
+}
+
+// Get flat list of all nav items (for mobile menu / backwards compat)
+export function getAllNavItems(plane, platformRole, agencyRole) {
+  const { primary, secondary } = getNavItems(plane, platformRole, agencyRole);
+  return [...primary, ...secondary];
 }
 
 // Get default landing page after login
 export function getDefaultLanding(platformRole, agencyRole) {
   if (platformRole) {
     if (platformRole === 'platform_editor') return '/news/dashboard';
-    return '/admin/agencies';
+    return '/agency/dashboard';
   }
   if (agencyRole) {
     if (agencyRole === 'agent') return '/agency/dashboard';

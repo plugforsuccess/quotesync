@@ -1,9 +1,11 @@
 // components/Layout.jsx - ULTRA ADVANCED VERSION
+// Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Sparkles, RefreshCw } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
+import HamburgerMenu from './HamburgerMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
 
@@ -30,7 +32,8 @@ function Layout() {
   }, [authPlane]);
 
   // Get navigation items based on active plane and role
-  const navItems = getNavItems(activePlane, platformRole, currentAgencyRole);
+  // Now returns { primary: [...], secondary: [...] }
+  const { primary: primaryNav, secondary: secondaryNav } = getNavItems(activePlane, platformRole, currentAgencyRole);
   const roleLabel = platformRole
     ? roleDisplayNames[platformRole]
     : currentAgencyRole
@@ -83,6 +86,9 @@ function Layout() {
       document.body.style.overflow = 'unset';
     };
   }, [mobileMenuOpen]);
+
+  // All nav items combined for mobile menu
+  const allNavItems = [...primaryNav, ...secondaryNav];
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white flex flex-col">
@@ -138,7 +144,9 @@ function Layout() {
                   <span>{activePlane === PLANES.PLATFORM ? 'Admin' : 'Consumer'}</span>
                 </button>
               )}
-              {navItems.map((item, idx) => (
+
+              {/* Primary nav items — always visible */}
+              {primaryNav.map((item, idx) => (
                 <TabLink
                   key={item.to}
                   to={item.to}
@@ -147,6 +155,12 @@ function Layout() {
                   scrollToQuote={item.scrollToQuote}
                 />
               ))}
+
+              {/* Hamburger menu for secondary nav items */}
+              {secondaryNav.length > 0 && (
+                <HamburgerMenu items={secondaryNav} />
+              )}
+
               <UserMenu />
             </nav>
 
@@ -183,7 +197,7 @@ function Layout() {
           <div className="absolute bottom-20 left-20 w-64 h-64 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float-delayed"></div>
 
           {/* Menu Content */}
-          <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp">
+          <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp overflow-y-auto">
             {/* Plane Switcher for Mobile */}
             {isPlatformUser && (
               <button
@@ -198,7 +212,8 @@ function Layout() {
               </button>
             )}
 
-            {navItems.map((item, idx) => (
+            {/* Primary nav items */}
+            {primaryNav.map((item, idx) => (
               <MobileTabLink
                 key={item.to}
                 to={item.to}
@@ -206,6 +221,25 @@ function Layout() {
                 icon={item.icon}
                 isPrimary={item.isPrimary && idx === 0}
                 scrollToQuote={item.scrollToQuote}
+              />
+            ))}
+
+            {/* Separator between primary and secondary (if both exist) */}
+            {primaryNav.length > 0 && secondaryNav.length > 0 && (
+              <div className="w-full max-w-sm flex items-center gap-3 my-2">
+                <div className="flex-1 h-px bg-white/20"></div>
+                <span className="text-xs text-white/40 uppercase tracking-wider font-medium">More</span>
+                <div className="flex-1 h-px bg-white/20"></div>
+              </div>
+            )}
+
+            {/* Secondary nav items */}
+            {secondaryNav.map((item) => (
+              <MobileTabLink
+                key={item.to}
+                to={item.to}
+                label={item.label}
+                icon={item.icon}
               />
             ))}
 

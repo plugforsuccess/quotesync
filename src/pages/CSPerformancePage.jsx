@@ -1,13 +1,15 @@
-// src/pages/AdminTimeAttendancePage.jsx
-// Admin Time & Attendance Dashboard (standalone — CS Performance split to its own page)
-// Route: /admin/time-attendance
+// src/pages/CSPerformancePage.jsx
+// CS Performance Dashboard (standalone — split from AdminTimeAttendancePage)
+// Route: /admin/cs-performance
+// Access: platform_master_admin, platform_admin, agency_admin (agent) only
 
 import { useState, useMemo } from 'react';
-import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { BarChart3, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
-import { supabase } from '../lib/supabase';
-import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
+import RCUploadForm from './components/time-attendance/RCUploadForm';
+import CSScorecard from './components/time-attendance/CSScorecard';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -34,41 +36,16 @@ function formatWeekLabel(weekStart) {
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
 
-function exportToCSV(entries, weekStart) {
-  const headers = ['Date', 'Location', 'Code', 'Start', 'Lunch Out', 'Lunch In', 'End', 'Break (min)', 'Hours Worked', 'Notes', 'Approved'];
-  const rows = entries.map((e) => [
-    e.work_date,
-    e.location,
-    e.code,
-    e.start_time || '',
-    e.lunch_out || '',
-    e.lunch_in || '',
-    e.end_time || '',
-    e.unpaid_break_minutes,
-    e.hours_worked || '',
-    (e.notes || '').replace(/,/g, ';'),
-    e.approved ? 'Yes' : 'No',
-  ]);
-
-  const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `time-entries-${weekStart}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
 // ── Page Component ─────────────────────────────────────────────────────────────
 
-const AdminTimeAttendancePage = () => {
+const CSPerformancePage = () => {
+  const { user } = useAuth();
   const { platform } = usePermissions();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('all');
 
-  // ── React Query hooks (shared cache keys with CS Performance page) ─────────
+  // ── React Query hooks (shared cache keys with T&A page) ────────────────────
 
   const {
     data: timeData,
@@ -79,49 +56,21 @@ const AdminTimeAttendancePage = () => {
 
   const {
     data: rcData = [],
+    isLoading: rcLoading,
     refetch: refetchRC,
   } = useRCData(weekStart, selectedEmployee);
 
   const { data: allEmployees = [] } = useAllEmployees();
-  const { invalidateTimeEntries } = useInvalidateTimeData();
+  const { invalidateRCData } = useInvalidateTimeData();
 
   const entries = timeData?.entries || [];
   const employees = timeData?.employees || [];
-  const isLoading = entriesLoading;
+  const isLoading = entriesLoading || rcLoading;
   const error = entriesError;
 
   function refetchAll() {
     refetchEntries();
     refetchRC();
-  }
-
-  // ── Approval Toggle (optimistic update via direct mutation + invalidate) ────
-
-  async function toggleApproval(entryId, approved) {
-    const { error } = await supabase
-      .from('employee_time_entries')
-      .update({ approved })
-      .eq('id', entryId);
-
-    if (error) {
-      console.error('Failed to update approval:', error);
-    }
-    // Invalidate to refetch and reconcile
-    invalidateTimeEntries(weekStart, selectedEmployee);
-  }
-
-  async function bulkApproval(entryIds, approved) {
-    if (!entryIds || entryIds.length === 0) return;
-
-    const { error } = await supabase
-      .from('employee_time_entries')
-      .update({ approved })
-      .in('id', entryIds);
-
-    if (error) {
-      console.error('Failed to bulk update approval:', error);
-    }
-    invalidateTimeEntries(weekStart, selectedEmployee);
   }
 
   // ── Employee name resolver ─────────────────────────────────────────────────
@@ -131,20 +80,28 @@ const AdminTimeAttendancePage = () => {
     return profile?.full_name || profile?.email || userId.substring(0, 8);
   }
 
-  // ── Group entries by employee ──────────────────────────────────────────────
+  // ── Employee map for RC upload (name → user_id) ────────────────────────────
 
-  const groupedEntries = useMemo(() => {
-    const groups = {};
-    entries.forEach((e) => {
-      if (!groups[e.employee_user_id]) groups[e.employee_user_id] = [];
-      groups[e.employee_user_id].push(e);
+  const employeeMap = useMemo(() => {
+    const map = {};
+    // Use allEmployees for the upload mapping (broader set than just those with entries)
+    const source = allEmployees.length > 0 ? allEmployees : employees;
+    source.forEach((p) => {
+      if (p.full_name) map[p.full_name] = p.id;
+      if (p.email) map[p.email] = p.id;
     });
-    return groups;
-  }, [entries]);
+    return map;
+  }, [allEmployees, employees]);
 
   // ── Employee dropdown options ──────────────────────────────────────────────
 
   const employeeOptions = allEmployees.length > 0 ? allEmployees : employees;
+
+  // ── RC upload callback — invalidate cache so both pages see fresh data ─────
+
+  function handleRCUploaded() {
+    invalidateRCData(weekStart, selectedEmployee);
+  }
 
   // ── Permission Check ───────────────────────────────────────────────────────
 
@@ -162,12 +119,12 @@ const AdminTimeAttendancePage = () => {
 
   // ── Loading / Error States ─────────────────────────────────────────────────
 
-  if (isLoading && entries.length === 0) {
+  if (isLoading && entries.length === 0 && rcData.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4" />
-          <p className="text-gray-600">Loading time entries...</p>
+          <p className="text-gray-600">Loading performance data...</p>
         </div>
       </div>
     );
@@ -199,31 +156,20 @@ const AdminTimeAttendancePage = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-blue-600" />
+              <BarChart3 className="w-8 h-8 text-blue-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Time & Attendance</h1>
-                <p className="text-gray-600 text-sm">Employee time tracking and approval</p>
+                <h1 className="text-2xl font-bold text-gray-900">CS Performance Dashboard</h1>
+                <p className="text-gray-600 text-sm">RingCentral metrics, scorecards, and discrepancy alerts</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={refetchAll}
-                disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
-                title="Refresh"
-              >
-                <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
-              </button>
-              {entries.length > 0 && (
-                <button
-                  onClick={() => exportToCSV(entries, weekStart)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  Export CSV
-                </button>
-              )}
-            </div>
+            <button
+              onClick={refetchAll}
+              disabled={isLoading}
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
+            </button>
           </div>
         </div>
       </div>
@@ -250,7 +196,7 @@ const AdminTimeAttendancePage = () => {
             </button>
           </div>
 
-          {/* Employee filter */}
+          {/* Employee filter (CS reps) */}
           <div className="flex items-center gap-2">
             <Filter className="w-4 h-4 text-gray-500" />
             <select
@@ -258,7 +204,7 @@ const AdminTimeAttendancePage = () => {
               onChange={(e) => setSelectedEmployee(e.target.value)}
               className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-blue-500"
             >
-              <option value="all">All Employees</option>
+              <option value="all">All CS Reps</option>
               {employeeOptions.map((emp) => (
                 <option key={emp.id} value={emp.id}>
                   {emp.full_name || emp.email || emp.id.substring(0, 8)}
@@ -280,63 +226,44 @@ const AdminTimeAttendancePage = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="space-y-6">
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="text-2xl font-bold text-gray-900">{entries.length}</div>
-              <div className="text-sm text-gray-600">Total Entries</div>
-            </div>
-            <div className="bg-blue-50 rounded-lg border border-blue-100 p-4">
-              <div className="text-2xl font-bold text-blue-700">
-                {entries.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0).toFixed(1)}h
-              </div>
-              <div className="text-sm text-blue-600">Total Hours</div>
-            </div>
-            <div className="bg-green-50 rounded-lg border border-green-100 p-4">
-              <div className="text-2xl font-bold text-green-700">
-                {entries.filter((e) => e.approved).length}
-              </div>
-              <div className="text-sm text-green-600">Approved</div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg border border-yellow-100 p-4">
-              <div className="text-2xl font-bold text-yellow-700">
-                {entries.filter((e) => !e.approved).length}
-              </div>
-              <div className="text-sm text-yellow-600">Pending</div>
-            </div>
-          </div>
+          {/* RC Upload */}
+          <RCUploadForm
+            orgId={user?.id}
+            weekStart={weekStart}
+            employeeMap={employeeMap}
+            onUploaded={handleRCUploaded}
+          />
 
-          {/* Entries by employee */}
-          {Object.keys(groupedEntries).length === 0 ? (
+          {/* Scorecards */}
+          {rcData.length === 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">No time entries</h2>
-              <p className="text-gray-600">No entries have been logged for this week.</p>
+              <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">No performance data</h2>
+              <p className="text-gray-600">Upload RingCentral CSV data to see the scorecard.</p>
             </div>
           ) : (
-            Object.entries(groupedEntries).map(([userId, userEntries]) => (
-              <div key={userId}>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-gray-400" />
-                  {getEmployeeName(userId)}
-                </h3>
+            rcData.map((rc) => {
+              const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
+              const daysWorked = empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length;
 
-                {/* Cross-check alerts for this employee */}
-                <div className="mb-4">
+              return (
+                <div key={rc.id} className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-gray-400" />
+                    {rc.employee_name || getEmployeeName(rc.employee_user_id)}
+                  </h3>
+
+                  {/* Cross-check alerts */}
                   <DiscrepancyAlerts
-                    timeEntries={userEntries}
-                    rcData={rcData.find((r) => r.employee_user_id === userId)}
+                    timeEntries={empEntries}
+                    rcData={rc}
                     weekStart={weekStart}
                   />
-                </div>
 
-                <WeeklyTimeTable
-                  entries={userEntries}
-                  onToggleApproval={toggleApproval}
-                  onBulkApproval={bulkApproval}
-                />
-              </div>
-            ))
+                  <CSScorecard rcData={rc} daysWorked={daysWorked || 5} />
+                </div>
+              );
+            })
           )}
         </div>
       </div>
@@ -344,4 +271,4 @@ const AdminTimeAttendancePage = () => {
   );
 };
 
-export default AdminTimeAttendancePage;
+export default CSPerformancePage;

@@ -53,6 +53,7 @@ const AdminAgenciesPage = lazy(() => import('./pages/AdminAgenciesPage'));
 const AdminAgencyDetailPage = lazy(() => import('./pages/AdminAgencyDetailPage'));
 const AdminAuditPage = lazy(() => import('./pages/AdminAuditPage'));
 const AdminTimeAttendancePage = lazy(() => import('./pages/AdminTimeAttendancePage'));
+const CSPerformancePage = lazy(() => import('./pages/CSPerformancePage'));
 const AgencyLeadsPage = lazy(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
 const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
@@ -268,13 +269,25 @@ function App() {
               }
             />
 
-            {/* Admin - Time & Attendance / CS Performance (platform_admin+) */}
+            {/* Admin - Time & Attendance (platform_admin+) */}
             <Route
               path="admin/time-attendance"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <Suspense fallback={<PageLoader />}>
                     <AdminTimeAttendancePage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin - CS Performance Dashboard (platform_admin+) */}
+            <Route
+              path="admin/cs-performance"
+              element={
+                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <CSPerformancePage />
                   </Suspense>
                 </ProtectedRoute>
               }
