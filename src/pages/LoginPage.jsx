@@ -43,10 +43,10 @@ const LoginPage = () => {
       if (event === 'SIGNED_IN' && session) {
         // Fetch user profile to determine redirect destination
         try {
-          const profile = await getUserProfile(session.user.id);
-          const platformRole = profile?.platform_role;
+          const result = await getUserProfile(session.user.id);
+          const platformRole = result.platformRole;
           // Determine agency role from first active membership
-          const activeMemberships = (profile?.agencyMemberships || []).filter(
+          const activeMemberships = (result.agencyMemberships || []).filter(
             m => m.status === 'active' && m.agencies?.status === 'approved'
           );
           const agencyRole = activeMemberships.length > 0
@@ -57,8 +57,9 @@ const LoginPage = () => {
           // Delay to ensure AuthProvider has processed the change
           setTimeout(() => navigate(destination), 300);
         } catch (err) {
-          console.error('[LoginPage] Profile fetch error, defaulting to /news/dashboard');
-          setTimeout(() => navigate('/news/dashboard'), 300);
+          console.error('[LoginPage] Profile fetch error. Blocking login redirect.', err);
+          setError('We could not load your permissions. Please contact support if this continues.');
+          setLoading(false);
         }
       }
     });
@@ -142,9 +143,9 @@ const LoginPage = () => {
               type="button"
               onClick={async () => {
                 try {
-                  const profile = await getUserProfile();
-                  const platformRole = profile?.platform_role;
-                  const activeMemberships = (profile?.agencyMemberships || []).filter(
+                  const result = await getUserProfile();
+                  const platformRole = result.platformRole;
+                  const activeMemberships = (result.agencyMemberships || []).filter(
                     m => m.status === 'active' && m.agencies?.status === 'approved'
                   );
                   const agencyRole = activeMemberships.length > 0

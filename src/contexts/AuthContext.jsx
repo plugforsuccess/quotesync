@@ -3,7 +3,7 @@
 // Platform plane: internal staff (platform_master_admin, platform_admin, platform_support, platform_editor, platform_auditor)
 // Tenant plane: agency users (agent, manager, producer, viewer)
 
-import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({
@@ -22,6 +22,7 @@ const AuthContext = createContext({
   impersonationSession: null,
   // State
   loading: true,
+  authError: null,
   // Actions
   signOut: async () => {},
   refreshUser: async () => {},
@@ -66,16 +67,22 @@ export const AuthProvider = ({ children }) => {
   const [isImpersonating, setIsImpersonating] = useState(false);
   const [impersonationSession, setImpersonationSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null);
+  const requestIdRef = useRef(0);
 
   // Fetch user profile and memberships
   const fetchUserProfile = async (currentUser) => {
+    const requestId = ++requestIdRef.current;
+
     if (!currentUser) {
       resetState();
+      setAuthError(null);
       return;
     }
 
+    console.log('[AUTHZ] resolving for uid=', currentUser.id);
+
     try {
-      // Fetch profile with platform role
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id, email, full_name, role, platform_role, is_platform_user')
@@ -83,17 +90,14 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (profileError) {
-        console.error('[AuthProvider] CRITICAL: Profile fetch failed:', profileError);
-        console.error('[AuthProvider] User will be treated as viewer. This is likely an RLS policy issue.');
-        setUser(currentUser);
-        setProfile(null);
-        setRole('viewer');
-        setIsPlatformUser(false);
-        setPlatformRole(null);
-        return;
+        console.error('[AUTHZ] profile fetch error', { uid: currentUser.id, profileError });
+        throw new Error(`PROFILE_FETCH_FAILED:${profileError.message}`);
       }
 
-      // Fetch agency memberships
+      if (!profileData || profileData.id !== currentUser.id) {
+        throw new Error('AUTH_UID_PROFILE_MISMATCH');
+      }
+
       const { data: memberships, error: membershipError } = await supabase
         .from('agency_memberships')
         .select(`
@@ -112,10 +116,10 @@ export const AuthProvider = ({ children }) => {
         .eq('status', 'active');
 
       if (membershipError) {
-        console.error('[AuthProvider] Error fetching memberships:', membershipError);
+        console.error('[AUTHZ] membership fetch error', { uid: currentUser.id, membershipError });
+        throw new Error(`MEMBERSHIP_FETCH_FAILED:${membershipError.message}`);
       }
 
-      // Check for active impersonation session
       let activeImpersonation = null;
       if (profileData?.is_platform_user) {
         const { data: impersonation, error: impError } = await supabase
@@ -131,17 +135,20 @@ export const AuthProvider = ({ children }) => {
         activeImpersonation = impersonation;
       }
 
-      // Set state
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      setAuthError(null);
       setUser(currentUser);
       setProfile(profileData);
-      setRole(profileData?.role || 'viewer'); // Legacy compatibility
+      setRole(profileData?.role || 'viewer');
       setIsPlatformUser(profileData?.is_platform_user || false);
       setPlatformRole(profileData?.platform_role || null);
       setAgencyMemberships(memberships || []);
       setIsImpersonating(!!activeImpersonation);
       setImpersonationSession(activeImpersonation);
 
-      // Set current agency from first active membership (or localStorage preference)
       const storedAgencyId = localStorage.getItem('currentAgencyId');
       const activeMemberships = (memberships || []).filter(m =>
         m.status === 'active' && m.agencies?.status === 'approved'
@@ -153,22 +160,45 @@ export const AuthProvider = ({ children }) => {
         setCurrentAgencyId(current.agency_id);
         setCurrentAgencyRole(current.agency_role);
       } else if (activeImpersonation) {
-        // If impersonating, use target agency
         setCurrentAgencyId(activeImpersonation.target_agency_id);
-        setCurrentAgencyRole('viewer'); // Read-only during impersonation by default
+        setCurrentAgencyRole('viewer');
+      } else {
+        setCurrentAgencyId(null);
+        setCurrentAgencyRole(null);
       }
 
-      console.log('[AuthProvider] Profile loaded:', {
-        email: profileData?.email,
-        isPlatformUser: profileData?.is_platform_user,
+      console.log('[AUTHZ] resolved', {
+        uid: currentUser.id,
         platformRole: profileData?.platform_role,
-        agencyCount: memberships?.length || 0,
+        membershipCount: memberships?.length || 0,
         isImpersonating: !!activeImpersonation
       });
     } catch (error) {
-      console.error('[AuthProvider] Exception fetching profile:', error);
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
+      console.error('[AUTHZ] error', {
+        uid: currentUser.id,
+        message: error?.message || 'Unknown authz error',
+        error
+      });
       setUser(currentUser);
-      resetState();
+      setProfile(null);
+      setRole('viewer');
+      setIsPlatformUser(false);
+      setPlatformRole(null);
+      setAgencyMemberships([]);
+      setCurrentAgencyId(null);
+      setCurrentAgencyRole(null);
+      setIsImpersonating(false);
+      setImpersonationSession(null);
+      setAuthError({
+        code: 'AUTHZ_RESOLUTION_FAILED',
+        message: "We couldn't load your permissions. Please retry.",
+        timestamp: new Date().toISOString(),
+        details: error?.message || 'Unknown error'
+      });
     }
   };
 
@@ -183,6 +213,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentAgencyRole(null);
     setIsImpersonating(false);
     setImpersonationSession(null);
+    setAuthError(null);
   };
 
   // Initialize auth state on mount
@@ -194,8 +225,11 @@ export const AuthProvider = ({ children }) => {
         const { data: { session } } = await supabase.auth.getSession();
 
         if (mounted) {
+          console.log('[AUTH] session loaded', { hasSession: !!session, uid: session?.user?.id || null });
           if (session?.user) {
             await fetchUserProfile(session.user);
+          } else {
+            resetState();
           }
           setLoading(false);
         }
@@ -214,7 +248,7 @@ export const AuthProvider = ({ children }) => {
       async (event, session) => {
         if (!mounted) return;
 
-        console.log('[AuthProvider] Auth state changed:', event, session?.user?.email);
+        console.log('[AUTH] state changed', { event, email: session?.user?.email || null });
 
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
@@ -225,6 +259,8 @@ export const AuthProvider = ({ children }) => {
         } else if (event === 'SIGNED_OUT') {
           resetState();
         }
+
+        setLoading(false);
       }
     );
 
@@ -358,6 +394,7 @@ export const AuthProvider = ({ children }) => {
     impersonationSession,
     // State
     loading,
+    authError,
     // Actions
     signOut,
     refreshUser,
