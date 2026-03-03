@@ -13,6 +13,8 @@ export const timeAttendanceKeys = {
     ['time-entries', weekStart, employeeId || 'all'],
   rcData: (weekStart, employeeId) =>
     ['rc-performance', weekStart, employeeId || 'all'],
+  proactivity: (weekStart, employeeId) =>
+    ['cs-proactivity', weekStart, employeeId || 'all'],
   allEmployees: () => ['employees', 'platform-users'],
 };
 
@@ -61,6 +63,21 @@ async function fetchRCData(weekStart, selectedEmployee) {
   return data || [];
 }
 
+async function fetchProactivityData(weekStart, selectedEmployee) {
+  let query = supabase
+    .from('cs_proactivity_manual')
+    .select('*')
+    .eq('week_start', weekStart);
+
+  if (selectedEmployee && selectedEmployee !== 'all') {
+    query = query.eq('employee_user_id', selectedEmployee);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return data || [];
+}
+
 async function fetchAllPlatformEmployees() {
   const { data } = await supabase
     .from('profiles')
@@ -87,6 +104,13 @@ export function useRCData(weekStart, selectedEmployee) {
   });
 }
 
+export function useProactivityData(weekStart, selectedEmployee) {
+  return useQuery({
+    queryKey: timeAttendanceKeys.proactivity(weekStart, selectedEmployee),
+    queryFn: () => fetchProactivityData(weekStart, selectedEmployee),
+  });
+}
+
 export function useAllEmployees() {
   return useQuery({
     queryKey: timeAttendanceKeys.allEmployees(),
@@ -109,12 +133,19 @@ export function useInvalidateTimeData() {
       queryClient.invalidateQueries({
         queryKey: timeAttendanceKeys.rcData(weekStart, selectedEmployee),
       }),
+    invalidateProactivity: (weekStart, selectedEmployee) =>
+      queryClient.invalidateQueries({
+        queryKey: timeAttendanceKeys.proactivity(weekStart, selectedEmployee),
+      }),
     invalidateAll: (weekStart, selectedEmployee) => {
       queryClient.invalidateQueries({
         queryKey: timeAttendanceKeys.timeEntries(weekStart, selectedEmployee),
       });
       queryClient.invalidateQueries({
         queryKey: timeAttendanceKeys.rcData(weekStart, selectedEmployee),
+      });
+      queryClient.invalidateQueries({
+        queryKey: timeAttendanceKeys.proactivity(weekStart, selectedEmployee),
       });
     },
   };

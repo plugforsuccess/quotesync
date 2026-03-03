@@ -101,10 +101,7 @@ export function computeMetrics(rcData, daysWorked) {
   const transferRate = totalCalls > 0 ? (transfers / totalCalls) * 100 : 0;
   const avgCallsPerDay = effectiveDays > 0 ? totalCalls / effectiveDays : 0;
 
-  const talkTimeHours = (rcData.talk_time_minutes || 0) / 60;
-  const loggedInHours = (rcData.logged_in_minutes || 0) / 60;
-  const availableHours = (rcData.available_minutes || 0) / 60;
-  const offlineHours = (rcData.offline_minutes || 0) / 60;
+  const totalHandleTimeHours = (rcData.total_handle_time_minutes || 0) / 60;
 
   const daily = rcData.daily_breakdown || [];
   const hasZeroCallDays = daily.some((d) => (d.total_calls || 0) === 0);
@@ -115,10 +112,7 @@ export function computeMetrics(rcData, daysWorked) {
     missedCallRate,
     transferRate,
     avgCallsPerDay,
-    talkTimeHours,
-    loggedInHours,
-    availableHours,
-    offlineHours,
+    totalHandleTimeHours,
     hasZeroCallDays,
     outboundEveryDay,
   };

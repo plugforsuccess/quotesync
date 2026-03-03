@@ -240,7 +240,7 @@ export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity,
           <MetricRowPDF label="Inbound Calls" target="Track only" actual={rcData.inbound_calls} />
           <MetricRowPDF label="Outbound Calls" target={`≥ ${t.outbound_calls_weekly}`} actual={rcData.outbound_calls} />
           <MetricRowPDF label="Avg Calls/Day" target={`≥ ${t.avg_calls_per_day}`} actual={metrics.avgCallsPerDay.toFixed(1)} />
-          <MetricRowPDF label="Talk Time" target="≥ 8" actual={metrics.talkTimeHours.toFixed(1)} unit="h" />
+          <MetricRowPDF label="Total Handle Time" target="Track only" actual={metrics.totalHandleTimeHours.toFixed(1)} unit="h" />
           <MetricRowPDF
             label="Avg Handle Time"
             target={`${t.avg_handle_time_min_low}–${t.avg_handle_time_min_high}`}
@@ -287,8 +287,8 @@ export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity,
           </View>
           <View style={styles.proactivityRow}>
             <Text style={styles.proactivityLabel}>Follow-Up Notes Logged (manual)</Text>
-            <Text style={[styles.proactivityStatus, proactivity?.followup_notes_logged ? styles.good : styles.bad]}>
-              {proactivity?.followup_notes_logged ? 'Yes' : 'No'}
+            <Text style={[styles.proactivityStatus, proactivity?.follow_up_notes_logged ? styles.good : styles.bad]}>
+              {proactivity?.follow_up_notes_logged ? 'Yes' : 'No'}
             </Text>
           </View>
           <View style={styles.proactivityRow}>

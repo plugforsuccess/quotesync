@@ -1,104 +1,91 @@
 // src/pages/components/time-attendance/RCUploadForm.jsx
-// CSV upload form for RingCentral User Performance + User Status reports
+// XLSX upload form for RingCentral User Performance report
+// Uses SheetJS to parse the "Users" sheet from RC Analytics exports.
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import * as XLSX from 'xlsx';
 
-function toMonday(d) {
-  const date = new Date(d);
-  const day = date.getDay();
-  const diff = (day === 0 ? -6 : 1) - day;
-  date.setDate(date.getDate() + diff);
-  return date.toISOString().slice(0, 10);
-}
+// ── Time Parsing ────────────────────────────────────────────────────────────────
 
-function parseCSV(text) {
-  const lines = text.split('\n').filter((l) => l.trim());
-  if (lines.length < 2) return [];
-
-  const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
-  const rows = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (const char of lines[i]) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    values.push(current.trim());
-
-    const row = {};
-    headers.forEach((h, idx) => {
-      row[h] = values[idx] || '';
-    });
-    rows.push(row);
-  }
-  return rows;
-}
-
-function parseMinutes(str) {
-  if (!str) return 0;
-  // Handle "HH:MM:SS" format
+/** Parse HH:MM:SS timedelta string to minutes */
+function parseTimedeltaMinutes(val) {
+  if (!val) return 0;
+  const str = String(val).trim();
+  // HH:MM:SS format
   const hms = str.match(/^(\d+):(\d+):(\d+)$/);
   if (hms) {
     return parseInt(hms[1], 10) * 60 + parseInt(hms[2], 10) + parseInt(hms[3], 10) / 60;
   }
-  // Handle "Xh Ym" format
+  // Xh Ym format
   const hm = str.match(/(\d+)h\s*(\d+)m/i);
   if (hm) {
     return parseInt(hm[1], 10) * 60 + parseInt(hm[2], 10);
   }
-  // Try plain number (already minutes)
+  // Plain number (already minutes)
   const num = parseFloat(str);
   return isNaN(num) ? 0 : num;
 }
 
-// Map common column names to our schema fields
+/** Parse HH:MM:SS timedelta string to seconds */
+function parseTimedeltaSeconds(val) {
+  if (!val) return 0;
+  const str = String(val).trim();
+  const hms = str.match(/^(\d+):(\d+):(\d+)$/);
+  if (hms) {
+    return parseInt(hms[1], 10) * 3600 + parseInt(hms[2], 10) * 60 + parseInt(hms[3], 10);
+  }
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+}
+
+// ── Column Mapping ──────────────────────────────────────────────────────────────
+// RC XLSX column headers contain special characters (#, %, trailing spaces).
+// We normalize headers to lowercase trimmed strings and match against aliases.
+
 const COLUMN_MAPPINGS = {
-  // User/Name
-  name: ['user name', 'user', 'name', 'agent name', 'agent', 'full name', 'employee'],
-  // Calls
-  total_calls: ['total calls', 'calls', 'total'],
-  inbound_calls: ['inbound calls', 'inbound', 'calls received', 'received'],
-  outbound_calls: ['outbound calls', 'outbound', 'calls made', 'made'],
-  answered_calls: ['answered calls', 'calls answered', 'answered', 'connected calls'],
-  missed_calls: ['missed calls', 'calls missed', 'missed', 'unanswered calls', 'unanswered'],
-  // Talk time
-  talk_time: ['talk time', 'talk duration', 'total talk time', 'call time'],
-  avg_handle_time: ['avg handle time', 'average handle time', 'aht', 'avg talk time'],
-  total_handle_time: ['total handle time', 'handle time', 'total aht'],
-  // Hold & Speed
-  avg_hold_time: ['avg hold time', 'average hold time', 'hold time', 'avg on hold'],
-  avg_speed_of_answer: ['avg speed of answer', 'speed of answer', 'asa', 'average speed of answer', 'avg answer speed'],
-  // Transfers
-  transfers: ['transfers', 'transferred', 'transfer count', 'calls transferred'],
-  // Status
-  logged_in: ['logged in time', 'logged in', 'login time', 'total logged in', 'online time'],
-  available: ['available time', 'available', 'total available'],
-  offline: ['offline time', 'offline', 'total offline'],
+  name:                    ['name', 'user name', 'user', 'agent name', 'agent', 'full name', 'employee'],
+  total_calls:             ['total calls', 'calls', 'total'],
+  avg_calls_per_day:       ['avg. calls/day', 'avg calls/day', 'avg. calls per day', 'avg calls per day'],
+  inbound_calls:           ['# inbound', 'inbound', 'inbound calls', 'calls received'],
+  outbound_calls:          ['# outbound', 'outbound', 'outbound calls', 'calls made'],
+  answered_calls:          ['# answered', 'answered', 'answered calls'],
+  missed_calls:            ['# missed (w/vm)', '# missed', 'missed calls', 'missed (w/vm)', 'missed'],
+  missed_pct:              ['% missed (w/vm)', '% missed', 'missed %', 'missed pct'],
+  transfers:               ['# transfers', 'transfers'],
+  transfer_pct:            ['% transferred', 'transfer %', 'transferred %', 'transfer pct'],
+  voicemails:              ['# voicemail', 'voicemail', 'voicemails'],
+  hold_count:              ['# holds', 'holds', 'hold count'],
+  avg_handle_time:         ['avg. handle time', 'avg handle time', 'average handle time', 'aht'],
+  total_handle_time:       ['total handle time'],
+  avg_handle_time_in:      ['avg. handle time (in)', 'avg handle time (in)', 'avg. handle time (inbound)'],
+  avg_handle_time_out:     ['avg. handle time (out)', 'avg handle time (out)', 'avg. handle time (outbound)'],
+  avg_hold_time:           ['avg. hold time', 'avg hold time', 'average hold time'],
+  avg_speed_of_answer:     ['avg. speed of answer', 'avg speed of answer', 'speed of answer', 'asa'],
+  total_call_sessions:     ['total call sessions', 'call sessions'],
 };
 
-function findColumn(row, aliases) {
-  const keys = Object.keys(row);
+function normalizeHeader(h) {
+  return String(h).trim().toLowerCase();
+}
+
+function findColumn(row, normalizedKeys, aliases) {
   for (const alias of aliases) {
-    const match = keys.find((k) => k.toLowerCase() === alias);
-    if (match) return row[match];
+    const match = normalizedKeys.find((k) => k === alias);
+    if (match !== undefined) {
+      // Find original key that normalizes to this
+      const originalKey = Object.keys(row).find((k) => normalizeHeader(k) === match);
+      if (originalKey !== undefined) return row[originalKey];
+    }
   }
   return null;
 }
 
+// ── Validation ──────────────────────────────────────────────────────────────────
+
 const MAX_ROWS = 500;
-const MAX_MINUTES_PER_WEEK = 10080; // 168 hrs
+const MAX_MINUTES_PER_WEEK = 10080;
 const MAX_CALLS = 10000;
 
 function clampInt(val, min, max) {
@@ -113,13 +100,22 @@ function clampFloat(val, min, max) {
   return Math.max(min, Math.min(max, n));
 }
 
+function parsePct(val) {
+  if (!val) return 0;
+  const str = String(val).replace('%', '').trim();
+  const n = parseFloat(str);
+  return isNaN(n) ? 0 : Math.max(0, Math.min(100, n));
+}
+
+// ── Component ───────────────────────────────────────────────────────────────────
+
 export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded }) {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [preview, setPreview] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [warnings, setWarnings] = useState([]);
-  const [confirmModal, setConfirmModal] = useState(null); // { matchedRows, unmatchedNames, skippedCount }
+  const [confirmModal, setConfirmModal] = useState(null);
   const fileRef = useRef(null);
 
   async function handleFile(e) {
@@ -130,86 +126,89 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
     setPreview(null);
     setWarnings([]);
 
-    const text = await file.text();
-    const rows = parseCSV(text);
+    try {
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: 'array' });
 
-    if (rows.length === 0) {
-      setMsg({ type: 'error', text: 'No data rows found in CSV.' });
-      return;
+      // Target the "Users" sheet; fall back to first sheet if not found
+      const sheetName = workbook.SheetNames.find(
+        (s) => s.toLowerCase() === 'users'
+      ) || workbook.SheetNames[0];
+
+      if (!sheetName) {
+        setMsg({ type: 'error', text: 'No sheets found in the XLSX file.' });
+        return;
+      }
+
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+      if (rows.length === 0) {
+        setMsg({ type: 'error', text: `No data rows found in sheet "${sheetName}".` });
+        return;
+      }
+
+      if (rows.length > MAX_ROWS) {
+        setMsg({ type: 'error', text: `Sheet has ${rows.length} rows. Maximum is ${MAX_ROWS}.` });
+        return;
+      }
+
+      const parseWarnings = [];
+
+      const parsed = rows
+        .map((row, idx) => {
+          const nKeys = Object.keys(row).map(normalizeHeader);
+          const name = findColumn(row, nKeys, COLUMN_MAPPINGS.name) || '';
+          if (!name) return null;
+
+          const matchedId = employeeMap?.[name];
+          if (!matchedId) {
+            parseWarnings.push(`Row ${idx + 2}: "${name}" does not match any known employee.`);
+          }
+
+          return {
+            employee_name: name,
+            matched: !!matchedId,
+            total_calls:                 clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.total_calls) || '0', 0, MAX_CALLS),
+            avg_calls_per_day:           clampFloat(findColumn(row, nKeys, COLUMN_MAPPINGS.avg_calls_per_day) || '0', 0, 2000),
+            inbound_calls:               clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.inbound_calls) || '0', 0, MAX_CALLS),
+            outbound_calls:              clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.outbound_calls) || '0', 0, MAX_CALLS),
+            answered_calls:              clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.answered_calls) || '0', 0, MAX_CALLS),
+            missed_calls:                clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.missed_calls) || '0', 0, MAX_CALLS),
+            missed_pct:                  parsePct(findColumn(row, nKeys, COLUMN_MAPPINGS.missed_pct)),
+            transfers:                   clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.transfers) || '0', 0, MAX_CALLS),
+            transfer_pct:                parsePct(findColumn(row, nKeys, COLUMN_MAPPINGS.transfer_pct)),
+            voicemails:                  clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.voicemails) || '0', 0, MAX_CALLS),
+            hold_count:                  clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.hold_count) || '0', 0, MAX_CALLS),
+            avg_handle_time_minutes:     clampFloat(parseTimedeltaMinutes(findColumn(row, nKeys, COLUMN_MAPPINGS.avg_handle_time)), 0, 1440),
+            total_handle_time_minutes:   clampFloat(parseTimedeltaMinutes(findColumn(row, nKeys, COLUMN_MAPPINGS.total_handle_time)), 0, MAX_MINUTES_PER_WEEK),
+            avg_handle_time_in_minutes:  clampFloat(parseTimedeltaMinutes(findColumn(row, nKeys, COLUMN_MAPPINGS.avg_handle_time_in)), 0, 1440),
+            avg_handle_time_out_minutes: clampFloat(parseTimedeltaMinutes(findColumn(row, nKeys, COLUMN_MAPPINGS.avg_handle_time_out)), 0, 1440),
+            avg_hold_time_minutes:       clampFloat(parseTimedeltaMinutes(findColumn(row, nKeys, COLUMN_MAPPINGS.avg_hold_time)), 0, 1440),
+            avg_speed_of_answer_seconds: clampFloat(parseTimedeltaSeconds(findColumn(row, nKeys, COLUMN_MAPPINGS.avg_speed_of_answer)), 0, 86400),
+            total_call_sessions:         clampInt(findColumn(row, nKeys, COLUMN_MAPPINGS.total_call_sessions) || '0', 0, MAX_CALLS),
+          };
+        })
+        .filter(Boolean);
+
+      setWarnings(parseWarnings);
+      setPreview(parsed);
+    } catch (err) {
+      setMsg({ type: 'error', text: `Failed to parse file: ${err.message}` });
     }
-
-    if (rows.length > MAX_ROWS) {
-      setMsg({ type: 'error', text: `CSV has ${rows.length} rows. Maximum is ${MAX_ROWS}. Please split the file or filter to the current week's data.` });
-      return;
-    }
-
-    const parseWarnings = [];
-
-    // Parse rows into our data shape with validation bounds
-    const parsed = rows
-      .map((row, idx) => {
-        const name = findColumn(row, COLUMN_MAPPINGS.name) || '';
-        if (!name) return null;
-
-        const totalCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.total_calls) || '0', 0, MAX_CALLS);
-        const inboundCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.inbound_calls) || '0', 0, MAX_CALLS);
-        const outboundCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.outbound_calls) || '0', 0, MAX_CALLS);
-        const answeredCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.answered_calls) || '0', 0, MAX_CALLS);
-        const missedCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.missed_calls) || '0', 0, MAX_CALLS);
-        const talkTime = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.talk_time)), 0, MAX_MINUTES_PER_WEEK);
-        const aht = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.avg_handle_time)), 0, 1440);
-        const totalHandleTime = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.total_handle_time)), 0, MAX_MINUTES_PER_WEEK);
-        const avgHoldTime = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.avg_hold_time)), 0, 1440);
-        const avgSpeedOfAnswer = clampFloat(findColumn(row, COLUMN_MAPPINGS.avg_speed_of_answer) || '0', 0, 9999);
-        const transferCount = clampInt(findColumn(row, COLUMN_MAPPINGS.transfers) || '0', 0, MAX_CALLS);
-        const loggedIn = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.logged_in)), 0, MAX_MINUTES_PER_WEEK);
-        const available = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.available)), 0, MAX_MINUTES_PER_WEEK);
-        const offline = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.offline)), 0, MAX_MINUTES_PER_WEEK);
-
-        // Check for unmatched employee
-        const matchedId = employeeMap?.[name];
-        if (!matchedId) {
-          parseWarnings.push(`Row ${idx + 2}: "${name}" does not match any known employee.`);
-        }
-
-        return {
-          employee_name: name,
-          matched: !!matchedId,
-          total_calls: totalCalls,
-          inbound_calls: inboundCalls,
-          outbound_calls: outboundCalls,
-          answered_calls: answeredCalls || Math.max(0, totalCalls - missedCalls),
-          missed_calls: missedCalls,
-          talk_time_minutes: talkTime,
-          avg_handle_time_minutes: aht,
-          total_handle_time_minutes: totalHandleTime,
-          avg_hold_time_minutes: avgHoldTime,
-          avg_speed_of_answer_seconds: avgSpeedOfAnswer,
-          transfers: transferCount,
-          logged_in_minutes: loggedIn,
-          available_minutes: available,
-          offline_minutes: offline,
-        };
-      })
-      .filter(Boolean);
-
-    setWarnings(parseWarnings);
-    setPreview(parsed);
   }
 
   function submitUpload() {
     if (!preview || preview.length === 0) return;
 
-    // Filter to only matched rows — unmatched rows are skipped
     const matchedRows = preview.filter((row) => row.matched);
     const skippedCount = preview.length - matchedRows.length;
 
     if (matchedRows.length === 0) {
-      setMsg({ type: 'error', text: 'No rows matched known employees. Please check employee names in the CSV.' });
+      setMsg({ type: 'error', text: 'No rows matched known employees. Please check employee names in the file.' });
       return;
     }
 
-    // Show confirmation modal if some rows will be skipped
     if (skippedCount > 0) {
       const unmatchedNames = preview
         .filter((row) => !row.matched)
@@ -218,7 +217,6 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       return;
     }
 
-    // No unmatched rows — upload directly
     doUpload(matchedRows, 0);
   }
 
@@ -229,31 +227,33 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    const records = matchedRows.map((row) => {
-      const matchedId = employeeMap?.[row.employee_name];
+    const round2 = (v) => Math.round(v * 100) / 100;
 
-      return {
-        org_id: orgId,
-        employee_user_id: matchedId,
-        employee_name: row.employee_name,
-        week_start: weekStart,
-        total_calls: row.total_calls,
-        inbound_calls: row.inbound_calls,
-        outbound_calls: row.outbound_calls,
-        answered_calls: row.answered_calls,
-        missed_calls: row.missed_calls,
-        talk_time_minutes: Math.round(row.talk_time_minutes * 100) / 100,
-        avg_handle_time_minutes: Math.round(row.avg_handle_time_minutes * 100) / 100,
-        total_handle_time_minutes: Math.round(row.total_handle_time_minutes * 100) / 100,
-        avg_hold_time_minutes: Math.round(row.avg_hold_time_minutes * 100) / 100,
-        avg_speed_of_answer_seconds: Math.round(row.avg_speed_of_answer_seconds * 100) / 100,
-        transfers: row.transfers,
-        logged_in_minutes: Math.round(row.logged_in_minutes * 100) / 100,
-        available_minutes: Math.round(row.available_minutes * 100) / 100,
-        offline_minutes: Math.round(row.offline_minutes * 100) / 100,
-        uploaded_by: user?.id,
-      };
-    });
+    const records = matchedRows.map((row) => ({
+      org_id: orgId,
+      employee_user_id: employeeMap?.[row.employee_name],
+      employee_name: row.employee_name,
+      week_start: weekStart,
+      total_calls: row.total_calls,
+      avg_calls_per_day: round2(row.avg_calls_per_day),
+      inbound_calls: row.inbound_calls,
+      outbound_calls: row.outbound_calls,
+      answered_calls: row.answered_calls,
+      missed_calls: row.missed_calls,
+      missed_pct: round2(row.missed_pct),
+      transfers: row.transfers,
+      transfer_pct: round2(row.transfer_pct),
+      voicemails: row.voicemails,
+      hold_count: row.hold_count,
+      avg_handle_time_minutes: round2(row.avg_handle_time_minutes),
+      total_handle_time_minutes: round2(row.total_handle_time_minutes),
+      avg_handle_time_in_minutes: round2(row.avg_handle_time_in_minutes),
+      avg_handle_time_out_minutes: round2(row.avg_handle_time_out_minutes),
+      avg_hold_time_minutes: round2(row.avg_hold_time_minutes),
+      avg_speed_of_answer_seconds: round2(row.avg_speed_of_answer_seconds),
+      total_call_sessions: row.total_call_sessions,
+      uploaded_by: user?.id,
+    }));
 
     const { error } = await supabase.from('rc_performance_data').upsert(records, {
       onConflict: 'employee_user_id,week_start',
@@ -292,7 +292,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           <FileSpreadsheet className="w-6 h-6 text-blue-600" />
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Upload RingCentral Data</h3>
-            <p className="text-sm text-gray-500">CSV export from User Performance or User Status reports</p>
+            <p className="text-sm text-gray-500">XLSX export from User Performance report</p>
           </div>
         </div>
         <button
@@ -305,28 +305,32 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
 
       {showHelp && (
         <div className="mb-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
-          <p className="font-medium mb-2">Expected CSV columns:</p>
+          <p className="font-medium mb-2">How to export from RingCentral:</p>
+          <ol className="list-decimal list-inside space-y-1 text-blue-700 mb-3">
+            <li>Go to RingCentral Analytics &rarr; User Performance</li>
+            <li>Set date range to the target week (Mon&ndash;Fri)</li>
+            <li>Export as XLSX</li>
+          </ol>
+          <p className="font-medium mb-2">Expected columns from the "Users" sheet:</p>
           <ul className="list-disc list-inside space-y-1 text-blue-700">
-            <li><strong>User Name</strong> (or Name, Agent Name)</li>
-            <li><strong>Total Calls</strong>, <strong>Inbound Calls</strong>, <strong>Outbound Calls</strong></li>
-            <li><strong>Answered Calls</strong>, <strong>Missed Calls</strong></li>
-            <li><strong>Talk Time</strong> (HH:MM:SS or Xh Ym format)</li>
-            <li><strong>Avg Handle Time</strong>, <strong>Avg Hold Time</strong></li>
-            <li><strong>Avg Speed of Answer</strong> (seconds), <strong>Transfers</strong></li>
-            <li><strong>Logged In Time</strong>, <strong>Available Time</strong>, <strong>Offline Time</strong></li>
+            <li><strong>Name</strong> &mdash; employee matching</li>
+            <li><strong>Total Calls</strong>, <strong># Inbound</strong>, <strong># Outbound</strong>, <strong># Answered</strong></li>
+            <li><strong># Missed (w/VM)</strong>, <strong># Transfers</strong>, <strong># Holds</strong></li>
+            <li><strong>Avg. Handle Time</strong>, <strong>Total Handle Time</strong> (HH:MM:SS)</li>
+            <li><strong>Avg. Hold Time</strong>, <strong>Avg. Speed of Answer</strong> (HH:MM:SS)</li>
           </ul>
-          <p className="mt-2">Time values can be in HH:MM:SS, "Xh Ym", or minutes format.</p>
+          <p className="mt-2 text-xs">Time columns are parsed from HH:MM:SS format automatically.</p>
         </div>
       )}
 
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
-          Choose CSV
+          Choose XLSX
           <input
             ref={fileRef}
             type="file"
-            accept=".csv"
+            accept=".xlsx,.xls"
             onChange={handleFile}
             className="hidden"
           />
@@ -344,7 +348,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           <ul className="text-xs text-yellow-700 space-y-0.5 max-h-32 overflow-y-auto">
             {warnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
-          <p className="text-xs text-yellow-600 mt-1">Unmatched rows will be skipped during upload. You will be asked to confirm before proceeding.</p>
+          <p className="text-xs text-yellow-600 mt-1">Unmatched rows will be skipped during upload.</p>
         </div>
       )}
 
@@ -360,11 +364,12 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Total</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">In</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Out</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Ans</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Miss</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Answered</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Missed</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">AHT</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">ASA</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Hold</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Xfer</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Xfer %</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -379,9 +384,10 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                     <td className="px-3 py-2 text-right text-gray-600">{row.outbound_calls}</td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.answered_calls}</td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.missed_calls}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_handle_time_minutes.toFixed(1)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_hold_time_minutes.toFixed(1)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.transfers}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_handle_time_minutes.toFixed(1)}m</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_speed_of_answer_seconds.toFixed(0)}s</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_hold_time_minutes.toFixed(1)}m</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.transfer_pct.toFixed(1)}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -423,14 +429,11 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           />
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl">
-              {/* Header */}
               <div className="border-b border-gray-200 px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <UserX className="w-5 h-5 text-yellow-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Unmatched Employees
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Unmatched Employees</h3>
                   </div>
                   <button
                     onClick={() => setConfirmModal(null)}
@@ -441,8 +444,6 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                   </button>
                 </div>
               </div>
-
-              {/* Body */}
               <div className="px-6 py-4">
                 <p className="text-sm text-gray-600 mb-3">
                   {confirmModal.skippedCount} row{confirmModal.skippedCount > 1 ? 's' : ''} will be skipped because {confirmModal.skippedCount > 1 ? 'these employees don\u2019t' : 'this employee doesn\u2019t'} match any known employee:
@@ -459,8 +460,6 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                   <span className="font-medium text-gray-900">{confirmModal.matchedRows.length}</span> matched row{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
                 </p>
               </div>
-
-              {/* Footer */}
               <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
                 <button
                   onClick={() => setConfirmModal(null)}
