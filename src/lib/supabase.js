@@ -98,65 +98,67 @@ export const hasAgencyPermission = (userAgencyRole, requiredRole) => {
 /**
  * Get user profile with full RBAC info
  */
-export const getUserProfile = async () => {
-  try {
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+export const getUserProfile = async (userId = null) => {
+  const { data: { user }, error: authError } = userId
+    ? { data: { user: { id: userId } }, error: null }
+    : await supabase.auth.getUser();
 
-    if (authError || !user) {
-      return {
-        user: null,
-        profile: null,
-        isPlatformUser: false,
-        platformRole: null,
-        agencyMemberships: []
-      };
-    }
+  if (authError) {
+    console.error('[AUTHZ] auth user fetch failed', authError);
+    throw authError;
+  }
 
-    // Fetch profile
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, role, platform_role, is_platform_user')
-      .eq('id', user.id)
-      .single();
-
-    // Fetch agency memberships
-    const { data: memberships } = await supabase
-      .from('agency_memberships')
-      .select(`
-        id,
-        agency_id,
-        agency_role,
-        status,
-        agencies (
-          id,
-          name,
-          brand_name,
-          status
-        )
-      `)
-      .eq('user_id', user.id)
-      .eq('status', 'active');
-
-    return {
-      user,
-      profile: profileData,
-      isPlatformUser: profileData?.is_platform_user || false,
-      platformRole: profileData?.platform_role || null,
-      agencyMemberships: memberships || [],
-      // Legacy field
-      role: profileData?.role || 'viewer'
-    };
-  } catch (error) {
-    console.error('Error getting user profile:', error);
+  if (!user?.id) {
     return {
       user: null,
       profile: null,
-      isPlatformUser: false,
       platformRole: null,
-      agencyMemberships: [],
-      role: 'viewer'
+      agencyMemberships: []
     };
   }
+
+  const { data: profileData, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, email, full_name, role, platform_role, is_platform_user')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError) {
+    console.error('[AUTHZ] profile fetch error', { uid: user.id, profileError });
+    throw profileError;
+  }
+
+  const { data: memberships, error: membershipError } = await supabase
+    .from('agency_memberships')
+    .select(`
+      id,
+      agency_id,
+      agency_role,
+      status,
+      agencies (
+        id,
+        name,
+        brand_name,
+        status
+      )
+    `)
+    .eq('user_id', user.id)
+    .eq('status', 'active');
+
+  if (membershipError) {
+    console.error('[AUTHZ] membership fetch error', { uid: user.id, membershipError });
+    throw membershipError;
+  }
+
+  return {
+    user,
+    profile: profileData,
+    platformRole: profileData?.platform_role || null,
+    agencyMemberships: memberships || [],
+    isPlatformUser: profileData?.is_platform_user || false,
+    // Legacy field
+    role: profileData?.role || 'viewer'
+  };
 };
 
 /**

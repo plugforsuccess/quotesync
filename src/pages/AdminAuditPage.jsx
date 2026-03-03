@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { FileSearch, RefreshCw, AlertCircle, Filter, Calendar, User, Building2, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { usePermissions } from '../hooks/usePermissions';
 import { supabase } from '../lib/supabase';
 

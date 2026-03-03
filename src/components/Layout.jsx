@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Menu, X, Sparkles, RefreshCw } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
 
 function Layout() {

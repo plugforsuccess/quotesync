@@ -8,7 +8,7 @@ import { Plus, Edit, Eye, CheckCircle, XCircle, Star, Archive, AlertCircle, Refr
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
 import { useStories, useStoryStats } from '../hooks/useStories';
 import { useSessionValidation } from '../hooks/useSessionValidation.jsx';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { getBuildString } from '../utils/cacheVersion';
 import { getCategoryLabel } from '../lib/categories';
 

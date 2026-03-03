@@ -3,7 +3,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { computeLeadScore } from '../lib/leadScoring';
 
 // Fetch current user's agency ID (from agency_memberships, the authoritative source)

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Clock, CheckCircle, XCircle, Ban, Eye, RefreshCw, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { useAgencies } from '../hooks/useAgencies';
 
 const STATUS_CONFIG = {

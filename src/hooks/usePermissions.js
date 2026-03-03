@@ -3,7 +3,7 @@
 // Provides granular permission checks for platform and agency access
 
 import { useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 
 /**
  * Permission hook for two-plane RBAC

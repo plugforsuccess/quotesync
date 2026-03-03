@@ -7,7 +7,7 @@ import {
   ArrowLeft, Building2, CheckCircle, XCircle, Ban, Clock, Plus, Trash2,
   MapPin, Users, FileText, History, Save, AlertCircle, UserPlus
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import {
   useAgencyDetail,
   useAgencyRoutingRules,

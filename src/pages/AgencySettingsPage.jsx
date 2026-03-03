@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { useAgencyDetail } from '../hooks/useAgencies';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { ArrowLeft, Save, Eye, Send, Archive, Plus, Clock, CheckCircle, AlertCircle, Wifi, WifiOff, X } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 import { useDraftAutosave } from '../hooks/useDraftAutosave';
 import { useNavigationBlock } from '../hooks/useNavigationBlock';
 import DraftRestoreModal from '../components/DraftRestoreModal';

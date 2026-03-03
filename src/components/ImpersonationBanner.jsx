@@ -2,7 +2,7 @@
 // Banner shown when admin is impersonating a user
 // Displays prominent warning and provides quick exit
 
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/auth-context';
 
 export function ImpersonationBanner() {
   const {
