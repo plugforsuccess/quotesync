@@ -62,7 +62,7 @@ const TABS = [
 // ── Page Component ─────────────────────────────────────────────────────────────
 
 const CSPerformancePage = () => {
-  const { user } = useAuth();
+  const { user, currentAgencyId } = useAuth();
   const { platform } = usePermissions();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
@@ -141,6 +141,9 @@ const CSPerformancePage = () => {
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
+    // Edge Function detection has already completed by the time onUploaded fires,
+    // so invalidate the badge count immediately.
+    invalidateAlertCount();
   }
 
   // ── Proactivity save handler (uses React Query mutation + cache invalidation)
@@ -149,7 +152,7 @@ const CSPerformancePage = () => {
     if (!singleEmployee) return;
     const current = proactivityList.find((p) => p.employee_user_id === singleEmployee);
     saveProactivity({
-      org_id: user?.id,
+      org_id: currentAgencyId,
       employee_user_id: singleEmployee,
       week_start: weekStart,
       follow_up_notes_logged: field === 'follow_up_notes_logged' ? value : (current?.follow_up_notes_logged || false),
@@ -390,7 +393,7 @@ const CSPerformancePage = () => {
           <div className="space-y-6">
             {/* RC Upload */}
             <RCUploadForm
-              orgId={user?.id}
+              orgId={currentAgencyId}
               weekStart={weekStart}
               employeeMap={employeeMap}
               onUploaded={handleRCUploaded}
@@ -436,6 +439,7 @@ const CSPerformancePage = () => {
                       timeEntries={empEntries}
                       rcData={rc}
                       weekStart={weekStart}
+                      employeeId={rc.employee_user_id}
                     />
 
                     {/* Scorecard with per-employee targets and manual proactivity */}
@@ -458,7 +462,7 @@ const CSPerformancePage = () => {
                         totalOutbound={rc.outbound_calls}
                         onSave={saveOutboundBreakdown}
                         saving={savingOutboundBreakdown}
-                        orgId={user?.id}
+                        orgId={currentAgencyId}
                         employeeId={rc.employee_user_id}
                         weekStart={weekStart}
                       />
@@ -486,7 +490,7 @@ const CSPerformancePage = () => {
           onClose={() => setTargetsModalOpen(false)}
           employeeName={getEmployeeName(singleEmployee)}
           employeeId={singleEmployee}
-          orgId={user?.id}
+          orgId={currentAgencyId}
           currentTargets={employeeTargets}
           onSave={(targets) => {
             saveTargets(targets, {

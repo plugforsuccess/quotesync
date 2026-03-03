@@ -6,7 +6,10 @@ import { Menu, X, Sparkles, RefreshCw } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
+import NavBadge from './layout/NavBadge';
 import { useAuth } from '../contexts/AuthContext';
+import { usePermissions } from '../hooks/usePermissions';
+import { useUnresolvedAlertCount } from '../hooks/useAlertCount';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
 
 function Layout() {
@@ -18,8 +21,12 @@ function Layout() {
   // Two-Plane RBAC: Get user context and determine active plane
   const {
     user, profile, isPlatformUser, platformRole,
-    activePlane: authPlane, currentAgencyRole, agencyMemberships
+    activePlane: authPlane, currentAgencyRole, currentAgencyId, agencyMemberships
   } = useAuth();
+
+  // Nav badge: unresolved alert count (admin only, scoped to org)
+  const { platform } = usePermissions();
+  const { data: alertCount } = useUnresolvedAlertCount(platform.isAdmin, currentAgencyId);
 
   // Platform users can toggle between platform and consumer views
   // Agency users see agency plane, everyone else sees consumer
@@ -153,6 +160,7 @@ function Layout() {
                   label={item.label}
                   isPrimary={item.isPrimary && idx === 0}
                   scrollToQuote={item.scrollToQuote}
+                  badge={item.to === '/admin/cs-performance' ? alertCount : undefined}
                 />
               ))}
 
@@ -221,6 +229,7 @@ function Layout() {
                 icon={item.icon}
                 isPrimary={item.isPrimary && idx === 0}
                 scrollToQuote={item.scrollToQuote}
+                badge={item.to === '/admin/cs-performance' ? alertCount : undefined}
               />
             ))}
 
@@ -271,7 +280,7 @@ function Layout() {
   );
 }
 
-function TabLink({ to, label, end, scrollToQuote, isPrimary }) {
+function TabLink({ to, label, end, scrollToQuote, isPrimary, badge }) {
   const handleClick = (e) => {
     if (scrollToQuote && to === '/quotes') {
       // Small delay to allow navigation to complete
@@ -325,15 +334,18 @@ function TabLink({ to, label, end, scrollToQuote, isPrimary }) {
           {/* Shine Effect on Hover */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-full"></div>
 
-          {/* Text */}
-          <span className="relative z-10">{label}</span>
+          {/* Text + Badge */}
+          <span className="relative z-10">
+            {label}
+            {badge > 0 && <NavBadge count={badge} />}
+          </span>
         </>
       )}
     </NavLink>
   );
 }
 
-function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
+function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary, badge }) {
   const handleClick = (e) => {
     if (scrollToQuote && to === '/quotes') {
       // Small delay to allow navigation and menu close
@@ -379,8 +391,11 @@ function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
             {/* Icon */}
             <span className="text-3xl">{icon}</span>
 
-            {/* Label */}
-            <span className="flex-1">{label}</span>
+            {/* Label + Badge */}
+            <span className="flex-1 relative">
+              {label}
+              {badge > 0 && <NavBadge count={badge} />}
+            </span>
 
             {/* Arrow indicator */}
             <svg
