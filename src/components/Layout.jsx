@@ -2,7 +2,7 @@
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Sparkles, RefreshCw } from 'lucide-react';
+import { Menu, X, Sparkles } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
@@ -130,21 +130,6 @@ function Layout() {
 
             {/* Desktop Navigation with Advanced Effects */}
             <nav className="hidden md:flex items-center gap-3">
-              {/* Plane Switcher for Platform Users */}
-              {isPlatformUser && (
-                <button
-                  onClick={() => setPlaneOverride(p => {
-                    const current = p || authPlane;
-                    return current === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM;
-                  })}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full bg-white/10 hover:bg-white/20 text-gray-300 transition-all"
-                  title="Switch view"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                  <span>{activePlane === PLANES.PLATFORM ? 'Admin' : 'Consumer'}</span>
-                </button>
-              )}
-
               {/* Primary nav items — always visible */}
               {primaryNav.map((item, idx) => (
                 <TabLink
@@ -161,7 +146,13 @@ function Layout() {
                 <HamburgerMenu items={secondaryNav} />
               )}
 
-              <UserMenu />
+              <UserMenu
+                activePlane={activePlane}
+                onTogglePlane={() => setPlaneOverride(p => {
+                  const current = p || authPlane;
+                  return current === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM;
+                })}
+              />
             </nav>
 
             {/* Mobile Menu Button with Animation */}
@@ -198,20 +189,6 @@ function Layout() {
 
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp overflow-y-auto">
-            {/* Plane Switcher for Mobile */}
-            {isPlatformUser && (
-              <button
-                onClick={() => setPlaneOverride(p => {
-                  const current = p || authPlane;
-                  return current === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM;
-                })}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-full bg-white/10 hover:bg-white/20 text-gray-300 transition-all mb-2"
-              >
-                <RefreshCw className="w-4 h-4" />
-                <span>Viewing: {activePlane === PLANES.PLATFORM ? 'Platform Admin' : 'Consumer Site'}</span>
-              </button>
-            )}
-
             {/* Primary nav items */}
             {primaryNav.map((item, idx) => (
               <MobileTabLink
@@ -245,7 +222,13 @@ function Layout() {
 
             {/* User Menu for Mobile */}
             <div className="mt-4">
-              <UserMenu />
+              <UserMenu
+                activePlane={activePlane}
+                onTogglePlane={() => setPlaneOverride(p => {
+                  const current = p || authPlane;
+                  return current === PLANES.PLATFORM ? PLANES.CONSUMER : PLANES.PLATFORM;
+                })}
+              />
             </div>
 
             {/* Decorative element */}
