@@ -1,16 +1,58 @@
 // src/pages/components/time-attendance/CSScorecard.jsx
-// CS Performance Dashboard — Sections A, B, C + A-F weekly grade
+// CS Performance Dashboard — Sections A (Activity), B (Efficiency & Quality),
+// C (Proactivity) + A-F weekly grade.
+//
+// Redesigned: Section B uses answer rate, speed of answer, handle time, hold time,
+// transfer rate, and missed call rate — all available from RC User Performance export.
+// Grading model uses outbound calls + answer rate + handle time (no utilization).
 
-import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { useState } from 'react';
+import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, CheckCircle, XCircle, Edit3 } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 
 // ── Grading Logic ──────────────────────────────────────────────────────────────
+// Grade axes: outbound calls, answer rate, avg handle time
+// 1. Outbound determines the base grade
+// 2. Answer rate can downgrade by one letter
+// 3. Handle time outside 4-10 min can downgrade by one letter
+// 4. 0-call days on working days caps at D maximum
+// 5. Final grade = lowest of the three axes
 
-function calculateGrade(outboundCalls, utilization, hasZeroCallDays) {
-  if (utilization < 10 || hasZeroCallDays) return 'F';
-  if (outboundCalls < 30 || utilization < 15) return 'D';
-  if (outboundCalls >= 60 && utilization >= 25 && !hasZeroCallDays) return 'A';
-  if (outboundCalls >= 40 && utilization >= 20) return 'B';
-  return 'C';
+const GRADE_ORDER = ['A', 'B', 'C', 'D', 'F'];
+
+function downgrade(grade) {
+  const idx = GRADE_ORDER.indexOf(grade);
+  if (idx < 0 || idx >= GRADE_ORDER.length - 1) return grade;
+  return GRADE_ORDER[idx + 1];
+}
+
+function calculateGrade(outboundCalls, answerRate, avgHandleTime, hasZeroCallDays) {
+  // Base grade from outbound calls
+  let grade;
+  if (outboundCalls < 15) grade = 'F';
+  else if (outboundCalls < 30) grade = 'D';
+  else if (outboundCalls < 40) grade = 'C';
+  else if (outboundCalls < 60) grade = 'B';
+  else grade = 'A';
+
+  // Answer rate adjustment
+  const answerThresholds = { A: 98, B: 95, C: 90, D: 0, F: 0 };
+  const requiredRate = answerThresholds[grade] || 0;
+  if (answerRate < requiredRate) {
+    grade = downgrade(grade);
+  }
+
+  // Handle time adjustment (optimal: 5-8 min, acceptable: 4-10 min)
+  if (avgHandleTime > 0 && (avgHandleTime < 4 || avgHandleTime > 10)) {
+    grade = downgrade(grade);
+  }
+
+  // 0-call days cap at D maximum
+  if (hasZeroCallDays && GRADE_ORDER.indexOf(grade) < GRADE_ORDER.indexOf('D')) {
+    grade = 'D';
+  }
+
+  return grade;
 }
 
 const GRADE_CONFIG = {
@@ -68,12 +110,28 @@ function MetricRow({ label, target, actual, unit, inverse }) {
   );
 }
 
-function PassFailRow({ label, passed }) {
+function PassFailRow({ label, passed, manual, onToggle }) {
   return (
     <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{label}</td>
+      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+        {label}
+        {manual && <span className="ml-1.5 text-xs text-gray-400">(manual)</span>}
+      </td>
       <td className="px-4 py-3">
-        {passed ? (
+        {manual && onToggle ? (
+          <button
+            onClick={onToggle}
+            className={`inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded transition-colors ${
+              passed
+                ? 'text-green-600 bg-green-50 hover:bg-green-100'
+                : 'text-red-600 bg-red-50 hover:bg-red-100'
+            }`}
+          >
+            {passed ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+            {passed ? 'Pass' : 'Fail'}
+            <Edit3 className="w-3 h-3 ml-1 text-gray-400" />
+          </button>
+        ) : passed ? (
           <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium">
             <CheckCircle className="w-4 h-4" /> Pass
           </span>
@@ -89,32 +147,71 @@ function PassFailRow({ label, passed }) {
 
 // ── Main Scorecard ─────────────────────────────────────────────────────────────
 
-export default function CSScorecard({ rcData, daysWorked }) {
+export default function CSScorecard({ rcData, daysWorked, proactivityData, orgId, weekStart, onProactivityUpdated }) {
+  const [savingProactivity, setSavingProactivity] = useState(false);
+
   if (!rcData) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p className="text-gray-500">No RingCentral data available for this week.</p>
-        <p className="text-sm text-gray-400 mt-1">Upload a CSV to see the performance scorecard.</p>
+        <p className="text-sm text-gray-400 mt-1">Upload an XLSX to see the performance scorecard.</p>
       </div>
     );
   }
 
-  const talkTimeHours = (rcData.talk_time_minutes || 0) / 60;
-  const loggedInHours = (rcData.logged_in_minutes || 0) / 60;
-  const availableHours = (rcData.available_minutes || 0) / 60;
-  const offlineHours = (rcData.offline_minutes || 0) / 60;
   const effectiveDays = daysWorked || 5;
-  const avgCallsPerDay = effectiveDays > 0 ? (rcData.total_calls / effectiveDays).toFixed(1) : 0;
-  const utilization = loggedInHours > 0 ? ((talkTimeHours / loggedInHours) * 100).toFixed(1) : 0;
+  const avgCallsPerDay = rcData.avg_calls_per_day || (effectiveDays > 0 ? (rcData.total_calls / effectiveDays).toFixed(1) : 0);
 
-  // Proactivity checks
+  // Efficiency & Quality metrics
+  const answerRate = rcData.inbound_calls > 0
+    ? ((rcData.answered_calls / rcData.inbound_calls) * 100).toFixed(1)
+    : '100.0';
+  const avgSpeedOfAnswerSec = rcData.avg_speed_of_answer_seconds || 0;
+  const avgHandleTime = rcData.avg_handle_time_minutes || 0;
+  const avgHoldTime = rcData.avg_hold_time_minutes || 0;
+  const transferRate = rcData.transfer_pct || (rcData.answered_calls > 0
+    ? ((rcData.transfers / rcData.answered_calls) * 100).toFixed(1)
+    : '0.0');
+  const missedRate = rcData.missed_pct || (rcData.inbound_calls > 0
+    ? ((rcData.missed_calls / rcData.inbound_calls) * 100).toFixed(1)
+    : '0.0');
+  const totalHandleTimeHours = (rcData.total_handle_time_minutes || 0) / 60;
+
+  // Proactivity checks (auto-computed)
   const daily = rcData.daily_breakdown || [];
   const hasZeroCallDays = daily.some((d) => (d.total_calls || 0) === 0);
   const outboundEveryDay = daily.length > 0 && daily.every((d) => (d.outbound_calls || 0) > 0);
 
-  const grade = calculateGrade(rcData.outbound_calls, parseFloat(utilization), hasZeroCallDays);
+  // Manual proactivity flags
+  const followUpNotesLogged = proactivityData?.follow_up_notes_logged || false;
+  const queueParticipation = proactivityData?.queue_participation || false;
+
+  const grade = calculateGrade(rcData.outbound_calls, parseFloat(answerRate), avgHandleTime, hasZeroCallDays);
   const gradeConfig = GRADE_CONFIG[grade];
+
+  async function toggleProactivity(field) {
+    if (savingProactivity) return;
+    setSavingProactivity(true);
+
+    const { data: { user } } = await supabase.auth.getUser();
+    const newValue = !(proactivityData?.[field] || false);
+
+    await supabase.from('cs_proactivity_manual').upsert({
+      org_id: orgId,
+      employee_user_id: rcData.employee_user_id,
+      week_start: weekStart,
+      [field]: newValue,
+      reviewed_by: user?.id,
+      reviewed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'employee_user_id,week_start',
+    });
+
+    setSavingProactivity(false);
+    if (onProactivityUpdated) onProactivityUpdated();
+  }
 
   return (
     <div className="space-y-6">
@@ -151,17 +248,18 @@ export default function CSScorecard({ rcData, daysWorked }) {
             <MetricRow label="Inbound Calls" target="Track only" actual={rcData.inbound_calls} />
             <MetricRow label="Outbound Calls" target="≥ 40" actual={rcData.outbound_calls} />
             <MetricRow label="Avg Calls/Day" target="≥ 15" actual={avgCallsPerDay} />
-            <MetricRow label="Talk Time" target="≥ 8" actual={talkTimeHours.toFixed(1)} unit="h" />
-            <MetricRow label="Avg Handle Time" target="5–8" actual={(rcData.avg_handle_time_minutes || 0).toFixed(1)} unit=" min" />
+            <MetricRow label="Answered Calls" target="Track only" actual={rcData.answered_calls} />
+            <MetricRow label="Avg Handle Time" target="5–8" actual={avgHandleTime.toFixed(1)} unit=" min" />
+            <MetricRow label="Total Handle Time" target="Track only" actual={totalHandleTimeHours.toFixed(1)} unit="h" />
           </tbody>
         </table>
       </div>
 
-      {/* Section B: Availability & Utilization */}
+      {/* Section B: Efficiency & Quality */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-600" />
-          <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section B — Availability & Utilization</h4>
+          <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section B — Efficiency & Quality</h4>
         </div>
         <table className="w-full">
           <thead className="bg-gray-50/50">
@@ -173,10 +271,12 @@ export default function CSScorecard({ rcData, daysWorked }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            <MetricRow label="Logged-In Time" target="40" actual={loggedInHours.toFixed(1)} unit="h" />
-            <MetricRow label="Available Time" target="≥ 30" actual={availableHours.toFixed(1)} unit="h" />
-            <MetricRow label="Offline Time" target="< 3" actual={offlineHours.toFixed(1)} unit="h" inverse />
-            <MetricRow label="Utilization %" target="≥ 20" actual={utilization} unit="%" />
+            <MetricRow label="Answer Rate" target="≥ 95" actual={answerRate} unit="%" />
+            <MetricRow label="Avg Speed of Answer" target="< 20" actual={avgSpeedOfAnswerSec.toFixed(0)} unit="s" />
+            <MetricRow label="Avg Handle Time" target="5–8" actual={avgHandleTime.toFixed(1)} unit=" min" />
+            <MetricRow label="Avg Hold Time" target="< 2" actual={avgHoldTime.toFixed(1)} unit=" min" />
+            <MetricRow label="Transfer Rate" target="< 15" actual={typeof transferRate === 'number' ? transferRate.toFixed(1) : transferRate} unit="%" />
+            <MetricRow label="Missed Call Rate" target="< 5" actual={typeof missedRate === 'number' ? missedRate.toFixed(1) : missedRate} unit="%" />
           </tbody>
         </table>
       </div>
@@ -197,7 +297,18 @@ export default function CSScorecard({ rcData, daysWorked }) {
           <tbody className="divide-y divide-gray-100">
             <PassFailRow label="Outbound Every Day" passed={outboundEveryDay} />
             <PassFailRow label="No 0-Call Days" passed={!hasZeroCallDays} />
-            <PassFailRow label="Queue Participation" passed={availableHours >= 20} />
+            <PassFailRow
+              label="Follow-Up Notes Logged"
+              passed={followUpNotesLogged}
+              manual
+              onToggle={() => toggleProactivity('follow_up_notes_logged')}
+            />
+            <PassFailRow
+              label="Queue Participation"
+              passed={queueParticipation}
+              manual
+              onToggle={() => toggleProactivity('queue_participation')}
+            />
           </tbody>
         </table>
       </div>

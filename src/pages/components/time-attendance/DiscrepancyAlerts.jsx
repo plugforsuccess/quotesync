@@ -1,5 +1,8 @@
 // src/pages/components/time-attendance/DiscrepancyAlerts.jsx
-// Cross-check alerts between time entries and RingCentral data
+// Cross-check alerts between time entries and RingCentral data.
+//
+// Revised: Uses total handle time and answer rate as proxy indicators
+// for desk presence and engagement (RC does not export logged-in time).
 
 import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
 
@@ -9,38 +12,37 @@ const SEVERITY_CONFIG = {
   info: { icon: Info, bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', iconColor: 'text-blue-600' },
 };
 
-function checkDiscrepancies(timeEntries, rcData, weekStart) {
+function checkDiscrepancies(timeEntries, rcData) {
   const alerts = [];
 
   if (!timeEntries || timeEntries.length === 0) return alerts;
   if (!rcData) return alerts;
 
   const totalHoursLogged = timeEntries.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0);
-  const loggedInHours = (rcData.logged_in_minutes || 0) / 60;
-  const offlineHours = (rcData.offline_minutes || 0) / 60;
-  const talkTimeHours = (rcData.talk_time_minutes || 0) / 60;
-  const utilization = loggedInHours > 0 ? (talkTimeHours / loggedInHours) * 100 : 0;
-
+  const totalHandleTimeHours = (rcData.total_handle_time_minutes || 0) / 60;
   const regOrWfhDays = timeEntries.filter((e) => ['REG', 'WFH'].includes(e.code));
-  const daily = rcData.daily_breakdown || [];
+  const answerRate = rcData.inbound_calls > 0
+    ? (rcData.answered_calls / rcData.inbound_calls) * 100
+    : 100;
+  const avgHoldTime = rcData.avg_hold_time_minutes || 0;
 
-  // Check 1: Time log says 8+ hrs but RC logged-in < 5 hrs
-  if (totalHoursLogged >= 8 * regOrWfhDays.length * 0.8 && loggedInHours < 5 * regOrWfhDays.length * 0.5) {
+  // Check 1: Time log says 8+ hrs but RC total handle time < 1 hr
+  if (totalHoursLogged >= 8 && totalHandleTimeHours < 1) {
     alerts.push({
       severity: 'red',
       title: 'Hours Mismatch',
-      detail: `Time log shows ${totalHoursLogged.toFixed(1)}h total, but RingCentral shows only ${loggedInHours.toFixed(1)}h logged in.`,
-      meaning: 'Employee may not have been at their desk or in the phone system.',
+      detail: `Time log shows ${totalHoursLogged.toFixed(1)}h total, but RC total handle time is only ${totalHandleTimeHours.toFixed(1)}h.`,
+      meaning: 'Employee logged a full day but had minimal phone activity.',
     });
   }
 
-  // Check 2: Time log says OFFICE but RC shows offline all day
+  // Check 2: Time log says OFFICE but RC shows 0 total calls
   const officeDays = timeEntries.filter((e) => e.location === 'OFFICE' && ['REG', 'WFH'].includes(e.code));
-  if (officeDays.length > 0 && loggedInHours < 1) {
+  if (officeDays.length > 0 && (rcData.total_calls || 0) === 0) {
     alerts.push({
       severity: 'red',
-      title: 'Office But Offline',
-      detail: `${officeDays.length} office day(s) logged, but RingCentral shows < 1h logged in for the week.`,
+      title: 'Office But No Calls',
+      detail: `${officeDays.length} office day(s) logged, but RingCentral shows 0 total calls for the week.`,
       meaning: 'Possible missed login or location discrepancy.',
     });
   }
@@ -55,17 +57,27 @@ function checkDiscrepancies(timeEntries, rcData, weekStart) {
     });
   }
 
-  // Check 4: Utilization < 10% for the week
-  if (utilization < 10 && loggedInHours > 2) {
+  // Check 4: Answer rate < 80% for the week
+  if (rcData.inbound_calls > 0 && answerRate < 80) {
     alerts.push({
       severity: 'yellow',
-      title: 'Very Low Utilization',
-      detail: `Utilization is ${utilization.toFixed(1)}% (talk time: ${talkTimeHours.toFixed(1)}h / logged in: ${loggedInHours.toFixed(1)}h).`,
-      meaning: 'Extremely low phone engagement relative to hours logged.',
+      title: 'Low Answer Rate',
+      detail: `Answer rate is ${answerRate.toFixed(1)}% (${rcData.answered_calls} answered / ${rcData.inbound_calls} inbound).`,
+      meaning: 'Excessive missed inbound calls — may indicate away from desk.',
     });
   }
 
-  // Check 5: Multiple SICK/EARLY days in this week (pattern-level — would need rolling window for 4 weeks)
+  // Check 5: Avg hold time > 5 min
+  if (avgHoldTime > 5) {
+    alerts.push({
+      severity: 'yellow',
+      title: 'High Hold Time',
+      detail: `Average hold time is ${avgHoldTime.toFixed(1)} min (target: < 2 min).`,
+      meaning: 'Callers being parked too long — quality concern.',
+    });
+  }
+
+  // Check 6: Multiple SICK/EARLY days in this week (pattern flag)
   const sickEarlyDays = timeEntries.filter((e) => ['SICK', 'SICK_PART', 'EARLY'].includes(e.code));
   if (sickEarlyDays.length >= 3) {
     alerts.push({
@@ -88,7 +100,7 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart }) {
         <div>
           <p className="text-sm font-medium text-gray-700">No RingCentral data for this week</p>
           <p className="text-xs text-gray-500 mt-0.5">
-            Upload a RingCentral CSV on the CS Performance tab to enable cross-check alerts.
+            Upload a RingCentral XLSX on the CS Performance tab to enable cross-check alerts.
           </p>
         </div>
       </div>
