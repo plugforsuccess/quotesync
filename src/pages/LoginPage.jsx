@@ -1,7 +1,7 @@
 // src/pages/LoginPage.jsx
 // Login page for platform staff and agency users
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, getUserProfile } from '../lib/supabase';
 import { getDefaultLanding } from '../config/nav.config';
@@ -15,6 +15,33 @@ const LoginPage = () => {
   const [existingSession, setExistingSession] = useState(false);
   const [mode, setMode] = useState('login');
   const [resetSuccess, setResetSuccess] = useState('');
+
+  const resolveAuthz = useCallback(async (userId) => {
+    try {
+      const result = await getUserProfile(userId);
+      const platformRole = result.platformRole;
+      const activeMemberships = (result.agencyMemberships || []).filter(
+        m => m.status === 'active' && m.agencies?.status === 'approved'
+      );
+      const agencyRole = activeMemberships.length > 0
+        ? activeMemberships[0].agency_role
+        : null;
+
+      return {
+        status: 'ok',
+        derived: {
+          platformRole,
+          agencyRole,
+          landingPath: getDefaultLanding(platformRole, agencyRole)
+        }
+      };
+    } catch (err) {
+      return {
+        status: 'error',
+        error: err
+      };
+    }
+  }, []);
 
   // Check if already logged in on mount
   useEffect(() => {
@@ -35,31 +62,21 @@ const LoginPage = () => {
     checkSession();
   }, []);
 
-  // Listen for auth changes and redirect when user is logged in
+  // Listen for auth changes and only re-resolve on stable auth events.
+  // Initial login routing is handled directly by handleLogin for deterministic behavior.
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('[LoginPage] Auth event:', event, session?.user?.email);
 
-      if (event === 'SIGNED_IN' && session) {
-        // Fetch user profile to determine redirect destination
-        try {
-          const result = await getUserProfile(session.user.id);
-          const platformRole = result.platformRole;
-          // Determine agency role from first active membership
-          const activeMemberships = (result.agencyMemberships || []).filter(
-            m => m.status === 'active' && m.agencies?.status === 'approved'
-          );
-          const agencyRole = activeMemberships.length > 0
-            ? activeMemberships[0].agency_role
-            : null;
-          const destination = getDefaultLanding(platformRole, agencyRole);
-          console.log('[LoginPage] Navigating to:', destination, 'platformRole:', platformRole, 'agencyRole:', agencyRole);
-          // Delay to ensure AuthProvider has processed the change
-          setTimeout(() => navigate(destination), 300);
-        } catch (err) {
-          console.error('[LoginPage] Profile fetch error. Blocking login redirect.', err);
-          setError('We could not load your permissions. Please contact support if this continues.');
-          setLoading(false);
+      if (event === 'SIGNED_OUT') {
+        setExistingSession(false);
+        return;
+      }
+
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
+        const authz = await resolveAuthz(session.user.id);
+        if (authz.status === 'ok') {
+          setExistingSession(true);
         }
       }
     });
@@ -67,7 +84,7 @@ const LoginPage = () => {
     return () => {
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [resolveAuthz]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -77,7 +94,7 @@ const LoginPage = () => {
     console.log('[LoginPage] Attempting login...');
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
       });
@@ -87,8 +104,17 @@ const LoginPage = () => {
         throw error;
       }
 
-      console.log('[LoginPage] Login successful, waiting for auth state change...');
-      // Don't navigate here - let the auth state change listener handle it
+      if (!data?.session?.user?.id) {
+        throw new Error('No session returned from sign in. Please try again.');
+      }
+
+      const authz = await resolveAuthz(data.session.user.id);
+      if (authz.status === 'error') {
+        throw authz.error || new Error('Failed to resolve permissions after sign in.');
+      }
+
+      console.log('[LoginPage] Login successful, navigating to:', authz.derived.landingPath);
+      navigate(authz.derived.landingPath);
     } catch (error) {
       console.error('[LoginPage] Login failed:', error);
 
