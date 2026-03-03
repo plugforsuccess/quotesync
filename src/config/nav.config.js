@@ -19,17 +19,17 @@ export const consumerNav = [
 // ── Primary nav items (always visible in top bar) ────────────────────────────
 
 const primaryItems = {
-  funnel:         { to: '/agency/dashboard',      label: 'Funnel',             icon: '📊' },
+  funnel:         { to: '/agency/dashboard',      label: 'Dashboard',          icon: '📊' },
   leads:          { to: '/agency/leads',           label: 'Leads',              icon: '📋' },
   timeAttendance: { to: '/admin/time-attendance',  label: 'Attendance',         icon: '⏱️' },
   csPerformance:  { to: '/admin/cs-performance',   label: 'Performance',        icon: '📈' },
+  newsroom:       { to: '/news/dashboard',         label: 'Newsroom',           icon: '📰' },
 };
 
 // ── Secondary nav items (inside hamburger menu) ──────────────────────────────
 
 const secondaryItems = {
   agencyMgmt: { to: '/admin/agencies', label: 'Agency Management', icon: '🏢' },
-  newsroom:   { to: '/news/dashboard', label: 'Newsroom',          icon: '📰' },
   audit:      { to: '/admin/audit',    label: 'Audit',             icon: '🔍' },
 };
 
@@ -43,10 +43,10 @@ export const platformNav = {
       primaryItems.leads,
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
+      primaryItems.newsroom,
     ],
     secondary: [
       secondaryItems.agencyMgmt,
-      secondaryItems.newsroom,
       secondaryItems.audit,
     ],
   },
@@ -56,10 +56,10 @@ export const platformNav = {
       primaryItems.leads,
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
+      primaryItems.newsroom,
     ],
     secondary: [
       secondaryItems.agencyMgmt,
-      secondaryItems.newsroom,
       secondaryItems.audit,
     ],
   },
@@ -73,9 +73,10 @@ export const platformNav = {
     ],
   },
   platform_editor: {
-    primary: [],
+    primary: [
+      primaryItems.newsroom,
+    ],
     secondary: [
-      secondaryItems.newsroom,
       { to: '/news/standards', label: 'Standards', icon: '📋' },
     ],
   },
