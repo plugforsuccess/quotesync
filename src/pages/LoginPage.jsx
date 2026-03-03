@@ -43,8 +43,15 @@ const LoginPage = () => {
         try {
           const profile = await getUserProfile(session.user.id);
           const platformRole = profile?.platform_role;
-          const destination = getDefaultLanding(platformRole);
-          console.log('[LoginPage] Navigating to:', destination, 'role:', platformRole);
+          // Determine agency role from first active membership
+          const activeMemberships = (profile?.agencyMemberships || []).filter(
+            m => m.status === 'active' && m.agencies?.status === 'approved'
+          );
+          const agencyRole = activeMemberships.length > 0
+            ? activeMemberships[0].agency_role
+            : null;
+          const destination = getDefaultLanding(platformRole, agencyRole);
+          console.log('[LoginPage] Navigating to:', destination, 'platformRole:', platformRole, 'agencyRole:', agencyRole);
           // Delay to ensure AuthProvider has processed the change
           setTimeout(() => navigate(destination), 300);
         } catch (err) {

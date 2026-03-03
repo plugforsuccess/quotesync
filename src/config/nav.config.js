@@ -4,7 +4,7 @@
 export const PLANES = {
   CONSUMER: 'consumer',
   PLATFORM: 'platform',
-  AGENCY: 'agency', // Future
+  AGENCY: 'agency',
 };
 
 // Consumer plane navigation (public/logged-out users)
@@ -45,19 +45,39 @@ export const platformNav = {
   ],
 };
 
+// Agency plane navigation by role (Allstate terminology)
+// agent = agency principal (owns the book), producer = licensed staff
+export const agencyNav = {
+  agent: [
+    { to: '/agency/dashboard', label: 'Dashboard', icon: '📊' },
+    { to: '/agency/leads', label: 'Leads', icon: '📋' },
+    { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
+  ],
+  producer: [
+    { to: '/agency/leads', label: 'My Leads', icon: '📋' },
+  ],
+};
+
 // Get navigation items based on plane and role
-export function getNavItems(plane, platformRole) {
+export function getNavItems(plane, platformRole, agencyRole) {
   if (plane === PLANES.PLATFORM && platformRole) {
     return platformNav[platformRole] || platformNav.platform_editor;
+  }
+  if (plane === PLANES.AGENCY && agencyRole) {
+    return agencyNav[agencyRole] || agencyNav.producer;
   }
   return consumerNav;
 }
 
 // Get default landing page after login
-export function getDefaultLanding(platformRole) {
+export function getDefaultLanding(platformRole, agencyRole) {
   if (platformRole) {
     if (platformRole === 'platform_editor') return '/news/dashboard';
     return '/admin/agencies';
+  }
+  if (agencyRole) {
+    if (agencyRole === 'agent') return '/agency/dashboard';
+    return '/agency/leads';
   }
   return '/';
 }
@@ -69,4 +89,6 @@ export const roleDisplayNames = {
   platform_support: 'Support',
   platform_editor: 'Editor',
   platform_auditor: 'Auditor',
+  agent: 'Agent',
+  producer: 'Producer',
 };

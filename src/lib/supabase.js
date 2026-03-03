@@ -45,10 +45,10 @@ export const PLATFORM_ROLE_HIERARCHY = {
   platform_master_admin: 5
 };
 
-// Agency roles (simplified to owner/agent for now)
+// Agency roles (Allstate terminology: agent = principal, producer = staff)
 export const AGENCY_ROLE_HIERARCHY = {
-  agent: 1,
-  owner: 2
+  producer: 1,
+  agent: 2
   // Future: viewer: 0, manager: 2
 };
 

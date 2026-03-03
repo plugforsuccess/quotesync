@@ -59,13 +59,17 @@ const AdminAgencyDetailPage = () => {
     zip: '',
     exclusivity_level: 'none',
     priority_tier: 0,
-    capacity_enabled: true
+    capacity_enabled: true,
+    rule_type: 'geographic',
+    min_score: '',
+    max_score: '',
+    carrier_filter: ''
   });
 
   // User form state
   const [userForm, setUserForm] = useState({
     email: '',
-    role: 'agent'
+    role: 'producer'
   });
 
   if (userRole !== 'admin') {
@@ -119,14 +123,20 @@ const AdminAgencyDetailPage = () => {
 
   const handleSaveRule = async () => {
     try {
+      const rulePayload = {
+        ...ruleForm,
+        min_score: ruleForm.min_score !== '' ? parseInt(ruleForm.min_score) : null,
+        max_score: ruleForm.max_score !== '' ? parseInt(ruleForm.max_score) : null,
+        carrier_filter: ruleForm.carrier_filter || null,
+      };
       if (editingRule) {
-        await updateRule.mutateAsync({ id: editingRule.id, agencyId: id, ...ruleForm });
+        await updateRule.mutateAsync({ id: editingRule.id, agencyId: id, ...rulePayload });
       } else {
-        await createRule.mutateAsync({ agency_id: id, ...ruleForm });
+        await createRule.mutateAsync({ agency_id: id, ...rulePayload });
       }
       setShowRuleForm(false);
       setEditingRule(null);
-      setRuleForm({ state: '', zip: '', exclusivity_level: 'none', priority_tier: 0, capacity_enabled: true });
+      setRuleForm({ state: '', zip: '', exclusivity_level: 'none', priority_tier: 0, capacity_enabled: true, rule_type: 'geographic', min_score: '', max_score: '', carrier_filter: '' });
     } catch (err) {
       alert('Failed to save rule: ' + err.message);
     }
@@ -159,7 +169,7 @@ const AdminAgencyDetailPage = () => {
         alert('User added to agency successfully');
       }
       setShowUserForm(false);
-      setUserForm({ email: '', role: 'agent' });
+      setUserForm({ email: '', role: 'producer' });
     } catch (err) {
       alert('Failed to add user: ' + err.message);
     }
@@ -358,7 +368,7 @@ const AdminAgencyDetailPage = () => {
               <button
                 onClick={() => {
                   setEditingRule(null);
-                  setRuleForm({ state: '', zip: '', exclusivity_level: 'none', priority_tier: 0, capacity_enabled: true });
+                  setRuleForm({ state: '', zip: '', exclusivity_level: 'none', priority_tier: 0, capacity_enabled: true, rule_type: 'geographic', min_score: '', max_score: '', carrier_filter: '' });
                   setShowRuleForm(true);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
@@ -373,6 +383,18 @@ const AdminAgencyDetailPage = () => {
                 <h3 className="font-medium text-gray-900 mb-4">{editingRule ? 'Edit Rule' : 'New Routing Rule'}</h3>
                 <div className="grid gap-4 md:grid-cols-2">
                   <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Rule Type</label>
+                    <select
+                      value={ruleForm.rule_type}
+                      onChange={(e) => setRuleForm(f => ({ ...f, rule_type: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    >
+                      <option value="geographic">Geographic (State/ZIP)</option>
+                      <option value="quality">Quality (Score/Carrier)</option>
+                      <option value="combined">Combined (Both)</option>
+                    </select>
+                  </div>
+                  <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
                     <select
                       value={ruleForm.state}
@@ -383,16 +405,66 @@ const AdminAgencyDetailPage = () => {
                       {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code(s)</label>
-                    <input
-                      type="text"
-                      value={ruleForm.zip}
-                      onChange={(e) => setRuleForm(f => ({ ...f, zip: e.target.value }))}
-                      placeholder="75001 or 75001,75002"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
+                  {(ruleForm.rule_type === 'geographic' || ruleForm.rule_type === 'combined') && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Prefix</label>
+                      <input
+                        type="text"
+                        value={ruleForm.zip}
+                        onChange={(e) => setRuleForm(f => ({ ...f, zip: e.target.value }))}
+                        placeholder="303 (matches 303xx)"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                      />
+                    </div>
+                  )}
+                  {(ruleForm.rule_type === 'quality' || ruleForm.rule_type === 'combined') && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Min Score</label>
+                        <input
+                          type="number"
+                          value={ruleForm.min_score}
+                          onChange={(e) => setRuleForm(f => ({ ...f, min_score: e.target.value }))}
+                          placeholder="0"
+                          min="0"
+                          max="100"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Max Score</label>
+                        <input
+                          type="number"
+                          value={ruleForm.max_score}
+                          onChange={(e) => setRuleForm(f => ({ ...f, max_score: e.target.value }))}
+                          placeholder="100"
+                          min="0"
+                          max="100"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Carrier Filter</label>
+                        <select
+                          value={ruleForm.carrier_filter}
+                          onChange={(e) => setRuleForm(f => ({ ...f, carrier_filter: e.target.value }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                        >
+                          <option value="">Any Carrier</option>
+                          <option value="none">No Prior Insurance</option>
+                          <option value="allstate">Allstate</option>
+                          <option value="state_farm">State Farm</option>
+                          <option value="geico">GEICO</option>
+                          <option value="progressive">Progressive</option>
+                          <option value="usaa">USAA</option>
+                          <option value="nationwide">Nationwide</option>
+                          <option value="liberty_mutual">Liberty Mutual</option>
+                          <option value="farmers">Farmers</option>
+                          <option value="other">Other</option>
+                        </select>
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Exclusivity</label>
                     <select
@@ -401,8 +473,8 @@ const AdminAgencyDetailPage = () => {
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     >
                       <option value="none">None</option>
-                      <option value="zip_exclusive">ZIP Exclusive</option>
-                      <option value="city_exclusive">City Exclusive</option>
+                      <option value="zip">ZIP Exclusive</option>
+                      <option value="state">State Exclusive</option>
                     </select>
                   </div>
                   <div>
@@ -411,6 +483,8 @@ const AdminAgencyDetailPage = () => {
                       type="number"
                       value={ruleForm.priority_tier}
                       onChange={(e) => setRuleForm(f => ({ ...f, priority_tier: parseInt(e.target.value) || 0 }))}
+                      min="0"
+                      max="10"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     />
                   </div>
@@ -422,7 +496,7 @@ const AdminAgencyDetailPage = () => {
                       onChange={(e) => setRuleForm(f => ({ ...f, capacity_enabled: e.target.checked }))}
                       className="w-4 h-4 text-blue-600 border-gray-300 rounded"
                     />
-                    <label htmlFor="capacity_enabled" className="text-sm text-gray-700">Capacity Enabled</label>
+                    <label htmlFor="capacity_enabled" className="text-sm text-gray-700">Enabled</label>
                   </div>
                 </div>
                 <div className="flex gap-2 mt-4">
@@ -456,22 +530,38 @@ const AdminAgencyDetailPage = () => {
                 <table className="w-full">
                   <thead className="bg-gray-50 border-b border-gray-200">
                     <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Type</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">State</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">ZIP</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Exclusivity</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Score Range</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Carrier</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Priority</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Capacity</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
                     {routingRules.map(rule => (
-                      <tr key={rule.id} className="hover:bg-gray-50">
+                      <tr key={rule.id} className={`hover:bg-gray-50 ${!rule.capacity_enabled ? 'opacity-50' : ''}`}>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                            rule.rule_type === 'quality' ? 'bg-purple-100 text-purple-700' :
+                            rule.rule_type === 'combined' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {rule.rule_type || 'geographic'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3 text-sm">{rule.state || 'All'}</td>
-                        <td className="px-4 py-3 text-sm">{rule.zip || '-'}</td>
-                        <td className="px-4 py-3 text-sm capitalize">{rule.exclusivity_level.replace('_', ' ')}</td>
+                        <td className="px-4 py-3 text-sm">{rule.zip_prefix || rule.zip || '-'}</td>
+                        <td className="px-4 py-3 text-sm">
+                          {rule.min_score != null || rule.max_score != null
+                            ? `${rule.min_score ?? 0} - ${rule.max_score ?? 100}`
+                            : '-'}
+                        </td>
+                        <td className="px-4 py-3 text-sm capitalize">{rule.carrier_filter?.replace('_', ' ') || '-'}</td>
                         <td className="px-4 py-3 text-sm">{rule.priority_tier}</td>
-                        <td className="px-4 py-3 text-sm">{rule.capacity_enabled ? 'Yes' : 'No'}</td>
+                        <td className="px-4 py-3 text-sm">{rule.capacity_enabled ? 'Active' : 'Disabled'}</td>
                         <td className="px-4 py-3 text-right">
                           <button
                             onClick={() => handleDeleteRule(rule.id)}
@@ -524,9 +614,9 @@ const AdminAgencyDetailPage = () => {
                       onChange={(e) => setUserForm(f => ({ ...f, role: e.target.value }))}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg"
                     >
-                      <option value="agent">Agent</option>
+                      <option value="producer">Producer</option>
                       <option value="manager">Manager</option>
-                      <option value="owner">Owner</option>
+                      <option value="agent">Agent (Principal)</option>
                     </select>
                   </div>
                 </div>

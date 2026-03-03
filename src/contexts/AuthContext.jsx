@@ -1,9 +1,9 @@
 // src/contexts/AuthContext.jsx
 // Global authentication context with two-plane RBAC support
 // Platform plane: internal staff (platform_master_admin, platform_admin, platform_support, platform_editor, platform_auditor)
-// Tenant plane: agency users (owner, manager, agent, viewer)
+// Tenant plane: agency users (agent, manager, producer, viewer)
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext({
@@ -47,11 +47,11 @@ const PLATFORM_ROLE_HIERARCHY = {
   platform_master_admin: 5
 };
 
-// Agency role hierarchy (simplified to owner/agent for now)
+// Agency role hierarchy (Allstate terminology: agent = principal, producer = staff)
 const AGENCY_ROLE_HIERARCHY = {
-  agent: 1,
-  owner: 2
-  // Future: viewer: 0, manager: 2 (insert between agent/owner)
+  producer: 1,
+  agent: 2
+  // Future: viewer: 0, manager: 2 (insert between producer/agent)
 };
 
 export const AuthProvider = ({ children }) => {
@@ -306,6 +306,16 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Derived state: active plane
+  // Platform users always get platform plane (they access agency data through admin view)
+  // Non-platform users with agency memberships get agency plane
+  // Everyone else gets consumer plane
+  const activePlane = useMemo(() => {
+    if (isPlatformUser && platformRole) return 'platform';
+    if (agencyMemberships.length > 0) return 'agency';
+    return 'consumer';
+  }, [isPlatformUser, platformRole, agencyMemberships]);
+
   // Helper: Check platform role
   const hasPlatformRole = useCallback((requiredRole) => {
     if (!isPlatformUser || !platformRole) return false;
@@ -331,6 +341,7 @@ export const AuthProvider = ({ children }) => {
     profile,
     role, // Legacy
     // Two-plane RBAC
+    activePlane,
     isPlatformUser,
     platformRole,
     agencyMemberships,
