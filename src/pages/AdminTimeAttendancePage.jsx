@@ -159,18 +159,45 @@ const AdminTimeAttendancePage = () => {
     fetchRCData();
   }, [fetchEntries, fetchRCData]);
 
-  // ── Approval Toggle ────────────────────────────────────────────────────────
+  // ── Approval Toggle (optimistic with rollback) ──────────────────────────
 
   async function toggleApproval(entryId, approved) {
+    // Optimistic update
+    const prevEntries = entries;
+    setEntries((prev) =>
+      prev.map((e) => (e.id === entryId ? { ...e, approved } : e))
+    );
+
     const { error } = await supabase
       .from('employee_time_entries')
       .update({ approved })
       .eq('id', entryId);
 
-    if (!error) {
-      setEntries((prev) =>
-        prev.map((e) => (e.id === entryId ? { ...e, approved } : e))
-      );
+    if (error) {
+      // Rollback on failure
+      setEntries(prevEntries);
+      console.error('Failed to update approval:', error);
+    }
+  }
+
+  async function bulkApproval(entryIds, approved) {
+    if (!entryIds || entryIds.length === 0) return;
+
+    // Optimistic update
+    const prevEntries = entries;
+    setEntries((prev) =>
+      prev.map((e) => (entryIds.includes(e.id) ? { ...e, approved } : e))
+    );
+
+    const { error } = await supabase
+      .from('employee_time_entries')
+      .update({ approved })
+      .in('id', entryIds);
+
+    if (error) {
+      // Rollback on failure
+      setEntries(prevEntries);
+      console.error('Failed to bulk update approval:', error);
     }
   }
 
@@ -420,19 +447,18 @@ const AdminTimeAttendancePage = () => {
                   </h3>
 
                   {/* Cross-check alerts for this employee */}
-                  {rcData.length > 0 && (
-                    <div className="mb-4">
-                      <DiscrepancyAlerts
-                        timeEntries={userEntries}
-                        rcData={rcData.find((r) => r.employee_user_id === userId)}
-                        weekStart={weekStart}
-                      />
-                    </div>
-                  )}
+                  <div className="mb-4">
+                    <DiscrepancyAlerts
+                      timeEntries={userEntries}
+                      rcData={rcData.find((r) => r.employee_user_id === userId)}
+                      weekStart={weekStart}
+                    />
+                  </div>
 
                   <WeeklyTimeTable
                     entries={userEntries}
                     onToggleApproval={toggleApproval}
+                    onBulkApproval={bulkApproval}
                   />
                 </div>
               ))

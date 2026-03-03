@@ -80,6 +80,21 @@ function checkDiscrepancies(timeEntries, rcData, weekStart) {
 }
 
 export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart }) {
+  // Show informational banner when time entries exist but no RC data is available
+  if ((!rcData || Object.keys(rcData).length === 0) && timeEntries && timeEntries.length > 0) {
+    return (
+      <div className="flex gap-3 p-4 rounded-lg border bg-gray-50 border-gray-200">
+        <Info className="w-5 h-5 mt-0.5 flex-shrink-0 text-gray-400" />
+        <div>
+          <p className="text-sm font-medium text-gray-700">No RingCentral data for this week</p>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Upload a RingCentral CSV on the CS Performance tab to enable cross-check alerts.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const alerts = checkDiscrepancies(timeEntries, rcData, weekStart);
 
   if (alerts.length === 0) {

@@ -89,11 +89,28 @@ function findColumn(row, aliases) {
   return null;
 }
 
+const MAX_ROWS = 500;
+const MAX_MINUTES_PER_WEEK = 10080; // 168 hrs
+const MAX_CALLS = 10000;
+
+function clampInt(val, min, max) {
+  const n = parseInt(val, 10);
+  if (isNaN(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
+function clampFloat(val, min, max) {
+  const n = parseFloat(val);
+  if (isNaN(n)) return min;
+  return Math.max(min, Math.min(max, n));
+}
+
 export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded }) {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [preview, setPreview] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [warnings, setWarnings] = useState([]);
   const fileRef = useRef(null);
 
   async function handleFile(e) {
@@ -102,6 +119,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
 
     setMsg(null);
     setPreview(null);
+    setWarnings([]);
 
     const text = await file.text();
     const rows = parseCSV(text);
@@ -111,26 +129,50 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       return;
     }
 
-    // Parse rows into our data shape
+    if (rows.length > MAX_ROWS) {
+      setMsg({ type: 'error', text: `CSV has ${rows.length} rows. Maximum is ${MAX_ROWS}. Please split the file or filter to the current week's data.` });
+      return;
+    }
+
+    const parseWarnings = [];
+
+    // Parse rows into our data shape with validation bounds
     const parsed = rows
-      .map((row) => {
+      .map((row, idx) => {
         const name = findColumn(row, COLUMN_MAPPINGS.name) || '';
         if (!name) return null;
 
+        const totalCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.total_calls) || '0', 0, MAX_CALLS);
+        const inboundCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.inbound_calls) || '0', 0, MAX_CALLS);
+        const outboundCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.outbound_calls) || '0', 0, MAX_CALLS);
+        const talkTime = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.talk_time)), 0, MAX_MINUTES_PER_WEEK);
+        const aht = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.avg_handle_time)), 0, 1440);
+        const loggedIn = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.logged_in)), 0, MAX_MINUTES_PER_WEEK);
+        const available = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.available)), 0, MAX_MINUTES_PER_WEEK);
+        const offline = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.offline)), 0, MAX_MINUTES_PER_WEEK);
+
+        // Check for unmatched employee
+        const matchedId = employeeMap?.[name];
+        if (!matchedId) {
+          parseWarnings.push(`Row ${idx + 2}: "${name}" does not match any known employee.`);
+        }
+
         return {
           employee_name: name,
-          total_calls: parseInt(findColumn(row, COLUMN_MAPPINGS.total_calls) || '0', 10),
-          inbound_calls: parseInt(findColumn(row, COLUMN_MAPPINGS.inbound_calls) || '0', 10),
-          outbound_calls: parseInt(findColumn(row, COLUMN_MAPPINGS.outbound_calls) || '0', 10),
-          talk_time_minutes: parseMinutes(findColumn(row, COLUMN_MAPPINGS.talk_time)),
-          avg_handle_time_minutes: parseMinutes(findColumn(row, COLUMN_MAPPINGS.avg_handle_time)),
-          logged_in_minutes: parseMinutes(findColumn(row, COLUMN_MAPPINGS.logged_in)),
-          available_minutes: parseMinutes(findColumn(row, COLUMN_MAPPINGS.available)),
-          offline_minutes: parseMinutes(findColumn(row, COLUMN_MAPPINGS.offline)),
+          matched: !!matchedId,
+          total_calls: totalCalls,
+          inbound_calls: inboundCalls,
+          outbound_calls: outboundCalls,
+          talk_time_minutes: talkTime,
+          avg_handle_time_minutes: aht,
+          logged_in_minutes: loggedIn,
+          available_minutes: available,
+          offline_minutes: offline,
         };
       })
       .filter(Boolean);
 
+    setWarnings(parseWarnings);
     setPreview(parsed);
   }
 
@@ -225,6 +267,20 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
         <span className="text-sm text-gray-500">Week: {weekStart}</span>
       </div>
 
+      {/* Warnings */}
+      {warnings.length > 0 && (
+        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm font-semibold text-yellow-800 mb-1">
+            <AlertCircle className="w-4 h-4 inline mr-1" />
+            {warnings.length} unmatched employee{warnings.length > 1 ? 's' : ''}
+          </p>
+          <ul className="text-xs text-yellow-700 space-y-0.5 max-h-32 overflow-y-auto">
+            {warnings.map((w, i) => <li key={i}>{w}</li>)}
+          </ul>
+          <p className="text-xs text-yellow-600 mt-1">Unmatched rows will still upload but cannot be linked to time entries for cross-checks.</p>
+        </div>
+      )}
+
       {/* Preview */}
       {preview && preview.length > 0 && (
         <div className="mt-4">
@@ -246,8 +302,11 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {preview.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-gray-900">{row.employee_name}</td>
+                  <tr key={i} className={row.matched ? 'hover:bg-gray-50' : 'bg-yellow-50/50 hover:bg-yellow-50'}>
+                    <td className="px-3 py-2 text-gray-900">
+                      {row.employee_name}
+                      {!row.matched && <span className="ml-1 text-xs text-yellow-600" title="No matching employee found">(?)</span>}
+                    </td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.total_calls}</td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.inbound_calls}</td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.outbound_calls}</td>

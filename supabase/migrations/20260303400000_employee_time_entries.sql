@@ -123,6 +123,34 @@ WITH CHECK (
   )
 );
 
+-- 5. Guard Trigger: Prevent employees from self-approving their own entries
+-- Silently reverts `approved` to its previous value if the updater is the
+-- employee themselves (i.e. not an admin). Admins bypass this via separate
+-- RLS policy on ALL operations which uses a profiles-table subquery.
+CREATE OR REPLACE FUNCTION public.guard_approval()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.approved IS DISTINCT FROM OLD.approved
+    AND auth.uid() = NEW.employee_user_id
+    AND NOT EXISTS (
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid()
+        AND p.is_platform_user = true
+        AND p.platform_role IN ('platform_admin', 'platform_master_admin')
+    )
+  THEN
+    NEW.approved := OLD.approved;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trg_guard_approval ON public.employee_time_entries;
+
+CREATE TRIGGER trg_guard_approval
+BEFORE UPDATE ON public.employee_time_entries
+FOR EACH ROW EXECUTE FUNCTION public.guard_approval();
+
 -- =============================================================================
 -- RingCentral Performance Data — CS Performance Dashboard
 -- =============================================================================
@@ -134,16 +162,16 @@ CREATE TABLE IF NOT EXISTS public.rc_performance_data (
   employee_user_id uuid NOT NULL,
   employee_name text NOT NULL,
   week_start date NOT NULL,
-  -- Activity metrics (Section A)
-  total_calls int NOT NULL DEFAULT 0,
-  inbound_calls int NOT NULL DEFAULT 0,
-  outbound_calls int NOT NULL DEFAULT 0,
-  talk_time_minutes numeric(8,2) NOT NULL DEFAULT 0,
-  avg_handle_time_minutes numeric(6,2) NOT NULL DEFAULT 0,
+  -- Activity metrics (Section A) — bounds: max 168 hrs/week = 10080 min
+  total_calls int NOT NULL DEFAULT 0 CHECK (total_calls >= 0 AND total_calls <= 10000),
+  inbound_calls int NOT NULL DEFAULT 0 CHECK (inbound_calls >= 0 AND inbound_calls <= 10000),
+  outbound_calls int NOT NULL DEFAULT 0 CHECK (outbound_calls >= 0 AND outbound_calls <= 10000),
+  talk_time_minutes numeric(8,2) NOT NULL DEFAULT 0 CHECK (talk_time_minutes >= 0 AND talk_time_minutes <= 10080),
+  avg_handle_time_minutes numeric(6,2) NOT NULL DEFAULT 0 CHECK (avg_handle_time_minutes >= 0 AND avg_handle_time_minutes <= 1440),
   -- Availability metrics (Section B)
-  logged_in_minutes numeric(8,2) NOT NULL DEFAULT 0,
-  available_minutes numeric(8,2) NOT NULL DEFAULT 0,
-  offline_minutes numeric(8,2) NOT NULL DEFAULT 0,
+  logged_in_minutes numeric(8,2) NOT NULL DEFAULT 0 CHECK (logged_in_minutes >= 0 AND logged_in_minutes <= 10080),
+  available_minutes numeric(8,2) NOT NULL DEFAULT 0 CHECK (available_minutes >= 0 AND available_minutes <= 10080),
+  offline_minutes numeric(8,2) NOT NULL DEFAULT 0 CHECK (offline_minutes >= 0 AND offline_minutes <= 10080),
   -- Daily breakdown for proactivity checks (JSON array of daily stats)
   daily_breakdown jsonb,
   -- Upload metadata

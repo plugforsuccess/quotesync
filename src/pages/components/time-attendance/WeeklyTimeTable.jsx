@@ -25,7 +25,7 @@ function formatTime(t) {
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-export default function WeeklyTimeTable({ entries, onToggleApproval }) {
+export default function WeeklyTimeTable({ entries, onToggleApproval, onBulkApproval }) {
   if (!entries || entries.length === 0) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
@@ -44,8 +44,29 @@ export default function WeeklyTimeTable({ entries, onToggleApproval }) {
   const sickDays = sorted.filter((e) => e.code === 'SICK' || e.code === 'SICK_PART').length;
   const wfhDays = sorted.filter((e) => e.location === 'WFH' || e.code === 'WFH').length;
 
+  const pendingCount = sorted.filter((e) => !e.approved).length;
+  const allApproved = pendingCount === 0;
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Bulk actions bar */}
+      {onBulkApproval && sorted.length > 1 && (
+        <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+          <span className="text-xs text-gray-500">
+            {allApproved ? 'All entries approved' : `${pendingCount} pending approval`}
+          </span>
+          <button
+            onClick={() => onBulkApproval(sorted.map((e) => e.id), !allApproved)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${
+              allApproved
+                ? 'text-yellow-700 bg-yellow-100 hover:bg-yellow-200'
+                : 'text-green-700 bg-green-100 hover:bg-green-200'
+            }`}
+          >
+            {allApproved ? 'Unapprove All' : 'Approve All'}
+          </button>
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[900px]">
           <thead className="bg-gray-50 border-b border-gray-200">

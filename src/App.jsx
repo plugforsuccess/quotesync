@@ -268,11 +268,11 @@ function App() {
               }
             />
 
-            {/* Admin - Time & Attendance / CS Performance */}
+            {/* Admin - Time & Attendance / CS Performance (platform_admin+) */}
             <Route
               path="admin/time-attendance"
               element={
-                <ProtectedRoute requiredRole="admin">
+                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <Suspense fallback={<PageLoader />}>
                     <AdminTimeAttendancePage />
                   </Suspense>
