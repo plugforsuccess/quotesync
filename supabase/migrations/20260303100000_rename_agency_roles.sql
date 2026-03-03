@@ -22,7 +22,7 @@ WHERE user_id = 'e9d8df65-7cd4-419b-b53c-6a8e734dc1c1';  -- Cam Wiley (insuredby
 
 -- Also update agency_users table (legacy table, has 'admin' values from initial setup)
 UPDATE agency_users SET role = 'producer' WHERE role = 'agent';
-UPDATE agency_users SET role = 'agent' WHERE role IN ('owner', 'admin');
+UPDATE agency_users SET role = 'agent' WHERE role IN ('owner');
 
 -- Enforce one agent (principal) per agency
 CREATE UNIQUE INDEX IF NOT EXISTS one_agent_per_agency
