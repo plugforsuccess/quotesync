@@ -68,7 +68,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
                   required
                   value={terminationDate}
                   onChange={(e) => setTerminationDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
 
@@ -79,7 +79,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
                   onChange={(e) => setTerminationReason(e.target.value)}
                   rows={3}
                   placeholder="Optional notes on departure..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
                 />
               </div>
             </div>
