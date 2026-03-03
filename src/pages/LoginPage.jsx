@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-// Simple login page for newsroom admin access
+// Login page for platform staff and agency users
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -105,10 +105,10 @@ const LoginPage = () => {
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Newsroom Login
+            Sign In
           </h1>
           <p className="text-gray-600">
-            Sign in to access the admin dashboard
+            Access your dashboard
           </p>
         </div>
 
@@ -118,7 +118,21 @@ const LoginPage = () => {
               <strong>Already logged in.</strong> You can{' '}
               <button
                 type="button"
-                onClick={() => navigate('/news/dashboard')}
+                onClick={async () => {
+                  try {
+                    const profile = await getUserProfile();
+                    const platformRole = profile?.platform_role;
+                    const activeMemberships = (profile?.agencyMemberships || []).filter(
+                      m => m.status === 'active' && m.agencies?.status === 'approved'
+                    );
+                    const agencyRole = activeMemberships.length > 0
+                      ? activeMemberships[0].agency_role
+                      : null;
+                    navigate(getDefaultLanding(platformRole, agencyRole));
+                  } catch {
+                    navigate('/');
+                  }
+                }}
                 className="underline font-semibold hover:text-blue-900"
               >
                 go to dashboard

@@ -15,6 +15,6 @@ WHERE user_id IN (
   '337b8759-1349-48d3-a616-95c3293f499a'    -- plugforsuccess@gmail.com
 );
 
--- Also update agency_users table if it has role values
+-- Also update agency_users table (legacy table, has 'admin' values from initial setup)
 UPDATE agency_users SET role = 'producer' WHERE role = 'agent';
-UPDATE agency_users SET role = 'agent' WHERE role = 'owner';
+UPDATE agency_users SET role = 'agent' WHERE role IN ('owner', 'admin');

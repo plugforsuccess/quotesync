@@ -81,7 +81,7 @@ const ProtectedRoute = ({
   }
 
   // Legacy role check (for backward compatibility)
-  // Agency owners/agents accessing agency routes pass through if they have agency membership
+  // Agency agents/producers accessing agency routes pass through if they have agency membership
   if (requiredRole && !hasPermission(role, requiredRole)) {
     // Allow agency users to access routes they have agency-level permission for
     const hasAgencyAccess = agencyMemberships.some(m => m.status === 'active');
