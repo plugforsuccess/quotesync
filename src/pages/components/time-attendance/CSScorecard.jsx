@@ -114,7 +114,7 @@ export default function CSScorecard({
       <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
         <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
         <p className="text-gray-500">No RingCentral data available for this week.</p>
-        <p className="text-sm text-gray-400 mt-1">Upload a CSV to see the performance scorecard.</p>
+        <p className="text-sm text-gray-400 mt-1">Upload an XLSX to see the performance scorecard.</p>
       </div>
     );
   }

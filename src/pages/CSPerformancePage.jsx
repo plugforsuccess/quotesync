@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useInvalidateAlertCount } from '../hooks/useAlertCount';
 import {
   useEmployeeTargets, useSaveTargets,
   useProactivityManual, useSaveProactivity,
@@ -63,7 +64,7 @@ const TABS = [
 // ── Page Component ─────────────────────────────────────────────────────────────
 
 const CSPerformancePage = () => {
-  const { user } = useAuth();
+  const { user, currentAgencyId } = useAuth();
   const { platform } = usePermissions();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
@@ -89,6 +90,7 @@ const CSPerformancePage = () => {
 
   const { data: allEmployees = [] } = useAllEmployees();
   const { invalidateRCData } = useInvalidateTimeData();
+  const { invalidateAlertCount } = useInvalidateAlertCount();
 
   // v2 hooks — only for individual view with a single employee selected
   const singleEmployee = selectedEmployee !== 'all' ? selectedEmployee : (rcData.length === 1 ? rcData[0]?.employee_user_id : null);
@@ -136,6 +138,9 @@ const CSPerformancePage = () => {
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
+    // Edge Function detection has already completed by the time onUploaded fires,
+    // so invalidate the badge count immediately.
+    invalidateAlertCount();
   }
 
   // ── Proactivity save handler ─────────────────────────────────────────────
@@ -143,14 +148,14 @@ const CSPerformancePage = () => {
   const handleProactivityChange = useCallback((field, value) => {
     if (!singleEmployee) return;
     saveProactivity({
-      org_id: user?.id,
+      org_id: currentAgencyId,
       employee_user_id: singleEmployee,
       week_start: weekStart,
       followup_notes_logged: field === 'followup_notes_logged' ? value : (proactivityData?.followup_notes_logged || false),
       queue_participation: field === 'queue_participation' ? value : (proactivityData?.queue_participation || false),
       updated_by: user?.id,
     });
-  }, [singleEmployee, weekStart, user, proactivityData, saveProactivity]);
+  }, [singleEmployee, weekStart, user, currentAgencyId, proactivityData, saveProactivity]);
 
   // ── PDF export handler ───────────────────────────────────────────────────
 
@@ -381,7 +386,7 @@ const CSPerformancePage = () => {
           <div className="space-y-6">
             {/* RC Upload */}
             <RCUploadForm
-              orgId={user?.id}
+              orgId={currentAgencyId}
               weekStart={weekStart}
               employeeMap={employeeMap}
               onUploaded={handleRCUploaded}
@@ -392,7 +397,7 @@ const CSPerformancePage = () => {
               <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                 <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">No performance data</h2>
-                <p className="text-gray-600">Upload RingCentral CSV data to see the scorecard.</p>
+                <p className="text-gray-600">Upload a RingCentral XLSX to see the scorecard.</p>
               </div>
             ) : (
               rcData.map((rc) => {
@@ -424,6 +429,7 @@ const CSPerformancePage = () => {
                       timeEntries={empEntries}
                       rcData={rc}
                       weekStart={weekStart}
+                      employeeId={rc.employee_user_id}
                     />
 
                     {/* Scorecard with per-employee targets and manual proactivity */}
@@ -446,7 +452,7 @@ const CSPerformancePage = () => {
                         totalOutbound={rc.outbound_calls}
                         onSave={saveOutboundBreakdown}
                         saving={savingOutboundBreakdown}
-                        orgId={user?.id}
+                        orgId={currentAgencyId}
                         employeeId={rc.employee_user_id}
                         weekStart={weekStart}
                       />
@@ -474,7 +480,7 @@ const CSPerformancePage = () => {
           onClose={() => setTargetsModalOpen(false)}
           employeeName={getEmployeeName(singleEmployee)}
           employeeId={singleEmployee}
-          orgId={user?.id}
+          orgId={currentAgencyId}
           currentTargets={employeeTargets}
           onSave={(targets) => {
             saveTargets(targets, {
