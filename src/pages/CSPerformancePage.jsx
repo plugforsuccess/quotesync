@@ -9,7 +9,6 @@ import {
   BarChart3, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight,
   Filter, Target, Download,
 } from 'lucide-react';
-import { pdf } from '@react-pdf/renderer';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
@@ -27,7 +26,8 @@ import TeamComparisonView from './components/time-attendance/TeamComparisonView'
 import TrendsView from './components/time-attendance/TrendsView';
 import DailyBreakdown from './components/time-attendance/DailyBreakdown';
 import OutboundBreakdownForm from './components/time-attendance/OutboundBreakdownForm';
-import ScorecardPDF from './components/time-attendance/ScorecardPDF';
+// ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
+
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -157,6 +157,12 @@ const CSPerformancePage = () => {
   async function handleDownloadPDF(rc) {
     setPdfGenerating(true);
     try {
+      // Dynamic import — @react-pdf/renderer only loaded when user clicks download
+      const [{ pdf }, { default: ScorecardPDF }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('./components/time-attendance/ScorecardPDF'),
+      ]);
+
       const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
       const daysWorked = empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length || 5;
 

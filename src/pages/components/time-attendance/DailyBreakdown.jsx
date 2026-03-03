@@ -13,10 +13,23 @@ function formatDayLabel(dateStr) {
   return `${day} ${date}`;
 }
 
+function parseDailyBreakdown(raw) {
+  try {
+    const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!Array.isArray(data)) return [];
+    // Validate each entry has at least one expected key
+    return data.filter(
+      (d) => d && typeof d === 'object' && ('outbound_calls' in d || 'total_calls' in d || 'inbound_calls' in d || 'date' in d)
+    );
+  } catch {
+    return [];
+  }
+}
+
 export default function DailyBreakdown({ rcData }) {
   const [expanded, setExpanded] = useState(false);
 
-  const daily = rcData?.daily_breakdown || [];
+  const daily = parseDailyBreakdown(rcData?.daily_breakdown);
 
   if (daily.length === 0) {
     return null;

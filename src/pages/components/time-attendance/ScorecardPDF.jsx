@@ -258,7 +258,7 @@ export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity,
             <Text style={styles.cellActual}>Actual</Text>
             <Text style={styles.cellStatus}>Status</Text>
           </View>
-          <MetricRowPDF label="Answer Rate" target={`≥ ${t.answer_rate_pct}`} actual={metrics.answerRate.toFixed(1)} unit="%" />
+          <MetricRowPDF label="Answer Rate" target={`≥ ${t.answer_rate_pct}`} actual={isFinite(metrics.answerRate) ? metrics.answerRate.toFixed(1) : 'N/A'} unit={isFinite(metrics.answerRate) ? '%' : ''} />
           <MetricRowPDF label="Avg Speed of Answer" target={`< ${t.avg_speed_of_answer_sec}`} actual={(rcData.avg_speed_of_answer_seconds || 0).toFixed(0)} unit="s" inverse />
           <MetricRowPDF label="Avg Handle Time" target={`${t.avg_handle_time_min_low}–${t.avg_handle_time_min_high}`} actual={(rcData.avg_handle_time_minutes || 0).toFixed(1)} unit=" min" />
           <MetricRowPDF label="Avg Hold Time" target={`< ${t.avg_hold_time_min}`} actual={(rcData.avg_hold_time_minutes || 0).toFixed(1)} unit=" min" inverse />

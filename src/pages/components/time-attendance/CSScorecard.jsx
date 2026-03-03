@@ -189,8 +189,8 @@ export default function CSScorecard({
             <MetricRow
               label="Answer Rate"
               target={`≥ ${t.answer_rate_pct}`}
-              actual={metrics.answerRate.toFixed(1)}
-              unit="%"
+              actual={isFinite(metrics.answerRate) ? metrics.answerRate.toFixed(1) : 'N/A'}
+              unit={isFinite(metrics.answerRate) ? '%' : ''}
             />
             <MetricRow
               label="Avg Speed of Answer"

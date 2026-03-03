@@ -46,30 +46,41 @@ export const OUTBOUND_CATEGORIES = [
 
 /**
  * Calculate grade from outbound calls and answer rate against targets.
+ *
+ * Two-axis model: outbound volume + answer rate. Final grade = lowest axis.
+ * If answer rate data is unavailable (0 total calls), grade on outbound only.
+ * Zero-call days force an F regardless of other metrics.
+ *
+ * Examples:
+ *   outbound=50 (B), answerRate=88% (D)           → D (lowest axis)
+ *   outbound=65 (A), answerRate=99% (A), zeroDays  → F (zero-call override)
+ *   outbound=45 (B), answerRate=NaN (0 calls)     → B (answer rate skipped)
  */
 export function calculateGrade(outboundCalls, answerRate, hasZeroCallDays, targets) {
+  // F override — zero-call days always fail regardless of other metrics
+  if (hasZeroCallDays) return 'F';
+
   const t = { ...DEFAULT_TARGETS, ...targets };
 
-  // Outbound-based grade
+  // Outbound-based grade (always available)
   let outGrade;
   if (outboundCalls >= t.grade_a_outbound) outGrade = 4;
   else if (outboundCalls >= t.grade_b_outbound) outGrade = 3;
   else if (outboundCalls >= t.grade_c_outbound) outGrade = 2;
   else outGrade = 1;
 
-  // Answer-rate-based grade
-  let arGrade;
-  if (answerRate >= t.grade_a_answer_rate) arGrade = 4;
-  else if (answerRate >= t.grade_b_answer_rate) arGrade = 3;
-  else if (answerRate >= t.grade_c_answer_rate) arGrade = 2;
-  else arGrade = 1;
+  // Answer-rate-based grade — skip if data unavailable (0 total calls yields NaN/0)
+  const hasAnswerData = answerRate > 0 || answerRate === 0;
+  let arGrade = outGrade; // default: don't penalize if no inbound data
+  if (hasAnswerData && isFinite(answerRate)) {
+    if (answerRate >= t.grade_a_answer_rate) arGrade = 4;
+    else if (answerRate >= t.grade_b_answer_rate) arGrade = 3;
+    else if (answerRate >= t.grade_c_answer_rate) arGrade = 2;
+    else arGrade = 1;
+  }
 
-  // Take the lower of the two
+  // Final grade = lowest axis
   const combined = Math.min(outGrade, arGrade);
-
-  // F override for zero-call days
-  if (hasZeroCallDays) return 'F';
-
   const map = { 4: 'A', 3: 'B', 2: 'C', 1: 'D' };
   return map[combined] || 'D';
 }
@@ -84,7 +95,8 @@ export function computeMetrics(rcData, daysWorked) {
   const missedCalls = rcData.missed_calls || 0;
   const transfers = rcData.transfers || 0;
 
-  const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : 0;
+  // When totalCalls is 0, rates are NaN-safe — calculateGrade() skips answer rate axis
+  const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : NaN;
   const missedCallRate = totalCalls > 0 ? (missedCalls / totalCalls) * 100 : 0;
   const transferRate = totalCalls > 0 ? (transfers / totalCalls) * 100 : 0;
   const avgCallsPerDay = effectiveDays > 0 ? totalCalls / effectiveDays : 0;
