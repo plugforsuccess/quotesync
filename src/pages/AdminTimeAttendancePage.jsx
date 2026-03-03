@@ -198,6 +198,10 @@ const AdminTimeAttendancePage = () => {
       // Rollback on failure
       setEntries(prevEntries);
       console.error('Failed to bulk update approval:', error);
+    } else {
+      // Refetch to reconcile with actual DB state (handles race conditions
+      // where an employee may have updated a row concurrently)
+      fetchEntries();
     }
   }
 

@@ -34,8 +34,14 @@ CREATE UNIQUE INDEX IF NOT EXISTS uniq_employee_work_date
   ON public.employee_time_entries (employee_user_id, work_date);
 
 -- 3. Trigger Function: Auto-Calculate hours_worked
+-- SECURITY DEFINER ensures this runs with the function owner's privileges,
+-- avoiding RLS recursion issues when called from employee sessions.
 CREATE OR REPLACE FUNCTION public.calc_hours_worked()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 DECLARE
   start_ts interval;
   end_ts interval;
@@ -74,7 +80,7 @@ BEGIN
   new.updated_at := now();
   RETURN new;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS trg_calc_hours_worked ON public.employee_time_entries;
 
@@ -125,10 +131,16 @@ WITH CHECK (
 
 -- 5. Guard Trigger: Prevent employees from self-approving their own entries
 -- Silently reverts `approved` to its previous value if the updater is the
--- employee themselves (i.e. not an admin). Admins bypass this via separate
--- RLS policy on ALL operations which uses a profiles-table subquery.
+-- employee themselves (i.e. not an admin). Admins bypass this via the
+-- profiles-table subquery.
+-- SECURITY DEFINER ensures the profiles SELECT always succeeds regardless
+-- of the calling user's RLS context on the profiles table.
 CREATE OR REPLACE FUNCTION public.guard_approval()
-RETURNS trigger AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   IF NEW.approved IS DISTINCT FROM OLD.approved
     AND auth.uid() = NEW.employee_user_id
@@ -143,7 +155,7 @@ BEGIN
   END IF;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 DROP TRIGGER IF EXISTS trg_guard_approval ON public.employee_time_entries;
 

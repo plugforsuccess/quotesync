@@ -178,18 +178,35 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
 
   async function submitUpload() {
     if (!preview || preview.length === 0) return;
+
+    // Filter to only matched rows — unmatched rows are skipped
+    const matchedRows = preview.filter((row) => row.matched);
+    const skippedCount = preview.length - matchedRows.length;
+
+    if (matchedRows.length === 0) {
+      setMsg({ type: 'error', text: 'No rows matched known employees. Please check employee names in the CSV.' });
+      return;
+    }
+
+    // Confirm if some rows will be skipped
+    if (skippedCount > 0) {
+      const confirmed = window.confirm(
+        `${skippedCount} row(s) with unmatched employee names will be skipped. Upload the remaining ${matchedRows.length} matched row(s)?`
+      );
+      if (!confirmed) return;
+    }
+
     setUploading(true);
     setMsg(null);
 
     const { data: { user } } = await supabase.auth.getUser();
 
-    const records = preview.map((row) => {
-      // Try to match to an employee user ID from the employee map
-      const matchedId = employeeMap?.[row.employee_name] || null;
+    const records = matchedRows.map((row) => {
+      const matchedId = employeeMap?.[row.employee_name];
 
       return {
         org_id: orgId,
-        employee_user_id: matchedId || '00000000-0000-0000-0000-000000000000',
+        employee_user_id: matchedId,
         employee_name: row.employee_name,
         week_start: weekStart,
         total_calls: row.total_calls,
@@ -213,8 +230,10 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
     if (error) {
       setMsg({ type: 'error', text: `Upload failed: ${error.message}` });
     } else {
-      setMsg({ type: 'success', text: `${records.length} records uploaded.` });
+      const skipNote = skippedCount > 0 ? ` (${skippedCount} unmatched skipped)` : '';
+      setMsg({ type: 'success', text: `${records.length} records uploaded${skipNote}.` });
       setPreview(null);
+      setWarnings([]);
       if (fileRef.current) fileRef.current.value = '';
       if (onUploaded) onUploaded();
     }
