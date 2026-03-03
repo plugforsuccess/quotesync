@@ -83,10 +83,13 @@ export const AuthProvider = ({ children }) => {
         .single();
 
       if (profileError) {
-        console.error('[AuthProvider] Error fetching profile:', profileError);
+        console.error('[AuthProvider] CRITICAL: Profile fetch failed:', profileError);
+        console.error('[AuthProvider] User will be treated as viewer. This is likely an RLS policy issue.');
         setUser(currentUser);
         setProfile(null);
         setRole('viewer');
+        setIsPlatformUser(false);
+        setPlatformRole(null);
         return;
       }
 
@@ -115,13 +118,16 @@ export const AuthProvider = ({ children }) => {
       // Check for active impersonation session
       let activeImpersonation = null;
       if (profileData?.is_platform_user) {
-        const { data: impersonation } = await supabase
+        const { data: impersonation, error: impError } = await supabase
           .from('impersonation_sessions')
           .select('*')
           .eq('admin_user_id', currentUser.id)
           .eq('is_active', true)
-          .single();
+          .maybeSingle();
 
+        if (impError) {
+          console.warn('[AuthProvider] Impersonation query failed (non-critical):', impError);
+        }
         activeImpersonation = impersonation;
       }
 

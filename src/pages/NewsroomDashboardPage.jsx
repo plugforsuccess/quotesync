@@ -14,7 +14,8 @@ import { getCategoryLabel } from '../lib/categories';
 
 const NewsroomDashboardPage = () => {
   const navigate = useNavigate();
-  const { role: userRole } = useAuth();
+  const { role: userRole, hasPlatformRole } = useAuth();
+  const isAdmin = userRole === 'admin' || hasPlatformRole('platform_admin');
   const [filter, setFilter] = useState('all'); // all, draft, in_review, published, archived
   const [actionLoading, setActionLoading] = useState(null);
 
@@ -55,7 +56,7 @@ const NewsroomDashboardPage = () => {
 
   // Publish story (admin only)
   const handlePublish = async (storyId) => {
-    if (userRole !== 'admin') {
+    if (!isAdmin) {
       alert('Only admins can publish stories');
       return;
     }
@@ -81,7 +82,7 @@ const NewsroomDashboardPage = () => {
 
   // Unpublish story (admin only)
   const handleUnpublish = async (storyId) => {
-    if (userRole !== 'admin') {
+    if (!isAdmin) {
       alert('Only admins can unpublish stories');
       return;
     }
@@ -107,7 +108,7 @@ const NewsroomDashboardPage = () => {
 
   // Toggle featured (admin only)
   const handleToggleFeatured = async (storyId, currentFeatured) => {
-    if (userRole !== 'admin') {
+    if (!isAdmin) {
       alert('Only admins can feature stories');
       return;
     }
@@ -132,7 +133,7 @@ const NewsroomDashboardPage = () => {
 
   // Archive story (admin only)
   const handleArchive = async (storyId, title) => {
-    if (userRole !== 'admin') {
+    if (!isAdmin) {
       alert('Only admins can archive stories');
       return;
     }
@@ -169,7 +170,7 @@ const NewsroomDashboardPage = () => {
 
   // Restore story from archive (admin only)
   const handleRestore = async (storyId, title) => {
-    if (userRole !== 'admin') {
+    if (!isAdmin) {
       alert('Only admins can restore stories');
       return;
     }
@@ -197,7 +198,7 @@ const NewsroomDashboardPage = () => {
 
   // Permanently delete story (admin only)
   const handleHardDelete = async (storyId, title) => {
-    if (userRole !== 'admin') {
+    if (!isAdmin) {
       alert('Only admins can permanently delete stories');
       return;
     }
@@ -292,7 +293,7 @@ const NewsroomDashboardPage = () => {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Newsroom Dashboard</h1>
               <p className="text-gray-600 text-sm mt-1">
-                Role: <span className="font-semibold capitalize">{userRole}</span>
+                Role: <span className="font-semibold capitalize">{isAdmin ? 'admin' : userRole}</span>
                 {' • '}
                 <span className="text-xs text-gray-400">{getBuildString()}</span>
               </p>
@@ -316,7 +317,7 @@ const NewsroomDashboardPage = () => {
                 <span className="sm:hidden">View</span>
               </Link>
 
-              {userRole === 'admin' && (
+              {isAdmin && (
                 <Link
                   to="/news/archived"
                   className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-sm whitespace-nowrap"
@@ -407,7 +408,7 @@ const NewsroomDashboardPage = () => {
             >
               Published
             </button>
-            {userRole === 'admin' && (
+            {isAdmin && (
               <button
                 onClick={() => setFilter('archived')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -521,7 +522,7 @@ const NewsroomDashboardPage = () => {
                       <div className="flex items-center justify-end gap-2">
                         {story.status === 'archived' ? (
                           // Archived story actions
-                          userRole === 'admin' && (
+                          isAdmin && (
                             <>
                               <button
                                 onClick={() => handleRestore(story.id, story.title)}
@@ -571,7 +572,7 @@ const NewsroomDashboardPage = () => {
                               <Eye className="w-4 h-4" />
                             </button>
 
-                            {userRole === 'admin' && (
+                            {isAdmin && (
                               <>
                                 <button
                                   onClick={() => handleToggleFeatured(story.id, story.is_featured)}

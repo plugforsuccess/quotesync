@@ -48,7 +48,7 @@ export const useSessionValidation = (requiredRole = null) => {
       if (requiredRole) {
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, platform_role, is_platform_user')
           .eq('id', session.user.id)
           .single();
 
@@ -61,15 +61,22 @@ export const useSessionValidation = (requiredRole = null) => {
         }
 
         const userRole = profile?.role || 'viewer';
+        const platformRole = profile?.platform_role;
+        const isPlatformUser = profile?.is_platform_user || false;
 
-        // Check if user has required role
-        const hasPermission =
+        // Check if user has required role (legacy OR platform)
+        const legacyPermission =
           requiredRole === 'viewer' ||
           (requiredRole === 'editor' && (userRole === 'editor' || userRole === 'admin')) ||
           (requiredRole === 'admin' && userRole === 'admin');
 
-        if (!hasPermission) {
-          console.warn('[useSessionValidation] Insufficient permissions:', userRole, 'required:', requiredRole);
+        const platformPermission = isPlatformUser && (
+          (requiredRole === 'admin' && ['platform_admin', 'platform_master_admin'].includes(platformRole)) ||
+          (requiredRole === 'editor' && ['platform_editor', 'platform_support', 'platform_admin', 'platform_master_admin'].includes(platformRole))
+        );
+
+        if (!legacyPermission && !platformPermission) {
+          console.warn('[useSessionValidation] Insufficient permissions:', userRole, 'platformRole:', platformRole, 'required:', requiredRole);
           setError(`Access denied. Required role: ${requiredRole}`);
           setIsValid(false);
           setIsChecking(false);

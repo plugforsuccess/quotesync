@@ -81,12 +81,22 @@ const ProtectedRoute = ({
   }
 
   // Legacy role check (for backward compatibility)
-  // Agency agents/producers accessing agency routes pass through if they have agency membership
+  // FIXED: Platform users with sufficient platform_role bypass legacy check
   if (requiredRole && !hasPermission(role, requiredRole)) {
-    // Allow agency users to access routes they have agency-level permission for
-    const hasAgencyAccess = agencyMemberships.some(m => m.status === 'active');
-    if (!hasAgencyAccess) {
-      return <Navigate to={redirectTo} replace />;
+    // Bridge: platform roles map to legacy roles
+    const platformGrantsAccess = isPlatformUser && (
+      // platform_admin and above satisfy any legacy requiredRole
+      (hasPlatformRole('platform_admin')) ||
+      // platform_editor satisfies requiredRole="editor"
+      (requiredRole === 'editor' && hasPlatformRole('platform_editor'))
+    );
+
+    if (!platformGrantsAccess) {
+      // Also allow agency users to access routes they have agency-level permission for
+      const hasAgencyAccess = agencyMemberships.some(m => m.status === 'active');
+      if (!hasAgencyAccess) {
+        return <Navigate to={redirectTo} replace />;
+      }
     }
   }
 
