@@ -1,8 +1,8 @@
 // src/pages/components/time-attendance/RCUploadForm.jsx
 // CSV upload form for RingCentral User Performance + User Status reports
 
-import { useState, useRef } from 'react';
-import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, HelpCircle } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 function toMonday(d) {
@@ -111,6 +111,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
   const [preview, setPreview] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [warnings, setWarnings] = useState([]);
+  const [confirmModal, setConfirmModal] = useState(null); // { matchedRows, unmatchedNames, skippedCount }
   const fileRef = useRef(null);
 
   async function handleFile(e) {
@@ -176,7 +177,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
     setPreview(parsed);
   }
 
-  async function submitUpload() {
+  function submitUpload() {
     if (!preview || preview.length === 0) return;
 
     // Filter to only matched rows — unmatched rows are skipped
@@ -188,14 +189,21 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       return;
     }
 
-    // Confirm if some rows will be skipped
+    // Show confirmation modal if some rows will be skipped
     if (skippedCount > 0) {
-      const confirmed = window.confirm(
-        `${skippedCount} row(s) with unmatched employee names will be skipped. Upload the remaining ${matchedRows.length} matched row(s)?`
-      );
-      if (!confirmed) return;
+      const unmatchedNames = preview
+        .filter((row) => !row.matched)
+        .map((row) => row.employee_name);
+      setConfirmModal({ matchedRows, unmatchedNames, skippedCount });
+      return;
     }
 
+    // No unmatched rows — upload directly
+    doUpload(matchedRows, 0);
+  }
+
+  async function doUpload(matchedRows, skippedCount) {
+    setConfirmModal(null);
     setUploading(true);
     setMsg(null);
 
@@ -238,6 +246,18 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       if (onUploaded) onUploaded();
     }
   }
+
+  // Close confirmation modal on Escape key
+  const handleEscKey = useCallback((e) => {
+    if (e.key === 'Escape') setConfirmModal(null);
+  }, []);
+
+  useEffect(() => {
+    if (confirmModal) {
+      document.addEventListener('keydown', handleEscKey);
+      return () => document.removeEventListener('keydown', handleEscKey);
+    }
+  }, [confirmModal, handleEscKey]);
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -296,7 +316,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           <ul className="text-xs text-yellow-700 space-y-0.5 max-h-32 overflow-y-auto">
             {warnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
-          <p className="text-xs text-yellow-600 mt-1">Unmatched rows will still upload but cannot be linked to time entries for cross-checks.</p>
+          <p className="text-xs text-yellow-600 mt-1">Unmatched rows will be skipped during upload. You will be asked to confirm before proceeding.</p>
         </div>
       )}
 
@@ -363,6 +383,72 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
         <div className={`mt-3 flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
           {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
           {msg.text}
+        </div>
+      )}
+
+      {/* Unmatched rows confirmation modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={() => setConfirmModal(null)}
+          />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl">
+              {/* Header */}
+              <div className="border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <UserX className="w-5 h-5 text-yellow-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Unmatched Employees
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setConfirmModal(null)}
+                    className="text-gray-400 hover:text-gray-500 transition"
+                    aria-label="Close"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="px-6 py-4">
+                <p className="text-sm text-gray-600 mb-3">
+                  {confirmModal.skippedCount} row{confirmModal.skippedCount > 1 ? 's' : ''} will be skipped because {confirmModal.skippedCount > 1 ? 'these employees don\u2019t' : 'this employee doesn\u2019t'} match any known employee:
+                </p>
+                <ul className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
+                  {confirmModal.unmatchedNames.map((name, i) => (
+                    <li key={i} className="flex items-center gap-2 text-sm text-yellow-800">
+                      <AlertCircle className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+                      {name}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-sm text-gray-700">
+                  <span className="font-medium text-gray-900">{confirmModal.matchedRows.length}</span> matched row{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+                <button
+                  onClick={() => setConfirmModal(null)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => doUpload(confirmModal.matchedRows, confirmModal.skippedCount)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Upload Matched Only
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
