@@ -41,13 +41,39 @@ function persistInputs(inputs) {
   } catch { /* ignore */ }
 }
 
+// ─── Allstate New Business Commission Schedule ──────────────────────────────
+
+const COMMISSION_MATRIX = {
+  'Standard Auto':             { preferredBundled: 16, bundled: 11, monoline: 6 },
+  'Homeowners / Condo':        { preferredBundled: 20, bundled: 16, monoline: 7 },
+  'LA/TX Homeowners / Condo':  { preferredBundled: 17, bundled: 13, monoline: 4 },
+  'Other Personal Lines':      { preferredBundled: 17, bundled: 12, monoline: 6 },
+};
+
+const BASE_COMMISSION = 9;
+
+const TIER_OPTIONS = [
+  { key: 'preferredBundled', label: 'Preferred Bundled' },
+  { key: 'bundled',          label: 'Bundled' },
+  { key: 'monoline',         label: 'Monoline' },
+];
+
+const DEFAULT_POLICY_MIX = [
+  { productLine: 'Standard Auto',        tier: 'bundled',          avgPremium: 2200, mixPct: 40 },
+  { productLine: 'Standard Auto',        tier: 'monoline',         avgPremium: 1800, mixPct: 20 },
+  { productLine: 'Homeowners / Condo',   tier: 'preferredBundled', avgPremium: 2000, mixPct: 15 },
+  { productLine: 'Homeowners / Condo',   tier: 'bundled',          avgPremium: 1800, mixPct: 10 },
+  { productLine: 'Other Personal Lines', tier: 'monoline',         avgPremium: 1200, mixPct: 15 },
+];
+
 const DEFAULT_PLANNER = {
   targetSubmissions: 700,
   avgCPC: 7.0,
   landingPageConvRate: 20,
   closeRate: 18,
-  avgPremium: 2400,
-  commissionRate: 10,
+  policyMix: DEFAULT_POLICY_MIX,
+  commissionMatrix: COMMISSION_MATRIX,
+  baseCommission: BASE_COMMISSION,
 };
 
 const DEFAULT_STAFFING = {
@@ -67,10 +93,28 @@ const FunnelDashboardPage = () => {
 
   const [timeRange, setTimeRange] = useState('30d');
 
-  // Load persisted inputs or use defaults
+  // Load persisted inputs or use defaults (with migration from old format)
   const [plannerInputs, setPlannerInputs] = useState(() => {
     const saved = loadPersistedInputs();
-    return saved?.planner || DEFAULT_PLANNER;
+    const planner = saved?.planner || DEFAULT_PLANNER;
+    // Migrate from old single-field format
+    if (!planner.policyMix && planner.avgPremium != null) {
+      planner.policyMix = [{
+        productLine: 'Standard Auto',
+        tier: 'bundled',
+        avgPremium: planner.avgPremium,
+        mixPct: 100,
+      }];
+      planner.commissionMatrix = COMMISSION_MATRIX;
+      planner.baseCommission = BASE_COMMISSION;
+      delete planner.avgPremium;
+      delete planner.commissionRate;
+    }
+    // Fallbacks for corrupted/partial localStorage
+    if (!planner.policyMix) planner.policyMix = DEFAULT_POLICY_MIX;
+    if (!planner.commissionMatrix) planner.commissionMatrix = COMMISSION_MATRIX;
+    if (planner.baseCommission == null) planner.baseCommission = BASE_COMMISSION;
+    return planner;
   });
 
   const [staffingInputs, setStaffingInputs] = useState(() => {
@@ -85,6 +129,30 @@ const FunnelDashboardPage = () => {
 
   const handlePlannerChange = useCallback((key, value) => {
     setPlannerInputs(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleMixChange = useCallback((index, field, value) => {
+    setPlannerInputs(prev => {
+      const updated = [...prev.policyMix];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, policyMix: updated };
+    });
+  }, []);
+
+  const handleMixAdd = useCallback(() => {
+    setPlannerInputs(prev => ({
+      ...prev,
+      policyMix: [...prev.policyMix, {
+        productLine: 'Standard Auto', tier: 'monoline', avgPremium: 1500, mixPct: 0,
+      }],
+    }));
+  }, []);
+
+  const handleMixRemove = useCallback((index) => {
+    setPlannerInputs(prev => {
+      if (prev.policyMix.length <= 1) return prev;
+      return { ...prev, policyMix: prev.policyMix.filter((_, i) => i !== index) };
+    });
   }, []);
 
   const handleStaffingChange = useCallback((key, value) => {
@@ -190,6 +258,11 @@ const FunnelDashboardPage = () => {
               kpis={metrics.kpis}
               plannerInputs={plannerInputs}
               onInputChange={handlePlannerChange}
+              onMixChange={handleMixChange}
+              onMixAdd={handleMixAdd}
+              onMixRemove={handleMixRemove}
+              tierOptions={TIER_OPTIONS}
+              productLines={Object.keys(COMMISSION_MATRIX)}
             />
 
             {/* Section 5: Staffing & Quoting Capacity */}

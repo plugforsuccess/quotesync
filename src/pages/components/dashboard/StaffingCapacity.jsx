@@ -3,6 +3,7 @@
 
 import { useMemo } from 'react';
 import { Users, Clock, Zap, AlertTriangle } from 'lucide-react';
+import { getBlendedValues } from '../../../lib/commissionUtils';
 
 function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
   return (
@@ -16,7 +17,7 @@ function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
           min={min}
           max={max}
           step={step}
-          className="w-20 text-right text-sm font-semibold border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
         {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
       </div>
@@ -39,7 +40,13 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
     quotingAllocation, qualificationRate, workingDays,
   } = staffingInputs;
 
-  const { targetSubmissions, closeRate, avgPremium, commissionRate } = plannerInputs;
+  const { targetSubmissions, closeRate, policyMix, commissionMatrix, baseCommission } = plannerInputs;
+
+  // Derive blended avgPremium and commissionRate from policy mix
+  const { avgPremium, commissionRate } = useMemo(
+    () => getBlendedValues(policyMix, commissionMatrix, baseCommission),
+    [policyMix, commissionMatrix, baseCommission]
+  );
 
   // Computed outputs
   const outputs = useMemo(() => {
