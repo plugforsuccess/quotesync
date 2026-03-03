@@ -14,9 +14,10 @@ import { validateCacheVersion } from './utils/cacheVersion';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 2 * 60 * 1000, // 2 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: true,
+      refetchOnReconnect: true,
       retry: 1
     }
   }
