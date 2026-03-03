@@ -21,8 +21,8 @@ export const consumerNav = [
 const primaryItems = {
   funnel:         { to: '/agency/dashboard',      label: 'Funnel',             icon: '📊' },
   leads:          { to: '/agency/leads',           label: 'Leads',              icon: '📋' },
-  timeAttendance: { to: '/admin/time-attendance',  label: 'Time & Attendance',  icon: '⏱️' },
-  csPerformance:  { to: '/admin/cs-performance',   label: 'CS Performance',     icon: '📈' },
+  timeAttendance: { to: '/admin/time-attendance',  label: 'Attendance',         icon: '⏱️' },
+  csPerformance:  { to: '/admin/cs-performance',   label: 'Performance',        icon: '📈' },
 };
 
 // ── Secondary nav items (inside hamburger menu) ──────────────────────────────
