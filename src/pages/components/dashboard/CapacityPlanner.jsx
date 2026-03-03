@@ -2,7 +2,7 @@
 // Section 4: Capacity Planning Model — current performance + scenario planner
 
 import { useMemo, useState } from 'react';
-import { Calculator, ChevronDown, ChevronUp, Plus, X, CheckCircle, AlertCircle } from 'lucide-react';
+import { Calculator, ChevronDown, ChevronUp, Plus, X, CheckCircle, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
 import { getCommissionRate } from '../../../lib/commissionUtils';
 
 // ─── Reusable rows ──────────────────────────────────────────────────────────
@@ -106,11 +106,11 @@ function PolicyMixTable({
       <p className="text-sm font-medium text-gray-700 mb-2">Your Policy Mix</p>
 
       {/* Desktop header */}
-      <div className="hidden sm:grid sm:grid-cols-[1fr_1fr_5rem_4rem_5rem_2rem] gap-1 text-xs font-medium text-gray-500 mb-1 px-1">
+      <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_1.5rem] gap-1 text-xs font-medium text-gray-500 mb-1 px-1">
         <span>Product Line</span>
         <span>Tier</span>
         <span className="text-right">Premium</span>
-        <span className="text-right">Comm</span>
+        <span className="text-right">Comm %</span>
         <span className="text-right">Mix %</span>
         <span />
       </div>
@@ -118,71 +118,129 @@ function PolicyMixTable({
       {policyMix.map((row, idx) => {
         const commRate = getCommissionRate(row.productLine, row.tier, commissionMatrix, baseCommission);
         return (
-          <div
-            key={idx}
-            className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_5rem_4rem_5rem_2rem] gap-1 items-center py-1 border-b border-gray-100"
-          >
-            {/* Product line select */}
-            <select
-              value={row.productLine}
-              onChange={(e) => onMixChange(idx, 'productLine', e.target.value)}
-              className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {productLines.map(pl => (
-                <option key={pl} value={pl}>{pl}</option>
-              ))}
-            </select>
+          <div key={idx}>
+            {/* Desktop row */}
+            <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_1.5rem] gap-1 items-center py-1 border-b border-gray-100">
+              {/* Product line select */}
+              <select
+                value={row.productLine}
+                onChange={(e) => onMixChange(idx, 'productLine', e.target.value)}
+                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {productLines.map(pl => (
+                  <option key={pl} value={pl}>{pl}</option>
+                ))}
+              </select>
 
-            {/* Tier select */}
-            <select
-              value={row.tier}
-              onChange={(e) => onMixChange(idx, 'tier', e.target.value)}
-              className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              {tierOptions.map(t => (
-                <option key={t.key} value={t.key}>{t.label}</option>
-              ))}
-            </select>
+              {/* Tier select */}
+              <select
+                value={row.tier}
+                onChange={(e) => onMixChange(idx, 'tier', e.target.value)}
+                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {tierOptions.map(t => (
+                  <option key={t.key} value={t.key}>{t.label}</option>
+                ))}
+              </select>
 
-            {/* Premium input */}
-            <div className="flex items-center gap-0.5">
-              <span className="text-xs text-gray-400">$</span>
-              <input
-                type="number"
-                value={row.avgPremium}
-                onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
-                min={0}
-                step={100}
-                className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
+              {/* Premium input */}
+              <div className="flex items-center gap-0.5">
+                <span className="text-xs text-gray-400">$</span>
+                <input
+                  type="number"
+                  value={row.avgPremium}
+                  onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
+                  min={0}
+                  step={100}
+                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+
+              {/* Commission % (read-only, auto-populated) */}
+              <span className="text-sm text-right text-gray-600 bg-gray-50 font-medium px-1 py-1 rounded">{commRate}%</span>
+
+              {/* Mix % input */}
+              <div className="flex items-center gap-0.5">
+                <input
+                  type="number"
+                  value={row.mixPct}
+                  onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
+                  min={0}
+                  max={100}
+                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+                <span className="text-xs text-gray-400">%</span>
+              </div>
+
+              {/* Remove button */}
+              <button
+                type="button"
+                onClick={() => onMixRemove(idx)}
+                disabled={policyMix.length <= 1}
+                className={`p-0.5 ${policyMix.length <= 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}
+                title="Remove row"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
-            {/* Commission (read-only) */}
-            <span className="text-sm text-right text-gray-400 font-medium">{commRate}%</span>
-
-            {/* Mix % input */}
-            <div className="flex items-center gap-0.5">
-              <input
-                type="number"
-                value={row.mixPct}
-                onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
-                min={0}
-                max={100}
-                className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <span className="text-xs text-gray-400">%</span>
+            {/* Mobile stacked row */}
+            <div className="md:hidden py-2 border-b border-gray-100">
+              <div className="flex items-center justify-between mb-1.5">
+                <select
+                  value={row.productLine}
+                  onChange={(e) => onMixChange(idx, 'productLine', e.target.value)}
+                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {productLines.map(pl => (
+                    <option key={pl} value={pl}>{pl}</option>
+                  ))}
+                </select>
+                <select
+                  value={row.tier}
+                  onChange={(e) => onMixChange(idx, 'tier', e.target.value)}
+                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  {tierOptions.map(t => (
+                    <option key={t.key} value={t.key}>{t.label}</option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => onMixRemove(idx)}
+                  disabled={policyMix.length <= 1}
+                  className={`p-0.5 flex-shrink-0 ${policyMix.length <= 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}
+                  title="Remove row"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-0.5">
+                  <span className="text-xs text-gray-400">$</span>
+                  <input
+                    type="number"
+                    value={row.avgPremium}
+                    onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
+                    min={0}
+                    step={100}
+                    className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <span className="text-gray-600 bg-gray-50 font-medium px-2 py-1 rounded text-sm">{commRate}%</span>
+                <div className="flex items-center gap-0.5">
+                  <input
+                    type="number"
+                    value={row.mixPct}
+                    onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
+                    min={0}
+                    max={100}
+                    className="w-14 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <span className="text-xs text-gray-400">%</span>
+                </div>
+              </div>
             </div>
-
-            {/* Remove button */}
-            <button
-              type="button"
-              onClick={() => onMixRemove(idx)}
-              disabled={policyMix.length <= 1}
-              className={`p-0.5 ${policyMix.length <= 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}
-              title="Remove row"
-            >
-              <X className="w-4 h-4" />
-            </button>
           </div>
         );
       })}
@@ -235,26 +293,6 @@ export default function CapacityPlanner({
     const convRate = landingPageConvRate / 100;
     const close = closeRate / 100;
 
-    // Visitor / ad-spend calculations (unchanged)
-    const visitorsNeeded = convRate > 0 ? Math.ceil(targetSubmissions / convRate) : 0;
-    const monthlyAdSpend = visitorsNeeded * avgCPC;
-    const costPerSubmission = targetSubmissions > 0 ? monthlyAdSpend / targetSubmissions : 0;
-    const policiesWritten = Math.round(targetSubmissions * close);
-    const leadsPerDay = targetSubmissions / 30;
-
-    // Weighted revenue from policy mix
-    const weightedAnnualPerPolicy = policyMix.reduce((sum, row) => {
-      const mix = row.mixPct / 100;
-      const commRate = getCommissionRate(
-        row.productLine, row.tier, commissionMatrix, baseCommission
-      ) / 100;
-      return sum + (mix * row.avgPremium * commRate);
-    }, 0);
-
-    const annualBookValue = policiesWritten * weightedAnnualPerPolicy;
-    const monthlyRevenue = annualBookValue / 12;
-    const monthlyROI = monthlyAdSpend > 0 ? ((monthlyRevenue - monthlyAdSpend) / monthlyAdSpend) * 100 : 0;
-
     // Blended stats for display
     const blendedPremium = policyMix.reduce(
       (sum, r) => sum + (r.mixPct / 100) * r.avgPremium, 0
@@ -269,24 +307,67 @@ export default function CapacityPlanner({
         }, 0) / blendedPremium
       : 0;
 
+    // Funnel projections
+    const requiredLeads = close > 0 ? Math.ceil(targetSubmissions / close) : 0;
+    const requiredClicks = convRate > 0 ? Math.ceil(requiredLeads / convRate) : 0;
+    const estMonthlyAdSpend = requiredClicks * avgCPC;
+    const estPoliciesClosed = Math.round(targetSubmissions * close);
+    const estMonthlyPremium = estPoliciesClosed * blendedPremium;
+    const estMonthlyCommission = estMonthlyPremium * (blendedCommission / 100);
+    const net = estMonthlyCommission - estMonthlyAdSpend;
+    const roi = estMonthlyAdSpend > 0 ? (net / estMonthlyAdSpend) * 100 : 0;
+
+    // Breakeven metrics
+    const costPerPolicy = estPoliciesClosed > 0 ? estMonthlyAdSpend / estPoliciesClosed : 0;
+    const commissionPerPolicy = blendedPremium * (blendedCommission / 100);
+    // Breakeven close rate: the close rate where commission = ad spend
+    // commission = (targetSubmissions * breakevenClose) * blendedPremium * (blendedCommission/100)
+    // adSpend = (targetSubmissions / breakevenClose) / convRate * avgCPC  -- but this creates a complex equation
+    // Simpler: at breakeven, costPerPolicy = commissionPerPolicy
+    // costPerPolicy = adSpend / policies = (requiredClicks * avgCPC) / policies
+    // Since requiredClicks = (targetSubmissions / closeRate) / convRate, and policies = targetSubmissions * closeRate:
+    // costPerPolicy = (targetSubmissions * avgCPC) / (closeRate^2 * convRate * targetSubmissions) = avgCPC / (closeRate^2 * convRate)
+    // At breakeven: avgCPC / (breakevenClose^2 * convRate) = blendedPremium * blendedCommission/100
+    // breakevenClose = sqrt(avgCPC / (convRate * blendedPremium * blendedCommission / 100))
+    const earnPerPolicy = blendedPremium * (blendedCommission / 100);
+    const breakevenCloseRate = convRate > 0 && earnPerPolicy > 0
+      ? Math.sqrt(avgCPC / (convRate * earnPerPolicy)) * 100
+      : 0;
+    // Breakeven CPC: the max CPC where commission = ad spend at current close rate
+    // adSpend = requiredClicks * CPC = ((targetSubs / close) / convRate) * CPC
+    // commission = targetSubs * close * earnPerPolicy
+    // At breakeven: ((targetSubs / close) / convRate) * CPC = targetSubs * close * earnPerPolicy
+    // CPC = close^2 * convRate * earnPerPolicy
+    const breakevenCPC = close * close * convRate * earnPerPolicy;
+
+    // Legacy compat for existing display
+    const leadsPerDay = targetSubmissions / 30;
+
     return {
-      visitorsNeeded,
-      monthlyAdSpend,
-      costPerSubmission,
-      policiesWritten,
-      monthlyRevenue,
-      monthlyROI,
-      annualBookValue,
-      leadsPerDay,
       blendedPremium: Math.round(blendedPremium),
       blendedCommission: blendedCommission.toFixed(1),
+      requiredLeads,
+      requiredClicks,
+      estMonthlyAdSpend,
+      estPoliciesClosed,
+      estMonthlyPremium,
+      estMonthlyCommission,
+      net,
+      roi,
+      costPerPolicy,
+      commissionPerPolicy,
+      breakevenCloseRate,
+      breakevenCPC,
+      leadsPerDay,
     };
   }, [targetSubmissions, avgCPC, landingPageConvRate, closeRate, policyMix, commissionMatrix, baseCommission]);
 
   const totalMix = policyMix.reduce((s, r) => s + r.mixPct, 0);
   const mixValid = Math.abs(totalMix - 100) < 0.01;
   const gapColor = gapTo700 >= 0 ? 'text-green-600' : 'text-red-600';
-  const roiColor = outputs.monthlyROI >= 0 ? 'text-green-600' : 'text-red-600';
+  const netColor = outputs.net >= 0 ? 'text-green-600' : 'text-red-600';
+  const roiColor = outputs.roi > 100 ? 'text-green-600' : outputs.roi >= 0 ? 'text-yellow-600' : 'text-red-600';
+  const [showBreakeven, setShowBreakeven] = useState(false);
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -373,35 +454,96 @@ export default function CapacityPlanner({
             </div>
           </div>
 
-          {/* Outputs */}
+          {/* Projections */}
           <div className="bg-gray-50 rounded-lg p-4">
-            <StatRow label="Visitors Needed/mo" value={outputs.visitorsNeeded.toLocaleString()} />
-            <StatRow label="Monthly Ad Spend" value={`$${outputs.monthlyAdSpend.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
-            <StatRow label="Cost Per Submission" value={`$${outputs.costPerSubmission.toFixed(2)}`} />
-            <StatRow label="Policies Written/mo" value={outputs.policiesWritten.toLocaleString()} />
-            <StatRow label="Monthly Revenue" value={`$${outputs.monthlyRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`} />
+            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Projections</h4>
+
+            {/* Traffic & spend */}
+            <StatRow label="Required Leads/mo" value={outputs.requiredLeads.toLocaleString()} />
+            <StatRow label="Required Clicks/mo" value={outputs.requiredClicks.toLocaleString()} />
             <StatRow
-              label="Monthly ROI"
-              value={`${outputs.monthlyROI.toFixed(1)}%`}
-              highlight={roiColor}
+              label="Est. Ad Spend/mo"
+              value={`$${outputs.estMonthlyAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            />
+
+            <div className="border-t border-gray-200 my-2" />
+
+            {/* Revenue */}
+            <StatRow label="Est. Policies Closed/mo" value={outputs.estPoliciesClosed.toLocaleString()} />
+            <StatRow
+              label="Est. Monthly Premium"
+              value={`$${outputs.estMonthlyPremium.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             />
             <StatRow
-              label="Annual Book Value"
-              value={`$${outputs.annualBookValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-              highlight="text-blue-600"
+              label="Est. Monthly Commission"
+              value={`$${outputs.estMonthlyCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             />
-            <StatRow
-              label="Leads Per Day"
-              value={outputs.leadsPerDay.toFixed(1)}
-              highlight="text-blue-600 text-base"
-            />
-            <StatRow label="Blended Premium" value={`$${outputs.blendedPremium.toLocaleString()}`} />
-            <StatRow label="Blended Commission" value={`${outputs.blendedCommission}%`} />
+
+            <div className="border-t border-gray-200 my-2" />
+
+            {/* Bottom line */}
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-sm font-medium text-gray-700">Net (Commission - Spend)</span>
+              <span className={`text-sm font-bold ${netColor}`}>
+                {outputs.net < 0 ? '(' : ''}${Math.abs(outputs.net).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.net < 0 ? ')' : ''}
+                {outputs.net >= 0
+                  ? <TrendingUp className="w-4 h-4 inline ml-1 text-green-500" />
+                  : <TrendingDown className="w-4 h-4 inline ml-1 text-red-500" />
+                }
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-sm font-medium text-gray-700">ROI</span>
+              <span className={`text-sm font-bold ${roiColor}`}>
+                {outputs.roi.toFixed(1)}%
+              </span>
+            </div>
+
+            {/* Leads per day context */}
+            <div className="border-t border-gray-200 my-2" />
+            <StatRow label="Leads Per Day" value={outputs.leadsPerDay.toFixed(1)} highlight="text-blue-600" />
+
             {!mixValid && (
-              <p className="text-xs text-red-500 mt-1">
+              <p className="text-xs text-red-500 mt-2">
                 Mix total is {Math.round(totalMix)}%. Adjust to 100% for accurate projections.
               </p>
             )}
+
+            {/* Breakeven metrics (expandable) */}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={() => setShowBreakeven(!showBreakeven)}
+                className="flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900"
+              >
+                Breakeven Analysis
+                {showBreakeven ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              {showBreakeven && (
+                <div className="mt-2 bg-white rounded p-3 border border-gray-200">
+                  <StatRow
+                    label="Cost Per Policy"
+                    value={`$${outputs.costPerPolicy.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                  />
+                  <StatRow
+                    label="Commission Per Policy"
+                    value={`$${outputs.commissionPerPolicy.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                  />
+                  <StatRow
+                    label="Breakeven Close Rate"
+                    value={outputs.breakevenCloseRate > 0 && outputs.breakevenCloseRate <= 100
+                      ? `${outputs.breakevenCloseRate.toFixed(1)}%`
+                      : 'N/A'}
+                  />
+                  <StatRow
+                    label="Breakeven CPC"
+                    value={outputs.breakevenCPC > 0
+                      ? `$${outputs.breakevenCPC.toFixed(2)}`
+                      : 'N/A'}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

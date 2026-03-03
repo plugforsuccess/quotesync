@@ -46,7 +46,6 @@ function persistInputs(inputs) {
 const COMMISSION_MATRIX = {
   'Standard Auto':             { preferredBundled: 16, bundled: 11, monoline: 6 },
   'Homeowners / Condo':        { preferredBundled: 20, bundled: 16, monoline: 7 },
-  'LA/TX Homeowners / Condo':  { preferredBundled: 17, bundled: 13, monoline: 4 },
   'Other Personal Lines':      { preferredBundled: 17, bundled: 12, monoline: 6 },
 };
 
