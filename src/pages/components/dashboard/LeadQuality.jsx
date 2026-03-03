@@ -246,12 +246,40 @@ function ChannelTable({ channels }) {
   );
 }
 
+// ─── No Prior Insurance Callout (NEW-3) ──────────────────────────────────────
+
+function NoPriorInsuranceCallout({ noPriorInsurance, totalCompleted }) {
+  if (!noPriorInsurance || totalCompleted === 0) return null;
+
+  const autoPct = Math.round((noPriorInsurance.auto / totalCompleted) * 100);
+  const homePct = Math.round((noPriorInsurance.home / totalCompleted) * 100);
+
+  // Only show callout if either exceeds 15% threshold
+  if (autoPct <= 15 && homePct <= 15) return null;
+
+  return (
+    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      {autoPct > 15 && (
+        <p className="text-xs text-amber-700">
+          {autoPct}% of leads have no prior auto insurance — these are hard to place at standard rates. Consider routing to a non-standard market partner.
+        </p>
+      )}
+      {homePct > 15 && (
+        <p className={`text-xs text-amber-700 ${autoPct > 15 ? 'mt-1' : ''}`}>
+          {homePct}% of leads have no prior home insurance — limited carrier options for first-time buyers.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Export ─────────────────────────────────────────────────────────────
 
 export default function LeadQuality({ quality, channels }) {
   if (!quality) return null;
 
-  const { scoreDistribution, ownerRenterSplit, intentMix, riskProfile } = quality;
+  const { scoreDistribution, ownerRenterSplit, intentMix, riskProfile, noPriorInsurance } = quality;
+  const totalCompleted = scoreDistribution.reduce((sum, b) => sum + b.count, 0);
 
   return (
     <div className="space-y-4">
@@ -266,6 +294,9 @@ export default function LeadQuality({ quality, channels }) {
         <IntentMixCard intentMix={intentMix} />
         <RiskProfileCard riskProfile={riskProfile} />
       </div>
+
+      {/* NEW-3: No prior insurance callout */}
+      <NoPriorInsuranceCallout noPriorInsurance={noPriorInsurance} totalCompleted={totalCompleted} />
 
       {/* Channel table */}
       <ChannelTable channels={channels} />

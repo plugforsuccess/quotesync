@@ -231,6 +231,14 @@ function computeAllMetrics(leads, timeRange) {
     else if (l.home_claims_history === '2+') claims2plus++;
   });
 
+  // NEW-3: No prior insurance tracking
+  let noPriorAuto = 0, noPriorHome = 0, noPriorRenters = 0;
+  completedFunnel.forEach(l => {
+    if (l.current_auto_carrier === 'none') noPriorAuto++;
+    if (l.current_home_carrier === 'none') noPriorHome++;
+    if (l.current_renters_carrier === 'none') noPriorRenters++;
+  });
+
   // ── Channel Performance ──
   const channelMap = {};
   funnelLeads.forEach(l => {
@@ -315,6 +323,7 @@ function computeAllMetrics(leads, timeRange) {
       ownerRenterSplit: { owners, renters },
       intentMix: intentCounts,
       riskProfile: { cleanDriving, incidents12, incidents3plus, claims01, claims2plus },
+      noPriorInsurance: { auto: noPriorAuto, home: noPriorHome, renters: noPriorRenters },
     },
     channels,
     partials: {
