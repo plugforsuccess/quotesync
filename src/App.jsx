@@ -4,13 +4,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { validateCacheVersion } from './utils/cacheVersion';
 
-// Configure React Query
+// Configure React Query with auth-aware error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -18,10 +19,34 @@ const queryClient = new QueryClient({
       cacheTime: 10 * 60 * 1000, // 10 minutes
       refetchOnWindowFocus: true,
       refetchOnReconnect: true,
-      retry: 1
-    }
-  }
+      retry: (failureCount, error) => {
+        // Never retry auth failures — the token is dead, retrying just cascades errors
+        if (error?.status === 401 || error?.status === 403) {
+          return false;
+        }
+        return failureCount < 1;
+      },
+    },
+    mutations: {
+      retry: false,
+    },
+  },
 });
+
+// Global auth error handler — sign out cleanly on 401/403 instead of freezing
+queryClient.getQueryCache().config.onError = (error) => {
+  if (error?.status === 401 || error?.status === 403) {
+    console.warn('[QueryCache] Auth error detected, signing out:', error.status);
+    supabase.auth.signOut();
+  }
+};
+
+queryClient.getMutationCache().config.onError = (error) => {
+  if (error?.status === 401 || error?.status === 403) {
+    console.warn('[MutationCache] Auth error detected, signing out:', error.status);
+    supabase.auth.signOut();
+  }
+};
 
 // Public pages - loaded immediately
 import InsuranceQuotesPage from './pages/InsuranceQuotesPage';

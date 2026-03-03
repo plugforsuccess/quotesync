@@ -152,12 +152,16 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
+      <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {mode === 'login' ? 'Sign In' : 'Reset Password'}
+          <h1 className="text-3xl font-bold text-gray-900 mb-1">
+            Insured<span className="text-blue-600">ByCam</span>
           </h1>
-          <p className="text-gray-600">
+          <p className="text-sm text-gray-500 mb-6">Agency Admin Portal</p>
+          <h2 className="text-xl font-semibold text-gray-800">
+            {mode === 'login' ? 'Sign In' : 'Reset Password'}
+          </h2>
+          <p className="text-gray-600 text-sm mt-1">
             {mode === 'login' ? 'Access your dashboard' : 'Enter your email to receive a reset link'}
           </p>
         </div>
@@ -283,11 +287,11 @@ const LoginPage = () => {
           </form>
         )}
 
-        <div className="mt-6 text-center text-xs text-gray-500 space-y-2">
-          <p>First time? Create a user in Supabase dashboard first.</p>
-          <p className="border-t border-gray-200 pt-2">
+        <div className="mt-6 text-center text-xs text-gray-400 space-y-2">
+          <p className="border-t border-gray-200 pt-4">
             <strong>Tip:</strong> If login fails, disable ad blockers or privacy extensions for this site.
           </p>
+          <p>&copy; {new Date().getFullYear()} InsuredByCam</p>
         </div>
       </div>
     </div>
