@@ -1,13 +1,13 @@
 // src/pages/CSPerformancePage.jsx
 // CS Performance Dashboard (standalone — split from AdminTimeAttendancePage)
 // Route: /admin/cs-performance
-// Access: platform_master_admin, platform_admin, agency_admin (agent) only
+// Access: platform_master_admin, platform_admin only
 
 import { useState, useMemo } from 'react';
 import { BarChart3, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useTimeEntries, useRCData, useProactivityData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import CSScorecard from './components/time-attendance/CSScorecard';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
@@ -60,8 +60,13 @@ const CSPerformancePage = () => {
     refetch: refetchRC,
   } = useRCData(weekStart, selectedEmployee);
 
+  const {
+    data: proactivityData = [],
+    refetch: refetchProactivity,
+  } = useProactivityData(weekStart, selectedEmployee);
+
   const { data: allEmployees = [] } = useAllEmployees();
-  const { invalidateRCData } = useInvalidateTimeData();
+  const { invalidateRCData, invalidateProactivity } = useInvalidateTimeData();
 
   const entries = timeData?.entries || [];
   const employees = timeData?.employees || [];
@@ -71,6 +76,7 @@ const CSPerformancePage = () => {
   function refetchAll() {
     refetchEntries();
     refetchRC();
+    refetchProactivity();
   }
 
   // ── Employee name resolver ─────────────────────────────────────────────────
@@ -84,7 +90,6 @@ const CSPerformancePage = () => {
 
   const employeeMap = useMemo(() => {
     const map = {};
-    // Use allEmployees for the upload mapping (broader set than just those with entries)
     const source = allEmployees.length > 0 ? allEmployees : employees;
     source.forEach((p) => {
       if (p.full_name) map[p.full_name] = p.id;
@@ -101,6 +106,12 @@ const CSPerformancePage = () => {
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
+  }
+
+  // ── Proactivity update callback ────────────────────────────────────────────
+
+  function handleProactivityUpdated() {
+    invalidateProactivity(weekStart, selectedEmployee);
   }
 
   // ── Permission Check ───────────────────────────────────────────────────────
@@ -239,12 +250,15 @@ const CSPerformancePage = () => {
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h2 className="text-xl font-semibold text-gray-900 mb-2">No performance data</h2>
-              <p className="text-gray-600">Upload RingCentral CSV data to see the scorecard.</p>
+              <p className="text-gray-600">Upload a RingCentral XLSX to see the scorecard.</p>
             </div>
           ) : (
             rcData.map((rc) => {
               const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
               const daysWorked = empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length;
+              const empProactivity = proactivityData.find(
+                (p) => p.employee_user_id === rc.employee_user_id
+              );
 
               return (
                 <div key={rc.id} className="space-y-4">
@@ -260,7 +274,14 @@ const CSPerformancePage = () => {
                     weekStart={weekStart}
                   />
 
-                  <CSScorecard rcData={rc} daysWorked={daysWorked || 5} />
+                  <CSScorecard
+                    rcData={rc}
+                    daysWorked={daysWorked || 5}
+                    proactivityData={empProactivity}
+                    orgId={user?.id}
+                    weekStart={weekStart}
+                    onProactivityUpdated={handleProactivityUpdated}
+                  />
                 </div>
               );
             })
