@@ -21,12 +21,12 @@ function Layout() {
   // Two-Plane RBAC: Get user context and determine active plane
   const {
     user, profile, isPlatformUser, platformRole,
-    activePlane: authPlane, currentAgencyRole, agencyMemberships
+    activePlane: authPlane, currentAgencyRole, currentAgencyId, agencyMemberships
   } = useAuth();
 
   // Nav badge: unresolved alert count (admin only, scoped to org)
   const { platform } = usePermissions();
-  const { data: alertCount } = useUnresolvedAlertCount(platform.isAdmin, user?.id);
+  const { data: alertCount } = useUnresolvedAlertCount(platform.isAdmin, currentAgencyId);
 
   // Platform users can toggle between platform and consumer views
   // Agency users see agency plane, everyone else sees consumer

@@ -351,6 +351,57 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // ── Auth check for user-initiated requests (upload scope) ──────────────
+    // Cron-triggered scopes (current_week, weekly_digest) use the service role
+    // key and have no user context. Upload scope comes from the browser with a
+    // user JWT — verify the caller is a platform admin and belongs to the org.
+    if (scope === 'upload') {
+      const authHeader = req.headers.get('Authorization') || ''
+      const token = authHeader.replace('Bearer ', '')
+
+      if (token && token !== supabaseKey) {
+        // Create a user-scoped client to verify identity
+        const userClient = createClient(supabaseUrl, Deno.env.get('SUPABASE_ANON_KEY')!, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        })
+        const { data: { user: caller } } = await userClient.auth.getUser()
+
+        if (!caller) {
+          return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+        }
+
+        // Verify caller is platform admin
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('platform_role')
+          .eq('id', caller.id)
+          .single()
+
+        if (!profile || !['platform_master_admin', 'platform_admin'].includes(profile.platform_role)) {
+          return new Response(JSON.stringify({ error: 'Forbidden — admin only' }), { status: 403 })
+        }
+
+        // Verify caller has an active membership in the claimed org
+        const requestedOrgId = body.org_id
+        if (requestedOrgId) {
+          const { data: membership } = await supabase
+            .from('agency_memberships')
+            .select('id')
+            .eq('user_id', caller.id)
+            .eq('agency_id', requestedOrgId)
+            .eq('status', 'active')
+            .maybeSingle()
+
+          if (!membership) {
+            return new Response(
+              JSON.stringify({ error: 'Forbidden — not a member of the specified org' }),
+              { status: 403 }
+            )
+          }
+        }
+      }
+    }
+
     // ── Weekly Digest Mode ─────────────────────────────────────────────────
     if (scope === 'weekly_digest') {
       const weekStart = body.week_start || toMonday(new Date())

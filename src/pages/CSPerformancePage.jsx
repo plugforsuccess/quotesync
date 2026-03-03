@@ -40,7 +40,7 @@ function formatWeekLabel(weekStart) {
 // ── Page Component ─────────────────────────────────────────────────────────────
 
 const CSPerformancePage = () => {
-  const { user } = useAuth();
+  const { user, currentAgencyId } = useAuth();
   const { platform } = usePermissions();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
@@ -233,7 +233,7 @@ const CSPerformancePage = () => {
         <div className="space-y-6">
           {/* RC Upload */}
           <RCUploadForm
-            orgId={user?.id}
+            orgId={currentAgencyId}
             weekStart={weekStart}
             employeeMap={employeeMap}
             onUploaded={handleRCUploaded}
