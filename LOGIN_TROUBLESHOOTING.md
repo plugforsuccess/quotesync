@@ -113,11 +113,7 @@ With our updated code, you should see these logs:
 **Successful login:**
 ```
 [LoginPage] Attempting login...
-[LoginPage] Login successful, waiting for auth state change...
-[AuthProvider] Auth state changed: SIGNED_IN user@example.com
-[AuthProvider] Profile loaded: user@example.com role: editor
-[LoginPage] Auth event: SIGNED_IN user@example.com
-[LoginPage] Navigating to dashboard
+[LoginPage] Login successful, navigating to: /your-landing-path
 ```
 
 **Blocked by ad blocker:**
@@ -131,6 +127,44 @@ With our updated code, you should see these logs:
 [LoginPage] Attempting login...
 [LoginPage] Login failed: NetworkError...
 ```
+
+---
+
+
+## Session Persistence Checklist (Production)
+
+If login succeeds but users are logged out after refresh, validate this exact checklist:
+
+1. **Client storage is explicit**
+   - `src/lib/supabase.js` should configure auth storage with `window.localStorage`.
+2. **Single client instance**
+   - App code should use only `src/lib/supabase.js` exported `supabase` singleton.
+3. **No mount-time sign out**
+   - Ensure no `supabase.auth.signOut()` is called during page/app mount lifecycle.
+4. **Supabase Auth URL Configuration**
+   - Supabase Dashboard → Authentication → URL Configuration
+   - **Site URL:** `https://www.insuredbycam.com`
+   - **Redirect URLs:** include `https://www.insuredbycam.com/*`
+
+### Acceptance Validation Steps
+
+After a successful login on `https://www.insuredbycam.com`:
+
+1. Open DevTools → Application → Local Storage → `https://www.insuredbycam.com`
+2. Confirm a key exists in this format: `sb-<project-ref>-auth-token`
+3. In console, verify:
+
+```javascript
+const { data } = await supabase.auth.getSession();
+console.log(!!data.session, data.session?.user?.id);
+```
+
+Expected: `true` and a valid user id.
+
+4. Refresh the page.
+5. Re-run `supabase.auth.getSession()` and verify session is still non-null.
+
+If storage key is missing, review browser privacy settings/extensions, cookie/storage blocking, and domain mismatch between app URL and Supabase Auth URL config.
 
 ---
 
