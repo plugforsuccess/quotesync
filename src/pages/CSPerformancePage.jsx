@@ -12,6 +12,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useTimeEntries, useRCData, useProactivityData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useRCEmployeeMap, useActiveEmployees } from '../hooks/useEmployees';
 import {
   useEmployeeTargets, useSaveTargets,
   useSaveProactivity,
@@ -93,6 +94,8 @@ const CSPerformancePage = () => {
   } = useProactivityData(weekStart, selectedEmployee);
 
   const { data: allEmployees = [] } = useAllEmployees();
+  // Active employees from employees table for dropdown
+  const { data: rosterEmployees = [] } = useActiveEmployees(user?.id);
   const { invalidateRCData, invalidateProactivity } = useInvalidateTimeData();
 
   // v2 hooks — per-employee targets, outbound breakdown, trends, team
@@ -125,9 +128,13 @@ const CSPerformancePage = () => {
     return profile?.full_name || profile?.email || userId?.substring(0, 8) || 'Unknown';
   }
 
-  // ── Employee map for RC upload ───────────────────────────────────────────
+  // ── Employee map for RC upload (uses employees.rc_display_name) ─────────
 
+  const { data: rcEmployeeMap } = useRCEmployeeMap(user?.id);
+
+  // Fallback to old profile-based map if employees table has no data yet
   const employeeMap = useMemo(() => {
+    if (rcEmployeeMap && Object.keys(rcEmployeeMap).length > 0) return rcEmployeeMap;
     const map = {};
     const source = allEmployees.length > 0 ? allEmployees : employees;
     source.forEach((p) => {
@@ -135,9 +142,12 @@ const CSPerformancePage = () => {
       if (p.email) map[p.email] = p.id;
     });
     return map;
-  }, [allEmployees, employees]);
+  }, [rcEmployeeMap, allEmployees, employees]);
 
-  const employeeOptions = allEmployees.length > 0 ? allEmployees : employees;
+  // Prefer roster employees for dropdown (employees table); fallback to profiles
+  const employeeOptions = rosterEmployees.length > 0
+    ? rosterEmployees
+    : (allEmployees.length > 0 ? allEmployees : employees);
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
@@ -338,8 +348,10 @@ const CSPerformancePage = () => {
               >
                 <option value="all">All CS Reps</option>
                 {employeeOptions.map((emp) => (
-                  <option key={emp.id} value={emp.id}>
-                    {emp.full_name || emp.email || emp.id.substring(0, 8)}
+                  <option key={emp.id} value={emp.auth_user_id || emp.id}>
+                    {emp.preferred_name || emp.first_name
+                      ? `${emp.preferred_name || emp.first_name} ${emp.last_name || ''}`
+                      : emp.full_name || emp.email || emp.id.substring(0, 8)}
                   </option>
                 ))}
               </select>

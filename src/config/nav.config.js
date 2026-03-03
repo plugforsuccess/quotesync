@@ -29,8 +29,9 @@ const primaryItems = {
 // ── Secondary nav items (inside hamburger menu) ──────────────────────────────
 
 const secondaryItems = {
-  agencyMgmt: { to: '/admin/agencies', label: 'Agency Management', icon: '🏢' },
-  audit:      { to: '/admin/audit',    label: 'Audit',             icon: '🔍' },
+  agencyMgmt:     { to: '/admin/agencies',          label: 'Agency Management', icon: '🏢' },
+  employeeRoster: { to: '/admin/agency/employees',  label: 'Employee Roster',   icon: '👥' },
+  audit:          { to: '/admin/audit',              label: 'Audit',             icon: '🔍' },
 };
 
 // ── Platform plane navigation by role ────────────────────────────────────────
@@ -47,6 +48,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.agencyMgmt,
+      secondaryItems.employeeRoster,
       secondaryItems.audit,
     ],
   },
@@ -60,6 +62,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.agencyMgmt,
+      secondaryItems.employeeRoster,
       secondaryItems.audit,
     ],
   },

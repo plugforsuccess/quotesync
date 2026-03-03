@@ -8,6 +8,7 @@ import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRig
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
 
@@ -73,6 +74,8 @@ const AdminTimeAttendancePage = () => {
   // ── Data hooks ────────────────────────────────────────────────────────────
 
   const { data: allEmployees = [] } = useAllEmployees();
+  // Active employees from the employees table (for dropdown — only active employees)
+  const { data: rosterEmployees = [] } = useActiveEmployees(currentAgencyId);
 
   const {
     data: timeData,
@@ -121,8 +124,13 @@ const AdminTimeAttendancePage = () => {
   const employeesWithEntries = new Set(entries.map((e) => e.employee_user_id)).size;
 
   // ── Get employee name ─────────────────────────────────────────────────────
+  // Use roster employees (employees table) for dropdown display
+  const dropdownEmployees = rosterEmployees.length > 0 ? rosterEmployees : allEmployees;
 
   function getEmployeeName(id) {
+    // Check roster employees first
+    const roster = rosterEmployees.find((e) => e.id === id || e.auth_user_id === id);
+    if (roster) return roster.preferred_name || roster.first_name + ' ' + roster.last_name;
     const emp = allEmployees.find((e) => e.id === id);
     return emp?.full_name || emp?.email || id?.substring(0, 8) || '';
   }
@@ -213,9 +221,11 @@ const AdminTimeAttendancePage = () => {
               className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 min-w-[200px]"
             >
               <option value="">Select Employee...</option>
-              {allEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.full_name || emp.email || emp.id.substring(0, 8)}
+              {dropdownEmployees.map((emp) => (
+                <option key={emp.id} value={emp.auth_user_id || emp.id}>
+                  {emp.preferred_name || emp.first_name
+                    ? `${emp.preferred_name || emp.first_name} ${emp.last_name || ''}`
+                    : emp.full_name || emp.email || emp.id.substring(0, 8)}
                 </option>
               ))}
             </select>

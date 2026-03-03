@@ -83,6 +83,7 @@ const AgencyLeadsPage = lazy(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
 const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
+const EmployeeRosterPage = lazy(() => import('./pages/EmployeeRosterPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -277,6 +278,18 @@ function App() {
                 <ProtectedRoute requiredRole="admin">
                   <Suspense fallback={<PageLoader />}>
                     <AdminAgencyDetailPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin - Employee Roster */}
+            <Route
+              path="admin/agency/employees"
+              element={
+                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <EmployeeRosterPage />
                   </Suspense>
                 </ProtectedRoute>
               }
