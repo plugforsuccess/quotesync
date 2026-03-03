@@ -369,9 +369,28 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
+    // Proactive session check on tab/app focus.
+    // When the user returns to the tab, validate the session BEFORE React Query
+    // fires refetches. This prevents cascading 401 errors from stale tokens.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && mounted) {
+        supabase.auth.getSession().then(({ data, error }) => {
+          if (!mounted) return;
+          if (error || !data?.session) {
+            console.log('[AUTH] session expired while tab was hidden');
+            resetState();
+            setLoading(false);
+          }
+        });
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
