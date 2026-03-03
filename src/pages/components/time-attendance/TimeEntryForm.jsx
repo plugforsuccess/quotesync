@@ -109,7 +109,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="date"
             value={workDate}
             onChange={(e) => setWorkDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -119,7 +119,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           <select
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {LOCATIONS.map((loc) => (
               <option key={loc.value} value={loc.value}>{loc.label}</option>
@@ -133,7 +133,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           <select
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             {CODES.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -149,7 +149,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             min={0}
             value={unpaidBreakMinutes}
             onChange={(e) => setUnpaidBreakMinutes(parseInt(e.target.value || '0', 10))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -162,7 +162,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -175,7 +175,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -186,7 +186,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={lunchOut}
             onChange={(e) => setLunchOut(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -197,7 +197,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={lunchIn}
             onChange={(e) => setLunchIn(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
@@ -210,7 +210,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
             placeholder={notesRequired ? 'Please provide details for this entry...' : 'Optional notes...'}
           />
         </div>

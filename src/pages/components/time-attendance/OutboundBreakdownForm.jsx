@@ -115,7 +115,7 @@ export default function OutboundBreakdownForm({
                     min="0"
                     value={form[cat.key]}
                     onChange={(e) => handleChange(cat.key, e.target.value)}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               ))}
