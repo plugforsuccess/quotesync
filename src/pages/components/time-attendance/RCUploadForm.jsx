@@ -71,9 +71,17 @@ const COLUMN_MAPPINGS = {
   total_calls: ['total calls', 'calls', 'total'],
   inbound_calls: ['inbound calls', 'inbound', 'calls received', 'received'],
   outbound_calls: ['outbound calls', 'outbound', 'calls made', 'made'],
+  answered_calls: ['answered calls', 'calls answered', 'answered', 'connected calls'],
+  missed_calls: ['missed calls', 'calls missed', 'missed', 'unanswered calls', 'unanswered'],
   // Talk time
   talk_time: ['talk time', 'talk duration', 'total talk time', 'call time'],
   avg_handle_time: ['avg handle time', 'average handle time', 'aht', 'avg talk time'],
+  total_handle_time: ['total handle time', 'handle time', 'total aht'],
+  // Hold & Speed
+  avg_hold_time: ['avg hold time', 'average hold time', 'hold time', 'avg on hold'],
+  avg_speed_of_answer: ['avg speed of answer', 'speed of answer', 'asa', 'average speed of answer', 'avg answer speed'],
+  // Transfers
+  transfers: ['transfers', 'transferred', 'transfer count', 'calls transferred'],
   // Status
   logged_in: ['logged in time', 'logged in', 'login time', 'total logged in', 'online time'],
   available: ['available time', 'available', 'total available'],
@@ -146,8 +154,14 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
         const totalCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.total_calls) || '0', 0, MAX_CALLS);
         const inboundCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.inbound_calls) || '0', 0, MAX_CALLS);
         const outboundCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.outbound_calls) || '0', 0, MAX_CALLS);
+        const answeredCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.answered_calls) || '0', 0, MAX_CALLS);
+        const missedCalls = clampInt(findColumn(row, COLUMN_MAPPINGS.missed_calls) || '0', 0, MAX_CALLS);
         const talkTime = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.talk_time)), 0, MAX_MINUTES_PER_WEEK);
         const aht = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.avg_handle_time)), 0, 1440);
+        const totalHandleTime = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.total_handle_time)), 0, MAX_MINUTES_PER_WEEK);
+        const avgHoldTime = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.avg_hold_time)), 0, 1440);
+        const avgSpeedOfAnswer = clampFloat(findColumn(row, COLUMN_MAPPINGS.avg_speed_of_answer) || '0', 0, 9999);
+        const transferCount = clampInt(findColumn(row, COLUMN_MAPPINGS.transfers) || '0', 0, MAX_CALLS);
         const loggedIn = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.logged_in)), 0, MAX_MINUTES_PER_WEEK);
         const available = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.available)), 0, MAX_MINUTES_PER_WEEK);
         const offline = clampFloat(parseMinutes(findColumn(row, COLUMN_MAPPINGS.offline)), 0, MAX_MINUTES_PER_WEEK);
@@ -164,8 +178,14 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           total_calls: totalCalls,
           inbound_calls: inboundCalls,
           outbound_calls: outboundCalls,
+          answered_calls: answeredCalls || Math.max(0, totalCalls - missedCalls),
+          missed_calls: missedCalls,
           talk_time_minutes: talkTime,
           avg_handle_time_minutes: aht,
+          total_handle_time_minutes: totalHandleTime,
+          avg_hold_time_minutes: avgHoldTime,
+          avg_speed_of_answer_seconds: avgSpeedOfAnswer,
+          transfers: transferCount,
           logged_in_minutes: loggedIn,
           available_minutes: available,
           offline_minutes: offline,
@@ -220,8 +240,14 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
         total_calls: row.total_calls,
         inbound_calls: row.inbound_calls,
         outbound_calls: row.outbound_calls,
+        answered_calls: row.answered_calls,
+        missed_calls: row.missed_calls,
         talk_time_minutes: Math.round(row.talk_time_minutes * 100) / 100,
         avg_handle_time_minutes: Math.round(row.avg_handle_time_minutes * 100) / 100,
+        total_handle_time_minutes: Math.round(row.total_handle_time_minutes * 100) / 100,
+        avg_hold_time_minutes: Math.round(row.avg_hold_time_minutes * 100) / 100,
+        avg_speed_of_answer_seconds: Math.round(row.avg_speed_of_answer_seconds * 100) / 100,
+        transfers: row.transfers,
         logged_in_minutes: Math.round(row.logged_in_minutes * 100) / 100,
         available_minutes: Math.round(row.available_minutes * 100) / 100,
         offline_minutes: Math.round(row.offline_minutes * 100) / 100,
@@ -283,8 +309,10 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           <ul className="list-disc list-inside space-y-1 text-blue-700">
             <li><strong>User Name</strong> (or Name, Agent Name)</li>
             <li><strong>Total Calls</strong>, <strong>Inbound Calls</strong>, <strong>Outbound Calls</strong></li>
+            <li><strong>Answered Calls</strong>, <strong>Missed Calls</strong></li>
             <li><strong>Talk Time</strong> (HH:MM:SS or Xh Ym format)</li>
-            <li><strong>Avg Handle Time</strong></li>
+            <li><strong>Avg Handle Time</strong>, <strong>Avg Hold Time</strong></li>
+            <li><strong>Avg Speed of Answer</strong> (seconds), <strong>Transfers</strong></li>
             <li><strong>Logged In Time</strong>, <strong>Available Time</strong>, <strong>Offline Time</strong></li>
           </ul>
           <p className="mt-2">Time values can be in HH:MM:SS, "Xh Ym", or minutes format.</p>
@@ -332,11 +360,11 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Total</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">In</th>
                   <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Out</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Talk (min)</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">AHT (min)</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Logged In</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Available</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Offline</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Ans</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Miss</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">AHT</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Hold</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Xfer</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -349,11 +377,11 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                     <td className="px-3 py-2 text-right text-gray-600">{row.total_calls}</td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.inbound_calls}</td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.outbound_calls}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.talk_time_minutes.toFixed(1)}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.answered_calls}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.missed_calls}</td>
                     <td className="px-3 py-2 text-right text-gray-600">{row.avg_handle_time_minutes.toFixed(1)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.logged_in_minutes.toFixed(0)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.available_minutes.toFixed(0)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.offline_minutes.toFixed(0)}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_hold_time_minutes.toFixed(1)}</td>
+                    <td className="px-3 py-2 text-right text-gray-600">{row.transfers}</td>
                   </tr>
                 ))}
               </tbody>
