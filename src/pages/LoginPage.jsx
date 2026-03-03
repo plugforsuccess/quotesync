@@ -13,6 +13,8 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [existingSession, setExistingSession] = useState(false);
+  const [mode, setMode] = useState('login');
+  const [resetSuccess, setResetSuccess] = useState('');
 
   // Check if already logged in on mount
   useEffect(() => {
@@ -100,89 +102,159 @@ const LoginPage = () => {
     }
   };
 
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setResetSuccess('');
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin-access-8by2X`
+      });
+
+      if (error) throw error;
+
+      setResetSuccess('Check your email for a password reset link.');
+    } catch (error) {
+      setError(error.message || 'Failed to send reset link. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-xl p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Sign In
+            {mode === 'login' ? 'Sign In' : 'Reset Password'}
           </h1>
           <p className="text-gray-600">
-            Access your dashboard
+            {mode === 'login' ? 'Access your dashboard' : 'Enter your email to receive a reset link'}
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          {existingSession && (
-            <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm">
-              <strong>Already logged in.</strong> You can{' '}
+        {existingSession && mode === 'login' && (
+          <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded text-sm mb-6">
+            <strong>Already logged in.</strong> You can{' '}
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  const profile = await getUserProfile();
+                  const platformRole = profile?.platform_role;
+                  const activeMemberships = (profile?.agencyMemberships || []).filter(
+                    m => m.status === 'active' && m.agencies?.status === 'approved'
+                  );
+                  const agencyRole = activeMemberships.length > 0
+                    ? activeMemberships[0].agency_role
+                    : null;
+                  navigate(getDefaultLanding(platformRole, agencyRole));
+                } catch {
+                  navigate('/');
+                }
+              }}
+              className="underline font-semibold hover:text-blue-900"
+            >
+              go to dashboard
+            </button>{' '}
+            or log in as a different user below.
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm mb-6">
+            {error}
+          </div>
+        )}
+
+        {resetSuccess && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded text-sm mb-6">
+            {resetSuccess}
+          </div>
+        )}
+
+        {mode === 'login' ? (
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                placeholder="admin@example.com"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                placeholder="Enter your password"
+              />
               <button
                 type="button"
-                onClick={async () => {
-                  try {
-                    const profile = await getUserProfile();
-                    const platformRole = profile?.platform_role;
-                    const activeMemberships = (profile?.agencyMemberships || []).filter(
-                      m => m.status === 'active' && m.agencies?.status === 'approved'
-                    );
-                    const agencyRole = activeMemberships.length > 0
-                      ? activeMemberships[0].agency_role
-                      : null;
-                    navigate(getDefaultLanding(platformRole, agencyRole));
-                  } catch {
-                    navigate('/');
-                  }
-                }}
-                className="underline font-semibold hover:text-blue-900"
+                onClick={() => { setMode('reset'); setError(''); setResetSuccess(''); }}
+                className="text-sm text-blue-600 hover:text-blue-800 mt-2"
               >
-                go to dashboard
-              </button>{' '}
-              or log in as a different user below.
+                Forgot password?
+              </button>
             </div>
-          )}
 
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
-              {error}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Signing in...' : 'Sign In'}
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleResetPassword} className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                placeholder="admin@example.com"
+              />
             </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-              placeholder="admin@example.com"
-            />
-          </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Sending...' : 'Send Reset Link'}
+            </button>
 
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-              placeholder="Enter your password"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => { setMode('login'); setError(''); setResetSuccess(''); }}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Back to Sign In
+              </button>
+            </div>
+          </form>
+        )}
 
         <div className="mt-6 text-center text-xs text-gray-500 space-y-2">
           <p>First time? Create a user in Supabase dashboard first.</p>
