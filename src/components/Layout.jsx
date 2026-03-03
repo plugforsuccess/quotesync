@@ -24,9 +24,9 @@ function Layout() {
     activePlane: authPlane, currentAgencyRole, agencyMemberships
   } = useAuth();
 
-  // Nav badge: unresolved alert count (admin only)
+  // Nav badge: unresolved alert count (admin only, scoped to org)
   const { platform } = usePermissions();
-  const { data: alertCount } = useUnresolvedAlertCount(platform.isAdmin);
+  const { data: alertCount } = useUnresolvedAlertCount(platform.isAdmin, user?.id);
 
   // Platform users can toggle between platform and consumer views
   // Agency users see agency plane, everyone else sees consumer

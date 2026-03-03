@@ -342,8 +342,12 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const slackWebhookUrl = Deno.env.get('SLACK_WEBHOOK_URL') || ''
     const appBaseUrl = Deno.env.get('APP_BASE_URL') || 'https://admin.insuredbycam.com'
+
+    // Per-mode Slack webhooks: alerts go to #ops-alerts, digest goes to #weekly-digest.
+    // Falls back to SLACK_WEBHOOK_URL if the specific secrets aren't set.
+    const slackAlerts = Deno.env.get('SLACK_WEBHOOK_ALERTS') || Deno.env.get('SLACK_WEBHOOK_URL') || ''
+    const slackDigest = Deno.env.get('SLACK_WEBHOOK_DIGEST') || Deno.env.get('SLACK_WEBHOOK_URL') || ''
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -393,9 +397,9 @@ Deno.serve(async (req) => {
         }
       })
 
-      if (slackWebhookUrl) {
+      if (slackDigest) {
         const digestMsg = buildDigestSlackMessage(weekStart, summaries, unresolvedCount ?? 0, appBaseUrl)
-        await sendSlack(slackWebhookUrl, digestMsg)
+        await sendSlack(slackDigest, digestMsg)
       }
 
       return new Response(JSON.stringify({ message: 'Digest sent', employees: summaries.length }), { status: 200 })
@@ -483,10 +487,10 @@ Deno.serve(async (req) => {
         if (inserted && inserted.length > 0 && !inserted[0].slack_sent) {
           totalNewAlerts++
 
-          // Send Slack message
-          if (slackWebhookUrl) {
+          // Send Slack message to #ops-alerts
+          if (slackAlerts) {
             const slackPayload = buildAlertSlackMessage(alert, appBaseUrl)
-            const sent = await sendSlack(slackWebhookUrl, slackPayload)
+            const sent = await sendSlack(slackAlerts, slackPayload)
 
             if (sent) {
               totalSlackSent++

@@ -1,16 +1,49 @@
 -- Migration: Cron jobs for discrepancy detection and weekly digest
--- Requires pg_cron and pg_net extensions to be enabled in the Supabase dashboard.
+-- Requires pg_cron, pg_net, and Vault extensions to be enabled in the Supabase dashboard.
 --
--- NOTE: Before running this migration, enable these extensions in the Supabase Dashboard:
---   1. Go to Database > Extensions
---   2. Enable "pg_cron" (for scheduling)
---   3. Enable "pg_net" (for HTTP requests from SQL)
+-- SETUP (Supabase Dashboard):
+--   1. Database > Extensions → Enable "pg_cron", "pg_net", and "pgsodium" (for Vault)
+--   2. Go to Project Settings > Vault
+--   3. Add two secrets:
+--        Name: detect_discrepancies_url
+--        Value: https://YOUR_PROJECT.supabase.co/functions/v1/detect-discrepancies
 --
--- Also set these Supabase Secrets:
---   - SLACK_WEBHOOK_URL: Slack incoming webhook URL for #ops-alerts
---   - APP_BASE_URL: e.g. https://admin.insuredbycam.com
+--        Name: service_role_key
+--        Value: (your service role key from Project Settings > API)
 --
--- The SERVICE_ROLE_KEY and SUPABASE_URL are automatically available.
+--   4. Also set these Supabase Edge Function Secrets (Settings > Edge Functions):
+--        SLACK_WEBHOOK_ALERTS  — Slack incoming webhook for #ops-alerts
+--        SLACK_WEBHOOK_DIGEST  — Slack incoming webhook for #weekly-digest
+--        APP_BASE_URL          — e.g. https://admin.insuredbycam.com
+--
+-- SECURITY:
+--   The service role key is stored in Vault (encrypted at rest) and retrieved at
+--   runtime via vault.decrypted_secrets. It never appears in this migration file,
+--   the cron.job table, or version control.
+--
+-- KEY ROTATION:
+--   If the service role key is rotated, update the "service_role_key" secret in
+--   Vault. The cron jobs will pick up the new value automatically on next run.
+
+-- ── Helper function: retrieve a Vault secret by name ────────────────────────
+-- Encapsulates the Vault lookup so the cron SQL stays readable.
+
+CREATE SCHEMA IF NOT EXISTS internal;
+
+CREATE OR REPLACE FUNCTION internal.get_vault_secret(secret_name text)
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+  SELECT decrypted_secret
+  FROM vault.decrypted_secrets
+  WHERE name = secret_name
+  LIMIT 1;
+$$;
+
+-- Restrict to postgres role (cron jobs run as postgres)
+REVOKE ALL ON FUNCTION internal.get_vault_secret(text) FROM PUBLIC;
 
 -- ── Nightly discrepancy check (9 PM ET = 1 AM UTC next day) ────────────────
 -- Runs every night at 1 AM UTC (9 PM ET) to detect discrepancies for the
@@ -22,10 +55,10 @@ SELECT cron.schedule(
   '0 1 * * *',
   $$
   SELECT net.http_post(
-    url := current_setting('app.settings.supabase_url', true) || '/functions/v1/detect-discrepancies',
+    url := internal.get_vault_secret('detect_discrepancies_url'),
     body := '{"scope": "current_week"}'::jsonb,
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true),
+      'Authorization', 'Bearer ' || internal.get_vault_secret('service_role_key'),
       'Content-Type', 'application/json'
     )
   );
@@ -41,10 +74,10 @@ SELECT cron.schedule(
   '0 22 * * 5',
   $$
   SELECT net.http_post(
-    url := current_setting('app.settings.supabase_url', true) || '/functions/v1/detect-discrepancies',
+    url := internal.get_vault_secret('detect_discrepancies_url'),
     body := '{"scope": "weekly_digest"}'::jsonb,
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true),
+      'Authorization', 'Bearer ' || internal.get_vault_secret('service_role_key'),
       'Content-Type', 'application/json'
     )
   );

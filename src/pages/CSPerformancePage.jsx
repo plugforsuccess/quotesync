@@ -103,9 +103,9 @@ const CSPerformancePage = () => {
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
-    // Alert count will update after the edge function runs detection (fire-and-forget)
-    // Add a short delay to let the edge function process, then invalidate badge count
-    setTimeout(() => invalidateAlertCount(), 3000);
+    // Edge Function detection has already completed by the time onUploaded fires,
+    // so invalidate the badge count immediately.
+    invalidateAlertCount();
   }
 
   // ── Permission Check ───────────────────────────────────────────────────────

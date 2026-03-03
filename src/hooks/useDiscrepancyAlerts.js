@@ -19,7 +19,8 @@ export function useDiscrepancyAlerts(weekStart, employeeId) {
         .from('discrepancy_alerts')
         .select('*')
         .eq('week_start', weekStart)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(100); // Safety cap — a single week can't realistically exceed this
 
       if (employeeId && employeeId !== 'all') {
         query = query.eq('employee_user_id', employeeId);

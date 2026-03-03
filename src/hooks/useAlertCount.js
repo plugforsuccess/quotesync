@@ -1,6 +1,7 @@
 // src/hooks/useAlertCount.js
 // Fetches unresolved discrepancy alert count for the nav badge.
 // Only runs for admin users. Polls every 5 minutes + refetches on window focus.
+// Scoped to org_id to prevent cross-tenant leakage.
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -9,15 +10,20 @@ export const alertCountKeys = {
   unresolved: () => ['alert-count', 'unresolved'],
 };
 
-export function useUnresolvedAlertCount(isAdmin) {
+export function useUnresolvedAlertCount(isAdmin, orgId) {
   return useQuery({
     queryKey: alertCountKeys.unresolved(),
     queryFn: async () => {
-      const { count, error } = await supabase
+      let query = supabase
         .from('discrepancy_alerts')
         .select('*', { count: 'exact', head: true })
         .eq('resolved', false);
 
+      if (orgId) {
+        query = query.eq('org_id', orgId);
+      }
+
+      const { count, error } = await query;
       if (error) throw error;
       return count ?? 0;
     },
