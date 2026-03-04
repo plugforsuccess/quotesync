@@ -270,6 +270,7 @@ export function useWizard() {
     setAnswer,
     currentStepId,
     currentIndex,
+    setCurrentIndex,  // needed for ZIP prefill skip
     totalSteps,
     progress,
     isFirstStep,
