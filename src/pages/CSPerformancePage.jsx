@@ -80,7 +80,7 @@ const TABS = [
 // ── Page Component ─────────────────────────────────────────────────────────────
 
 const CSPerformancePage = () => {
-  const { user } = useAuth();
+  const { user, currentAgencyId } = useAuth();
   const { platform } = usePermissions();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
@@ -114,7 +114,7 @@ const CSPerformancePage = () => {
   } = useProactivityData(weekStart, selectedEmployee);
 
   // Active employees from employees table for dropdown + RC matching
-  const { data: rosterEmployees = [] } = useActiveEmployees(user?.id);
+  const { data: rosterEmployees = [] } = useActiveEmployees(currentAgencyId);
   const { invalidateRCData, invalidateProactivity } = useInvalidateTimeData();
 
   // v2 hooks — per-employee targets, outbound breakdown, trends, team
@@ -171,7 +171,7 @@ const CSPerformancePage = () => {
 
   // ── Employee map for RC upload (uses employees.rc_display_name) ─────────
 
-  const { data: rcEmployeeMap } = useRCEmployeeMap(user?.id);
+  const { data: rcEmployeeMap } = useRCEmployeeMap(currentAgencyId);
 
   // Fallback to roster-based map if rcEmployeeMap has no data yet
   const employeeMap = useMemo(() => {
@@ -205,7 +205,7 @@ const CSPerformancePage = () => {
     if (!singleEmployee) return;
     const current = proactivityList.find((p) => p.employee_user_id === singleEmployee);
     saveProactivity({
-      org_id: user?.id,
+      org_id: currentAgencyId,
       employee_user_id: singleEmployee,
       week_start: weekStart,
       follow_up_notes_logged: field === 'follow_up_notes_logged' ? value : (current?.follow_up_notes_logged || false),
@@ -525,7 +525,7 @@ const CSPerformancePage = () => {
           <div className="space-y-6">
             {/* RC Upload */}
             <RCUploadForm
-              orgId={user?.id}
+              orgId={currentAgencyId}
               weekStart={weekStart}
               employeeMap={employeeMap}
               onUploaded={handleRCUploaded}
@@ -594,7 +594,7 @@ const CSPerformancePage = () => {
                         totalOutbound={rc.outbound_calls}
                         onSave={saveOutboundBreakdown}
                         saving={savingOutboundBreakdown}
-                        orgId={user?.id}
+                        orgId={currentAgencyId}
                         employeeId={rc.employee_user_id}
                         weekStart={weekStart}
                       />
@@ -622,7 +622,7 @@ const CSPerformancePage = () => {
           onClose={() => setTargetsModalOpen(false)}
           employeeName={getEmployeeName(singleEmployee)}
           employeeId={singleEmployee}
-          orgId={user?.id}
+          orgId={currentAgencyId}
           currentTargets={employeeTargets}
           roleType={resolvedEmployeeRole}
           onSave={(targets) => {
