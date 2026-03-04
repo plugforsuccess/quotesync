@@ -1,29 +1,21 @@
 // src/components/AddressAutocomplete.jsx
-// Production-grade Google Places autocomplete using the gmp-place-autocomplete
-// web component. Race-condition safe, with Geocoder fallback for missing fields.
-// Enterprise hardened: geocoder cache, non-PII telemetry, graceful failure UI.
-import { useEffect, useMemo, useRef, useState } from "react";
-import { loadGoogleMaps } from "./googleMapsLoader";
-import { parseAddressComponents } from "../utils/parseAddress";
-import { trackEvent } from "../lib/analytics";
+// Google Places Autocomplete using the new PlaceAutocompleteElement API.
+// Relies on the Maps JS API script tag loaded in index.html.
+import { useEffect, useRef, useCallback, useState } from 'react';
 
-// ── Session-scoped geocoder cache (avoids repeated calls for same placeId) ──
-const geocoderCache = new Map();
+export default function AddressAutocomplete({ onAddressSelect, className = '' }) {
+  const containerRef = useRef(null);
+  const elementRef = useRef(null);
+  const [loaded, setLoaded] = useState(!!window.google?.maps?.places);
 
-async function geocodeByPlaceId(placeId) {
-  if (geocoderCache.has(placeId)) return geocoderCache.get(placeId);
+  const handlePlaceSelect = useCallback(async (event) => {
+    const place = event.place;
+    await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] });
 
-  const geocoder = new google.maps.Geocoder();
-  const result = await new Promise((resolve) => {
-    geocoder.geocode({ placeId }, (results, status) => {
-      if (status === "OK" && results?.[0]) resolve(results[0]);
-      else resolve(null);
-    });
-  });
-
-  geocoderCache.set(placeId, result);
-  return result;
-}
+    const getComponent = (type) => {
+      const component = place.addressComponents?.find(c => c.types?.includes(type));
+      return component?.longText || component?.long_name || '';
+    };
 
 function parseGeocoderComponents(addressComponents, formattedAddress) {
   const normalized = addressComponents.map((c) => ({
@@ -34,21 +26,21 @@ function parseGeocoderComponents(addressComponents, formattedAddress) {
   return parseAddressComponents(normalized, formattedAddress);
 }
 
-export default function AddressAutocomplete({
-  apiKey,
-  regionCodes = ["us"],
-  onSelect,
-  onError,
-  onLoadFailure,
-  placeholder = "Enter your address",
-  className = "",
-}) {
-  const containerRef = useRef(null);
-  const autocompleteElRef = useRef(null);
-  const [ready, setReady] = useState(false);
-  const [loadState, setLoadState] = useState("loading"); // loading | ready | failed
+    const city = getComponent('locality')
+      || getComponent('sublocality_level_1')
+      || getComponent('sublocality')
+      || getComponent('administrative_area_level_2')
+      || getComponent('neighborhood')
+      || getComponent('postal_town');
 
-  const includedRegionCodes = useMemo(() => regionCodes, [regionCodes]);
+    onAddressSelect({
+      street: `${getComponent('street_number')} ${getComponent('route')}`.trim(),
+      city,
+      state: getShort('administrative_area_level_1'),
+      zip: getComponent('postal_code'),
+      fullAddress: place.formattedAddress,
+    });
+  }, [onAddressSelect]);
 
   // ── Load Google Maps once ───────────────────────────────────────────
   useEffect(() => {
@@ -73,104 +65,12 @@ export default function AddressAutocomplete({
       }
     })();
 
-    return () => {
-      cancelled = true;
-    };
-  }, [apiKey, onError, onLoadFailure]);
+    const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement({
+      includedRegionCodes: ['us'],
+    });
 
-  // ── Mount the web component & attach listener ───────────────────────
-  useEffect(() => {
-    if (!ready || !containerRef.current) return;
-
-    const el = document.createElement("gmp-place-autocomplete");
-    el.setAttribute("placeholder", placeholder);
-    el.includedRegionCodes = includedRegionCodes;
-
-    containerRef.current.innerHTML = "";
-    containerRef.current.appendChild(el);
-    autocompleteElRef.current = el;
-
-    let isMounted = true;
-
-    const handlePlaceSelect = async (event) => {
-      try {
-        const place = event?.place;
-        if (!place) return;
-
-        let comps = [];
-        let formatted;
-        let fetchFieldsOk = false;
-
-        // Primary path: fetchFields
-        try {
-          await place.fetchFields({
-            fields: ["id", "formattedAddress", "addressComponents", "location"],
-          });
-          comps = place.addressComponents || [];
-          formatted = place.formattedAddress;
-          fetchFieldsOk = true;
-        } catch {
-          // fetchFields failed — fall through to geocoder
-          trackEvent("places_fetch_fields", { outcome: "failure" });
-        }
-
-        if (fetchFieldsOk) {
-          trackEvent("places_fetch_fields", { outcome: "success" });
-        }
-
-        let parsed = parseAddressComponents(comps, formatted);
-
-        let lat;
-        let lng;
-        if (place.location) {
-          lat = place.location.lat();
-          lng = place.location.lng();
-        }
-
-        const missingCore =
-          !parsed.street1 || !parsed.city || !parsed.state || !parsed.zip;
-
-        // Secondary path: Geocoder fallback
-        if (missingCore || !fetchFieldsOk) {
-          trackEvent("places_geocoder_fallback", { reason: fetchFieldsOk ? "missing_fields" : "fetch_failed" });
-          try {
-            const geocoded = await geocodeByPlaceId(place.id);
-            if (geocoded?.address_components?.length) {
-              parsed = parseGeocoderComponents(
-                geocoded.address_components,
-                geocoded.formatted_address
-              );
-              if (!lat && geocoded.geometry?.location) {
-                lat = geocoded.geometry.location.lat();
-                lng = geocoded.geometry.location.lng();
-              }
-            }
-          } catch {
-            trackEvent("places_geocoder_fallback", { outcome: "failure" });
-          }
-        }
-
-        const stillMissing =
-          !parsed.street1 || !parsed.city || !parsed.state || !parsed.zip;
-        if (stillMissing) {
-          trackEvent("places_result", { outcome: "incomplete_address" });
-        } else {
-          trackEvent("places_result", { outcome: "complete" });
-        }
-
-        if (!isMounted) return;
-
-        onSelect({
-          address: parsed,
-          lat,
-          lng,
-          placeId: place.id,
-        });
-      } catch (e) {
-        trackEvent("places_select_error", { error_type: e?.name || "unknown" });
-        onError?.(e);
-      }
-    };
+    const container = containerRef.current;
+    placeAutocomplete.addEventListener('gmp-placeselect', handlePlaceSelect);
 
     el.addEventListener("gmp-placeselect", handlePlaceSelect);
 

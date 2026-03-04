@@ -2,6 +2,7 @@
 // Performance Dashboard — Individual scorecard, Team comparison, Trends,
 // Daily breakdown, Outbound breakdown, PDF export, per-employee goals.
 // Supports role-aware views: service reps (full scorecard) and producers (outbound effort).
+// v3: Call log as primary data source with summary report as optional supplement.
 // Route: /admin/cs-performance
 // Access: platform_master_admin, platform_admin only
 
@@ -19,7 +20,10 @@ import {
   useSaveProactivity,
   useOutboundBreakdown, useSaveOutboundBreakdown,
   useTrendData, useTeamData,
+  useCallLogData, useInvalidateCallLog,
 } from '../hooks/useCSPerformance';
+import { computeCallLogMetrics } from '../config/csPerformanceDefaults';
+import CallLogUploadForm from './components/time-attendance/CallLogUploadForm';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import CSScorecard from './components/time-attendance/CSScorecard';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
@@ -29,6 +33,7 @@ import TrendsView from './components/time-attendance/TrendsView';
 import DailyBreakdown from './components/time-attendance/DailyBreakdown';
 import OutboundBreakdownForm from './components/time-attendance/OutboundBreakdownForm';
 import ProducerDetailView from './components/time-attendance/ProducerDetailView';
+import CallLogTable from './components/time-attendance/CallLogTable';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -128,6 +133,16 @@ const CSPerformancePage = () => {
   const { data: trendData } = useTrendData(singleEmployee, weekStart);
   const { data: teamData, isLoading: teamLoading } = useTeamData(weekStart);
 
+  // v3: Call log data
+  const { data: callLogData = [], refetch: refetchCallLog } = useCallLogData(singleEmployee, weekStart);
+  const { invalidateCallLog, invalidateAllCallLogs } = useInvalidateCallLog();
+
+  // Compute call log metrics from raw call data
+  const callLogMetrics = useMemo(() => {
+    if (!callLogData || callLogData.length === 0) return null;
+    return computeCallLogMetrics(callLogData, weekStart);
+  }, [callLogData, weekStart]);
+
   const entries = timeData?.entries || [];
   const employees = timeData?.employees || [];
   const isLoading = entriesLoading || rcLoading;
@@ -150,6 +165,7 @@ const CSPerformancePage = () => {
     refetchEntries();
     refetchRC();
     refetchProactivity();
+    refetchCallLog();
   }
 
   // ── Employee name resolver ───────────────────────────────────────────────
@@ -186,6 +202,13 @@ const CSPerformancePage = () => {
       if (!map[fullName]) {
         map[fullName] = value;
       }
+      // Also add preferred_name + last_name for call log matching
+      if (emp.preferred_name) {
+        const prefName = `${emp.preferred_name} ${emp.last_name}`.trim().toLowerCase();
+        if (!map[prefName]) {
+          map[prefName] = value;
+        }
+      }
     });
     return map;
   }, [rcEmployeeMap, rosterEmployees]);
@@ -197,6 +220,14 @@ const CSPerformancePage = () => {
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
+  }
+
+  function handleCallLogUploaded() {
+    if (singleEmployee) {
+      invalidateCallLog(singleEmployee, weekStart);
+    } else {
+      invalidateAllCallLogs();
+    }
   }
 
   // ── Proactivity save handler (uses React Query mutation + cache invalidation)
@@ -523,7 +554,15 @@ const CSPerformancePage = () => {
         ) : (
           /* ── Service Rep Individual View ──────────────────────────────────── */
           <div className="space-y-6">
-            {/* RC Upload */}
+            {/* 1. Daily Call Log Upload (primary) */}
+            <CallLogUploadForm
+              orgId={currentAgencyId}
+              weekStart={weekStart}
+              employeeMap={employeeMap}
+              onUploaded={handleCallLogUploaded}
+            />
+
+            {/* 2. Weekly Summary Upload (optional supplement) */}
             <RCUploadForm
               orgId={currentAgencyId}
               weekStart={weekStart}
@@ -532,13 +571,90 @@ const CSPerformancePage = () => {
             />
 
             {/* Scorecards */}
-            {rcData.length === 0 ? (
+            {rcData.length === 0 && !callLogMetrics ? (
               <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
                 <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">No performance data</h2>
-                <p className="text-gray-600">Upload a RingCentral XLSX to see the scorecard.</p>
+                <p className="text-gray-600">Upload a call log or RingCentral XLSX to see the scorecard.</p>
+              </div>
+            ) : callLogMetrics && singleEmployee ? (
+              /* Call log available for single employee — show unified scorecard */
+              <div className="space-y-4">
+                {/* Employee header with PDF download */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                    <Users className="w-5 h-5 text-gray-400" />
+                    {getEmployeeName(singleEmployee)}
+                  </h3>
+                  {rcData.length > 0 && (
+                    <button
+                      onClick={() => handleDownloadPDF(rcData.find((r) => r.employee_user_id === singleEmployee) || rcData[0])}
+                      disabled={pdfGenerating}
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Download PDF scorecard"
+                    >
+                      <Download className="w-4 h-4" />
+                      {pdfGenerating ? 'Generating...' : 'Download PDF'}
+                    </button>
+                  )}
+                </div>
+
+                {/* Cross-check alerts */}
+                {rcData.length > 0 && (() => {
+                  const rc = rcData.find((r) => r.employee_user_id === singleEmployee) || rcData[0];
+                  const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
+                  return (
+                    <DiscrepancyAlerts
+                      timeEntries={empEntries}
+                      rcData={rc}
+                      weekStart={weekStart}
+                      roleType="service"
+                    />
+                  );
+                })()}
+
+                {/* Scorecard with call log metrics as primary */}
+                <CSScorecard
+                  rcData={rcData.find((r) => r.employee_user_id === singleEmployee) || null}
+                  callLogMetrics={callLogMetrics}
+                  daysWorked={(() => {
+                    const empEntries = entries.filter((e) => e.employee_user_id === singleEmployee);
+                    return empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length || 5;
+                  })()}
+                  targets={employeeTargets}
+                  proactivity={proactivityList.find((p) => p.employee_user_id === singleEmployee)}
+                  onProactivityChange={handleProactivityChange}
+                  savingProactivity={savingProactivity}
+                />
+
+                {/* Daily Breakdown (from call log) */}
+                <DailyBreakdown
+                  rcData={rcData.find((r) => r.employee_user_id === singleEmployee)}
+                  callLogDaily={callLogMetrics.daily}
+                />
+
+                {/* Call Log Detail Table */}
+                <CallLogTable calls={callLogData} />
+
+                {/* Outbound Call Breakdown */}
+                <OutboundBreakdownForm
+                  breakdownData={outboundBreakdownData}
+                  totalOutbound={callLogMetrics.outboundAttempts}
+                  onSave={saveOutboundBreakdown}
+                  saving={savingOutboundBreakdown}
+                  orgId={currentAgencyId}
+                  employeeId={singleEmployee}
+                  weekStart={weekStart}
+                />
+
+                {/* Trends (8-week) */}
+                <TrendsView
+                  trendData={trendData}
+                  targets={employeeTargets}
+                />
               </div>
             ) : (
+              /* Fall back to legacy per-rcData display */
               rcData.map((rc) => {
                 const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
                 const daysWorked = empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length;
