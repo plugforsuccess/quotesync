@@ -60,7 +60,7 @@ const COLUMN_MAPPINGS = {
   avg_calls_per_day:       ['avg. calls/day', 'avg calls/day', 'avg. calls per day', 'avg calls per day'],
   inbound_calls:           ['# inbound', 'inbound', 'inbound calls', 'calls received'],
   outbound_calls:          ['# outbound', 'outbound', 'outbound calls', 'calls made'],
-  answered_calls:          ['# answered', '# answered (in)', 'answered', 'answered calls'],
+  answered_calls:          ['# answered (in)', '# answered', 'answered (in)', 'answered calls'],
   missed_calls:            ['# missed (w/vm)', '# missed', 'missed calls', 'missed (w/vm)', 'missed'],
   missed_pct:              ['% missed (w/vm)', '% missed', 'missed %', 'missed pct'],
   transfers:               ['# transfers', 'transfers'],
