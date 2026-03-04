@@ -33,18 +33,33 @@ const queryClient = new QueryClient({
   },
 });
 
-// Global auth error handler — sign out cleanly on 401/403 instead of freezing
+// Global auth error handler — verify session is truly dead before signing out.
+// On tab focus, React Query refetches may race ahead of the Supabase token
+// refresh, producing transient 401s. If the session is still valid after
+// refresh, skip the sign-out — the next refetch will succeed with the new token.
 queryClient.getQueryCache().config.onError = (error) => {
   if (error?.status === 401 || error?.status === 403) {
-    console.warn('[QueryCache] Auth error detected, signing out:', error.status);
-    supabase.auth.signOut();
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data?.session) {
+        console.warn('[QueryCache] Auth error confirmed — no valid session, signing out');
+        supabase.auth.signOut();
+      } else {
+        console.warn('[QueryCache] Auth error was transient (token refreshed) — skipping sign-out');
+      }
+    });
   }
 };
 
 queryClient.getMutationCache().config.onError = (error) => {
   if (error?.status === 401 || error?.status === 403) {
-    console.warn('[MutationCache] Auth error detected, signing out:', error.status);
-    supabase.auth.signOut();
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data?.session) {
+        console.warn('[MutationCache] Auth error confirmed — no valid session, signing out');
+        supabase.auth.signOut();
+      } else {
+        console.warn('[MutationCache] Auth error was transient (token refreshed) — skipping sign-out');
+      }
+    });
   }
 };
 
