@@ -266,7 +266,16 @@ export const AuthProvider = ({ children }) => {
 
         // 1) Rehydrate session (retry on Supabase lock abort)
         const { data, error } = await safeGetSession(2);
-        if (error) throw error;
+
+        // Don't throw on returned errors — getSession() may fail to refresh
+        // the token due to a transient network issue while the session itself
+        // (in localStorage) is still perfectly valid.  Throwing here sends us
+        // into the catch block that nukes the stored token, which is the
+        // "refresh kills the session" bug.  The onAuthStateChange listener
+        // already handles genuine session expiry (SIGNED_OUT event).
+        if (error) {
+          console.warn('[AUTH] getSession returned error (non-fatal):', error.message);
+        }
 
         const session = data?.session;
 
