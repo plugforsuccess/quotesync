@@ -26,8 +26,9 @@ export default defineConfig({
       }
     },
     
-    // Chunk size settings
-    chunkSizeWarningLimit: 1000,
+    // @react-pdf/renderer is ~1.5 MB but loaded on-demand via dynamic import();
+    // raise the limit so it doesn't trigger a misleading warning.
+    chunkSizeWarningLimit: 1600,
     
     // Source maps for debugging (disable in production for speed)
     sourcemap: false,
