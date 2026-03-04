@@ -53,6 +53,10 @@ function parseTimedeltaSeconds(val) {
 // ── Column Mapping ──────────────────────────────────────────────────────────────
 // RC XLSX column headers contain special characters (#, %, trailing spaces).
 // We normalize headers to lowercase trimmed strings and match against aliases.
+// IMPORTANT: # and % prefixes MUST be preserved during normalization — they are
+// the only distinction between count columns (e.g. "# Answered (in)") and
+// percentage columns (e.g. "% Answered (in)"). Stripping them causes ambiguous
+// matches where a percentage value is returned instead of a count.
 
 const COLUMN_MAPPINGS = {
   name:                    ['name', 'user name', 'user', 'agent name', 'agent', 'full name', 'employee'],
@@ -60,8 +64,8 @@ const COLUMN_MAPPINGS = {
   avg_calls_per_day:       ['avg. calls/day', 'avg calls/day', 'avg. calls per day', 'avg calls per day'],
   inbound_calls:           ['# inbound', 'inbound', 'inbound calls', 'calls received'],
   outbound_calls:          ['# outbound', 'outbound', 'outbound calls', 'calls made'],
-  answered_calls:          ['# answered (in)', '# answered', 'answered (in)', 'answered calls'],
-  missed_calls:            ['# missed (w/vm)', '# missed', 'missed calls', 'missed (w/vm)', 'missed'],
+  answered_calls:          ['# answered (in)', '# answered', 'answered calls'],
+  missed_calls:            ['# missed (w/vm)', '# missed', 'missed calls', 'missed'],
   missed_pct:              ['% missed (w/vm)', '% missed', 'missed %', 'missed pct'],
   transfers:               ['# transfers', 'transfers'],
   transfer_pct:            ['% transferred', 'transfer %', 'transferred %', 'transfer pct'],
