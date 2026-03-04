@@ -9,9 +9,14 @@ import * as XLSX from 'xlsx';
 
 // ── Time Parsing ────────────────────────────────────────────────────────────────
 
-/** Parse HH:MM:SS timedelta string to minutes */
+/** Parse time value to minutes. Handles Excel day-fractions, HH:MM:SS, and Xh Ym. */
 function parseTimedeltaMinutes(val) {
-  if (!val) return 0;
+  if (!val && val !== 0) return 0;
+  // SheetJS reads Excel time-formatted cells as day fractions
+  // e.g., 0.003865... × 86400 = 334 seconds = 5.57 minutes
+  if (typeof val === 'number' && val >= 0 && val < 1) {
+    return (val * 86400) / 60;
+  }
   const str = String(val).trim();
   // HH:MM:SS format
   const hms = str.match(/^(\d+):(\d+):(\d+)$/);
@@ -28,9 +33,14 @@ function parseTimedeltaMinutes(val) {
   return isNaN(num) ? 0 : num;
 }
 
-/** Parse HH:MM:SS timedelta string to seconds */
+/** Parse time value to seconds. Handles Excel day-fractions and HH:MM:SS. */
 function parseTimedeltaSeconds(val) {
-  if (!val) return 0;
+  if (!val && val !== 0) return 0;
+  // SheetJS reads Excel time-formatted cells as day fractions
+  // e.g., 0.003865... × 86400 = 334 seconds
+  if (typeof val === 'number' && val >= 0 && val < 1) {
+    return val * 86400;
+  }
   const str = String(val).trim();
   const hms = str.match(/^(\d+):(\d+):(\d+)$/);
   if (hms) {
@@ -50,7 +60,7 @@ const COLUMN_MAPPINGS = {
   avg_calls_per_day:       ['avg. calls/day', 'avg calls/day', 'avg. calls per day', 'avg calls per day'],
   inbound_calls:           ['# inbound', 'inbound', 'inbound calls', 'calls received'],
   outbound_calls:          ['# outbound', 'outbound', 'outbound calls', 'calls made'],
-  answered_calls:          ['# answered', 'answered', 'answered calls'],
+  answered_calls:          ['# answered', '# answered (in)', 'answered', 'answered calls'],
   missed_calls:            ['# missed (w/vm)', '# missed', 'missed calls', 'missed (w/vm)', 'missed'],
   missed_pct:              ['% missed (w/vm)', '% missed', 'missed %', 'missed pct'],
   transfers:               ['# transfers', 'transfers'],
