@@ -145,8 +145,13 @@ export function computeMetrics(rcData, daysWorked) {
   };
 }
 
+// Business timezone for day boundary computation.
+// All "call_date" values in the DB are already computed in this tz at ingest time.
+const BUSINESS_TZ = 'America/New_York';
+
 /**
  * Compute metrics from call log data (new primary source).
+ * call_date values are assumed to already be in business tz (set at ingest).
  */
 export function computeCallLogMetrics(calls, weekStart) {
   if (!calls || calls.length === 0) {

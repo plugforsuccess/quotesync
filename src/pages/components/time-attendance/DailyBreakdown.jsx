@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { CalendarDays, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const LOW_OUTBOUND_THRESHOLD = 4;
+const BUSINESS_TZ = 'America/New_York';
 
 function formatDayLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -17,7 +18,12 @@ function formatDayLabel(dateStr) {
 function formatTime(isoStr) {
   if (!isoStr) return '—';
   const d = new Date(isoStr);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return d.toLocaleTimeString('en-US', {
+    timeZone: BUSINESS_TZ,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 }
 
 function parseLegacyDailyBreakdown(raw) {

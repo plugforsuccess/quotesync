@@ -4,9 +4,17 @@
 import { useState, useMemo } from 'react';
 import { PhoneCall, ChevronDown, ChevronRight } from 'lucide-react';
 
+// Business timezone for consistent time display
+const BUSINESS_TZ = 'America/New_York';
+
 function formatTime(isoStr) {
   const d = new Date(isoStr);
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  return d.toLocaleTimeString('en-US', {
+    timeZone: BUSINESS_TZ,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
 }
 
 function formatDuration(seconds) {
@@ -14,6 +22,19 @@ function formatDuration(seconds) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+/**
+ * Mask phone numbers for PII protection.
+ * Shows only last 4 digits: ***-***-1234
+ */
+function maskPhone(phone) {
+  if (!phone) return '—';
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length >= 4) {
+    return `***-***-${digits.slice(-4)}`;
+  }
+  return '***';
 }
 
 function formatDateLabel(dateStr) {
@@ -183,10 +204,10 @@ export default function CallLogTable({ calls }) {
 
                   const bgClass = isFirstOutbound ? 'bg-blue-50/30' : '';
 
-                  // Contact: the other party's number
+                  // Contact: masked phone number of the other party (PII protection)
                   const contact = call.call_direction === 'Outbound'
-                    ? call.to_number || call.to_name || '—'
-                    : call.from_number || call.from_name || '—';
+                    ? maskPhone(call.to_number) || '—'
+                    : maskPhone(call.from_number) || '—';
 
                   return (
                     <tr key={call.id} className={`hover:bg-gray-50 transition-colors ${borderClass} ${bgClass}`}>

@@ -1,11 +1,44 @@
 // src/pages/components/time-attendance/CallLogUploadForm.jsx
 // Upload form for RingCentral Call Log exports (XLSX or CSV).
 // Parses individual call records and upserts to rc_call_log table.
+//
+// Enterprise hardening:
+// - File size + row count limits enforced before parsing
+// - Per-row schema validation (required fields, enums, duration bounds)
+// - Phone numbers masked in preview UI
+// - No raw PII in console logs
+// - Timestamps normalized to UTC; day boundaries in business timezone
+// - Upload result shows inserted/ignored/invalid counts
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Phone, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import * as XLSX from 'xlsx';
+
+// ── Constants ───────────────────────────────────────────────────────────────────
+
+const MAX_FILE_SIZE_MB = 25;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const MAX_ROWS = 10000;
+const BATCH_SIZE = 500;
+const VALID_DIRECTIONS = new Set(['Inbound', 'Outbound']);
+const VALID_RESULTS = new Set(['Connected', 'Answered', 'VM/Missed']);
+const MAX_CALL_DURATION_SEC = 86400; // 24h sanity cap
+
+// Business timezone for day boundary computation
+const BUSINESS_TZ = 'America/New_York';
+
+// ── PII Masking ─────────────────────────────────────────────────────────────────
+
+function maskPhone(phone) {
+  if (!phone) return '—';
+  // Show only last 4 digits: (***) ***-1234 or ***-***-1234
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length >= 4) {
+    return `***-***-${digits.slice(-4)}`;
+  }
+  return '***';
+}
 
 // ── Time Parsing ────────────────────────────────────────────────────────────────
 
@@ -21,6 +54,42 @@ function parseTimedeltaSeconds(val) {
   }
   const num = parseFloat(str);
   return isNaN(num) ? 0 : Math.round(num);
+}
+
+// ── Timezone-Aware Date Helpers ─────────────────────────────────────────────────
+
+/**
+ * Convert a Date to a YYYY-MM-DD string in the business timezone.
+ * This ensures day boundaries align with the agency's operating hours,
+ * not the browser's local timezone or UTC.
+ */
+function toBusinessDateStr(date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+
+  const y = parts.find((p) => p.type === 'year').value;
+  const m = parts.find((p) => p.type === 'month').value;
+  const d = parts.find((p) => p.type === 'day').value;
+  return `${y}-${m}-${d}`;
+}
+
+function formatTimeInBusinessTz(date) {
+  return date.toLocaleTimeString('en-US', {
+    timeZone: BUSINESS_TZ,
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  });
+}
+
+function formatDuration(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 // ── Agent Name Extraction ───────────────────────────────────────────────────────
@@ -63,25 +132,6 @@ function cleanQueueName(queue) {
   return queue.replace(/^\w+\s+/, '');
 }
 
-// ── Date Helpers ────────────────────────────────────────────────────────────────
-
-function toLocalDateStr(date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, '0');
-  const d = String(date.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
-}
-
-function formatTime(date) {
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-}
-
-function formatDuration(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
-}
-
 // ── CSV Parser ──────────────────────────────────────────────────────────────────
 
 function parseCSVText(text) {
@@ -100,46 +150,92 @@ function parseCSVText(text) {
   return rows;
 }
 
-// ── Row Transformation ──────────────────────────────────────────────────────────
+// ── Row Validation & Transformation ─────────────────────────────────────────────
 
-function transformRow(row, employeeMap, orgId) {
+/**
+ * Validate and transform a raw parsed row into a DB-ready record.
+ * Returns { record, error } — error is a string if the row is invalid.
+ */
+function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
+  // 1. Required fields: Call Direction, Result, Call Start Time
+  const direction = (row['Call Direction'] || row.call_direction || '').trim();
+  if (!VALID_DIRECTIONS.has(direction)) {
+    return { record: null, error: `Invalid direction: "${direction}"` };
+  }
+
+  const result = (row.Result || row.result || '').trim();
+  if (!VALID_RESULTS.has(result)) {
+    return { record: null, error: `Invalid result: "${result}"` };
+  }
+
+  const callStartStr = (row['Call Start Time'] || row.call_start_time || '').trim();
+  if (!callStartStr) {
+    return { record: null, error: 'Missing Call Start Time' };
+  }
+
+  const callStart = new Date(callStartStr);
+  if (isNaN(callStart.getTime())) {
+    return { record: null, error: `Unparseable timestamp: "${callStartStr}"` };
+  }
+
+  // Sanity: reject timestamps before 2020 or more than 1 day in the future
+  const now = new Date();
+  const minDate = new Date('2020-01-01T00:00:00Z');
+  if (callStart < minDate || callStart > new Date(now.getTime() + 86400000)) {
+    return { record: null, error: `Timestamp out of range: ${callStart.toISOString()}` };
+  }
+
+  // 2. Duration fields — clamp to sane bounds
+  let callLengthSec = parseTimedeltaSeconds(row['Call Length'] || row.call_length);
+  if (callLengthSec < 0) callLengthSec = 0;
+  if (callLengthSec > MAX_CALL_DURATION_SEC) callLengthSec = MAX_CALL_DURATION_SEC;
+
+  let handleTimeSec = parseTimedeltaSeconds(row['Handle Time'] || row.handle_time) || null;
+  if (handleTimeSec !== null) {
+    if (handleTimeSec < 0) handleTimeSec = 0;
+    if (handleTimeSec > MAX_CALL_DURATION_SEC) handleTimeSec = MAX_CALL_DURATION_SEC;
+  }
+
+  // 3. Agent resolution
   const agentName = resolveAgent(row);
   const matchedId = agentName ? employeeMap[agentName.toLowerCase()] : null;
 
-  const callStartStr = row['Call Start Time'] || row.call_start_time || '';
-  const callStart = new Date(callStartStr);
-  if (isNaN(callStart.getTime())) return null;
+  // 4. Compute call_date in business timezone (not browser local time)
+  const callDate = toBusinessDateStr(callStart);
 
-  const callDate = toLocalDateStr(callStart);
+  // 5. Queue normalization
   const queue = row.Queue || row.queue || null;
   const cleanQueue = cleanQueueName(queue);
+  const queueType = deriveQueueType(queue);
 
-  const direction = row['Call Direction'] || row.call_direction || '';
-  const result = row.Result || row.result || '';
-  if (!direction || !result) return null;
-
-  return {
+  const record = {
     org_id: orgId,
     employee_user_id: matchedId,
     employee_name: agentName || 'Unknown',
     session_id: row['Session Id'] || row.session_id || null,
     call_date: callDate,
-    call_start_time: callStart.toISOString(),
+    call_start_time: callStart.toISOString(),  // UTC
     call_direction: direction,
     call_result: result,
-    call_length_seconds: parseTimedeltaSeconds(row['Call Length'] || row.call_length),
-    handle_time_seconds: parseTimedeltaSeconds(row['Handle Time'] || row.handle_time) || null,
+    call_length_seconds: callLengthSec,
+    handle_time_seconds: handleTimeSec,
     from_name: row['From Name'] || row.from_name || null,
     from_number: row['From Number'] || row.from_number || null,
     to_name: row['To Name'] || row.to_name || null,
     to_number: row['To Number'] || row.to_number || null,
     queue: cleanQueue,
-    queue_type: deriveQueueType(queue),
-    matched: !!matchedId,
-    // For preview display
-    _time: formatTime(callStart),
-    _duration: formatDuration(parseTimedeltaSeconds(row['Call Length'] || row.call_length)),
+    queue_type: queueType,
+    source_filename: sourceFilename,
+    // Preview-only fields (stripped before DB write)
+    _matched: !!matchedId,
+    _time: formatTimeInBusinessTz(callStart),
+    _duration: formatDuration(callLengthSec),
+    _maskedContact: direction === 'Outbound'
+      ? maskPhone(row['To Number'] || row.to_number)
+      : maskPhone(row['From Number'] || row.from_number),
   };
+
+  return { record, error: null };
 }
 
 // ── Component ───────────────────────────────────────────────────────────────────
@@ -148,8 +244,10 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [validationErrors, setValidationErrors] = useState([]);
   const [showHelp, setShowHelp] = useState(false);
   const [confirmModal, setConfirmModal] = useState(null);
+  const [uploadStats, setUploadStats] = useState(null);
   const fileRef = useRef(null);
 
   async function handleFile(e) {
@@ -158,6 +256,14 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
 
     setMsg(null);
     setPreview(null);
+    setValidationErrors([]);
+    setUploadStats(null);
+
+    // File size check
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      setMsg({ type: 'error', text: `File is ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum is ${MAX_FILE_SIZE_MB}MB.` });
+      return;
+    }
 
     try {
       const isCSV = file.name.toLowerCase().endsWith('.csv');
@@ -187,21 +293,39 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         return;
       }
 
-      if (rows.length > 5000) {
-        setMsg({ type: 'error', text: `File has ${rows.length} rows. Maximum is 5,000.` });
+      if (rows.length > MAX_ROWS) {
+        setMsg({ type: 'error', text: `File has ${rows.length.toLocaleString()} rows. Maximum is ${MAX_ROWS.toLocaleString()}.` });
         return;
       }
 
-      const parsed = rows
-        .map((row) => transformRow(row, employeeMap || {}, orgId))
-        .filter(Boolean);
+      // Validate and transform each row
+      const valid = [];
+      const errors = [];
 
-      if (parsed.length === 0) {
-        setMsg({ type: 'error', text: 'No valid call records found. Check the file format.' });
+      for (let i = 0; i < rows.length; i++) {
+        const { record, error } = validateAndTransformRow(
+          rows[i], employeeMap || {}, orgId, file.name
+        );
+        if (error) {
+          errors.push({ row: i + 2, error }); // +2: 1-indexed + header row
+        } else {
+          valid.push(record);
+        }
+      }
+
+      if (valid.length === 0) {
+        setMsg({
+          type: 'error',
+          text: `No valid call records found. ${errors.length} row(s) had validation errors.`,
+        });
+        setValidationErrors(errors.slice(0, 10));
         return;
       }
 
-      setPreview(parsed);
+      setPreview(valid);
+      if (errors.length > 0) {
+        setValidationErrors(errors.slice(0, 10));
+      }
     } catch (err) {
       setMsg({ type: 'error', text: `Failed to parse file: ${err.message}` });
     }
@@ -213,22 +337,21 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     const inbound = preview.filter((r) => r.call_direction === 'Inbound').length;
     const answered = preview.filter((r) => r.call_result === 'Answered').length;
     const missed = preview.filter((r) => r.call_result === 'VM/Missed').length;
-    const matched = new Set(preview.filter((r) => r.matched).map((r) => r.employee_name)).size;
-    const unmatched = new Set(preview.filter((r) => !r.matched).map((r) => r.employee_name)).size;
-    const agents = new Set(preview.map((r) => r.employee_name)).size;
+    const matched = new Set(preview.filter((r) => r._matched).map((r) => r.employee_name)).size;
+    const unmatched = new Set(preview.filter((r) => !r._matched).map((r) => r.employee_name)).size;
     const dateRange = preview.reduce((acc, r) => {
       if (!acc.min || r.call_date < acc.min) acc.min = r.call_date;
       if (!acc.max || r.call_date > acc.max) acc.max = r.call_date;
       return acc;
     }, { min: null, max: null });
-    return { outbound, inbound, answered, missed, matched, unmatched, agents, dateRange };
+    return { outbound, inbound, answered, missed, matched, unmatched, dateRange };
   })() : null;
 
   function submitUpload() {
     if (!preview || preview.length === 0) return;
 
-    const matchedRows = preview.filter((r) => r.matched);
-    const unmatchedNames = [...new Set(preview.filter((r) => !r.matched).map((r) => r.employee_name))];
+    const matchedRows = preview.filter((r) => r._matched);
+    const unmatchedNames = [...new Set(preview.filter((r) => !r._matched).map((r) => r.employee_name))];
 
     if (matchedRows.length === 0) {
       setMsg({ type: 'error', text: 'No calls matched known employees. Check employee names.' });
@@ -236,7 +359,11 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     }
 
     if (unmatchedNames.length > 0) {
-      setConfirmModal({ matchedRows, unmatchedNames, skippedCount: preview.length - matchedRows.length });
+      setConfirmModal({
+        matchedRows,
+        unmatchedNames,
+        skippedCount: preview.length - matchedRows.length,
+      });
       return;
     }
 
@@ -247,31 +374,37 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     setConfirmModal(null);
     setUploading(true);
     setMsg(null);
+    setUploadStats(null);
 
     const { data: { user } } = await supabase.auth.getUser();
 
     // Strip preview-only fields and add uploaded_by
-    const records = matchedRows.map(({ matched, _time, _duration, ...row }) => ({
+    const records = matchedRows.map(({ _matched, _time, _duration, _maskedContact, ...row }) => ({
       ...row,
       uploaded_by: user?.id,
     }));
 
-    // Batch upsert in chunks of 500
-    const BATCH_SIZE = 500;
-    let totalUploaded = 0;
+    let totalSent = 0;
+    let totalInserted = 0;
     let uploadError = null;
 
     for (let i = 0; i < records.length; i += BATCH_SIZE) {
       const batch = records.slice(i, i + BATCH_SIZE);
-      const { error } = await supabase.from('rc_call_log').upsert(batch, {
-        onConflict: 'org_id,employee_user_id,call_start_time,call_direction,call_result',
-        ignoreDuplicates: true,
-      });
+      const { data, error, count } = await supabase
+        .from('rc_call_log')
+        .upsert(batch, {
+          onConflict: 'org_id,employee_user_id,call_start_time,call_direction,call_result',
+          ignoreDuplicates: true,
+          count: 'exact',
+        })
+        .select('id');
+
       if (error) {
         uploadError = error;
         break;
       }
-      totalUploaded += batch.length;
+      totalSent += batch.length;
+      totalInserted += data?.length || 0;
     }
 
     setUploading(false);
@@ -279,9 +412,27 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     if (uploadError) {
       setMsg({ type: 'error', text: `Upload failed: ${uploadError.message}` });
     } else {
-      const skipNote = skippedCount > 0 ? ` (${skippedCount} unmatched skipped)` : '';
-      setMsg({ type: 'success', text: `${totalUploaded} call records uploaded${skipNote}.` });
+      const ignored = totalSent - totalInserted;
+      const stats = {
+        sent: totalSent,
+        inserted: totalInserted,
+        ignored,
+        skipped: skippedCount,
+        invalid: validationErrors.length,
+      };
+      setUploadStats(stats);
+
+      // Warn if high ignore ratio
+      const warnIgnore = ignored > 0 && ignored > totalSent * 0.5;
+      const skipNote = skippedCount > 0 ? `, ${skippedCount} unmatched skipped` : '';
+      const ignoreNote = ignored > 0 ? `, ${ignored} duplicates ignored` : '';
+
+      setMsg({
+        type: warnIgnore ? 'warning' : 'success',
+        text: `${totalInserted} new records inserted${ignoreNote}${skipNote}.${warnIgnore ? ' High duplicate ratio — this file may have been uploaded before.' : ''}`,
+      });
       setPreview(null);
+      setValidationErrors([]);
       if (fileRef.current) fileRef.current.value = '';
       if (onUploaded) onUploaded();
     }
@@ -326,7 +477,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             <li>Set the date range to the target day or week</li>
             <li>Export as XLSX or CSV</li>
           </ol>
-          <p className="font-medium mb-2">Expected columns (from the "Calls" sheet):</p>
+          <p className="font-medium mb-2">Expected columns (from the &ldquo;Calls&rdquo; sheet):</p>
           <ul className="list-disc list-inside space-y-1 text-blue-700">
             <li><strong>From Name</strong>, <strong>To Name</strong> &mdash; agent identification</li>
             <li><strong>Call Direction</strong> &mdash; Inbound or Outbound</li>
@@ -356,12 +507,26 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         )}
       </div>
 
+      {/* Validation errors */}
+      {validationErrors.length > 0 && (
+        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm font-medium text-yellow-800 mb-1">
+            {validationErrors.length} row{validationErrors.length > 1 ? 's' : ''} had validation errors and will be skipped:
+          </p>
+          <ul className="text-xs text-yellow-700 space-y-0.5 max-h-32 overflow-y-auto">
+            {validationErrors.map((ve, i) => (
+              <li key={i}>Row {ve.row}: {ve.error}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Preview */}
       {preview && preview.length > 0 && summary && (
         <div className="mt-4">
           <div className="mb-3 p-3 bg-gray-50 rounded-lg">
             <p className="text-sm font-medium text-gray-700">
-              {preview.length} calls found: {summary.outbound} outbound, {summary.inbound} inbound
+              {preview.length} valid calls: {summary.outbound} outbound, {summary.inbound} inbound
               ({summary.answered} answered, {summary.missed} missed).
               {' '}{summary.matched} agent{summary.matched !== 1 ? 's' : ''} matched
               {summary.unmatched > 0 && (
@@ -385,10 +550,10 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {preview.slice(0, 100).map((row, i) => (
-                  <tr key={i} className={row.matched ? 'hover:bg-gray-50' : 'bg-yellow-50/50 hover:bg-yellow-50'}>
+                  <tr key={i} className={row._matched ? 'hover:bg-gray-50' : 'bg-yellow-50/50 hover:bg-yellow-50'}>
                     <td className="px-3 py-2 text-gray-900">
                       {row.employee_name}
-                      {!row.matched && <span className="ml-1 text-xs text-yellow-600" title="No matching employee found">(?)</span>}
+                      {!row._matched && <span className="ml-1 text-xs text-yellow-600" title="No matching employee found">(?)</span>}
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
@@ -427,7 +592,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               {uploading ? 'Uploading...' : 'Confirm Upload'}
             </button>
             <button
-              onClick={() => { setPreview(null); if (fileRef.current) fileRef.current.value = ''; }}
+              onClick={() => { setPreview(null); setValidationErrors([]); if (fileRef.current) fileRef.current.value = ''; }}
               className="px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
             >
               Cancel
@@ -436,9 +601,31 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         </div>
       )}
 
+      {/* Upload result stats */}
+      {uploadStats && (
+        <div className="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-600 flex items-center gap-4">
+          <span>Sent: <strong>{uploadStats.sent}</strong></span>
+          <span>Inserted: <strong className="text-green-700">{uploadStats.inserted}</strong></span>
+          {uploadStats.ignored > 0 && (
+            <span>Duplicates ignored: <strong className="text-gray-500">{uploadStats.ignored}</strong></span>
+          )}
+          {uploadStats.skipped > 0 && (
+            <span>Unmatched skipped: <strong className="text-yellow-600">{uploadStats.skipped}</strong></span>
+          )}
+          {uploadStats.invalid > 0 && (
+            <span>Invalid rows: <strong className="text-red-600">{uploadStats.invalid}</strong></span>
+          )}
+        </div>
+      )}
+
       {msg && (
-        <div className={`mt-3 flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
-          {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+        <div className={`mt-3 flex items-center gap-1.5 text-sm ${
+          msg.type === 'error' ? 'text-red-600' :
+          msg.type === 'warning' ? 'text-yellow-600' : 'text-green-600'
+        }`}>
+          {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> :
+           msg.type === 'warning' ? <AlertCircle className="w-4 h-4" /> :
+           <CheckCircle className="w-4 h-4" />}
           {msg.text}
         </div>
       )}
