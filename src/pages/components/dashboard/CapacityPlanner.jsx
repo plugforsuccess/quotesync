@@ -21,8 +21,8 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
     <div className="py-2 border-b border-gray-100 last:border-b-0">
       <div className="flex justify-between items-center">
         <label className="text-sm text-gray-600">{label}</label>
-        <div className="flex items-center gap-1">
-          {prefix && <span className="text-sm text-gray-400">{prefix}</span>}
+        <div className="relative">
+          {prefix && <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">{prefix}</span>}
           <input
             type="number"
             value={value}
@@ -30,9 +30,9 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
             min={min}
             max={max}
             step={step}
-            className="w-24 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className={`w-24 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${prefix ? 'pl-6 pr-2' : suffix ? 'pl-2 pr-6' : 'px-2'}`}
           />
-          {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
+          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">{suffix}</span>}
         </div>
       </div>
       {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
@@ -144,15 +144,15 @@ function PolicyMixTable({
               </select>
 
               {/* Premium input */}
-              <div className="flex items-center gap-0.5">
-                <span className="text-xs text-gray-400">$</span>
+              <div className="relative">
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
                 <input
                   type="number"
                   value={row.avgPremium}
                   onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                   min={0}
                   step={100}
-                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -160,16 +160,16 @@ function PolicyMixTable({
               <span className="text-sm text-right text-gray-600 bg-gray-50 font-medium px-1 py-1 rounded">{commRate}%</span>
 
               {/* Mix % input */}
-              <div className="flex items-center gap-0.5">
+              <div className="relative">
                 <input
                   type="number"
                   value={row.mixPct}
                   onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                   min={0}
                   max={100}
-                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-                <span className="text-xs text-gray-400">%</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
               </div>
 
               {/* Remove button */}
@@ -216,28 +216,28 @@ function PolicyMixTable({
                 </button>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <div className="flex items-center gap-0.5">
-                  <span className="text-xs text-gray-400">$</span>
+                <div className="relative">
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
                   <input
                     type="number"
                     value={row.avgPremium}
                     onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                     min={0}
                     step={100}
-                    className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <span className="text-gray-600 bg-gray-50 font-medium px-2 py-1 rounded text-sm">{commRate}%</span>
-                <div className="flex items-center gap-0.5">
+                <div className="relative">
                   <input
                     type="number"
                     value={row.mixPct}
                     onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                     min={0}
                     max={100}
-                    className="w-14 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-14 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
-                  <span className="text-xs text-gray-400">%</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                 </div>
               </div>
             </div>
