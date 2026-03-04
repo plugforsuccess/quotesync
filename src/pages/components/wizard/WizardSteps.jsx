@@ -637,14 +637,19 @@ export function DobStep({ value, onChange }) {
 
 // ─── Step 9: Street Address (with Google Places Autocomplete) ─────
 
-export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChange, onCityChange, onZipCorrected, onAddressSourceChange }) {
+export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChange, onCityChange, onZipCorrected, onAddressSourceChange, onLatLngChange }) {
   const [manualMode, setManualMode] = useState(false);
   const [zipMismatch, setZipMismatch] = useState(null);
 
-  const handleAddressSelect = (address) => {
-    onStreetChange(address.street);
+  const handleSelect = ({ address, lat, lng }) => {
+    onStreetChange(address.street1);
     onCityChange(address.city);
     onAddressSourceChange?.('google_autocomplete');
+
+    // Forward lat/lng for downstream use (lead routing, etc.)
+    if (lat != null && lng != null) {
+      onLatLngChange?.({ lat, lng });
+    }
 
     // Check for ZIP mismatch between Step 1 and the autocomplete result
     if (address.zip && address.zip !== zip) {
@@ -674,7 +679,10 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
           </label>
           {!manualMode ? (
             <AddressAutocomplete
-              onAddressSelect={handleAddressSelect}
+              apiKey={import.meta.env.VITE_GOOGLE_PLACES_API_KEY}
+              regionCodes={['us']}
+              onSelect={handleSelect}
+              onError={(e) => console.error('Places error:', e)}
             />
           ) : (
             <input
