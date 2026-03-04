@@ -267,9 +267,19 @@ async function fetchCallLogData(employeeId, weekStart) {
 
   const weekEnd = addDays(weekStart, 4); // Mon-Fri
 
+  // Select only columns needed for metrics + display.
+  // Excludes raw PII fields (from_name, from_number, to_name, to_number)
+  // to minimize PII in client memory. CallLogTable uses masked versions only.
   const { data, error } = await supabase
     .from('rc_call_log')
-    .select('*')
+    .select(`
+      id, org_id, employee_user_id, employee_name,
+      session_id, call_date, call_start_time, call_direction, call_result,
+      call_length_seconds, handle_time_seconds,
+      from_number, to_number,
+      queue, queue_type,
+      ingestion_batch_id, uploaded_at
+    `)
     .eq('employee_user_id', employeeId)
     .gte('call_date', weekStart)
     .lte('call_date', weekEnd)

@@ -5,9 +5,10 @@
 // Enterprise hardening:
 // - File size + row count limits enforced before parsing
 // - Per-row schema validation (required fields, enums, duration bounds)
-// - Phone numbers masked in preview UI
-// - No raw PII in console logs
-// - Timestamps normalized to UTC; day boundaries in business timezone
+// - Out-of-bounds values REJECTED (not clamped) to preserve data integrity
+// - Phone numbers masked in preview UI — never logged
+// - Timestamps normalized to UTC; call_date derived server-side in DB
+// - Ingestion batch record created per upload (who/when/hash/stats)
 // - Upload result shows inserted/ignored/invalid counts
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -25,19 +26,26 @@ const VALID_DIRECTIONS = new Set(['Inbound', 'Outbound']);
 const VALID_RESULTS = new Set(['Connected', 'Answered', 'VM/Missed']);
 const MAX_CALL_DURATION_SEC = 86400; // 24h sanity cap
 
-// Business timezone for day boundary computation
+// Business timezone for preview display (call_date is computed server-side)
 const BUSINESS_TZ = 'America/New_York';
 
 // ── PII Masking ─────────────────────────────────────────────────────────────────
 
 function maskPhone(phone) {
   if (!phone) return '—';
-  // Show only last 4 digits: (***) ***-1234 or ***-***-1234
   const digits = phone.replace(/\D/g, '');
   if (digits.length >= 4) {
     return `***-***-${digits.slice(-4)}`;
   }
   return '***';
+}
+
+// ── File Hashing ────────────────────────────────────────────────────────────────
+
+async function computeSHA256(buffer) {
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // ── Time Parsing ────────────────────────────────────────────────────────────────
@@ -56,26 +64,7 @@ function parseTimedeltaSeconds(val) {
   return isNaN(num) ? 0 : Math.round(num);
 }
 
-// ── Timezone-Aware Date Helpers ─────────────────────────────────────────────────
-
-/**
- * Convert a Date to a YYYY-MM-DD string in the business timezone.
- * This ensures day boundaries align with the agency's operating hours,
- * not the browser's local timezone or UTC.
- */
-function toBusinessDateStr(date) {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: BUSINESS_TZ,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-
-  const y = parts.find((p) => p.type === 'year').value;
-  const m = parts.find((p) => p.type === 'month').value;
-  const d = parts.find((p) => p.type === 'day').value;
-  return `${y}-${m}-${d}`;
-}
+// ── Display Helpers ─────────────────────────────────────────────────────────────
 
 function formatTimeInBusinessTz(date) {
   return date.toLocaleTimeString('en-US', {
@@ -92,15 +81,27 @@ function formatDuration(seconds) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+function toBusinessDateStr(date) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date);
+  const y = parts.find((p) => p.type === 'year').value;
+  const m = parts.find((p) => p.type === 'month').value;
+  const d = parts.find((p) => p.type === 'day').value;
+  return `${y}-${m}-${d}`;
+}
+
 // ── Agent Name Extraction ───────────────────────────────────────────────────────
 
 function extractAgentName(rawName) {
   if (!rawName) return null;
   let name = rawName
-    .replace(/\s*\(\d{3}\)\s*\d{3}-?\d{4}\s*$/, '')   // (770) 786-1616
-    .replace(/\s*\+\d[\d\s]+$/, '')                      // +244 49102
+    .replace(/\s*\(\d{3}\)\s*\d{3}-?\d{4}\s*$/, '')
+    .replace(/\s*\+\d[\d\s]+$/, '')
     .trim();
-  // Strip queue prefix: "0C2667 English Sales - CALLER NAME" → "CALLER NAME"
   const queueDash = name.indexOf(' - ');
   if (queueDash > 0 && /^\w+\s+(English|Spanish)\s+(Sales|Service)/i.test(name)) {
     name = name.substring(queueDash + 3).trim();
@@ -155,6 +156,7 @@ function parseCSVText(text) {
 /**
  * Validate and transform a raw parsed row into a DB-ready record.
  * Returns { record, error } — error is a string if the row is invalid.
+ * Out-of-bounds values are REJECTED, not clamped, to preserve data integrity.
  */
 function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
   // 1. Required fields: Call Direction, Result, Call Start Time
@@ -185,35 +187,33 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
     return { record: null, error: `Timestamp out of range: ${callStart.toISOString()}` };
   }
 
-  // 2. Duration fields — clamp to sane bounds
-  let callLengthSec = parseTimedeltaSeconds(row['Call Length'] || row.call_length);
-  if (callLengthSec < 0) callLengthSec = 0;
-  if (callLengthSec > MAX_CALL_DURATION_SEC) callLengthSec = MAX_CALL_DURATION_SEC;
+  // 2. Duration fields — REJECT (not clamp) out-of-bounds values
+  const callLengthSec = parseTimedeltaSeconds(row['Call Length'] || row.call_length);
+  if (callLengthSec < 0 || callLengthSec > MAX_CALL_DURATION_SEC) {
+    return { record: null, error: `Call length out of bounds: ${callLengthSec}s` };
+  }
 
   let handleTimeSec = parseTimedeltaSeconds(row['Handle Time'] || row.handle_time) || null;
-  if (handleTimeSec !== null) {
-    if (handleTimeSec < 0) handleTimeSec = 0;
-    if (handleTimeSec > MAX_CALL_DURATION_SEC) handleTimeSec = MAX_CALL_DURATION_SEC;
+  if (handleTimeSec !== null && (handleTimeSec < 0 || handleTimeSec > MAX_CALL_DURATION_SEC)) {
+    return { record: null, error: `Handle time out of bounds: ${handleTimeSec}s` };
   }
 
   // 3. Agent resolution
   const agentName = resolveAgent(row);
   const matchedId = agentName ? employeeMap[agentName.toLowerCase()] : null;
 
-  // 4. Compute call_date in business timezone (not browser local time)
-  const callDate = toBusinessDateStr(callStart);
-
-  // 5. Queue normalization
+  // 4. Queue normalization
   const queue = row.Queue || row.queue || null;
   const cleanQueue = cleanQueueName(queue);
   const queueType = deriveQueueType(queue);
 
+  // NOTE: call_date is NOT sent — it's a GENERATED column computed server-side
+  // from call_start_time AT TIME ZONE 'America/New_York'
   const record = {
     org_id: orgId,
     employee_user_id: matchedId,
     employee_name: agentName || 'Unknown',
     session_id: row['Session Id'] || row.session_id || null,
-    call_date: callDate,
     call_start_time: callStart.toISOString(),  // UTC
     call_direction: direction,
     call_result: result,
@@ -230,9 +230,7 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
     _matched: !!matchedId,
     _time: formatTimeInBusinessTz(callStart),
     _duration: formatDuration(callLengthSec),
-    _maskedContact: direction === 'Outbound'
-      ? maskPhone(row['To Number'] || row.to_number)
-      : maskPhone(row['From Number'] || row.from_number),
+    _callDate: toBusinessDateStr(callStart), // for preview date range only
   };
 
   return { record, error: null };
@@ -249,6 +247,9 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
   const [confirmModal, setConfirmModal] = useState(null);
   const [uploadStats, setUploadStats] = useState(null);
   const fileRef = useRef(null);
+  // Store raw file buffer for SHA-256 computation during upload
+  const fileBufferRef = useRef(null);
+  const fileNameRef = useRef(null);
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -258,6 +259,8 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     setPreview(null);
     setValidationErrors([]);
     setUploadStats(null);
+    fileBufferRef.current = null;
+    fileNameRef.current = null;
 
     // File size check
     if (file.size > MAX_FILE_SIZE_BYTES) {
@@ -268,13 +271,15 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     try {
       const isCSV = file.name.toLowerCase().endsWith('.csv');
       let rows;
+      let rawBuffer;
 
       if (isCSV) {
-        const text = await file.text();
+        rawBuffer = await file.arrayBuffer();
+        const text = new TextDecoder().decode(rawBuffer);
         rows = parseCSVText(text);
       } else {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
+        rawBuffer = await file.arrayBuffer();
+        const workbook = XLSX.read(rawBuffer, { type: 'array' });
         const sheetName = workbook.SheetNames.find(
           (s) => s.toLowerCase() === 'calls'
         ) || workbook.SheetNames[workbook.SheetNames.length - 1];
@@ -287,6 +292,10 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         const sheet = workbook.Sheets[sheetName];
         rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       }
+
+      // Store buffer for hash computation during upload
+      fileBufferRef.current = rawBuffer;
+      fileNameRef.current = file.name;
 
       if (rows.length === 0) {
         setMsg({ type: 'error', text: 'No data rows found in the file.' });
@@ -318,13 +327,13 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           type: 'error',
           text: `No valid call records found. ${errors.length} row(s) had validation errors.`,
         });
-        setValidationErrors(errors.slice(0, 10));
+        setValidationErrors(errors.slice(0, 20));
         return;
       }
 
       setPreview(valid);
       if (errors.length > 0) {
-        setValidationErrors(errors.slice(0, 10));
+        setValidationErrors(errors.slice(0, 20));
       }
     } catch (err) {
       setMsg({ type: 'error', text: `Failed to parse file: ${err.message}` });
@@ -340,8 +349,8 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     const matched = new Set(preview.filter((r) => r._matched).map((r) => r.employee_name)).size;
     const unmatched = new Set(preview.filter((r) => !r._matched).map((r) => r.employee_name)).size;
     const dateRange = preview.reduce((acc, r) => {
-      if (!acc.min || r.call_date < acc.min) acc.min = r.call_date;
-      if (!acc.max || r.call_date > acc.max) acc.max = r.call_date;
+      if (!acc.min || r._callDate < acc.min) acc.min = r._callDate;
+      if (!acc.max || r._callDate > acc.max) acc.max = r._callDate;
       return acc;
     }, { min: null, max: null });
     return { outbound, inbound, answered, missed, matched, unmatched, dateRange };
@@ -376,65 +385,110 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     setMsg(null);
     setUploadStats(null);
 
-    const { data: { user } } = await supabase.auth.getUser();
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
 
-    // Strip preview-only fields and add uploaded_by
-    const records = matchedRows.map(({ _matched, _time, _duration, _maskedContact, ...row }) => ({
-      ...row,
-      uploaded_by: user?.id,
-    }));
-
-    let totalSent = 0;
-    let totalInserted = 0;
-    let uploadError = null;
-
-    for (let i = 0; i < records.length; i += BATCH_SIZE) {
-      const batch = records.slice(i, i + BATCH_SIZE);
-      const { data, error, count } = await supabase
-        .from('rc_call_log')
-        .upsert(batch, {
-          onConflict: 'org_id,employee_user_id,call_start_time,call_direction,call_result',
-          ignoreDuplicates: true,
-          count: 'exact',
-        })
-        .select('id');
-
-      if (error) {
-        uploadError = error;
-        break;
+      // Compute file hash for audit trail
+      let fileHash = 'unknown';
+      if (fileBufferRef.current) {
+        fileHash = await computeSHA256(fileBufferRef.current);
       }
-      totalSent += batch.length;
-      totalInserted += data?.length || 0;
-    }
 
-    setUploading(false);
+      // Create ingestion batch record
+      const { data: batch, error: batchError } = await supabase
+        .from('rc_call_log_batches')
+        .insert({
+          org_id: orgId,
+          uploaded_by: user?.id,
+          source_filename: fileNameRef.current || 'unknown',
+          source_sha256: fileHash,
+          rows_total: (preview?.length || 0) + validationErrors.length,
+          rows_valid: matchedRows.length,
+          rows_invalid: validationErrors.length,
+          rows_unmatched: skippedCount,
+          // rows_inserted and rows_duplicate updated after upserts complete
+        })
+        .select()
+        .single();
 
-    if (uploadError) {
-      setMsg({ type: 'error', text: `Upload failed: ${uploadError.message}` });
-    } else {
-      const ignored = totalSent - totalInserted;
-      const stats = {
-        sent: totalSent,
-        inserted: totalInserted,
-        ignored,
-        skipped: skippedCount,
-        invalid: validationErrors.length,
-      };
-      setUploadStats(stats);
+      if (batchError) {
+        setMsg({ type: 'error', text: `Failed to create batch record: ${batchError.message}` });
+        setUploading(false);
+        return;
+      }
 
-      // Warn if high ignore ratio
-      const warnIgnore = ignored > 0 && ignored > totalSent * 0.5;
-      const skipNote = skippedCount > 0 ? `, ${skippedCount} unmatched skipped` : '';
-      const ignoreNote = ignored > 0 ? `, ${ignored} duplicates ignored` : '';
+      // Strip preview-only fields and add audit fields
+      const records = matchedRows.map(({ _matched, _time, _duration, _callDate, ...row }) => ({
+        ...row,
+        uploaded_by: user?.id,
+        ingestion_batch_id: batch.id,
+      }));
 
-      setMsg({
-        type: warnIgnore ? 'warning' : 'success',
-        text: `${totalInserted} new records inserted${ignoreNote}${skipNote}.${warnIgnore ? ' High duplicate ratio — this file may have been uploaded before.' : ''}`,
-      });
-      setPreview(null);
-      setValidationErrors([]);
-      if (fileRef.current) fileRef.current.value = '';
-      if (onUploaded) onUploaded();
+      let totalSent = 0;
+      let totalInserted = 0;
+      let uploadError = null;
+
+      for (let i = 0; i < records.length; i += BATCH_SIZE) {
+        const chunk = records.slice(i, i + BATCH_SIZE);
+        const { data, error } = await supabase
+          .from('rc_call_log')
+          .upsert(chunk, {
+            onConflict: 'org_id,employee_user_id,call_start_time,call_direction,call_result',
+            ignoreDuplicates: true,
+          })
+          .select('id');
+
+        if (error) {
+          uploadError = error;
+          break;
+        }
+        totalSent += chunk.length;
+        totalInserted += data?.length || 0;
+      }
+
+      // Update batch with final stats
+      const totalDuplicate = totalSent - totalInserted;
+      await supabase
+        .from('rc_call_log_batches')
+        .update({
+          rows_inserted: totalInserted,
+          rows_duplicate: totalDuplicate,
+        })
+        .eq('id', batch.id);
+
+      setUploading(false);
+
+      if (uploadError) {
+        setMsg({ type: 'error', text: `Upload failed: ${uploadError.message}` });
+      } else {
+        const stats = {
+          batchId: batch.id,
+          sent: totalSent,
+          inserted: totalInserted,
+          ignored: totalDuplicate,
+          skipped: skippedCount,
+          invalid: validationErrors.length,
+        };
+        setUploadStats(stats);
+
+        const warnIgnore = totalDuplicate > 0 && totalDuplicate > totalSent * 0.5;
+        const skipNote = skippedCount > 0 ? `, ${skippedCount} unmatched skipped` : '';
+        const ignoreNote = totalDuplicate > 0 ? `, ${totalDuplicate} duplicates ignored` : '';
+
+        setMsg({
+          type: warnIgnore ? 'warning' : 'success',
+          text: `${totalInserted} new records inserted${ignoreNote}${skipNote}.${warnIgnore ? ' High duplicate ratio — this file may have been uploaded before.' : ''}`,
+        });
+        setPreview(null);
+        setValidationErrors([]);
+        fileBufferRef.current = null;
+        fileNameRef.current = null;
+        if (fileRef.current) fileRef.current.value = '';
+        if (onUploaded) onUploaded();
+      }
+    } catch (err) {
+      setUploading(false);
+      setMsg({ type: 'error', text: `Upload failed: ${err.message}` });
     }
   }
 
@@ -511,7 +565,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       {validationErrors.length > 0 && (
         <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
           <p className="text-sm font-medium text-yellow-800 mb-1">
-            {validationErrors.length} row{validationErrors.length > 1 ? 's' : ''} had validation errors and will be skipped:
+            {validationErrors.length} row{validationErrors.length > 1 ? 's' : ''} rejected (validation errors):
           </p>
           <ul className="text-xs text-yellow-700 space-y-0.5 max-h-32 overflow-y-auto">
             {validationErrors.map((ve, i) => (
@@ -592,7 +646,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               {uploading ? 'Uploading...' : 'Confirm Upload'}
             </button>
             <button
-              onClick={() => { setPreview(null); setValidationErrors([]); if (fileRef.current) fileRef.current.value = ''; }}
+              onClick={() => { setPreview(null); setValidationErrors([]); fileBufferRef.current = null; if (fileRef.current) fileRef.current.value = ''; }}
               className="px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
             >
               Cancel
@@ -603,18 +657,21 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
 
       {/* Upload result stats */}
       {uploadStats && (
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-600 flex items-center gap-4">
-          <span>Sent: <strong>{uploadStats.sent}</strong></span>
-          <span>Inserted: <strong className="text-green-700">{uploadStats.inserted}</strong></span>
-          {uploadStats.ignored > 0 && (
-            <span>Duplicates ignored: <strong className="text-gray-500">{uploadStats.ignored}</strong></span>
-          )}
-          {uploadStats.skipped > 0 && (
-            <span>Unmatched skipped: <strong className="text-yellow-600">{uploadStats.skipped}</strong></span>
-          )}
-          {uploadStats.invalid > 0 && (
-            <span>Invalid rows: <strong className="text-red-600">{uploadStats.invalid}</strong></span>
-          )}
+        <div className="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+          <div className="flex items-center gap-4 flex-wrap">
+            <span>Sent: <strong>{uploadStats.sent}</strong></span>
+            <span>Inserted: <strong className="text-green-700">{uploadStats.inserted}</strong></span>
+            {uploadStats.ignored > 0 && (
+              <span>Duplicates ignored: <strong className="text-gray-500">{uploadStats.ignored}</strong></span>
+            )}
+            {uploadStats.skipped > 0 && (
+              <span>Unmatched skipped: <strong className="text-yellow-600">{uploadStats.skipped}</strong></span>
+            )}
+            {uploadStats.invalid > 0 && (
+              <span>Invalid rejected: <strong className="text-red-600">{uploadStats.invalid}</strong></span>
+            )}
+          </div>
+          <p className="mt-1 text-gray-400">Batch: {uploadStats.batchId?.substring(0, 8)}</p>
         </div>
       )}
 
