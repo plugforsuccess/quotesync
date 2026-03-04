@@ -6,7 +6,6 @@ import { supabase } from '../lib/supabase';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion, trackEvent, trackZipSubmitted, trackQuoteAbandoned } from '../lib/analytics';
 import { getSessionId, getUtmParams } from '../lib/leadsApi';
 import { toE164, isValidPhone } from '../utils/phoneFormat';
-import PhoneCapture from '../components/PhoneCapture';
 import { isTargetZip } from '../config/targetZips';
 import {
   ZipStep,
@@ -110,8 +109,6 @@ export default function SaveWizardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [animKey, setAnimKey] = useState(0);
-  const [showPhoneCapture, setShowPhoneCapture] = useState(false);
-  const phoneCaptured = useRef(false);
 
   const utmParams = useRef(getUtmParams());
   const defaultAgencyId = useRef(null);
@@ -307,12 +304,9 @@ export default function SaveWizardPage() {
     // Fire step analytics
     trackEvent('funnel_step_completed', { step: stepId, step_index: currentIndex });
 
-    // Insert partial lead when leaving ZIP step + show phone capture
+    // Insert partial lead when leaving ZIP step
     if (stepId === 'zip') {
       insertPartialLead();
-      if (!phoneCaptured.current) {
-        setShowPhoneCapture(true);
-      }
       return;
     }
 
@@ -617,21 +611,6 @@ export default function SaveWizardPage() {
 
               {/* Validation error for non-object errors (single string) */}
               {typeof error === 'string' && <ErrorMessage>{error}</ErrorMessage>}
-
-              {/* Optional Phone Capture — shown on ownsHome step after ZIP */}
-              {showPhoneCapture && currentStepId === 'ownsHome' && (
-                <PhoneCapture
-                  onSave={(e164Phone) => {
-                    updatePartialLead({ phone: e164Phone });
-                    phoneCaptured.current = true;
-                    setShowPhoneCapture(false);
-                  }}
-                  onSkip={() => {
-                    phoneCaptured.current = true;
-                    setShowPhoneCapture(false);
-                  }}
-                />
-              )}
 
               {/* Navigation Buttons — UX-6: visible on all steps after selection */}
               {showNextButton && (
