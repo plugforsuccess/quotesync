@@ -18,7 +18,11 @@ const createSupabaseClient = () => createClient(supabaseUrl || '', supabaseAnonK
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: browserStorage
+    storage: browserStorage,
+    // Default lock timeout is very short and causes AbortError on slow networks
+    // when autoRefreshToken and getSession() contend for the navigator lock.
+    // 10s gives the token refresh network round-trip enough time to complete.
+    lockAcquisitionTimeout: 10000
   },
   global: {
     headers: {
