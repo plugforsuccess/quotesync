@@ -203,18 +203,18 @@ export function useActiveEmployees(orgId) {
   });
 }
 
-// ── Active CS reps for Performance team view ────────────────────────────────
+// ── Active service reps for Performance team view ────────────────────────────
 
-export function useActiveCSReps(orgId) {
+export function useActiveServiceReps(orgId) {
   return useQuery({
-    queryKey: ['employees', 'cs-reps', orgId],
+    queryKey: ['employees', 'service-reps', orgId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
         .select('id, first_name, last_name, preferred_name, role_type, auth_user_id')
         .eq('org_id', orgId)
         .eq('employment_status', 'active')
-        .eq('role_type', 'cs_rep');
+        .eq('role_type', 'service');
 
       if (error) throw error;
       return data || [];

@@ -5,8 +5,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { X, Target, RotateCcw, Save } from 'lucide-react';
 import { DEFAULT_TARGETS } from '../../../config/csPerformanceDefaults';
 
-// Full field groups for CS reps
-const CS_REP_FIELD_GROUPS = [
+// Full field groups for service reps
+const SERVICE_FIELD_GROUPS = [
   {
     title: 'Activity Targets',
     fields: [
@@ -57,7 +57,7 @@ const PRODUCER_FIELD_GROUPS = [
   },
 ];
 
-export default function TargetsModal({ open, onClose, employeeName, employeeId, orgId, currentTargets, onSave, saving, roleType = 'cs_rep' }) {
+export default function TargetsModal({ open, onClose, employeeName, employeeId, orgId, currentTargets, onSave, saving, roleType = 'service' }) {
   const [form, setForm] = useState({ ...DEFAULT_TARGETS });
   const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -144,7 +144,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
               </p>
             </div>
 
-            {(roleType === 'producer' ? PRODUCER_FIELD_GROUPS : CS_REP_FIELD_GROUPS).map((group) => (
+            {(roleType === 'producer' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS).map((group) => (
               <div key={group.title}>
                 <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">{group.title}</h4>
                 <div className="grid grid-cols-2 gap-3">

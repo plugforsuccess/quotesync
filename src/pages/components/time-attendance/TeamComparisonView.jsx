@@ -1,5 +1,5 @@
 // src/pages/components/time-attendance/TeamComparisonView.jsx
-// Role-aware team comparison table. Supports CS reps (full scorecard),
+// Role-aware team comparison table. Supports services (full scorecard),
 // producers (outbound effort), and a combined "all" view.
 
 import { useState, useMemo } from 'react';
@@ -8,12 +8,12 @@ import { GRADE_CONFIG, calculateGrade, computeMetrics, DEFAULT_TARGETS } from '.
 
 // ── Role labels ─────────────────────────────────────────────────────────────
 
-const ROLE_LABELS = { cs_rep: 'CS Rep', producer: 'Producer', admin: 'Admin' };
+const ROLE_LABELS = { service: 'Service', producer: 'Producer', admin: 'Admin' };
 
 // ── Column configurations per role filter ───────────────────────────────────
 
 const TEAM_COLUMNS = {
-  cs_rep: [
+  service: [
     { key: 'name', label: 'Employee', sortable: true },
     { key: 'grade', label: 'Grade', sortable: true },
     { key: 'outbound', label: 'Outbound', sortable: true },
@@ -39,12 +39,12 @@ const TEAM_COLUMNS = {
     { key: 'totalCalls', label: 'Total Calls', sortable: true },
     { key: 'avgCallsDay', label: 'Avg Calls/Day', sortable: true, format: 'decimal' },
     { key: 'missed', label: 'Missed', sortable: true },
-    { key: 'grade', label: 'Grade', sortable: true, roleSpecific: 'cs_rep' },
+    { key: 'grade', label: 'Grade', sortable: true, roleSpecific: 'service' },
   ],
 };
 
 const DEFAULT_SORT = {
-  cs_rep: { key: 'grade', dir: 'desc' },
+  service: { key: 'grade', dir: 'desc' },
   producer: { key: 'outbound', dir: 'desc' },
   all: { key: 'role', dir: 'asc' },
 };
@@ -139,21 +139,21 @@ function AvgCellValue({ col, teamAvg }) {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export default function TeamComparisonView({ teamData, roleFilter = 'cs_rep', onSelectEmployee }) {
-  const defaultSort = DEFAULT_SORT[roleFilter] || DEFAULT_SORT.cs_rep;
+export default function TeamComparisonView({ teamData, roleFilter = 'service', onSelectEmployee }) {
+  const defaultSort = DEFAULT_SORT[roleFilter] || DEFAULT_SORT.service;
   const [sortKey, setSortKey] = useState(defaultSort.key);
   const [sortDir, setSortDir] = useState(defaultSort.dir);
   const [prevRoleFilter, setPrevRoleFilter] = useState(roleFilter);
 
   // Reset sort when role filter changes
   if (roleFilter !== prevRoleFilter) {
-    const newDefault = DEFAULT_SORT[roleFilter] || DEFAULT_SORT.cs_rep;
+    const newDefault = DEFAULT_SORT[roleFilter] || DEFAULT_SORT.service;
     setSortKey(newDefault.key);
     setSortDir(newDefault.dir);
     setPrevRoleFilter(roleFilter);
   }
 
-  const columns = TEAM_COLUMNS[roleFilter] || TEAM_COLUMNS.cs_rep;
+  const columns = TEAM_COLUMNS[roleFilter] || TEAM_COLUMNS.service;
 
   const rows = useMemo(() => {
     if (!teamData?.rcData) return [];
@@ -162,7 +162,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'cs_rep', on
     return teamData.rcData
       .map((rc) => {
         const emp = employeesMap[rc.employee_user_id];
-        const empRoleType = emp?.role_type || 'cs_rep';
+        const empRoleType = emp?.role_type || 'service';
 
         // Filter by role
         if (roleFilter !== 'all' && empRoleType !== roleFilter) return null;
@@ -170,15 +170,15 @@ export default function TeamComparisonView({ teamData, roleFilter = 'cs_rep', on
         const targets = teamData.targets?.[rc.employee_user_id] || DEFAULT_TARGETS;
         const metrics = computeMetrics(rc, 5);
 
-        // Grade only for CS reps
-        const isCSRep = empRoleType === 'cs_rep';
-        const grade = isCSRep
+        // Grade only for services
+        const isServiceRep = empRoleType === 'service';
+        const grade = isServiceRep
           ? calculateGrade(rc.outbound_calls, metrics.answerRate, metrics.hasZeroCallDays, targets)
           : null;
 
-        // Discrepancy flags — only for CS reps
+        // Discrepancy flags — only for services
         let flagCount = 0;
-        if (isCSRep) {
+        if (isServiceRep) {
           if (metrics.answerRate < (targets.answer_rate_pct || 95)) flagCount++;
           if ((rc.avg_hold_time_minutes || 0) > (targets.avg_hold_time_min || 2)) flagCount++;
           if (metrics.missedCallRate > (targets.missed_call_rate_pct || 5)) flagCount++;
@@ -231,11 +231,11 @@ export default function TeamComparisonView({ teamData, roleFilter = 'cs_rep', on
     if (rows.length === 0) return null;
     const avg = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0) / rows.length;
 
-    // Grade average only makes sense for CS reps
-    const csRows = rows.filter((r) => r.roleType === 'cs_rep');
+    // Grade average only makes sense for services
+    const serviceRows = rows.filter((r) => r.roleType === 'service');
     let gradeLabel = null;
-    if (csRows.length > 0) {
-      const gradeAvg = csRows.reduce((s, r) => s + r.gradeNumeric, 0) / csRows.length;
+    if (serviceRows.length > 0) {
+      const gradeAvg = serviceRows.reduce((s, r) => s + r.gradeNumeric, 0) / serviceRows.length;
       const gradeMap = { 5: 'A', 4: 'B', 3: 'C', 2: 'D', 1: 'F' };
       gradeLabel = gradeMap[Math.round(gradeAvg)] || 'C';
     }
@@ -266,7 +266,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'cs_rep', on
   }
 
   if (rows.length === 0) {
-    const filterLabel = roleFilter === 'cs_rep' ? 'CS rep' : roleFilter === 'producer' ? 'producer' : '';
+    const filterLabel = roleFilter === 'service' ? 'service' : roleFilter === 'producer' ? 'producer' : '';
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -280,7 +280,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'cs_rep', on
     );
   }
 
-  const countLabel = roleFilter === 'cs_rep' ? 'reps' : roleFilter === 'producer' ? 'producers' : 'employees';
+  const countLabel = roleFilter === 'service' ? 'reps' : roleFilter === 'producer' ? 'producers' : 'employees';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

@@ -19,7 +19,7 @@ import TerminateModal from './components/employees/TerminateModal';
 import VerifyInlineForm from './components/employees/VerifyInlineForm';
 
 const ROLE_LABELS = {
-  cs_rep: 'CS Rep',
+  service: 'Service',
   producer: 'Producer',
   admin: 'Admin',
 };

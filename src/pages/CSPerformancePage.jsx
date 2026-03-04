@@ -1,7 +1,7 @@
 // src/pages/CSPerformancePage.jsx
 // Performance Dashboard — Individual scorecard, Team comparison, Trends,
 // Daily breakdown, Outbound breakdown, PDF export, per-employee goals.
-// Supports role-aware views: CS reps (full scorecard) and producers (outbound effort).
+// Supports role-aware views: service reps (full scorecard) and producers (outbound effort).
 // Route: /admin/cs-performance
 // Access: platform_master_admin, platform_admin only
 
@@ -58,7 +58,7 @@ function formatWeekLabel(weekStart) {
 // ── Role filter options ──────────────────────────────────────────────────────
 
 const ROLE_FILTER_OPTIONS = [
-  { key: 'cs_rep', label: 'CS Reps' },
+  { key: 'service', label: 'Service' },
   { key: 'producer', label: 'Producers' },
   { key: 'all', label: 'All' },
 ];
@@ -81,7 +81,7 @@ const CSPerformancePage = () => {
   const [activeTab, setActiveTab] = useState('individual');
   const [targetsModalOpen, setTargetsModalOpen] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
-  const [roleFilter, setRoleFilter] = useState('cs_rep');
+  const [roleFilter, setRoleFilter] = useState('service');
   // Track whether the individual view was entered from the team view for a specific role
   const [selectedEmployeeRole, setSelectedEmployeeRole] = useState(null);
 
@@ -130,11 +130,11 @@ const CSPerformancePage = () => {
   // Resolve the role of the currently selected employee
   const resolvedEmployeeRole = useMemo(() => {
     if (selectedEmployeeRole) return selectedEmployeeRole;
-    if (!singleEmployee || !rosterEmployees.length) return 'cs_rep';
+    if (!singleEmployee || !rosterEmployees.length) return 'service';
     const emp = rosterEmployees.find(
       (e) => (e.auth_user_id || e.id) === singleEmployee
     );
-    return emp?.role_type || 'cs_rep';
+    return emp?.role_type || 'service';
   }, [selectedEmployeeRole, singleEmployee, rosterEmployees]);
 
   // Is this employee a producer?
@@ -374,7 +374,7 @@ const CSPerformancePage = () => {
                     roleFilter === opt.key
                       ? 'bg-blue-600 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-50'
-                  } ${opt.key !== 'cs_rep' ? 'border-l border-gray-300' : ''}`}
+                  } ${opt.key !== 'service' ? 'border-l border-gray-300' : ''}`}
                 >
                   {opt.label}
                 </button>
@@ -511,7 +511,7 @@ const CSPerformancePage = () => {
             )}
           </div>
         ) : (
-          /* ── CS Rep Individual View ──────────────────────────────────── */
+          /* ── Service Rep Individual View ──────────────────────────────────── */
           <div className="space-y-6">
             {/* RC Upload */}
             <RCUploadForm
@@ -561,7 +561,7 @@ const CSPerformancePage = () => {
                       timeEntries={empEntries}
                       rcData={rc}
                       weekStart={weekStart}
-                      roleType="cs_rep"
+                      roleType="service"
                     />
 
                     {/* Scorecard with per-employee targets and manual proactivity */}

@@ -33,7 +33,7 @@ function checkDiscrepancies(timeEntries, rcData, weekStart, roleType) {
     return alerts;
   }
 
-  // ── CS Rep checks (all 6 discrepancy checks) ─────────────────────────
+  // ── Service rep checks (all 6 discrepancy checks) ─────────────────────────
 
   const totalHoursLogged = timeEntries.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0);
   const totalHandleTimeHours = (rcData.total_handle_time_minutes || 0) / 60;
@@ -107,7 +107,7 @@ function checkDiscrepancies(timeEntries, rcData, weekStart, roleType) {
   return alerts;
 }
 
-export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, roleType = 'cs_rep' }) {
+export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, roleType = 'service' }) {
   // Show informational banner when time entries exist but no RC data is available
   if ((!rcData || Object.keys(rcData).length === 0) && timeEntries && timeEntries.length > 0) {
     return (
