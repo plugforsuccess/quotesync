@@ -660,6 +660,12 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
     }
   };
 
+  // Auto-fallback to manual entry if Places fails to load (CSP, network, adblock)
+  const handleLoadFailure = () => {
+    setManualMode(true);
+    onAddressSourceChange?.('manual_entry');
+  };
+
   const handleSwitchToManual = () => {
     setManualMode(true);
     onAddressSourceChange?.('manual_entry');
@@ -682,7 +688,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
               apiKey={import.meta.env.VITE_GOOGLE_PLACES_API_KEY}
               regionCodes={['us']}
               onSelect={handleSelect}
-              onError={(e) => console.error('Places error:', e)}
+              onLoadFailure={handleLoadFailure}
             />
           ) : (
             <input

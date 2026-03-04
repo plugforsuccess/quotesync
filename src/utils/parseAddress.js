@@ -16,11 +16,26 @@ function pick(comps, type, preferShort = false) {
  *   admin_area_level_1 short → state (e.g. GA)
  *   postal_code → zip
  *   country short → country (e.g. US)
+ *
+ * Handles edge cases:
+ *   - Missing street_number (route-only, premise, or subpremise addresses)
+ *   - PO Boxes (premise type)
+ *   - Multi-unit addresses (subpremise → street2)
  */
 export function parseAddressComponents(addressComponents, formattedAddress) {
   const streetNumber = pick(addressComponents, "street_number");
   const route = pick(addressComponents, "route");
-  const street1 = [streetNumber, route].filter(Boolean).join(" ").trim();
+  const premise = pick(addressComponents, "premise");
+
+  // Build street1: prefer street_number + route; fall back to premise (PO Box, named buildings)
+  let street1 = [streetNumber, route].filter(Boolean).join(" ").trim();
+  if (!street1 && premise) {
+    street1 = premise;
+  }
+
+  // Multi-unit / subpremise → street2
+  const subpremise = pick(addressComponents, "subpremise");
+  const street2 = subpremise || undefined;
 
   // City fallbacks: locality → postal_town → sublocality → sublocality_level_1 → admin_area_level_2
   const city =
@@ -36,6 +51,7 @@ export function parseAddressComponents(addressComponents, formattedAddress) {
 
   return {
     street1,
+    street2,
     city,
     state,
     zip,
