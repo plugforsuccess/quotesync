@@ -166,12 +166,16 @@ async function fetchTrendData(employeeId, weekStart) {
   const currentWeek = new Date(weekStart + 'T00:00:00');
   const startWeek = new Date(currentWeek);
   startWeek.setDate(startWeek.getDate() - 7 * 7); // 7 weeks back = 8 weeks total
+  const y = startWeek.getFullYear();
+  const m = String(startWeek.getMonth() + 1).padStart(2, '0');
+  const d = String(startWeek.getDate()).padStart(2, '0');
+  const startWeekStr = `${y}-${m}-${d}`;
 
   const { data, error } = await supabase
     .from('rc_performance_data')
     .select('*')
     .eq('employee_user_id', employeeId)
-    .gte('week_start', startWeek.toISOString().slice(0, 10))
+    .gte('week_start', startWeekStr)
     .lte('week_start', weekStart)
     .order('week_start', { ascending: true });
 

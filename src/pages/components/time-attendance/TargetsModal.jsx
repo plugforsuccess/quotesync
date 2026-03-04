@@ -59,7 +59,13 @@ const PRODUCER_FIELD_GROUPS = [
 
 export default function TargetsModal({ open, onClose, employeeName, employeeId, orgId, currentTargets, onSave, saving, roleType = 'service' }) {
   const [form, setForm] = useState({ ...DEFAULT_TARGETS });
-  const [effectiveDate, setEffectiveDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [effectiveDate, setEffectiveDate] = useState(() => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  });
 
   useEffect(() => {
     if (currentTargets) {
