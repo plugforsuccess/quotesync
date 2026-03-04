@@ -73,7 +73,6 @@ export default function AddressAutocomplete({ onAddressSelect, className = '' })
     if (!loaded || !containerRef.current || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
 
     const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement({
-      includedPrimaryTypes: ['address'],
       includedRegionCodes: ['us'],
     });
 
