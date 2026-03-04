@@ -8,7 +8,9 @@
 export function getCommissionRate(productLine, tier, matrix, baseRate) {
   const rates = matrix[productLine];
   if (!rates) return baseRate;
-  return rates[tier] ?? baseRate;
+  const variable = rates[tier];
+  if (variable == null) return baseRate;
+  return baseRate + variable;
 }
 
 /**
