@@ -2,7 +2,7 @@
 // Admin editable weekly time entry table — pre-filled with REG/OFFICE defaults
 // Cameron enters the full week and only modifies exception days.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
@@ -78,7 +78,7 @@ export default function WeeklyTimeTable({
   onSaved,
   employeeDefaults,
 }) {
-  const weekDates = getWeekDates(weekStart);
+  const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
 
   // Per-employee schedule defaults (fall back to global defaults)
   const scheduleDefaults = {
