@@ -118,7 +118,7 @@ const STEP_LABELS = {
   contact: 'Contact Info',
 };
 
-function reachedStep(lead, stepName) {
+function hasStepData(lead, stepName) {
   switch (stepName) {
     case 'zip': return lead.zip != null;
     case 'ownsHome': return lead.owns_home != null;
@@ -132,6 +132,18 @@ function reachedStep(lead, stepName) {
     case 'contact': return lead.first_name != null && lead.phone != null;
     default: return false;
   }
+}
+
+function reachedStep(lead, stepName) {
+  const targetIdx = STEP_ORDER.indexOf(stepName);
+  if (targetIdx === -1) return false;
+  // A lead reached this step if they have data here OR at any later step.
+  // This prevents conditionally-skipped steps (e.g. carrier for "unsure" intent)
+  // from showing as false drop-offs.
+  for (let i = targetIdx; i < STEP_ORDER.length; i++) {
+    if (hasStepData(lead, STEP_ORDER[i])) return true;
+  }
+  return false;
 }
 
 // ─── Metric Computation ───────────────────────────────────────────────────────
