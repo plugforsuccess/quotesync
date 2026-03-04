@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion, trackEvent, trackZipSubmitted, trackQuoteAbandoned } from '../lib/analytics';
 import { getSessionId, getUtmParams } from '../lib/leadsApi';
 import { toE164 } from '../utils/phoneFormat';
+import { isTargetZip } from '../config/targetZips';
 import PhoneCapture from '../components/PhoneCapture';
 import {
   ZipStep,
@@ -164,6 +165,26 @@ export default function SaveWizardPage() {
       console.error('Failed to create partial lead:', err);
     }
   }, [answers.zip]);
+
+  // ─── Prefill from URL: trigger ZIP-step side effects ──────────
+  const prefillHandled = useRef(false);
+  useEffect(() => {
+    if (prefillHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    const urlZip = params.get('zip');
+    if (urlZip && /^\d{5}$/.test(urlZip) && isTargetZip(urlZip) && answers.zip === urlZip && currentIndex >= 1) {
+      prefillHandled.current = true;
+      trackEvent('funnel_step_completed', { step: 'zip', step_index: 0 });
+      // Delay partial lead insert slightly to let agency ID fetch complete
+      const timer = setTimeout(() => {
+        insertPartialLead();
+        if (!phoneCaptured.current) {
+          setShowPhoneCapture(true);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [answers.zip, currentIndex, insertPartialLead]);
 
   // ─── Progressive Lead Update ───────────────────────────────────
 
