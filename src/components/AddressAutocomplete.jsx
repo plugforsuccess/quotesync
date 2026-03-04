@@ -17,10 +17,14 @@ export default function AddressAutocomplete({ onAddressSelect, className = '' })
       return component?.longText || component?.long_name || '';
     };
 
-    const getShort = (type) => {
-      const component = place.addressComponents?.find(c => c.types?.includes(type));
-      return component?.shortText || component?.short_name || '';
-    };
+function parseGeocoderComponents(addressComponents, formattedAddress) {
+  const normalized = addressComponents.map((c) => ({
+    longText: c.long_name,
+    shortText: c.short_name,
+    types: c.types,
+  }));
+  return parseAddressComponents(normalized, formattedAddress);
+}
 
     const city = getComponent('locality')
       || getComponent('sublocality_level_1')
@@ -38,24 +42,28 @@ export default function AddressAutocomplete({ onAddressSelect, className = '' })
     });
   }, [onAddressSelect]);
 
-  // Wait for the async Google Maps script to finish loading
+  // ── Load Google Maps once ───────────────────────────────────────────
   useEffect(() => {
-    if (window.google?.maps?.places) {
-      setLoaded(true);
-      return;
-    }
-    const interval = setInterval(() => {
-      if (window.google?.maps?.places) {
-        setLoaded(true);
-        clearInterval(interval);
-      }
-    }, 200);
-    return () => clearInterval(interval);
-  }, []);
+    let cancelled = false;
 
-  // Create and mount the PlaceAutocompleteElement
-  useEffect(() => {
-    if (!loaded || !containerRef.current || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
+    (async () => {
+      try {
+        await loadGoogleMaps(apiKey);
+        if (cancelled) return;
+        setReady(true);
+        setLoadState("ready");
+        trackEvent("places_maps_load", { outcome: "success" });
+      } catch (e) {
+        if (cancelled) return;
+        setLoadState("failed");
+        trackEvent("places_maps_load", {
+          outcome: "failure",
+          error_type: e?.message === "Google Maps load timeout" ? "timeout" : "script_error",
+        });
+        onLoadFailure?.();
+        onError?.(e);
+      }
+    })();
 
     const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement({
       includedRegionCodes: ['us'],
@@ -64,19 +72,32 @@ export default function AddressAutocomplete({ onAddressSelect, className = '' })
     const container = containerRef.current;
     placeAutocomplete.addEventListener('gmp-placeselect', handlePlaceSelect);
 
-    container.appendChild(placeAutocomplete);
-    elementRef.current = placeAutocomplete;
+    el.addEventListener("gmp-placeselect", handlePlaceSelect);
 
     return () => {
-      placeAutocomplete.removeEventListener('gmp-placeselect', handlePlaceSelect);
-      if (container.contains(placeAutocomplete)) {
-        container.removeChild(placeAutocomplete);
+      isMounted = false;
+      try {
+        el.removeEventListener("gmp-placeselect", handlePlaceSelect);
+      } catch {
+        // ignore
       }
-      elementRef.current = null;
     };
-  }, [loaded, handlePlaceSelect]);
+  }, [ready, includedRegionCodes, onSelect, onError, placeholder]);
 
+  // ── Render ──────────────────────────────────────────────────────────
   return (
-    <div ref={containerRef} className={className} />
+    <div className={className}>
+      <div ref={containerRef} />
+      {loadState === "loading" && (
+        <div className="mt-2 text-xs text-gray-400">
+          Loading address search…
+        </div>
+      )}
+      {loadState === "failed" && (
+        <div className="mt-2 text-xs text-red-500">
+          Address search unavailable. Please enter your address manually.
+        </div>
+      )}
+    </div>
   );
 }
