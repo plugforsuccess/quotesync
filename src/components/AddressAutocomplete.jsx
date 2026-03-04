@@ -12,19 +12,29 @@ export default function AddressAutocomplete({ onAddressSelect, className = '' })
     const place = event.place;
     await place.fetchFields({ fields: ['addressComponents', 'formattedAddress'] });
 
+    console.log('Address components:', place.addressComponents);
+    console.log('Formatted address:', place.formattedAddress);
+
     const getComponent = (type) => {
-      const component = place.addressComponents.find(c => c.types.includes(type));
+      const component = place.addressComponents?.find(c => c.types?.includes(type));
       return component?.longText || '';
     };
 
     const getShort = (type) => {
-      const component = place.addressComponents.find(c => c.types.includes(type));
+      const component = place.addressComponents?.find(c => c.types?.includes(type));
       return component?.shortText || '';
     };
 
+    const city = getComponent('locality')
+      || getComponent('sublocality_level_1')
+      || getComponent('sublocality')
+      || getComponent('administrative_area_level_2')
+      || getComponent('neighborhood')
+      || getComponent('postal_town');
+
     onAddressSelect({
       street: `${getComponent('street_number')} ${getComponent('route')}`.trim(),
-      city: getComponent('locality') || getComponent('sublocality_level_1'),
+      city,
       state: getShort('administrative_area_level_1'),
       zip: getComponent('postal_code'),
       fullAddress: place.formattedAddress,
@@ -51,8 +61,8 @@ export default function AddressAutocomplete({ onAddressSelect, className = '' })
     if (!loaded || !containerRef.current || !window.google?.maps?.places?.PlaceAutocompleteElement) return;
 
     const placeAutocomplete = new window.google.maps.places.PlaceAutocompleteElement({
-      types: ['address'],
-      componentRestrictions: { country: 'us' },
+      includedPrimaryTypes: ['address'],
+      includedRegionCodes: ['us'],
     });
 
     const container = containerRef.current;
