@@ -254,6 +254,7 @@ export const AuthProvider = ({ children }) => {
     setIsImpersonating(false);
     setImpersonationSession(null);
     setAuthError(null);
+    try { sessionStorage.removeItem('qs_active_plane'); } catch (_) {}
   };
 
   // Initialize auth state on mount (self-healing boot)
@@ -512,11 +513,29 @@ export const AuthProvider = ({ children }) => {
   // Platform users always get platform plane (they access agency data through admin view)
   // Non-platform users with agency memberships get agency plane
   // Everyone else gets consumer plane
-  const activePlane = useMemo(() => {
+  const resolvedPlane = useMemo(() => {
     if (isPlatformUser && platformRole) return 'platform';
     if (agencyMemberships.length > 0) return 'agency';
     return 'consumer';
   }, [isPlatformUser, platformRole, agencyMemberships]);
+
+  // Cache the resolved plane after RBAC loads, so refreshes don't flash consumer nav
+  useEffect(() => {
+    if (!loading && user) {
+      try { sessionStorage.setItem('qs_active_plane', resolvedPlane); } catch (_) {}
+    }
+    if (!loading && !user) {
+      try { sessionStorage.removeItem('qs_active_plane'); } catch (_) {}
+    }
+  }, [resolvedPlane, loading, user]);
+
+  // While RBAC is loading, use the cached plane from the previous session.
+  // This prevents Layout from flashing consumer nav for admin users on refresh.
+  const activePlane = useMemo(() => {
+    if (!loading) return resolvedPlane;
+    try { return sessionStorage.getItem('qs_active_plane') || 'consumer'; }
+    catch (_) { return 'consumer'; }
+  }, [loading, resolvedPlane]);
 
   // Helper: Check platform role
   const hasPlatformRole = useCallback((requiredRole) => {
