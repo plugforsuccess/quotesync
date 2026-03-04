@@ -25,17 +25,24 @@ const NO_TIME_CODES = ['PTO', 'SICK'];
 // Codes that require notes
 const NOTES_REQUIRED_CODES = ['WFH', 'SICK_PART', 'APPT', 'EARLY'];
 
+function toLocalDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function toMonday(d) {
-  const date = new Date(d);
+  const date = typeof d === 'string' ? new Date(d + 'T00:00:00') : new Date(d);
   const day = date.getDay(); // 0 Sun .. 6 Sat
   const diff = (day === 0 ? -6 : 1) - day;
   date.setDate(date.getDate() + diff);
-  return date.toISOString().slice(0, 10);
+  return toLocalDateStr(date);
 }
 
 export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onSaved }) {
-  const [workDate, setWorkDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const weekStart = useMemo(() => toMonday(new Date(workDate)), [workDate]);
+  const [workDate, setWorkDate] = useState(() => toLocalDateStr(new Date()));
+  const weekStart = useMemo(() => toMonday(workDate), [workDate]);
 
   const [location, setLocation] = useState('OFFICE');
   const [code, setCode] = useState('REG');

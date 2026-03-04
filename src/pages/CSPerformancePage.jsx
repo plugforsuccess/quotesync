@@ -33,18 +33,25 @@ import ProducerDetailView from './components/time-attendance/ProducerDetailView'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
+function toLocalDateStr(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 function toMonday(d) {
-  const date = new Date(d);
+  const date = typeof d === 'string' ? new Date(d + 'T00:00:00') : new Date(d);
   const day = date.getDay();
   const diff = (day === 0 ? -6 : 1) - day;
   date.setDate(date.getDate() + diff);
-  return date.toISOString().slice(0, 10);
+  return toLocalDateStr(date);
 }
 
 function addWeeks(dateStr, n) {
-  const d = new Date(dateStr);
+  const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() + 7 * n);
-  return d.toISOString().slice(0, 10);
+  return toLocalDateStr(d);
 }
 
 function formatWeekLabel(weekStart) {
