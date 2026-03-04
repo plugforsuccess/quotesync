@@ -7,7 +7,7 @@ import { useState, useMemo } from 'react';
 import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
-import { useTimeEntries, useRCData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useTimeEntries, useRCData, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
@@ -80,8 +80,7 @@ const AdminTimeAttendancePage = () => {
 
   // ── Data hooks ────────────────────────────────────────────────────────────
 
-  const { data: allEmployees = [] } = useAllEmployees();
-  // Active employees from the employees table (for dropdown — only active employees)
+  // Active employees from the employees table (for dropdown + name resolution)
   const { data: rosterEmployees = [] } = useActiveEmployees(currentAgencyId);
 
   const {
@@ -132,14 +131,13 @@ const AdminTimeAttendancePage = () => {
 
   // ── Get employee name ─────────────────────────────────────────────────────
   // Use roster employees (employees table) for dropdown display
-  const dropdownEmployees = rosterEmployees.length > 0 ? rosterEmployees : allEmployees;
+  const dropdownEmployees = rosterEmployees;
 
   function getEmployeeName(id) {
     // Check roster employees first
     const roster = rosterEmployees.find((e) => e.id === id || e.auth_user_id === id);
     if (roster) return roster.preferred_name || roster.first_name + ' ' + roster.last_name;
-    const emp = allEmployees.find((e) => e.id === id);
-    return emp?.full_name || emp?.email || id?.substring(0, 8) || '';
+    return id?.substring(0, 8) || '';
   }
 
   // Look up the selected employee's schedule defaults
@@ -290,7 +288,7 @@ const AdminTimeAttendancePage = () => {
             </div>
             <div className="bg-green-50 rounded-lg border border-green-100 p-4">
               <div className="text-2xl font-bold text-green-700">
-                {employeesWithEntries} / {rosterEmployees.length || allEmployees.length}
+                {employeesWithEntries} / {rosterEmployees.length}
               </div>
               <div className="text-sm text-green-600">Employees Entered</div>
             </div>
