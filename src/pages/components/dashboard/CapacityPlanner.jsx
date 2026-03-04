@@ -30,7 +30,7 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
             min={min}
             max={max}
             step={step}
-            className={`w-24 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${prefix ? 'pl-6 pr-2' : suffix ? 'pl-2 pr-6' : 'px-2'}`}
+            className={`w-24 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${prefix ? 'pl-6 pr-2' : suffix ? 'pl-2 pr-6' : 'px-2'}`}
           />
           {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">{suffix}</span>}
         </div>
@@ -152,7 +152,7 @@ function PolicyMixTable({
                   onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                   min={0}
                   step={100}
-                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
@@ -167,7 +167,7 @@ function PolicyMixTable({
                   onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                   min={0}
                   max={100}
-                  className="w-full text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
               </div>
@@ -224,7 +224,7 @@ function PolicyMixTable({
                     onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                     min={0}
                     step={100}
-                    className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
                 <span className="text-gray-600 bg-gray-50 font-medium px-2 py-1 rounded text-sm">{commRate}%</span>
@@ -235,7 +235,7 @@ function PolicyMixTable({
                     onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                     min={0}
                     max={100}
-                    className="w-14 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-14 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                 </div>
