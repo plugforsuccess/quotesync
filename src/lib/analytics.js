@@ -47,16 +47,49 @@ export const trackPageView = (path, title) => {
   }
 };
 
+// ===== Retargeting Audience Events =====
+
+/**
+ * Audience 2: ZIP entered but did not complete
+ * Fires Meta Pixel custom event for retargeting audience
+ * @param {string} zip - ZIP code entered
+ */
+export const trackZipSubmitted = (zip) => {
+  trackEvent('ZipSubmitted', { zip_code: zip });
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('trackCustom', 'ZipSubmitted', { zip_code: zip });
+  }
+};
+
+/**
+ * Funnel abandoned mid-wizard
+ * Fires Meta Pixel custom event for Audience 3 retargeting
+ * @param {string} lastStep - ID of the last step the user was on
+ * @param {number} stepIndex - Index of the last step
+ */
+export const trackQuoteAbandoned = (lastStep, stepIndex) => {
+  trackEvent('QuoteAbandoned', { last_step: lastStep, step_index: stepIndex });
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('trackCustom', 'QuoteAbandoned', { last_step: lastStep });
+  }
+};
+
 // ===== Conversion Events =====
 
 /**
- * Track when user starts a quote
+ * Track when user starts a quote (Audience 3: Quote started)
+ * Fires both GA4 event and Meta Pixel custom QuoteStarted event
  */
 export const trackQuoteStarted = () => {
   trackEvent('quote_started', {
     event_category: 'engagement',
     event_label: 'insurance_quote',
   });
+
+  // Ensure Meta Pixel custom QuoteStarted event fires for retargeting audience
+  if (typeof window !== 'undefined' && window.fbq) {
+    window.fbq('trackCustom', 'QuoteStarted');
+  }
 };
 
 /**

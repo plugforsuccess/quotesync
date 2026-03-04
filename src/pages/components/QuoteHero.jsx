@@ -1,7 +1,27 @@
 // src/components/QuoteHero.jsx
-import React from 'react';
+import React, { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import ZipHeroInput from '../../components/ZipHeroInput';
+import { trackEvent } from '../../lib/analytics';
+
+const STORAGE_KEY = 'insuredbycam_validated_zip';
 
 const QuoteHero = ({ isVisible }) => {
+  const navigate = useNavigate();
+
+  const handleInlineZipEntry = useCallback((zip) => {
+    // Store to localStorage (same key as ZipValidation hook)
+    const data = { zip, state: 'GA', timestamp: Date.now() };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    // Fire ZipSubmitted pixel event
+    trackEvent('ZipSubmitted', { zip_code: zip });
+    if (window.fbq) window.fbq('trackCustom', 'ZipSubmitted', { zip_code: zip });
+
+    // Navigate to funnel with zip param
+    navigate(`/save?zip=${zip}`);
+  }, [navigate]);
+
   return (
     <div className="container mx-auto px-4 py-16 relative z-10">
       <div
@@ -12,23 +32,48 @@ const QuoteHero = ({ isVisible }) => {
         {/* Strong, Opinionated Value Prop */}
         <div className="inline-block mb-6 px-6 py-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20">
           <p className="text-sm md:text-base font-semibold text-white/90">
-            🎯 Compare coverage, not just price
+            Compare coverage, not just price
           </p>
         </div>
 
-        <h1 className="text-5xl md:text-7xl font-black text-white mb-8 leading-tight">
-          Georgia Families Are
+        <h1 className="text-5xl md:text-7xl font-black text-white mb-4 leading-tight">
+          Georgia Homeowners Are Saving
           <br />
           <span className="bg-gradient-to-r from-accent-300 via-accent-400 to-accent-500 bg-clip-text text-transparent inline-block">
-            Overpaying for Insurance.
+            Up To $742 Per Year
           </span>
-          <br />
-          Are You?
         </h1>
 
-        <p className="text-xl md:text-2xl text-white/90 mb-6 font-medium max-w-3xl mx-auto leading-relaxed">
-          Find out in 30 seconds — no forms, no spam, no obligation.
+        <p className="text-2xl md:text-3xl text-white/90 mb-2 font-bold">
+          On Home + Auto Insurance
         </p>
+
+        <p className="text-lg md:text-xl text-white/80 mb-8 font-medium max-w-3xl mx-auto leading-relaxed">
+          Check your eligibility in 30 seconds. No phone call required.
+        </p>
+
+        {/* Inline ZIP Input - Above the fold */}
+        <div className="mb-6">
+          <ZipHeroInput
+            onValidZip={handleInlineZipEntry}
+            onInvalidZip={() => {}}
+          />
+        </div>
+
+        {/* Social Proof Row */}
+        <div className="flex flex-wrap items-center justify-center gap-4 text-base text-white/80 mb-8">
+          <div className="flex items-center gap-1">
+            <span className="text-accent-400 font-bold">4.9</span>
+            <span className="text-accent-400">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+            <span className="font-semibold">rating</span>
+          </div>
+          <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
+          <span className="font-semibold">Licensed Insurance Agency</span>
+          <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
+          <span className="font-semibold">Serving GA Since 2015</span>
+          <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
+          <span className="font-semibold">4,300+ Georgia families served</span>
+        </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-base text-white/80">
           <div className="flex items-center gap-2">
@@ -80,7 +125,7 @@ const QuoteHero = ({ isVisible }) => {
         </div>
 
         <div className="text-center md:text-left">
-          <h1 className="text-4xl md:text-5xl font-black text-white mb-2">I'm Cameron</h1>
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-2">I'm Cameron</h2>
           <p className="text-xl text-white mb-4">Allstate Agency Owner in Georgia</p>
           <div className="flex items-center justify-center md:justify-start gap-2 text-sm text-gray-500">
             <span className="px-3 py-1 bg-primary-100 text-primary-700 rounded-full font-semibold">
