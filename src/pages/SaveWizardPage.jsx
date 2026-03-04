@@ -5,12 +5,13 @@ import { useWizard, SESSION_KEYS } from '../hooks/useWizard';
 import { supabase } from '../lib/supabase';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion, trackEvent, trackZipSubmitted, trackQuoteAbandoned } from '../lib/analytics';
 import { getSessionId, getUtmParams } from '../lib/leadsApi';
-import { toE164 } from '../utils/phoneFormat';
+import { toE164, isValidPhone } from '../utils/phoneFormat';
 import PhoneCapture from '../components/PhoneCapture';
 import {
   ZipStep,
   OwnsHomeStep,
   ProductIntentStep,
+  EarlyPhoneStep,
   CurrentAutoCarrierStep,
   CurrentHomeCarrierStep,
   CurrentRentersCarrierStep,
@@ -35,7 +36,7 @@ const TCPA_CONSENT_VERSION = 'v1.0-2026-03';
 
 function computeLeadScore(answers, utmParams) {
   let score = 0;
-  if (answers.ownsHome) score += 30;
+  if (answers.ownsHome === true) score += 30;
   if (answers.vehicleCount >= 2) score += 20;
   if (answers.vehicleCount >= 3) score += 10;
   if (answers.zip) score += 15;
@@ -83,6 +84,7 @@ function hasValueForCurrentStep(stepId, answers) {
     case 'zip': return answers.zip?.length === 5;
     case 'ownsHome': return answers.ownsHome != null;
     case 'productIntent': return answers.productIntent != null;
+    case 'earlyPhone': return isValidPhone(answers.earlyPhone || '');
     case 'currentAutoCarrier': return answers.currentAutoCarrier != null;
     case 'currentHomeCarrier': return answers.currentHomeCarrier != null;
     case 'currentRentersCarrier': return answers.currentRentersCarrier != null;
@@ -302,9 +304,15 @@ export default function SaveWizardPage() {
 
     // Progressive updates at key steps
     if (stepId === 'ownsHome') {
-      updatePartialLead({ owns_home: answers.ownsHome });
+      const housingSituation = answers.ownsHome === true ? 'own' : answers.ownsHome === 'other' ? 'other' : 'rent';
+      updatePartialLead({ owns_home: answers.ownsHome === true, housing_situation: housingSituation });
     } else if (stepId === 'productIntent') {
       updatePartialLead({ product_intent: answers.productIntent });
+    } else if (stepId === 'earlyPhone' && answers.earlyPhone && isValidPhone(answers.earlyPhone)) {
+      updatePartialLead({
+        phone: toE164(answers.earlyPhone),
+        early_phone_captured: true,
+      });
     } else if (stepId === 'currentAutoCarrier' || stepId === 'currentHomeCarrier' || stepId === 'currentRentersCarrier') {
       updatePartialLead({
         current_auto_carrier: answers.currentAutoCarrier,
@@ -335,6 +343,13 @@ export default function SaveWizardPage() {
     onStepLeaving(currentStepId);
     goNext();
   }, [currentStepId, goNext, onStepLeaving]);
+
+  const handleEarlyPhoneSkip = useCallback(() => {
+    setAnswer('phoneSkipped', true);
+    setError(null);
+    onStepLeaving(currentStepId);
+    goNext();
+  }, [setAnswer, onStepLeaving, currentStepId, goNext]);
 
   const handleNext = useCallback(() => {
     const validationError = validateStep(currentStepId, answers);
@@ -389,7 +404,15 @@ export default function SaveWizardPage() {
             onChange={(v) => setAnswer('productIntent', v)}
             options={productIntentOptions}
             onAutoAdvance={handleAutoAdvance}
-            isRenter={answers.ownsHome === false}
+            isRenter={answers.ownsHome === false || answers.ownsHome === 'other'}
+          />
+        );
+      case 'earlyPhone':
+        return (
+          <EarlyPhoneStep
+            value={answers.earlyPhone}
+            onChange={(v) => setAnswer('earlyPhone', v)}
+            onSkip={handleEarlyPhoneSkip}
           />
         );
       case 'currentAutoCarrier':

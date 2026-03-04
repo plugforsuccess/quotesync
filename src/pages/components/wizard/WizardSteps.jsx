@@ -215,12 +215,15 @@ export function OwnsHomeStep({ value, onChange, onAutoAdvance }) {
     <div>
       <StepHeading>Do you own or rent your home?</StepHeading>
       <StepDescription>Homeowners often qualify for bundled savings.</StepDescription>
-      <div className="grid grid-cols-2 gap-4 max-w-sm mx-auto">
+      <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
         <ChoiceButton selected={value === true} onClick={() => handleSelect(true)}>
           I Own
         </ChoiceButton>
         <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}>
           I Rent
+        </ChoiceButton>
+        <ChoiceButton selected={value === 'other'} onClick={() => handleSelect('other')}>
+          Other
         </ChoiceButton>
       </div>
     </div>
@@ -259,7 +262,50 @@ export function ProductIntentStep({ value, onChange, options, onAutoAdvance, isR
   );
 }
 
-// ─── Step 4a: Current Auto Carrier ─────────────────────────────────
+// ─── Step 4: Early Phone Capture ──────────────────────────────────
+
+export function EarlyPhoneStep({ value, onChange, onSkip }) {
+  const handlePhoneChange = (e) => {
+    onChange(formatPhoneInput(e.target.value));
+  };
+
+  return (
+    <div>
+      <StepHeading>What&apos;s your phone number?</StepHeading>
+      <StepDescription>
+        We&apos;ll text you a link to your quote — no spam, just results.
+      </StepDescription>
+      <div className="max-w-[280px] mx-auto">
+        <input
+          type="tel"
+          inputMode="numeric"
+          value={value}
+          onChange={handlePhoneChange}
+          placeholder="(555) 123-4567"
+          maxLength={14}
+          autoFocus
+          className="w-full px-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 tracking-wide border-gray-200 focus:border-primary-500"
+        />
+      </div>
+      <p className="mt-4 text-xs text-gray-400 text-center leading-relaxed max-w-sm mx-auto">
+        By entering your number, you agree to receive a text from Insured By
+        Cam with your quote status. Msg &amp; data rates may apply. Reply STOP
+        to opt out.
+      </p>
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-sm text-primary-500 hover:text-primary-600 font-medium transition-colors bg-transparent border-0 cursor-pointer"
+        >
+          Skip for now
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 5a: Current Auto Carrier ─────────────────────────────────
 
 const AUTO_CARRIERS = [
   { label: 'State Farm', value: 'state_farm' },
@@ -831,7 +877,7 @@ export function ConfirmationStep({ answers }) {
       {/* Savings estimate */}
       <div className="bg-success-50 border border-success-200 rounded-xl p-5 text-center">
         <p className="text-sm text-gray-600 mb-2">
-          Based on your info, {answers.ownsHome ? 'homeowners' : 'renters'} in{' '}
+          Based on your info, {answers.ownsHome === true ? 'homeowners' : 'renters'} in{' '}
           <span className="font-semibold text-gray-900">{answers.zip}</span> typically save:
         </p>
         <p className="text-3xl font-black bg-gradient-to-r from-success-600 to-success-700 bg-clip-text text-transparent mb-2">
