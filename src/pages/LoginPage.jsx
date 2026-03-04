@@ -1,13 +1,15 @@
 // src/pages/LoginPage.jsx
 // Login page for platform staff and agency users
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, getUserProfile } from '../lib/supabase';
 import { getDefaultLanding } from '../config/nav.config';
+import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading, platformRole, currentAgencyRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,56 +17,19 @@ const LoginPage = () => {
   const [mode, setMode] = useState('login');
   const [resetSuccess, setResetSuccess] = useState('');
 
-  const resolveAuthz = useCallback(async (userId) => {
-    try {
-      const result = await getUserProfile(userId);
-      const platformRole = result.platformRole;
-      const activeMemberships = (result.agencyMemberships || []).filter(
-        m => m.status === 'active' && m.agencies?.status === 'approved'
-      );
-      const agencyRole = activeMemberships.length > 0
-        ? activeMemberships[0].agency_role
-        : null;
-
-      return {
-        status: 'ok',
-        derived: {
-          platformRole,
-          agencyRole,
-          landingPath: getDefaultLanding(platformRole, agencyRole)
-        }
-      };
-    } catch (err) {
-      return {
-        status: 'error',
-        error: err
-      };
-    }
-  }, []);
-
-  // If user is already authenticated, redirect to dashboard instead of
-  // showing the login page. This prevents the "already signed in" alert
-  // and the confusing state where a logged-in user sees a login form.
+  // If user is already authenticated, redirect to their landing page.
+  // Uses AuthContext state instead of calling getSession() directly — avoids
+  // lock contention with AuthContext's initAuth, which also calls getSession()
+  // on mount. Two concurrent getSession() calls fight for Supabase's internal
+  // navigator lock, causing signInWithPassword to hang if the user clicks
+  // "Sign In" before the lock is released.
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (session?.user && !error) {
-          console.log('[LoginPage] Existing session detected, redirecting to dashboard');
-          const authz = await resolveAuthz(session.user.id);
-          if (authz.status === 'ok') {
-            navigate(authz.derived.landingPath, { replace: true });
-          } else {
-            // Can't resolve permissions — let them re-login
-            console.warn('[LoginPage] Could not resolve authz for existing session');
-          }
-        }
-      } catch (error) {
-        console.error('[LoginPage] Error checking session:', error);
-      }
-    };
-    checkSession();
-  }, [navigate, resolveAuthz]);
+    if (!authLoading && user) {
+      console.log('[LoginPage] Existing session detected, redirecting to dashboard');
+      const landingPath = getDefaultLanding(platformRole, currentAgencyRole);
+      navigate(landingPath, { replace: true });
+    }
+  }, [authLoading, user, platformRole, currentAgencyRole, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -88,13 +53,20 @@ const LoginPage = () => {
         throw new Error('No session returned from sign in. Please try again.');
       }
 
-      const authz = await resolveAuthz(data.session.user.id);
-      if (authz.status === 'error') {
-        throw authz.error || new Error('Failed to resolve permissions after sign in.');
-      }
+      // Resolve RBAC to determine landing page.
+      // getUserProfile(userId) skips getSession() when userId is provided,
+      // so this won't contend with Supabase's auth lock.
+      const result = await getUserProfile(data.session.user.id);
+      const activeMemberships = (result.agencyMemberships || []).filter(
+        m => m.status === 'active' && m.agencies?.status === 'approved'
+      );
+      const agencyRole = activeMemberships.length > 0
+        ? activeMemberships[0].agency_role
+        : null;
+      const landingPath = getDefaultLanding(result.platformRole, agencyRole);
 
-      console.log('[LoginPage] Login successful, navigating to:', authz.derived.landingPath);
-      navigate(authz.derived.landingPath);
+      console.log('[LoginPage] Login successful, navigating to:', landingPath);
+      navigate(landingPath);
     } catch (error) {
       console.error('[LoginPage] Login failed:', error);
 
@@ -104,7 +76,9 @@ const LoginPage = () => {
       } else {
         setError(error.message || 'Login failed. Please try again.');
       }
-
+    } finally {
+      // Always reset loading — prevents the "Signing in..." button from hanging
+      // if signInWithPassword or getUserProfile hangs and eventually fails.
       setLoading(false);
     }
   };
