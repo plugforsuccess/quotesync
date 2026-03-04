@@ -224,6 +224,23 @@ export default function WeeklyTimeTable({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      {/* Code legend */}
+      <div className="flex flex-wrap gap-2 text-xs text-gray-500 px-4 pt-3 mb-3">
+        <span><strong className="text-gray-700">REG</strong> Regular</span>
+        <span className="text-gray-300">|</span>
+        <span><strong className="text-gray-700">WFH</strong> Work from Home</span>
+        <span className="text-gray-300">|</span>
+        <span><strong className="text-gray-700">SICK</strong> Sick (Full Day)</span>
+        <span className="text-gray-300">|</span>
+        <span><strong className="text-gray-700">SICK_PART</strong> Sick (Partial)</span>
+        <span className="text-gray-300">|</span>
+        <span><strong className="text-gray-700">PTO</strong> Paid Time Off</span>
+        <span className="text-gray-300">|</span>
+        <span><strong className="text-gray-700">APPT</strong> Appointment</span>
+        <span className="text-gray-300">|</span>
+        <span><strong className="text-gray-700">EARLY</strong> Left Early</span>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full min-w-[950px]">
           <thead className="bg-gray-50 border-b border-gray-200">
