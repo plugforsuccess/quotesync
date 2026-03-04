@@ -376,7 +376,14 @@ export const AuthProvider = ({ children }) => {
       if (document.visibilityState === 'visible' && mounted) {
         supabase.auth.getSession().then(({ data, error }) => {
           if (!mounted) return;
-          if (error || !data?.session) {
+          if (error) {
+            // Transient error (network blip, lock contention) — do NOT sign out.
+            // The token may still be valid; signing out here causes the
+            // "session lost on tab switch" bug.
+            console.warn('[AUTH] getSession error on tab focus (ignoring):', error.message);
+            return;
+          }
+          if (!data?.session) {
             console.log('[AUTH] session expired while tab was hidden');
             resetState();
             setLoading(false);

@@ -12,7 +12,6 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [existingSession, setExistingSession] = useState(false);
   const [mode, setMode] = useState('login');
   const [resetSuccess, setResetSuccess] = useState('');
 
@@ -43,48 +42,29 @@ const LoginPage = () => {
     }
   }, []);
 
-  // Check if already logged in on mount
+  // If user is already authenticated, redirect to dashboard instead of
+  // showing the login page. This prevents the "already signed in" alert
+  // and the confusing state where a logged-in user sees a login form.
   useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
-
-        // Show message if already logged in, but don't auto-redirect
         if (session?.user && !error) {
-          console.log('[LoginPage] Existing session detected');
-          setExistingSession(true);
+          console.log('[LoginPage] Existing session detected, redirecting to dashboard');
+          const authz = await resolveAuthz(session.user.id);
+          if (authz.status === 'ok') {
+            navigate(authz.derived.landingPath, { replace: true });
+          } else {
+            // Can't resolve permissions — let them re-login
+            console.warn('[LoginPage] Could not resolve authz for existing session');
+          }
         }
       } catch (error) {
         console.error('[LoginPage] Error checking session:', error);
       }
     };
-
     checkSession();
-  }, []);
-
-  // Listen for auth changes and only re-resolve on stable auth events.
-  // Initial login routing is handled directly by handleLogin for deterministic behavior.
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('[LoginPage] Auth event:', event, session?.user?.email);
-
-      if (event === 'SIGNED_OUT') {
-        setExistingSession(false);
-        return;
-      }
-
-      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user) {
-        const authz = await resolveAuthz(session.user.id);
-        if (authz.status === 'ok') {
-          setExistingSession(true);
-        }
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [resolveAuthz]);
+  }, [navigate, resolveAuthz]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -189,34 +169,6 @@ const LoginPage = () => {
             {mode === 'login' ? 'Access your dashboard' : 'Enter your email to receive a reset link'}
           </p>
         </div>
-
-        {existingSession && mode === 'login' && (
-          <div className="bg-emerald-900/30 border border-emerald-700/40 text-emerald-300 px-4 py-3 rounded-lg text-sm mb-6">
-            <strong>Already logged in.</strong> You can{' '}
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  const result = await getUserProfile();
-                  const platformRole = result.platformRole;
-                  const activeMemberships = (result.agencyMemberships || []).filter(
-                    m => m.status === 'active' && m.agencies?.status === 'approved'
-                  );
-                  const agencyRole = activeMemberships.length > 0
-                    ? activeMemberships[0].agency_role
-                    : null;
-                  navigate(getDefaultLanding(platformRole, agencyRole));
-                } catch {
-                  navigate('/');
-                }
-              }}
-              className="underline font-semibold hover:text-emerald-200"
-            >
-              go to dashboard
-            </button>{' '}
-            or log in as a different user below.
-          </div>
-        )}
 
         {error && (
           <div className="bg-red-900/30 border border-red-700/40 text-red-300 px-4 py-3 rounded-lg text-sm mb-6">
