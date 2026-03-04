@@ -379,35 +379,16 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
-    // Proactive session check on tab/app focus.
-    // When the user returns to the tab, validate the session BEFORE React Query
-    // fires refetches. This prevents cascading 401 errors from stale tokens.
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && mounted) {
-        supabase.auth.getSession().then(({ data, error }) => {
-          if (!mounted) return;
-          if (error) {
-            // Transient error (network blip, lock contention) — do NOT sign out.
-            // The token may still be valid; signing out here causes the
-            // "session lost on tab switch" bug.
-            console.warn('[AUTH] getSession error on tab focus (ignoring):', error.message);
-            return;
-          }
-          if (!data?.session) {
-            console.log('[AUTH] session expired while tab was hidden');
-            resetState();
-            setLoading(false);
-          }
-        });
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // NOTE: No visibilitychange handler here. The Supabase client automatically
+    // refreshes expired tokens on each API call (via its internal lock mechanism).
+    // Adding a manual getSession() on tab focus causes lock contention with React
+    // Query's refetchOnWindowFocus refetches, which also trigger getSession()
+    // internally — leading to queries hanging or failing on tab restore.
+    // True session expiry is handled by the QueryCache error handler in App.jsx.
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
