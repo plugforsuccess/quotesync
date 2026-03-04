@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { useTimeEntries, useRCData, useProactivityData, useAllEmployees, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useTimeEntries, useRCData, useProactivityData, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { useRCEmployeeMap, useActiveEmployees } from '../hooks/useEmployees';
 import {
   useEmployeeTargets, useSaveTargets,
@@ -113,8 +113,7 @@ const CSPerformancePage = () => {
     refetch: refetchProactivity,
   } = useProactivityData(weekStart, selectedEmployee);
 
-  const { data: allEmployees = [] } = useAllEmployees();
-  // Active employees from employees table for dropdown
+  // Active employees from employees table for dropdown + RC matching
   const { data: rosterEmployees = [] } = useActiveEmployees(user?.id);
   const { invalidateRCData, invalidateProactivity } = useInvalidateTimeData();
 
@@ -166,8 +165,7 @@ const CSPerformancePage = () => {
     if (teamEmp) {
       return `${teamEmp.preferred_name || teamEmp.first_name} ${teamEmp.last_name || ''}`.trim();
     }
-    const profile = employees.find((p) => p.id === userId)
-      || allEmployees.find((p) => p.id === userId);
+    const profile = employees.find((p) => p.id === userId);
     return profile?.full_name || profile?.email || userId?.substring(0, 8) || 'Unknown';
   }
 
@@ -175,22 +173,27 @@ const CSPerformancePage = () => {
 
   const { data: rcEmployeeMap } = useRCEmployeeMap(user?.id);
 
-  // Fallback to old profile-based map if employees table has no data yet
+  // Fallback to roster-based map if rcEmployeeMap has no data yet
   const employeeMap = useMemo(() => {
     if (rcEmployeeMap && Object.keys(rcEmployeeMap).length > 0) return rcEmployeeMap;
     const map = {};
-    const source = allEmployees.length > 0 ? allEmployees : employees;
-    source.forEach((p) => {
-      if (p.full_name) map[p.full_name.trim().toLowerCase()] = p.id;
-      if (p.email) map[p.email.trim().toLowerCase()] = p.id;
+    rosterEmployees.forEach((emp) => {
+      const value = emp.auth_user_id || emp.id;
+      if (emp.rc_display_name) {
+        map[emp.rc_display_name.trim().toLowerCase()] = value;
+      }
+      const fullName = `${emp.first_name} ${emp.last_name}`.trim().toLowerCase();
+      if (!map[fullName]) {
+        map[fullName] = value;
+      }
     });
     return map;
-  }, [rcEmployeeMap, allEmployees, employees]);
+  }, [rcEmployeeMap, rosterEmployees]);
 
-  // Prefer roster employees for dropdown (employees table); fallback to profiles
+  // Use roster employees (employees table) for dropdown
   const employeeOptions = rosterEmployees.length > 0
     ? rosterEmployees
-    : (allEmployees.length > 0 ? allEmployees : employees);
+    : employees;
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);

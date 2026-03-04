@@ -15,7 +15,6 @@ export const timeAttendanceKeys = {
     ['rc-performance', weekStart, employeeId || 'all'],
   proactivity: (weekStart, employeeId) =>
     ['cs-proactivity', weekStart, employeeId || 'all'],
-  allEmployees: () => ['employees', 'platform-users'],
 };
 
 // ── Fetch functions ─────────────────────────────────────────────────────────
@@ -34,18 +33,22 @@ async function fetchTimeEntries(weekStart, selectedEmployee) {
   const { data, error } = await query;
   if (error) throw error;
 
-  // Also fetch profile names for the employees found in entries
+  // Resolve employee names from the employees table (matching on auth_user_id)
   const uniqueIds = [...new Set((data || []).map((e) => e.employee_user_id))];
-  let profiles = [];
+  let employeeProfiles = [];
   if (uniqueIds.length > 0) {
-    const { data: profileData } = await supabase
-      .from('profiles')
-      .select('id, full_name, email')
-      .in('id', uniqueIds);
-    profiles = profileData || [];
+    const { data: empData } = await supabase
+      .from('employees')
+      .select('id, first_name, last_name, preferred_name, auth_user_id')
+      .in('auth_user_id', uniqueIds);
+    // Map to shape expected by consumers (id = auth_user_id, full_name computed)
+    employeeProfiles = (empData || []).map((emp) => ({
+      id: emp.auth_user_id || emp.id,
+      full_name: `${emp.preferred_name || emp.first_name} ${emp.last_name}`.trim(),
+    }));
   }
 
-  return { entries: data || [], employees: profiles };
+  return { entries: data || [], employees: employeeProfiles };
 }
 
 async function fetchRCData(weekStart, selectedEmployee) {
@@ -78,15 +81,6 @@ async function fetchProactivityData(weekStart, selectedEmployee) {
   return data || [];
 }
 
-async function fetchAllPlatformEmployees() {
-  const { data } = await supabase
-    .from('profiles')
-    .select('id, full_name, email')
-    .eq('is_platform_user', true)
-    .order('full_name');
-  return data || [];
-}
-
 // ── Hooks ───────────────────────────────────────────────────────────────────
 
 export function useTimeEntries(weekStart, selectedEmployee) {
@@ -108,14 +102,6 @@ export function useProactivityData(weekStart, selectedEmployee) {
   return useQuery({
     queryKey: timeAttendanceKeys.proactivity(weekStart, selectedEmployee),
     queryFn: () => fetchProactivityData(weekStart, selectedEmployee),
-  });
-}
-
-export function useAllEmployees() {
-  return useQuery({
-    queryKey: timeAttendanceKeys.allEmployees(),
-    queryFn: fetchAllPlatformEmployees,
-    staleTime: 5 * 60 * 1000, // Employee list rarely changes — 5 min stale
   });
 }
 
