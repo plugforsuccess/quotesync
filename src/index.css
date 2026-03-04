@@ -46,3 +46,19 @@ gmp-placeautocomplete input {
 gmp-placeautocomplete input:focus {
   border-color: #2563eb;
 }
+
+/* Ensure the autocomplete dropdown renders above the wizard card */
+gmp-placeautocomplete {
+  position: relative;
+  z-index: 50;
+}
+
+/* Style the dropdown suggestions panel */
+.pac-container,
+gmp-placeautocomplete::part(list) {
+  z-index: 9999 !important;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
