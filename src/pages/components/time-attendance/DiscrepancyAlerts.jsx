@@ -12,15 +12,31 @@ const SEVERITY_CONFIG = {
   info: { icon: Info, bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-800', iconColor: 'text-blue-600' },
 };
 
-function checkDiscrepancies(timeEntries, rcData) {
+function checkDiscrepancies(timeEntries, rcData, weekStart, roleType) {
   const alerts = [];
 
   if (!timeEntries || timeEntries.length === 0) return alerts;
   if (!rcData) return alerts;
 
+  const regOrWfhDays = timeEntries.filter((e) => ['REG', 'WFH'].includes(e.code));
+
+  // ── Producer-specific checks (outbound effort only) ───────────────────
+  if (roleType === 'producer') {
+    if (regOrWfhDays.length > 0 && (rcData.outbound_calls || 0) === 0) {
+      alerts.push({
+        severity: 'yellow',
+        title: 'Zero Outbound Calls',
+        detail: `${regOrWfhDays.length} working day(s) logged, but 0 outbound calls recorded in RingCentral.`,
+        meaning: 'Producer should be making prospecting calls on working days.',
+      });
+    }
+    return alerts;
+  }
+
+  // ── Service rep checks (all 6 discrepancy checks) ─────────────────────────
+
   const totalHoursLogged = timeEntries.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0);
   const totalHandleTimeHours = (rcData.total_handle_time_minutes || 0) / 60;
-  const regOrWfhDays = timeEntries.filter((e) => ['REG', 'WFH'].includes(e.code));
   const answerRate = rcData.inbound_calls > 0
     ? (rcData.answered_calls / rcData.inbound_calls) * 100
     : 100;
@@ -91,7 +107,7 @@ function checkDiscrepancies(timeEntries, rcData) {
   return alerts;
 }
 
-export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart }) {
+export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, roleType = 'service' }) {
   // Show informational banner when time entries exist but no RC data is available
   if ((!rcData || Object.keys(rcData).length === 0) && timeEntries && timeEntries.length > 0) {
     return (
@@ -107,7 +123,7 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart }) {
     );
   }
 
-  const alerts = checkDiscrepancies(timeEntries, rcData, weekStart);
+  const alerts = checkDiscrepancies(timeEntries, rcData, weekStart, roleType);
 
   if (alerts.length === 0) {
     return null;

@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 
 const ROLE_OPTIONS = [
-  { value: 'cs_rep', label: 'CS Rep' },
+  { value: 'service', label: 'Service' },
   { value: 'producer', label: 'Producer' },
   { value: 'admin', label: 'Admin' },
 ];
@@ -37,7 +37,7 @@ const EMPTY_FORM = {
   city: '',
   state: '',
   zip_code: '',
-  role_type: 'cs_rep',
+  role_type: 'service',
   hire_date: '',
   allstate_id: '',
   rc_display_name: '',
@@ -67,7 +67,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
         city: employee.city || '',
         state: employee.state || '',
         zip_code: employee.zip_code || '',
-        role_type: employee.role_type || 'cs_rep',
+        role_type: employee.role_type || 'service',
         hire_date: employee.hire_date || '',
         allstate_id: employee.allstate_id || '',
         rc_display_name: employee.rc_display_name || '',

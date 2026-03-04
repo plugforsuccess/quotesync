@@ -188,7 +188,7 @@ export function useTrendData(employeeId, weekStart) {
   });
 }
 
-// ── Team Data (all CS reps for a week) ──────────────────────────────────────
+// ── Team Data (all employees for a week, with role info) ────────────────────
 
 async function fetchTeamData(weekStart) {
   // Fetch all RC performance data for the selected week
@@ -199,29 +199,43 @@ async function fetchTeamData(weekStart) {
 
   if (rcError) throw rcError;
 
-  if (!rcData || rcData.length === 0) return { rcData: [], targets: {} };
+  if (!rcData || rcData.length === 0) return { rcData: [], targets: {}, employees: {} };
 
   // Fetch targets for all employees found
   const employeeIds = [...new Set(rcData.map((r) => r.employee_user_id))];
 
-  const { data: targetsData, error: targetsError } = await supabase
-    .from('cs_performance_targets')
-    .select('*')
-    .in('employee_user_id', employeeIds)
-    .lte('effective_date', weekStart)
-    .order('effective_date', { ascending: false });
+  const [targetsResult, employeesResult] = await Promise.all([
+    supabase
+      .from('cs_performance_targets')
+      .select('*')
+      .in('employee_user_id', employeeIds)
+      .lte('effective_date', weekStart)
+      .order('effective_date', { ascending: false }),
+    supabase
+      .from('employees')
+      .select('id, auth_user_id, first_name, last_name, preferred_name, role_type')
+      .in('auth_user_id', employeeIds),
+  ]);
 
-  if (targetsError) throw targetsError;
+  if (targetsResult.error) throw targetsResult.error;
+  if (employeesResult.error) throw employeesResult.error;
 
   // Build a map of employee_user_id -> most recent targets
   const targetsMap = {};
-  for (const t of (targetsData || [])) {
+  for (const t of (targetsResult.data || [])) {
     if (!targetsMap[t.employee_user_id]) {
       targetsMap[t.employee_user_id] = t;
     }
   }
 
-  return { rcData: rcData || [], targets: targetsMap };
+  // Build a map of auth_user_id -> employee data (with role_type)
+  const employeesMap = {};
+  for (const emp of (employeesResult.data || [])) {
+    const key = emp.auth_user_id || emp.id;
+    employeesMap[key] = emp;
+  }
+
+  return { rcData: rcData || [], targets: targetsMap, employees: employeesMap };
 }
 
 export function useTeamData(weekStart) {
