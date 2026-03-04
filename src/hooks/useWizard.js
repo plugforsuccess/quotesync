@@ -22,6 +22,7 @@ export const SESSION_KEYS = {
   APT: 'qs_funnel_unit',
   CITY: 'qs_funnel_city',
   MARITAL_STATUS: 'qs_funnel_marital_status',
+  ADDRESS_SOURCE: 'qs_funnel_address_source',
   CURRENT_STEP: 'qs_funnel_current_step',
 };
 
@@ -52,6 +53,7 @@ function restore() {
     phone: sessionStorage.getItem(SESSION_KEYS.PHONE) || '',
     email: sessionStorage.getItem(SESSION_KEYS.EMAIL) || '',
     maritalStatus: sessionStorage.getItem(SESSION_KEYS.MARITAL_STATUS) || null,
+    addressSource: sessionStorage.getItem(SESSION_KEYS.ADDRESS_SOURCE) || null,
   };
 }
 
@@ -76,6 +78,7 @@ function persistToSession(a) {
     [SESSION_KEYS.PHONE, a.phone],
     [SESSION_KEYS.EMAIL, a.email],
     [SESSION_KEYS.MARITAL_STATUS, a.maritalStatus],
+    [SESSION_KEYS.ADDRESS_SOURCE, a.addressSource],
   ];
   pairs.forEach(([k, v]) => {
     if (v != null && v !== '') {
