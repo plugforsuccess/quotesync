@@ -1,5 +1,6 @@
 // src/hooks/useWizard.js — Wizard state + conditional branching for /save funnel v2
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { isTargetZip } from '../config/targetZips';
 
 export const SESSION_KEYS = {
   LEAD_ID: 'qs_funnel_lead_id',
@@ -34,7 +35,7 @@ function jp(val, fallback) {
 }
 
 function restore() {
-  return {
+  const state = {
     zip: sessionStorage.getItem(SESSION_KEYS.ZIP) || '',
     ownsHome: jp(sessionStorage.getItem(SESSION_KEYS.OWNS_HOME), null),
     vehicleCount: jp(sessionStorage.getItem(SESSION_KEYS.VEHICLE_COUNT), null),
@@ -55,6 +56,19 @@ function restore() {
     maritalStatus: sessionStorage.getItem(SESSION_KEYS.MARITAL_STATUS) || null,
     addressSource: sessionStorage.getItem(SESSION_KEYS.ADDRESS_SOURCE) || null,
   };
+
+  // Prefill ZIP from URL ?zip= param (e.g. landing page "Check My Eligibility")
+  if (!state.zip) {
+    const params = new URLSearchParams(window.location.search);
+    const urlZip = params.get('zip');
+    if (urlZip && /^\d{5}$/.test(urlZip) && isTargetZip(urlZip)) {
+      state.zip = urlZip;
+      sessionStorage.setItem(SESSION_KEYS.ZIP, urlZip);
+      sessionStorage.setItem(SESSION_KEYS.CURRENT_STEP, '1');
+    }
+  }
+
+  return state;
 }
 
 // H-5: persistToSession must clear null/empty values
@@ -152,7 +166,10 @@ export function computeStepSequence(answers) {
 
 export function useWizard() {
   const [answers, setAnswers] = useState(restore);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    const saved = parseInt(sessionStorage.getItem(SESSION_KEYS.CURRENT_STEP) || '0', 10);
+    return saved > 0 ? saved : 0;
+  });
   const [direction, setDirection] = useState('forward');
   const hasRestoredStep = useRef(false);
 
@@ -163,14 +180,12 @@ export function useWizard() {
   const isFirstStep = currentIndex === 0;
   const isLastStep = currentIndex >= stepSequence.length - 1;
 
-  // C-3: Restore step index on page refresh (one-time on mount)
+  // C-3: Clamp restored step index if step sequence shrinks (e.g. answers changed)
   useEffect(() => {
     if (!hasRestoredStep.current) {
       hasRestoredStep.current = true;
-      const saved = parseInt(sessionStorage.getItem(SESSION_KEYS.CURRENT_STEP) || '0', 10);
-      if (saved > 0 && saved < stepSequence.length) {
-        setCurrentIndex(saved);
-      }
+      // Step index already restored via lazy initializer; clamp if needed
+      setCurrentIndex(prev => (prev >= stepSequence.length ? stepSequence.length - 1 : prev));
     }
   }, [stepSequence.length]);
 
