@@ -8,6 +8,7 @@ import { formatPhoneInput } from '../../../utils/phoneFormat';
 import { useCanopyLauncher } from '../../../hooks/useCanopyLauncher';
 import { SESSION_KEYS } from '../../../hooks/useWizard';
 import { trackEvent } from '../../../lib/analytics';
+import AddressAutocomplete from '../../../components/AddressAutocomplete';
 
 // ─── Shared UI Primitives ──────────────────────────────────────────
 
@@ -588,22 +589,62 @@ export function DobStep({ value, onChange }) {
   );
 }
 
-// ─── Step 9: Street Address ────────────────────────────────────────
+// ─── Step 9: Street Address (with Google Places Autocomplete) ─────
 
-export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChange, onCityChange }) {
+export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChange, onCityChange, onZipCorrected, onAddressSourceChange }) {
+  const [manualMode, setManualMode] = useState(false);
+  const [zipMismatch, setZipMismatch] = useState(null);
+
+  const handleAddressSelect = (address) => {
+    onStreetChange(address.street);
+    onCityChange(address.city);
+    onAddressSourceChange?.('google_autocomplete');
+
+    // Check for ZIP mismatch between Step 1 and the autocomplete result
+    if (address.zip && address.zip !== zip) {
+      setZipMismatch({ original: zip, corrected: address.zip });
+      onZipCorrected?.(address.zip);
+    } else {
+      setZipMismatch(null);
+    }
+  };
+
+  const handleSwitchToManual = () => {
+    setManualMode(true);
+    onAddressSourceChange?.('manual_entry');
+  };
+
+  const inputClasses = 'w-full px-4 py-3 rounded-xl border-2 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500';
+  const readOnlyClasses = 'w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-500 bg-gray-50';
+
   return (
     <div>
       <StepHeading>What is your home address?</StepHeading>
       <StepDescription>Used to calculate your exact rate — never shared.</StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
-        <InputField
-          id="street"
-          label="Street Address"
-          value={street}
-          onChange={(e) => onStreetChange(e.target.value)}
-          placeholder="123 Main Street"
-          autoFocus
-        />
+        <div>
+          <label htmlFor="street" className="block text-sm font-semibold text-gray-700 mb-1.5">
+            Street Address
+          </label>
+          {!manualMode ? (
+            <AddressAutocomplete
+              onAddressSelect={handleAddressSelect}
+              defaultValue={street}
+              className={inputClasses}
+            />
+          ) : (
+            <input
+              id="street"
+              type="text"
+              value={street}
+              onChange={(e) => onStreetChange(e.target.value)}
+              placeholder="123 Main Street"
+              autoFocus
+              className={inputClasses}
+            />
+          )}
+        </div>
+
         <InputField
           id="apt"
           label="Apt / Unit (optional)"
@@ -611,27 +652,63 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
           onChange={(e) => onAptChange(e.target.value)}
           placeholder="Apt 4B"
         />
+
         <div className="grid grid-cols-3 gap-3">
-          <InputField
-            id="city"
-            label="City"
-            value={city}
-            onChange={(e) => onCityChange(e.target.value)}
-            placeholder="Atlanta"
-          />
+          {manualMode ? (
+            <InputField
+              id="city"
+              label="City"
+              value={city}
+              onChange={(e) => onCityChange(e.target.value)}
+              placeholder="Atlanta"
+            />
+          ) : (
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">City</label>
+              <div className={readOnlyClasses}>
+                {city || <span className="text-gray-400">—</span>}
+              </div>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">State</label>
-            <div className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-500 bg-gray-50">
-              GA
-            </div>
+            <div className={readOnlyClasses}>GA</div>
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">ZIP</label>
-            <div className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-500 bg-gray-50">
-              {zip}
-            </div>
+            <div className={readOnlyClasses}>{zip}</div>
           </div>
         </div>
+
+        {/* ZIP mismatch notice */}
+        {zipMismatch && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <p className="text-sm text-amber-800">
+              The ZIP code for this address is <span className="font-semibold">{zipMismatch.corrected}</span>,
+              but you entered <span className="font-semibold">{zipMismatch.original}</span> earlier.
+              We&apos;ll use the address ZIP for your quote.
+            </p>
+          </div>
+        )}
+
+        {/* Manual fallback toggle */}
+        {!manualMode ? (
+          <button
+            type="button"
+            onClick={handleSwitchToManual}
+            className="text-sm text-primary-600 hover:underline"
+          >
+            Can&apos;t find your address? Enter it manually
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setManualMode(false)}
+            className="text-sm text-primary-600 hover:underline"
+          >
+            Search for your address instead
+          </button>
+        )}
       </div>
     </div>
   );

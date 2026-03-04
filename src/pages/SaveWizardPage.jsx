@@ -226,6 +226,7 @@ export default function SaveWizardPage() {
           address_unit: answers.apt?.trim() || null,
           city: answers.city?.trim() || null,
           marital_status: answers.maritalStatus || null,
+          address_source: answers.addressSource || 'manual_entry',
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('insuredbycam_session_id'),
@@ -316,6 +317,13 @@ export default function SaveWizardPage() {
       updatePartialLead({ vehicle_count: answers.vehicleCount });
     } else if (stepId === 'maritalStatus') {
       updatePartialLead({ marital_status: answers.maritalStatus });
+    } else if (stepId === 'address') {
+      updatePartialLead({
+        street_address: answers.street?.trim() || null,
+        address_unit: answers.apt?.trim() || null,
+        city: answers.city?.trim() || null,
+        address_source: answers.addressSource || 'manual_entry',
+      });
     }
   }, [currentIndex, answers, insertPartialLead, updatePartialLead]);
 
@@ -454,6 +462,8 @@ export default function SaveWizardPage() {
             onStreetChange={(v) => setAnswer('street', v)}
             onAptChange={(v) => setAnswer('apt', v)}
             onCityChange={(v) => setAnswer('city', v)}
+            onZipCorrected={(v) => setAnswer('zip', v)}
+            onAddressSourceChange={(v) => setAnswer('addressSource', v)}
           />
         );
       case 'contact':

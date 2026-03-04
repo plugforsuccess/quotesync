@@ -397,6 +397,7 @@ Deno.serve(async (req) => {
           // V2.1 fields
           current_renters_carrier: body.current_renters_carrier || null,
           marital_status: body.marital_status || null,
+          address_source: body.address_source || 'manual_entry',
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -443,6 +444,7 @@ Deno.serve(async (req) => {
         // V2.1 fields
         current_renters_carrier: body.current_renters_carrier || null,
         marital_status: body.marital_status || null,
+        address_source: body.address_source || 'manual_entry',
       }
 
       const { data: newLead, error: leadError } = await supabase
