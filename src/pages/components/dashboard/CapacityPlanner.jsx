@@ -3,7 +3,7 @@
 
 import { useMemo, useState } from 'react';
 import { Calculator, ChevronDown, ChevronUp, Plus, X, CheckCircle, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
-import { getCommissionRate } from '../../../lib/commissionUtils';
+import { getCommissionRate, getFirstYearMultiplier } from '../../../lib/commissionUtils';
 
 // ─── Reusable rows ──────────────────────────────────────────────────────────
 
@@ -44,9 +44,10 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
 
 const TIER_LABELS = { preferredBundled: 'Pref Bundled', bundled: 'Bundled', monoline: 'Monoline' };
 
-function CommissionReferenceTable({ matrix, baseCommission }) {
+function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
   const [open, setOpen] = useState(false);
   const productLines = Object.keys(matrix);
+  const tiers = Object.keys(TIER_LABELS);
 
   return (
     <div className="mb-3">
@@ -64,27 +65,46 @@ function CommissionReferenceTable({ matrix, baseCommission }) {
             <thead>
               <tr className="border-b border-blue-200">
                 <th className="text-left py-1 pr-3 font-medium text-gray-500" />
-                {Object.keys(TIER_LABELS).map(k => (
+                {tiers.map(k => (
                   <th key={k} className="text-right py-1 px-2 font-medium text-gray-500">
                     {TIER_LABELS[k]}
                   </th>
                 ))}
+                <th className="text-left py-1 pl-3 font-medium text-gray-500" />
               </tr>
             </thead>
             <tbody>
-              {productLines.map(pl => (
-                <tr key={pl} className="border-b border-gray-100">
-                  <td className="py-1 pr-3 text-gray-700 whitespace-nowrap">{pl}</td>
-                  {Object.keys(TIER_LABELS).map(tier => (
-                    <td key={tier} className="py-1 px-2 text-right text-gray-800 font-medium">
-                      {matrix[pl][tier]}%
-                    </td>
-                  ))}
-                </tr>
-              ))}
+              {productLines.map(pl => {
+                const info = renewalInfo?.[pl];
+                let renewalNote = '';
+                if (info) {
+                  if (!info.renewalRates) {
+                    renewalNote = `(${info.cycleMonths}-mo renewal: same rates)`;
+                  } else {
+                    const rateStr = tiers.map(t => `${info.renewalRates[t]}%`).join(' / ');
+                    renewalNote = `(${info.cycleMonths}-mo renewal: ${rateStr})`;
+                  }
+                }
+                return (
+                  <tr key={pl} className="border-b border-gray-100">
+                    <td className="py-1 pr-3 text-gray-700 whitespace-nowrap">{pl}</td>
+                    {tiers.map(tier => (
+                      <td key={tier} className="py-1 px-2 text-right text-gray-800 font-medium">
+                        {baseCommission + matrix[pl][tier]}%
+                      </td>
+                    ))}
+                    <td className="py-1 pl-3 text-gray-400 whitespace-nowrap text-xs">{renewalNote}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          <p className="text-xs text-gray-500 mt-1">Base commission: {baseCommission}%</p>
+          <p className="text-xs text-gray-500 mt-1">
+            Base: {baseCommission}% new business
+            {renewalInfo && (
+              <> | Auto 1st renewal: {renewalInfo['Standard Auto']?.renewalBase ?? baseCommission}% | Home/OPL 1st renewal: {renewalInfo['Homeowners / Condo']?.renewalBase ?? baseCommission}%</>
+            )}
+          </p>
         </div>
       )}
     </div>
@@ -96,7 +116,7 @@ function CommissionReferenceTable({ matrix, baseCommission }) {
 function PolicyMixTable({
   policyMix, commissionMatrix, baseCommission,
   onMixChange, onMixAdd, onMixRemove,
-  tierOptions, productLines,
+  tierOptions, productLines, renewalInfo,
 }) {
   const totalMix = policyMix.reduce((s, r) => s + r.mixPct, 0);
   const mixValid = Math.abs(totalMix - 100) < 0.01;
@@ -106,21 +126,23 @@ function PolicyMixTable({
       <p className="text-sm font-medium text-gray-700 mb-2">Your Policy Mix</p>
 
       {/* Desktop header */}
-      <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_1.5rem] gap-1 text-xs font-medium text-gray-500 mb-1 px-1">
+      <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_2.5rem_1.5rem] gap-1 text-xs font-medium text-gray-500 mb-1 px-1">
         <span>Product Line</span>
         <span>Tier</span>
         <span className="text-right">Premium</span>
         <span className="text-right">Comm %</span>
         <span className="text-right">Mix %</span>
+        <span className="text-center">1st Yr</span>
         <span />
       </div>
 
       {policyMix.map((row, idx) => {
         const commRate = getCommissionRate(row.productLine, row.tier, commissionMatrix, baseCommission);
+        const multiplier = getFirstYearMultiplier(row.productLine);
         return (
           <div key={idx}>
             {/* Desktop row */}
-            <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_1.5rem] gap-1 items-center py-1 border-b border-gray-100">
+            <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_2.5rem_1.5rem] gap-1 items-center py-1 border-b border-gray-100">
               {/* Product line select */}
               <select
                 value={row.productLine}
@@ -171,6 +193,13 @@ function PolicyMixTable({
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
               </div>
+
+              {/* 1st Year multiplier badge */}
+              <span className={`text-xs font-medium px-1.5 py-0.5 rounded text-center ${
+                multiplier === 2 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+              }`}>
+                ×{multiplier}
+              </span>
 
               {/* Remove button */}
               <button
@@ -239,6 +268,11 @@ function PolicyMixTable({
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                 </div>
+                <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${
+                  multiplier === 2 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                }`}>
+                  ×{multiplier}
+                </span>
               </div>
             </div>
           </div>
@@ -276,7 +310,7 @@ function PolicyMixTable({
 export default function CapacityPlanner({
   kpis, plannerInputs, onInputChange,
   onMixChange, onMixAdd, onMixRemove,
-  tierOptions, productLines,
+  tierOptions, productLines, renewalInfo,
 }) {
   if (!kpis) return null;
 
@@ -307,40 +341,39 @@ export default function CapacityPlanner({
         }, 0) / blendedPremium
       : 0;
 
-    // Funnel projections
+    // Funnel projections (monthly)
     const requiredLeads = close > 0 ? Math.ceil(targetSubmissions / close) : 0;
     const requiredClicks = convRate > 0 ? Math.ceil(requiredLeads / convRate) : 0;
     const estMonthlyAdSpend = requiredClicks * avgCPC;
     const estPoliciesClosed = Math.round(targetSubmissions * close);
-    const estMonthlyPremium = estPoliciesClosed * blendedPremium;
-    const estMonthlyCommission = estMonthlyPremium * (blendedCommission / 100);
-    const net = estMonthlyCommission - estMonthlyAdSpend;
-    const roi = estMonthlyAdSpend > 0 ? (net / estMonthlyAdSpend) * 100 : 0;
+    const estMonthlyCommission = estPoliciesClosed * blendedPremium * (blendedCommission / 100);
+    const monthlyNet = estMonthlyCommission - estMonthlyAdSpend;
 
-    // Breakeven metrics
+    // First-year projection
+    // Each policy's first-year commission depends on its renewal cycle:
+    // Auto (6-mo cycle): new biz + 1 renewal at same rate = ×2
+    // Home/OPL (12-mo cycle): new biz only = ×1
+    const firstYearPolicies = estPoliciesClosed * 12;
+    const firstYearCommPerPolicy = policyMix.reduce((sum, row) => {
+      const mix = row.mixPct / 100;
+      const rate = getCommissionRate(row.productLine, row.tier, commissionMatrix, baseCommission) / 100;
+      const multiplier = getFirstYearMultiplier(row.productLine);
+      return sum + mix * row.avgPremium * rate * multiplier;
+    }, 0);
+    const firstYearGrossCommission = firstYearPolicies * firstYearCommPerPolicy;
+    const firstYearAdSpend = estMonthlyAdSpend * 12;
+    const firstYearNet = firstYearGrossCommission - firstYearAdSpend;
+    const firstYearROI = firstYearAdSpend > 0 ? (firstYearNet / firstYearAdSpend) * 100 : 0;
+
+    // Breakeven metrics (using first-year commission per policy)
     const costPerPolicy = estPoliciesClosed > 0 ? estMonthlyAdSpend / estPoliciesClosed : 0;
-    const commissionPerPolicy = blendedPremium * (blendedCommission / 100);
-    // Breakeven close rate: the close rate where commission = ad spend
-    // commission = (targetSubmissions * breakevenClose) * blendedPremium * (blendedCommission/100)
-    // adSpend = (targetSubmissions / breakevenClose) / convRate * avgCPC  -- but this creates a complex equation
-    // Simpler: at breakeven, costPerPolicy = commissionPerPolicy
-    // costPerPolicy = adSpend / policies = (requiredClicks * avgCPC) / policies
-    // Since requiredClicks = (targetSubmissions / closeRate) / convRate, and policies = targetSubmissions * closeRate:
-    // costPerPolicy = (targetSubmissions * avgCPC) / (closeRate^2 * convRate * targetSubmissions) = avgCPC / (closeRate^2 * convRate)
-    // At breakeven: avgCPC / (breakevenClose^2 * convRate) = blendedPremium * blendedCommission/100
-    // breakevenClose = sqrt(avgCPC / (convRate * blendedPremium * blendedCommission / 100))
-    const earnPerPolicy = blendedPremium * (blendedCommission / 100);
+    // earnPerPolicy uses first-year commission (higher for auto-heavy mixes due to ×2 multiplier)
+    const earnPerPolicy = firstYearCommPerPolicy;
     const breakevenCloseRate = convRate > 0 && earnPerPolicy > 0
       ? Math.sqrt(avgCPC / (convRate * earnPerPolicy)) * 100
       : 0;
-    // Breakeven CPC: the max CPC where commission = ad spend at current close rate
-    // adSpend = requiredClicks * CPC = ((targetSubs / close) / convRate) * CPC
-    // commission = targetSubs * close * earnPerPolicy
-    // At breakeven: ((targetSubs / close) / convRate) * CPC = targetSubs * close * earnPerPolicy
-    // CPC = close^2 * convRate * earnPerPolicy
     const breakevenCPC = close * close * convRate * earnPerPolicy;
 
-    // Legacy compat for existing display
     const leadsPerDay = targetSubmissions / 30;
 
     return {
@@ -350,12 +383,15 @@ export default function CapacityPlanner({
       requiredClicks,
       estMonthlyAdSpend,
       estPoliciesClosed,
-      estMonthlyPremium,
       estMonthlyCommission,
-      net,
-      roi,
+      monthlyNet,
+      firstYearPolicies,
+      firstYearGrossCommission,
+      firstYearAdSpend,
+      firstYearNet,
+      firstYearROI,
+      firstYearCommPerPolicy,
       costPerPolicy,
-      commissionPerPolicy,
       breakevenCloseRate,
       breakevenCPC,
       leadsPerDay,
@@ -365,8 +401,9 @@ export default function CapacityPlanner({
   const totalMix = policyMix.reduce((s, r) => s + r.mixPct, 0);
   const mixValid = Math.abs(totalMix - 100) < 0.01;
   const gapColor = gapTo700 >= 0 ? 'text-green-600' : 'text-red-600';
-  const netColor = outputs.net >= 0 ? 'text-green-600' : 'text-red-600';
-  const roiColor = outputs.roi > 100 ? 'text-green-600' : outputs.roi >= 0 ? 'text-yellow-600' : 'text-red-600';
+  const monthlyNetColor = outputs.monthlyNet >= 0 ? 'text-green-600' : 'text-red-600';
+  const firstYearNetColor = outputs.firstYearNet >= 0 ? 'text-green-600' : 'text-red-600';
+  const firstYearRoiColor = outputs.firstYearROI > 100 ? 'text-green-600' : outputs.firstYearROI >= 0 ? 'text-yellow-600' : 'text-red-600';
   const [showBreakeven, setShowBreakeven] = useState(false);
 
   return (
@@ -432,7 +469,7 @@ export default function CapacityPlanner({
 
             {/* Commission Reference (collapsed by default) */}
             <div className="pt-3">
-              <CommissionReferenceTable matrix={commissionMatrix} baseCommission={baseCommission} />
+              <CommissionReferenceTable matrix={commissionMatrix} baseCommission={baseCommission} renewalInfo={renewalInfo} />
             </div>
 
             {/* Policy Mix */}
@@ -445,6 +482,7 @@ export default function CapacityPlanner({
               onMixRemove={onMixRemove}
               tierOptions={tierOptions}
               productLines={productLines}
+              renewalInfo={renewalInfo}
             />
 
             {/* Blended summary */}
@@ -458,35 +496,50 @@ export default function CapacityPlanner({
           <div className="bg-gray-50 rounded-lg p-4">
             <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Projections</h4>
 
-            {/* Traffic & spend */}
-            <StatRow label="Required Leads/mo" value={outputs.requiredLeads.toLocaleString()} />
-            <StatRow label="Required Clicks/mo" value={outputs.requiredClicks.toLocaleString()} />
+            {/* Monthly Snapshot */}
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Monthly Snapshot</p>
+            <StatRow label="Policies Closed/mo" value={outputs.estPoliciesClosed.toLocaleString()} />
             <StatRow
-              label="Est. Ad Spend/mo"
-              value={`$${outputs.estMonthlyAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-            />
-
-            <div className="border-t border-gray-200 my-2" />
-
-            {/* Revenue */}
-            <StatRow label="Est. Policies Closed/mo" value={outputs.estPoliciesClosed.toLocaleString()} />
-            <StatRow
-              label="Est. Monthly Premium"
-              value={`$${outputs.estMonthlyPremium.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-            />
-            <StatRow
-              label="Est. Monthly Commission"
+              label="New Business Commission"
               value={`$${outputs.estMonthlyCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             />
-
-            <div className="border-t border-gray-200 my-2" />
-
-            {/* Bottom line */}
+            <StatRow
+              label="Ad Spend"
+              value={`$${outputs.estMonthlyAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            />
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700">Net (Commission - Spend)</span>
-              <span className={`text-sm font-bold ${netColor}`}>
-                {outputs.net < 0 ? '(' : ''}${Math.abs(outputs.net).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.net < 0 ? ')' : ''}
-                {outputs.net >= 0
+              <span className="text-sm font-medium text-gray-700">Net</span>
+              <span className={`text-sm font-bold ${monthlyNetColor}`}>
+                {outputs.monthlyNet < 0 ? '(' : ''}${Math.abs(outputs.monthlyNet).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.monthlyNet < 0 ? ')' : ''}
+                {outputs.monthlyNet >= 0
+                  ? <TrendingUp className="w-4 h-4 inline ml-1 text-green-500" />
+                  : <TrendingDown className="w-4 h-4 inline ml-1 text-red-500" />
+                }
+              </span>
+            </div>
+
+            <div className="border-t border-gray-200 my-3" />
+
+            {/* First-Year Projection */}
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+              First-Year Projection
+              <span className="text-xs font-normal text-gray-400 normal-case ml-1">(12 months of new business)</span>
+            </p>
+            <StatRow label="Total Policies Written" value={outputs.firstYearPolicies.toLocaleString()} />
+            <StatRow
+              label="Gross Commission"
+              value={`$${outputs.firstYearGrossCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+              highlight="text-gray-900"
+            />
+            <StatRow
+              label="Total Ad Spend"
+              value={`$${outputs.firstYearAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+            />
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-sm font-medium text-gray-700">Net</span>
+              <span className={`text-sm font-bold ${firstYearNetColor}`}>
+                {outputs.firstYearNet < 0 ? '(' : ''}${Math.abs(outputs.firstYearNet).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.firstYearNet < 0 ? ')' : ''}
+                {outputs.firstYearNet >= 0
                   ? <TrendingUp className="w-4 h-4 inline ml-1 text-green-500" />
                   : <TrendingDown className="w-4 h-4 inline ml-1 text-red-500" />
                 }
@@ -494,8 +547,8 @@ export default function CapacityPlanner({
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-sm font-medium text-gray-700">ROI</span>
-              <span className={`text-sm font-bold ${roiColor}`}>
-                {outputs.roi.toFixed(1)}%
+              <span className={`text-sm font-bold ${firstYearRoiColor}`}>
+                {outputs.firstYearROI.toFixed(1)}%
               </span>
             </div>
 
@@ -526,8 +579,8 @@ export default function CapacityPlanner({
                     value={`$${outputs.costPerPolicy.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                   />
                   <StatRow
-                    label="Commission Per Policy"
-                    value={`$${outputs.commissionPerPolicy.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                    label="1st-Year Commission/Policy"
+                    value={`$${outputs.firstYearCommPerPolicy.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
                   />
                   <StatRow
                     label="Breakeven Close Rate"

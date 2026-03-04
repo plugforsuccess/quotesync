@@ -51,6 +51,25 @@ const COMMISSION_MATRIX = {
 
 const BASE_COMMISSION = 9;
 
+// Renewal info — used for first-year projection and commission reference table
+const RENEWAL_INFO = {
+  'Standard Auto': {
+    cycleMonths: 6,
+    renewalRates: null,      // same as new business
+    renewalBase: 9,
+  },
+  'Homeowners / Condo': {
+    cycleMonths: 12,
+    renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 },
+    renewalBase: 7,
+  },
+  'Other Personal Lines': {
+    cycleMonths: 12,
+    renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 },
+    renewalBase: 7,
+  },
+};
+
 const TIER_OPTIONS = [
   { key: 'preferredBundled', label: 'Preferred Bundled' },
   { key: 'bundled',          label: 'Bundled' },
@@ -262,6 +281,7 @@ const FunnelDashboardPage = () => {
               onMixRemove={handleMixRemove}
               tierOptions={TIER_OPTIONS}
               productLines={Object.keys(COMMISSION_MATRIX)}
+              renewalInfo={RENEWAL_INFO}
             />
 
             {/* Section 5: Staffing & Quoting Capacity */}

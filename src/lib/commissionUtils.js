@@ -41,3 +41,19 @@ export function getBlendedValues(policyMix, commissionMatrix, baseCommission) {
 
   return { avgPremium: blendedPremium, commissionRate: blendedCommission };
 }
+
+/**
+ * Get the first-year commission multiplier for a product line.
+ * Auto (6-month renewal cycle): 2 commission events (new business + first renewal at month 6)
+ * Home/OPL (12-month renewal cycle): 1 commission event (new business only; renewal at month 12+ is outside year 1)
+ */
+const RENEWAL_CYCLE_MONTHS = {
+  'Standard Auto': 6,
+  'Homeowners / Condo': 12,
+  'Other Personal Lines': 12,
+};
+
+export function getFirstYearMultiplier(productLine) {
+  const cycle = RENEWAL_CYCLE_MONTHS[productLine];
+  return cycle && cycle <= 6 ? 2 : 1;
+}
