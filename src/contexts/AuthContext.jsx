@@ -77,14 +77,17 @@ function clearSupabaseAuthTokenFromStorage() {
   }
 }
 
-// A safe getSession that retries on Supabase lock aborts
+// A safe getSession that retries on Supabase navigator lock aborts.
+// The lock can be held during token refresh (a full network round-trip),
+// so retries use 1s delays to give it time to complete.
 async function safeGetSession(retries = 2) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       return await supabase.auth.getSession();
     } catch (e) {
       if (!isAbortError(e) || attempt === retries) throw e;
-      await sleep(150);
+      console.warn(`[AUTH] getSession lock abort, retry ${attempt + 1}/${retries}`);
+      await sleep(1000);
     }
   }
 }
