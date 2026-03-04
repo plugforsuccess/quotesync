@@ -181,8 +181,8 @@ const CSPerformancePage = () => {
     const map = {};
     const source = allEmployees.length > 0 ? allEmployees : employees;
     source.forEach((p) => {
-      if (p.full_name) map[p.full_name] = p.id;
-      if (p.email) map[p.email] = p.id;
+      if (p.full_name) map[p.full_name.trim().toLowerCase()] = p.id;
+      if (p.email) map[p.email.trim().toLowerCase()] = p.id;
     });
     return map;
   }, [rcEmployeeMap, allEmployees, employees]);
