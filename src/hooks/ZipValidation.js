@@ -64,11 +64,17 @@ export const useZipValidation = () => {
     };
   }, []);
 
+  // Inline ZIP entry handler (for ZipHeroInput on landing page)
+  const handleInlineZipEntry = (zip) => {
+    handleValidZip(zip);
+  };
+
   return {
     validatedZip,
     showValidator,
     requestCanopyConnect,
     handleValidatorSuccess,
-    closeValidator
+    closeValidator,
+    handleInlineZipEntry,
   };
 };

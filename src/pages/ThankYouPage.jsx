@@ -1,15 +1,38 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import EmailCapture from '../components/EmailCapture';
 import ProductUpsell from '../components/ProductUpsell';
-import { trackQuoteCompleted } from '../lib/analytics';
+import { trackQuoteCompleted, trackEvent } from '../lib/analytics';
+import { supabase } from '../lib/supabase';
 import './ThankYouPage.css';
 
+const SESSION_KEYS_LEAD_ID = 'qs_funnel_lead_id';
+
 const ThankYouPage = () => {
+  const [smsOptIn, setSmsOptIn] = useState(false);
+  const [smsSubmitted, setSmsSubmitted] = useState(false);
+
   // Track quote completed on page load
   useEffect(() => {
     trackQuoteCompleted();
   }, []);
+
+  // Handle SMS opt-in toggle
+  const handleSmsOptIn = useCallback(async (checked) => {
+    setSmsOptIn(checked);
+    if (checked && !smsSubmitted) {
+      const leadId = sessionStorage.getItem(SESSION_KEYS_LEAD_ID);
+      if (leadId) {
+        try {
+          await supabase.from('leads').update({ sms_opt_in: true }).eq('id', leadId);
+          setSmsSubmitted(true);
+          trackEvent('sms_opt_in', { context: 'thank_you_page' });
+        } catch (err) {
+          console.error('Failed to update SMS opt-in:', err);
+        }
+      }
+    }
+  }, [smsSubmitted]);
 
   return (
     <div className="thank-you-container">
@@ -77,6 +100,27 @@ const ThankYouPage = () => {
               <strong>I'll call you within 24 hours</strong> to show you the comparison. Can't talk? No problem. I'll email everything instead.
             </div>
           </div>
+        </div>
+
+        {/* SMS Opt-In */}
+        <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-xl text-sm" style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '0.75rem', fontSize: '0.875rem' }}>
+          <p style={{ fontWeight: 600, marginBottom: '0.5rem' }}>
+            Get a text when your quote is ready?
+          </p>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={smsOptIn}
+              onChange={e => handleSmsOptIn(e.target.checked)}
+            />
+            Yes &mdash; text me at the number I provided
+          </label>
+          {smsOptIn && (
+            <p style={{ fontSize: '0.75rem', color: '#6b7280', marginTop: '0.25rem' }}>
+              By checking this box, you agree to receive SMS updates from Insured by Cam.
+              Message &amp; data rates may apply. Reply STOP to unsubscribe.
+            </p>
+          )}
         </div>
 
         {/* Value-Add Section */}

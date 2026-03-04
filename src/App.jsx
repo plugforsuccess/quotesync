@@ -10,6 +10,7 @@ import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
 import { validateCacheVersion } from './utils/cacheVersion';
+import { persistUtmParams } from './lib/leadsApi';
 
 // Configure React Query with auth-aware error handling
 const queryClient = new QueryClient({
@@ -117,13 +118,14 @@ const PageLoader = () => (
 );
 
 function App() {
-  // Validate cache version on mount
+  // Validate cache version on mount + persist UTM params
   useEffect(() => {
     console.log('[App] Validating cache version...');
     const cacheInvalidated = validateCacheVersion();
     if (cacheInvalidated) {
       console.log('[App] Cache was invalidated due to version mismatch');
     }
+    persistUtmParams();
   }, []);
 
   return (

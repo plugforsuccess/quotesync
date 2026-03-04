@@ -29,13 +29,31 @@ function sanitizeUtm(val) {
   return val.slice(0, 256).replace(/<[^>]*>/g, '');
 }
 
+const UTM_SESSION_KEY = 'insuredbycam_utm_params';
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
+
 /**
- * Extracts UTM parameters from current URL (sanitized)
+ * Persist UTM params from URL to sessionStorage on landing.
+ * Call on initial app render so UTMs survive navigation before CTA click.
+ */
+export function persistUtmParams() {
+  const params = new URLSearchParams(window.location.search);
+  const found = UTM_KEYS.some(k => params.get(k));
+  if (found) {
+    const data = Object.fromEntries(UTM_KEYS.map(k => [k, sanitizeUtm(params.get(k))]));
+    data.referral_code = sanitizeUtm(params.get('ref') || params.get('referral_code'));
+    sessionStorage.setItem(UTM_SESSION_KEY, JSON.stringify(data));
+  }
+}
+
+/**
+ * Extracts UTM parameters from current URL (sanitized),
+ * with sessionStorage fallback for cross-page persistence.
  * @returns {Object} UTM parameters
  */
 export function getUtmParams() {
   const params = new URLSearchParams(window.location.search);
-  return {
+  const fromUrl = {
     utm_source: sanitizeUtm(params.get('utm_source')),
     utm_medium: sanitizeUtm(params.get('utm_medium')),
     utm_campaign: sanitizeUtm(params.get('utm_campaign')),
@@ -43,6 +61,17 @@ export function getUtmParams() {
     utm_term: sanitizeUtm(params.get('utm_term')),
     referral_code: sanitizeUtm(params.get('ref') || params.get('referral_code')),
   };
+
+  // If URL has UTMs, use them directly
+  if (Object.values(fromUrl).some(Boolean)) return fromUrl;
+
+  // Fallback: read from sessionStorage (persisted on landing)
+  try {
+    const stored = sessionStorage.getItem(UTM_SESSION_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch { /* ignore parse errors */ }
+
+  return fromUrl;
 }
 
 /**
