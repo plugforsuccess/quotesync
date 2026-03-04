@@ -91,12 +91,15 @@ export function calculateGrade(outboundCalls, answerRate, hasZeroCallDays, targe
 export function computeMetrics(rcData, daysWorked) {
   const effectiveDays = daysWorked || 5;
   const totalCalls = rcData.total_calls || 0;
+  const inboundCalls = rcData.inbound_calls || 0;
   const answeredCalls = rcData.answered_calls || 0;
   const missedCalls = rcData.missed_calls || 0;
   const transfers = rcData.transfers || 0;
 
-  // When totalCalls is 0, rates are NaN-safe — calculateGrade() skips answer rate axis
-  const answerRate = totalCalls > 0 ? (answeredCalls / totalCalls) * 100 : NaN;
+  // Answer rate uses inbound_calls as denominator — only inbound calls can be answered.
+  // Using total_calls (which includes outbound) produces a misleadingly low rate that
+  // coincides with % Inbound from the RC export instead of % Answered (in).
+  const answerRate = inboundCalls > 0 ? (answeredCalls / inboundCalls) * 100 : NaN;
   const missedCallRate = totalCalls > 0 ? (missedCalls / totalCalls) * 100 : 0;
   const transferRate = totalCalls > 0 ? (transfers / totalCalls) * 100 : 0;
   const avgCallsPerDay = effectiveDays > 0 ? totalCalls / effectiveDays : 0;
