@@ -623,14 +623,12 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
       <StepDescription>Used to calculate your exact rate — never shared.</StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <div>
-          <label htmlFor="street" className="block text-sm font-semibold text-gray-700 mb-1.5">
+          <label htmlFor={manualMode ? 'street' : undefined} className="block text-sm font-semibold text-gray-700 mb-1.5">
             Street Address
           </label>
           {!manualMode ? (
             <AddressAutocomplete
               onAddressSelect={handleAddressSelect}
-              defaultValue={street}
-              className={inputClasses}
             />
           ) : (
             <input
