@@ -135,6 +135,12 @@ const AdminTimeAttendancePage = () => {
     return emp?.full_name || emp?.email || id?.substring(0, 8) || '';
   }
 
+  // Look up the selected employee's schedule defaults
+  const selectedEmployeeData = useMemo(() => {
+    if (!selectedEmployee) return null;
+    return rosterEmployees.find((e) => e.auth_user_id === selectedEmployee || e.id === selectedEmployee) || null;
+  }, [selectedEmployee, rosterEmployees]);
+
   // orgId for upserts — prefer currentAgencyId from auth context
   const orgId = currentAgencyId || agency.currentAgencyId || '';
 
@@ -277,7 +283,7 @@ const AdminTimeAttendancePage = () => {
             </div>
             <div className="bg-green-50 rounded-lg border border-green-100 p-4">
               <div className="text-2xl font-bold text-green-700">
-                {employeesWithEntries} / {allEmployees.length}
+                {employeesWithEntries} / {rosterEmployees.length || allEmployees.length}
               </div>
               <div className="text-sm text-green-600">Employees Entered</div>
             </div>
@@ -324,6 +330,7 @@ const AdminTimeAttendancePage = () => {
                     orgId={orgId}
                     existingEntries={selectedEntries}
                     onSaved={handleSaved}
+                    employeeDefaults={selectedEmployeeData}
                   />
                 )}
               </div>
