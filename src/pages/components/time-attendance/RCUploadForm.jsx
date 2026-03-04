@@ -51,8 +51,10 @@ function parseTimedeltaSeconds(val) {
 }
 
 // ── Column Mapping ──────────────────────────────────────────────────────────────
-// RC XLSX column headers contain special characters (#, %, trailing spaces).
-// We normalize headers to lowercase trimmed strings and match against aliases.
+// RC XLSX column headers use # for counts and % for percentages (e.g.
+// "# Answered (in)" vs "% Answered (in)").  The normalization step preserves
+// these prefixes so that count and percentage columns never collide.
+// Aliases must include the # or % prefix when a same-name counterpart exists.
 
 const COLUMN_MAPPINGS = {
   name:                    ['name', 'user name', 'user', 'agent name', 'agent', 'full name', 'employee'],
@@ -60,8 +62,8 @@ const COLUMN_MAPPINGS = {
   avg_calls_per_day:       ['avg. calls/day', 'avg calls/day', 'avg. calls per day', 'avg calls per day'],
   inbound_calls:           ['# inbound', 'inbound', 'inbound calls', 'calls received'],
   outbound_calls:          ['# outbound', 'outbound', 'outbound calls', 'calls made'],
-  answered_calls:          ['# answered (in)', '# answered', 'answered (in)', 'answered calls'],
-  missed_calls:            ['# missed (w/vm)', '# missed', 'missed calls', 'missed (w/vm)', 'missed'],
+  answered_calls:          ['# answered (in)', '# answered', 'answered calls'],
+  missed_calls:            ['# missed (w/vm)', '# missed', 'missed calls', 'missed'],
   missed_pct:              ['% missed (w/vm)', '% missed', 'missed %', 'missed pct'],
   transfers:               ['# transfers', 'transfers'],
   transfer_pct:            ['% transferred', 'transfer %', 'transferred %', 'transfer pct'],
@@ -76,6 +78,9 @@ const COLUMN_MAPPINGS = {
   total_call_sessions:     ['total call sessions', 'call sessions'],
 };
 
+/** Normalize header to lowercase trimmed string.  Preserves # and % prefixes
+ *  so that count columns (e.g. "# Answered (in)") stay distinct from percentage
+ *  columns (e.g. "% Answered (in)"). */
 function normalizeHeader(h) {
   return String(h).trim().toLowerCase();
 }
