@@ -223,6 +223,7 @@ export default function WeeklyTimeTable({
     'w-full px-2 py-1.5 text-sm border border-gray-200 rounded bg-gray-100 text-gray-400 cursor-not-allowed';
 
   return (
+    <>
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[950px]">
@@ -358,5 +359,23 @@ export default function WeeklyTimeTable({
         )}
       </div>
     </div>
+
+    {/* Code legend */}
+    <div className="flex flex-wrap gap-2 text-xs text-gray-500 mt-3">
+      <span><strong className="text-gray-700">REG</strong> Regular</span>
+      <span className="text-gray-300">|</span>
+      <span><strong className="text-gray-700">WFH</strong> Work from Home</span>
+      <span className="text-gray-300">|</span>
+      <span><strong className="text-gray-700">SICK</strong> Sick (Full Day)</span>
+      <span className="text-gray-300">|</span>
+      <span><strong className="text-gray-700">SICK_PART</strong> Sick (Partial)</span>
+      <span className="text-gray-300">|</span>
+      <span><strong className="text-gray-700">PTO</strong> Paid Time Off</span>
+      <span className="text-gray-300">|</span>
+      <span><strong className="text-gray-700">APPT</strong> Appointment</span>
+      <span className="text-gray-300">|</span>
+      <span><strong className="text-gray-700">EARLY</strong> Left Early</span>
+    </div>
+    </>
   );
 }
