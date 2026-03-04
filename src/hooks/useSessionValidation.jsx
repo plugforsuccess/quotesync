@@ -110,8 +110,17 @@ export const useSessionValidation = (requiredRole = null) => {
       if (event === 'SIGNED_OUT' || event === 'USER_DELETED') {
         setIsValid(false);
         setError('Session expired. Please log in again.');
-      } else if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_IN') {
-        // Re-validate after token refresh or sign in
+      } else if (event === 'TOKEN_REFRESHED') {
+        // Token was just refreshed successfully — session is valid.
+        // Don't call validateSession() here: it fires getSession() + a profile
+        // query, which contends with React Query refetches on tab restore and
+        // can cause queries to hang due to Supabase's internal auth lock.
+        if (session) {
+          setIsValid(true);
+          setError(null);
+        }
+      } else if (event === 'SIGNED_IN') {
+        // Full validation on sign-in (role may change)
         validateSession();
       }
     });

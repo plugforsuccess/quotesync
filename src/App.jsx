@@ -37,29 +37,35 @@ const queryClient = new QueryClient({
 // On tab focus, React Query refetches may race ahead of the Supabase token
 // refresh, producing transient 401s. If the session is still valid after
 // refresh, skip the sign-out — the next refetch will succeed with the new token.
+//
+// Debounced: if 5 queries all fail with 401 at once (e.g. on tab restore with
+// an expired token), we fire only ONE getSession() check instead of 5.
+// This prevents lock contention in the Supabase auth client.
+let authCheckInFlight = false;
+const handleAuthError = (source) => {
+  if (authCheckInFlight) return;
+  authCheckInFlight = true;
+  supabase.auth.getSession().then(({ data }) => {
+    if (!data?.session) {
+      console.warn(`[${source}] Auth error confirmed — no valid session, signing out`);
+      supabase.auth.signOut();
+    } else {
+      console.warn(`[${source}] Auth error was transient (token refreshed) — skipping sign-out`);
+    }
+  }).finally(() => {
+    authCheckInFlight = false;
+  });
+};
+
 queryClient.getQueryCache().config.onError = (error) => {
   if (error?.status === 401 || error?.status === 403) {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data?.session) {
-        console.warn('[QueryCache] Auth error confirmed — no valid session, signing out');
-        supabase.auth.signOut();
-      } else {
-        console.warn('[QueryCache] Auth error was transient (token refreshed) — skipping sign-out');
-      }
-    });
+    handleAuthError('QueryCache');
   }
 };
 
 queryClient.getMutationCache().config.onError = (error) => {
   if (error?.status === 401 || error?.status === 403) {
-    supabase.auth.getSession().then(({ data }) => {
-      if (!data?.session) {
-        console.warn('[MutationCache] Auth error confirmed — no valid session, signing out');
-        supabase.auth.signOut();
-      } else {
-        console.warn('[MutationCache] Auth error was transient (token refreshed) — skipping sign-out');
-      }
-    });
+    handleAuthError('MutationCache');
   }
 };
 
