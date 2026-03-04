@@ -23,6 +23,8 @@ export const SESSION_KEYS = {
   CITY: 'qs_funnel_city',
   MARITAL_STATUS: 'qs_funnel_marital_status',
   ADDRESS_SOURCE: 'qs_funnel_address_source',
+  EARLY_PHONE: 'qs_funnel_early_phone',
+  PHONE_SKIPPED: 'qs_funnel_phone_skipped',
   CURRENT_STEP: 'qs_funnel_current_step',
 };
 
@@ -54,6 +56,8 @@ function restore() {
     email: sessionStorage.getItem(SESSION_KEYS.EMAIL) || '',
     maritalStatus: sessionStorage.getItem(SESSION_KEYS.MARITAL_STATUS) || null,
     addressSource: sessionStorage.getItem(SESSION_KEYS.ADDRESS_SOURCE) || null,
+    earlyPhone: sessionStorage.getItem(SESSION_KEYS.EARLY_PHONE) || '',
+    phoneSkipped: jp(sessionStorage.getItem(SESSION_KEYS.PHONE_SKIPPED), false),
   };
 }
 
@@ -79,6 +83,8 @@ function persistToSession(a) {
     [SESSION_KEYS.EMAIL, a.email],
     [SESSION_KEYS.MARITAL_STATUS, a.maritalStatus],
     [SESSION_KEYS.ADDRESS_SOURCE, a.addressSource],
+    [SESSION_KEYS.EARLY_PHONE, a.earlyPhone],
+    [SESSION_KEYS.PHONE_SKIPPED, a.phoneSkipped ? 'true' : null],
   ];
   pairs.forEach(([k, v]) => {
     if (v != null && v !== '') {
@@ -107,7 +113,7 @@ function persistToSession(a) {
  * Step 11: confirmation
  */
 export function computeStepSequence(answers) {
-  const steps = ['zip', 'ownsHome', 'productIntent'];
+  const steps = ['zip', 'ownsHome', 'productIntent', 'earlyPhone'];
 
   const intent = answers.productIntent;
   const isOwner = answers.ownsHome === true;
@@ -178,15 +184,15 @@ export function useWizard() {
     setAnswers(prev => {
       const next = { ...prev, [field]: value };
 
-      // Renter → clear home-specific data, reset invalid product intent
-      if (field === 'ownsHome' && value === false) {
+      // Renter or Other → clear home-specific data, reset invalid product intent
+      if (field === 'ownsHome' && (value === false || value === 'other')) {
         if (prev.productIntent === 'home' || prev.productIntent === 'bundle') {
           next.productIntent = null;
         }
         next.currentHomeCarrier = null;
         next.homeClaimsHistory = null;
       }
-      // Owner → clear renters carrier if switching from renter
+      // Owner → clear renters carrier if switching from renter/other
       if (field === 'ownsHome' && value === true) {
         // 'renters' is legacy pre-v2.1 — kept for in-flight sessions
         if (prev.productIntent === 'renters' || prev.productIntent === 'auto_renters') {
@@ -211,6 +217,11 @@ export function useWizard() {
         if (value === 'home') {
           next.vehicleCount = null;
         }
+      }
+
+      // Early phone → sync to contact phone field for pre-fill
+      if (field === 'earlyPhone' && value) {
+        next.phone = value;
       }
 
       return next;
@@ -240,7 +251,7 @@ export function useWizard() {
 
   // UX-4: Updated renter product intent options
   const productIntentOptions = useMemo(() => {
-    if (answers.ownsHome === false) {
+    if (answers.ownsHome === false || answers.ownsHome === 'other') {
       return [
         { label: 'Auto Only', value: 'auto', emoji: '🚗' },
         { label: 'Auto + Renters', value: 'auto_renters', emoji: '🚗🏠' },

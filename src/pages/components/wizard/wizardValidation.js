@@ -49,6 +49,13 @@ export function vehicleCountStepValidate(value) {
   return null;
 }
 
+export function earlyPhoneStepValidate(value) {
+  if (value && !isValidPhone(value)) {
+    return 'Please enter a valid 10-digit phone number.';
+  }
+  return null;
+}
+
 export function maritalStatusStepValidate(value) {
   if (!value) return 'Please select one.';
   return null;
@@ -106,6 +113,7 @@ export function validateStep(stepId, answers) {
     case 'zip': return zipStepValidate(answers.zip);
     case 'ownsHome': return ownsHomeStepValidate(answers.ownsHome);
     case 'productIntent': return productIntentStepValidate(answers.productIntent);
+    case 'earlyPhone': return earlyPhoneStepValidate(answers.earlyPhone);
     case 'currentAutoCarrier': return currentAutoCarrierStepValidate(answers.currentAutoCarrier);
     case 'currentHomeCarrier': return currentHomeCarrierStepValidate(answers.currentHomeCarrier);
     case 'currentRentersCarrier': return currentRentersCarrierStepValidate(answers.currentRentersCarrier);
