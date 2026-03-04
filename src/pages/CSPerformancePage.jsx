@@ -57,7 +57,7 @@ function addWeeks(dateStr, n) {
 function formatWeekLabel(weekStart) {
   const start = new Date(weekStart + 'T00:00:00');
   const end = new Date(start);
-  end.setDate(end.getDate() + 6);
+  end.setDate(end.getDate() + 4); // Mon–Fri
   const opts = { month: 'short', day: 'numeric' };
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
