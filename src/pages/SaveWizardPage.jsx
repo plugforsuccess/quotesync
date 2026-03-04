@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion, trackEvent, trackZipSubmitted, trackQuoteAbandoned } from '../lib/analytics';
 import { getSessionId, getUtmParams } from '../lib/leadsApi';
 import { toE164, isValidPhone } from '../utils/phoneFormat';
-import PhoneCapture from '../components/PhoneCapture';
+import { isTargetZip } from '../config/targetZips';
 import {
   ZipStep,
   OwnsHomeStep,
@@ -103,14 +103,12 @@ function hasValueForCurrentStep(stepId, answers) {
 
 export default function SaveWizardPage() {
   const wizard = useWizard();
-  const { answers, setAnswer, currentStepId, currentIndex, direction, isFirstStep, goNext, goBack, productIntentOptions } = wizard;
+  const { answers, setAnswer, currentStepId, currentIndex, setCurrentIndex, direction, isFirstStep, goNext, goBack, productIntentOptions } = wizard;
 
   const [error, setError] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [animKey, setAnimKey] = useState(0);
-  const [showPhoneCapture, setShowPhoneCapture] = useState(false);
-  const phoneCaptured = useRef(false);
 
   const utmParams = useRef(getUtmParams());
   const defaultAgencyId = useRef(null);
@@ -130,6 +128,18 @@ export default function SaveWizardPage() {
       .then(({ data }) => { if (data) defaultAgencyId.current = data.id; });
   }, []);
 
+  // ZIP prefill from landing page URL (e.g. /save?zip=30331)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const prefilledZip = params.get('zip');
+
+    if (prefilledZip?.length === 5 && isTargetZip(prefilledZip) && !answers.zip) {
+      setAnswer('zip', prefilledZip);
+      insertPartialLead(prefilledZip);
+      setCurrentIndex(1); // Skip to step 2 (Own / Rent / Other)
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Trigger animation on step change
   useEffect(() => {
     setAnimKey(prev => prev + 1);
@@ -137,17 +147,18 @@ export default function SaveWizardPage() {
 
   // ─── Partial Lead Insert (at ZIP step) ─────────────────────────
 
-  const insertPartialLead = useCallback(async () => {
+  const insertPartialLead = useCallback(async (zipOverride) => {
     if (partialLeadInserted.current || !defaultAgencyId.current) return;
     partialLeadInserted.current = true;
 
+    const zip = zipOverride || answers.zip;
     try {
       const sessionId = getSessionId();
       const { data } = await supabase.from('leads').insert({
         status: 'partial',
         source: 'funnel',
         agency_id: defaultAgencyId.current,
-        zip: answers.zip,
+        zip,
         state: 'GA',
         session_id: sessionId,
         utm_source: utmParams.current.utm_source,
@@ -160,7 +171,7 @@ export default function SaveWizardPage() {
 
       if (data?.id) {
         sessionStorage.setItem(SESSION_KEYS.LEAD_ID, data.id);
-        trackZipSubmitted(answers.zip);
+        trackZipSubmitted(zip);
       }
     } catch (err) {
       console.error('Failed to create partial lead:', err);
@@ -293,12 +304,9 @@ export default function SaveWizardPage() {
     // Fire step analytics
     trackEvent('funnel_step_completed', { step: stepId, step_index: currentIndex });
 
-    // Insert partial lead when leaving ZIP step + show phone capture
+    // Insert partial lead when leaving ZIP step
     if (stepId === 'zip') {
       insertPartialLead();
-      if (!phoneCaptured.current) {
-        setShowPhoneCapture(true);
-      }
       return;
     }
 
@@ -603,21 +611,6 @@ export default function SaveWizardPage() {
 
               {/* Validation error for non-object errors (single string) */}
               {typeof error === 'string' && <ErrorMessage>{error}</ErrorMessage>}
-
-              {/* Optional Phone Capture — shown on ownsHome step after ZIP */}
-              {showPhoneCapture && currentStepId === 'ownsHome' && (
-                <PhoneCapture
-                  onSave={(e164Phone) => {
-                    updatePartialLead({ phone: e164Phone });
-                    phoneCaptured.current = true;
-                    setShowPhoneCapture(false);
-                  }}
-                  onSkip={() => {
-                    phoneCaptured.current = true;
-                    setShowPhoneCapture(false);
-                  }}
-                />
-              )}
 
               {/* Navigation Buttons — UX-6: visible on all steps after selection */}
               {showNextButton && (
