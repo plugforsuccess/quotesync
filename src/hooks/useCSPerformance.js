@@ -17,6 +17,7 @@ export const csPerformanceKeys = {
   outboundBreakdown: (employeeId, weekStart) => ['cs-outbound-breakdown', employeeId, weekStart],
   trendData: (employeeId, weekStart) => ['cs-trend', employeeId, weekStart],
   teamData: (weekStart) => ['cs-team', weekStart],
+  callLog: (employeeId, weekStart) => ['cs-call-log', employeeId, weekStart],
 };
 
 // ── Per-Employee Targets ────────────────────────────────────────────────────
@@ -248,4 +249,55 @@ export function useTeamData(weekStart) {
     queryFn: () => fetchTeamData(weekStart),
     staleTime: 2 * 60 * 1000,
   });
+}
+
+// ── Call Log Data ─────────────────────────────────────────────────────────────
+
+function addDays(dateStr, days) {
+  const d = new Date(dateStr + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+async function fetchCallLogData(employeeId, weekStart) {
+  if (!employeeId || employeeId === 'all') return [];
+
+  const weekEnd = addDays(weekStart, 4); // Mon-Fri
+
+  const { data, error } = await supabase
+    .from('rc_call_log')
+    .select('*')
+    .eq('employee_user_id', employeeId)
+    .gte('call_date', weekStart)
+    .lte('call_date', weekEnd)
+    .order('call_start_time', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export function useCallLogData(employeeId, weekStart) {
+  return useQuery({
+    queryKey: csPerformanceKeys.callLog(employeeId, weekStart),
+    queryFn: () => fetchCallLogData(employeeId, weekStart),
+    enabled: !!employeeId && employeeId !== 'all',
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useInvalidateCallLog() {
+  const queryClient = useQueryClient();
+  return {
+    invalidateCallLog: (employeeId, weekStart) => {
+      queryClient.invalidateQueries({
+        queryKey: csPerformanceKeys.callLog(employeeId, weekStart),
+      });
+    },
+    invalidateAllCallLogs: () => {
+      queryClient.invalidateQueries({ queryKey: ['cs-call-log'] });
+    },
+  };
 }
