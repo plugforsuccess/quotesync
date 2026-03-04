@@ -239,15 +239,17 @@ export function useRCEmployeeMap(orgId) {
       if (error) throw error;
 
       // Build name -> auth_user_id map for RC upload matching
+      // Keys are trimmed and lowercased so XLSX lookups are case/whitespace-insensitive
       const map = {};
       (data || []).forEach((emp) => {
+        const value = emp.auth_user_id || emp.id;
         if (emp.rc_display_name) {
-          map[emp.rc_display_name] = emp.auth_user_id || emp.id;
+          map[emp.rc_display_name.trim().toLowerCase()] = value;
         }
         // Also map full name as fallback
-        const fullName = `${emp.first_name} ${emp.last_name}`;
+        const fullName = `${emp.first_name} ${emp.last_name}`.trim().toLowerCase();
         if (!map[fullName]) {
-          map[fullName] = emp.auth_user_id || emp.id;
+          map[fullName] = value;
         }
       });
       return map;

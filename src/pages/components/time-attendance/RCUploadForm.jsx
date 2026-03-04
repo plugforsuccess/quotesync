@@ -158,10 +158,11 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       const parsed = rows
         .map((row, idx) => {
           const nKeys = Object.keys(row).map(normalizeHeader);
-          const name = findColumn(row, nKeys, COLUMN_MAPPINGS.name) || '';
-          if (!name) return null;
+          const rawName = findColumn(row, nKeys, COLUMN_MAPPINGS.name) || '';
+          if (!rawName) return null;
+          const name = String(rawName).trim();
 
-          const matchedId = employeeMap?.[name];
+          const matchedId = employeeMap?.[name.toLowerCase()];
           if (!matchedId) {
             parseWarnings.push(`Row ${idx + 2}: "${name}" does not match any known employee.`);
           }
@@ -231,7 +232,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
 
     const records = matchedRows.map((row) => ({
       org_id: orgId,
-      employee_user_id: employeeMap?.[row.employee_name],
+      employee_user_id: employeeMap?.[row.employee_name.toLowerCase()],
       employee_name: row.employee_name,
       week_start: weekStart,
       total_calls: row.total_calls,
