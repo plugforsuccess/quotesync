@@ -69,10 +69,19 @@ export default function WeeklyTimeTable({
   orgId,
   existingEntries,
   onSaved,
+  employeeDefaults,
 }) {
   const weekDates = getWeekDates(weekStart);
 
-  // Build initial rows: use existing entries if available, else defaults
+  // Per-employee schedule defaults (fall back to global defaults)
+  const scheduleDefaults = {
+    startTime: employeeDefaults?.default_start_time?.slice(0, 5) || DEFAULT_ROW.startTime,
+    lunchOut: employeeDefaults?.default_lunch_out?.slice(0, 5) || DEFAULT_ROW.lunchOut,
+    lunchIn: employeeDefaults?.default_lunch_in?.slice(0, 5) || DEFAULT_ROW.lunchIn,
+    endTime: employeeDefaults?.default_end_time?.slice(0, 5) || DEFAULT_ROW.endTime,
+  };
+
+  // Build initial rows: use existing entries if available, else employee defaults
   const buildRows = useCallback(() => {
     return weekDates.map((date) => {
       const existing = existingEntries?.find((e) => e.work_date === date);
@@ -89,9 +98,16 @@ export default function WeeklyTimeTable({
           notes: existing.notes || '',
         };
       }
-      return { date, ...DEFAULT_ROW };
+      return {
+        date,
+        code: DEFAULT_ROW.code,
+        location: DEFAULT_ROW.location,
+        ...scheduleDefaults,
+        unpaidBreak: DEFAULT_ROW.unpaidBreak,
+        notes: DEFAULT_ROW.notes,
+      };
     });
-  }, [weekDates, existingEntries]);
+  }, [weekDates, existingEntries, scheduleDefaults.startTime, scheduleDefaults.lunchOut, scheduleDefaults.lunchIn, scheduleDefaults.endTime]);
 
   const [rows, setRows] = useState(buildRows);
   const [saving, setSaving] = useState(false);
@@ -121,18 +137,18 @@ export default function WeeklyTimeTable({
           row.location = 'WFH';
           // Restore defaults if times were cleared
           if (!row.startTime) {
-            row.startTime = DEFAULT_ROW.startTime;
-            row.lunchOut = DEFAULT_ROW.lunchOut;
-            row.lunchIn = DEFAULT_ROW.lunchIn;
-            row.endTime = DEFAULT_ROW.endTime;
+            row.startTime = scheduleDefaults.startTime;
+            row.lunchOut = scheduleDefaults.lunchOut;
+            row.lunchIn = scheduleDefaults.lunchIn;
+            row.endTime = scheduleDefaults.endTime;
           }
         } else {
           // Restore time defaults if switching from a no-time code
           if (!row.startTime) {
-            row.startTime = DEFAULT_ROW.startTime;
-            row.lunchOut = DEFAULT_ROW.lunchOut;
-            row.lunchIn = DEFAULT_ROW.lunchIn;
-            row.endTime = DEFAULT_ROW.endTime;
+            row.startTime = scheduleDefaults.startTime;
+            row.lunchOut = scheduleDefaults.lunchOut;
+            row.lunchIn = scheduleDefaults.lunchIn;
+            row.endTime = scheduleDefaults.endTime;
           }
         }
       }

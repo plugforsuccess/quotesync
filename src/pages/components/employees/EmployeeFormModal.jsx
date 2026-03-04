@@ -41,6 +41,10 @@ const EMPTY_FORM = {
   hire_date: '',
   allstate_id: '',
   rc_display_name: '',
+  default_start_time: '09:00',
+  default_lunch_out: '12:00',
+  default_lunch_in: '13:00',
+  default_end_time: '18:00',
   is_licensed: false,
   license_verified_date: '',
   professional_designations: [],
@@ -71,6 +75,10 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
         hire_date: employee.hire_date || '',
         allstate_id: employee.allstate_id || '',
         rc_display_name: employee.rc_display_name || '',
+        default_start_time: employee.default_start_time?.slice(0, 5) || '09:00',
+        default_lunch_out: employee.default_lunch_out?.slice(0, 5) || '12:00',
+        default_lunch_in: employee.default_lunch_in?.slice(0, 5) || '13:00',
+        default_end_time: employee.default_end_time?.slice(0, 5) || '18:00',
         is_licensed: employee.is_licensed || false,
         license_verified_date: employee.license_verified_date || '',
         professional_designations: employee.professional_designations || [],
@@ -132,6 +140,10 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
     if (!payload.zip_code) payload.zip_code = null;
     if (!payload.allstate_id) payload.allstate_id = null;
     if (!payload.hire_date) payload.hire_date = null;
+    if (!payload.default_start_time) payload.default_start_time = null;
+    if (!payload.default_lunch_out) payload.default_lunch_out = null;
+    if (!payload.default_lunch_in) payload.default_lunch_in = null;
+    if (!payload.default_end_time) payload.default_end_time = null;
     if (!payload.license_verified_date) payload.license_verified_date = null;
     if (!payload.highest_education) payload.highest_education = null;
     if (payload.professional_designations.length === 0) payload.professional_designations = null;
@@ -311,6 +323,50 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       value={form.rc_display_name}
                       onChange={(e) => handleChange('rc_display_name', e.target.value)}
                       placeholder="e.g. Tracy Peacock"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              {/* Schedule */}
+              <fieldset>
+                <legend className="text-sm font-semibold text-gray-700 mb-3">Default Schedule</legend>
+                <p className="text-xs text-gray-500 mb-3">Pre-fills the Attendance page for this employee each week.</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <input
+                      type="time"
+                      value={form.default_start_time}
+                      onChange={(e) => handleChange('default_start_time', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Lunch Out</label>
+                    <input
+                      type="time"
+                      value={form.default_lunch_out}
+                      onChange={(e) => handleChange('default_lunch_out', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Lunch In</label>
+                    <input
+                      type="time"
+                      value={form.default_lunch_in}
+                      onChange={(e) => handleChange('default_lunch_in', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <input
+                      type="time"
+                      value={form.default_end_time}
+                      onChange={(e) => handleChange('default_end_time', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
