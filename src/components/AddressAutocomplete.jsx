@@ -1,22 +1,7 @@
 // src/components/AddressAutocomplete.jsx
-// Google Places Autocomplete wrapper for the funnel address step
+// Google Places Autocomplete wrapper for the funnel address step.
+// Relies on the Maps JS API script tag loaded in index.html.
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { Loader } from '@googlemaps/js-api-loader';
-
-let loaderPromise = null;
-
-function getGoogleMapsLoader() {
-  if (loaderPromise) return loaderPromise;
-  const apiKey = import.meta.env.VITE_GOOGLE_PLACES_API_KEY;
-  if (!apiKey) return null;
-  const loader = new Loader({
-    apiKey,
-    version: 'weekly',
-    libraries: ['places'],
-  });
-  loaderPromise = loader.load();
-  return loaderPromise;
-}
 
 export default function AddressAutocomplete({ onAddressSelect, defaultValue = '', className = '' }) {
   const inputRef = useRef(null);
@@ -48,18 +33,22 @@ export default function AddressAutocomplete({ onAddressSelect, defaultValue = ''
     onAddressSelect(address);
   }, [onAddressSelect]);
 
-  // Load Google Maps API
+  // Wait for the async Google Maps script to finish loading
   useEffect(() => {
     if (window.google?.maps?.places) {
       setLoaded(true);
       return;
     }
-    const promise = getGoogleMapsLoader();
-    if (!promise) return;
-    promise.then(() => setLoaded(true)).catch(() => {});
+    const interval = setInterval(() => {
+      if (window.google?.maps?.places) {
+        setLoaded(true);
+        clearInterval(interval);
+      }
+    }, 200);
+    return () => clearInterval(interval);
   }, []);
 
-  // Initialize autocomplete once loaded
+  // Initialize autocomplete once the API is available
   useEffect(() => {
     if (!loaded || !inputRef.current || !window.google?.maps?.places) return;
 
