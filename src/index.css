@@ -53,7 +53,6 @@ gmp-placeautocomplete input:focus {
   z-index: 50;
 }
 
-.save-wizard-card .pac-container,
 .save-wizard-card gmp-placeautocomplete::part(list) {
   z-index: 9999 !important;
   max-height: 240px;
