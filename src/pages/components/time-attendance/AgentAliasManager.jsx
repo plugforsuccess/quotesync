@@ -56,7 +56,7 @@ export default function AgentAliasManager({ orgId, employees }) {
         const { count } = await previewBackfill({ orgId, nameKey: backfillKey });
         if (count > 0) {
           const confirmed = window.confirm(
-            `This will update ${count} unmatched call${count !== 1 ? 's' : ''} to ${getEmployeeNameById(employeeUserId)}. Continue?`
+            `This will update up to ${count} unmatched call${count !== 1 ? 's' : ''} to ${getEmployeeNameById(employeeUserId)}. Continue?`
           );
           if (!confirmed) return;
         }

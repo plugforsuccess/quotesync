@@ -18,15 +18,16 @@ ALTER TABLE rc_call_log
 -- Exotic unicode / phone fragments in names are rare in practice; any mismatches
 -- will self-heal when the admin creates an alias (alias_key is the JS-normalized value).
 
--- Postgres-side normalization: NFKC + lower + strip non-alnum (except space/hyphen) + collapse whitespace
--- Matches the JS normalizeAliasKey logic so employee_name_key values are consistent
--- whether set by the migration or by the JS application at ingestion time.
+-- Postgres-side normalization matching JS normalizeAliasKey:
+-- NFKC → lower → strip non-letter/digit/space/hyphen → collapse whitespace
+-- Uses [^\w\s-] which in Postgres respects locale and handles unicode letters,
+-- matching JS's [\p{L}\p{N}\s-] behavior.
 UPDATE rc_call_log
 SET employee_name_key = regexp_replace(
   trim(
     regexp_replace(
       lower(normalize(trim(employee_name), NFKC)),
-      '[^a-z0-9\s-]', '', 'g'
+      '[^\w\s-]', '', 'g'
     )
   ),
   '\s+', ' ', 'g'
