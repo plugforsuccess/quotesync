@@ -14,7 +14,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useTimeEntries, useRCData, useProactivityData, useInvalidateTimeData } from '../hooks/useTimeAttendance';
-import { useRCEmployeeMap, useActiveEmployees } from '../hooks/useEmployees';
+import { useRCEmployeeMap, useActiveEmployees, normalizeAliasKey } from '../hooks/useEmployees';
 import {
   useEmployeeTargets, useSaveTargets,
   useSaveProactivity,
@@ -204,15 +204,15 @@ const CSPerformancePage = () => {
       const value = emp.auth_user_id;
       if (!value) return;
       if (emp.rc_display_name) {
-        map[emp.rc_display_name.trim().toLowerCase()] = value;
+        map[normalizeAliasKey(emp.rc_display_name)] = value;
       }
-      const fullName = `${emp.first_name} ${emp.last_name}`.trim().toLowerCase();
-      if (!map[fullName]) {
+      const fullName = normalizeAliasKey(`${emp.first_name} ${emp.last_name}`);
+      if (fullName && !map[fullName]) {
         map[fullName] = value;
       }
       if (emp.preferred_name) {
-        const prefName = `${emp.preferred_name} ${emp.last_name}`.trim().toLowerCase();
-        if (!map[prefName]) {
+        const prefName = normalizeAliasKey(`${emp.preferred_name} ${emp.last_name}`);
+        if (prefName && !map[prefName]) {
           map[prefName] = value;
         }
       }

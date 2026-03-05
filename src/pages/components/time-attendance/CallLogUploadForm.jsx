@@ -14,6 +14,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Phone, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { normalizeForLookup } from '../../../hooks/useEmployees';
 import * as XLSX from 'xlsx';
 
 // ── Constants ───────────────────────────────────────────────────────────────────
@@ -200,7 +201,7 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
 
   // 3. Agent resolution
   const agentName = resolveAgent(row);
-  const matchedId = agentName ? employeeMap[agentName.toLowerCase()] : null;
+  const matchedId = agentName ? employeeMap[normalizeForLookup(agentName)] : null;
 
   // 4. Queue normalization
   const queue = row.Queue || row.queue || null;

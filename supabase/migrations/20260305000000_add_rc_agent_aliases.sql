@@ -35,6 +35,29 @@ CREATE INDEX idx_rc_agent_aliases_employee
 
 -- ── RLS ──────────────────────────────────────────────────────────────────────────
 
+-- ── RPC: aggregate unmatched agent names server-side ─────────────────────────
+-- Returns { name, count } rows for unmatched agents, grouped and sorted.
+-- This avoids fetching raw rows client-side and respects RLS context.
+
+CREATE OR REPLACE FUNCTION get_unmatched_agent_names(p_org_id uuid)
+RETURNS TABLE(name text, call_count bigint)
+LANGUAGE sql STABLE SECURITY INVOKER
+AS $$
+  SELECT
+    employee_name AS name,
+    count(*)      AS call_count
+  FROM rc_call_log
+  WHERE org_id = p_org_id
+    AND employee_user_id IS NULL
+    AND employee_name IS NOT NULL
+    AND employee_name <> 'Unknown'
+  GROUP BY employee_name
+  ORDER BY call_count DESC
+  LIMIT 200;
+$$;
+
+-- ── RLS ──────────────────────────────────────────────────────────────────────────
+
 ALTER TABLE rc_agent_aliases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rc_agent_aliases FORCE ROW LEVEL SECURITY;
 

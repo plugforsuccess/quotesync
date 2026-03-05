@@ -3,13 +3,14 @@
 // Maps RC display names (aliases) to employees and optionally backfills past calls.
 
 import { useState } from 'react';
-import { UserX, Link2, Trash2, AlertCircle, CheckCircle, RotateCcw } from 'lucide-react';
+import { UserX, Link2, Trash2, AlertCircle, CheckCircle } from 'lucide-react';
 import {
   useAgentAliases,
   useUnmatchedAgents,
   useSaveAgentAlias,
   useDeleteAgentAlias,
   useBackfillAlias,
+  useBackfillPreview,
 } from '../../../hooks/useEmployees';
 
 export default function AgentAliasManager({ orgId, employees }) {
@@ -17,6 +18,7 @@ export default function AgentAliasManager({ orgId, employees }) {
   const { data: unmatchedAgents = [], isLoading: unmatchedLoading } = useUnmatchedAgents(orgId);
   const { mutate: saveAlias, isPending: saving } = useSaveAgentAlias();
   const { mutate: deleteAlias, isPending: deleting } = useDeleteAgentAlias();
+  const { mutateAsync: previewBackfill } = useBackfillPreview();
   const { mutate: backfillAlias, isPending: backfilling } = useBackfillAlias();
 
   const [selectedMapping, setSelectedMapping] = useState({}); // { agentName: employeeUserId }
@@ -26,9 +28,24 @@ export default function AgentAliasManager({ orgId, employees }) {
   // Only show employees with auth_user_id (mappable employees)
   const mappableEmployees = (employees || []).filter((e) => e.auth_user_id);
 
-  function handleSaveAlias(agentName) {
+  async function handleSaveAlias(agentName) {
     const employeeUserId = selectedMapping[agentName];
     if (!employeeUserId) return;
+
+    // If backfill is checked, preview first and confirm
+    if (backfillChecked[agentName]) {
+      try {
+        const { count } = await previewBackfill({ orgId, aliasDisplay: agentName });
+        if (count > 0) {
+          const confirmed = window.confirm(
+            `This will update ${count} unmatched call${count !== 1 ? 's' : ''} to ${getEmployeeNameById(employeeUserId)}. Continue?`
+          );
+          if (!confirmed) return;
+        }
+      } catch {
+        // Preview failed — proceed without confirmation (backfill itself will validate)
+      }
+    }
 
     setFeedback(null);
     saveAlias(

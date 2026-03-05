@@ -251,13 +251,16 @@ export function useRCEmployeeMap(orgId) {
 
       const map = {};
 
+      // All computed keys go through normalizeAliasKey so that
+      // ingestion lookup (also via normalizeAliasKey) always matches.
+
       // Layer 4 (lowest priority): first_name + last_name
       (empResult.data || []).forEach((emp) => {
         const value = emp.auth_user_id;
         if (!value) return; // skip employees without auth linkage
-        const fullName = `${emp.first_name} ${emp.last_name}`.trim().toLowerCase();
-        if (fullName && !map[fullName]) {
-          map[fullName] = value;
+        const key = normalizeAliasKey(`${emp.first_name} ${emp.last_name}`);
+        if (key && !map[key]) {
+          map[key] = value;
         }
       });
 
@@ -265,9 +268,9 @@ export function useRCEmployeeMap(orgId) {
       (empResult.data || []).forEach((emp) => {
         const value = emp.auth_user_id;
         if (!value || !emp.preferred_name) return;
-        const prefName = `${emp.preferred_name} ${emp.last_name}`.trim().toLowerCase();
-        if (prefName && !map[prefName]) {
-          map[prefName] = value;
+        const key = normalizeAliasKey(`${emp.preferred_name} ${emp.last_name}`);
+        if (key && !map[key]) {
+          map[key] = value;
         }
       });
 
@@ -275,10 +278,10 @@ export function useRCEmployeeMap(orgId) {
       (empResult.data || []).forEach((emp) => {
         const value = emp.auth_user_id;
         if (!value || !emp.rc_display_name) return;
-        map[emp.rc_display_name.trim().toLowerCase()] = value;
+        map[normalizeAliasKey(emp.rc_display_name)] = value;
       });
 
-      // Layer 1 (highest priority): alias table (admin decisions override everything)
+      // Layer 1 (highest priority): alias table keys are already normalized at creation time
       if (!aliasResult.error) {
         (aliasResult.data || []).forEach((alias) => {
           map[alias.alias_key] = alias.employee_user_id;
@@ -317,40 +320,59 @@ export function useUnmatchedAgents(orgId) {
   return useQuery({
     queryKey: employeeKeys.unmatchedAgents(orgId),
     queryFn: async () => {
-      // Find distinct unmatched agent names (employee_user_id IS NULL)
+      // Server-side aggregation via RPC (GROUP BY in Postgres, not client-side)
       const { data, error } = await supabase
-        .from('rc_call_log')
-        .select('employee_name')
-        .eq('org_id', orgId)
-        .is('employee_user_id', null)
-        .limit(1000);
+        .rpc('get_unmatched_agent_names', { p_org_id: orgId });
 
       if (error) throw error;
-
-      // Group by name and count occurrences
-      const counts = {};
-      (data || []).forEach((row) => {
-        const name = row.employee_name;
-        if (!name || name === 'Unknown') return;
-        counts[name] = (counts[name] || 0) + 1;
-      });
-
-      return Object.entries(counts)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count);
+      return (data || []).map((row) => ({
+        name: row.name,
+        count: Number(row.call_count),
+      }));
     },
     enabled: !!orgId,
     staleTime: 2 * 60 * 1000,
   });
 }
 
-/** Normalize an alias key: lowercase, collapse whitespace, strip non-alphanumeric (except spaces). */
-function normalizeAliasKey(name) {
-  return name
-    .toLowerCase()
-    .replace(/[^\w\s]/g, '')
-    .replace(/\s+/g, ' ')
-    .trim();
+/**
+ * Normalize an alias key for deterministic many-to-one matching.
+ *
+ * Rules (in order):
+ *  1. NFKC unicode normalization (collapses ligatures, fullwidth, etc.)
+ *  2. NBSP / weird whitespace → regular space, then collapse
+ *  3. Lowercase (no locale — uses base toLowerCase for determinism)
+ *  4. Strip trailing phone fragments the parser may have missed
+ *  5. Remove non-letter, non-digit, non-space, non-hyphen chars
+ *  6. Final whitespace collapse + trim
+ *
+ * IMPORTANT: This function must stay in sync with `normalizeForLookup` below.
+ * Both are used across alias creation, ingestion lookup, and backfill matching.
+ */
+export function normalizeAliasKey(input) {
+  if (!input) return '';
+  let s = String(input).normalize('NFKC');
+  s = s.replace(/\u00A0/g, ' ');
+  s = s.replace(/\s+/g, ' ').trim();
+  s = s.toLowerCase();
+  // Strip phone fragments: "(203) 555-1234", "+12035551234", trailing 10-digit
+  s = s.replace(/\(\d{3}\)\s*\d{3}[-\s]*\d{4}/g, '');
+  s = s.replace(/\+?1?\s*\d{10}\b/g, '');
+  // Keep letters (any script), digits, spaces, hyphens
+  s = s.replace(/[^\p{L}\p{N}\s-]/gu, '');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
+}
+
+/**
+ * Lighter normalization for map lookups during ingestion.
+ * Must produce the same key as normalizeAliasKey for any given display name,
+ * so that alias table entries are found during upload matching.
+ *
+ * Exported so CallLogUploadForm can use the same path instead of bare `.toLowerCase()`.
+ */
+export function normalizeForLookup(name) {
+  return normalizeAliasKey(name);
 }
 
 export function useSaveAgentAlias() {
@@ -408,12 +430,34 @@ export function useDeleteAgentAlias() {
   });
 }
 
+/**
+ * Preview how many rows a backfill would affect (read-only).
+ * Returns { count } so the UI can show "This will update N calls. Continue?"
+ */
+export function useBackfillPreview() {
+  return useMutation({
+    mutationFn: async ({ orgId, aliasDisplay }) => {
+      const { count, error } = await supabase
+        .from('rc_call_log')
+        .select('id', { count: 'exact', head: true })
+        .eq('org_id', orgId)
+        .is('employee_user_id', null)
+        .eq('employee_name', aliasDisplay);
+
+      if (error) throw error;
+      return { count: count || 0 };
+    },
+  });
+}
+
 export function useBackfillAlias() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async ({ orgId, aliasDisplay, employeeUserId }) => {
-      // Update past unmatched call log rows that match this alias
+      // Only update truly-unmatched rows: employee_user_id IS NULL
+      // Match on exact employee_name (raw string as stored at ingestion time)
+      // org_id scoping prevents cross-tenant data leaks
       const { data, error } = await supabase
         .from('rc_call_log')
         .update({ employee_user_id: employeeUserId })
@@ -427,6 +471,8 @@ export function useBackfillAlias() {
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.unmatchedAgents(variables.orgId) });
+      // Invalidate call log data so scorecards reflect newly-attributed calls
+      queryClient.invalidateQueries({ queryKey: ['cs-call-log'] });
     },
   });
 }
