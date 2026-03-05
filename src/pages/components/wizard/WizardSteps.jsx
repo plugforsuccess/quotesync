@@ -903,33 +903,6 @@ export function ConfirmationStep({ answers }) {
         </div>
       </div>
 
-      {/* About Cam */}
-      <div className="bg-white border border-gray-200 rounded-xl p-5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary-200 shadow-lg flex-shrink-0">
-            <img
-              src="/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
-              alt="Cameron Wiley"
-              className="w-full h-full object-cover"
-              style={{ objectPosition: '50% 30%' }}
-            />
-          </div>
-          <div>
-            <h3 className="font-bold text-gray-900">About Cam</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Cameron is a licensed Allstate agent in Georgia who personally reviews every quote.
-            </p>
-            <div className="flex items-center gap-1 mt-1">
-              {[...Array(4)].map((_, i) => (
-                <Star key={i} className="w-3.5 h-3.5 text-accent-500 fill-accent-500" />
-              ))}
-              <Star className="w-3.5 h-3.5 text-gray-300" />
-              <span className="text-xs text-gray-500 ml-1">4.1 (265 reviews)</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Canopy upsell */}
       <div className="bg-gradient-to-br from-accent-50 to-white border border-accent-200 rounded-xl p-5">
         <div className="flex items-center gap-2 mb-3">
@@ -966,6 +939,33 @@ export function ConfirmationStep({ answers }) {
             <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:translate-x-1" />
           </div>
         </button>
+      </div>
+
+      {/* About Cam */}
+      <div className="bg-white border border-gray-200 rounded-xl p-5">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary-200 shadow-lg flex-shrink-0">
+            <img
+              src="/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
+              alt="Cameron Wiley"
+              className="w-full h-full object-cover"
+              style={{ objectPosition: '50% 30%' }}
+            />
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900">About Cam</h3>
+            <p className="text-sm text-gray-600 leading-relaxed">
+              Cameron is a licensed Allstate agent in Georgia who personally reviews every quote.
+            </p>
+            <div className="flex items-center gap-1 mt-1">
+              {[...Array(4)].map((_, i) => (
+                <Star key={i} className="w-3.5 h-3.5 text-accent-500 fill-accent-500" />
+              ))}
+              <Star className="w-3.5 h-3.5 text-gray-300" />
+              <span className="text-xs text-gray-500 ml-1">4.1 (265 reviews)</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
