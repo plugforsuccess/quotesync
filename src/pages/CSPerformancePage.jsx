@@ -200,9 +200,8 @@ const CSPerformancePage = () => {
     if (rcEmployeeMap && Object.keys(rcEmployeeMap).length > 0) return rcEmployeeMap;
     const map = {};
     rosterEmployees.forEach((emp) => {
-      // Only use auth_user_id — emp.id is not in the same identity domain as rc_call_log.employee_user_id
-      const value = emp.auth_user_id;
-      if (!value) return;
+      // auth_user_id for linked employees, employees.id for unlinked
+      const value = emp.auth_user_id || emp.id;
       if (emp.rc_display_name) {
         map[normalizeAliasKey(emp.rc_display_name)] = value;
       }

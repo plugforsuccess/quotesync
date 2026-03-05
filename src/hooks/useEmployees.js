@@ -253,11 +253,13 @@ export function useRCEmployeeMap(orgId) {
 
       // All computed keys go through normalizeAliasKey so that
       // ingestion lookup (also via normalizeAliasKey) always matches.
+      //
+      // Identity value: auth_user_id for linked employees, employees.id for unlinked.
+      // This matches the rc_call_log.employee_user_id convention documented in the schema.
 
       // Layer 4 (lowest priority): first_name + last_name
       (empResult.data || []).forEach((emp) => {
-        const value = emp.auth_user_id;
-        if (!value) return; // skip employees without auth linkage
+        const value = emp.auth_user_id || emp.id;
         const key = normalizeAliasKey(`${emp.first_name} ${emp.last_name}`);
         if (key && !map[key]) {
           map[key] = value;
@@ -266,8 +268,8 @@ export function useRCEmployeeMap(orgId) {
 
       // Layer 3: preferred_name + last_name
       (empResult.data || []).forEach((emp) => {
-        const value = emp.auth_user_id;
-        if (!value || !emp.preferred_name) return;
+        if (!emp.preferred_name) return;
+        const value = emp.auth_user_id || emp.id;
         const key = normalizeAliasKey(`${emp.preferred_name} ${emp.last_name}`);
         if (key && !map[key]) {
           map[key] = value;
@@ -276,8 +278,8 @@ export function useRCEmployeeMap(orgId) {
 
       // Layer 2: rc_display_name (overrides computed names)
       (empResult.data || []).forEach((emp) => {
-        const value = emp.auth_user_id;
-        if (!value || !emp.rc_display_name) return;
+        if (!emp.rc_display_name) return;
+        const value = emp.auth_user_id || emp.id;
         map[normalizeAliasKey(emp.rc_display_name)] = value;
       });
 
