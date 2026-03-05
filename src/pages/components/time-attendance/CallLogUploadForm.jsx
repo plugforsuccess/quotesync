@@ -24,7 +24,12 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const MAX_ROWS = 10000;
 const BATCH_SIZE = 500;
 const VALID_DIRECTIONS = new Set(['Inbound', 'Outbound']);
-const VALID_RESULTS = new Set(['Connected', 'Answered', 'VM/Missed']);
+const VALID_RESULTS = new Set(['Connected', 'Not Connected', 'Answered', 'VM/Missed']);
+// RingCentral uses different result labels per direction
+const VALID_COMBOS = {
+  Outbound: new Set(['Connected', 'Not Connected']),
+  Inbound: new Set(['Answered', 'VM/Missed']),
+};
 const MAX_CALL_DURATION_SEC = 86400; // 24h sanity cap
 
 // Business timezone for preview display (call_date is computed server-side)
@@ -63,6 +68,38 @@ function parseTimedeltaSeconds(val) {
   }
   const num = parseFloat(str);
   return isNaN(num) ? 0 : Math.round(num);
+}
+
+/**
+ * Parse a timezone-naive datetime string as BUSINESS_TZ (Eastern).
+ * RingCentral exports timestamps without timezone info; they're in the
+ * account's local timezone. Using bare `new Date()` would interpret them
+ * as browser-local time, shifting calls by hours and potentially putting
+ * evening calls on the wrong call_date.
+ */
+function parseAsBusinessTz(dateStr) {
+  const s = dateStr.trim();
+  // If the string already has timezone info, parse directly
+  if (/[Zz]$|[+-]\d{2}:?\d{2}$/.test(s)) {
+    return new Date(s);
+  }
+  // Parse as UTC first to get a stable reference point
+  const asUtc = new Date(s.replace(/\s+/, 'T') + 'Z');
+  if (isNaN(asUtc.getTime())) return asUtc;
+  // Find the UTC offset for BUSINESS_TZ at this approximate moment:
+  // Format the UTC instant into BUSINESS_TZ parts, rebuild as UTC,
+  // then the difference is the timezone offset.
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: BUSINESS_TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(asUtc).map((p) => [p.type, p.value]));
+  const inTz = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour % 24, +parts.minute, +parts.second);
+  const offsetMs = inTz - asUtc.getTime();
+  // Subtract offset: "09:15 Eastern" stored as UTC = 09:15 + offset
+  return new Date(asUtc.getTime() - offsetMs);
 }
 
 // ── Display Helpers ─────────────────────────────────────────────────────────────
@@ -170,13 +207,16 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
   if (!VALID_RESULTS.has(result)) {
     return { record: null, error: `Invalid result: "${result}"` };
   }
+  if (!VALID_COMBOS[direction].has(result)) {
+    return { record: null, error: `Invalid ${direction} result: "${result}" (expected ${[...VALID_COMBOS[direction]].join(' or ')})` };
+  }
 
   const callStartStr = (row['Call Start Time'] || row.call_start_time || '').trim();
   if (!callStartStr) {
     return { record: null, error: 'Missing Call Start Time' };
   }
 
-  const callStart = new Date(callStartStr);
+  const callStart = parseAsBusinessTz(callStartStr);
   if (isNaN(callStart.getTime())) {
     return { record: null, error: `Unparseable timestamp: "${callStartStr}"` };
   }
@@ -391,10 +431,33 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Compute file hash for audit trail
+      // Compute file hash for audit trail + duplicate detection
       let fileHash = 'unknown';
       if (fileBufferRef.current) {
         fileHash = await computeSHA256(fileBufferRef.current);
+      }
+
+      // Warn if this exact file was already uploaded
+      if (fileHash !== 'unknown') {
+        const { data: existingBatch } = await supabase
+          .from('rc_call_log_batches')
+          .select('id, created_at, rows_inserted')
+          .eq('org_id', orgId)
+          .eq('source_sha256', fileHash)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existingBatch) {
+          const when = new Date(existingBatch.created_at).toLocaleString();
+          const confirmed = window.confirm(
+            `This file was already uploaded on ${when} (${existingBatch.rows_inserted ?? '?'} rows inserted). Upload again?`
+          );
+          if (!confirmed) {
+            setUploading(false);
+            return;
+          }
+        }
       }
 
       // Create ingestion batch record
@@ -538,7 +601,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           <ul className="list-disc list-inside space-y-1 text-blue-700">
             <li><strong>From Name</strong>, <strong>To Name</strong> &mdash; agent identification</li>
             <li><strong>Call Direction</strong> &mdash; Inbound or Outbound</li>
-            <li><strong>Result</strong> &mdash; Connected, Answered, or VM/Missed</li>
+            <li><strong>Result</strong> &mdash; Connected, Not Connected, Answered, or VM/Missed</li>
             <li><strong>Call Length</strong>, <strong>Handle Time</strong> &mdash; HH:MM:SS</li>
             <li><strong>Queue</strong> &mdash; Sales or Service queue name</li>
           </ul>
@@ -622,6 +685,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                     <td className="px-3 py-2">
                       <span className={`text-xs font-medium ${
                         row.call_result === 'VM/Missed' ? 'text-red-600' :
+                        row.call_result === 'Not Connected' ? 'text-amber-600' :
                         row.call_result === 'Connected' ? 'text-blue-600' : 'text-green-600'
                       }`}>
                         {row.call_result === 'VM/Missed' ? 'Missed' : row.call_result}

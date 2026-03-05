@@ -87,8 +87,10 @@ export default function CallLogTable({ calls }) {
   const filtered = useMemo(() => {
     return calls.filter((c) => {
       if (dirFilter !== 'all' && c.call_direction !== dirFilter) return false;
-      if (resultFilter === 'Answered' && c.call_result !== 'Answered') return false;
-      if (resultFilter === 'Missed' && c.call_result !== 'VM/Missed') return false;
+      if (resultFilter !== 'all') {
+        if (resultFilter === 'Missed' && c.call_result !== 'VM/Missed') return false;
+        if (resultFilter !== 'Missed' && c.call_result !== resultFilter) return false;
+      }
       if (queueFilter !== 'all' && (c.queue_type || 'none') !== queueFilter) return false;
       if (dateFilter !== 'all' && c.call_date !== dateFilter) return false;
       return true;
@@ -144,6 +146,8 @@ export default function CallLogTable({ calls }) {
               options={[
                 { value: 'all', label: 'All' },
                 { value: 'Answered', label: 'Answered' },
+                { value: 'Connected', label: 'Connected' },
+                { value: 'Not Connected', label: 'Not Connected' },
                 { value: 'Missed', label: 'Missed' },
               ]}
               value={resultFilter}
@@ -224,6 +228,7 @@ export default function CallLogTable({ calls }) {
                       <td className="px-4 py-2">
                         <span className={`text-xs font-medium ${
                           call.call_result === 'VM/Missed' ? 'text-red-600' :
+                          call.call_result === 'Not Connected' ? 'text-amber-600' :
                           call.call_result === 'Connected' ? 'text-blue-600' : 'text-green-600'
                         }`}>
                           {call.call_result === 'VM/Missed' ? 'Missed' : call.call_result}

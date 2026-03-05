@@ -281,13 +281,18 @@ export function useRCEmployeeMap(orgId) {
       (empResult.data || []).forEach((emp) => {
         if (!emp.rc_display_name) return;
         const value = emp.auth_user_id || emp.id;
-        map[normalizeAliasKey(emp.rc_display_name)] = value;
+        const key = normalizeAliasKey(emp.rc_display_name);
+        if (key) {
+          map[key] = value;
+        }
       });
 
       // Layer 1 (highest priority): alias table keys are already normalized at creation time
       if (!aliasResult.error) {
         (aliasResult.data || []).forEach((alias) => {
-          map[alias.alias_key] = alias.employee_user_id;
+          if (alias.alias_key) {
+            map[alias.alias_key] = alias.employee_user_id;
+          }
         });
       }
 
@@ -385,6 +390,7 @@ export function useSaveAgentAlias() {
   return useMutation({
     mutationFn: async ({ orgId, aliasDisplay, employeeUserId }) => {
       const aliasKey = normalizeAliasKey(aliasDisplay);
+      if (!aliasKey) throw new Error('Agent name is empty after normalization');
       const { data: { user } } = await supabase.auth.getUser();
 
       // Check for existing active alias with this key (partial unique index).
@@ -412,7 +418,8 @@ export function useSaveAgentAlias() {
           .select()
           .single());
       } else {
-        // Insert new alias
+        // Insert new alias; if a concurrent save created one first (TOCTOU race),
+        // catch the unique constraint violation and fall back to update.
         ({ data, error } = await supabase
           .from('rc_agent_aliases')
           .insert({
@@ -426,6 +433,29 @@ export function useSaveAgentAlias() {
           })
           .select()
           .single());
+
+        if (error?.code === '23505') {
+          // Unique violation — another admin won the race; update instead
+          const { data: raced } = await supabase
+            .from('rc_agent_aliases')
+            .select('id')
+            .eq('org_id', orgId)
+            .eq('alias_key', aliasKey)
+            .eq('active', true)
+            .maybeSingle();
+          if (raced) {
+            ({ data, error } = await supabase
+              .from('rc_agent_aliases')
+              .update({
+                alias_display: aliasDisplay,
+                employee_user_id: employeeUserId,
+                created_by: user?.id,
+              })
+              .eq('id', raced.id)
+              .select()
+              .single());
+          }
+        }
       }
 
       if (error) throw error;
