@@ -60,3 +60,16 @@ gmp-placeautocomplete input:focus {
   border-radius: 0.75rem;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
+
+/* Canopy Connect modal — enlarge on desktop viewports.
+   The embed.js script injects an iframe (src contains usecanopy.com)
+   inside a container. Override the default mobile-sized dimensions so
+   the modal fills more of the screen on wider displays. */
+@media (min-width: 768px) {
+  iframe[src*="usecanopy.com"] {
+    width: 480px  !important;
+    height: 720px !important;
+    max-height: 90vh !important;
+    border-radius: 12px !important;
+  }
+}
