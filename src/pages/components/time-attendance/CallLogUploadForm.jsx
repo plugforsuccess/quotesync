@@ -83,8 +83,22 @@ function parseAsBusinessTz(dateStr) {
   if (/[Zz]$|[+-]\d{2}:?\d{2}$/.test(s)) {
     return new Date(s);
   }
-  // Parse as UTC first to get a stable reference point
-  const asUtc = new Date(s.replace(/\s+/, 'T') + 'Z');
+
+  // Handle MM/DD/YYYY h:mm:ss AM/PM format (RingCentral export default)
+  const ampmMatch = s.match(
+    /^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)$/i
+  );
+  let asUtc;
+  if (ampmMatch) {
+    const [, mon, day, year, rawHr, min, sec, meridiem] = ampmMatch;
+    let hr = parseInt(rawHr, 10);
+    if (meridiem.toUpperCase() === 'AM' && hr === 12) hr = 0;
+    if (meridiem.toUpperCase() === 'PM' && hr !== 12) hr += 12;
+    asUtc = new Date(Date.UTC(+year, +mon - 1, +day, hr, +min, +sec));
+  } else {
+    // ISO-ish format: "YYYY-MM-DD HH:mm:ss"
+    asUtc = new Date(s.replace(/\s+/, 'T') + 'Z');
+  }
   if (isNaN(asUtc.getTime())) return asUtc;
   // Find the UTC offset for BUSINESS_TZ at this approximate moment:
   // Format the UTC instant into BUSINESS_TZ parts, rebuild as UTC,
