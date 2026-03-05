@@ -387,21 +387,46 @@ export function useSaveAgentAlias() {
       const aliasKey = normalizeAliasKey(aliasDisplay);
       const { data: { user } } = await supabase.auth.getUser();
 
-      const { data, error } = await supabase
+      // Check for existing active alias with this key (partial unique index).
+      // PostgREST upsert doesn't reliably handle partial unique indexes,
+      // so we do an explicit check-then-update/insert.
+      const { data: existing } = await supabase
         .from('rc_agent_aliases')
-        .upsert({
-          org_id: orgId,
-          alias_key: aliasKey,
-          alias_display: aliasDisplay,
-          employee_user_id: employeeUserId,
-          created_by: user?.id,
-          source: 'manual',
-          active: true,
-        }, {
-          onConflict: 'org_id,alias_key',
-        })
-        .select()
-        .single();
+        .select('id')
+        .eq('org_id', orgId)
+        .eq('alias_key', aliasKey)
+        .eq('active', true)
+        .maybeSingle();
+
+      let data, error;
+      if (existing) {
+        // Update existing active alias
+        ({ data, error } = await supabase
+          .from('rc_agent_aliases')
+          .update({
+            alias_display: aliasDisplay,
+            employee_user_id: employeeUserId,
+            created_by: user?.id,
+          })
+          .eq('id', existing.id)
+          .select()
+          .single());
+      } else {
+        // Insert new alias
+        ({ data, error } = await supabase
+          .from('rc_agent_aliases')
+          .insert({
+            org_id: orgId,
+            alias_key: aliasKey,
+            alias_display: aliasDisplay,
+            employee_user_id: employeeUserId,
+            created_by: user?.id,
+            source: 'manual',
+            active: true,
+          })
+          .select()
+          .single());
+      }
 
       if (error) throw error;
       return data;
@@ -462,20 +487,17 @@ export function useBackfillAlias() {
 
   return useMutation({
     mutationFn: async ({ orgId, nameKey, employeeUserId }) => {
-      // Match on normalized key — catches all whitespace/case/punctuation variants
-      // of the same agent name in a single backfill.
-      // Only update truly-unmatched rows: employee_user_id IS NULL
-      // org_id scoping prevents cross-tenant data leaks
+      // Use server-side RPC that safely skips rows which would violate
+      // the dedup UNIQUE constraint (same employee + start_time + direction + result).
       const { data, error } = await supabase
-        .from('rc_call_log')
-        .update({ employee_user_id: employeeUserId })
-        .eq('org_id', orgId)
-        .is('employee_user_id', null)
-        .eq('employee_name_key', nameKey)
-        .select('id');
+        .rpc('backfill_alias', {
+          p_org_id: orgId,
+          p_name_key: nameKey,
+          p_employee_user_id: employeeUserId,
+        });
 
       if (error) throw error;
-      return { updated: data?.length || 0 };
+      return { updated: data || 0 };
     },
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: employeeKeys.unmatchedAgents(variables.orgId) });
