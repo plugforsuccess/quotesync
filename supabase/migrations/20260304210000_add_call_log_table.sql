@@ -75,7 +75,7 @@ COMMENT ON TABLE rc_call_log_batches IS 'Audit trail for call log uploads. Each 
 CREATE TABLE IF NOT EXISTS rc_call_log (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   org_id uuid NOT NULL,
-  employee_user_id uuid REFERENCES auth.users(id),
+  employee_user_id uuid,            -- no FK: values come from employees.auth_user_id, not auth.users
   employee_name text NOT NULL,
 
   -- Call data
@@ -103,16 +103,22 @@ CREATE TABLE IF NOT EXISTS rc_call_log (
 
   -- Audit / provenance
   ingestion_batch_id uuid REFERENCES rc_call_log_batches(id),
-  uploaded_by uuid REFERENCES auth.users(id),
+  uploaded_by uuid,                 -- denormalized from batch; no FK to avoid insert failures
   uploaded_at timestamptz DEFAULT now(),
   source_filename text,       -- denormalized from batch for quick reference
 
   -- PII retention: records expire after 180 days from upload
   retention_expires_at timestamptz NOT NULL DEFAULT (now() + interval '180 days'),
 
-  -- Prevent duplicate uploads
+  -- Prevent duplicate uploads (matched employees — employee_user_id is NOT NULL)
   UNIQUE(org_id, employee_user_id, call_start_time, call_direction, call_result)
 );
+
+-- Dedup for unmatched rows (employee_user_id IS NULL) — uses employee_name as fallback key.
+-- Without this, NULLs in the UNIQUE constraint would allow unbounded duplicate inserts.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rc_call_log_dedup_unmatched
+  ON rc_call_log(org_id, employee_name, call_start_time, call_direction, call_result)
+  WHERE employee_user_id IS NULL;
 
 -- Indexes for common query patterns
 CREATE INDEX IF NOT EXISTS idx_rc_call_log_employee_date
