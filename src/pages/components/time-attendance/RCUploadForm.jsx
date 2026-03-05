@@ -304,10 +304,10 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <FileSpreadsheet className="w-6 h-6 text-blue-600" />
+          <FileSpreadsheet className="w-6 h-6 text-gray-500" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Upload RingCentral Data</h3>
-            <p className="text-sm text-gray-500">XLSX export from User Performance report</p>
+            <h3 className="text-lg font-semibold text-gray-900">Weekly Summary (Optional)</h3>
+            <p className="text-sm text-gray-500">Upload the User Performance summary for Speed of Answer and Hold Time metrics. All other metrics are derived from the daily call log.</p>
           </div>
         </div>
         <button

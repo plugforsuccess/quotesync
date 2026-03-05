@@ -582,13 +582,13 @@ export default function SaveWizardPage() {
           )}
 
           {/* Wizard Card */}
-          <div className="relative group">
+          <div className="relative group isolate">
             <div className={`absolute -inset-0.5 rounded-2xl opacity-75 blur-sm ${
               isConfirmation
                 ? 'bg-gradient-to-r from-success-400 to-success-600'
                 : 'bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600'
             }`}></div>
-            <div className="relative bg-white rounded-2xl shadow-2xl p-6 sm:p-8 overflow-hidden">
+            <div className="save-wizard-card relative bg-white rounded-2xl shadow-2xl p-6 sm:p-8 overflow-visible">
               {/* Submit error banner */}
               {submitError && (
                 <div className="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">

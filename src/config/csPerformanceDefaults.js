@@ -45,48 +45,75 @@ export const OUTBOUND_CATEGORIES = [
 ];
 
 /**
- * Calculate grade from outbound calls and answer rate against targets.
+ * Calculate grade from call log metrics (primary) and optional summary data.
  *
- * Two-axis model: outbound volume + answer rate. Final grade = lowest axis.
- * If answer rate data is unavailable (0 total calls), grade on outbound only.
+ * Three-axis model: outbound volume (25%) + answer rate (20%) + outbound consistency (15%).
+ * Final grade = lowest axis.
  * Zero-call days force an F regardless of other metrics.
  *
- * Examples:
- *   outbound=50 (B), answerRate=88% (D)           → D (lowest axis)
- *   outbound=65 (A), answerRate=99% (A), zeroDays  → F (zero-call override)
- *   outbound=45 (B), answerRate=NaN (0 calls)     → B (answer rate skipped)
+ * Accepts either the new call-log-based metrics object or legacy positional args.
  */
-export function calculateGrade(outboundCalls, answerRate, hasZeroCallDays, targets) {
+export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCallDaysOrTargets, targetsArg) {
+  // Support both new signature: calculateGrade(metrics, summaryData, targets)
+  // and legacy signature: calculateGrade(outboundCalls, answerRate, hasZeroCallDays, targets)
+  let outboundCalls, answerRate, hasZeroCallDays, zeroDays, outboundEveryDay, targets;
+
+  if (typeof metricsOrOutbound === 'object' && metricsOrOutbound !== null && 'outboundAttempts' in metricsOrOutbound) {
+    // New call-log-based signature
+    const metrics = metricsOrOutbound;
+    outboundCalls = metrics.outboundAttempts;
+    answerRate = metrics.answerRate;
+    hasZeroCallDays = metrics.hasZeroCallDays;
+    zeroDays = metrics.zeroDays || [];
+    outboundEveryDay = metrics.outboundEveryDay;
+    targets = hasZeroCallDaysOrTargets;
+  } else {
+    // Legacy signature
+    outboundCalls = metricsOrOutbound;
+    answerRate = answerRateOrSummary;
+    hasZeroCallDays = hasZeroCallDaysOrTargets;
+    zeroDays = [];
+    outboundEveryDay = true; // unknown in legacy mode
+    targets = targetsArg;
+  }
+
   // F override — zero-call days always fail regardless of other metrics
   if (hasZeroCallDays) return 'F';
 
   const t = { ...DEFAULT_TARGETS, ...targets };
 
-  // Outbound-based grade (always available)
+  // Axis 1: Outbound volume (25%)
   let outGrade;
   if (outboundCalls >= t.grade_a_outbound) outGrade = 4;
   else if (outboundCalls >= t.grade_b_outbound) outGrade = 3;
   else if (outboundCalls >= t.grade_c_outbound) outGrade = 2;
   else outGrade = 1;
 
-  // Answer-rate-based grade — skip if data unavailable (0 total calls yields NaN/0)
-  const hasAnswerData = answerRate > 0 || answerRate === 0;
-  let arGrade = outGrade; // default: don't penalize if no inbound data
-  if (hasAnswerData && isFinite(answerRate)) {
+  // Axis 2: Answer rate (20%) — skip if data unavailable
+  let arGrade = 4; // default: don't penalize if no inbound data
+  if (isFinite(answerRate)) {
     if (answerRate >= t.grade_a_answer_rate) arGrade = 4;
     else if (answerRate >= t.grade_b_answer_rate) arGrade = 3;
     else if (answerRate >= t.grade_c_answer_rate) arGrade = 2;
     else arGrade = 1;
   }
 
+  // Axis 3: Outbound consistency (15%)
+  const zeroDayCount = zeroDays.length || 0;
+  let consistGrade;
+  if (outboundEveryDay) consistGrade = 4;
+  else if (zeroDayCount <= 1) consistGrade = 3;
+  else if (zeroDayCount <= 2) consistGrade = 2;
+  else consistGrade = 1;
+
   // Final grade = lowest axis
-  const combined = Math.min(outGrade, arGrade);
+  const combined = Math.min(outGrade, arGrade, consistGrade);
   const map = { 4: 'A', 3: 'B', 2: 'C', 1: 'D' };
   return map[combined] || 'D';
 }
 
 /**
- * Compute derived metrics from raw RC data.
+ * Compute derived metrics from raw RC summary data (legacy).
  */
 export function computeMetrics(rcData, daysWorked) {
   const effectiveDays = daysWorked || 5;
@@ -96,9 +123,6 @@ export function computeMetrics(rcData, daysWorked) {
   const missedCalls = rcData.missed_calls || 0;
   const transfers = rcData.transfers || 0;
 
-  // Answer rate uses inbound_calls as denominator — only inbound calls can be answered.
-  // Using total_calls (which includes outbound) produces a misleadingly low rate that
-  // coincides with % Inbound from the RC export instead of % Answered (in).
   const answerRate = inboundCalls > 0 ? (answeredCalls / inboundCalls) * 100 : NaN;
   const missedCallRate = totalCalls > 0 ? (missedCalls / totalCalls) * 100 : 0;
   const transferRate = totalCalls > 0 ? (transfers / totalCalls) * 100 : 0;
@@ -119,4 +143,165 @@ export function computeMetrics(rcData, daysWorked) {
     hasZeroCallDays,
     outboundEveryDay,
   };
+}
+
+// Business timezone for day boundary computation.
+// All "call_date" values in the DB are already computed in this tz at ingest time.
+const BUSINESS_TZ = 'America/New_York';
+
+/**
+ * Compute metrics from call log data (new primary source).
+ * call_date values are assumed to already be in business tz (set at ingest).
+ */
+export function computeCallLogMetrics(calls, weekStart) {
+  if (!calls || calls.length === 0) {
+    return {
+      totalCalls: 0,
+      outboundAttempts: 0,
+      outboundConnected: 0,
+      outboundConnectRate: 0,
+      inboundTotal: 0,
+      inboundAnswered: 0,
+      inboundMissed: 0,
+      answerRate: NaN,
+      salesCalls: 0,
+      serviceCalls: 0,
+      salesPct: 0,
+      servicePct: 0,
+      avgHandleTimeMin: 0,
+      totalHandleTimeMin: 0,
+      longestCall: null,
+      hasLongCall: false,
+      hasZeroCallDays: false,
+      zeroDays: [],
+      outboundEveryDay: true,
+      daily: [],
+      avgOutboundPerDay: 0,
+      avgCallsPerDay: 0,
+      daysWorked: 0,
+    };
+  }
+
+  // ── Outbound metrics ──
+  const outbound = calls.filter((c) => c.call_direction === 'Outbound');
+  const outboundAttempts = outbound.length;
+  const outboundConnected = outbound.filter((c) => c.call_result === 'Connected').length;
+  const outboundConnectRate = outboundAttempts > 0
+    ? (outboundConnected / outboundAttempts) * 100 : 0;
+
+  // ── Inbound metrics ──
+  const inbound = calls.filter((c) => c.call_direction === 'Inbound');
+  const inboundAnswered = inbound.filter((c) => c.call_result === 'Answered').length;
+  const inboundMissed = inbound.filter((c) => c.call_result === 'VM/Missed').length;
+  const inboundTotal = inbound.length;
+  const answerRate = inboundTotal > 0
+    ? (inboundAnswered / inboundTotal) * 100 : NaN;
+
+  // ── Queue split ──
+  const salesCalls = inbound.filter((c) => c.queue_type === 'sales').length;
+  const serviceCalls = inbound.filter((c) => c.queue_type === 'service').length;
+  const salesPct = inboundTotal > 0 ? (salesCalls / inboundTotal) * 100 : 0;
+  const servicePct = inboundTotal > 0 ? (serviceCalls / inboundTotal) * 100 : 0;
+
+  // ── Handle time ──
+  const callsWithHandle = calls.filter((c) => c.handle_time_seconds > 0);
+  const avgHandleTimeSec = callsWithHandle.length > 0
+    ? callsWithHandle.reduce((sum, c) => sum + c.handle_time_seconds, 0) / callsWithHandle.length
+    : 0;
+  const avgHandleTimeMin = avgHandleTimeSec / 60;
+  const totalHandleTimeMin = callsWithHandle.reduce((sum, c) => sum + c.handle_time_seconds, 0) / 60;
+
+  // ── Longest call flag ──
+  const longestCall = calls.reduce((max, c) =>
+    c.call_length_seconds > (max?.call_length_seconds || 0) ? c : max, null);
+  const hasLongCall = longestCall && longestCall.call_length_seconds > 1800;
+
+  // ── Daily breakdown ──
+  const dailyMap = {};
+  for (const call of calls) {
+    if (!dailyMap[call.call_date]) {
+      dailyMap[call.call_date] = {
+        date: call.call_date,
+        outbound: 0,
+        inbound: 0,
+        answered: 0,
+        missed: 0,
+        total: 0,
+        handle_seconds: 0,
+        handle_count: 0,
+        first_call_time: call.call_start_time,
+        last_call_time: call.call_start_time,
+      };
+    }
+    const day = dailyMap[call.call_date];
+    day.total++;
+    if (call.call_direction === 'Outbound') day.outbound++;
+    if (call.call_direction === 'Inbound') day.inbound++;
+    if (call.call_result === 'Answered') day.answered++;
+    if (call.call_result === 'VM/Missed') day.missed++;
+    if (call.handle_time_seconds > 0) {
+      day.handle_seconds += call.handle_time_seconds;
+      day.handle_count++;
+    }
+    if (call.call_start_time < day.first_call_time) day.first_call_time = call.call_start_time;
+    if (call.call_start_time > day.last_call_time) day.last_call_time = call.call_start_time;
+  }
+  const daily = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
+
+  // ── Zero-call days and outbound consistency ──
+  const workdays = getWorkdaysInRange(weekStart, 5);
+  const daysWithCalls = new Set(calls.map((c) => c.call_date));
+  const zeroDays = workdays.filter((d) => !daysWithCalls.has(d));
+  const hasZeroCallDays = zeroDays.length > 0;
+
+  const daysWithOutbound = new Set(outbound.map((c) => c.call_date));
+  const outboundEveryDay = workdays.every((d) => daysWithOutbound.has(d));
+
+  // ── Per-day averages ──
+  const daysWorked = workdays.filter((d) => daysWithCalls.has(d)).length || 1;
+  const avgOutboundPerDay = outboundAttempts / daysWorked;
+  const avgCallsPerDay = calls.length / daysWorked;
+
+  return {
+    totalCalls: calls.length,
+    outboundAttempts,
+    outboundConnected,
+    outboundConnectRate,
+    inboundTotal,
+    inboundAnswered,
+    inboundMissed,
+    answerRate,
+    salesCalls,
+    serviceCalls,
+    salesPct,
+    servicePct,
+    avgHandleTimeMin,
+    totalHandleTimeMin,
+    longestCall,
+    hasLongCall,
+    hasZeroCallDays,
+    zeroDays,
+    outboundEveryDay,
+    daily,
+    avgOutboundPerDay,
+    avgCallsPerDay,
+    daysWorked,
+  };
+}
+
+/**
+ * Get array of workday date strings (Mon-Fri) starting from weekStart.
+ */
+function getWorkdaysInRange(weekStart, count) {
+  const days = [];
+  const start = new Date(weekStart + 'T00:00:00');
+  for (let i = 0; i < count; i++) {
+    const d = new Date(start);
+    d.setDate(d.getDate() + i);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    days.push(`${y}-${m}-${day}`);
+  }
+  return days;
 }
