@@ -127,7 +127,7 @@ CREATE INDEX IF NOT EXISTS idx_rc_call_log_batch
   ON rc_call_log(ingestion_batch_id);
 -- Partial index for retention purge job
 CREATE INDEX IF NOT EXISTS idx_rc_call_log_retention
-  ON rc_call_log(retention_expires_at) WHERE retention_expires_at < now();
+  ON rc_call_log(retention_expires_at) WHERE retention_expires_at IS NOT NULL;
 
 
 -- ── RLS ──────────────────────────────────────────────────────────────────────
