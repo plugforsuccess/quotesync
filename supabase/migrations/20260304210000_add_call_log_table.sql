@@ -27,7 +27,7 @@
 
 CREATE TABLE IF NOT EXISTS rc_call_log_batches (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  org_id uuid NOT NULL REFERENCES organizations(id),
+  org_id uuid NOT NULL,
   uploaded_by uuid NOT NULL REFERENCES auth.users(id),
   uploaded_at timestamptz NOT NULL DEFAULT now(),
   source_filename text NOT NULL,         -- original filename (no path)
@@ -74,7 +74,7 @@ COMMENT ON TABLE rc_call_log_batches IS 'Audit trail for call log uploads. Each 
 
 CREATE TABLE IF NOT EXISTS rc_call_log (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  org_id uuid NOT NULL REFERENCES organizations(id),
+  org_id uuid NOT NULL,
   employee_user_id uuid REFERENCES auth.users(id),
   employee_name text NOT NULL,
 
