@@ -33,8 +33,12 @@ CREATE INDEX IF NOT EXISTS idx_rc_call_log_unmatched_key
   WHERE employee_user_id IS NULL;
 
 -- ── Update the unmatched aggregation RPC to use the normalized key ────────────────
+-- Must DROP first: changing RETURNS TABLE signature is not allowed with OR REPLACE
+-- (Postgres error 42P13). Safe for SECURITY INVOKER functions with no dependent grants.
 
-CREATE OR REPLACE FUNCTION get_unmatched_agent_names(p_org_id uuid)
+DROP FUNCTION IF EXISTS get_unmatched_agent_names(uuid);
+
+CREATE FUNCTION get_unmatched_agent_names(p_org_id uuid)
 RETURNS TABLE(name text, name_key text, call_count bigint)
 LANGUAGE sql STABLE SECURITY INVOKER
 AS $$
