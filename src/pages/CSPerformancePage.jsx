@@ -200,19 +200,18 @@ const CSPerformancePage = () => {
     if (rcEmployeeMap && Object.keys(rcEmployeeMap).length > 0) return rcEmployeeMap;
     const map = {};
     rosterEmployees.forEach((emp) => {
-      // Only auth_user_id is valid — FK on rc_call_log.employee_user_id references auth.users
-      if (!emp.auth_user_id) return;
+      const value = emp.auth_user_id || emp.id;
       if (emp.rc_display_name) {
-        map[normalizeAliasKey(emp.rc_display_name)] = emp.auth_user_id;
+        map[normalizeAliasKey(emp.rc_display_name)] = value;
       }
       const fullName = normalizeAliasKey(`${emp.first_name} ${emp.last_name}`);
       if (fullName && !map[fullName]) {
-        map[fullName] = emp.auth_user_id;
+        map[fullName] = value;
       }
       if (emp.preferred_name) {
         const prefName = normalizeAliasKey(`${emp.preferred_name} ${emp.last_name}`);
         if (prefName && !map[prefName]) {
-          map[prefName] = emp.auth_user_id;
+          map[prefName] = value;
         }
       }
     });

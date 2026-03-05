@@ -254,33 +254,34 @@ export function useRCEmployeeMap(orgId) {
       // All computed keys go through normalizeAliasKey so that
       // ingestion lookup (also via normalizeAliasKey) always matches.
       //
-      // Only employees with auth_user_id can be matched at ingestion time,
-      // because rc_call_log.employee_user_id has a FK to auth.users(id).
-      // Unlinked employees (no auth account) must be resolved post-upload
-      // via the alias system + backfill.
+      // Identity value: auth_user_id for linked employees, employees.id
+      // for unlinked employees (no app login). Both are valid UUIDs stored
+      // in rc_call_log.employee_user_id (no FK constraint).
 
       // Layer 4 (lowest priority): first_name + last_name
       (empResult.data || []).forEach((emp) => {
-        if (!emp.auth_user_id) return;
+        const value = emp.auth_user_id || emp.id;
         const key = normalizeAliasKey(`${emp.first_name} ${emp.last_name}`);
         if (key && !map[key]) {
-          map[key] = emp.auth_user_id;
+          map[key] = value;
         }
       });
 
       // Layer 3: preferred_name + last_name
       (empResult.data || []).forEach((emp) => {
-        if (!emp.auth_user_id || !emp.preferred_name) return;
+        if (!emp.preferred_name) return;
+        const value = emp.auth_user_id || emp.id;
         const key = normalizeAliasKey(`${emp.preferred_name} ${emp.last_name}`);
         if (key && !map[key]) {
-          map[key] = emp.auth_user_id;
+          map[key] = value;
         }
       });
 
       // Layer 2: rc_display_name (overrides computed names)
       (empResult.data || []).forEach((emp) => {
-        if (!emp.auth_user_id || !emp.rc_display_name) return;
-        map[normalizeAliasKey(emp.rc_display_name)] = emp.auth_user_id;
+        if (!emp.rc_display_name) return;
+        const value = emp.auth_user_id || emp.id;
+        map[normalizeAliasKey(emp.rc_display_name)] = value;
       });
 
       // Layer 1 (highest priority): alias table keys are already normalized at creation time

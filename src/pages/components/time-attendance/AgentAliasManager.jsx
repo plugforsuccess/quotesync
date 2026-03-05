@@ -26,10 +26,11 @@ export default function AgentAliasManager({ orgId, employees }) {
   const [backfillChecked, setBackfillChecked] = useState({}); // { agentName: boolean }
   const [feedback, setFeedback] = useState(null);
 
-  // Only employees with auth_user_id can be mapped — rc_call_log.employee_user_id
-  // has a FK to auth.users(id), so employees.id would violate the constraint.
-  // Unlinked employees need an auth account before they can be mapped.
-  const mappableEmployees = (employees || []).filter((e) => e.auth_user_id);
+  // All employees are mappable — use auth_user_id if linked, else employees.id
+  const mappableEmployees = (employees || []).map((e) => ({
+    ...e,
+    mappingId: e.auth_user_id || e.id,
+  }));
 
   async function handleSaveAlias(agentName, nameKey) {
     const employeeUserId = selectedMapping[agentName];
@@ -124,7 +125,7 @@ export default function AgentAliasManager({ orgId, employees }) {
   }
 
   function getEmployeeNameById(userId) {
-    const emp = mappableEmployees.find((e) => e.auth_user_id === userId);
+    const emp = mappableEmployees.find((e) => e.mappingId === userId);
     return emp ? getEmployeeLabel(emp) : userId?.substring(0, 8) || 'Unknown';
   }
 
@@ -182,7 +183,7 @@ export default function AgentAliasManager({ orgId, employees }) {
                 >
                   <option value="">Select employee...</option>
                   {mappableEmployees.map((emp) => (
-                    <option key={emp.auth_user_id} value={emp.auth_user_id}>
+                    <option key={emp.mappingId} value={emp.mappingId}>
                       {getEmployeeLabel(emp)}
                     </option>
                   ))}
