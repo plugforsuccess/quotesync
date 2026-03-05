@@ -45,9 +45,9 @@ export default function AddressAutocomplete({
 }) {
   const containerRef = useRef(null);
   const autocompleteElRef = useRef(null);
-  const [ready, setReady] = useState(false);
   const [loadState, setLoadState] = useState("loading"); // loading | ready | failed
 
+  const ready = loadState === "ready";
   const includedRegionCodes = useMemo(() => regionCodes, [regionCodes]);
 
   // ── Load Google Maps once ───────────────────────────────────────────
@@ -58,7 +58,6 @@ export default function AddressAutocomplete({
       try {
         await loadGoogleMaps(apiKey);
         if (cancelled) return;
-        setReady(true);
         setLoadState("ready");
         trackEvent("places_maps_load", { outcome: "success" });
       } catch (e) {
