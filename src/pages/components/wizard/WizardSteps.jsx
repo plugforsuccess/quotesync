@@ -639,6 +639,7 @@ export function DobStep({ value, onChange }) {
 
 export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChange, onCityChange, onZipCorrected, onAddressSourceChange, onLatLngChange }) {
   const [manualMode, setManualMode] = useState(false);
+  const [userRequestedAutocomplete, setUserRequestedAutocomplete] = useState(false);
   const [zipMismatch, setZipMismatch] = useState(null);
 
   const handleSelect = ({ address, lat, lng }) => {
@@ -663,6 +664,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
   const switchMode = (manual) => {
     setManualMode(manual);
     onAddressSourceChange?.(manual ? 'manual_entry' : 'google_autocomplete');
+    if (!manual) setUserRequestedAutocomplete(true);
   };
 
   const inputClasses = 'w-full px-4 py-3 rounded-xl border-2 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500';
@@ -686,7 +688,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
               apiKey={import.meta.env.VITE_GOOGLE_PLACES_API_KEY}
               regionCodes={['us']}
               onSelect={handleSelect}
-              onLoadFailure={() => switchMode(true)}
+              onLoadFailure={userRequestedAutocomplete ? undefined : () => switchMode(true)}
             />
           ) : (
             <input
