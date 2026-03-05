@@ -671,13 +671,22 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
     onAddressSourceChange?.('manual_entry');
   };
 
+  const handleSwitchToAutocomplete = () => {
+    setManualMode(false);
+    onAddressSourceChange?.('google_autocomplete');
+  };
+
   const inputClasses = 'w-full px-4 py-3 rounded-xl border-2 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500';
   const readOnlyClasses = 'w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-500 bg-gray-50';
 
   return (
     <div>
-      <StepHeading>What is your home address?</StepHeading>
-      <StepDescription>Used to calculate your exact rate — never shared.</StepDescription>
+      <StepHeading>{manualMode ? 'Enter your home address' : 'Search for your home address'}</StepHeading>
+      <StepDescription>
+        {manualMode
+          ? 'Type your address details below — used to calculate your exact rate.'
+          : 'Start typing to find your address — used to calculate your exact rate.'}
+      </StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <div>
           <label htmlFor={manualMode ? 'street' : undefined} className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -761,7 +770,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
         ) : (
           <button
             type="button"
-            onClick={() => setManualMode(false)}
+            onClick={handleSwitchToAutocomplete}
             className="text-sm text-primary-600 hover:underline"
           >
             Search for your address instead
