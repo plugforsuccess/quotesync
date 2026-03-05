@@ -254,8 +254,9 @@ export function useRCEmployeeMap(orgId) {
       // All computed keys go through normalizeAliasKey so that
       // ingestion lookup (also via normalizeAliasKey) always matches.
       //
-      // Identity value: auth_user_id for linked employees, employees.id for unlinked.
-      // This matches the rc_call_log.employee_user_id convention documented in the schema.
+      // Identity value: auth_user_id for linked employees, employees.id
+      // for unlinked employees (no app login). Both are valid UUIDs stored
+      // in rc_call_log.employee_user_id (no FK constraint).
 
       // Layer 4 (lowest priority): first_name + last_name
       (empResult.data || []).forEach((emp) => {

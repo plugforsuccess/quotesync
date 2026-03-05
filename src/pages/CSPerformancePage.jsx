@@ -200,7 +200,6 @@ const CSPerformancePage = () => {
     if (rcEmployeeMap && Object.keys(rcEmployeeMap).length > 0) return rcEmployeeMap;
     const map = {};
     rosterEmployees.forEach((emp) => {
-      // auth_user_id for linked employees, employees.id for unlinked
       const value = emp.auth_user_id || emp.id;
       if (emp.rc_display_name) {
         map[normalizeAliasKey(emp.rc_display_name)] = value;

@@ -26,7 +26,7 @@ export default function AgentAliasManager({ orgId, employees }) {
   const [backfillChecked, setBackfillChecked] = useState({}); // { agentName: boolean }
   const [feedback, setFeedback] = useState(null);
 
-  // All active employees are mappable — use auth_user_id if linked, else employees.id
+  // All employees are mappable — use auth_user_id if linked, else employees.id
   const mappableEmployees = (employees || []).map((e) => ({
     ...e,
     mappingId: e.auth_user_id || e.id,
