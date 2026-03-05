@@ -418,7 +418,8 @@ export function useSaveAgentAlias() {
           .select()
           .single());
       } else {
-        // Insert new alias
+        // Insert new alias; if a concurrent save created one first (TOCTOU race),
+        // catch the unique constraint violation and fall back to update.
         ({ data, error } = await supabase
           .from('rc_agent_aliases')
           .insert({
@@ -432,6 +433,29 @@ export function useSaveAgentAlias() {
           })
           .select()
           .single());
+
+        if (error?.code === '23505') {
+          // Unique violation — another admin won the race; update instead
+          const { data: raced } = await supabase
+            .from('rc_agent_aliases')
+            .select('id')
+            .eq('org_id', orgId)
+            .eq('alias_key', aliasKey)
+            .eq('active', true)
+            .maybeSingle();
+          if (raced) {
+            ({ data, error } = await supabase
+              .from('rc_agent_aliases')
+              .update({
+                alias_display: aliasDisplay,
+                employee_user_id: employeeUserId,
+                created_by: user?.id,
+              })
+              .eq('id', raced.id)
+              .select()
+              .single());
+          }
+        }
       }
 
       if (error) throw error;

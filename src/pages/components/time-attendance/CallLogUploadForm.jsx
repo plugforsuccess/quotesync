@@ -70,6 +70,38 @@ function parseTimedeltaSeconds(val) {
   return isNaN(num) ? 0 : Math.round(num);
 }
 
+/**
+ * Parse a timezone-naive datetime string as BUSINESS_TZ (Eastern).
+ * RingCentral exports timestamps without timezone info; they're in the
+ * account's local timezone. Using bare `new Date()` would interpret them
+ * as browser-local time, shifting calls by hours and potentially putting
+ * evening calls on the wrong call_date.
+ */
+function parseAsBusinessTz(dateStr) {
+  const s = dateStr.trim();
+  // If the string already has timezone info, parse directly
+  if (/[Zz]$|[+-]\d{2}:?\d{2}$/.test(s)) {
+    return new Date(s);
+  }
+  // Parse as UTC first to get a stable reference point
+  const asUtc = new Date(s.replace(/\s+/, 'T') + 'Z');
+  if (isNaN(asUtc.getTime())) return asUtc;
+  // Find the UTC offset for BUSINESS_TZ at this approximate moment:
+  // Format the UTC instant into BUSINESS_TZ parts, rebuild as UTC,
+  // then the difference is the timezone offset.
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: BUSINESS_TZ,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false,
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(asUtc).map((p) => [p.type, p.value]));
+  const inTz = Date.UTC(+parts.year, +parts.month - 1, +parts.day, +parts.hour % 24, +parts.minute, +parts.second);
+  const offsetMs = inTz - asUtc.getTime();
+  // Subtract offset: "09:15 Eastern" stored as UTC = 09:15 + offset
+  return new Date(asUtc.getTime() - offsetMs);
+}
+
 // ── Display Helpers ─────────────────────────────────────────────────────────────
 
 function formatTimeInBusinessTz(date) {
@@ -184,7 +216,7 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
     return { record: null, error: 'Missing Call Start Time' };
   }
 
-  const callStart = new Date(callStartStr);
+  const callStart = parseAsBusinessTz(callStartStr);
   if (isNaN(callStart.getTime())) {
     return { record: null, error: `Unparseable timestamp: "${callStartStr}"` };
   }
