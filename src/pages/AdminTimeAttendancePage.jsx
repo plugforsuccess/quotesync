@@ -3,14 +3,16 @@
 // No employee self-service, no approval workflow. Admin-only data entry.
 // Route: /admin/time-attendance
 
-import { useState, useMemo } from 'react';
-import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Clock, Users, Download, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
-import { useTimeEntries, useRCData, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useTimeEntries, useRCData, useYTDEntries, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
+import WeekPickerCalendar from './components/time-attendance/WeekPickerCalendar';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -43,30 +45,147 @@ function formatWeekLabel(weekStart) {
   return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
 }
 
-function exportToCSV(entries, weekStart) {
-  const headers = ['Employee', 'Date', 'Location', 'Code', 'Start', 'Lunch Out', 'Lunch In', 'End', 'Break (min)', 'Hours Worked', 'Notes'];
-  const rows = entries.map((e) => [
-    e.employee_user_id,
-    e.work_date,
-    e.location,
-    e.code,
-    e.start_time || '',
-    e.lunch_out || '',
-    e.lunch_in || '',
-    e.end_time || '',
-    e.unpaid_break_minutes,
-    e.hours_worked || '',
-    (e.notes || '').replace(/,/g, ';'),
-  ]);
+function calcHours(entry) {
+  if (!entry.start_time || !entry.end_time) return 0;
+  const [sh, sm] = entry.start_time.split(':').map(Number);
+  const [eh, em] = entry.end_time.split(':').map(Number);
+  const totalMin = (eh * 60 + em) - (sh * 60 + sm) - (entry.unpaid_break_minutes || 0);
+  // Subtract lunch if present
+  if (entry.lunch_out && entry.lunch_in) {
+    const [loh, lom] = entry.lunch_out.split(':').map(Number);
+    const [lih, lim] = entry.lunch_in.split(':').map(Number);
+    const lunchMin = (lih * 60 + lim) - (loh * 60 + lom);
+    return Math.max(0, (totalMin - lunchMin) / 60);
+  }
+  return Math.max(0, totalMin / 60);
+}
 
-  const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `attendance-${weekStart}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+// ── XLSX Export ────────────────────────────────────────────────────────────────
+
+function buildWeeklyDetailSheet(entries, getEmployeeName) {
+  const headers = ['Employee', 'Date', 'Day', 'Location', 'Code', 'Start', 'Lunch Out', 'Lunch In', 'End', 'Break (min)', 'Hours Worked', 'Notes'];
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const rows = entries.map((e) => {
+    const d = new Date(e.work_date + 'T00:00:00');
+    const hours = parseFloat(e.hours_worked) || calcHours(e);
+    return [
+      getEmployeeName(e.employee_user_id),
+      e.work_date,
+      dayNames[d.getDay()],
+      e.location,
+      e.code,
+      e.start_time || '',
+      e.lunch_out || '',
+      e.lunch_in || '',
+      e.end_time || '',
+      e.unpaid_break_minutes || 0,
+      Math.round(hours * 100) / 100,
+      e.notes || '',
+    ];
+  });
+  return [headers, ...rows];
+}
+
+function buildWeeklySummarySheet(entries, getEmployeeName) {
+  const headers = ['Employee', 'Total Hours', 'Days Worked', 'REG Days', 'WFH Days', 'PTO Days', 'Sick Days', 'Partial/Appt/Early Days', 'Avg Hours/Day'];
+  const byEmployee = {};
+  for (const e of entries) {
+    if (!byEmployee[e.employee_user_id]) byEmployee[e.employee_user_id] = [];
+    byEmployee[e.employee_user_id].push(e);
+  }
+  const rows = Object.entries(byEmployee).map(([id, empEntries]) => {
+    const totalHours = empEntries.reduce((s, e) => s + (parseFloat(e.hours_worked) || calcHours(e)), 0);
+    const daysWorked = empEntries.filter((e) => !['PTO', 'SICK'].includes(e.code)).length;
+    const reg = empEntries.filter((e) => e.code === 'REG').length;
+    const wfh = empEntries.filter((e) => e.code === 'WFH').length;
+    const pto = empEntries.filter((e) => e.code === 'PTO').length;
+    const sick = empEntries.filter((e) => e.code === 'SICK').length;
+    const other = empEntries.filter((e) => ['SICK_PART', 'APPT', 'EARLY'].includes(e.code)).length;
+    const avg = daysWorked > 0 ? totalHours / daysWorked : 0;
+    return [
+      getEmployeeName(id),
+      Math.round(totalHours * 100) / 100,
+      daysWorked,
+      reg,
+      wfh,
+      pto,
+      sick,
+      other,
+      Math.round(avg * 100) / 100,
+    ];
+  });
+  return [headers, ...rows];
+}
+
+function buildYTDSheet(ytdEntries, getEmployeeName, year) {
+  const headers = ['Employee', 'Year', 'Total Hours', 'Days Worked', 'REG Days', 'WFH Days', 'PTO Days Used', 'Sick Days Used', 'Partial/Appt/Early', 'Avg Hours/Week', 'Weeks Entered'];
+  const byEmployee = {};
+  for (const e of ytdEntries) {
+    if (!byEmployee[e.employee_user_id]) byEmployee[e.employee_user_id] = [];
+    byEmployee[e.employee_user_id].push(e);
+  }
+  const rows = Object.entries(byEmployee).map(([id, empEntries]) => {
+    const totalHours = empEntries.reduce((s, e) => s + (parseFloat(e.hours_worked) || calcHours(e)), 0);
+    const daysWorked = empEntries.filter((e) => !['PTO', 'SICK'].includes(e.code)).length;
+    const reg = empEntries.filter((e) => e.code === 'REG').length;
+    const wfh = empEntries.filter((e) => e.code === 'WFH').length;
+    const pto = empEntries.filter((e) => e.code === 'PTO').length;
+    const sick = empEntries.filter((e) => e.code === 'SICK').length;
+    const other = empEntries.filter((e) => ['SICK_PART', 'APPT', 'EARLY'].includes(e.code)).length;
+    const weeksSet = new Set(empEntries.map((e) => e.week_start));
+    const weeksEntered = weeksSet.size;
+    const avgPerWeek = weeksEntered > 0 ? totalHours / weeksEntered : 0;
+    return [
+      getEmployeeName(id),
+      year,
+      Math.round(totalHours * 100) / 100,
+      daysWorked,
+      reg,
+      wfh,
+      pto,
+      sick,
+      other,
+      Math.round(avgPerWeek * 100) / 100,
+      weeksEntered,
+    ];
+  });
+  return [headers, ...rows];
+}
+
+function exportToXLSX(entries, weekStart, getEmployeeName, ytdEntries, year) {
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: Weekly Detail
+  const detailData = buildWeeklyDetailSheet(entries, getEmployeeName);
+  const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
+  wsDetail['!cols'] = [
+    { wch: 20 }, { wch: 12 }, { wch: 5 }, { wch: 8 }, { wch: 10 },
+    { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 8 }, { wch: 10 },
+    { wch: 12 }, { wch: 30 },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsDetail, 'Weekly Detail');
+
+  // Sheet 2: Weekly Summary
+  const summaryData = buildWeeklySummarySheet(entries, getEmployeeName);
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryData);
+  wsSummary['!cols'] = [
+    { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+    { wch: 10 }, { wch: 10 }, { wch: 18 }, { wch: 14 },
+  ];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Weekly Summary');
+
+  // Sheet 3: YTD Summary (if data available)
+  if (ytdEntries && ytdEntries.length > 0) {
+    const ytdData = buildYTDSheet(ytdEntries, getEmployeeName, year);
+    const wsYTD = XLSX.utils.aoa_to_sheet(ytdData);
+    wsYTD['!cols'] = [
+      { wch: 20 }, { wch: 6 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
+      { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 14 },
+    ];
+    XLSX.utils.book_append_sheet(wb, wsYTD, `YTD ${year}`);
+  }
+
+  XLSX.writeFile(wb, `attendance-${weekStart}.xlsx`);
 }
 
 // ── Page Component ─────────────────────────────────────────────────────────────
@@ -77,6 +196,10 @@ const AdminTimeAttendancePage = () => {
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('');
+
+  // Track whether YTD data should be fetched (on-demand when export clicked)
+  const currentYear = new Date(weekStart + 'T00:00:00').getFullYear();
+  const [ytdRequested, setYtdRequested] = useState(false);
 
   // ── Data hooks ────────────────────────────────────────────────────────────
 
@@ -94,6 +217,11 @@ const AdminTimeAttendancePage = () => {
     data: rcData = [],
     refetch: refetchRC,
   } = useRCData(weekStart, selectedEmployee || 'all');
+
+  const {
+    data: ytdData,
+    isLoading: ytdLoading,
+  } = useYTDEntries(currentYear, ytdRequested);
 
   const { invalidateTimeEntries } = useInvalidateTimeData();
 
@@ -133,12 +261,12 @@ const AdminTimeAttendancePage = () => {
   // Use roster employees (employees table) for dropdown display
   const dropdownEmployees = rosterEmployees;
 
-  function getEmployeeName(id) {
+  const getEmployeeName = useCallback((id) => {
     // Check roster employees first
     const roster = rosterEmployees.find((e) => e.id === id || e.auth_user_id === id);
     if (roster) return roster.preferred_name || roster.first_name + ' ' + roster.last_name;
     return id?.substring(0, 8) || '';
-  }
+  }, [rosterEmployees]);
 
   // Look up the selected employee's schedule defaults
   const selectedEmployeeData = useMemo(() => {
@@ -148,6 +276,35 @@ const AdminTimeAttendancePage = () => {
 
   // orgId for upserts — prefer currentAgencyId from auth context
   const orgId = currentAgencyId || agency.currentAgencyId || '';
+
+  // ── Export handler ────────────────────────────────────────────────────────
+
+  const [pendingExport, setPendingExport] = useState(false);
+  const pendingExportRef = useRef(false);
+
+  function handleExportClick() {
+    if (!ytdRequested) {
+      setYtdRequested(true);
+      setPendingExport(true);
+      pendingExportRef.current = true;
+      return;
+    }
+    if (ytdLoading) {
+      setPendingExport(true);
+      pendingExportRef.current = true;
+      return;
+    }
+    exportToXLSX(entries, weekStart, getEmployeeName, ytdData?.entries || [], currentYear);
+  }
+
+  // When YTD data arrives and an export is pending, trigger download
+  useEffect(() => {
+    if (pendingExportRef.current && ytdRequested && !ytdLoading && ytdData) {
+      pendingExportRef.current = false;
+      setPendingExport(false);
+      exportToXLSX(entries, weekStart, getEmployeeName, ytdData.entries || [], currentYear);
+    }
+  }, [ytdRequested, ytdLoading, ytdData, entries, weekStart, getEmployeeName, currentYear]);
 
   // ── Permission Check ─────────────────────────────────────────────────────
 
@@ -208,11 +365,13 @@ const AdminTimeAttendancePage = () => {
               </button>
               {entries.length > 0 && (
                 <button
-                  onClick={() => exportToCSV(entries, weekStart)}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={handleExportClick}
+                  disabled={pendingExport && ytdLoading}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  title="Export XLSX with Weekly Detail, Summary, and YTD tabs"
                 >
-                  <Download className="w-4 h-4" />
-                  Export CSV
+                  <FileSpreadsheet className="w-4 h-4" />
+                  {pendingExport && ytdLoading ? 'Preparing...' : 'Export Report'}
                 </button>
               )}
             </div>
@@ -242,7 +401,7 @@ const AdminTimeAttendancePage = () => {
             </select>
           </div>
 
-          {/* Week selector */}
+          {/* Week selector with calendar popup */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, -1))}
@@ -250,9 +409,11 @@ const AdminTimeAttendancePage = () => {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm font-medium text-gray-900 min-w-[200px] text-center">
-              {formatWeekLabel(weekStart)}
-            </span>
+            <WeekPickerCalendar
+              weekStart={weekStart}
+              onChange={setWeekStart}
+              label={formatWeekLabel(weekStart)}
+            />
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
               className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
@@ -260,14 +421,6 @@ const AdminTimeAttendancePage = () => {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
-
-          {/* Quick jump to current week */}
-          <button
-            onClick={() => setWeekStart(toMonday(new Date()))}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-          >
-            This Week
-          </button>
         </div>
       </div>
 

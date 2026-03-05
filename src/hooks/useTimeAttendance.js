@@ -15,6 +15,8 @@ export const timeAttendanceKeys = {
     ['rc-performance', weekStart, employeeId || 'all'],
   proactivity: (weekStart, employeeId) =>
     ['cs-proactivity', weekStart, employeeId || 'all'],
+  ytdEntries: (year) =>
+    ['time-entries-ytd', year],
 };
 
 // ── Fetch functions ─────────────────────────────────────────────────────────
@@ -81,6 +83,36 @@ async function fetchProactivityData(weekStart, selectedEmployee) {
   return data || [];
 }
 
+async function fetchYTDEntries(year) {
+  const startDate = `${year}-01-01`;
+  const endDate = `${year}-12-31`;
+
+  const { data, error } = await supabase
+    .from('employee_time_entries')
+    .select('*')
+    .gte('work_date', startDate)
+    .lte('work_date', endDate)
+    .order('work_date', { ascending: true });
+
+  if (error) throw error;
+
+  // Resolve employee names
+  const uniqueIds = [...new Set((data || []).map((e) => e.employee_user_id))];
+  let employeeProfiles = [];
+  if (uniqueIds.length > 0) {
+    const { data: empData } = await supabase
+      .from('employees')
+      .select('id, first_name, last_name, preferred_name, auth_user_id')
+      .in('auth_user_id', uniqueIds);
+    employeeProfiles = (empData || []).map((emp) => ({
+      id: emp.auth_user_id || emp.id,
+      full_name: `${emp.preferred_name || emp.first_name} ${emp.last_name}`.trim(),
+    }));
+  }
+
+  return { entries: data || [], employees: employeeProfiles };
+}
+
 // ── Hooks ───────────────────────────────────────────────────────────────────
 
 export function useTimeEntries(weekStart, selectedEmployee) {
@@ -102,6 +134,15 @@ export function useProactivityData(weekStart, selectedEmployee) {
   return useQuery({
     queryKey: timeAttendanceKeys.proactivity(weekStart, selectedEmployee),
     queryFn: () => fetchProactivityData(weekStart, selectedEmployee),
+  });
+}
+
+export function useYTDEntries(year, enabled = false) {
+  return useQuery({
+    queryKey: timeAttendanceKeys.ytdEntries(year),
+    queryFn: () => fetchYTDEntries(year),
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 min — YTD data is heavier
   });
 }
 
