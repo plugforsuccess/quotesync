@@ -346,12 +346,21 @@ const AgencyLeadDetailPage = () => {
               </dl>
 
               {/* Contact Info Note */}
-              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <Phone className="w-4 h-4 inline mr-1" />
-                  Contact details captured via Canopy. View full profile in your Canopy dashboard.
-                </p>
-              </div>
+              {lead.source === 'canopy' ? (
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    <Phone className="w-4 h-4 inline mr-1" />
+                    Contact details captured via Canopy. View full profile in your Canopy dashboard.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-700">
+                    <Phone className="w-4 h-4 inline mr-1" />
+                    Contact details submitted via form.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Quote Summary */}
