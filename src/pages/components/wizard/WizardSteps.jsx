@@ -660,20 +660,9 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
     }
   };
 
-  // Auto-fallback to manual entry if Places fails to load (CSP, network, adblock)
-  const handleLoadFailure = () => {
-    setManualMode(true);
-    onAddressSourceChange?.('manual_entry');
-  };
-
-  const handleSwitchToManual = () => {
-    setManualMode(true);
-    onAddressSourceChange?.('manual_entry');
-  };
-
-  const handleSwitchToAutocomplete = () => {
-    setManualMode(false);
-    onAddressSourceChange?.('google_autocomplete');
+  const switchMode = (manual) => {
+    setManualMode(manual);
+    onAddressSourceChange?.(manual ? 'manual_entry' : 'google_autocomplete');
   };
 
   const inputClasses = 'w-full px-4 py-3 rounded-xl border-2 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500';
@@ -697,7 +686,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
               apiKey={import.meta.env.VITE_GOOGLE_PLACES_API_KEY}
               regionCodes={['us']}
               onSelect={handleSelect}
-              onLoadFailure={handleLoadFailure}
+              onLoadFailure={() => switchMode(true)}
             />
           ) : (
             <input
@@ -762,7 +751,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
         {!manualMode ? (
           <button
             type="button"
-            onClick={handleSwitchToManual}
+            onClick={() => switchMode(true)}
             className="text-sm text-primary-600 hover:underline"
           >
             Can&apos;t find your address? Enter it manually
@@ -770,7 +759,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
         ) : (
           <button
             type="button"
-            onClick={handleSwitchToAutocomplete}
+            onClick={() => switchMode(false)}
             className="text-sm text-primary-600 hover:underline"
           >
             Search for your address instead
