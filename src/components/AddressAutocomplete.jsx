@@ -50,7 +50,19 @@ export default function AddressAutocomplete({
   const ready = loadState === "ready";
   const includedRegionCodes = useMemo(() => regionCodes, [regionCodes]);
 
+  // Stable refs for callbacks — prevents effect re-runs when parent re-renders
+  // with new inline function references, which would cause spurious
+  // loading → ready bounces and duplicate telemetry events.
+  const onSelectRef = useRef(onSelect);
+  const onErrorRef = useRef(onError);
+  const onLoadFailureRef = useRef(onLoadFailure);
+  useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
+  useEffect(() => { onErrorRef.current = onError; }, [onError]);
+  useEffect(() => { onLoadFailureRef.current = onLoadFailure; }, [onLoadFailure]);
+
   // ── Load Google Maps once ───────────────────────────────────────────
+  // Deps: only apiKey. Callback refs keep this stable across re-renders.
+  // Valid transitions: loading → ready | loading → failed (no re-runs after settled)
   useEffect(() => {
     let cancelled = false;
 
@@ -67,15 +79,15 @@ export default function AddressAutocomplete({
           outcome: "failure",
           error_type: e?.message === "Google Maps load timeout" ? "timeout" : "script_error",
         });
-        onLoadFailure?.();
-        onError?.(e);
+        onLoadFailureRef.current?.();
+        onErrorRef.current?.(e);
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [apiKey, onError, onLoadFailure]);
+  }, [apiKey]);
 
   // ── Mount the web component & attach listener ───────────────────────
   useEffect(() => {
@@ -159,7 +171,7 @@ export default function AddressAutocomplete({
 
         if (!isMounted) return;
 
-        onSelect({
+        onSelectRef.current?.({
           address: parsed,
           lat,
           lng,
@@ -167,7 +179,7 @@ export default function AddressAutocomplete({
         });
       } catch (e) {
         trackEvent("places_select_error", { error_type: e?.name || "unknown" });
-        onError?.(e);
+        onErrorRef.current?.(e);
       }
     };
 
@@ -181,7 +193,7 @@ export default function AddressAutocomplete({
         // ignore
       }
     };
-  }, [ready, includedRegionCodes, onSelect, onError, placeholder]);
+  }, [ready, includedRegionCodes, placeholder]);
 
   // ── Render ──────────────────────────────────────────────────────────
   return (
