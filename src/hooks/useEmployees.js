@@ -326,7 +326,8 @@ export function useUnmatchedAgents(orgId) {
 
       if (error) throw error;
       return (data || []).map((row) => ({
-        name: row.name,
+        name: row.name,           // representative display name for UI
+        nameKey: row.name_key,    // normalized key for backfill matching
         count: Number(row.call_count),
       }));
     },
@@ -433,16 +434,19 @@ export function useDeleteAgentAlias() {
 /**
  * Preview how many rows a backfill would affect (read-only).
  * Returns { count } so the UI can show "This will update N calls. Continue?"
+ *
+ * Matches on employee_name_key (normalized) so that all whitespace/case/punctuation
+ * variants of the same agent name are captured in a single backfill operation.
  */
 export function useBackfillPreview() {
   return useMutation({
-    mutationFn: async ({ orgId, aliasDisplay }) => {
+    mutationFn: async ({ orgId, nameKey }) => {
       const { count, error } = await supabase
         .from('rc_call_log')
         .select('id', { count: 'exact', head: true })
         .eq('org_id', orgId)
         .is('employee_user_id', null)
-        .eq('employee_name', aliasDisplay);
+        .eq('employee_name_key', nameKey);
 
       if (error) throw error;
       return { count: count || 0 };
@@ -454,16 +458,17 @@ export function useBackfillAlias() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ orgId, aliasDisplay, employeeUserId }) => {
+    mutationFn: async ({ orgId, nameKey, employeeUserId }) => {
+      // Match on normalized key — catches all whitespace/case/punctuation variants
+      // of the same agent name in a single backfill.
       // Only update truly-unmatched rows: employee_user_id IS NULL
-      // Match on exact employee_name (raw string as stored at ingestion time)
       // org_id scoping prevents cross-tenant data leaks
       const { data, error } = await supabase
         .from('rc_call_log')
         .update({ employee_user_id: employeeUserId })
         .eq('org_id', orgId)
         .is('employee_user_id', null)
-        .eq('employee_name', aliasDisplay)
+        .eq('employee_name_key', nameKey)
         .select('id');
 
       if (error) throw error;

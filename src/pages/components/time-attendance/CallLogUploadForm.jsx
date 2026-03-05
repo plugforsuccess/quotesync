@@ -210,10 +210,12 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
 
   // NOTE: call_date is NOT sent — it's a GENERATED column computed server-side
   // from call_start_time AT TIME ZONE 'America/New_York'
+  const employeeName = agentName || 'Unknown';
   const record = {
     org_id: orgId,
     employee_user_id: matchedId,
-    employee_name: agentName || 'Unknown',
+    employee_name: employeeName,
+    employee_name_key: normalizeForLookup(employeeName),
     session_id: row['Session Id'] || row.session_id || null,
     call_start_time: callStart.toISOString(),  // UTC
     call_direction: direction,

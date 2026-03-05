@@ -11,6 +11,7 @@ import {
   useDeleteAgentAlias,
   useBackfillAlias,
   useBackfillPreview,
+  normalizeAliasKey,
 } from '../../../hooks/useEmployees';
 
 export default function AgentAliasManager({ orgId, employees }) {
@@ -28,14 +29,28 @@ export default function AgentAliasManager({ orgId, employees }) {
   // Only show employees with auth_user_id (mappable employees)
   const mappableEmployees = (employees || []).filter((e) => e.auth_user_id);
 
-  async function handleSaveAlias(agentName) {
+  async function handleSaveAlias(agentName, nameKey) {
     const employeeUserId = selectedMapping[agentName];
     if (!employeeUserId) return;
 
-    // If backfill is checked, preview first and confirm
+    // Collision detection: check if this normalized key already maps to a different employee
+    const existingAlias = aliases.find(
+      (a) => a.alias_key === normalizeAliasKey(agentName)
+    );
+    if (existingAlias && existingAlias.employee_user_id !== employeeUserId) {
+      const currentName = getEmployeeNameById(existingAlias.employee_user_id);
+      const newName = getEmployeeNameById(employeeUserId);
+      const confirmed = window.confirm(
+        `"${agentName}" is currently mapped to ${currentName}. Replace with ${newName}?`
+      );
+      if (!confirmed) return;
+    }
+
+    // If backfill is checked, preview count and confirm
     if (backfillChecked[agentName]) {
       try {
-        const { count } = await previewBackfill({ orgId, aliasDisplay: agentName });
+        const backfillKey = nameKey || normalizeAliasKey(agentName);
+        const { count } = await previewBackfill({ orgId, nameKey: backfillKey });
         if (count > 0) {
           const confirmed = window.confirm(
             `This will update ${count} unmatched call${count !== 1 ? 's' : ''} to ${getEmployeeNameById(employeeUserId)}. Continue?`
@@ -53,8 +68,9 @@ export default function AgentAliasManager({ orgId, employees }) {
       {
         onSuccess: () => {
           if (backfillChecked[agentName]) {
+            const backfillKey = nameKey || normalizeAliasKey(agentName);
             backfillAlias(
-              { orgId, aliasDisplay: agentName, employeeUserId },
+              { orgId, nameKey: backfillKey, employeeUserId },
               {
                 onSuccess: (result) => {
                   setFeedback({
@@ -148,9 +164,9 @@ export default function AgentAliasManager({ orgId, employees }) {
             Unmatched Agents ({unmatchedAgents.length})
           </h4>
           <div className="space-y-2">
-            {unmatchedAgents.map(({ name, count }) => (
+            {unmatchedAgents.map(({ name, nameKey, count }) => (
               <div
-                key={name}
+                key={nameKey || name}
                 className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
               >
                 <div className="flex-1 min-w-0">
@@ -179,7 +195,7 @@ export default function AgentAliasManager({ orgId, employees }) {
                   Backfill
                 </label>
                 <button
-                  onClick={() => handleSaveAlias(name)}
+                  onClick={() => handleSaveAlias(name, nameKey)}
                   disabled={!selectedMapping[name] || saving || backfilling}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
