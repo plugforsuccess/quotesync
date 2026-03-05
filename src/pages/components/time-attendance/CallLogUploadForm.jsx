@@ -24,7 +24,7 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const MAX_ROWS = 10000;
 const BATCH_SIZE = 500;
 const VALID_DIRECTIONS = new Set(['Inbound', 'Outbound']);
-const VALID_RESULTS = new Set(['Connected', 'Answered', 'VM/Missed']);
+const VALID_RESULTS = new Set(['Connected', 'Not Connected', 'Answered', 'VM/Missed']);
 const MAX_CALL_DURATION_SEC = 86400; // 24h sanity cap
 
 // Business timezone for preview display (call_date is computed server-side)
@@ -538,7 +538,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           <ul className="list-disc list-inside space-y-1 text-blue-700">
             <li><strong>From Name</strong>, <strong>To Name</strong> &mdash; agent identification</li>
             <li><strong>Call Direction</strong> &mdash; Inbound or Outbound</li>
-            <li><strong>Result</strong> &mdash; Connected, Answered, or VM/Missed</li>
+            <li><strong>Result</strong> &mdash; Connected, Not Connected, Answered, or VM/Missed</li>
             <li><strong>Call Length</strong>, <strong>Handle Time</strong> &mdash; HH:MM:SS</li>
             <li><strong>Queue</strong> &mdash; Sales or Service queue name</li>
           </ul>
@@ -622,6 +622,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                     <td className="px-3 py-2">
                       <span className={`text-xs font-medium ${
                         row.call_result === 'VM/Missed' ? 'text-red-600' :
+                        row.call_result === 'Not Connected' ? 'text-amber-600' :
                         row.call_result === 'Connected' ? 'text-blue-600' : 'text-green-600'
                       }`}>
                         {row.call_result === 'VM/Missed' ? 'Missed' : row.call_result}
