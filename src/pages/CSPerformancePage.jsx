@@ -200,19 +200,19 @@ const CSPerformancePage = () => {
     if (rcEmployeeMap && Object.keys(rcEmployeeMap).length > 0) return rcEmployeeMap;
     const map = {};
     rosterEmployees.forEach((emp) => {
-      // auth_user_id for linked employees, employees.id for unlinked
-      const value = emp.auth_user_id || emp.id;
+      // Only auth_user_id is valid — FK on rc_call_log.employee_user_id references auth.users
+      if (!emp.auth_user_id) return;
       if (emp.rc_display_name) {
-        map[normalizeAliasKey(emp.rc_display_name)] = value;
+        map[normalizeAliasKey(emp.rc_display_name)] = emp.auth_user_id;
       }
       const fullName = normalizeAliasKey(`${emp.first_name} ${emp.last_name}`);
       if (fullName && !map[fullName]) {
-        map[fullName] = value;
+        map[fullName] = emp.auth_user_id;
       }
       if (emp.preferred_name) {
         const prefName = normalizeAliasKey(`${emp.preferred_name} ${emp.last_name}`);
         if (prefName && !map[prefName]) {
-          map[prefName] = value;
+          map[prefName] = emp.auth_user_id;
         }
       }
     });
