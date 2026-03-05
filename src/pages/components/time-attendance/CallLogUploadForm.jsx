@@ -25,6 +25,11 @@ const MAX_ROWS = 10000;
 const BATCH_SIZE = 500;
 const VALID_DIRECTIONS = new Set(['Inbound', 'Outbound']);
 const VALID_RESULTS = new Set(['Connected', 'Not Connected', 'Answered', 'VM/Missed']);
+// RingCentral uses different result labels per direction
+const VALID_COMBOS = {
+  Outbound: new Set(['Connected', 'Not Connected']),
+  Inbound: new Set(['Answered', 'VM/Missed']),
+};
 const MAX_CALL_DURATION_SEC = 86400; // 24h sanity cap
 
 // Business timezone for preview display (call_date is computed server-side)
@@ -169,6 +174,9 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
   const result = (row.Result || row.result || '').trim();
   if (!VALID_RESULTS.has(result)) {
     return { record: null, error: `Invalid result: "${result}"` };
+  }
+  if (!VALID_COMBOS[direction].has(result)) {
+    return { record: null, error: `Invalid ${direction} result: "${result}" (expected ${[...VALID_COMBOS[direction]].join(' or ')})` };
   }
 
   const callStartStr = (row['Call Start Time'] || row.call_start_time || '').trim();
@@ -391,10 +399,33 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Compute file hash for audit trail
+      // Compute file hash for audit trail + duplicate detection
       let fileHash = 'unknown';
       if (fileBufferRef.current) {
         fileHash = await computeSHA256(fileBufferRef.current);
+      }
+
+      // Warn if this exact file was already uploaded
+      if (fileHash !== 'unknown') {
+        const { data: existingBatch } = await supabase
+          .from('rc_call_log_batches')
+          .select('id, created_at, rows_inserted')
+          .eq('org_id', orgId)
+          .eq('source_sha256', fileHash)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (existingBatch) {
+          const when = new Date(existingBatch.created_at).toLocaleString();
+          const confirmed = window.confirm(
+            `This file was already uploaded on ${when} (${existingBatch.rows_inserted ?? '?'} rows inserted). Upload again?`
+          );
+          if (!confirmed) {
+            setUploading(false);
+            return;
+          }
+        }
       }
 
       // Create ingestion batch record
