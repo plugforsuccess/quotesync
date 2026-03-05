@@ -14,7 +14,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useTimeEntries, useRCData, useProactivityData, useInvalidateTimeData } from '../hooks/useTimeAttendance';
-import { useRCEmployeeMap, useActiveEmployees } from '../hooks/useEmployees';
+import { useRCEmployeeMap, useActiveEmployees, normalizeAliasKey } from '../hooks/useEmployees';
 import {
   useEmployeeTargets, useSaveTargets,
   useSaveProactivity,
@@ -34,6 +34,7 @@ import DailyBreakdown from './components/time-attendance/DailyBreakdown';
 import OutboundBreakdownForm from './components/time-attendance/OutboundBreakdownForm';
 import ProducerDetailView from './components/time-attendance/ProducerDetailView';
 import CallLogTable from './components/time-attendance/CallLogTable';
+import AgentAliasManager from './components/time-attendance/AgentAliasManager';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -185,27 +186,33 @@ const CSPerformancePage = () => {
     return profile?.full_name || profile?.email || userId?.substring(0, 8) || 'Unknown';
   }
 
-  // ── Employee map for RC upload (uses employees.rc_display_name) ─────────
+  // ── Employee map for RC upload ─────────────────────────────────────────
+  // useRCEmployeeMap now handles all matching layers:
+  // 1) alias table (highest priority — admin decisions)
+  // 2) rc_display_name
+  // 3) preferred_name + last_name
+  // 4) first_name + last_name (lowest priority)
 
   const { data: rcEmployeeMap } = useRCEmployeeMap(currentAgencyId);
 
-  // Fallback to roster-based map if rcEmployeeMap has no data yet
+  // Fallback to roster-based map if rcEmployeeMap hasn't loaded yet
   const employeeMap = useMemo(() => {
     if (rcEmployeeMap && Object.keys(rcEmployeeMap).length > 0) return rcEmployeeMap;
     const map = {};
     rosterEmployees.forEach((emp) => {
-      const value = emp.auth_user_id || emp.id;
+      // Only use auth_user_id — emp.id is not in the same identity domain as rc_call_log.employee_user_id
+      const value = emp.auth_user_id;
+      if (!value) return;
       if (emp.rc_display_name) {
-        map[emp.rc_display_name.trim().toLowerCase()] = value;
+        map[normalizeAliasKey(emp.rc_display_name)] = value;
       }
-      const fullName = `${emp.first_name} ${emp.last_name}`.trim().toLowerCase();
-      if (!map[fullName]) {
+      const fullName = normalizeAliasKey(`${emp.first_name} ${emp.last_name}`);
+      if (fullName && !map[fullName]) {
         map[fullName] = value;
       }
-      // Also add preferred_name + last_name for call log matching
       if (emp.preferred_name) {
-        const prefName = `${emp.preferred_name} ${emp.last_name}`.trim().toLowerCase();
-        if (!map[prefName]) {
+        const prefName = normalizeAliasKey(`${emp.preferred_name} ${emp.last_name}`);
+        if (prefName && !map[prefName]) {
           map[prefName] = value;
         }
       }
@@ -568,6 +575,12 @@ const CSPerformancePage = () => {
               weekStart={weekStart}
               employeeMap={employeeMap}
               onUploaded={handleRCUploaded}
+            />
+
+            {/* 3. Agent Alias Manager — resolve unmatched names */}
+            <AgentAliasManager
+              orgId={currentAgencyId}
+              employees={rosterEmployees}
             />
 
             {/* Scorecards */}

@@ -14,6 +14,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Phone, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { normalizeForLookup } from '../../../hooks/useEmployees';
 import * as XLSX from 'xlsx';
 
 // ── Constants ───────────────────────────────────────────────────────────────────
@@ -200,7 +201,7 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
 
   // 3. Agent resolution
   const agentName = resolveAgent(row);
-  const matchedId = agentName ? employeeMap[agentName.toLowerCase()] : null;
+  const matchedId = agentName ? employeeMap[normalizeForLookup(agentName)] : null;
 
   // 4. Queue normalization
   const queue = row.Queue || row.queue || null;
@@ -209,10 +210,12 @@ function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
 
   // NOTE: call_date is NOT sent — it's a GENERATED column computed server-side
   // from call_start_time AT TIME ZONE 'America/New_York'
+  const employeeName = agentName || 'Unknown';
   const record = {
     org_id: orgId,
     employee_user_id: matchedId,
-    employee_name: agentName || 'Unknown',
+    employee_name: employeeName,
+    employee_name_key: normalizeForLookup(employeeName),
     session_id: row['Session Id'] || row.session_id || null,
     call_start_time: callStart.toISOString(),  // UTC
     call_direction: direction,

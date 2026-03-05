@@ -5,6 +5,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, FileSpreadsheet, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { normalizeForLookup } from '../../../hooks/useEmployees';
 import * as XLSX from 'xlsx';
 
 // ── Time Parsing ────────────────────────────────────────────────────────────────
@@ -176,7 +177,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
           if (!rawName) return null;
           const name = String(rawName).trim();
 
-          const matchedId = employeeMap?.[name.toLowerCase()];
+          const matchedId = employeeMap?.[normalizeForLookup(name)];
           if (!matchedId) {
             parseWarnings.push(`Row ${idx + 2}: "${name}" does not match any known employee.`);
           }
@@ -246,7 +247,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
 
     const records = matchedRows.map((row) => ({
       org_id: orgId,
-      employee_user_id: employeeMap?.[row.employee_name.toLowerCase()],
+      employee_user_id: employeeMap?.[normalizeForLookup(row.employee_name)],
       employee_name: row.employee_name,
       week_start: weekStart,
       total_calls: row.total_calls,
