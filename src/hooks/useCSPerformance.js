@@ -18,6 +18,7 @@ export const csPerformanceKeys = {
   trendData: (employeeId, weekStart) => ['cs-trend', employeeId, weekStart],
   teamData: (weekStart) => ['cs-team', weekStart],
   callLog: (employeeId, weekStart) => ['cs-call-log', employeeId, weekStart],
+  queueData: (orgId, weekStart) => ['queue-data', orgId, weekStart],
 };
 
 // ── Per-Employee Targets ────────────────────────────────────────────────────
@@ -308,6 +309,46 @@ export function useInvalidateCallLog() {
     },
     invalidateAllCallLogs: () => {
       queryClient.invalidateQueries({ queryKey: ['cs-call-log'] });
+    },
+  };
+}
+
+// ── Queue Data ──────────────────────────────────────────────────────────────────
+
+async function fetchQueueData(orgId, weekStart) {
+  const weekEnd = addDays(weekStart, 4); // Mon-Fri
+
+  const { data, error } = await supabase
+    .from('rc_queue_data')
+    .select('*')
+    .eq('org_id', orgId)
+    .gte('report_date', weekStart)
+    .lte('report_date', weekEnd)
+    .order('report_date', { ascending: true });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export function useQueueData(orgId, weekStart) {
+  return useQuery({
+    queryKey: csPerformanceKeys.queueData(orgId, weekStart),
+    queryFn: () => fetchQueueData(orgId, weekStart),
+    enabled: !!orgId && !!weekStart,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useInvalidateQueueData() {
+  const queryClient = useQueryClient();
+  return {
+    invalidateQueueData: (orgId, weekStart) => {
+      queryClient.invalidateQueries({
+        queryKey: csPerformanceKeys.queueData(orgId, weekStart),
+      });
+    },
+    invalidateAllQueueData: () => {
+      queryClient.invalidateQueries({ queryKey: ['queue-data'] });
     },
   };
 }
