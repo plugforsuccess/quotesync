@@ -87,6 +87,11 @@ import LoginPage from './pages/LoginPage';
 import SaveWizardPage from './pages/SaveWizardPage';
 import SaveConfirmationPage from './pages/SaveConfirmationPage';
 
+// Parent onboarding — overnight childcare
+import ParentLoginPage from './pages/ParentLoginPage';
+import ParentOnboardingPage from './pages/ParentOnboardingPage';
+const ParentDashboardPage = lazy(() => import('./pages/ParentDashboardPage'));
+
 // Admin pages - lazy loaded for code splitting
 const NewsroomDashboardPage = lazy(() => import('./pages/NewsroomDashboardPage'));
 const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
@@ -237,6 +242,18 @@ function App() {
 
             {/* Agency Partnership - Public Application */}
             <Route path="partners/apply" element={<AgencyApplyPage />} />
+
+            {/* Parent Onboarding — Overnight Childcare */}
+            <Route path="parent/login" element={<ParentLoginPage />} />
+            <Route path="parent/onboarding" element={<ParentOnboardingPage />} />
+            <Route
+              path="parent/dashboard"
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <ParentDashboardPage />
+                </Suspense>
+              }
+            />
 
             {/* Agency Funnel Dashboard (Protected for agency users) */}
             <Route
