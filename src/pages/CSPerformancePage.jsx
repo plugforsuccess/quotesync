@@ -21,12 +21,16 @@ import {
   useOutboundBreakdown, useSaveOutboundBreakdown,
   useTrendData, useTeamData,
   useCallLogData, useInvalidateCallLog,
+  useQueueData, useInvalidateQueueData,
 } from '../hooks/useCSPerformance';
 import { computeCallLogMetrics } from '../config/csPerformanceDefaults';
 import CallLogUploadForm from './components/time-attendance/CallLogUploadForm';
+import QueueUploadForm from './components/time-attendance/QueueUploadForm';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import CSScorecard from './components/time-attendance/CSScorecard';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
+import CoverageAlerts from './components/time-attendance/CoverageAlerts';
+import QueueSummaryCard from './components/time-attendance/QueueSummaryCard';
 import TargetsModal from './components/time-attendance/TargetsModal';
 import TeamComparisonView from './components/time-attendance/TeamComparisonView';
 import TrendsView from './components/time-attendance/TrendsView';
@@ -138,6 +142,10 @@ const CSPerformancePage = () => {
   const { data: callLogData = [], refetch: refetchCallLog } = useCallLogData(singleEmployee, weekStart);
   const { invalidateCallLog, invalidateAllCallLogs } = useInvalidateCallLog();
 
+  // v3: Queue data (org-wide, not per-employee)
+  const { data: queueData = [], refetch: refetchQueueData } = useQueueData(currentAgencyId, weekStart);
+  const { invalidateQueueData } = useInvalidateQueueData();
+
   // Compute call log metrics from raw call data
   const callLogMetrics = useMemo(() => {
     if (!callLogData || callLogData.length === 0) return null;
@@ -167,6 +175,7 @@ const CSPerformancePage = () => {
     refetchRC();
     refetchProactivity();
     refetchCallLog();
+    refetchQueueData();
   }
 
   // ── Employee name resolver ───────────────────────────────────────────────
@@ -233,6 +242,10 @@ const CSPerformancePage = () => {
     } else {
       invalidateAllCallLogs();
     }
+  }
+
+  function handleQueueDataUploaded() {
+    invalidateQueueData(currentAgencyId, weekStart);
   }
 
   // ── Proactivity save handler (uses React Query mutation + cache invalidation)
@@ -567,7 +580,13 @@ const CSPerformancePage = () => {
               onUploaded={handleCallLogUploaded}
             />
 
-            {/* 2. Weekly Summary Upload (optional supplement) */}
+            {/* 2. Daily Queue Report Upload */}
+            <QueueUploadForm
+              orgId={currentAgencyId}
+              onUploaded={handleQueueDataUploaded}
+            />
+
+            {/* 3. Weekly Summary Upload (optional supplement) */}
             <RCUploadForm
               orgId={currentAgencyId}
               weekStart={weekStart}
@@ -575,7 +594,7 @@ const CSPerformancePage = () => {
               onUploaded={handleRCUploaded}
             />
 
-            {/* 3. Agent Alias Manager — resolve unmatched names */}
+            {/* 4. Agent Alias Manager — resolve unmatched names */}
             <AgentAliasManager
               orgId={currentAgencyId}
               employees={rosterEmployees}
@@ -610,7 +629,15 @@ const CSPerformancePage = () => {
                   )}
                 </div>
 
-                {/* Cross-check alerts */}
+                {/* Coverage Alerts (queue + call log comparison) */}
+                <CoverageAlerts
+                  queueData={queueData}
+                  callLogData={callLogData}
+                  weekStart={weekStart}
+                  employeeId={singleEmployee}
+                />
+
+                {/* Cross-check alerts (time entries vs RC) */}
                 {rcData.length > 0 && (() => {
                   const rc = rcData.find((r) => r.employee_user_id === singleEmployee) || rcData[0];
                   const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
@@ -636,6 +663,12 @@ const CSPerformancePage = () => {
                   proactivity={proactivityList.find((p) => p.employee_user_id === singleEmployee)}
                   onProactivityChange={handleProactivityChange}
                   savingProactivity={savingProactivity}
+                />
+
+                {/* Queue Coverage summary (when queue data exists) */}
+                <QueueSummaryCard
+                  queueData={queueData}
+                  weekStart={weekStart}
                 />
 
                 {/* Daily Breakdown (from call log) */}

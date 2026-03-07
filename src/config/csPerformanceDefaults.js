@@ -47,9 +47,12 @@ export const OUTBOUND_CATEGORIES = [
 /**
  * Calculate grade from call log metrics (primary) and optional summary data.
  *
- * Three-axis model: outbound volume (25%) + answer rate (20%) + outbound consistency (15%).
+ * Three-axis model: outbound volume (40%) + inbound answer rate (35%) + outbound consistency (25%).
  * Final grade = lowest axis.
  * Zero-call days force an F regardless of other metrics.
+ *
+ * Speed of Answer and Hold Time are NOT included in the grade formula.
+ * They can be tracked via the optional weekly summary upload but do not affect the grade.
  *
  * Accepts either the new call-log-based metrics object or legacy positional args.
  */
@@ -82,14 +85,14 @@ export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCa
 
   const t = { ...DEFAULT_TARGETS, ...targets };
 
-  // Axis 1: Outbound volume (25%)
+  // Axis 1: Outbound volume (40%)
   let outGrade;
   if (outboundCalls >= t.grade_a_outbound) outGrade = 4;
   else if (outboundCalls >= t.grade_b_outbound) outGrade = 3;
   else if (outboundCalls >= t.grade_c_outbound) outGrade = 2;
   else outGrade = 1;
 
-  // Axis 2: Answer rate (20%) — skip if data unavailable
+  // Axis 2: Inbound answer rate (35%) — skip if data unavailable
   let arGrade = 4; // default: don't penalize if no inbound data
   if (isFinite(answerRate)) {
     if (answerRate >= t.grade_a_answer_rate) arGrade = 4;
@@ -98,7 +101,7 @@ export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCa
     else arGrade = 1;
   }
 
-  // Axis 3: Outbound consistency (15%)
+  // Axis 3: Outbound consistency (25%)
   const zeroDayCount = zeroDays.length || 0;
   let consistGrade;
   if (outboundEveryDay) consistGrade = 4;
