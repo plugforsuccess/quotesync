@@ -46,16 +46,18 @@ CREATE POLICY "Platform admins can manage queue data"
   ON rc_queue_data FOR ALL
   USING (
     EXISTS (
-      SELECT 1 FROM platform_users pu
-      WHERE pu.user_id = auth.uid()
-      AND pu.role IN ('platform_admin', 'platform_master_admin')
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid()
+        AND p.is_platform_user = true
+        AND p.platform_role IN ('platform_admin', 'platform_master_admin')
     )
   )
   WITH CHECK (
     EXISTS (
-      SELECT 1 FROM platform_users pu
-      WHERE pu.user_id = auth.uid()
-      AND pu.role IN ('platform_admin', 'platform_master_admin')
+      SELECT 1 FROM public.profiles p
+      WHERE p.id = auth.uid()
+        AND p.is_platform_user = true
+        AND p.platform_role IN ('platform_admin', 'platform_master_admin')
     )
   );
 
