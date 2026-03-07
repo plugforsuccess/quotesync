@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS rc_queue_data (
   id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-  org_id uuid NOT NULL REFERENCES organizations(id),
+  org_id uuid NOT NULL,
 
   -- Date range (extracted from Filters sheet)
   report_date date NOT NULL,
