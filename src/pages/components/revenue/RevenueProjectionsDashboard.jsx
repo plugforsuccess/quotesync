@@ -40,6 +40,16 @@ const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"
 
 function daysInMonth(y, m) { return new Date(y, m + 1, 0).getDate(); }
 function todayDayOfMonth() { return TODAY.getDate(); }
+function countBusinessDays(start, end) {
+  let count = 0;
+  const d = new Date(start);
+  while (d <= end) {
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) count++;
+    d.setDate(d.getDate() + 1);
+  }
+  return count;
+}
 
 // ─── Empty entry template ─────────────────────────────────────────────────────
 const emptyEntry = () => ({
@@ -205,23 +215,35 @@ export default function RevenueProjectionsDashboard() {
   const pace = useMemo(() => {
     if (view !== "month") return null;
     const y = TODAY.getFullYear(), m = TODAY.getMonth();
-    const totalDays = daysInMonth(y, m);
-    const elapsed = todayDayOfMonth();
-    const projectedCommission = elapsed > 0 ? (totals.totalCommission / elapsed) * totalDays : 0;
-    const projectedPremium    = elapsed > 0 ? (totals.totalPremium    / elapsed) * totalDays : 0;
-    return { projectedCommission, projectedPremium, elapsed, totalDays, onPace: projectedCommission >= COMMISSION_GOAL };
+    const monthStart = new Date(y, m, 1);
+    const monthEnd   = new Date(y, m + 1, 0);
+    const businessDaysTotal   = countBusinessDays(monthStart, monthEnd);
+    const businessDaysElapsed = countBusinessDays(monthStart, TODAY);
+    const projectedCommission = businessDaysElapsed > 0 ? (totals.totalCommission / businessDaysElapsed) * businessDaysTotal : 0;
+    const projectedPremium    = businessDaysElapsed > 0 ? (totals.totalPremium    / businessDaysElapsed) * businessDaysTotal : 0;
+    return { projectedCommission, projectedPremium, elapsed: businessDaysElapsed, totalDays: businessDaysTotal, onPace: projectedCommission >= COMMISSION_GOAL };
   }, [view, totals.totalCommission, totals.totalPremium]);
 
   // ─── Goal pcts ────────────────────────────────────────────────────────────
   const commissionGoalPct = Math.min(totals.totalCommission / COMMISSION_GOAL, 1);
 
+  // ─── Last-month commission (for MoM delta) ────────────────────────────────
+  const lastMonthCommission = useMemo(() => {
+    const y = TODAY.getFullYear(), m = TODAY.getMonth();
+    const start = new Date(y, m - 1, 1);
+    const end   = new Date(y, m, 0);
+    return entries
+      .filter(e => { const d = new Date(e.date); return d >= start && d <= end; })
+      .reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline"), 0);
+  }, [entries]);
+
   // ─── Daily target (month view only) ───────────────────────────────────────
   const dailyTarget = useMemo(() => {
     if (view !== "month") return null;
     const y = TODAY.getFullYear(), m = TODAY.getMonth();
-    const totalDays = daysInMonth(y, m);
-    const elapsed = todayDayOfMonth();
-    const remaining = totalDays - elapsed;
+    const tomorrow  = new Date(y, m, todayDayOfMonth() + 1);
+    const monthEnd  = new Date(y, m + 1, 0);
+    const remaining = countBusinessDays(tomorrow, monthEnd);
     if (remaining <= 0) return null;
 
     const commissionRemaining = Math.max(COMMISSION_GOAL - totals.totalCommission, 0);
@@ -383,6 +405,15 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalCommission)}</div>
           <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
+          {lastMonthCommission > 0 && (() => {
+            const delta = totals.totalCommission - lastMonthCommission;
+            const pct   = Math.abs(delta / lastMonthCommission * 100).toFixed(1);
+            return (
+              <div style={{ fontSize: 11, color: delta >= 0 ? "#10B981" : "#EF4444", marginTop: 4 }}>
+                {delta >= 0 ? "▲" : "▼"} {fmtFull$(Math.abs(delta))} ({pct}%) vs last mo
+              </div>
+            );
+          })()}
         </div>
         {/* Policies */}
         <div className="card clickable" onClick={() => setModal("kpi-policies")}>
@@ -405,14 +436,14 @@ export default function RevenueProjectionsDashboard() {
           <div className="card clickable" onClick={() => setModal("kpi-pace")}>
             <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Month-End Pace</div>
             <div style={{ fontSize: 26, fontWeight: 700, color: pace.onPace ? "#10B981" : "#EF4444", fontFamily: "'DM Mono', monospace" }}>{fmt$(pace.projectedCommission)}</div>
-            <div style={{ fontSize: 11, color: pace.onPace ? "#10B981" : "#EF4444", marginTop: 2 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Day {pace.elapsed}/{pace.totalDays}</div>
+            <div style={{ fontSize: 11, color: pace.onPace ? "#10B981" : "#EF4444", marginTop: 2 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays}</div>
           </div>
         )}
         {dailyTarget && (
           <div className="card clickable" onClick={() => setModal("kpi-daily")}>
             <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Daily Target</div>
             <div style={{ fontSize: 26, fontWeight: 700, color: "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(dailyTarget.dailyCommissionNeeded)}</div>
-            <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>commission / day · {dailyTarget.remaining} days left</div>
+            <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>commission / day · {dailyTarget.remaining} business days left</div>
             <div style={{ borderTop: "1px solid #252A3A", margin: "10px 0" }} />
             {dailyTarget.policiesPerDayNeeded !== null ? (
               <div style={{ fontSize: 12, color: "#94A3B8" }}>
