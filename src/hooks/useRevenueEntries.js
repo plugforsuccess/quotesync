@@ -47,6 +47,7 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
         tier:         entry.tier ?? "monoline",
         premium:      entry.premium,
         policy_count: entry.policyCount,
+        policy_no:    entry.policyNo || null,
         source:       entry.source,
         note:         entry.note || null,
         created_by:   (await supabase.auth.getUser()).data.user?.id ?? null,

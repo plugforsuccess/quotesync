@@ -59,6 +59,7 @@ const emptyEntry = () => ({
   tier: "monoline",
   premium: "",
   policyCount: 1,
+  policyNo: "",
   source: "manual",
   note: "",
 });
@@ -613,6 +614,10 @@ export default function RevenueProjectionsDashboard() {
               <div>
                 <label>Date</label>
                 <input type="date" value={newEntry.date} onChange={e => setNewEntry(p => ({...p, date: e.target.value}))} style={{ width: 140 }} />
+              </div>
+              <div>
+                <label>Policy No</label>
+                <input type="text" placeholder="954061414" value={newEntry.policyNo} onChange={e => setNewEntry(p => ({...p, policyNo: e.target.value.trim()}))} style={{ width: 130 }} />
               </div>
               <div>
                 <label>Product</label>
