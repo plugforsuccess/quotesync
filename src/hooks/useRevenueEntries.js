@@ -47,7 +47,6 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
         tier:         entry.tier ?? "monoline",
         premium:      entry.premium,
         policy_count: entry.policyCount,
-        policy_no:    entry.policyNo || null,
         source:       entry.source,
         note:         entry.note || null,
         created_by:   (await supabase.auth.getUser()).data.user?.id ?? null,
@@ -78,7 +77,6 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
       tier:         entry.tier ?? "monoline",
       premium:      entry.premium,
       policy_count: entry.policyCount,
-      policy_no:    entry.policyNo || null,
       source:       "upload",
       note:         entry.note || null,
       created_by:   user?.id ?? null,
@@ -86,7 +84,7 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
 
     const { data, error } = await supabase
       .from("revenue_entries")
-      .upsert(rows, { onConflict: "agency_id,policy_no", ignoreDuplicates: false })
+      .upsert(rows, { ignoreDuplicates: false })
       .select();
 
     if (error) return { count: 0, error: error.message };
