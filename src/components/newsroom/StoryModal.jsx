@@ -58,15 +58,15 @@ const StoryModal = ({ story, isOpen, onClose }) => {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity"
+        className="fixed inset-0 bg-black/70 z-40 transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex min-h-full items-start justify-center p-4 pt-20">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+        <div className="absolute inset-0" onClick={onClose} />
           <div
-            className="relative bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto"
+            className="relative bg-white w-full rounded-t-2xl sm:rounded-2xl sm:max-w-3xl max-h-[90vh] overflow-y-auto p-5 sm:p-0"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
@@ -210,7 +210,6 @@ const StoryModal = ({ story, isOpen, onClose }) => {
             </div>
           </div>
         </div>
-      </div>
     </>
   );
 };

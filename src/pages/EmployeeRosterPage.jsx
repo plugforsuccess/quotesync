@@ -285,7 +285,7 @@ const EmployeeRosterPage = () => {
         ) : (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[700px] text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
@@ -363,12 +363,12 @@ const EmployeeRosterPage = () => {
                           )}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex flex-wrap items-center justify-end gap-2">
                             {!isTerminated && (
                               <>
                                 <button
                                   onClick={() => handleEditOpen(emp)}
-                                  className="text-gray-500 hover:text-blue-600 transition-colors"
+                                  className="text-gray-500 hover:text-blue-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                   title="Edit"
                                 >
                                   <Edit2 className="w-4 h-4" />
@@ -379,7 +379,7 @@ const EmployeeRosterPage = () => {
                                       ? setVerifyingId(null)
                                       : setVerifyingId(emp.id)
                                   }
-                                  className={`transition-colors ${
+                                  className={`transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center ${
                                     isOverdue
                                       ? 'text-red-500 hover:text-red-700'
                                       : 'text-gray-500 hover:text-green-600'
@@ -390,7 +390,7 @@ const EmployeeRosterPage = () => {
                                 </button>
                                 <button
                                   onClick={() => setTerminateTarget(emp)}
-                                  className="text-gray-400 hover:text-red-600 transition-colors"
+                                  className="text-gray-400 hover:text-red-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                   title="Terminate"
                                 >
                                   <UserX className="w-4 h-4" />
@@ -400,7 +400,7 @@ const EmployeeRosterPage = () => {
                             {isTerminated && (
                               <button
                                 onClick={() => handleEditOpen(emp)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                                className="text-gray-400 hover:text-gray-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                 title="View details"
                               >
                                 <Edit2 className="w-4 h-4" />
