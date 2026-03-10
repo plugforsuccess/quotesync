@@ -179,12 +179,13 @@ const styles = StyleSheet.create({
     borderBottomColor: "#f3f4f6",
     backgroundColor: "#f9fafb",
   },
-  colDate:      { width: "13%", fontSize: 8, color: "#374151" },
-  colProduct:   { width: "14%", fontSize: 8 },
-  colPremium:   { width: "15%", fontSize: 8, textAlign: "right" },
-  colComm:      { width: "15%", fontSize: 8, textAlign: "right", color: "#059669" },
-  colCount:     { width: "8%",  fontSize: 8, textAlign: "center" },
-  colSource:    { width: "10%", fontSize: 8, color: "#6b7280" },
+  colDate:      { width: "12%", fontSize: 8, color: "#374151" },
+  colProduct:   { width: "13%", fontSize: 8 },
+  colTier:      { width: "11%", fontSize: 8 },
+  colPremium:   { width: "13%", fontSize: 8, textAlign: "right" },
+  colComm:      { width: "13%", fontSize: 8, textAlign: "right", color: "#059669" },
+  colCount:     { width: "6%",  fontSize: 8, textAlign: "center" },
+  colSource:    { width: "9%",  fontSize: 8, color: "#6b7280" },
   colNote:      { flex: 1,      fontSize: 8, color: "#6b7280" },
   colHdr: {
     fontSize: 7,
@@ -244,14 +245,16 @@ const fmt$ = (n) => `$${Math.round(n).toLocaleString()}`;
 const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
 
 const COMMISSION = {
-  auto:    { rate: 0.25, label: "Auto" },
-  ho:      { rate: 0.29, label: "HO / Condo" },
-  renters: { rate: 0.26, label: "Renters" },
-  other:   { rate: 0.26, label: "Other Personal Lines" },
+  auto:    { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Auto" },
+  ho:      { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "HO / Condo" },
+  renters: { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Renters" },
+  other:   { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
 };
+const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
 
-function calcCommission(premium, product) {
-  return premium * (COMMISSION[product]?.rate ?? 0.09);
+function calcCommission(premium, product, tier = "monoline") {
+  const rates = COMMISSION[product] ?? COMMISSION.other;
+  return premium * (rates[tier] ?? rates.monoline);
 }
 
 // ── Main PDF document ─────────────────────────────────────────────────────────
@@ -341,7 +344,7 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
               <Text style={styles.productHeaderLeft}>Product</Text>
               <Text style={styles.productHeader}>Written Premium</Text>
               <Text style={styles.productHeader}>Commission</Text>
-              <Text style={styles.productHeader}>Rate</Text>
+              <Text style={styles.productHeader}>Eff. Rate</Text>
               <Text style={styles.productHeader}>Policies</Text>
             </View>
             {Object.entries(totals.byProduct)
@@ -351,7 +354,7 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
                   <Text style={styles.productName}>{COMMISSION[key]?.label ?? key}</Text>
                   <Text style={styles.productCell}>{fmt$(val.premium)}</Text>
                   <Text style={styles.productCellGreen}>{fmt$(val.commission)}</Text>
-                  <Text style={styles.productCell}>{fmtPct(COMMISSION[key]?.rate ?? 0)}</Text>
+                  <Text style={styles.productCell}>{val.premium > 0 ? fmtPct(val.commission / val.premium) : "—"}</Text>
                   <Text style={styles.productCell}>{val.count}</Text>
                 </View>
               ))}
@@ -372,23 +375,28 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
             <View style={styles.tableHeaderRow}>
               <Text style={[styles.colDate,    styles.colHdr]}>Date</Text>
               <Text style={[styles.colProduct, styles.colHdr]}>Product</Text>
+              <Text style={[styles.colTier,    styles.colHdr]}>Tier</Text>
               <Text style={[styles.colPremium, styles.colHdr]}>Premium</Text>
               <Text style={[styles.colComm,    styles.colHdr]}>Commission</Text>
               <Text style={[styles.colCount,   styles.colHdr]}>Qty</Text>
               <Text style={[styles.colSource,  styles.colHdr]}>Source</Text>
               <Text style={[styles.colNote,    styles.colHdr]}>Note</Text>
             </View>
-            {entries.map((e, i) => (
-              <View key={e.id} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
-                <Text style={styles.colDate}>{e.date}</Text>
-                <Text style={styles.colProduct}>{COMMISSION[e.product]?.label ?? e.product}</Text>
-                <Text style={styles.colPremium}>{fmt$(e.premium)}</Text>
-                <Text style={styles.colComm}>{fmt$(calcCommission(e.premium, e.product))}</Text>
-                <Text style={styles.colCount}>{e.policyCount}</Text>
-                <Text style={styles.colSource}>{e.source}</Text>
-                <Text style={styles.colNote} numberOfLines={1}>{e.note}</Text>
-              </View>
-            ))}
+            {entries.map((e, i) => {
+              const tier = e.tier ?? "monoline";
+              return (
+                <View key={e.id} style={i % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+                  <Text style={styles.colDate}>{e.date}</Text>
+                  <Text style={styles.colProduct}>{COMMISSION[e.product]?.label ?? e.product}</Text>
+                  <Text style={styles.colTier}>{TIER_LABELS[tier]}</Text>
+                  <Text style={styles.colPremium}>{fmt$(e.premium)}</Text>
+                  <Text style={styles.colComm}>{fmt$(calcCommission(e.premium, e.product, tier))}</Text>
+                  <Text style={styles.colCount}>{e.policyCount}</Text>
+                  <Text style={styles.colSource}>{e.source}</Text>
+                  <Text style={styles.colNote} numberOfLines={1}>{e.note}</Text>
+                </View>
+              );
+            })}
             <View style={styles.totalsRow}>
               <Text style={styles.totalLabel}>Total ({entries.length} entries)</Text>
               <Text style={styles.totalPremium}>{fmt$(totals.totalPremium)}</Text>
