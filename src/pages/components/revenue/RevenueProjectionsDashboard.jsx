@@ -201,6 +201,8 @@ export default function RevenueProjectionsDashboard() {
   const [modalMode, setModalMode] = useState("commission");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
+  const [addingEntry, setAddingEntry] = useState(false);
+  const [addEntryMsg, setAddEntryMsg] = useState("");
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
@@ -348,9 +350,21 @@ export default function RevenueProjectionsDashboard() {
   // ─── Add manual entry ─────────────────────────────────────────────────────
   const handleAddEntry = async () => {
     const premium = parseFloat(newEntry.premium);
-    if (!premium || premium <= 0) return;
+    if (!premium || premium <= 0) {
+      setAddEntryMsg("Enter a valid premium amount greater than $0.");
+      return;
+    }
+
+    setAddingEntry(true);
+    setAddEntryMsg("");
     const { error } = await addEntry({ ...newEntry, premium });
-    if (!error) setNewEntry(emptyEntry());
+    if (error) {
+      setAddEntryMsg(`Unable to add entry: ${error}`);
+    } else {
+      setNewEntry(emptyEntry());
+      setAddEntryMsg("Entry added.");
+    }
+    setAddingEntry(false);
   };
 
   // ─── File upload ───────────────────────────────────────────────────────────
@@ -786,8 +800,13 @@ export default function RevenueProjectionsDashboard() {
                 <label>Note (optional)</label>
                 <input type="text" placeholder="Household name, bundle..." value={newEntry.note} onChange={e => setNewEntry(p => ({...p, note: e.target.value}))} style={{ width: "100%" }} />
               </div>
-              <button className="btn-primary" onClick={handleAddEntry}>Add</button>
+              <button className="btn-primary" type="button" onClick={handleAddEntry} disabled={addingEntry}>{addingEntry ? "Adding…" : "Add"}</button>
             </div>
+            {addEntryMsg && (
+              <div style={{ marginTop: 10, fontSize: 12, color: addEntryMsg.startsWith("Unable") || addEntryMsg.startsWith("Enter") ? "#EF4444" : "#10B981" }}>
+                {addEntryMsg}
+              </div>
+            )}
           </div>
 
           {/* Commission rate reminder — all three tiers */}
