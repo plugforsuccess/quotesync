@@ -189,6 +189,33 @@ export default function RevenueProjectionsDashboard() {
   // ─── Goal pcts ────────────────────────────────────────────────────────────
   const commissionGoalPct = Math.min(totals.totalCommission / COMMISSION_GOAL, 1);
 
+  // ─── Daily target (month view only) ───────────────────────────────────────
+  const dailyTarget = useMemo(() => {
+    if (view !== "month") return null;
+    const y = TODAY.getFullYear(), m = TODAY.getMonth();
+    const totalDays = daysInMonth(y, m);
+    const elapsed = todayDayOfMonth();
+    const remaining = totalDays - elapsed;
+    if (remaining <= 0) return null;
+
+    const commissionRemaining = Math.max(COMMISSION_GOAL - totals.totalCommission, 0);
+    const premiumRemaining    = Math.max(PREMIUM_GOAL    - totals.totalPremium,    0);
+
+    const totalPolicies = filtered.reduce((s, e) => s + e.policyCount, 0);
+    const avgCommissionPerPolicy = totalPolicies > 0 ? totals.totalCommission / totalPolicies : null;
+    const avgPremiumPerPolicy    = totalPolicies > 0 ? totals.totalPremium    / totalPolicies : null;
+
+    const dailyCommissionNeeded = commissionRemaining / remaining;
+    const dailyPremiumNeeded    = premiumRemaining    / remaining;
+    const policiesPerDayNeeded  = avgCommissionPerPolicy ? dailyCommissionNeeded / avgCommissionPerPolicy : null;
+
+    return {
+      commissionRemaining, premiumRemaining, remaining,
+      dailyCommissionNeeded, dailyPremiumNeeded, policiesPerDayNeeded,
+      avgCommissionPerPolicy, avgPremiumPerPolicy, totalPolicies,
+    };
+  }, [view, totals, filtered]);
+
   // ─── Add manual entry ─────────────────────────────────────────────────────
   const handleAddEntry = async () => {
     const premium = parseFloat(newEntry.premium);
@@ -353,6 +380,31 @@ export default function RevenueProjectionsDashboard() {
             <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Month-End Pace</div>
             <div style={{ fontSize: 26, fontWeight: 700, color: pace.onPace ? "#10B981" : "#EF4444", fontFamily: "'DM Mono', monospace" }}>{fmt$(pace.projectedCommission)}</div>
             <div style={{ fontSize: 11, color: pace.onPace ? "#10B981" : "#EF4444", marginTop: 2 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Day {pace.elapsed}/{pace.totalDays}</div>
+          </div>
+        )}
+        {dailyTarget && (
+          <div className="card">
+            <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Daily Target</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(dailyTarget.dailyCommissionNeeded)}</div>
+            <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>commission / day · {dailyTarget.remaining} days left</div>
+            <div style={{ borderTop: "1px solid #252A3A", margin: "10px 0" }} />
+            {dailyTarget.policiesPerDayNeeded !== null ? (
+              <div style={{ fontSize: 12, color: "#94A3B8" }}>
+                <span style={{ color: "#F59E0B", fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{dailyTarget.policiesPerDayNeeded.toFixed(1)}</span>
+                {" "}policies/day
+              </div>
+            ) : (
+              <div style={{ fontSize: 11, color: "#334155" }}>Add entries to calculate policies/day</div>
+            )}
+            <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 4 }}>
+              <span style={{ color: "#64748B", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(dailyTarget.dailyPremiumNeeded)}</span>
+              {" "}premium/day
+            </div>
+            {dailyTarget.avgCommissionPerPolicy && (
+              <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>
+                Avg {fmtFull$(dailyTarget.avgCommissionPerPolicy)} commission · {fmtFull$(dailyTarget.avgPremiumPerPolicy)} premium per policy
+              </div>
+            )}
           </div>
         )}
       </div>
