@@ -195,12 +195,9 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
 export default function RevenueProjectionsDashboard() {
   const [newEntry, setNewEntry] = useState(emptyEntry());
   const [view, setView] = useState("month"); // month | ytd
-  const [dailyTargetMode, setDailyTargetMode] = useState("commission"); // cycles: commission → premium → policies → commission
-  const cycleDailyTargetMode = () => {
-    setDailyTargetMode(m =>
-      m === "commission" ? "premium" : m === "premium" ? "policies" : "commission"
-    );
-  };
+  const [paceMode, setPaceMode] = useState("commission");       // commission | premium
+  const [dailyTargetMode, setDailyTargetMode] = useState("commission"); // commission | premium | policies
+  const [modalMode, setModalMode] = useState("commission");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
@@ -208,6 +205,8 @@ export default function RevenueProjectionsDashboard() {
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
   const closeModal = () => setModal(null);
   const fileRef = useRef();
+  const paceClickTimer  = useRef(null);
+  const dailyClickTimer = useRef(null);
 
   // ─── Date range for current view ──────────────────────────────────────────
   const { rangeStart, rangeEnd, label: rangeLabel } = useMemo(() => {
@@ -416,6 +415,44 @@ export default function RevenueProjectionsDashboard() {
     URL.revokeObjectURL(url);
   };
 
+  // ─── Card click handlers ──────────────────────────────────────────────────
+  const handlePaceClick = () => {
+    if (paceClickTimer.current) {
+      clearTimeout(paceClickTimer.current);
+      paceClickTimer.current = null;
+      setModalMode(paceMode);
+      setModal("pace");
+    } else {
+      paceClickTimer.current = setTimeout(() => {
+        setPaceMode(m => m === "commission" ? "premium" : "commission");
+        paceClickTimer.current = null;
+      }, 300);
+    }
+  };
+
+  const handleDailyClick = () => {
+    if (dailyClickTimer.current) {
+      clearTimeout(dailyClickTimer.current);
+      dailyClickTimer.current = null;
+      setModalMode(dailyTargetMode);
+      setModal("daily");
+    } else {
+      dailyClickTimer.current = setTimeout(() => {
+        setDailyTargetMode(m =>
+          m === "commission" ? "premium" : m === "premium" ? "policies" : "commission"
+        );
+        dailyClickTimer.current = null;
+      }, 300);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (paceClickTimer.current) clearTimeout(paceClickTimer.current);
+      if (dailyClickTimer.current) clearTimeout(dailyClickTimer.current);
+    };
+  }, []);
+
   // ─── UI ───────────────────────────────────────────────────────────────────
   return (
     <>
@@ -486,38 +523,54 @@ export default function RevenueProjectionsDashboard() {
         </div>
         {/* Pace (month only) */}
         {pace && (() => {
-          const paceColor = pace.onPace
-            ? "#10B981"
-            : pace.projectedCommission < COMMISSION_GOAL * 0.5
-              ? "#EF4444"
-              : "#F59E0B";
+          const paceModeConfig = {
+            commission: {
+              label: "PROJECTED COMMISSION",
+              value: fmt$(pace.projectedCommission),
+              subLabel: "projected by month-end",
+              color: pace.onPace ? "#10B981" : pace.projectedCommission < COMMISSION_GOAL * 0.5 ? "#EF4444" : "#F59E0B",
+            },
+            premium: {
+              label: "PROJECTED PREMIUM",
+              value: fmt$(pace.projectedPremium),
+              subLabel: "projected by month-end",
+              color: "#3B82F6",
+            },
+          };
+          const activePace = paceModeConfig[paceMode];
           return (
-            <div className="card clickable" onClick={() => setModal("kpi-pace")}>
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Month-End Pace</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: paceColor, fontFamily: "'DM Mono', monospace" }}>{fmt$(pace.projectedCommission)}</div>
-              <div style={{ fontSize: 11, color: paceColor, marginTop: 2 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays}</div>
+            <div className="card clickable" onClick={handlePaceClick} title="Click to switch · Double-click to expand">
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activePace.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: activePace.color, fontFamily: "'DM Mono', monospace" }}>{activePace.value}</div>
+              <div style={{ fontSize: 11, color: activePace.color, marginTop: 2 }}>{pace.onPace ? "↑ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays}</div>
+              <div style={{ fontSize: 10, color: "#334155", marginTop: 4 }}>{activePace.subLabel}</div>
+              <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                {["commission", "premium"].map(m => (
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: paceMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                ))}
+              </div>
             </div>
           );
         })()}
         {dailyTarget && (() => {
-          const dailyTargetHeadline = {
-            commission: { value: fmtFull$(dailyTarget.dailyCommissionNeeded), label: "commission / day", color: "#F59E0B" },
-            premium:    { value: fmtFull$(dailyTarget.dailyPremiumNeeded),    label: "premium / day",    color: "#3B82F6" },
-            policies:   { value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", label: "policies / day", color: "#10B981" },
+          const dailyModes = {
+            commission: { label: "DAILY TARGET",         value: fmtFull$(dailyTarget.dailyCommissionNeeded),            unit: "commission / day", color: "#F59E0B" },
+            premium:    { label: "DAILY PREMIUM TARGET", value: fmtFull$(dailyTarget.dailyPremiumNeeded),               unit: "premium / day",    color: "#3B82F6" },
+            policies:   { label: "POLICIES / DAY",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—",   unit: "policies needed",  color: "#10B981" },
           };
-          const active = dailyTargetHeadline[dailyTargetMode];
+          const activeDaily = dailyModes[dailyTargetMode];
           return (
-            <div className="card clickable" onClick={cycleDailyTargetMode} title="Click to cycle metrics">
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Daily Target</div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: active.color, fontFamily: "'DM Mono', monospace" }}>{active.value}</div>
-              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{active.label} · {dailyTarget.remaining} business days left</div>
+            <div className="card clickable" onClick={handleDailyClick} title="Click to switch · Double-click to expand">
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activeDaily.label}</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: activeDaily.color, fontFamily: "'DM Mono', monospace" }}>{activeDaily.value}</div>
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{activeDaily.unit} · {dailyTarget.remaining} business days left</div>
               <div style={{ borderTop: "1px solid #252A3A", marginTop: 10, paddingTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
-                {Object.entries(dailyTargetHeadline)
+                {Object.entries(dailyModes)
                   .filter(([key]) => key !== dailyTargetMode)
                   .map(([key, m]) => (
                     <div key={key} style={{ fontSize: 11, color: "#475569" }}>
                       <span style={{ color: m.color, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{m.value}</span>
-                      {" "}{m.label}
+                      {" "}{m.unit}
                     </div>
                   ))
                 }
@@ -926,52 +979,78 @@ export default function RevenueProjectionsDashboard() {
         </DrillDownModal>
       )}
 
-      {/* KPI — Pace */}
-      {modal === "kpi-pace" && pace && (() => {
-        const paceColor = pace.onPace
-          ? "#10B981"
-          : pace.projectedCommission < COMMISSION_GOAL * 0.5
-            ? "#EF4444"
-            : "#F59E0B";
-        return (
-        <DrillDownModal title="Month-End Pace" onClose={closeModal}>
-          <div style={{ fontSize: 42, fontWeight: 700, color: paceColor, fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(pace.projectedCommission)}</div>
-          <div style={{ fontSize: 13, color: paceColor, marginBottom: 24 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Day {pace.elapsed} of {pace.totalDays}</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            {[["Commission Earned", fmtFull$(totals.totalCommission), "#10B981"], ["Projected Commission", fmtFull$(pace.projectedCommission), paceColor], ["Premium Written", fmtFull$(totals.totalPremium), "#F1F5F9"], ["Projected Premium", fmtFull$(pace.projectedPremium), "#F1F5F9"]].map(([label, value, color]) => (
-              <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'DM Mono', monospace", color }}>{value}</div>
-              </div>
-            ))}
+      {/* Pace drill-down */}
+      {modal === "pace" && pace && (
+        <DrillDownModal
+          title={modalMode === "commission" ? "Projected Commission" : "Projected Premium"}
+          onClose={closeModal}
+        >
+          <div style={{ fontSize: 40, fontWeight: 700, color: modalMode === "commission" ? (pace.onPace ? "#10B981" : "#F59E0B") : "#3B82F6", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+            {modalMode === "commission" ? fmtFull$(pace.projectedCommission) : fmtFull$(pace.projectedPremium)}
           </div>
-        </DrillDownModal>
-        );
-      })()}
-
-      {/* KPI — Daily Target */}
-      {modal === "kpi-daily" && dailyTarget && (
-        <DrillDownModal title="Daily Target" onClose={closeModal}>
-          <div style={{ fontSize: 42, fontWeight: 700, color: "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(dailyTarget.dailyCommissionNeeded)}</div>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 24 }}>commission needed per day · {dailyTarget.remaining} days remaining</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+          <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
+            {pace.onPace ? "↑ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays} · projected by month-end
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
-              ["Commission Remaining", fmtFull$(dailyTarget.commissionRemaining), "#F59E0B"],
-              ["Premium Remaining", fmtFull$(dailyTarget.premiumRemaining), "#64748B"],
-              ["Daily Premium Needed", fmtFull$(dailyTarget.dailyPremiumNeeded), "#64748B"],
-              ["Policies / Day", dailyTarget.policiesPerDayNeeded ? dailyTarget.policiesPerDayNeeded.toFixed(1) : "—", "#F59E0B"],
-            ].map(([label, value, color]) => (
-              <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: 16 }}>
-                <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'DM Mono', monospace", color }}>{value}</div>
+              { label: "Commission Earned",    value: fmtFull$(totals.totalCommission),   color: "#10B981" },
+              { label: "Projected Commission", value: fmtFull$(pace.projectedCommission), color: pace.onPace ? "#10B981" : "#F59E0B" },
+              { label: "Premium Written",      value: fmtFull$(totals.totalPremium),      color: "#E2E8F0" },
+              { label: "Projected Premium",    value: fmtFull$(pace.projectedPremium),    color: "#3B82F6" },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ background: "#1A1D27", borderRadius: 10, padding: "14px 16px", border: "1px solid #252A3A" }}>
+                <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>{label}</div>
+                <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
           </div>
-          {dailyTarget.avgCommissionPerPolicy && (
-            <div style={{ fontSize: 12, color: "#475569" }}>Based on {dailyTarget.totalPolicies} policies · avg {fmtFull$(dailyTarget.avgCommissionPerPolicy)} commission · {fmtFull$(dailyTarget.avgPremiumPerPolicy)} premium per policy</div>
-          )}
         </DrillDownModal>
       )}
+
+      {/* Daily Target drill-down */}
+      {modal === "daily" && dailyTarget && (() => {
+        const dailyModes = {
+          commission: { label: "DAILY TARGET",         value: fmtFull$(dailyTarget.dailyCommissionNeeded),          unit: "commission / day", color: "#F59E0B" },
+          premium:    { label: "DAILY PREMIUM TARGET", value: fmtFull$(dailyTarget.dailyPremiumNeeded),             unit: "premium / day",    color: "#3B82F6" },
+          policies:   { label: "POLICIES / DAY",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", unit: "policies needed",  color: "#10B981" },
+        };
+        const active = dailyModes[modalMode] ?? dailyModes.commission;
+        return (
+          <DrillDownModal
+            title={
+              modalMode === "commission" ? "Daily Commission Target"
+              : modalMode === "premium"  ? "Daily Premium Target"
+              : "Daily Policies Target"
+            }
+            onClose={closeModal}
+          >
+            <div style={{ fontSize: 40, fontWeight: 700, color: active.color, fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+              {active.value}
+            </div>
+            <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
+              {active.unit} · {dailyTarget.remaining} business days left
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {[
+                { label: "Commission Remaining", value: fmtFull$(dailyTarget.commissionRemaining), color: "#F59E0B" },
+                { label: "Premium Remaining",    value: fmtFull$(dailyTarget.premiumRemaining),    color: "#3B82F6" },
+                { label: "Daily Premium Needed", value: fmtFull$(dailyTarget.dailyPremiumNeeded),  color: "#E2E8F0" },
+                { label: "Policies / Day",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", color: "#10B981" },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: "#1A1D27", borderRadius: 10, padding: "14px 16px", border: "1px solid #252A3A" }}>
+                  <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>{label}</div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            {dailyTarget.avgCommissionPerPolicy && (
+              <div style={{ fontSize: 12, color: "#334155", marginTop: 16 }}>
+                Based on {dailyTarget.totalPolicies} policies · avg {fmtFull$(dailyTarget.avgCommissionPerPolicy)} commission · {fmtFull$(dailyTarget.avgPremiumPerPolicy)} premium per policy
+              </div>
+            )}
+          </DrillDownModal>
+        );
+      })()}
 
       {/* Trend chart drill-down */}
       {modal === "trend" && (
