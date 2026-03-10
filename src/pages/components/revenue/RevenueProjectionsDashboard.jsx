@@ -1,5 +1,6 @@
 import { useState, useMemo, useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
+import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 
 // ─── Commission Matrix ────────────────────────────────────────────────────────
 // Rates = 9% base + variable compensation (new business only)
@@ -89,7 +90,6 @@ function parseAllstateRows(rows) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function RevenueProjectionsDashboard() {
-  const [entries, setEntries] = useState([]);
   const [newEntry, setNewEntry] = useState(emptyEntry());
   const [view, setView] = useState("month"); // month | ytd
   const [uploading, setUploading] = useState(false);
@@ -117,6 +117,8 @@ export default function RevenueProjectionsDashboard() {
     // fallback (should not reach)
     return { rangeStart: new Date(y, m, 1), rangeEnd: new Date(y, m + 1, 0), label: `${MONTH_NAMES[m]} ${y}` };
   }, [view]);
+
+  const { entries, loading, error, addEntry, addEntries, deleteEntry } = useRevenueEntries({ rangeStart, rangeEnd });
 
   // ─── Filtered entries ──────────────────────────────────────────────────────
   const filtered = useMemo(() =>
@@ -173,11 +175,11 @@ export default function RevenueProjectionsDashboard() {
   const goalPct = Math.min(totals.totalPremium / GOAL, 1);
 
   // ─── Add manual entry ─────────────────────────────────────────────────────
-  const addEntry = () => {
+  const handleAddEntry = async () => {
     const premium = parseFloat(newEntry.premium);
     if (!premium || premium <= 0) return;
-    setEntries(prev => [...prev, { ...newEntry, id: crypto.randomUUID(), premium }]);
-    setNewEntry(emptyEntry());
+    const { error } = await addEntry({ ...newEntry, premium });
+    if (!error) setNewEntry(emptyEntry());
   };
 
   // ─── File upload ───────────────────────────────────────────────────────────
@@ -196,8 +198,12 @@ export default function RevenueProjectionsDashboard() {
       if (parsed.length === 0) {
         setUploadMsg("⚠️ No rows parsed — check column headers match Allstate export format.");
       } else {
-        setEntries(prev => [...prev, ...parsed]);
-        setUploadMsg(`✅ Imported ${parsed.length} policies from ${file.name}`);
+        const { count, error } = await addEntries(parsed);
+        if (error) {
+          setUploadMsg(`❌ Error saving to database: ${error}`);
+        } else {
+          setUploadMsg(`✅ Imported ${count} policies from ${file.name}`);
+        }
       }
     } catch (err) {
       setUploadMsg(`❌ Error: ${err.message}`);
@@ -207,7 +213,27 @@ export default function RevenueProjectionsDashboard() {
     }
   };
 
-  const deleteEntry = (id) => setEntries(prev => prev.filter(e => e.id !== id));
+  // ─── CSV Export ───────────────────────────────────────────────────────────
+  const exportCSV = () => {
+    const headers = ["Date", "Product", "Annual Premium", "Commission", "Policy Count", "Source", "Note"];
+    const rows = filtered.map(e => [
+      e.date,
+      COMMISSION[e.product]?.label ?? e.product,
+      e.premium.toFixed(2),
+      calcCommission(e.premium, e.product).toFixed(2),
+      e.policyCount,
+      e.source,
+      e.note,
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `revenue-${view}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // ─── Product bar chart data ───────────────────────────────────────────────
   const productData = Object.entries(totals.byProduct).map(([key, val]) => ({
@@ -221,6 +247,15 @@ export default function RevenueProjectionsDashboard() {
   return (
     <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#0F1117", minHeight: "100vh", color: "#E2E8F0", padding: "24px" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; } .del-btn { background: transparent; border: none; color: #EF4444; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; } .del-btn:hover { background: #2D1A1A; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 13px; } th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; } tr:hover td { background: #161924; }`}</style>
+
+      {error && (
+        <div style={{ background: "#2D1A1A", border: "1px solid #EF4444", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
+          {error}
+        </div>
+      )}
+      {loading && (
+        <div style={{ color: "#475569", fontSize: 13, marginBottom: 12 }}>Loading entries...</div>
+      )}
 
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
@@ -379,7 +414,12 @@ export default function RevenueProjectionsDashboard() {
         <div className="card">
           {/* Add Manual Entry */}
           <div style={{ marginBottom: 20, padding: 16, background: "#1A1D27", borderRadius: 10, border: "1px solid #252A3A" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 12 }}>Add Manual Entry</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8" }}>Add Manual Entry</div>
+              {filtered.length > 0 && (
+                <button className="btn-ghost" onClick={exportCSV}>Export CSV</button>
+              )}
+            </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
               <div>
                 <label>Date</label>
@@ -406,7 +446,7 @@ export default function RevenueProjectionsDashboard() {
                 <label>Note (optional)</label>
                 <input type="text" placeholder="Household name, bundle..." value={newEntry.note} onChange={e => setNewEntry(p => ({...p, note: e.target.value}))} style={{ width: "100%" }} />
               </div>
-              <button className="btn-primary" onClick={addEntry}>Add</button>
+              <button className="btn-primary" onClick={handleAddEntry}>Add</button>
             </div>
           </div>
 
