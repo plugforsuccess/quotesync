@@ -542,7 +542,7 @@ export default function RevenueProjectionsDashboard() {
             <div className="card clickable" onClick={handlePaceClick} title="Click to switch · Double-click to expand">
               <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activePace.label}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: activePace.color, fontFamily: "'DM Mono', monospace" }}>{activePace.value}</div>
-              <div style={{ fontSize: 11, color: activePace.color, marginTop: 2 }}>{pace.onPace ? "↑ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays}</div>
+              <div style={{ fontSize: 11, color: activePace.color, marginTop: 2 }}>{pace.onPace ? "↑ On pace" : "↓ Behind pace"} · {dailyTarget.remaining} business days left</div>
               <div style={{ fontSize: 10, color: "#334155", marginTop: 4 }}>{activePace.subLabel}</div>
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                 {["commission", "premium"].map(m => (
