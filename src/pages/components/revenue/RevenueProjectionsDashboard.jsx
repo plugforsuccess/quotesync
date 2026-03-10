@@ -71,10 +71,11 @@ function parseAllstateRows(rows) {
 
   if (!rows || rows.length < 2) return [];
   const headers = rows[0];
-  const di   = findCol(headers, COL_MAP.date);
-  const pi   = findCol(headers, COL_MAP.premium);
-  const li   = findCol(headers, COL_MAP.product);
-  const iTier = findCol(headers, COL_MAP.tier); // -1 if column absent
+  const di      = findCol(headers, COL_MAP.date);
+  const pi      = findCol(headers, COL_MAP.premium);
+  const li      = findCol(headers, COL_MAP.product);
+  const iTier   = findCol(headers, COL_MAP.tier);   // -1 if column absent
+  const iPolicyNo = findCol(headers, COL_MAP.policy); // -1 if column absent
 
   return rows.slice(1).filter(r => r.some(Boolean)).map((r) => {
     const raw = r[li]?.toString().toLowerCase() ?? "";
@@ -94,11 +95,12 @@ function parseAllstateRows(rows) {
       id: crypto.randomUUID(),
       date,
       product,
-      tier: normalizeTier(iTier >= 0 ? r[iTier] : ""),
-      premium: parseFloat(r[pi]?.toString().replace(/[$,]/g, "")) || 0,
+      tier:     normalizeTier(iTier >= 0 ? r[iTier] : ""),
+      premium:  parseFloat(r[pi]?.toString().replace(/[$,]/g, "")) || 0,
       policyCount: 1,
-      source: "upload",
-      note: r[li]?.toString() ?? "",
+      policyNo: iPolicyNo >= 0 ? (r[iPolicyNo]?.toString().trim() || null) : null,
+      source:   "upload",
+      note:     r[li]?.toString() ?? "",
     };
   }).filter(e => e.premium > 0);
 }
@@ -267,7 +269,7 @@ export default function RevenueProjectionsDashboard() {
         if (error) {
           setUploadMsg(`❌ Error saving to database: ${error}`);
         } else {
-          setUploadMsg(`✅ Imported ${count} policies from ${file.name}`);
+          setUploadMsg(`✅ ${count} policies synced from ${file.name} — duplicates updated in place.`);
         }
       }
     } catch (err) {
