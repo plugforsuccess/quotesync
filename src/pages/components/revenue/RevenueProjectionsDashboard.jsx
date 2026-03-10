@@ -14,7 +14,8 @@ const COMMISSION = {
 const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
 const TIER_COLORS = { preferred: "#10B981", bundled: "#3B82F6", monoline: "#64748B" };
 
-const GOAL = 40000;
+const COMMISSION_GOAL = 40000;  // primary goal — commission revenue
+const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
 const PRODUCT_COLORS = { auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6" };
 
 const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n).toLocaleString()}`;
@@ -170,7 +171,7 @@ export default function RevenueProjectionsDashboard() {
       const slice = entries.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
       const premium = slice.reduce((s, e) => s + e.premium, 0);
       const commission = slice.reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline"), 0);
-      return { name: `${MONTH_NAMES[month]} '${String(year).slice(2)}`, premium, commission, goal: GOAL };
+      return { name: `${MONTH_NAMES[month]} '${String(year).slice(2)}`, premium, commission, goal: COMMISSION_GOAL };
     });
   }, [entries]);
 
@@ -180,13 +181,13 @@ export default function RevenueProjectionsDashboard() {
     const y = TODAY.getFullYear(), m = TODAY.getMonth();
     const totalDays = daysInMonth(y, m);
     const elapsed = todayDayOfMonth();
-    const projected = elapsed > 0 ? (totals.totalPremium / elapsed) * totalDays : 0;
-    const pct = Math.min(projected / GOAL, 2);
-    return { projected, pct, elapsed, totalDays, onPace: projected >= GOAL };
-  }, [view, totals.totalPremium]);
+    const projectedCommission = elapsed > 0 ? (totals.totalCommission / elapsed) * totalDays : 0;
+    const projectedPremium    = elapsed > 0 ? (totals.totalPremium    / elapsed) * totalDays : 0;
+    return { projectedCommission, projectedPremium, elapsed, totalDays, onPace: projectedCommission >= COMMISSION_GOAL };
+  }, [view, totals.totalCommission, totals.totalPremium]);
 
-  // ─── Goal pct ─────────────────────────────────────────────────────────────
-  const goalPct = Math.min(totals.totalPremium / GOAL, 1);
+  // ─── Goal pcts ────────────────────────────────────────────────────────────
+  const commissionGoalPct = Math.min(totals.totalCommission / COMMISSION_GOAL, 1);
 
   // ─── Add manual entry ─────────────────────────────────────────────────────
   const handleAddEntry = async () => {
@@ -240,7 +241,7 @@ export default function RevenueProjectionsDashboard() {
           totals={totals}
           rangeLabel={rangeLabel}
           view={view}
-          goalPct={goalPct}
+          goalPct={commissionGoalPct}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -306,7 +307,7 @@ export default function RevenueProjectionsDashboard() {
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>insuredbycam.com</div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#F1F5F9" }}>Revenue Projections</h1>
-          <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>New Business · Goal: {fmtFull$(GOAL)}/mo</div>
+          <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>New Business · Commission Goal: {fmtFull$(COMMISSION_GOAL)}/mo</div>
         </div>
         {/* View selector */}
         <div style={{ display: "flex", gap: 6 }}>
@@ -336,44 +337,73 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 26, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace" }}>{filtered.reduce((s,e) => s + e.policyCount, 0)}</div>
           <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Avg premium: {filtered.length > 0 ? fmt$(totals.totalPremium / filtered.reduce((s,e) => s + e.policyCount,0)) : "—"}</div>
         </div>
-        {/* Goal */}
+        {/* Commission Goal */}
         <div className="card" style={{ position: "relative", overflow: "hidden" }}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Goal Progress</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: goalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{Math.round(goalPct * 100)}%</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{fmt$(GOAL - totals.totalPremium > 0 ? GOAL - totals.totalPremium : 0)} remaining</div>
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Goal</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{Math.round(commissionGoalPct * 100)}%</div>
+          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{fmt$(COMMISSION_GOAL - totals.totalCommission > 0 ? COMMISSION_GOAL - totals.totalCommission : 0)} remaining</div>
           {/* mini progress bar */}
           <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 10 }}>
-            <div style={{ height: "100%", width: `${Math.min(goalPct * 100, 100)}%`, background: goalPct >= 1 ? "#10B981" : "#3B82F6", borderRadius: 2, transition: "width 0.4s" }} />
+            <div style={{ height: "100%", width: `${Math.min(commissionGoalPct * 100, 100)}%`, background: commissionGoalPct >= 1 ? "#10B981" : "#3B82F6", borderRadius: 2, transition: "width 0.4s" }} />
           </div>
         </div>
         {/* Pace (month only) */}
         {pace && (
           <div className="card">
             <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Month-End Pace</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: pace.onPace ? "#10B981" : "#EF4444", fontFamily: "'DM Mono', monospace" }}>{fmt$(pace.projected)}</div>
+            <div style={{ fontSize: 26, fontWeight: 700, color: pace.onPace ? "#10B981" : "#EF4444", fontFamily: "'DM Mono', monospace" }}>{fmt$(pace.projectedCommission)}</div>
             <div style={{ fontSize: 11, color: pace.onPace ? "#10B981" : "#EF4444", marginTop: 2 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Day {pace.elapsed}/{pace.totalDays}</div>
           </div>
         )}
       </div>
 
-      {/* Progress Bar Full */}
+      {/* Goal Tracking */}
       <div className="card" style={{ marginBottom: 20, padding: "16px 20px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12 }}>
-          <span style={{ color: "#94A3B8", fontWeight: 600 }}>$40K Monthly New Business Goal</span>
-          <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(totals.totalPremium)} / {fmtFull$(GOAL)}</span>
+        {/* Commission Goal — primary */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12 }}>
+            <span style={{ color: "#94A3B8", fontWeight: 600 }}>💰 Commission Revenue Goal</span>
+            <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>
+              {fmtFull$(totals.totalCommission)} / {fmtFull$(COMMISSION_GOAL)}
+            </span>
+          </div>
+          <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden" }}>
+            <div style={{
+              height: "100%",
+              width: `${Math.min(totals.totalCommission / COMMISSION_GOAL * 100, 100)}%`,
+              background: totals.totalCommission >= COMMISSION_GOAL ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)",
+              borderRadius: 5,
+              transition: "width 0.5s",
+            }} />
+          </div>
         </div>
-        <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${Math.min(goalPct * 100, 100)}%`, background: "linear-gradient(90deg, #3B82F6, #8B5CF6)", borderRadius: 5, transition: "width 0.5s" }} />
-        </div>
-        {/* Product breakdown bars */}
-        <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-          {Object.entries(totals.byProduct).map(([key, val]) => val.premium > 0 && (
-            <div key={key} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: PRODUCT_COLORS[key] }} />
-              <span style={{ color: "#64748B" }}>{COMMISSION[key].label}</span>
-              <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>{fmt$(val.premium)}</span>
-            </div>
-          ))}
+        {/* Written Premium Volume — secondary */}
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12 }}>
+            <span style={{ color: "#94A3B8", fontWeight: 600 }}>📋 Written Premium Volume</span>
+            <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>
+              {fmtFull$(totals.totalPremium)} / {fmtFull$(PREMIUM_GOAL)}
+            </span>
+          </div>
+          <div style={{ height: 6, background: "#252A3A", borderRadius: 5, overflow: "hidden" }}>
+            <div style={{
+              height: "100%",
+              width: `${Math.min(totals.totalPremium / PREMIUM_GOAL * 100, 100)}%`,
+              background: "linear-gradient(90deg, #3B82F6, #8B5CF6)",
+              borderRadius: 5,
+              transition: "width 0.5s",
+            }} />
+          </div>
+          {/* Product breakdown dots */}
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+            {Object.entries(totals.byProduct).map(([key, val]) => val.premium > 0 && (
+              <div key={key} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: PRODUCT_COLORS[key] }} />
+                <span style={{ color: "#64748B" }}>{COMMISSION[key].label}</span>
+                <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>{fmt$(val.premium)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -389,17 +419,17 @@ export default function RevenueProjectionsDashboard() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {/* Monthly Trend */}
           <div className="card" style={{ gridColumn: "1 / -1" }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Monthly Written Premium vs $40K Goal</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Monthly Commission Earned vs $40K Goal</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={trendData} barSize={20}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
                 <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v, n) => [fmtFull$(v), n === "premium" ? "Written Premium" : "Commission"]} />
-                <ReferenceLine y={GOAL} stroke="#3B82F6" strokeDasharray="4 4" label={{ value: "$40K", fill: "#3B82F6", fontSize: 11 }} />
-                <Bar dataKey="premium" fill="#3B82F6" radius={[4,4,0,0]}>
+                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Commission"]} />
+                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
+                <Bar dataKey="commission" fill="#10B981" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (
-                    <Cell key={i} fill={entry.premium >= GOAL ? "#10B981" : "#3B82F6"} />
+                    <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
                   ))}
                 </Bar>
               </BarChart>
