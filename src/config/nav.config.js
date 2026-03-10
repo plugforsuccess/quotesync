@@ -29,9 +29,10 @@ const primaryItems = {
 // ── Secondary nav items (inside hamburger menu) ──────────────────────────────
 
 const secondaryItems = {
-  agencyMgmt:     { to: '/admin/agencies',          label: 'Agency Management', icon: '🏢' },
-  employeeRoster: { to: '/admin/agency/employees',  label: 'Employee Roster',   icon: '👥' },
-  audit:          { to: '/admin/audit',              label: 'Audit',             icon: '🔍' },
+  agencyMgmt:          { to: '/admin/agencies',              label: 'Agency Management',   icon: '🏢' },
+  employeeRoster:      { to: '/admin/agency/employees',      label: 'Employee Roster',     icon: '👥' },
+  audit:               { to: '/admin/audit',                 label: 'Audit',               icon: '🔍' },
+  revenueProjections:  { to: '/admin/revenue-projections',   label: 'Revenue Projections', icon: '💰' },
 };
 
 // ── Platform plane navigation by role ────────────────────────────────────────
@@ -50,6 +51,7 @@ export const platformNav = {
       secondaryItems.agencyMgmt,
       secondaryItems.employeeRoster,
       secondaryItems.audit,
+      secondaryItems.revenueProjections,
     ],
   },
   platform_admin: {
@@ -64,6 +66,7 @@ export const platformNav = {
       secondaryItems.agencyMgmt,
       secondaryItems.employeeRoster,
       secondaryItems.audit,
+      secondaryItems.revenueProjections,
     ],
   },
   platform_support: {

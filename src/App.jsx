@@ -106,6 +106,7 @@ const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
 const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
 const EmployeeRosterPage = lazy(() => import('./pages/EmployeeRosterPage'));
+const RevenueProjectionsDashboard = lazy(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -349,6 +350,18 @@ function App() {
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <Suspense fallback={<PageLoader />}>
                     <CSPerformancePage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin - Revenue Projections Dashboard (platform_admin+) */}
+            <Route
+              path="admin/revenue-projections"
+              element={
+                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <RevenueProjectionsDashboard />
                   </Suspense>
                 </ProtectedRoute>
               }
