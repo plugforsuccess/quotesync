@@ -154,28 +154,27 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
   const yearOptions = Array.from({ length: 32 }, (_, i) => i === 31 ? '30+' : String(i));
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="flex min-h-full items-start justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl my-8">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative w-full rounded-t-2xl sm:rounded-2xl sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-5 sm:p-7">
           {/* Header */}
-          <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <div className="border-b border-gray-200 pb-4 mb-4 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">
               {isEdit ? 'Edit Employee' : 'Add Employee'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-500" aria-label="Close">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-500 min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Body */}
           <form onSubmit={handleSubmit}>
-            <div className="px-6 py-4 max-h-[70vh] overflow-y-auto space-y-6">
+            <div className="space-y-6">
 
               {/* Identity */}
               <fieldset>
                 <legend className="text-sm font-semibold text-gray-700 mb-3">Identity</legend>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
                     <input
@@ -233,8 +232,8 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
               {/* Address */}
               <fieldset>
                 <legend className="text-sm font-semibold text-gray-700 mb-3">Address</legend>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
                     <input
                       value={form.address_line1}
@@ -242,7 +241,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
                   </div>
-                  <div className="col-span-2">
+                  <div className="sm:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
                     <input
                       value={form.address_line2}
@@ -285,7 +284,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
               {/* Employment */}
               <fieldset>
                 <legend className="text-sm font-semibold text-gray-700 mb-3">Employment</legend>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
                     <select
@@ -333,7 +332,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
               <fieldset>
                 <legend className="text-sm font-semibold text-gray-700 mb-3">Default Schedule</legend>
                 <p className="text-xs text-gray-500 mb-3">Pre-fills the Attendance page for this employee each week.</p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
                     <input
@@ -426,7 +425,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Years Insurance Experience</label>
                       <select
@@ -472,7 +471,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+            <div className="border-t border-gray-200 pt-4 mt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
@@ -491,6 +490,5 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
           </form>
         </div>
       </div>
-    </div>
   );
 }

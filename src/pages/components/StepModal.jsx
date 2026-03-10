@@ -32,7 +32,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 md:p-8"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -47,7 +47,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
 
       {/* Modal */}
       <div
-        className="relative bg-white/95 backdrop-blur-2xl rounded-3xl shadow-2xl max-w-xl w-full max-h-[85vh] flex flex-col border border-white/20 overflow-hidden animate-scaleSpring"
+        className="relative bg-white/95 backdrop-blur-2xl rounded-t-2xl sm:rounded-3xl shadow-2xl sm:max-w-xl w-full max-h-[90vh] flex flex-col border border-white/20 overflow-hidden animate-scaleSpring p-5 sm:p-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Gradient Glow */}

@@ -101,7 +101,7 @@ function HamburgerMenu({ items }) {
       {isOpen && (
         <div
           ref={menuRef}
-          className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-fadeIn"
+          className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-fadeIn"
           style={{
             animation: 'hamburgerIn 150ms ease-out',
           }}

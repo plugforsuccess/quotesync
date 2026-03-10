@@ -124,11 +124,11 @@ function DrillDownModal({ title, onClose, children }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
   return createPortal(
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: 900, maxHeight: "85vh", overflow: "auto", padding: 28 }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 0 }} className="sm:items-center sm:p-6">
+      <div onClick={e => e.stopPropagation()} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: "14px 14px 0 0", width: "100%", maxHeight: "90vh", overflow: "auto", padding: "20px 16px" }} className="sm:rounded-2xl sm:max-w-3xl sm:p-7">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{title}</div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer", minWidth: 44, minHeight: 44 }}>×</button>
         </div>
         {children}
       </div>
@@ -702,7 +702,7 @@ export default function RevenueProjectionsDashboard() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
+      <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto", paddingBottom: 2 }}>
         {[["overview","Overview"],["entries","Entries"],["upload","Upload"]].map(([t,l]) => (
           <button key={t} className={`tab ${activeTab===t?"active":""}`} onClick={() => setActiveTab(t)}>{l}</button>
         ))}
@@ -763,7 +763,7 @@ export default function RevenueProjectionsDashboard() {
               )}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
-              <div>
+              <div style={{ minWidth: 120 }}>
                 <label>Date</label>
                 <input type="date" value={newEntry.date} onChange={e => setNewEntry(p => ({...p, date: e.target.value}))} style={{ width: 140 }} />
               </div>
@@ -771,7 +771,7 @@ export default function RevenueProjectionsDashboard() {
                 <label>Policy No</label>
                 <input type="text" placeholder="954061414" value={newEntry.policyNo} onChange={e => setNewEntry(p => ({...p, policyNo: e.target.value.trim()}))} style={{ width: 130 }} />
               </div>
-              <div>
+              <div style={{ minWidth: 120 }}>
                 <label>Product</label>
                 <select value={newEntry.product} onChange={e => setNewEntry(p => ({...p, product: e.target.value}))}>
                   <option value="auto">Auto</option>
@@ -780,7 +780,7 @@ export default function RevenueProjectionsDashboard() {
                   <option value="other">Other</option>
                 </select>
               </div>
-              <div>
+              <div style={{ minWidth: 120 }}>
                 <label>Bundle Tier</label>
                 <select value={newEntry.tier} onChange={e => setNewEntry(p => ({...p, tier: e.target.value}))}>
                   <option value="preferred">Preferred</option>
@@ -790,7 +790,7 @@ export default function RevenueProjectionsDashboard() {
               </div>
               <div>
                 <label>Annual Premium ($)</label>
-                <input type="number" placeholder="1200" value={newEntry.premium} onChange={e => setNewEntry(p => ({...p, premium: e.target.value}))} style={{ width: 120 }} />
+                <input type="number" placeholder="1200" value={newEntry.premium} onChange={e => setNewEntry(p => ({...p, premium: e.target.value}))} style={{ width: 120, minWidth: 100 }} />
               </div>
               <div>
                 <label>Policies</label>
@@ -825,7 +825,8 @@ export default function RevenueProjectionsDashboard() {
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0", color: "#334155", fontSize: 13 }}>No entries in this range. Add manually or upload an Allstate report.</div>
           ) : (
-            <table>
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <table style={{ minWidth: 640 }}>
               <thead>
                 <tr>
                   <th>Date</th><th>Product</th><th>Tier</th><th>Premium</th><th>Commission</th><th>Source</th><th>Note</th><th></th>
@@ -843,7 +844,7 @@ export default function RevenueProjectionsDashboard() {
                       <td style={{ color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier))}</td>
                       <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "#94A3B8" }}>{e.source}</span></td>
                       <td style={{ color: "#475569", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
-                      <td><button className="del-btn" onClick={() => deleteEntry(e.id)}>×</button></td>
+                      <td><button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button></td>
                     </tr>
                   );
                 })}
@@ -857,6 +858,7 @@ export default function RevenueProjectionsDashboard() {
                 </tr>
               </tfoot>
             </table>
+            </div>
           )}
         </div>
       )}

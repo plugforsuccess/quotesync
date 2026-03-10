@@ -114,12 +114,11 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
   }
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative w-full rounded-t-2xl sm:rounded-2xl sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-5 sm:p-7">
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 z-10">
+          <div className="sticky top-0 bg-white border-b border-gray-200 pb-4 mb-4 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-blue-600" />
@@ -128,14 +127,14 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
                   <p className="text-sm text-gray-500">{employeeName}</p>
                 </div>
               </div>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition" aria-label="Close">
+              <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
 
           {/* Body */}
-          <div className="px-6 py-4 space-y-6">
+          <div className="space-y-6">
             {/* Effective Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Effective Date</label>
@@ -153,7 +152,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
             {(roleType === 'producer' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS).map((group) => (
               <div key={group.title}>
                 <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">{group.title}</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {group.fields.map((field) => (
                     <div key={field.key}>
                       <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
@@ -172,7 +171,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-between">
+          <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <button
               onClick={handleReset}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -199,6 +198,5 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
           </div>
         </div>
       </div>
-    </div>
   );
 }

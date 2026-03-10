@@ -384,7 +384,7 @@ const CSPerformancePage = () => {
             <button
               onClick={refetchAll}
               disabled={isLoading}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -421,7 +421,7 @@ const CSPerformancePage = () => {
 
       {/* Filters bar */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap overflow-x-auto pb-2">
           {/* Role filter — only in team view */}
           {activeTab === 'team' && (
             <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden">
@@ -456,7 +456,7 @@ const CSPerformancePage = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, -1))}
-              className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -465,7 +465,7 @@ const CSPerformancePage = () => {
             </span>
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
-              className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <ChevronRight className="w-4 h-4" />
             </button>

@@ -44,22 +44,21 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
   const displayName = employee.preferred_name || employee.first_name;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="fixed inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl">
-          <div className="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+      <div className="absolute inset-0" onClick={onClose} />
+      <div className="relative w-full rounded-t-2xl sm:rounded-2xl sm:max-w-md max-h-[90vh] overflow-y-auto bg-white p-5 sm:p-7">
+          <div className="border-b border-gray-200 pb-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-600" />
               <h3 className="text-lg font-semibold text-gray-900">Terminate Employee</h3>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-500" aria-label="Close">
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-500 min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit}>
-            <div className="px-6 py-4 space-y-4">
+            <div className="space-y-4">
               <p className="text-sm text-gray-600">
                 You are about to terminate <span className="font-semibold text-gray-900">{displayName} {employee.last_name}</span>.
                 This will mark them as terminated but preserve all historical data.
@@ -88,7 +87,7 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
               </div>
             </div>
 
-            <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+            <div className="border-t border-gray-200 pt-4 mt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
@@ -107,6 +106,5 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
           </form>
         </div>
       </div>
-    </div>
   );
 }

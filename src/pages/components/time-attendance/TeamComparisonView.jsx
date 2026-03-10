@@ -291,7 +291,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[640px]">
           <thead className="bg-gray-50/50">
             <tr>
               {columns.map((col) => (
