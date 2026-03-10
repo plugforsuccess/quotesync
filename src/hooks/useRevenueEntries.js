@@ -15,19 +15,21 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
       .from("revenue_entries")
       .select("*")
       .eq("agency_id", AGENCY_ID)
-      .gte("date", rangeStart.toISOString().slice(0, 10))
-      .lte("date", rangeEnd.toISOString().slice(0, 10))
-      .order("date", { ascending: false });
+      .gte("issued_date", rangeStart.toISOString().slice(0, 10))
+      .lte("issued_date", rangeEnd.toISOString().slice(0, 10))
+      .order("issued_date", { ascending: false });
 
     if (error) setError(error.message);
     else setEntries(
       (data ?? []).map(r => ({
         id:          r.id,
-        date:        r.date,
+        date:        r.issued_date,   // internal alias — all downstream logic uses e.date
+        issuedDate:  r.issued_date,
         product:     r.product,
         tier:        r.tier ?? "monoline",
         premium:     parseFloat(r.premium),
         policyCount: r.policy_count,
+        policyNo:    r.policy_no ?? null,
         source:      r.source,
         note:        r.note ?? "",
       }))
@@ -42,7 +44,8 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
       .from("revenue_entries")
       .insert({
         agency_id:    AGENCY_ID,
-        date:         entry.date,
+        date:         entry.date,         // keep writing date col during transition
+        issued_date:  entry.date,         // primary field
         product:      entry.product,
         tier:         entry.tier ?? "monoline",
         premium:      entry.premium,
@@ -58,11 +61,13 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
     if (error) return { error: error.message };
     setEntries(prev => [{
       id:          data.id,
-      date:        data.date,
+      date:        data.issued_date,
+      issuedDate:  data.issued_date,
       product:     data.product,
       tier:        data.tier ?? "monoline",
       premium:     parseFloat(data.premium),
       policyCount: data.policy_count,
+      policyNo:    data.policy_no ?? null,
       source:      data.source,
       note:        data.note ?? "",
     }, ...prev]);
@@ -73,13 +78,14 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
     const user = (await supabase.auth.getUser()).data.user;
     const rows = batch.map(entry => ({
       agency_id:    AGENCY_ID,
-      date:         entry.date,
+      date:         entry.date,         // keep writing date col during transition
+      issued_date:  entry.date,         // primary field
       product:      entry.product,
       tier:         entry.tier ?? "monoline",
       premium:      entry.premium,
       policy_count: entry.policyCount,
       policy_no:    entry.policyNo || null,
-      source:       "upload",
+      source:       "upload",           // always "upload" — overwrites "manual" on conflict
       note:         entry.note || null,
       created_by:   user?.id ?? null,
     }));
@@ -90,7 +96,7 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
       .select();
 
     if (error) return { count: 0, error: error.message };
-    await fetch(); // re-fetch to sync state
+    await fetch();
     return { count: data.length, error: null };
   };
 

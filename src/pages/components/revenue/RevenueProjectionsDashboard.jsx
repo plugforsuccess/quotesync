@@ -68,7 +68,7 @@ const emptyEntry = () => ({
 function parseAllstateRows(rows) {
   // Best-effort mapping for common Allstate export column names
   const COL_MAP = {
-    date:    ["effective date", "policy date", "date", "eff date"],
+    date:    ["date written", "issued date", "effective date", "policy date", "date", "eff date"],
     premium: ["written premium", "premium", "annual premium", "prem"],
     product: ["line of business", "lob", "product", "type"],
     policy:  ["policy number", "policy #", "policy no"],
@@ -114,6 +114,24 @@ function parseAllstateRows(rows) {
       note:     r[li]?.toString() ?? "",
     };
   }).filter(e => e.premium > 0);
+}
+
+// ─── Sortable Table Header ────────────────────────────────────────────────────
+function SortTh({ col, label, sortCol, sortDir, onSort }) {
+  const active = sortCol === col;
+  return (
+    <th
+      onClick={() => onSort(col)}
+      style={{ cursor: "pointer", userSelect: "none", whiteSpace: "nowrap" }}
+    >
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        {label}
+        <span style={{ fontSize: 9, color: active ? "#E2E8F0" : "#334155", lineHeight: 1 }}>
+          {active ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
+        </span>
+      </span>
+    </th>
+  );
 }
 
 // ─── Drill-Down Modal ─────────────────────────────────────────────────────────
@@ -206,6 +224,8 @@ export default function RevenueProjectionsDashboard() {
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
+  const [sortCol, setSortCol] = useState("date");   // "date" | "issuedDate" | "product" | "tier" | "premium" | "commission" | "source"
+  const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
   const closeModal = () => setModal(null);
   const fileRef = useRef();
   const paceClickTimer  = useRef(null);
@@ -241,6 +261,39 @@ export default function RevenueProjectionsDashboard() {
       const d = new Date(e.date);
       return d >= rangeStart && d <= rangeEnd;
     }), [entries, rangeStart, rangeEnd]);
+
+  // ─── Sort handler ──────────────────────────────────────────────────────────
+  const handleSort = (col) => {
+    if (sortCol === col) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortCol(col);
+      setSortDir(col === "date" || col === "issuedDate" ? "desc" : "asc");
+    }
+  };
+
+  // ─── Sorted entries ────────────────────────────────────────────────────────
+  const sortedEntries = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let av, bv;
+      switch (sortCol) {
+        case "date":       av = a.date;       bv = b.date;       break;
+        case "issuedDate": av = a.issuedDate; bv = b.issuedDate; break;
+        case "product":    av = a.product;    bv = b.product;    break;
+        case "tier":       av = a.tier;       bv = b.tier;       break;
+        case "premium":    av = a.premium;    bv = b.premium;    break;
+        case "commission":
+          av = calcCommission(a.premium, a.product, a.tier);
+          bv = calcCommission(b.premium, b.product, b.tier);
+          break;
+        case "source":     av = a.source;     bv = b.source;     break;
+        default:           av = a.date;       bv = b.date;
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [filtered, sortCol, sortDir]);
 
   // ─── Aggregated totals ─────────────────────────────────────────────────────
   const totals = useMemo(() => {
@@ -764,8 +817,8 @@ export default function RevenueProjectionsDashboard() {
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
               <div style={{ minWidth: 120 }}>
-                <label>Date</label>
-                <input type="date" value={newEntry.date} onChange={e => setNewEntry(p => ({...p, date: e.target.value}))} style={{ width: 140 }} />
+                <label>Issued Date</label>
+                <input type="date" value={newEntry.date} onChange={e => setNewEntry(p => ({...p, date: e.target.value}))} style={{ width: 140 }} title="Policy bind / issue date — not today's date" />
               </div>
               <div>
                 <label>Policy No</label>
@@ -829,15 +882,24 @@ export default function RevenueProjectionsDashboard() {
             <table style={{ minWidth: 640 }}>
               <thead>
                 <tr>
-                  <th>Date</th><th>Product</th><th>Tier</th><th>Premium</th><th>Commission</th><th>Source</th><th>Note</th><th></th>
+                  <SortTh col="date"       label="Date"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh col="issuedDate" label="Issued Date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh col="product"    label="Product"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh col="tier"       label="Tier"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh col="premium"    label="Premium"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh col="commission" label="Commission"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh col="source"     label="Source"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                  <th>Note</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(e => {
+                {sortedEntries.map(e => {
                   const tier = e.tier ?? "monoline";
                   return (
                     <tr key={e.id}>
                       <td style={{ color: "#64748B", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
+                      <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.issuedDate}</td>
                       <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{COMMISSION[e.product]?.label}</span></td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
                       <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
@@ -851,7 +913,7 @@ export default function RevenueProjectionsDashboard() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={3} style={{ color: "#64748B", fontWeight: 600, paddingTop: 12 }}>Total</td>
+                  <td colSpan={4} style={{ color: "#64748B", fontWeight: 600, paddingTop: 12 }}>Total</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#F1F5F9", paddingTop: 12 }}>{fmtFull$(totals.totalPremium)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#10B981", paddingTop: 12 }}>{fmtFull$(totals.totalCommission)}</td>
                   <td colSpan={3} />
