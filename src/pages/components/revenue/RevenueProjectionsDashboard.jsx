@@ -197,9 +197,12 @@ export default function RevenueProjectionsDashboard() {
   const [view, setView] = useState("month"); // month | ytd
   const [paceMode, setPaceMode] = useState("commission");       // commission | premium
   const [dailyTargetMode, setDailyTargetMode] = useState("commission"); // commission | premium | policies
+  const [goalMode, setGoalMode] = useState("commission"); // commission | premium
   const [modalMode, setModalMode] = useState("commission");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
+  const [addingEntry, setAddingEntry] = useState(false);
+  const [addEntryMsg, setAddEntryMsg] = useState("");
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
@@ -207,6 +210,7 @@ export default function RevenueProjectionsDashboard() {
   const fileRef = useRef();
   const paceClickTimer  = useRef(null);
   const dailyClickTimer = useRef(null);
+  const goalClickTimer  = useRef(null);
 
   // ─── Date range for current view ──────────────────────────────────────────
   const { rangeStart, rangeEnd, label: rangeLabel } = useMemo(() => {
@@ -286,6 +290,25 @@ export default function RevenueProjectionsDashboard() {
 
   // ─── Goal pcts ────────────────────────────────────────────────────────────
   const commissionGoalPct = Math.min(totals.totalCommission / COMMISSION_GOAL, 1);
+  const goalModes = {
+    commission: {
+      label: "COMMISSION GOAL",
+      pct: commissionGoalPct,
+      earned: totals.totalCommission,
+      goal: COMMISSION_GOAL,
+      barColor: commissionGoalPct >= 1 ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)",
+      valueColor: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B",
+    },
+    premium: {
+      label: "PREMIUM GOAL",
+      pct: Math.min(totals.totalPremium / PREMIUM_GOAL, 1),
+      earned: totals.totalPremium,
+      goal: PREMIUM_GOAL,
+      barColor: "linear-gradient(90deg, #3B82F6, #8B5CF6)",
+      valueColor: "#3B82F6",
+    },
+  };
+  const activeGoal = goalModes[goalMode];
 
   // ─── Last-month commission (for MoM delta) ────────────────────────────────
   const lastMonthCommission = useMemo(() => {
@@ -327,9 +350,21 @@ export default function RevenueProjectionsDashboard() {
   // ─── Add manual entry ─────────────────────────────────────────────────────
   const handleAddEntry = async () => {
     const premium = parseFloat(newEntry.premium);
-    if (!premium || premium <= 0) return;
+    if (!premium || premium <= 0) {
+      setAddEntryMsg("Enter a valid premium amount greater than $0.");
+      return;
+    }
+
+    setAddingEntry(true);
+    setAddEntryMsg("");
     const { error } = await addEntry({ ...newEntry, premium });
-    if (!error) setNewEntry(emptyEntry());
+    if (error) {
+      setAddEntryMsg(`Unable to add entry: ${error}`);
+    } else {
+      setNewEntry(emptyEntry());
+      setAddEntryMsg("Entry added.");
+    }
+    setAddingEntry(false);
   };
 
   // ─── File upload ───────────────────────────────────────────────────────────
@@ -446,10 +481,25 @@ export default function RevenueProjectionsDashboard() {
     }
   };
 
+  const handleGoalClick = () => {
+    if (goalClickTimer.current) {
+      clearTimeout(goalClickTimer.current);
+      goalClickTimer.current = null;
+      setModalMode(goalMode);
+      setModal("kpi-goal");
+    } else {
+      goalClickTimer.current = setTimeout(() => {
+        setGoalMode(m => m === "commission" ? "premium" : "commission");
+        goalClickTimer.current = null;
+      }, 300);
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (paceClickTimer.current) clearTimeout(paceClickTimer.current);
       if (dailyClickTimer.current) clearTimeout(dailyClickTimer.current);
+      if (goalClickTimer.current) clearTimeout(goalClickTimer.current);
     };
   }, []);
 
@@ -457,7 +507,7 @@ export default function RevenueProjectionsDashboard() {
   return (
     <>
     <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#0F1117", minHeight: "100vh", color: "#E2E8F0", padding: "24px" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; } .del-btn { background: transparent; border: none; color: #EF4444; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; } .del-btn:hover { background: #2D1A1A; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 13px; } th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; } tr:hover td { background: #161924; } .clickable { cursor: pointer; transition: border-color 0.15s; } .clickable:hover { border-color: #3B82F6; }`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; } .del-btn { background: transparent; border: none; color: #EF4444; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; } .del-btn:hover { background: #2D1A1A; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 13px; } th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #94A3B8; } tr:hover td { background: #161924; } .clickable { cursor: pointer; transition: border-color 0.15s; } .clickable:hover { border-color: #3B82F6; }`}</style>
 
       {error && (
         <div style={{ background: "#2D1A1A", border: "1px solid #EF4444", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
@@ -513,12 +563,23 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Avg premium: {filtered.length > 0 ? fmt$(totals.totalPremium / filtered.reduce((s,e) => s + e.policyCount,0)) : "—"}</div>
         </div>
         {/* Commission Goal */}
-        <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={() => setModal("kpi-goal")}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Goal</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(totals.totalCommission)}</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{Math.round(commissionGoalPct * 100)}% of {fmtFull$(COMMISSION_GOAL)} goal</div>
-          <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 10 }}>
-            <div style={{ height: "100%", width: `${Math.min(commissionGoalPct * 100, 100)}%`, background: commissionGoalPct >= 1 ? "#10B981" : "#3B82F6", borderRadius: 2, transition: "width 0.4s" }} />
+        <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={handleGoalClick} title="Click to switch · Double-click to expand">
+          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+            {activeGoal.label}
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: activeGoal.valueColor, fontFamily: "'DM Mono', monospace" }}>
+            {fmtFull$(activeGoal.earned)}
+          </div>
+          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+            {Math.round(activeGoal.pct * 100)}% of {fmtFull$(activeGoal.goal)} goal
+          </div>
+          <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.min(activeGoal.pct * 100, 100)}%`, background: activeGoal.barColor, borderRadius: 2, transition: "width 0.4s" }} />
+          </div>
+          <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+            {["commission", "premium"].map(m => (
+              <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: goalMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+            ))}
           </div>
         </div>
         {/* Pace (month only) */}
@@ -739,8 +800,13 @@ export default function RevenueProjectionsDashboard() {
                 <label>Note (optional)</label>
                 <input type="text" placeholder="Household name, bundle..." value={newEntry.note} onChange={e => setNewEntry(p => ({...p, note: e.target.value}))} style={{ width: "100%" }} />
               </div>
-              <button className="btn-primary" onClick={handleAddEntry}>Add</button>
+              <button className="btn-primary" type="button" onClick={handleAddEntry} disabled={addingEntry}>{addingEntry ? "Adding…" : "Add"}</button>
             </div>
+            {addEntryMsg && (
+              <div style={{ marginTop: 10, fontSize: 12, color: addEntryMsg.startsWith("Unable") || addEntryMsg.startsWith("Enter") ? "#EF4444" : "#10B981" }}>
+                {addEntryMsg}
+              </div>
+            )}
           </div>
 
           {/* Commission rate reminder — all three tiers */}
@@ -905,7 +971,7 @@ export default function RevenueProjectionsDashboard() {
               {trendData.slice(-6).map(d => (
                 <tr key={d.name}>
                   <td style={{ color: "#94A3B8" }}>{d.name}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(d.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(d.premium)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(d.commission)}</td>
                 </tr>
               ))}
@@ -925,7 +991,7 @@ export default function RevenueProjectionsDashboard() {
               {Object.entries(totals.byProduct).filter(([,v]) => v.premium > 0).map(([key, val]) => (
                 <tr key={key}>
                   <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(val.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{fmtPct(val.commission / val.premium)}</td>
                 </tr>
@@ -946,8 +1012,8 @@ export default function RevenueProjectionsDashboard() {
               {Object.entries(totals.byProduct).filter(([,v]) => v.count > 0).map(([key, val]) => (
                 <tr key={key}>
                   <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace" }}>{val.count}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(val.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{val.count}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
                 </tr>
               ))}
@@ -958,24 +1024,60 @@ export default function RevenueProjectionsDashboard() {
 
       {/* KPI — Commission Goal */}
       {modal === "kpi-goal" && (
-        <DrillDownModal title="Commission Goal" onClose={closeModal}>
-          <div style={{ fontSize: 42, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{Math.round(commissionGoalPct * 100)}%</div>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>{fmtFull$(totals.totalCommission)} earned of {fmtFull$(COMMISSION_GOAL)} goal · {rangeLabel}</div>
-          <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
-            <div style={{ height: "100%", width: `${Math.min(commissionGoalPct * 100, 100)}%`, background: commissionGoalPct >= 1 ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)", borderRadius: 5 }} />
-          </div>
-          <table>
-            <thead><tr><th>Month</th><th>Commission</th><th>Goal %</th></tr></thead>
-            <tbody>
-              {trendData.slice(-6).map(d => (
-                <tr key={d.name}>
-                  <td style={{ color: "#94A3B8" }}>{d.name}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#F1F5F9" }}>{fmtFull$(d.commission)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#EF4444" }}>{d.commission > 0 ? fmtPct(d.commission / COMMISSION_GOAL) : "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <DrillDownModal title={modalMode === "premium" ? "Written Premium Goal" : "Commission Revenue Goal"} onClose={closeModal}>
+          {modalMode === "premium" ? (
+            <>
+              <div style={{ fontSize: 42, fontWeight: 700, color: "#3B82F6", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+                {Math.round((totals.totalPremium / PREMIUM_GOAL) * 100)}%
+              </div>
+              <div style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>
+                {fmtFull$(totals.totalPremium)} written of {fmtFull$(PREMIUM_GOAL)} goal · {rangeLabel}
+              </div>
+              <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
+                <div style={{ height: "100%", width: `${Math.min(totals.totalPremium / PREMIUM_GOAL * 100, 100)}%`, background: "linear-gradient(90deg, #3B82F6, #8B5CF6)", borderRadius: 5 }} />
+              </div>
+              <table>
+                <thead><tr><th>Month</th><th>Premium</th><th>Goal %</th></tr></thead>
+                <tbody>
+                  {trendData.slice(-6).map(d => (
+                    <tr key={d.name}>
+                      <td style={{ color: "#94A3B8" }}>{d.name}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(d.premium)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.premium >= PREMIUM_GOAL ? "#10B981" : "#64748B" }}>
+                        {d.premium > 0 ? fmtPct(d.premium / PREMIUM_GOAL) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 42, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+                {Math.round(commissionGoalPct * 100)}%
+              </div>
+              <div style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>
+                {fmtFull$(totals.totalCommission)} earned of {fmtFull$(COMMISSION_GOAL)} goal · {rangeLabel}
+              </div>
+              <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
+                <div style={{ height: "100%", width: `${Math.min(commissionGoalPct * 100, 100)}%`, background: commissionGoalPct >= 1 ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)", borderRadius: 5 }} />
+              </div>
+              <table>
+                <thead><tr><th>Month</th><th>Commission</th><th>Goal %</th></tr></thead>
+                <tbody>
+                  {trendData.slice(-6).map(d => (
+                    <tr key={d.name}>
+                      <td style={{ color: "#94A3B8" }}>{d.name}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#E2E8F0" }}>{fmtFull$(d.commission)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#EF4444" }}>
+                        {d.commission > 0 ? fmtPct(d.commission / COMMISSION_GOAL) : "—"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          )}
         </DrillDownModal>
       )}
 
