@@ -141,6 +141,12 @@ function DrillDownModal({ title, onClose, children }) {
 export default function RevenueProjectionsDashboard() {
   const [newEntry, setNewEntry] = useState(emptyEntry());
   const [view, setView] = useState("month"); // month | ytd
+  const [dailyTargetMode, setDailyTargetMode] = useState("commission"); // cycles: commission → premium → policies → commission
+  const cycleDailyTargetMode = () => {
+    setDailyTargetMode(m =>
+      m === "commission" ? "premium" : m === "premium" ? "policies" : "commission"
+    );
+  };
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
@@ -426,46 +432,63 @@ export default function RevenueProjectionsDashboard() {
         {/* Commission Goal */}
         <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={() => setModal("kpi-goal")}>
           <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Goal</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{Math.round(commissionGoalPct * 100)}%</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{fmt$(COMMISSION_GOAL - totals.totalCommission > 0 ? COMMISSION_GOAL - totals.totalCommission : 0)} remaining</div>
-          {/* mini progress bar */}
+          <div style={{ fontSize: 26, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(totals.totalCommission)}</div>
+          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{Math.round(commissionGoalPct * 100)}% of {fmtFull$(COMMISSION_GOAL)} goal</div>
           <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 10 }}>
             <div style={{ height: "100%", width: `${Math.min(commissionGoalPct * 100, 100)}%`, background: commissionGoalPct >= 1 ? "#10B981" : "#3B82F6", borderRadius: 2, transition: "width 0.4s" }} />
           </div>
         </div>
         {/* Pace (month only) */}
-        {pace && (
-          <div className="card clickable" onClick={() => setModal("kpi-pace")}>
-            <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Month-End Pace</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: pace.onPace ? "#10B981" : "#EF4444", fontFamily: "'DM Mono', monospace" }}>{fmt$(pace.projectedCommission)}</div>
-            <div style={{ fontSize: 11, color: pace.onPace ? "#10B981" : "#EF4444", marginTop: 2 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays}</div>
-          </div>
-        )}
-        {dailyTarget && (
-          <div className="card clickable" onClick={() => setModal("kpi-daily")}>
-            <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Daily Target</div>
-            <div style={{ fontSize: 26, fontWeight: 700, color: "#F59E0B", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(dailyTarget.dailyCommissionNeeded)}</div>
-            <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>commission / day · {dailyTarget.remaining} business days left</div>
-            <div style={{ borderTop: "1px solid #252A3A", margin: "10px 0" }} />
-            {dailyTarget.policiesPerDayNeeded !== null ? (
-              <div style={{ fontSize: 12, color: "#94A3B8" }}>
-                <span style={{ color: "#F59E0B", fontWeight: 700, fontFamily: "'DM Mono', monospace" }}>{dailyTarget.policiesPerDayNeeded.toFixed(1)}</span>
-                {" "}policies/day
-              </div>
-            ) : (
-              <div style={{ fontSize: 11, color: "#334155" }}>Add entries to calculate policies/day</div>
-            )}
-            <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 4 }}>
-              <span style={{ color: "#64748B", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(dailyTarget.dailyPremiumNeeded)}</span>
-              {" "}premium/day
+        {pace && (() => {
+          const paceColor = pace.onPace
+            ? "#10B981"
+            : pace.projectedCommission < COMMISSION_GOAL * 0.5
+              ? "#EF4444"
+              : "#F59E0B";
+          return (
+            <div className="card clickable" onClick={() => setModal("kpi-pace")}>
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Month-End Pace</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: paceColor, fontFamily: "'DM Mono', monospace" }}>{fmt$(pace.projectedCommission)}</div>
+              <div style={{ fontSize: 11, color: paceColor, marginTop: 2 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays}</div>
             </div>
-            {dailyTarget.avgCommissionPerPolicy && (
-              <div style={{ fontSize: 11, color: "#334155", marginTop: 6 }}>
-                Avg {fmtFull$(dailyTarget.avgCommissionPerPolicy)} commission · {fmtFull$(dailyTarget.avgPremiumPerPolicy)} premium per policy
+          );
+        })()}
+        {dailyTarget && (() => {
+          const dailyTargetHeadline = {
+            commission: { value: fmtFull$(dailyTarget.dailyCommissionNeeded), label: "commission / day", color: "#F59E0B" },
+            premium:    { value: fmtFull$(dailyTarget.dailyPremiumNeeded),    label: "premium / day",    color: "#3B82F6" },
+            policies:   { value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", label: "policies / day", color: "#10B981" },
+          };
+          const active = dailyTargetHeadline[dailyTargetMode];
+          return (
+            <div className="card clickable" onClick={cycleDailyTargetMode} title="Click to cycle metrics">
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Daily Target</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: active.color, fontFamily: "'DM Mono', monospace" }}>{active.value}</div>
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{active.label} · {dailyTarget.remaining} business days left</div>
+              <div style={{ borderTop: "1px solid #252A3A", marginTop: 10, paddingTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+                {Object.entries(dailyTargetHeadline)
+                  .filter(([key]) => key !== dailyTargetMode)
+                  .map(([key, m]) => (
+                    <div key={key} style={{ fontSize: 11, color: "#475569" }}>
+                      <span style={{ color: m.color, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{m.value}</span>
+                      {" "}{m.label}
+                    </div>
+                  ))
+                }
               </div>
-            )}
-          </div>
-        )}
+              {dailyTarget.avgCommissionPerPolicy && (
+                <div style={{ fontSize: 10, color: "#334155", marginTop: 6 }}>
+                  Avg {fmtFull$(dailyTarget.avgCommissionPerPolicy)} commission · {fmtFull$(dailyTarget.avgPremiumPerPolicy)} premium per policy
+                </div>
+              )}
+              <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                {["commission", "premium", "policies"].map(m => (
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: dailyTargetMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Goal Tracking */}
@@ -538,7 +561,7 @@ export default function RevenueProjectionsDashboard() {
                 <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Commission"]} />
                 <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
-                <Bar dataKey="commission" fill="#10B981" radius={[4,4,0,0]}>
+                <Bar dataKey="commission" radius={[4,4,0,0]} activeBar={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 2, filter: "brightness(1.3)" }}>
                   {trendData.map((entry, i) => (
                     <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
                   ))}
@@ -889,12 +912,18 @@ export default function RevenueProjectionsDashboard() {
       )}
 
       {/* KPI — Pace */}
-      {modal === "kpi-pace" && pace && (
+      {modal === "kpi-pace" && pace && (() => {
+        const paceColor = pace.onPace
+          ? "#10B981"
+          : pace.projectedCommission < COMMISSION_GOAL * 0.5
+            ? "#EF4444"
+            : "#F59E0B";
+        return (
         <DrillDownModal title="Month-End Pace" onClose={closeModal}>
-          <div style={{ fontSize: 42, fontWeight: 700, color: pace.onPace ? "#10B981" : "#EF4444", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(pace.projectedCommission)}</div>
-          <div style={{ fontSize: 13, color: pace.onPace ? "#10B981" : "#EF4444", marginBottom: 24 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Day {pace.elapsed} of {pace.totalDays}</div>
+          <div style={{ fontSize: 42, fontWeight: 700, color: paceColor, fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(pace.projectedCommission)}</div>
+          <div style={{ fontSize: 13, color: paceColor, marginBottom: 24 }}>{pace.onPace ? "✓ On pace" : "↓ Behind pace"} · Day {pace.elapsed} of {pace.totalDays}</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            {[["Commission Earned", fmtFull$(totals.totalCommission), "#10B981"], ["Projected Commission", fmtFull$(pace.projectedCommission), pace.onPace ? "#10B981" : "#EF4444"], ["Premium Written", fmtFull$(totals.totalPremium), "#F1F5F9"], ["Projected Premium", fmtFull$(pace.projectedPremium), "#F1F5F9"]].map(([label, value, color]) => (
+            {[["Commission Earned", fmtFull$(totals.totalCommission), "#10B981"], ["Projected Commission", fmtFull$(pace.projectedCommission), paceColor], ["Premium Written", fmtFull$(totals.totalPremium), "#F1F5F9"], ["Projected Premium", fmtFull$(pace.projectedPremium), "#F1F5F9"]].map(([label, value, color]) => (
               <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: 16 }}>
                 <div style={{ fontSize: 11, color: "#475569", marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 20, fontWeight: 700, fontFamily: "'DM Mono', monospace", color }}>{value}</div>
@@ -902,7 +931,8 @@ export default function RevenueProjectionsDashboard() {
             ))}
           </div>
         </DrillDownModal>
-      )}
+        );
+      })()}
 
       {/* KPI — Daily Target */}
       {modal === "kpi-daily" && dailyTarget && (
@@ -938,7 +968,7 @@ export default function RevenueProjectionsDashboard() {
               <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
               <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Commission"]} />
               <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
-              <Bar dataKey="commission" radius={[4,4,0,0]}>
+              <Bar dataKey="commission" radius={[4,4,0,0]} activeBar={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 2, filter: "brightness(1.3)" }}>
                 {trendData.map((entry, i) => (
                   <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
                 ))}
@@ -987,10 +1017,10 @@ export default function RevenueProjectionsDashboard() {
               {Object.entries(totals.byProduct).filter(([,v]) => v.premium > 0).map(([key, val]) => (
                 <tr key={key}>
                   <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(val.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{fmtPct(val.commission / val.premium)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace" }}>{val.count}</td>
+                  <td style={{ color: "#E2E8F0" }}>{val.count}</td>
                 </tr>
               ))}
             </tbody>
