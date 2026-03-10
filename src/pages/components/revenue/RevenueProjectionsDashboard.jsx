@@ -95,6 +95,7 @@ export default function RevenueProjectionsDashboard() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
+  const [pdfGenerating, setPdfGenerating] = useState(false);
   const fileRef = useRef();
 
   // ─── Date range for current view ──────────────────────────────────────────
@@ -210,6 +211,36 @@ export default function RevenueProjectionsDashboard() {
     } finally {
       setUploading(false);
       e.target.value = "";
+    }
+  };
+
+  // ─── PDF Export ───────────────────────────────────────────────────────────
+  const exportPDF = async () => {
+    setPdfGenerating(true);
+    try {
+      const [{ pdf }, { default: RevenueReportPDF }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("./RevenueReportPDF"),
+      ]);
+      const blob = await pdf(
+        <RevenueReportPDF
+          entries={filtered}
+          totals={totals}
+          rangeLabel={rangeLabel}
+          view={view}
+          goalPct={goalPct}
+        />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `revenue-${view}-${new Date().toISOString().slice(0, 10)}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    } finally {
+      setPdfGenerating(false);
     }
   };
 
@@ -417,7 +448,12 @@ export default function RevenueProjectionsDashboard() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8" }}>Add Manual Entry</div>
               {filtered.length > 0 && (
-                <button className="btn-ghost" onClick={exportCSV}>Export CSV</button>
+                <div style={{ display: "flex", gap: 6 }}>
+                  <button className="btn-ghost" onClick={exportCSV}>Export CSV</button>
+                  <button className="btn-ghost" onClick={exportPDF} disabled={pdfGenerating}>
+                    {pdfGenerating ? "Generating…" : "Export PDF"}
+                  </button>
+                </div>
               )}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end" }}>
