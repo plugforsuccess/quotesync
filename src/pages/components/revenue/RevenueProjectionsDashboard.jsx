@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
+import * as XLSX from "xlsx";
 
 // ─── Commission Matrix ────────────────────────────────────────────────────────
 // Three-tier rates: Preferred / Bundled / Monoline (new business only)
@@ -202,11 +203,10 @@ export default function RevenueProjectionsDashboard() {
     setUploading(true);
     setUploadMsg("");
     try {
-      const { read, utils } = await import("https://cdn.jsdelivr.net/npm/xlsx@0.18.5/+esm");
       const buf = await file.arrayBuffer();
-      const wb = read(buf, { type: "array" });
+      const wb = XLSX.read(buf, { type: "array" });
       const sheetName = wb.SheetNames.find(n => n.toLowerCase() !== "filters") ?? wb.SheetNames[0];
-      const rows = utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: "" });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: "" });
       const parsed = parseAllstateRows(rows);
       if (parsed.length === 0) {
         setUploadMsg("⚠️ No rows parsed — check column headers match Allstate export format.");
