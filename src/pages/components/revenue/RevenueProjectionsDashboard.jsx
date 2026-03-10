@@ -137,6 +137,60 @@ function DrillDownModal({ title, onClose, children }) {
   );
 }
 
+// ─── Product Breakdown Rows ───────────────────────────────────────────────────
+function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
+  const rows = Object.entries(byProduct)
+    .filter(([, v]) => v.premium > 0)
+    .sort(([, a], [, b]) => b.premium - a.premium);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#334155", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", paddingRight: 4 }}>
+        <span>Product</span>
+        <span style={{ display: "flex", gap: 16 }}>
+          <span style={{ width: 72, textAlign: "right" }}>Premium</span>
+          <span style={{ width: 72, textAlign: "right" }}>Commission</span>
+          <span style={{ width: 52, textAlign: "right" }}>Rate</span>
+        </span>
+      </div>
+      {rows.map(([key, val]) => {
+        const premiumPct = totalPremium > 0 ? val.premium / totalPremium : 0;
+        const commPct    = totalCommission > 0 ? val.commission / totalCommission : 0;
+        const effRate    = val.premium > 0 ? val.commission / val.premium : 0;
+        return (
+          <div key={key}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <span style={{ width: 9, height: 9, borderRadius: "50%", background: PRODUCT_COLORS[key], display: "inline-block", flexShrink: 0 }} />
+                <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 500 }}>{COMMISSION[key].label}</span>
+              </span>
+              <span style={{ display: "flex", gap: 16, fontSize: 12, fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
+                <span style={{ width: 72, textAlign: "right", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</span>
+                <span style={{ width: 72, textAlign: "right", color: "#10B981" }}>{fmtFull$(val.commission)}</span>
+                <span style={{ width: 52, textAlign: "right", color: "#475569" }}>{fmtPct(effRate)}</span>
+              </span>
+            </div>
+            <div style={{ height: 7, background: "#252A3A", borderRadius: 4, overflow: "hidden", position: "relative" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${premiumPct * 100}%`, background: `${PRODUCT_COLORS[key]}33`, borderRadius: 4 }} />
+              <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${commPct * 100}%`, background: PRODUCT_COLORS[key], borderRadius: 4 }} />
+            </div>
+          </div>
+        );
+      })}
+      <div style={{ display: "flex", gap: 16, fontSize: 10, color: "#334155", marginTop: 2 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ width: 20, height: 3, background: "#3B82F633", borderRadius: 2, display: "inline-block" }} />
+          Premium share
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ width: 20, height: 3, background: "#3B82F6", borderRadius: 2, display: "inline-block" }} />
+          Commission share
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function RevenueProjectionsDashboard() {
   const [newEntry, setNewEntry] = useState(emptyEntry());
@@ -362,14 +416,6 @@ export default function RevenueProjectionsDashboard() {
     URL.revokeObjectURL(url);
   };
 
-  // ─── Product bar chart data ───────────────────────────────────────────────
-  const productData = Object.entries(totals.byProduct).map(([key, val]) => ({
-    name: COMMISSION[key].label,
-    premium: Math.round(val.premium),
-    commission: Math.round(val.commission),
-    key,
-  })).filter(d => d.premium > 0);
-
   // ─── UI ───────────────────────────────────────────────────────────────────
   return (
     <>
@@ -559,9 +605,9 @@ export default function RevenueProjectionsDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
                 <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Commission"]} />
+                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
                 <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
-                <Bar dataKey="commission" radius={[4,4,0,0]} activeBar={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 2, filter: "brightness(1.3)" }}>
+                <Bar dataKey="commission" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (
                     <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
                   ))}
@@ -570,48 +616,17 @@ export default function RevenueProjectionsDashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* By Product Premium */}
-          <div className="card clickable" onClick={() => setModal("products")}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Premium by Product Line</div>
-            {productData.length === 0 ? (
+          {/* Revenue by Product Line */}
+          <div className="card clickable" style={{ gridColumn: "1 / -1" }} onClick={() => setModal("products")}>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Revenue by Product Line</div>
+            {totals.totalPremium === 0 ? (
               <div style={{ color: "#334155", textAlign: "center", padding: "30px 0", fontSize: 13 }}>No data in range</div>
             ) : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart data={productData} layout="vertical" barSize={14}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" horizontal={false} />
-                  <XAxis type="number" tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} width={110} />
-                  <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Premium"]} />
-                  <Bar dataKey="premium" radius={[0,4,4,0]}>
-                    {productData.map((d, i) => <Cell key={i} fill={PRODUCT_COLORS[d.key]} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-
-          {/* Commission by Product */}
-          <div className="card clickable" onClick={() => setModal("products")}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Estimated Commission by Product</div>
-            {productData.length === 0 ? (
-              <div style={{ color: "#334155", textAlign: "center", padding: "30px 0", fontSize: 13 }}>No data in range</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 4 }}>
-                {Object.entries(totals.byProduct).filter(([,v]) => v.premium > 0).map(([key, val]) => (
-                  <div key={key}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4, fontSize: 12 }}>
-                      <span style={{ color: "#94A3B8" }}>{COMMISSION[key].label}</span>
-                      <span style={{ color: PRODUCT_COLORS[key], fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{fmtFull$(val.commission)}</span>
-                    </div>
-                    <div style={{ height: 5, background: "#252A3A", borderRadius: 3 }}>
-                      <div style={{ height: "100%", width: `${Math.min(val.premium / totals.totalPremium * 100, 100)}%`, background: PRODUCT_COLORS[key], borderRadius: 3 }} />
-                    </div>
-                    <div style={{ fontSize: 10, color: "#334155", marginTop: 2 }}>
-                      {fmtFull$(val.premium)} premium · eff. rate: {val.premium > 0 ? fmtPct(val.commission / val.premium) : "—"}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <ProductBreakdownRows
+                byProduct={totals.byProduct}
+                totalPremium={totals.totalPremium}
+                totalCommission={totals.totalCommission}
+              />
             )}
           </div>
         </div>
@@ -966,9 +981,9 @@ export default function RevenueProjectionsDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
               <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
               <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Commission"]} />
+              <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
               <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
-              <Bar dataKey="commission" radius={[4,4,0,0]} activeBar={{ stroke: "rgba(255,255,255,0.15)", strokeWidth: 2, filter: "brightness(1.3)" }}>
+              <Bar dataKey="commission" radius={[4,4,0,0]}>
                 {trendData.map((entry, i) => (
                   <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
                 ))}
@@ -981,35 +996,12 @@ export default function RevenueProjectionsDashboard() {
       {/* Product breakdown drill-down */}
       {modal === "products" && (
         <DrillDownModal title="Revenue by Product Line" onClose={closeModal}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Premium by Product</div>
-              {productData.length === 0 ? <div style={{ color: "#334155", fontSize: 13 }}>No data</div> : (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={productData} layout="vertical" barSize={16}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" horizontal={false} />
-                    <XAxis type="number" tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="name" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} width={110} />
-                    <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Premium"]} />
-                    <Bar dataKey="premium" radius={[0,4,4,0]}>{productData.map((d, i) => <Cell key={i} fill={PRODUCT_COLORS[d.key]} />)}</Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Commission by Product</div>
-              {productData.length === 0 ? <div style={{ color: "#334155", fontSize: 13 }}>No data</div> : (
-                <ResponsiveContainer width="100%" height={220}>
-                  <BarChart data={productData} layout="vertical" barSize={16}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" horizontal={false} />
-                    <XAxis type="number" tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="name" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} width={110} />
-                    <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }} formatter={(v) => [fmtFull$(v), "Commission"]} />
-                    <Bar dataKey="commission" radius={[0,4,4,0]}>{productData.map((d, i) => <Cell key={i} fill={PRODUCT_COLORS[d.key]} />)}</Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              )}
-            </div>
+          <div style={{ marginBottom: 24 }}>
+            <ProductBreakdownRows
+              byProduct={totals.byProduct}
+              totalPremium={totals.totalPremium}
+              totalCommission={totals.totalCommission}
+            />
           </div>
           <table style={{ marginTop: 24 }}>
             <thead><tr><th>Product</th><th>Premium</th><th>Commission</th><th>Eff. Rate</th><th>Policies</th></tr></thead>
