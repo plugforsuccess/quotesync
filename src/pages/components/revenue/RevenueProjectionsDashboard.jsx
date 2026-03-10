@@ -3,14 +3,15 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 
 // ─── Commission Matrix ────────────────────────────────────────────────────────
-// Rates = 9% base + variable compensation (new business only)
-const BASE = 0.09;
+// Three-tier rates: Preferred / Bundled / Monoline (new business only)
 const COMMISSION = {
-  auto:    { rate: BASE + 0.16, label: "Auto" },
-  ho:      { rate: BASE + 0.20, label: "HO / Condo" },
-  renters: { rate: BASE + 0.17, label: "Renters" },
-  other:   { rate: BASE + 0.17, label: "Other Personal Lines" },
+  auto:    { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Auto" },
+  ho:      { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "HO / Condo" },
+  renters: { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Renters" },
+  other:   { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
 };
+const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
+const TIER_COLORS = { preferred: "#10B981", bundled: "#3B82F6", monoline: "#64748B" };
 
 const GOAL = 40000;
 const PRODUCT_COLORS = { auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6" };
@@ -19,8 +20,16 @@ const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)
 const fmtFull$ = (n) => `$${Math.round(n).toLocaleString()}`;
 const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
 
-function calcCommission(premium, product) {
-  return premium * (COMMISSION[product]?.rate ?? BASE);
+function calcCommission(premium, product, tier = "monoline") {
+  const rates = COMMISSION[product] ?? COMMISSION.other;
+  return premium * (rates[tier] ?? rates.monoline);
+}
+
+function normalizeTier(raw = "") {
+  const v = raw.toString().toLowerCase().trim();
+  if (v.startsWith("p")) return "preferred";
+  if (v.startsWith("b")) return "bundled";
+  return "monoline";
 }
 
 const TODAY = new Date();
@@ -34,6 +43,7 @@ const emptyEntry = () => ({
   id: crypto.randomUUID(),
   date: TODAY.toISOString().slice(0, 10),
   product: "auto",
+  tier: "monoline",
   premium: "",
   policyCount: 1,
   source: "manual",
@@ -44,10 +54,11 @@ const emptyEntry = () => ({
 function parseAllstateRows(rows) {
   // Best-effort mapping for common Allstate export column names
   const COL_MAP = {
-    date: ["effective date", "policy date", "date", "eff date"],
+    date:    ["effective date", "policy date", "date", "eff date"],
     premium: ["written premium", "premium", "annual premium", "prem"],
     product: ["line of business", "lob", "product", "type"],
-    policy: ["policy number", "policy #", "policy no"],
+    policy:  ["policy number", "policy #", "policy no"],
+    tier:    ["bundle tier", "tier", "bundle"],
   };
   const findCol = (headers, keys) => {
     const h = headers.map((x) => x?.toString().toLowerCase().trim());
@@ -57,9 +68,10 @@ function parseAllstateRows(rows) {
 
   if (!rows || rows.length < 2) return [];
   const headers = rows[0];
-  const di = findCol(headers, COL_MAP.date);
-  const pi = findCol(headers, COL_MAP.premium);
-  const li = findCol(headers, COL_MAP.product);
+  const di   = findCol(headers, COL_MAP.date);
+  const pi   = findCol(headers, COL_MAP.premium);
+  const li   = findCol(headers, COL_MAP.product);
+  const iTier = findCol(headers, COL_MAP.tier); // -1 if column absent
 
   return rows.slice(1).filter(r => r.some(Boolean)).map((r) => {
     const raw = r[li]?.toString().toLowerCase() ?? "";
@@ -79,8 +91,8 @@ function parseAllstateRows(rows) {
       id: crypto.randomUUID(),
       date,
       product,
+      tier: normalizeTier(iTier >= 0 ? r[iTier] : ""),
       premium: parseFloat(r[pi]?.toString().replace(/[$,]/g, "")) || 0,
-      year: 1,  // always new business
       policyCount: 1,
       source: "upload",
       note: r[li]?.toString() ?? "",
@@ -133,7 +145,7 @@ export default function RevenueProjectionsDashboard() {
     const base = { premium: 0, commission: 0, count: 0 };
     const byProduct = { auto: {...base}, ho: {...base}, renters: {...base}, other: {...base} };
     filtered.forEach(e => {
-      const c = calcCommission(e.premium, e.product);
+      const c = calcCommission(e.premium, e.product, e.tier ?? "monoline");
       const p = byProduct[e.product] ?? byProduct.other;
       p.premium += e.premium;
       p.commission += c;
@@ -156,7 +168,7 @@ export default function RevenueProjectionsDashboard() {
       const end = new Date(year, month + 1, 0);
       const slice = entries.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
       const premium = slice.reduce((s, e) => s + e.premium, 0);
-      const commission = slice.reduce((s, e) => s + calcCommission(e.premium, e.product), 0);
+      const commission = slice.reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline"), 0);
       return { name: `${MONTH_NAMES[month]} '${String(year).slice(2)}`, premium, commission, goal: GOAL };
     });
   }, [entries]);
@@ -246,12 +258,13 @@ export default function RevenueProjectionsDashboard() {
 
   // ─── CSV Export ───────────────────────────────────────────────────────────
   const exportCSV = () => {
-    const headers = ["Date", "Product", "Annual Premium", "Commission", "Policy Count", "Source", "Note"];
+    const headers = ["Date", "Product", "Bundle Tier", "Annual Premium", "Commission", "Policy Count", "Source", "Note"];
     const rows = filtered.map(e => [
       e.date,
       COMMISSION[e.product]?.label ?? e.product,
+      TIER_LABELS[e.tier ?? "monoline"],
       e.premium.toFixed(2),
-      calcCommission(e.premium, e.product).toFixed(2),
+      calcCommission(e.premium, e.product, e.tier ?? "monoline").toFixed(2),
       e.policyCount,
       e.source,
       e.note,
@@ -430,7 +443,7 @@ export default function RevenueProjectionsDashboard() {
                       <div style={{ height: "100%", width: `${Math.min(val.premium / totals.totalPremium * 100, 100)}%`, background: PRODUCT_COLORS[key], borderRadius: 3 }} />
                     </div>
                     <div style={{ fontSize: 10, color: "#334155", marginTop: 2 }}>
-                      {fmtFull$(val.premium)} premium · {fmtPct(COMMISSION[key].rate)} rate
+                      {fmtFull$(val.premium)} premium · eff. rate: {val.premium > 0 ? fmtPct(val.commission / val.premium) : "—"}
                     </div>
                   </div>
                 ))}
@@ -471,6 +484,14 @@ export default function RevenueProjectionsDashboard() {
                 </select>
               </div>
               <div>
+                <label>Bundle Tier</label>
+                <select value={newEntry.tier} onChange={e => setNewEntry(p => ({...p, tier: e.target.value}))}>
+                  <option value="preferred">Preferred</option>
+                  <option value="bundled">Bundled</option>
+                  <option value="monoline">Monoline</option>
+                </select>
+              </div>
+              <div>
                 <label>Annual Premium ($)</label>
                 <input type="number" placeholder="1200" value={newEntry.premium} onChange={e => setNewEntry(p => ({...p, premium: e.target.value}))} style={{ width: 120 }} />
               </div>
@@ -486,12 +507,14 @@ export default function RevenueProjectionsDashboard() {
             </div>
           </div>
 
-          {/* Commission rate reminder */}
+          {/* Commission rate reminder — all three tiers */}
           <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
             {Object.entries(COMMISSION).map(([key, val]) => (
               <div key={key} style={{ background: "#1A1D27", border: `1px solid ${PRODUCT_COLORS[key]}33`, borderRadius: 6, padding: "6px 12px", fontSize: 11 }}>
-                <span style={{ color: PRODUCT_COLORS[key], fontWeight: 600 }}>{val.label}</span>
-                <span style={{ color: "#475569", marginLeft: 6 }}>{fmtPct(val.rate)}</span>
+                <span style={{ color: PRODUCT_COLORS[key], fontWeight: 600, marginRight: 6 }}>{val.label}</span>
+                {Object.entries(TIER_LABELS).map(([tk, tl]) => (
+                  <span key={tk} style={{ color: TIER_COLORS[tk], marginRight: 5 }}>{tl}: {fmtPct(val[tk])}</span>
+                ))}
               </div>
             ))}
           </div>
@@ -503,25 +526,29 @@ export default function RevenueProjectionsDashboard() {
             <table>
               <thead>
                 <tr>
-                  <th>Date</th><th>Product</th><th>Premium</th><th>Commission</th><th>Source</th><th>Note</th><th></th>
+                  <th>Date</th><th>Product</th><th>Tier</th><th>Premium</th><th>Commission</th><th>Source</th><th>Note</th><th></th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(e => (
-                  <tr key={e.id}>
-                    <td style={{ color: "#64748B", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
-                    <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{COMMISSION[e.product]?.label}</span></td>
-                    <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
-                    <td style={{ color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product))}</td>
-                    <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "#94A3B8" }}>{e.source}</span></td>
-                    <td style={{ color: "#475569", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
-                    <td><button className="del-btn" onClick={() => deleteEntry(e.id)}>×</button></td>
-                  </tr>
-                ))}
+                {filtered.map(e => {
+                  const tier = e.tier ?? "monoline";
+                  return (
+                    <tr key={e.id}>
+                      <td style={{ color: "#64748B", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
+                      <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{COMMISSION[e.product]?.label}</span></td>
+                      <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
+                      <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
+                      <td style={{ color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier))}</td>
+                      <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "#94A3B8" }}>{e.source}</span></td>
+                      <td style={{ color: "#475569", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
+                      <td><button className="del-btn" onClick={() => deleteEntry(e.id)}>×</button></td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={2} style={{ color: "#64748B", fontWeight: 600, paddingTop: 12 }}>Total</td>
+                  <td colSpan={3} style={{ color: "#64748B", fontWeight: 600, paddingTop: 12 }}>Total</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#F1F5F9", paddingTop: 12 }}>{fmtFull$(totals.totalPremium)}</td>
                   <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#10B981", paddingTop: 12 }}>{fmtFull$(totals.totalCommission)}</td>
                   <td colSpan={3} />
@@ -537,7 +564,7 @@ export default function RevenueProjectionsDashboard() {
         <div className="card">
           <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 4 }}>Upload Allstate Export</div>
           <div style={{ fontSize: 12, color: "#475569", marginBottom: 20 }}>
-            Accepts XLSX or CSV. Expects columns: <span style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>Effective Date, Written Premium, Line of Business</span> (or similar Allstate report headers).
+            Accepts XLSX or CSV. Expects columns: <span style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>Effective Date, Written Premium, Line of Business, Bundle Tier</span> (or similar Allstate report headers). <span style={{ color: "#64748B" }}>Bundle Tier column is optional — rows without it default to Monoline.</span>
           </div>
           <div className="upload-zone" onClick={() => fileRef.current?.click()}>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleFile} />
@@ -549,16 +576,23 @@ export default function RevenueProjectionsDashboard() {
             <div style={{ marginTop: 14, padding: "10px 16px", background: "#1A1D27", borderRadius: 8, fontSize: 13, color: "#94A3B8" }}>{uploadMsg}</div>
           )}
           <div style={{ marginTop: 24, padding: 16, background: "#1A1D27", borderRadius: 10, border: "1px solid #252A3A" }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Commission Reference</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Commission Reference — New Business Rates by Tier</div>
             <table>
               <thead>
-                <tr><th>Product</th><th>New Business Rate</th></tr>
+                <tr>
+                  <th>Product</th>
+                  <th style={{ color: TIER_COLORS.preferred }}>Preferred</th>
+                  <th style={{ color: TIER_COLORS.bundled }}>Bundled</th>
+                  <th style={{ color: TIER_COLORS.monoline }}>Monoline</th>
+                </tr>
               </thead>
               <tbody>
                 {Object.entries(COMMISSION).map(([key, val]) => (
                   <tr key={key}>
                     <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{val.label}</span></td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtPct(val.rate)}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: TIER_COLORS.preferred }}>{fmtPct(val.preferred)}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: TIER_COLORS.bundled }}>{fmtPct(val.bundled)}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: TIER_COLORS.monoline }}>{fmtPct(val.monoline)}</td>
                   </tr>
                 ))}
               </tbody>
