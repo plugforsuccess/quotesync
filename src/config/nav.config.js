@@ -24,7 +24,7 @@ const primaryItems = {
   timeAttendance: { to: '/admin/time-attendance',  label: 'Attendance',         icon: '⏱️' },
   csPerformance:  { to: '/admin/cs-performance',   label: 'Performance',        icon: '📈' },
   revenueProjections: { to: '/admin/revenue-projections', label: 'Revenue',        icon: '💰' },
-  retention:      { to: '/admin/retention',         label: 'Retention',          icon: '🛡️' },
+  bookHealth:     { to: '/admin/book-health',        label: 'Book Health',        icon: '🛡️' },
   newsroom:       { to: '/news/dashboard',         label: 'Newsroom',           icon: '📰' },
 };
 
@@ -49,7 +49,7 @@ export const platformNav = {
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
       primaryItems.revenueProjections,
-      primaryItems.retention,
+      primaryItems.bookHealth,
     ],
     secondary: [
       secondaryItems.leads,
@@ -65,7 +65,7 @@ export const platformNav = {
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
       primaryItems.revenueProjections,
-      primaryItems.retention,
+      primaryItems.bookHealth,
     ],
     secondary: [
       secondaryItems.leads,

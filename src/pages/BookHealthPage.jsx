@@ -576,7 +576,7 @@ const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export default function RetentionDashboardPage() {
+export default function BookHealthPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("triage");
@@ -857,7 +857,7 @@ export default function RetentionDashboardPage() {
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Retention</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Book Health</h1>
         <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>Pending Cancellation \u00B7 Wiley-Wilson Agency</div>
       </div>
 
