@@ -18,7 +18,15 @@ const TIER_COLORS = { preferred: "#10B981", bundled: "#3B82F6", monoline: "#6474
 
 const COMMISSION_GOAL = 40000;  // primary goal — commission revenue
 const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
-const PRODUCT_COLORS = { auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6" };
+const PRODUCT_COLORS = {
+  auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6",
+  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316",
+};
+const PRODUCT_LABELS = {
+  auto: "Auto", ho: "HO / Condo", renters: "Renters", landlord: "Landlord",
+  specialty_auto: "Specialty Auto", pup: "Personal Umbrella",
+  manufactured: "Manufactured Home", other: "Other",
+};
 
 // ─── Portfolio Points Matrix ──────────────────────────────────────────────────
 // Points are per ITEM (not per policy). A 2-car auto policy = 2 items × 10 pts = 20 pts.
@@ -350,7 +358,6 @@ export default function RevenueProjectionsDashboard() {
   // ─── Policies stats (items, VC baseline, portfolio points) ───────────────
   const policiesStats = useMemo(() => {
     const totalPolicies = filtered.reduce((s, e) => s + e.policyCount, 0);
-    const totalItems    = filtered.reduce((s, e) => s + e.itemCount, 0);
 
     // VC Baseline = auto items + HO items (HO always itemCount=1)
     const vcBaselineCount = filtered.reduce((s, e) => {
@@ -375,7 +382,7 @@ export default function RevenueProjectionsDashboard() {
 
     const pointsDelta = totalPoints - priorPoints;
 
-    return { totalPolicies, totalItems, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
+    return { totalPolicies, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
   }, [filtered, entries, rangeStart]);
 
   // ─── Monthly trend (rolling 12 or YTD) ────────────────────────────────────
@@ -552,7 +559,7 @@ export default function RevenueProjectionsDashboard() {
     const headers = ["Date", "Product", "Bundle Tier", "Annual Premium", "Commission", "Policy Count", "Source", "Note"];
     const rows = filtered.map(e => [
       e.date,
-      COMMISSION[e.product]?.label ?? e.product,
+      PRODUCT_LABELS[e.product] ?? e.product,
       TIER_LABELS[e.tier ?? "monoline"],
       e.premium.toFixed(2),
       calcCommission(e.premium, e.product, e.tier ?? "monoline").toFixed(2),
@@ -705,7 +712,7 @@ export default function RevenueProjectionsDashboard() {
             count: {
               label: "POLICIES WRITTEN",
               value: String(totalPolicies),
-              sub: `Avg premium: ${filtered.length > 0 ? fmt$(totals.totalPremium / totalPolicies) : "—"}`,
+              sub: `Avg premium: ${totalPolicies > 0 ? fmt$(totals.totalPremium / totalPolicies) : "—"}`,
               subColor: "#475569",
             },
             items: {
@@ -1074,7 +1081,7 @@ export default function RevenueProjectionsDashboard() {
                     <tr key={e.id}>
                       <td style={{ color: "#64748B", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
                       <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.issuedDate}</td>
-                      <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{COMMISSION[e.product]?.label}</span></td>
+                      <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{PRODUCT_LABELS[e.product] ?? e.product}</span></td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
                       <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
                       <td style={{ color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier))}</td>
@@ -1355,15 +1362,6 @@ export default function RevenueProjectionsDashboard() {
           .filter(([, v]) => v.points > 0 || v.items > 0)
           .sort(([, a], [, b]) => b.points - a.points);
 
-        const PRODUCT_LABELS = {
-          auto: "Auto", ho: "HO / Condo", renters: "Renters", landlord: "Landlord",
-          specialty_auto: "Specialty Auto", pup: "Personal Umbrella",
-          manufactured: "Manufactured Home", other: "Other",
-        };
-        const PRODUCT_COLORS_EXT = {
-          auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", landlord: "#06B6D4",
-          specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", other: "#64748B",
-        };
 
         return (
           <DrillDownModal title="Portfolio Points" onClose={closeModal}>
@@ -1390,7 +1388,7 @@ export default function RevenueProjectionsDashboard() {
                 {rows.map(([key, val]) => (
                   <tr key={key}>
                     <td>
-                      <span style={{ background: `${PRODUCT_COLORS_EXT[key]}22`, color: PRODUCT_COLORS_EXT[key] ?? "#64748B", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] ?? "#64748B", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
                         {PRODUCT_LABELS[key] ?? key}
                       </span>
                     </td>
