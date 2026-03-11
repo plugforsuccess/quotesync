@@ -425,7 +425,8 @@ const AdminTimeAttendancePage = () => {
   }, [entries, selectedEmployee]);
 
   // Today's entries for punch status display
-  const todayStr = useMemo(() => toLocalDateStr(new Date()), []);
+  const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }), []);
+  const isCurrentWeek = useMemo(() => weekStart === toMonday(new Date()), [weekStart]);
   const todayEntries = useMemo(() => {
     return entries.filter((e) => e.work_date === todayStr);
   }, [entries, todayStr]);
@@ -622,45 +623,60 @@ const AdminTimeAttendancePage = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="space-y-6">
-          {/* Today's Punch Status */}
-          {rosterEmployees.length > 0 && (
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Activity className="w-4 h-4 text-gray-500" />
-                <h3 className="text-sm font-semibold text-gray-700">Today's Punch Status</h3>
-              </div>
-              <div className="flex gap-2.5 flex-wrap">
-                {rosterEmployees.map((emp) => {
-                  const punch = todayEntries.find(
-                    (t) => t.employee_user_id === emp.auth_user_id
-                  );
-                  const status = derivePunchStatus(punch);
-                  return (
-                    <div
-                      key={emp.id}
-                      className="border rounded-lg px-3 py-2"
-                      style={{ borderColor: '#252A3A', minWidth: 120, background: '#F8FAFC' }}
-                    >
-                      <div className="text-xs text-gray-500 mb-0.5 truncate">
-                        {emp.preferred_name || emp.first_name}
-                      </div>
+          {/* Today's Punch Status — only shown for the current week */}
+          {isCurrentWeek && rosterEmployees.length > 0 && (() => {
+            const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            const minutesSinceMidnight = nowET.getHours() * 60 + nowET.getMinutes();
+            const dayOfWeekET = nowET.getDay();
+            const shouldFlagLate = minutesSinceMidnight >= 570 && dayOfWeekET >= 1 && dayOfWeekET <= 5;
+
+            return (
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Activity className="w-4 h-4 text-gray-500" />
+                  <h3 className="text-sm font-semibold text-gray-700">Today's Punch Status</h3>
+                </div>
+                <div className="flex gap-2.5 flex-wrap">
+                  {rosterEmployees.map((emp) => {
+                    const punch = emp.auth_user_id
+                      ? todayEntries.find((t) => t.employee_user_id === emp.auth_user_id)
+                      : undefined;
+                    const status = derivePunchStatus(punch);
+                    const isLate = status === 'not_clocked_in' && shouldFlagLate;
+                    const statusColor = isLate ? '#EF4444' : (PUNCH_STATUS_COLORS[status] || '#475569');
+                    const statusLabel = isLate ? 'Not In' : PUNCH_STATUS_LABELS[status];
+                    return (
                       <div
-                        className="text-xs font-semibold"
-                        style={{ color: PUNCH_STATUS_COLORS[status] || '#475569' }}
+                        key={emp.id}
+                        className="border rounded-lg px-3 py-2"
+                        style={{
+                          borderColor: isLate ? '#FECACA' : '#E2E8F0',
+                          minWidth: 120,
+                          background: isLate ? '#FEF2F2' : '#F8FAFC',
+                        }}
                       >
-                        {PUNCH_STATUS_LABELS[status]}
-                      </div>
-                      {punch?.hours_worked && (
-                        <div className="text-[10px] text-gray-400 mt-0.5">
-                          {punch.hours_worked}h
+                        <div className="text-xs text-gray-500 mb-0.5 truncate">
+                          {emp.preferred_name || emp.first_name}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        <div
+                          className="text-xs font-semibold"
+                          style={{ color: statusColor }}
+                        >
+                          {isLate && <AlertCircle className="w-3 h-3 inline-block mr-0.5 -mt-0.5" />}
+                          {statusLabel}
+                        </div>
+                        {punch?.hours_worked && (
+                          <div className="text-[10px] text-gray-400 mt-0.5">
+                            {punch.hours_worked}h
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

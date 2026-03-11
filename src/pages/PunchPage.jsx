@@ -29,9 +29,15 @@ export default function PunchPage() {
   const [lastTime, setLastTime] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
   const pinRefs = [useRef(), useRef(), useRef(), useRef()];
+  const returnTimer = useRef(null);
 
   // Auto-focus first PIN box on mount
   useEffect(() => { pinRefs[0].current?.focus(); }, []);
+
+  // Clean up auto-return timer on unmount
+  useEffect(() => {
+    return () => { if (returnTimer.current) clearTimeout(returnTimer.current); };
+  }, []);
 
   function handlePinInput(i, val) {
     if (!/^\d?$/.test(val)) return;
@@ -92,7 +98,7 @@ export default function PunchPage() {
         setEntry(data.entry);
         setScreen("success");
         // Auto-return to PIN screen after 4 seconds
-        setTimeout(() => { setPin(""); setScreen("pin"); pinRefs[0].current?.focus(); }, 4000);
+        returnTimer.current = setTimeout(() => { setPin(""); setScreen("pin"); pinRefs[0].current?.focus(); }, 4000);
       }
     } catch {
       setErrorMsg("Connection error. Try again.");

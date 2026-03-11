@@ -7,6 +7,23 @@ const supabase = createClient(
 
 const AGENCY_ORG_ID = "00000000-0000-0000-0000-000000000001";
 
+// ── Rate limiting (in-memory, resets on cold start) ─────────────────────────
+const attempts = new Map<string, { count: number; resetAt: number }>();
+const MAX_ATTEMPTS = 5;
+const WINDOW_MS = 60_000;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const rec = attempts.get(ip);
+  if (!rec || now > rec.resetAt) {
+    attempts.set(ip, { count: 1, resetAt: now + WINDOW_MS });
+    return true;
+  }
+  if (rec.count >= MAX_ATTEMPTS) return false;
+  rec.count++;
+  return true;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -40,6 +57,14 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
 
   try {
+    const ip = req.headers.get("x-forwarded-for") ?? "unknown";
+    if (!checkRateLimit(ip)) {
+      return jsonResponse(
+        { error: "Too many attempts. Try again in a minute." },
+        429
+      );
+    }
+
     const { action, pin } = await req.json();
 
     // ── Validate PIN ──────────────────────────────────────────────────────
@@ -62,6 +87,13 @@ Deno.serve(async (req) => {
 
     if (employee.employment_status !== "active") {
       return jsonResponse({ error: "Employee not active" }, 403);
+    }
+
+    if (!employee.auth_user_id) {
+      return jsonResponse(
+        { error: "Employee account not fully configured. Contact your admin." },
+        403
+      );
     }
 
     const displayName = employee.preferred_name || employee.first_name;
