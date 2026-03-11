@@ -24,6 +24,7 @@ const primaryItems = {
   timeAttendance: { to: '/admin/time-attendance',  label: 'Attendance',         icon: '⏱️' },
   csPerformance:  { to: '/admin/cs-performance',   label: 'Performance',        icon: '📈' },
   revenueProjections: { to: '/admin/revenue-projections', label: 'Revenue',        icon: '💰' },
+  retention:      { to: '/admin/retention',         label: 'Retention',          icon: '🛡️' },
   newsroom:       { to: '/news/dashboard',         label: 'Newsroom',           icon: '📰' },
 };
 
@@ -31,11 +32,11 @@ const primaryItems = {
 
 const secondaryItems = {
   newsroom:            { to: '/news/dashboard',              label: 'Newsroom',            icon: '📰' },
+  leads:               { to: '/agency/leads',                label: 'Leads',               icon: '📋' },
   agencyMgmt:          { to: '/admin/agencies',              label: 'Agency Management',   icon: '🏢' },
   employeeRoster:      { to: '/admin/agency/employees',      label: 'Employee Roster',     icon: '👥' },
   audit:               { to: '/admin/audit',                 label: 'Audit',               icon: '🔍' },
   revenueProjections:  { to: '/admin/revenue-projections',   label: 'Revenue Projections', icon: '💰' },
-  retention:           { to: '/admin/retention',              label: 'Retention',           icon: '🛡️' },
 };
 
 // ── Platform plane navigation by role ────────────────────────────────────────
@@ -45,33 +46,33 @@ export const platformNav = {
   platform_master_admin: {
     primary: [
       primaryItems.funnel,
-      primaryItems.leads,
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
       primaryItems.revenueProjections,
+      primaryItems.retention,
     ],
     secondary: [
+      secondaryItems.leads,
       secondaryItems.newsroom,
       secondaryItems.agencyMgmt,
       secondaryItems.employeeRoster,
       secondaryItems.audit,
-      secondaryItems.retention,
     ],
   },
   platform_admin: {
     primary: [
       primaryItems.funnel,
-      primaryItems.leads,
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
       primaryItems.revenueProjections,
+      primaryItems.retention,
     ],
     secondary: [
+      secondaryItems.leads,
       secondaryItems.newsroom,
       secondaryItems.agencyMgmt,
       secondaryItems.employeeRoster,
       secondaryItems.audit,
-      secondaryItems.retention,
     ],
   },
   platform_support: {
