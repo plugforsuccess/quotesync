@@ -21,19 +21,20 @@ const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
 const PRODUCT_COLORS = { auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6" };
 
 // ─── Portfolio Points Matrix ──────────────────────────────────────────────────
-// Each product is worth N points toward portfolio growth
+// Points are per ITEM (not per policy). A 2-car auto policy = 2 items × 10 pts = 20 pts.
 const PORTFOLIO_POINTS = {
   auto:          10,
-  ho:            20,  // HO / Condo / Landlord
+  ho:            20,  // HO / Condo — always 1 item per policy
   renters:        5,
+  landlord:      20,  // same points as HO but tracked separately
   specialty_auto: 5,  // Motorcycle, motor home, off-road, trailers
   pup:            5,  // Personal Umbrella Policy
   manufactured:   5,  // Manufactured Home
-  // "other" products not in the above list = 0 points (unknown type)
+  other:          0,
 };
 
-// HO/Condo monthly target (Allstate requirement)
-const HO_MONTHLY_TARGET = 53;
+// VC Baseline = Auto items + HO items (target 53/month)
+const VC_BASELINE_TARGET = 53;
 
 const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n).toLocaleString()}`;
 const fmtFull$ = (n) => `$${Math.round(n).toLocaleString()}`;
@@ -76,6 +77,7 @@ const emptyEntry = () => ({
   tier: "monoline",
   premium: "",
   policyCount: 1,
+  itemCount: 1,
   policyNo: "",
   source: "manual",
   note: "",
@@ -90,6 +92,7 @@ function parseAllstateRows(rows) {
     product: ["line of business", "lob", "product", "type"],
     policy:  ["policy number", "policy #", "policy no"],
     tier:    ["bundle tier", "tier", "bundle"],
+    items:   ["item count", "items", "vehicle count", "vehicles"],
   };
   const findCol = (headers, keys) => {
     const h = headers.map((x) => x?.toString().toLowerCase().trim());
@@ -104,18 +107,25 @@ function parseAllstateRows(rows) {
   const li      = findCol(headers, COL_MAP.product);
   const iTier   = findCol(headers, COL_MAP.tier);   // -1 if column absent
   const iPolicyNo = findCol(headers, COL_MAP.policy); // -1 if column absent
+  const iItems  = findCol(headers, COL_MAP.items);  // -1 if absent
 
   return rows.slice(1).filter(r => r.some(Boolean)).map((r) => {
     const raw = r[li]?.toString().toLowerCase() ?? "";
     let product = "other";
     // specialty auto must be checked BEFORE standard auto to avoid false match
     if (raw.includes("specialty auto") || raw.includes("motorcycle") || raw.includes("motor home") || raw.includes("off-road") || raw.includes("trailer")) product = "specialty_auto";
-    else if (raw.includes("auto") || raw.includes("private passenger")) product = "auto";
-    else if (raw.includes("home") || raw.includes("condo") || raw.includes("ho3") || raw.includes("ho6") || raw.includes("landlord")) product = "ho";
+    else if (raw.includes("standard auto") || raw.includes("private passenger")) product = "auto";
+    else if (raw.includes("home") || raw.includes("condo") || raw.includes("ho3") || raw.includes("ho6")) product = "ho";
     else if (raw.includes("rent") || raw.includes("ho4")) product = "renters";
+    else if (raw.includes("landlord")) product = "landlord";
     else if (raw.includes("umbrella") || raw.includes("pup")) product = "pup";
     else if (raw.includes("manufactured")) product = "manufactured";
     else product = "other";
+
+    // Only auto and specialty_auto can have multiple items per policy
+    const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured"];
+    const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
+    const itemCount = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
 
     const rawDate = di >= 0 ? r[di] : null;
     let date = TODAY.toISOString().slice(0, 10);
@@ -131,6 +141,7 @@ function parseAllstateRows(rows) {
       tier:     normalizeTier(iTier >= 0 ? r[iTier] : ""),
       premium:  parseFloat(r[pi]?.toString().replace(/[$,]/g, "")) || 0,
       policyCount: 1,
+      itemCount,
       policyNo: iPolicyNo >= 0 ? (r[iPolicyNo]?.toString().trim() || null) : null,
       source:   "upload",
       note:     r[li]?.toString() ?? "",
@@ -336,36 +347,36 @@ export default function RevenueProjectionsDashboard() {
     return { byProduct, totalPremium, totalCommission };
   }, [filtered]);
 
-  // ─── Policies stats (items, HO count, portfolio points) ─────────────────
+  // ─── Policies stats (items, VC baseline, portfolio points) ───────────────
   const policiesStats = useMemo(() => {
-    const totalItems = filtered.reduce((s, e) => s + e.policyCount, 0);
+    const totalPolicies = filtered.reduce((s, e) => s + e.policyCount, 0);
+    const totalItems    = filtered.reduce((s, e) => s + e.itemCount, 0);
 
-    // HO/Condo count — product === 'ho'
-    const hoCount = filtered
-      .filter(e => e.product === "ho")
-      .reduce((s, e) => s + e.policyCount, 0);
-
-    // Portfolio points
-    const totalPoints = filtered.reduce((s, e) => {
-      const pts = PORTFOLIO_POINTS[e.product] ?? 0;
-      return s + pts * e.policyCount;
+    // VC Baseline = auto items + HO items (HO always itemCount=1)
+    const vcBaselineCount = filtered.reduce((s, e) => {
+      if (e.product === "auto" || e.product === "ho") return s + e.itemCount;
+      return s;
     }, 0);
 
-    // Month-over-month points — need prior month entries
-    // Use the full `entries` array (unfiltered by date range) to get prior month
-    const now = new Date();
-    const priorMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
-    const priorMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
-    const priorEntries = entries.filter(e => e.date >= priorMonthStart && e.date <= priorMonthEnd);
-    const priorPoints = priorEntries.reduce((s, e) => {
+    // Portfolio points = PORTFOLIO_POINTS[product] × itemCount
+    const totalPoints = filtered.reduce((s, e) => {
       const pts = PORTFOLIO_POINTS[e.product] ?? 0;
-      return s + pts * e.policyCount;
+      return s + pts * e.itemCount;
+    }, 0);
+
+    // Prior month — derived from rangeStart so historical views work correctly
+    const priorStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth() - 1, 1).toISOString().slice(0, 10);
+    const priorEnd   = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 0).toISOString().slice(0, 10);
+    const priorEntries = entries.filter(e => e.date >= priorStart && e.date <= priorEnd);
+    const priorPoints  = priorEntries.reduce((s, e) => {
+      const pts = PORTFOLIO_POINTS[e.product] ?? 0;
+      return s + pts * (e.itemCount ?? 1);
     }, 0);
 
     const pointsDelta = totalPoints - priorPoints;
 
-    return { totalItems, hoCount, totalPoints, priorPoints, pointsDelta };
-  }, [filtered, entries]);
+    return { totalPolicies, totalItems, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
+  }, [filtered, entries, rangeStart]);
 
   // ─── Monthly trend (rolling 12 or YTD) ────────────────────────────────────
   const trendData = useMemo(() => {
@@ -608,8 +619,10 @@ export default function RevenueProjectionsDashboard() {
     if (policiesClickTimer.current) {
       clearTimeout(policiesClickTimer.current);
       policiesClickTimer.current = null;
-      // Double-click → open drill-down modal (existing behavior)
-      setModal("kpi-policies");
+      // Double-click → open modal appropriate to current mode
+      if (policiesMode === "points") setModal("kpi-points");
+      else if (policiesMode === "items") setModal("kpi-vc-baseline");
+      else setModal("kpi-policies");
       return;
     }
     policiesClickTimer.current = setTimeout(() => {
@@ -684,24 +697,24 @@ export default function RevenueProjectionsDashboard() {
         </div>
         {/* Policies Written — cycling card */}
         {(() => {
-          const { totalItems, hoCount, totalPoints, pointsDelta } = policiesStats;
-          const hoShortfall = HO_MONTHLY_TARGET - hoCount;
-          const hoOnTrack = hoCount >= HO_MONTHLY_TARGET;
+          const { totalPolicies, vcBaselineCount, totalPoints, pointsDelta } = policiesStats;
+          const vcShortfall = VC_BASELINE_TARGET - vcBaselineCount;
+          const vcOnTrack   = vcBaselineCount >= VC_BASELINE_TARGET;
 
           const modes = {
             count: {
               label: "POLICIES WRITTEN",
-              value: String(totalItems),
-              sub: `Avg premium: ${filtered.length > 0 ? fmt$(totals.totalPremium / totalItems) : "—"}`,
+              value: String(totalPolicies),
+              sub: `Avg premium: ${filtered.length > 0 ? fmt$(totals.totalPremium / totalPolicies) : "—"}`,
               subColor: "#475569",
             },
             items: {
-              label: "TOTAL ITEMS",
-              value: String(totalItems),
-              sub: hoOnTrack
-                ? `✓ HO/Condo: ${hoCount} / ${HO_MONTHLY_TARGET}`
-                : `HO/Condo: ${hoCount} / ${HO_MONTHLY_TARGET} · ${hoShortfall} needed`,
-              subColor: hoOnTrack ? "#10B981" : "#F59E0B",
+              label: "VC BASELINE",
+              value: String(vcBaselineCount),
+              sub: vcOnTrack
+                ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (Auto + HO)`
+                : `${vcBaselineCount} / ${VC_BASELINE_TARGET} · ${vcShortfall} needed`,
+              subColor: vcOnTrack ? "#10B981" : "#F59E0B",
             },
             points: {
               label: "PORTFOLIO POINTS",
@@ -951,10 +964,15 @@ export default function RevenueProjectionsDashboard() {
               </div>
               <div style={{ minWidth: 120 }}>
                 <label>Product</label>
-                <select value={newEntry.product} onChange={e => setNewEntry(p => ({...p, product: e.target.value}))}>
+                <select value={newEntry.product} onChange={e => {
+                  const val = e.target.value;
+                  const locked = ["ho", "renters", "landlord", "pup", "manufactured"].includes(val);
+                  setNewEntry(p => ({ ...p, product: val, itemCount: locked ? 1 : p.itemCount }));
+                }}>
                   <option value="auto">Auto</option>
                   <option value="ho">HO / Condo</option>
                   <option value="renters">Renters</option>
+                  <option value="landlord">Landlord</option>
                   <option value="specialty_auto">Specialty Auto</option>
                   <option value="pup">Personal Umbrella</option>
                   <option value="manufactured">Manufactured Home</option>
@@ -977,6 +995,23 @@ export default function RevenueProjectionsDashboard() {
                 <label>Policies</label>
                 <input type="number" value={newEntry.policyCount} min={1} onChange={e => setNewEntry(p => ({...p, policyCount: parseInt(e.target.value)||1}))} style={{ width: 70 }} />
               </div>
+              {(() => {
+                const isItemLocked = ["ho", "renters", "landlord", "pup", "manufactured"].includes(newEntry.product);
+                return (
+                  <div>
+                    <label style={{ fontSize: 11, color: "#475569" }}>Items</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={newEntry.itemCount}
+                      disabled={isItemLocked}
+                      onChange={e => setNewEntry(p => ({ ...p, itemCount: parseInt(e.target.value) || 1 }))}
+                      style={{ width: 60, opacity: isItemLocked ? 0.5 : 1 }}
+                      title={isItemLocked ? "Always 1 item for this product type" : "Number of vehicles or items"}
+                    />
+                  </div>
+                );
+              })()}
               <div style={{ flex: 1, minWidth: 120 }}>
                 <label>Product</label>
                 <input type="text" placeholder="Auto, Home, Renters..." value={newEntry.note} onChange={e => setNewEntry(p => ({...p, note: e.target.value}))} style={{ width: "100%" }} />
@@ -1224,6 +1259,175 @@ export default function RevenueProjectionsDashboard() {
           </table>
         </DrillDownModal>
       )}
+
+      {/* KPI — VC Baseline */}
+      {modal === "kpi-vc-baseline" && (() => {
+        const { vcBaselineCount } = policiesStats;
+        const autoItems = filtered.reduce((s, e) => e.product === "auto" ? s + e.itemCount : s, 0);
+        const hoItems   = filtered.reduce((s, e) => e.product === "ho"   ? s + e.itemCount : s, 0);
+        const pct = Math.min(vcBaselineCount / VC_BASELINE_TARGET, 1);
+        const onTrack = vcBaselineCount >= VC_BASELINE_TARGET;
+
+        return (
+          <DrillDownModal title="VC Baseline" onClose={closeModal}>
+            {/* Total + progress bar */}
+            <div style={{ fontSize: 42, fontWeight: 700, color: onTrack ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+              {vcBaselineCount} <span style={{ fontSize: 20, color: "#475569" }}>/ {VC_BASELINE_TARGET}</span>
+            </div>
+            <div style={{ fontSize: 13, color: "#475569", marginBottom: 12 }}>
+              Auto + HO items · {rangeLabel}
+            </div>
+            <div style={{ height: 8, background: "#252A3A", borderRadius: 4, overflow: "hidden", marginBottom: 24 }}>
+              <div style={{ height: "100%", width: `${pct * 100}%`, background: onTrack ? "#10B981" : "#F59E0B", borderRadius: 4, transition: "width 0.4s" }} />
+            </div>
+
+            {/* Auto vs HO breakdown */}
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Policies</th>
+                  <th>Items</th>
+                  <th>Counts Toward VC</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span style={{ background: "#3B82F622", color: "#3B82F6", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>Auto</span></td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>
+                    {filtered.filter(e => e.product === "auto").length}
+                  </td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0", fontWeight: 700 }}>{autoItems}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>✓</td>
+                </tr>
+                <tr>
+                  <td><span style={{ background: "#10B98122", color: "#10B981", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>HO / Condo</span></td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>
+                    {filtered.filter(e => e.product === "ho").length}
+                  </td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0", fontWeight: 700 }}>{hoItems}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>✓</td>
+                </tr>
+                {/* Non-VC products for reference */}
+                {["renters","landlord","specialty_auto","pup","manufactured","other"].map(key => {
+                  const policies = filtered.filter(e => e.product === key);
+                  if (policies.length === 0) return null;
+                  const items = policies.reduce((s, e) => s + e.itemCount, 0);
+                  const label = {
+                    renters: "Renters", landlord: "Landlord", specialty_auto: "Specialty Auto",
+                    pup: "Personal Umbrella", manufactured: "Manufactured Home", other: "Other",
+                  }[key];
+                  return (
+                    <tr key={key} style={{ opacity: 0.5 }}>
+                      <td><span style={{ background: "#33415522", color: "#64748B", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{label}</span></td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{policies.length}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{items}</td>
+                      <td style={{ color: "#334155" }}>—</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {!onTrack && (
+              <div style={{ marginTop: 16, fontSize: 12, color: "#F59E0B", background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
+                {VC_BASELINE_TARGET - vcBaselineCount} more Auto/HO items needed to hit baseline
+              </div>
+            )}
+          </DrillDownModal>
+        );
+      })()}
+
+      {/* KPI — Portfolio Points */}
+      {modal === "kpi-points" && (() => {
+        const { totalPoints, priorPoints, pointsDelta } = policiesStats;
+
+        // Build per-product breakdown
+        const byProduct = {};
+        filtered.forEach(e => {
+          if (!byProduct[e.product]) byProduct[e.product] = { policies: 0, items: 0, points: 0 };
+          byProduct[e.product].policies += e.policyCount;
+          byProduct[e.product].items    += e.itemCount;
+          byProduct[e.product].points   += (PORTFOLIO_POINTS[e.product] ?? 0) * e.itemCount;
+        });
+
+        const rows = Object.entries(byProduct)
+          .filter(([, v]) => v.points > 0 || v.items > 0)
+          .sort(([, a], [, b]) => b.points - a.points);
+
+        const PRODUCT_LABELS = {
+          auto: "Auto", ho: "HO / Condo", renters: "Renters", landlord: "Landlord",
+          specialty_auto: "Specialty Auto", pup: "Personal Umbrella",
+          manufactured: "Manufactured Home", other: "Other",
+        };
+        const PRODUCT_COLORS_EXT = {
+          auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", landlord: "#06B6D4",
+          specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", other: "#64748B",
+        };
+
+        return (
+          <DrillDownModal title="Portfolio Points" onClose={closeModal}>
+            {/* Total points + MoM */}
+            <div style={{ fontSize: 42, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+              {totalPoints}
+            </div>
+            <div style={{ fontSize: 13, color: pointsDelta >= 0 ? "#10B981" : "#EF4444", marginBottom: 24 }}>
+              {pointsDelta >= 0 ? `+${pointsDelta}` : pointsDelta} pts vs prior month · {rangeLabel}
+            </div>
+
+            {/* Product breakdown table */}
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Policies</th>
+                  <th>Items</th>
+                  <th>Pts / Item</th>
+                  <th>Total Pts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(([key, val]) => (
+                  <tr key={key}>
+                    <td>
+                      <span style={{ background: `${PRODUCT_COLORS_EXT[key]}22`, color: PRODUCT_COLORS_EXT[key] ?? "#64748B", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                        {PRODUCT_LABELS[key] ?? key}
+                      </span>
+                    </td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>{val.policies}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{val.items}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#475569" }}>{PORTFOLIO_POINTS[key] ?? 0}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9", fontWeight: 700 }}>{val.points}</td>
+                  </tr>
+                ))}
+                {/* Totals row */}
+                <tr style={{ borderTop: "1px solid #252A3A" }}>
+                  <td style={{ color: "#F1F5F9", fontWeight: 600 }}>Total</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>
+                    {rows.reduce((s, [, v]) => s + v.policies, 0)}
+                  </td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>
+                    {rows.reduce((s, [, v]) => s + v.items, 0)}
+                  </td>
+                  <td />
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981", fontWeight: 700 }}>{totalPoints}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Prior month comparison */}
+            {priorPoints > 0 && (
+              <div style={{ marginTop: 16, fontSize: 12, color: "#475569", borderTop: "1px solid #1A1D27", paddingTop: 12 }}>
+                Prior month: <span style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>{priorPoints} pts</span>
+                &nbsp;·&nbsp;
+                Net: <span style={{ fontFamily: "'DM Mono', monospace", color: pointsDelta >= 0 ? "#10B981" : "#EF4444" }}>
+                  {pointsDelta >= 0 ? `+${pointsDelta}` : pointsDelta}
+                </span>
+              </div>
+            )}
+          </DrillDownModal>
+        );
+      })()}
 
       {/* KPI — Commission Goal */}
       {modal === "kpi-goal" && (
