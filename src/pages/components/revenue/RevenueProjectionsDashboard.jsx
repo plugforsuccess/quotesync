@@ -20,12 +20,28 @@ const COMMISSION_GOAL = 40000;  // primary goal — commission revenue
 const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
 const PRODUCT_COLORS = { auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6" };
 
+// ─── Portfolio Points Matrix ──────────────────────────────────────────────────
+// Each product is worth N points toward portfolio growth
+const PORTFOLIO_POINTS = {
+  auto:          10,
+  ho:            20,  // HO / Condo / Landlord
+  renters:        5,
+  specialty_auto: 5,  // Motorcycle, motor home, off-road, trailers
+  pup:            5,  // Personal Umbrella Policy
+  manufactured:   5,  // Manufactured Home
+  // "other" products not in the above list = 0 points (unknown type)
+};
+
+// HO/Condo monthly target (Allstate requirement)
+const HO_MONTHLY_TARGET = 53;
+
 const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n).toLocaleString()}`;
 const fmtFull$ = (n) => `$${Math.round(n).toLocaleString()}`;
 const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
 
 function calcCommission(premium, product, tier = "monoline") {
-  const rates = COMMISSION[product] ?? COMMISSION.other;
+  const key = ["auto","ho","renters"].includes(product) ? product : "other";
+  const rates = COMMISSION[key];
   return premium * (rates[tier] ?? rates.monoline);
 }
 
@@ -92,9 +108,14 @@ function parseAllstateRows(rows) {
   return rows.slice(1).filter(r => r.some(Boolean)).map((r) => {
     const raw = r[li]?.toString().toLowerCase() ?? "";
     let product = "other";
-    if (raw.includes("auto") || raw.includes("private passenger")) product = "auto";
-    else if (raw.includes("home") || raw.includes("condo") || raw.includes("ho3") || raw.includes("ho6")) product = "ho";
+    // specialty auto must be checked BEFORE standard auto to avoid false match
+    if (raw.includes("specialty auto") || raw.includes("motorcycle") || raw.includes("motor home") || raw.includes("off-road") || raw.includes("trailer")) product = "specialty_auto";
+    else if (raw.includes("auto") || raw.includes("private passenger")) product = "auto";
+    else if (raw.includes("home") || raw.includes("condo") || raw.includes("ho3") || raw.includes("ho6") || raw.includes("landlord")) product = "ho";
     else if (raw.includes("rent") || raw.includes("ho4")) product = "renters";
+    else if (raw.includes("umbrella") || raw.includes("pup")) product = "pup";
+    else if (raw.includes("manufactured")) product = "manufactured";
+    else product = "other";
 
     const rawDate = di >= 0 ? r[di] : null;
     let date = TODAY.toISOString().slice(0, 10);
@@ -217,6 +238,7 @@ export default function RevenueProjectionsDashboard() {
   const [paceMode, setPaceMode] = useState("commission");       // commission | premium
   const [dailyTargetMode, setDailyTargetMode] = useState("commission"); // commission | premium | policies
   const [goalMode, setGoalMode] = useState("commission"); // commission | premium
+  const [policiesMode, setPoliciesMode] = useState("count"); // count | items | points
   const [modalMode, setModalMode] = useState("commission");
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState("");
@@ -233,6 +255,7 @@ export default function RevenueProjectionsDashboard() {
   const paceClickTimer  = useRef(null);
   const dailyClickTimer = useRef(null);
   const goalClickTimer  = useRef(null);
+  const policiesClickTimer = useRef(null);
 
   // ─── Date range for current view ──────────────────────────────────────────
   const { rangeStart, rangeEnd, label: rangeLabel } = useMemo(() => {
@@ -312,6 +335,37 @@ export default function RevenueProjectionsDashboard() {
     const totalCommission = Object.values(byProduct).reduce((s, v) => s + v.commission, 0);
     return { byProduct, totalPremium, totalCommission };
   }, [filtered]);
+
+  // ─── Policies stats (items, HO count, portfolio points) ─────────────────
+  const policiesStats = useMemo(() => {
+    const totalItems = filtered.reduce((s, e) => s + e.policyCount, 0);
+
+    // HO/Condo count — product === 'ho'
+    const hoCount = filtered
+      .filter(e => e.product === "ho")
+      .reduce((s, e) => s + e.policyCount, 0);
+
+    // Portfolio points
+    const totalPoints = filtered.reduce((s, e) => {
+      const pts = PORTFOLIO_POINTS[e.product] ?? 0;
+      return s + pts * e.policyCount;
+    }, 0);
+
+    // Month-over-month points — need prior month entries
+    // Use the full `entries` array (unfiltered by date range) to get prior month
+    const now = new Date();
+    const priorMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10);
+    const priorMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().slice(0, 10);
+    const priorEntries = entries.filter(e => e.date >= priorMonthStart && e.date <= priorMonthEnd);
+    const priorPoints = priorEntries.reduce((s, e) => {
+      const pts = PORTFOLIO_POINTS[e.product] ?? 0;
+      return s + pts * e.policyCount;
+    }, 0);
+
+    const pointsDelta = totalPoints - priorPoints;
+
+    return { totalItems, hoCount, totalPoints, priorPoints, pointsDelta };
+  }, [filtered, entries]);
 
   // ─── Monthly trend (rolling 12 or YTD) ────────────────────────────────────
   const trendData = useMemo(() => {
@@ -550,11 +604,28 @@ export default function RevenueProjectionsDashboard() {
     }
   };
 
+  const handlePoliciesClick = () => {
+    if (policiesClickTimer.current) {
+      clearTimeout(policiesClickTimer.current);
+      policiesClickTimer.current = null;
+      // Double-click → open drill-down modal (existing behavior)
+      setModal("kpi-policies");
+      return;
+    }
+    policiesClickTimer.current = setTimeout(() => {
+      setPoliciesMode(m =>
+        m === "count" ? "items" : m === "items" ? "points" : "count"
+      );
+      policiesClickTimer.current = null;
+    }, 300);
+  };
+
   useEffect(() => {
     return () => {
       if (paceClickTimer.current) clearTimeout(paceClickTimer.current);
       if (dailyClickTimer.current) clearTimeout(dailyClickTimer.current);
       if (goalClickTimer.current) clearTimeout(goalClickTimer.current);
+      if (policiesClickTimer.current) clearTimeout(policiesClickTimer.current);
     };
   }, []);
 
@@ -611,12 +682,64 @@ export default function RevenueProjectionsDashboard() {
             );
           })()}
         </div>
-        {/* Policies */}
-        <div className="card clickable" onClick={() => setModal("kpi-policies")}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Policies Written</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace" }}>{filtered.reduce((s,e) => s + e.policyCount, 0)}</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Avg premium: {filtered.length > 0 ? fmt$(totals.totalPremium / filtered.reduce((s,e) => s + e.policyCount,0)) : "—"}</div>
-        </div>
+        {/* Policies Written — cycling card */}
+        {(() => {
+          const { totalItems, hoCount, totalPoints, pointsDelta } = policiesStats;
+          const hoShortfall = HO_MONTHLY_TARGET - hoCount;
+          const hoOnTrack = hoCount >= HO_MONTHLY_TARGET;
+
+          const modes = {
+            count: {
+              label: "POLICIES WRITTEN",
+              value: String(totalItems),
+              sub: `Avg premium: ${filtered.length > 0 ? fmt$(totals.totalPremium / totalItems) : "—"}`,
+              subColor: "#475569",
+            },
+            items: {
+              label: "TOTAL ITEMS",
+              value: String(totalItems),
+              sub: hoOnTrack
+                ? `✓ HO/Condo: ${hoCount} / ${HO_MONTHLY_TARGET}`
+                : `HO/Condo: ${hoCount} / ${HO_MONTHLY_TARGET} · ${hoShortfall} needed`,
+              subColor: hoOnTrack ? "#10B981" : "#F59E0B",
+            },
+            points: {
+              label: "PORTFOLIO POINTS",
+              value: String(totalPoints),
+              sub: pointsDelta >= 0
+                ? `+${pointsDelta} vs last month`
+                : `${pointsDelta} vs last month`,
+              subColor: pointsDelta >= 0 ? "#10B981" : "#EF4444",
+            },
+          };
+
+          const active = modes[policiesMode];
+
+          return (
+            <div
+              className="card clickable"
+              onClick={handlePoliciesClick}
+              title="Click to cycle · Double-click to expand"
+              style={{ position: "relative" }}
+            >
+              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+                {active.label}
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace" }}>
+                {active.value}
+              </div>
+              <div style={{ fontSize: 11, color: active.subColor, marginTop: 2 }}>
+                {active.sub}
+              </div>
+              {/* Mode indicator dots */}
+              <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                {["count", "items", "points"].map(m => (
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: policiesMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                ))}
+              </div>
+            </div>
+          );
+        })()}
         {/* Commission Goal */}
         <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={handleGoalClick} title="Click to switch · Double-click to expand">
           <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
@@ -832,6 +955,9 @@ export default function RevenueProjectionsDashboard() {
                   <option value="auto">Auto</option>
                   <option value="ho">HO / Condo</option>
                   <option value="renters">Renters</option>
+                  <option value="specialty_auto">Specialty Auto</option>
+                  <option value="pup">Personal Umbrella</option>
+                  <option value="manufactured">Manufactured Home</option>
                   <option value="other">Other</option>
                 </select>
               </div>
