@@ -107,6 +107,7 @@ const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
 const EmployeeRosterPage = lazy(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazy(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
+const RetentionDashboardPage = lazy(() => import('./pages/RetentionDashboardPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -362,6 +363,18 @@ function App() {
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <Suspense fallback={<PageLoader />}>
                     <RevenueProjectionsDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin - Retention Dashboard (platform_admin+) */}
+            <Route
+              path="admin/retention"
+              element={
+                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                  <Suspense fallback={<PageLoader />}>
+                    <RetentionDashboardPage />
                   </Suspense>
                 </ProtectedRoute>
               }

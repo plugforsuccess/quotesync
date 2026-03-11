@@ -35,6 +35,7 @@ const secondaryItems = {
   employeeRoster:      { to: '/admin/agency/employees',      label: 'Employee Roster',     icon: '👥' },
   audit:               { to: '/admin/audit',                 label: 'Audit',               icon: '🔍' },
   revenueProjections:  { to: '/admin/revenue-projections',   label: 'Revenue Projections', icon: '💰' },
+  retention:           { to: '/admin/retention',              label: 'Retention',           icon: '🛡️' },
 };
 
 // ── Platform plane navigation by role ────────────────────────────────────────
@@ -54,6 +55,7 @@ export const platformNav = {
       secondaryItems.agencyMgmt,
       secondaryItems.employeeRoster,
       secondaryItems.audit,
+      secondaryItems.retention,
     ],
   },
   platform_admin: {
@@ -69,6 +71,7 @@ export const platformNav = {
       secondaryItems.agencyMgmt,
       secondaryItems.employeeRoster,
       secondaryItems.audit,
+      secondaryItems.retention,
     ],
   },
   platform_support: {
