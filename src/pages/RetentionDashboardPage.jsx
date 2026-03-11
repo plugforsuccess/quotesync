@@ -20,7 +20,6 @@ const STATUS_CONFIG = {
 const TERMINATION_REASONS = ["Price", "Service", "Claims", "Moving", "Coverage no longer needed", "Other"];
 const CONTACT_METHODS = ["phone", "text", "email", "other"];
 
-// Allstate Pending Cancellation report column aliases (flexible matching)
 const COL_MAP = {
   policy_no:    ["policy number", "policy no", "policy #", "pol no", "pol #"],
   customer:     ["customer name", "insured name", "insured", "name", "customer"],
@@ -53,6 +52,19 @@ function fmtFull$(n) {
   return `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
+function daysUntilCancel(dateStr) {
+  const d = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.ceil((d - today) / 86400000);
+}
+
+function urgencyColor(days) {
+  if (days <= 3) return "#EF4444";
+  if (days <= 7) return "#F59E0B";
+  return "#10B981";
+}
+
 // ─── Upload Parser ─────────────────────────────────────────────────────────────
 
 function parseReport(file) {
@@ -64,7 +76,6 @@ function parseReport(file) {
         const ws = wb.Sheets[wb.SheetNames[0]];
         const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" });
 
-        // Find header row (first row where policy_no alias matches)
         let headerRow = 0;
         for (let i = 0; i < Math.min(10, raw.length); i++) {
           const idx = findCol(raw[i].map(String), COL_MAP.policy_no);
@@ -123,18 +134,19 @@ function parseReport(file) {
 
 function diffReport(parsed, existing) {
   const today = new Date().toISOString().slice(0, 10);
-  const parsedKeys = new Set(parsed.map(r => `${r.policy_no}|${r.cancel_effective_date}`));
+  const makeKey = (pno, cdate) => `${pno.toLowerCase()}|${cdate}`;
+  const parsedKeys = new Set(parsed.map(r => makeKey(r.policy_no, r.cancel_effective_date)));
 
   const activeStatuses = ["pending", "contacted", "promise_to_pay", "promise_broken"];
   const activeEvents = existing.filter(e => activeStatuses.includes(e.status));
-  const activeKeys = new Map(activeEvents.map(e => [`${e.policy_no}|${e.cancel_effective_date}`, e]));
+  const activeKeys = new Map(activeEvents.map(e => [makeKey(e.policy_no, e.cancel_effective_date), e]));
 
   const toAdd = [];
   const toUpdate = [];
   const duplicates = [];
 
   for (const row of parsed) {
-    const key = `${row.policy_no}|${row.cancel_effective_date}`;
+    const key = makeKey(row.policy_no, row.cancel_effective_date);
     if (activeKeys.has(key)) {
       const ex = activeKeys.get(key);
       if (ex.last_seen_on !== today || ex.premium_at_risk !== row.premium_at_risk) {
@@ -143,31 +155,29 @@ function diffReport(parsed, existing) {
         duplicates.push(key);
       }
     } else {
-      const priorEvents = existing.filter(e => e.policy_no === row.policy_no);
+      const priorEvents = existing.filter(e => e.policy_no.toLowerCase() === row.policy_no.toLowerCase());
       const cycle = priorEvents.length + 1;
       toAdd.push({ ...row, cycle, first_seen_on: today, last_seen_on: today });
     }
   }
 
   const toAutoResolve = activeEvents
-    .filter(e => !parsedKeys.has(`${e.policy_no}|${e.cancel_effective_date}`))
+    .filter(e => !parsedKeys.has(makeKey(e.policy_no, e.cancel_effective_date)))
     .map(e => ({ id: e.id }));
 
   return { toAdd, toUpdate, toAutoResolve, duplicates };
 }
 
-// ─── Sortable Table Header ─────────────────────────────────────────────────────
+// ─── Module-Level Sub-Components ───────────────────────────────────────────────
 
 function SortTh({ col, label, sortCol, sortDir, onSort }) {
   const active = sortCol === col;
   return (
     <th onClick={() => onSort(col)} style={{ cursor: "pointer", userSelect: "none" }}>
-      {label} {active ? (sortDir === "asc" ? "▲" : "▼") : ""}
+      {label} {active ? (sortDir === "asc" ? "\u25B2" : "\u25BC") : ""}
     </th>
   );
 }
-
-// ─── KPI Card ──────────────────────────────────────────────────────────────────
 
 function KpiCard({ label, value, sub, color, urgent, urgentCount }) {
   return (
@@ -180,6 +190,380 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount }) {
       <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{sub}</div>}
+    </div>
+  );
+}
+
+// ─── Triage Tab ──────────────────────────────────────────────────────────────
+
+function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sortCol, sortDir, onSort, setSelectedEvent, producers, bulkAssign }) {
+  const brokenCount = events.filter(e => e.status === "promise_broken").length;
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 4 }}>
+          {["active","all","saved","lost"].map(f => (
+            <button key={f} className={`btn-ghost ${statusFilter === f ? "active" : ""}`}
+              onClick={() => setStatusFilter(f)}
+              style={{ padding: "5px 12px", fontSize: 12 }}>
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "#475569" }}>Bulk assign unassigned pending:</span>
+          {producers.map(p => {
+            const name = p.preferred_name || p.first_name;
+            return (
+              <button key={p.id} className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}
+                onClick={() => bulkAssign(name)}>
+                \u2192 {name}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {brokenCount > 0 && (
+        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
+          {brokenCount} broken promise{brokenCount > 1 ? "s" : ""} \u2014 follow up needed
+        </div>
+      )}
+
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ minWidth: 800 }}>
+          <thead>
+            <tr>
+              <SortTh col="cancel_effective_date" label="Cancel Date" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+              <th>Days Left</th>
+              <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+              <th>Product</th>
+              <SortTh col="premium_at_risk" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+              <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+              <SortTh col="assigned_to" label="Assigned" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+              <th>Promise Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredEvents.map(event => {
+              const days = daysUntilCancel(event.cancel_effective_date);
+              const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
+              return (
+                <tr key={event.id} className="triage-row" onClick={() => setSelectedEvent(event)}>
+                  <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                    {event.cancel_effective_date}
+                  </td>
+                  <td>
+                    <span className="urgency-badge" style={{ background: `${urgencyColor(days)}22`, color: urgencyColor(days) }}>
+                      {days <= 0 ? "PAST DUE" : `${days}d`}
+                    </span>
+                  </td>
+                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "\u2014"}</td>
+                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
+                  <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
+                    {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014"}
+                  </td>
+                  <td>
+                    <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
+                  </td>
+                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "\u2014"}</td>
+                  <td style={{ color: event.promise_date ? "#8B5CF6" : "#334155", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                    {event.promise_date || "\u2014"}
+                  </td>
+                  <td style={{ color: "#475569", fontSize: 16 }}>\u203A</td>
+                </tr>
+              );
+            })}
+            {filteredEvents.length === 0 && (
+              <tr><td colSpan={9} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+                No events in this filter
+              </td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Resolved Tab ────────────────────────────────────────────────────────────
+
+function ResolvedTab({ resolvedEvents }) {
+  return (
+    <div>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ minWidth: 800 }}>
+          <thead>
+            <tr>
+              <th>Resolution Date</th>
+              <th>Customer</th>
+              <th>Policy</th>
+              <th>Product</th>
+              <th>Premium</th>
+              <th>Status</th>
+              <th>Assigned</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {resolvedEvents.map(event => {
+              const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
+              return (
+                <tr key={event.id}>
+                  <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                    {event.resolution_date || event.updated_at?.slice(0, 10) || "\u2014"}
+                  </td>
+                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "\u2014"}</td>
+                  <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{event.policy_no}</td>
+                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
+                  <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
+                    {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014"}
+                  </td>
+                  <td>
+                    <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
+                  </td>
+                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "\u2014"}</td>
+                  <td style={{ color: "#64748B", fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {event.notes || "\u2014"}
+                  </td>
+                </tr>
+              );
+            })}
+            {resolvedEvents.length === 0 && (
+              <tr><td colSpan={8} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+                No resolved events yet
+              </td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Upload Tab ──────────────────────────────────────────────────────────────
+
+function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancel }) {
+  return (
+    <div style={{ maxWidth: 640 }}>
+      <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
+        Upload the Allstate <span style={{ color: "#64748B", fontFamily: "'DM Mono', monospace" }}>Pending Cancellation</span> report (XLSX).
+        The system will diff against existing active events \u2014 new policies added, resolved policies auto-closed.
+      </div>
+
+      <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); onFileSelect(e.dataTransfer.files[0]); }}>
+        <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }}
+          onChange={e => onFileSelect(e.target.files[0])} />
+        <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
+        <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
+          {uploadFile ? uploadFile.name : "Drop report here or click to browse"}
+        </div>
+        {isParsing && <div style={{ fontSize: 12, color: "#475569", marginTop: 8 }}>Parsing\u2026</div>}
+      </div>
+
+      {uploadError && (
+        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
+          {uploadError}
+        </div>
+      )}
+
+      {diffResult && !uploadMsg && (
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Review before committing</div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
+            {[
+              { label: "New Policies", value: diffResult.toAdd.length, color: "#10B981" },
+              { label: "Updated", value: diffResult.toUpdate.length, color: "#3B82F6" },
+              { label: "Auto-Resolved", value: diffResult.toAutoResolve.length, color: "#F59E0B" },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, padding: "12px 14px" }}>
+                <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+              </div>
+            ))}
+          </div>
+
+          {diffResult.toAutoResolve.length > 0 && (
+            <div style={{ fontSize: 12, color: "#F59E0B", marginBottom: 14, background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
+              {diffResult.toAutoResolve.length} active policies not found in this report will be marked auto-resolved (they likely paid).
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn-primary" onClick={onCommit} disabled={isCommitting}>
+              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+            </button>
+            <button className="btn-ghost" onClick={onCancel}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {uploadMsg && (
+        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 16, fontSize: 13, color: "#10B981" }}>
+          {uploadMsg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Trends Tab ──────────────────────────────────────────────────────────────
+
+function TrendsTab({ trendsData }) {
+  if (trendsData.length === 0) {
+    return (
+      <div style={{ textAlign: "center", color: "#334155", padding: "48px 0" }}>
+        No data yet. Upload reports to see trends.
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 16 }}>Monthly Cancel Volume & Save Rate</div>
+      <div className="card" style={{ padding: "20px 12px" }}>
+        <ResponsiveContainer width="100%" height={300}>
+          <ComposedChart data={trendsData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#252A3A" />
+            <XAxis dataKey="month" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />
+            <YAxis yAxisId="left" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />
+            <YAxis yAxisId="right" orientation="right" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} domain={[0, 100]} unit="%" />
+            <Tooltip
+              contentStyle={{ background: "#1a1f2e", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }}
+              labelStyle={{ color: "#94A3B8" }}
+              itemStyle={{ color: "#E2E8F0" }}
+            />
+            <Bar yAxisId="left" dataKey="cancels" name="Cancels" fill="#EF4444" radius={[4, 4, 0, 0]} opacity={0.7} />
+            <Bar yAxisId="left" dataKey="saves" name="Saves" fill="#10B981" radius={[4, 4, 0, 0]} />
+            <Line yAxisId="right" type="monotone" dataKey="saveRate" name="Save Rate %" stroke="#F59E0B" strokeWidth={2} dot={{ fill: "#F59E0B", r: 3 }} />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// ─── Event Detail Modal ──────────────────────────────────────────────────────
+
+function EventDetailModal({ event, onClose, onUpdate }) {
+  const days = daysUntilCancel(event.cancel_effective_date);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    status: event.status,
+    assigned_to: event.assigned_to || "",
+    contact_method: event.contact_method || "",
+    promise_date: event.promise_date || "",
+    termination_reason: event.termination_reason || "",
+    notes: event.notes || "",
+  });
+
+  async function save() {
+    setSaving(true);
+    const updates = { ...form };
+    if (["contacted","promise_to_pay"].includes(form.status) && !event.contacted_at) {
+      updates.contacted_at = new Date().toISOString();
+    }
+    if (["saved","lost","requested_cancellation"].includes(form.status) && !event.resolution_date) {
+      updates.resolution_date = new Date().toISOString().slice(0,10);
+    }
+    await onUpdate(event.id, updates);
+    setSaving(false);
+    onClose();
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
+      <div style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: 560, maxHeight: "90vh", overflow: "auto", padding: "24px 20px" }}>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{event.customer_name || "Unknown Customer"}</div>
+            <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
+              Policy {event.policy_no} \u00B7 {event.product?.toUpperCase()} \u00B7 Cycle {event.cycle}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>\u00D7</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
+          {[
+            { label: "Cancel Date", value: event.cancel_effective_date, color: urgencyColor(days) },
+            { label: "Days Left", value: days <= 0 ? "PAST DUE" : `${days} days`, color: urgencyColor(days) },
+            { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014", color: "#E2E8F0" },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
+              <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label>Status</label>
+              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Contact Method</label>
+              <select value={form.contact_method} onChange={ev => setForm(p => ({ ...p, contact_method: ev.target.value }))}>
+                <option value="">\u2014</option>
+                {CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label>Assigned To</label>
+              <input type="text" value={form.assigned_to}
+                onChange={ev => setForm(p => ({ ...p, assigned_to: ev.target.value }))}
+                placeholder="Producer name" />
+            </div>
+            <div>
+              <label>Promise Date</label>
+              <input type="date" value={form.promise_date}
+                onChange={ev => setForm(p => ({ ...p, promise_date: ev.target.value }))} />
+            </div>
+          </div>
+
+          {form.status === "requested_cancellation" && (
+            <div>
+              <label>Termination Reason</label>
+              <select value={form.termination_reason}
+                onChange={ev => setForm(p => ({ ...p, termination_reason: ev.target.value }))}>
+                <option value="">\u2014 Select reason \u2014</option>
+                {TERMINATION_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </div>
+          )}
+
+          <div>
+            <label>Notes</label>
+            <textarea value={form.notes}
+              onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
+              rows={3}
+              style={{ width: "100%", background: "#1E2130", color: "#E2E8F0", border: "1px solid #2D3348", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
+              placeholder="Call notes, customer response..." />
+          </div>
+
+          <button className="btn-primary" onClick={save} disabled={saving} style={{ width: "100%" }}>
+            {saving ? "Saving\u2026" : "Save"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -199,13 +583,14 @@ export default function RetentionDashboardPage() {
   const [sortDir, setSortDir] = useState("asc");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [uploadFile, setUploadFile] = useState(null);
-  const [uploadParsed, setUploadParsed] = useState(null);
   const [diffResult, setDiffResult] = useState(null);
   const [uploadMsg, setUploadMsg] = useState("");
   const [uploadError, setUploadError] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
   const fileInputRef = useRef(null);
+  const hasFlaggedBroken = useRef(false);
+  const [producers, setProducers] = useState([]);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -220,9 +605,25 @@ export default function RetentionDashboardPage() {
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
+  // ─── Load producers for bulk assign ────────────────────────────────────────
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, preferred_name")
+        .eq("org_id", AGENCY_ID)
+        .eq("employment_status", "active")
+        .eq("role_type", "producer")
+        .order("last_name");
+      if (data) setProducers(data);
+    })();
+  }, []);
+
   // ─── Promise-Broken Auto-Flag ──────────────────────────────────────────────
 
   useEffect(() => {
+    if (hasFlaggedBroken.current) return;
     const today = new Date().toISOString().slice(0, 10);
     const broken = events.filter(e =>
       e.status === "promise_to_pay" &&
@@ -230,6 +631,7 @@ export default function RetentionDashboardPage() {
       e.promise_date < today
     );
     if (broken.length === 0) return;
+    hasFlaggedBroken.current = true;
     Promise.all(
       broken.map(e =>
         supabase.from("pending_cancel_events")
@@ -251,15 +653,12 @@ export default function RetentionDashboardPage() {
     const contacted = events.filter(e =>
       ["contacted","promise_to_pay","saved","promise_broken","requested_cancellation","lost"].includes(e.status)
     );
-    const promises = events.filter(e =>
-      ["promise_to_pay","saved","promise_broken"].includes(e.status)
-    );
-    const keptPromises = events.filter(e => e.status === "saved" && e.promise_date);
 
     const premiumAtRisk = active.reduce((s,e) => s + (e.premium_at_risk || 0), 0);
     const premiumSaved = saved.reduce((s,e) => s + (e.premium_at_risk || 0), 0);
 
-    const workable = saved.length + lost.length + (events.filter(e => e.status === "promise_broken").length);
+    // workable = saved + lost (lost already includes promise_broken)
+    const workable = saved.length + lost.length;
     const saveRate = workable > 0 ? saved.length / workable : null;
     const contactRate = (active.length + contacted.length) > 0
       ? contacted.length / (active.length + contacted.length) : null;
@@ -308,20 +707,18 @@ export default function RetentionDashboardPage() {
     });
   }, [events, statusFilter, sortCol, sortDir]);
 
-  // Resolved events for Resolved tab
   const resolvedEvents = useMemo(() => {
     return events
       .filter(e => ["saved","lost","auto_resolved","requested_cancellation","promise_broken"].includes(e.status))
       .sort((a, b) => (b.resolution_date || b.updated_at || "").localeCompare(a.resolution_date || a.updated_at || ""));
   }, [events]);
 
-  // Trends data
   const trendsData = useMemo(() => {
     const months = {};
     for (const e of events) {
       const d = e.cancel_effective_date || e.created_at?.slice(0, 10);
       if (!d) continue;
-      const key = d.slice(0, 7); // YYYY-MM
+      const key = d.slice(0, 7);
       if (!months[key]) months[key] = { month: key, cancels: 0, saves: 0, saveRate: 0 };
       months[key].cancels++;
       if (e.status === "saved") months[key].saves++;
@@ -332,20 +729,6 @@ export default function RetentionDashboardPage() {
     }
     return sorted;
   }, [events]);
-
-  function daysUntilCancel(dateStr) {
-    const d = new Date(dateStr);
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    return Math.ceil((d - today) / 86400000);
-  }
-
-  function urgencyColor(days) {
-    if (days <= 0) return "#EF4444";
-    if (days <= 3) return "#EF4444";
-    if (days <= 7) return "#F59E0B";
-    return "#10B981";
-  }
 
   function handleSort(col) {
     if (sortCol === col) {
@@ -368,7 +751,6 @@ export default function RetentionDashboardPage() {
     try {
       const parsed = await parseReport(file);
       const diff = diffReport(parsed, events);
-      setUploadParsed(parsed);
       setDiffResult(diff);
     } catch (err) {
       setUploadError(err.message);
@@ -381,6 +763,7 @@ export default function RetentionDashboardPage() {
     if (!diffResult || isCommitting) return;
     setIsCommitting(true);
     try {
+      // Create batch record with committed=false; flip to true only after all writes succeed
       const { data: batch, error: batchErr } = await supabase
         .from("pending_cancel_uploads")
         .insert({
@@ -390,7 +773,7 @@ export default function RetentionDashboardPage() {
           rows_added: diffResult.toAdd.length,
           rows_updated: diffResult.toUpdate.length,
           rows_auto_resolved: diffResult.toAutoResolve.length,
-          committed: true,
+          committed: false,
         })
         .select().single();
       if (batchErr) throw new Error(batchErr.message);
@@ -423,10 +806,15 @@ export default function RetentionDashboardPage() {
           .in("id", ids);
       }
 
+      // All writes succeeded — mark batch as committed
+      await supabase
+        .from("pending_cancel_uploads")
+        .update({ committed: true })
+        .eq("id", batchId);
+
       setUploadMsg(`${diffResult.toAdd.length} added \u00B7 ${diffResult.toUpdate.length} updated \u00B7 ${diffResult.toAutoResolve.length} auto-resolved`);
       setDiffResult(null);
       setUploadFile(null);
-      setUploadParsed(null);
       await loadEvents();
     } catch (err) {
       setUploadError(err.message);
@@ -457,377 +845,6 @@ export default function RetentionDashboardPage() {
       .update({ assigned_to: producerName })
       .in("id", pendingIds);
     await loadEvents();
-  }
-
-  // ─── Triage Tab ────────────────────────────────────────────────────────────
-
-  function TriageTab() {
-    return (
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap" }}>
-          <div style={{ display: "flex", gap: 4 }}>
-            {["active","all","saved","lost"].map(f => (
-              <button key={f} className={`btn-ghost ${statusFilter === f ? "active" : ""}`}
-                onClick={() => setStatusFilter(f)}
-                style={{ padding: "5px 12px", fontSize: 12 }}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </button>
-            ))}
-          </div>
-          <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ fontSize: 12, color: "#475569" }}>Bulk assign unassigned pending:</span>
-            {["Cam", "Producer 2"].map(name => (
-              <button key={name} className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}
-                onClick={() => bulkAssign(name)}>
-                \u2192 {name}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {events.filter(e => e.status === "promise_broken").length > 0 && (
-          <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
-            {events.filter(e => e.status === "promise_broken").length} broken promise{events.filter(e => e.status === "promise_broken").length > 1 ? "s" : ""} \u2014 follow up needed
-          </div>
-        )}
-
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ minWidth: 800 }}>
-            <thead>
-              <tr>
-                <SortTh col="cancel_effective_date" label="Cancel Date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <th>Days Left</th>
-                <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <th>Product</th>
-                <SortTh col="premium_at_risk" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <SortTh col="assigned_to" label="Assigned" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <th>Promise Date</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEvents.map(event => {
-                const days = daysUntilCancel(event.cancel_effective_date);
-                const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
-                return (
-                  <tr key={event.id} className="triage-row" onClick={() => setSelectedEvent(event)}>
-                    <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                      {event.cancel_effective_date}
-                    </td>
-                    <td>
-                      <span className="urgency-badge" style={{ background: `${urgencyColor(days)}22`, color: urgencyColor(days) }}>
-                        {days <= 0 ? "PAST DUE" : `${days}d`}
-                      </span>
-                    </td>
-                    <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "\u2014"}</td>
-                    <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
-                    <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
-                      {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014"}
-                    </td>
-                    <td>
-                      <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
-                    </td>
-                    <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "\u2014"}</td>
-                    <td style={{ color: event.promise_date ? "#8B5CF6" : "#334155", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                      {event.promise_date || "\u2014"}
-                    </td>
-                    <td style={{ color: "#475569", fontSize: 16 }}>\u203A</td>
-                  </tr>
-                );
-              })}
-              {filteredEvents.length === 0 && (
-                <tr><td colSpan={9} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
-                  No events in this filter
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Resolved Tab ──────────────────────────────────────────────────────────
-
-  function ResolvedTab() {
-    return (
-      <div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ minWidth: 800 }}>
-            <thead>
-              <tr>
-                <th>Resolution Date</th>
-                <th>Customer</th>
-                <th>Policy</th>
-                <th>Product</th>
-                <th>Premium</th>
-                <th>Status</th>
-                <th>Assigned</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {resolvedEvents.map(event => {
-                const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
-                return (
-                  <tr key={event.id}>
-                    <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                      {event.resolution_date || event.updated_at?.slice(0, 10) || "\u2014"}
-                    </td>
-                    <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "\u2014"}</td>
-                    <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{event.policy_no}</td>
-                    <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
-                    <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
-                      {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014"}
-                    </td>
-                    <td>
-                      <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
-                    </td>
-                    <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "\u2014"}</td>
-                    <td style={{ color: "#64748B", fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {event.notes || "\u2014"}
-                    </td>
-                  </tr>
-                );
-              })}
-              {resolvedEvents.length === 0 && (
-                <tr><td colSpan={8} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
-                  No resolved events yet
-                </td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Upload Tab ────────────────────────────────────────────────────────────
-
-  function UploadTab() {
-    return (
-      <div style={{ maxWidth: 640 }}>
-        <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
-          Upload the Allstate <span style={{ color: "#64748B", fontFamily: "'DM Mono', monospace" }}>Pending Cancellation</span> report (XLSX).
-          The system will diff against existing active events \u2014 new policies added, resolved policies auto-closed.
-        </div>
-
-        <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
-          onDragOver={e => e.preventDefault()}
-          onDrop={e => { e.preventDefault(); handleFileSelect(e.dataTransfer.files[0]); }}>
-          <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }}
-            onChange={e => handleFileSelect(e.target.files[0])} />
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-          <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
-            {uploadFile ? uploadFile.name : "Drop report here or click to browse"}
-          </div>
-          {isParsing && <div style={{ fontSize: 12, color: "#475569", marginTop: 8 }}>Parsing\u2026</div>}
-        </div>
-
-        {uploadError && (
-          <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
-            {uploadError}
-          </div>
-        )}
-
-        {diffResult && !uploadMsg && (
-          <div style={{ marginTop: 20 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Review before committing</div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-              {[
-                { label: "New Policies", value: diffResult.toAdd.length, color: "#10B981" },
-                { label: "Updated", value: diffResult.toUpdate.length, color: "#3B82F6" },
-                { label: "Auto-Resolved", value: diffResult.toAutoResolve.length, color: "#F59E0B" },
-              ].map(({ label, value, color }) => (
-                <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, padding: "12px 14px" }}>
-                  <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
-                  <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
-                </div>
-              ))}
-            </div>
-
-            {diffResult.toAutoResolve.length > 0 && (
-              <div style={{ fontSize: 12, color: "#F59E0B", marginBottom: 14, background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
-                {diffResult.toAutoResolve.length} active policies not found in this report will be marked auto-resolved (they likely paid).
-              </div>
-            )}
-
-            <div style={{ display: "flex", gap: 10 }}>
-              <button className="btn-primary" onClick={handleCommitUpload} disabled={isCommitting}>
-                {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
-              </button>
-              <button className="btn-ghost" onClick={() => { setDiffResult(null); setUploadFile(null); setUploadParsed(null); }}>
-                Cancel
-              </button>
-            </div>
-          </div>
-        )}
-
-        {uploadMsg && (
-          <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 16, fontSize: 13, color: "#10B981" }}>
-            {uploadMsg}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // ─── Trends Tab ────────────────────────────────────────────────────────────
-
-  function TrendsTab() {
-    if (trendsData.length === 0) {
-      return (
-        <div style={{ textAlign: "center", color: "#334155", padding: "48px 0" }}>
-          No data yet. Upload reports to see trends.
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 16 }}>Monthly Cancel Volume & Save Rate</div>
-        <div className="card" style={{ padding: "20px 12px" }}>
-          <ResponsiveContainer width="100%" height={300}>
-            <ComposedChart data={trendsData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#252A3A" />
-              <XAxis dataKey="month" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />
-              <YAxis yAxisId="left" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />
-              <YAxis yAxisId="right" orientation="right" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} domain={[0, 100]} unit="%" />
-              <Tooltip
-                contentStyle={{ background: "#1a1f2e", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }}
-                labelStyle={{ color: "#94A3B8" }}
-                itemStyle={{ color: "#E2E8F0" }}
-              />
-              <Bar yAxisId="left" dataKey="cancels" name="Cancels" fill="#EF4444" radius={[4, 4, 0, 0]} opacity={0.7} />
-              <Bar yAxisId="left" dataKey="saves" name="Saves" fill="#10B981" radius={[4, 4, 0, 0]} />
-              <Line yAxisId="right" type="monotone" dataKey="saveRate" name="Save Rate %" stroke="#F59E0B" strokeWidth={2} dot={{ fill: "#F59E0B", r: 3 }} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── Event Detail Modal ────────────────────────────────────────────────────
-
-  function EventDetailModal() {
-    const e = selectedEvent;
-    const sc = STATUS_CONFIG[e.status] || STATUS_CONFIG.pending;
-    const days = daysUntilCancel(e.cancel_effective_date);
-    const [saving, setSaving] = useState(false);
-    const [form, setForm] = useState({
-      status: e.status,
-      assigned_to: e.assigned_to || "",
-      contact_method: e.contact_method || "",
-      promise_date: e.promise_date || "",
-      termination_reason: e.termination_reason || "",
-      notes: e.notes || "",
-    });
-
-    async function save() {
-      setSaving(true);
-      const updates = { ...form };
-      if (["contacted","promise_to_pay"].includes(form.status) && !e.contacted_at) {
-        updates.contacted_at = new Date().toISOString();
-      }
-      if (["saved","lost","requested_cancellation"].includes(form.status) && !e.resolution_date) {
-        updates.resolution_date = new Date().toISOString().slice(0,10);
-      }
-      await updateEvent(e.id, updates);
-      setSaving(false);
-      setSelectedEvent(null);
-    }
-
-    return (
-      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-        onClick={(ev) => { if (ev.target === ev.currentTarget) setSelectedEvent(null); }}>
-        <div style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: 560, maxHeight: "90vh", overflow: "auto", padding: "24px 20px" }}>
-
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{e.customer_name || "Unknown Customer"}</div>
-              <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
-                Policy {e.policy_no} \u00B7 {e.product?.toUpperCase()} \u00B7 Cycle {e.cycle}
-              </div>
-            </div>
-            <button onClick={() => setSelectedEvent(null)} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>\u00D7</button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 20 }}>
-            {[
-              { label: "Cancel Date", value: e.cancel_effective_date, color: urgencyColor(days) },
-              { label: "Days Left", value: days <= 0 ? "PAST DUE" : `${days} days`, color: urgencyColor(days) },
-              { label: "Premium", value: e.premium_at_risk ? fmtFull$(e.premium_at_risk) : "\u2014", color: "#E2E8F0" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
-                <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div>
-                <label>Status</label>
-                <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
-                  {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label>Contact Method</label>
-                <select value={form.contact_method} onChange={ev => setForm(p => ({ ...p, contact_method: ev.target.value }))}>
-                  <option value="">\u2014</option>
-                  {CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <div>
-                <label>Assigned To</label>
-                <input type="text" value={form.assigned_to}
-                  onChange={ev => setForm(p => ({ ...p, assigned_to: ev.target.value }))}
-                  placeholder="Producer name" />
-              </div>
-              <div>
-                <label>Promise Date</label>
-                <input type="date" value={form.promise_date}
-                  onChange={ev => setForm(p => ({ ...p, promise_date: ev.target.value }))} />
-              </div>
-            </div>
-
-            {form.status === "requested_cancellation" && (
-              <div>
-                <label>Termination Reason</label>
-                <select value={form.termination_reason}
-                  onChange={ev => setForm(p => ({ ...p, termination_reason: ev.target.value }))}>
-                  <option value="">\u2014 Select reason \u2014</option>
-                  {TERMINATION_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
-                </select>
-              </div>
-            )}
-
-            <div>
-              <label>Notes</label>
-              <textarea value={form.notes}
-                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-                rows={3}
-                style={{ width: "100%", background: "#1E2130", color: "#E2E8F0", border: "1px solid #2D3348", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
-                placeholder="Call notes, customer response..." />
-            </div>
-
-            <button className="btn-primary" onClick={save} disabled={saving} style={{ width: "100%" }}>
-              {saving ? "Saving\u2026" : "Save"}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   // ─── Page Render ───────────────────────────────────────────────────────────
@@ -865,13 +882,46 @@ export default function RetentionDashboardPage() {
       </div>
 
       {/* Tab Content */}
-      {activeTab === "triage" && <TriageTab />}
-      {activeTab === "resolved" && <ResolvedTab />}
-      {activeTab === "upload" && <UploadTab />}
-      {activeTab === "trends" && <TrendsTab />}
+      {activeTab === "triage" && (
+        <TriageTab
+          events={events}
+          filteredEvents={filteredEvents}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          sortCol={sortCol}
+          sortDir={sortDir}
+          onSort={handleSort}
+          setSelectedEvent={setSelectedEvent}
+          producers={producers}
+          bulkAssign={bulkAssign}
+        />
+      )}
+      {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
+      {activeTab === "upload" && (
+        <UploadTab
+          uploadFile={uploadFile}
+          uploadError={uploadError}
+          uploadMsg={uploadMsg}
+          isParsing={isParsing}
+          isCommitting={isCommitting}
+          diffResult={diffResult}
+          fileInputRef={fileInputRef}
+          onFileSelect={handleFileSelect}
+          onCommit={handleCommitUpload}
+          onCancel={() => { setDiffResult(null); setUploadFile(null); }}
+        />
+      )}
+      {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
 
       {/* Detail Modal */}
-      {selectedEvent && createPortal(<EventDetailModal />, document.body)}
+      {selectedEvent && createPortal(
+        <EventDetailModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onUpdate={updateEvent}
+        />,
+        document.body
+      )}
     </div>
   );
 }
