@@ -4,7 +4,7 @@
 // Route: /admin/time-attendance
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Clock, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { Clock, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet, Activity } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
@@ -64,6 +64,32 @@ function calcHours(entry) {
 }
 
 const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// ── Punch status helpers ──────────────────────────────────────────────────────
+
+function derivePunchStatus(entry) {
+  if (!entry || !entry.start_time) return 'not_clocked_in';
+  if (entry.end_time) return 'clocked_out';
+  if (entry.lunch_out && !entry.lunch_in) return 'on_lunch';
+  if (entry.lunch_in) return 'back_from_lunch';
+  return 'clocked_in';
+}
+
+const PUNCH_STATUS_LABELS = {
+  not_clocked_in: 'Not clocked in',
+  clocked_in: 'Clocked in',
+  on_lunch: 'On lunch',
+  back_from_lunch: 'Back from lunch',
+  clocked_out: 'Clocked out',
+};
+
+const PUNCH_STATUS_COLORS = {
+  not_clocked_in: '#334155',
+  clocked_in: '#10B981',
+  on_lunch: '#F59E0B',
+  back_from_lunch: '#3B82F6',
+  clocked_out: '#475569',
+};
 
 // ── XLSX Sheet Builders ───────────────────────────────────────────────────────
 
@@ -398,6 +424,12 @@ const AdminTimeAttendancePage = () => {
     return entries.filter((e) => e.employee_user_id === selectedEmployee);
   }, [entries, selectedEmployee]);
 
+  // Today's entries for punch status display
+  const todayStr = useMemo(() => toLocalDateStr(new Date()), []);
+  const todayEntries = useMemo(() => {
+    return entries.filter((e) => e.work_date === todayStr);
+  }, [entries, todayStr]);
+
   // RC data for the selected employee
   const selectedRC = useMemo(() => {
     if (!selectedEmployee) return null;
@@ -590,6 +622,46 @@ const AdminTimeAttendancePage = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="space-y-6">
+          {/* Today's Punch Status */}
+          {rosterEmployees.length > 0 && (
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Activity className="w-4 h-4 text-gray-500" />
+                <h3 className="text-sm font-semibold text-gray-700">Today's Punch Status</h3>
+              </div>
+              <div className="flex gap-2.5 flex-wrap">
+                {rosterEmployees.map((emp) => {
+                  const punch = todayEntries.find(
+                    (t) => t.employee_user_id === emp.auth_user_id
+                  );
+                  const status = derivePunchStatus(punch);
+                  return (
+                    <div
+                      key={emp.id}
+                      className="border rounded-lg px-3 py-2"
+                      style={{ borderColor: '#252A3A', minWidth: 120, background: '#F8FAFC' }}
+                    >
+                      <div className="text-xs text-gray-500 mb-0.5 truncate">
+                        {emp.preferred_name || emp.first_name}
+                      </div>
+                      <div
+                        className="text-xs font-semibold"
+                        style={{ color: PUNCH_STATUS_COLORS[status] || '#475569' }}
+                      >
+                        {PUNCH_STATUS_LABELS[status]}
+                      </div>
+                      {punch?.hours_worked && (
+                        <div className="text-[10px] text-gray-400 mt-0.5">
+                          {punch.hours_worked}h
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4">
