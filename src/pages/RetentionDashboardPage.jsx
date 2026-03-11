@@ -614,7 +614,7 @@ export default function RetentionDashboardPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", AGENCY_ID)
         .eq("employment_status", "active")
-        .eq("role_type", "producer")
+        .eq("role_type", "service")
         .order("last_name");
       if (data) setProducers(data);
     })();
