@@ -82,6 +82,7 @@ import TermsPage from './pages/TermsPage';
 import NewsroomPage from './pages/NewsroomPage';
 import StoryDetailPage from './pages/StoryDetailPage';
 import LoginPage from './pages/LoginPage';
+import PunchPage from './pages/PunchPage';
 
 // Lead generation funnel — V2 single-question wizard
 import SaveWizardPage from './pages/SaveWizardPage';
@@ -139,6 +140,9 @@ function App() {
             <Routes>
           {/* Admin login page (no layout) - obscured path for security */}
           <Route path="/admin-access-8by2X" element={<LoginPage />} />
+
+          {/* Employee punch clock — public, no auth required */}
+          <Route path="/punch" element={<PunchPage />} />
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}
           <Route path="/" element={<Layout />}>

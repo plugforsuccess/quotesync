@@ -10,6 +10,7 @@ import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTimeEntries, useRCData, useYTDEntries, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { useActiveEmployees } from '../hooks/useEmployees';
+import { supabase } from '../lib/supabase';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
 import WeekPickerCalendar from './components/time-attendance/WeekPickerCalendar';
@@ -64,6 +65,36 @@ function calcHours(entry) {
 }
 
 const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+// ── Punch status helpers ──────────────────────────────────────────────────────
+
+function derivePunchStatus(entry) {
+  if (!entry || !entry.start_time) return 'not_clocked_in';
+  if (entry.end_time) return 'clocked_out';
+  if (entry.lunch_out && !entry.lunch_in) return 'on_lunch';
+  if (entry.lunch_in) return 'back_from_lunch';
+  return 'clocked_in';
+}
+
+const PUNCH_STATUS_LABELS = {
+  not_clocked_in: 'Not In',
+  clocked_in: 'Clocked In',
+  on_lunch: 'On Lunch',
+  back_from_lunch: 'Back',
+  clocked_out: 'Clocked Out',
+};
+
+const PUNCH_STATUS_COLORS = {
+  not_clocked_in: { color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
+  clocked_in:     { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+  on_lunch:       { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  back_from_lunch:{ color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+  clocked_out:    { color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+};
+
+// Minutes past midnight ET before flagging not_clocked_in as late
+// 8:45 AM = 525 minutes (15-minute grace after 8:30 shift start)
+const LATE_THRESHOLD_MINUTES = 525;
 
 // ── XLSX Sheet Builders ───────────────────────────────────────────────────────
 
@@ -398,6 +429,32 @@ const AdminTimeAttendancePage = () => {
     return entries.filter((e) => e.employee_user_id === selectedEmployee);
   }, [entries, selectedEmployee]);
 
+  // Today's entries for punch status display
+  const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }), []);
+  const isCurrentWeek = useMemo(() => weekStart === toMonday(new Date()), [weekStart]);
+  const [todayEntries, setTodayEntries] = useState([]);
+
+  // Query today's punch entries with 5-minute auto-refresh — only when viewing the current week
+  useEffect(() => {
+    if (!isCurrentWeek || !currentAgencyId) {
+      setTodayEntries([]);
+      return;
+    }
+
+    const fetchToday = async () => {
+      const { data } = await supabase
+        .from('employee_time_entries')
+        .select('employee_user_id, start_time, lunch_out, lunch_in, end_time, hours_worked')
+        .eq('week_start', weekStart)
+        .eq('work_date', todayStr);
+      setTodayEntries(data ?? []);
+    };
+
+    fetchToday();
+    const interval = setInterval(fetchToday, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isCurrentWeek, weekStart, todayStr, currentAgencyId]);
+
   // RC data for the selected employee
   const selectedRC = useMemo(() => {
     if (!selectedEmployee) return null;
@@ -590,6 +647,69 @@ const AdminTimeAttendancePage = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="space-y-6">
+          {/* Today's Punch Status — only shown for the current week */}
+          {isCurrentWeek && rosterEmployees.length > 0 && (() => {
+            const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            const minutesSinceMidnight = nowET.getHours() * 60 + nowET.getMinutes();
+            const dayOfWeekET = nowET.getDay();
+            const shouldFlagLate = minutesSinceMidnight >= LATE_THRESHOLD_MINUTES && dayOfWeekET >= 1 && dayOfWeekET <= 5;
+
+            return (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Today's Status
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {rosterEmployees.map((emp) => {
+                    const punch = emp.auth_user_id
+                      ? todayEntries.find((t) => t.employee_user_id === emp.auth_user_id)
+                      : undefined;
+                    const status = derivePunchStatus(punch);
+                    const isLate = status === 'not_clocked_in' && shouldFlagLate;
+                    const styles = isLate
+                      ? PUNCH_STATUS_COLORS.not_clocked_in
+                      : PUNCH_STATUS_COLORS[status] ?? PUNCH_STATUS_COLORS.not_clocked_in;
+                    const displayName = emp.preferred_name || emp.first_name;
+
+                    return (
+                      <div
+                        key={emp.id}
+                        style={{
+                          background: styles.bg,
+                          border: `1px solid ${styles.border}`,
+                          borderRadius: 8,
+                          padding: '8px 12px',
+                          minWidth: 110,
+                        }}
+                      >
+                        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 2, fontWeight: 500 }}>
+                          {displayName}
+                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: styles.color }}>
+                          {isLate ? '⚠ Not In' : PUNCH_STATUS_LABELS[status]}
+                        </div>
+                        {punch?.start_time && (
+                          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2, fontFamily: 'monospace' }}>
+                            in {punch.start_time}
+                            {punch.end_time ? ` · out ${punch.end_time}` : ''}
+                          </div>
+                        )}
+                        {punch?.hours_worked && status === 'clocked_out' && (
+                          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>
+                            {punch.hours_worked}h
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                  {rosterEmployees.length === 0 && (
+                    <div style={{ fontSize: 12, color: '#9CA3AF' }}>No active employees found.</div>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div className="bg-white rounded-lg border border-gray-200 p-4">
