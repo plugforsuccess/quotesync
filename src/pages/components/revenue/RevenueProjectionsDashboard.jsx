@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
+import { ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
@@ -226,6 +227,7 @@ export default function RevenueProjectionsDashboard() {
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
   const [sortCol, setSortCol] = useState("date");   // "date" | "issuedDate" | "product" | "tier" | "premium" | "commission" | "source"
   const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
+  const [ratesOpen, setRatesOpen] = useState(window.innerWidth >= 768);
   const closeModal = () => setModal(null);
   const fileRef = useRef();
   const paceClickTimer  = useRef(null);
@@ -850,8 +852,8 @@ export default function RevenueProjectionsDashboard() {
                 <input type="number" value={newEntry.policyCount} min={1} onChange={e => setNewEntry(p => ({...p, policyCount: parseInt(e.target.value)||1}))} style={{ width: 70 }} />
               </div>
               <div style={{ flex: 1, minWidth: 120 }}>
-                <label>Note (optional)</label>
-                <input type="text" placeholder="Household name, bundle..." value={newEntry.note} onChange={e => setNewEntry(p => ({...p, note: e.target.value}))} style={{ width: "100%" }} />
+                <label>Product</label>
+                <input type="text" placeholder="Auto, Home, Renters..." value={newEntry.note} onChange={e => setNewEntry(p => ({...p, note: e.target.value}))} style={{ width: "100%" }} />
               </div>
               <button className="btn-primary" type="button" onClick={handleAddEntry} disabled={addingEntry}>{addingEntry ? "Adding…" : "Add"}</button>
             </div>
@@ -863,15 +865,26 @@ export default function RevenueProjectionsDashboard() {
           </div>
 
           {/* Commission rate reminder — all three tiers */}
-          <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
-            {Object.entries(COMMISSION).map(([key, val]) => (
-              <div key={key} style={{ background: "#1A1D27", border: `1px solid ${PRODUCT_COLORS[key]}33`, borderRadius: 6, padding: "6px 12px", fontSize: 11 }}>
-                <span style={{ color: PRODUCT_COLORS[key], fontWeight: 600, marginRight: 6 }}>{val.label}</span>
-                {Object.entries(TIER_LABELS).map(([tk, tl]) => (
-                  <span key={tk} style={{ color: TIER_COLORS[tk], marginRight: 5 }}>{tl}: {fmtPct(val[tk])}</span>
+          <div style={{ marginBottom: 14 }}>
+            <button
+              onClick={() => setRatesOpen(!ratesOpen)}
+              style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#94A3B8", cursor: "pointer", background: "none", border: "none", padding: "4px 0", width: "100%", textAlign: "left" }}
+            >
+              <ChevronRight style={{ width: 14, height: 14, transition: "transform 0.2s", transform: ratesOpen ? "rotate(90deg)" : "rotate(0deg)" }} />
+              Commission Rates Reference
+            </button>
+            {ratesOpen && (
+              <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
+                {Object.entries(COMMISSION).map(([key, val]) => (
+                  <div key={key} style={{ background: "#1A1D27", border: `1px solid ${PRODUCT_COLORS[key]}33`, borderRadius: 6, padding: "6px 12px", fontSize: 11 }}>
+                    <span style={{ color: PRODUCT_COLORS[key], fontWeight: 600, marginRight: 6 }}>{val.label}</span>
+                    {Object.entries(TIER_LABELS).map(([tk, tl]) => (
+                      <span key={tk} style={{ color: TIER_COLORS[tk], marginRight: 5 }}>{tl}: {fmtPct(val[tk])}</span>
+                    ))}
+                  </div>
                 ))}
               </div>
-            ))}
+            )}
           </div>
 
           {/* Table */}
@@ -889,7 +902,7 @@ export default function RevenueProjectionsDashboard() {
                   <SortTh col="premium"    label="Premium"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                   <SortTh col="commission" label="Commission"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                   <SortTh col="source"     label="Source"      sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                  <th>Note</th>
+                  <th>Product</th>
                   <th></th>
                 </tr>
               </thead>
