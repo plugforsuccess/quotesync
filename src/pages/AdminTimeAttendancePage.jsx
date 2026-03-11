@@ -4,12 +4,13 @@
 // Route: /admin/time-attendance
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Clock, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet, Activity } from 'lucide-react';
+import { Clock, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTimeEntries, useRCData, useYTDEntries, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { useActiveEmployees } from '../hooks/useEmployees';
+import { supabase } from '../lib/supabase';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
 import WeekPickerCalendar from './components/time-attendance/WeekPickerCalendar';
@@ -76,20 +77,24 @@ function derivePunchStatus(entry) {
 }
 
 const PUNCH_STATUS_LABELS = {
-  not_clocked_in: 'Not clocked in',
-  clocked_in: 'Clocked in',
-  on_lunch: 'On lunch',
-  back_from_lunch: 'Back from lunch',
-  clocked_out: 'Clocked out',
+  not_clocked_in: 'Not In',
+  clocked_in: 'Clocked In',
+  on_lunch: 'On Lunch',
+  back_from_lunch: 'Back',
+  clocked_out: 'Clocked Out',
 };
 
 const PUNCH_STATUS_COLORS = {
-  not_clocked_in: '#334155',
-  clocked_in: '#10B981',
-  on_lunch: '#F59E0B',
-  back_from_lunch: '#3B82F6',
-  clocked_out: '#475569',
+  not_clocked_in: { color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
+  clocked_in:     { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
+  on_lunch:       { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
+  back_from_lunch:{ color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
+  clocked_out:    { color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
 };
+
+// Minutes past midnight ET before flagging not_clocked_in as late
+// 8:45 AM = 525 minutes (15-minute grace after 8:30 shift start)
+const LATE_THRESHOLD_MINUTES = 525;
 
 // ── XLSX Sheet Builders ───────────────────────────────────────────────────────
 
@@ -427,9 +432,28 @@ const AdminTimeAttendancePage = () => {
   // Today's entries for punch status display
   const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }), []);
   const isCurrentWeek = useMemo(() => weekStart === toMonday(new Date()), [weekStart]);
-  const todayEntries = useMemo(() => {
-    return entries.filter((e) => e.work_date === todayStr);
-  }, [entries, todayStr]);
+  const [todayEntries, setTodayEntries] = useState([]);
+
+  // Query today's punch entries with 5-minute auto-refresh — only when viewing the current week
+  useEffect(() => {
+    if (!isCurrentWeek || !currentAgencyId) {
+      setTodayEntries([]);
+      return;
+    }
+
+    const fetchToday = async () => {
+      const { data } = await supabase
+        .from('employee_time_entries')
+        .select('employee_user_id, start_time, lunch_out, lunch_in, end_time, hours_worked')
+        .eq('week_start', weekStart)
+        .eq('work_date', todayStr);
+      setTodayEntries(data ?? []);
+    };
+
+    fetchToday();
+    const interval = setInterval(fetchToday, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isCurrentWeek, weekStart, todayStr, currentAgencyId]);
 
   // RC data for the selected employee
   const selectedRC = useMemo(() => {
@@ -628,51 +652,59 @@ const AdminTimeAttendancePage = () => {
             const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
             const minutesSinceMidnight = nowET.getHours() * 60 + nowET.getMinutes();
             const dayOfWeekET = nowET.getDay();
-            const shouldFlagLate = minutesSinceMidnight >= 570 && dayOfWeekET >= 1 && dayOfWeekET <= 5;
+            const shouldFlagLate = minutesSinceMidnight >= LATE_THRESHOLD_MINUTES && dayOfWeekET >= 1 && dayOfWeekET <= 5;
 
             return (
-              <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Activity className="w-4 h-4 text-gray-500" />
-                  <h3 className="text-sm font-semibold text-gray-700">Today's Punch Status</h3>
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Today's Status
                 </div>
-                <div className="flex gap-2.5 flex-wrap">
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   {rosterEmployees.map((emp) => {
                     const punch = emp.auth_user_id
                       ? todayEntries.find((t) => t.employee_user_id === emp.auth_user_id)
                       : undefined;
                     const status = derivePunchStatus(punch);
                     const isLate = status === 'not_clocked_in' && shouldFlagLate;
-                    const statusColor = isLate ? '#EF4444' : (PUNCH_STATUS_COLORS[status] || '#475569');
-                    const statusLabel = isLate ? 'Not In' : PUNCH_STATUS_LABELS[status];
+                    const styles = isLate
+                      ? PUNCH_STATUS_COLORS.not_clocked_in
+                      : PUNCH_STATUS_COLORS[status] ?? PUNCH_STATUS_COLORS.not_clocked_in;
+                    const displayName = emp.preferred_name || emp.first_name;
+
                     return (
                       <div
                         key={emp.id}
-                        className="border rounded-lg px-3 py-2"
                         style={{
-                          borderColor: isLate ? '#FECACA' : '#E2E8F0',
-                          minWidth: 120,
-                          background: isLate ? '#FEF2F2' : '#F8FAFC',
+                          background: styles.bg,
+                          border: `1px solid ${styles.border}`,
+                          borderRadius: 8,
+                          padding: '8px 12px',
+                          minWidth: 110,
                         }}
                       >
-                        <div className="text-xs text-gray-500 mb-0.5 truncate">
-                          {emp.preferred_name || emp.first_name}
+                        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 2, fontWeight: 500 }}>
+                          {displayName}
                         </div>
-                        <div
-                          className="text-xs font-semibold"
-                          style={{ color: statusColor }}
-                        >
-                          {isLate && <AlertCircle className="w-3 h-3 inline-block mr-0.5 -mt-0.5" />}
-                          {statusLabel}
+                        <div style={{ fontSize: 12, fontWeight: 700, color: styles.color }}>
+                          {isLate ? '⚠ Not In' : PUNCH_STATUS_LABELS[status]}
                         </div>
-                        {punch?.hours_worked && (
-                          <div className="text-[10px] text-gray-400 mt-0.5">
+                        {punch?.start_time && (
+                          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2, fontFamily: 'monospace' }}>
+                            in {punch.start_time}
+                            {punch.end_time ? ` · out ${punch.end_time}` : ''}
+                          </div>
+                        )}
+                        {punch?.hours_worked && status === 'clocked_out' && (
+                          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>
                             {punch.hours_worked}h
                           </div>
                         )}
                       </div>
                     );
                   })}
+                  {rosterEmployees.length === 0 && (
+                    <div style={{ fontSize: 12, color: '#9CA3AF' }}>No active employees found.</div>
+                  )}
                 </div>
               </div>
             );
