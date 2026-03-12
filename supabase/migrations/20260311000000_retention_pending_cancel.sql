@@ -85,6 +85,7 @@ CREATE TRIGGER trg_pending_cancel_updated_at
 ALTER TABLE public.pending_cancel_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pending_cancel_uploads ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "admin_all_pending_cancel_events" ON public.pending_cancel_events;
 CREATE POLICY "admin_all_pending_cancel_events"
 ON public.pending_cancel_events FOR ALL
 USING (
@@ -104,6 +105,7 @@ WITH CHECK (
   )
 );
 
+DROP POLICY IF EXISTS "admin_all_pending_cancel_uploads" ON public.pending_cancel_uploads;
 CREATE POLICY "admin_all_pending_cancel_uploads"
 ON public.pending_cancel_uploads FOR ALL
 USING (

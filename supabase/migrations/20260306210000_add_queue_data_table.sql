@@ -42,6 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_rc_queue_data_date
 -- RLS (same policy pattern as rc_call_log)
 ALTER TABLE rc_queue_data ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Platform admins can manage queue data" ON rc_queue_data;
 CREATE POLICY "Platform admins can manage queue data"
   ON rc_queue_data FOR ALL
   USING (

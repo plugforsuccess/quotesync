@@ -64,6 +64,7 @@ CREATE INDEX IF NOT EXISTS idx_proactivity_org_week
 
 ALTER TABLE public.cs_proactivity_manual ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "admin_all_proactivity" ON public.cs_proactivity_manual;
 CREATE POLICY "admin_all_proactivity"
 ON public.cs_proactivity_manual
 FOR ALL
