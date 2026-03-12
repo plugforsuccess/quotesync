@@ -30,6 +30,8 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
         policyCount: r.policy_count,
         itemCount:   r.item_count ?? 1,
         policyNo:    r.policy_no ?? null,
+        bindId:      r.bind_id ?? null,
+        producerName: r.producer_name ?? null,
         source:      r.source,
         note:        r.note ?? "",
       }))
@@ -76,22 +78,29 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
     return { error: null };
   };
 
-  const addEntries = async (batch) => {
+  const addEntries = async (batch, employeeBindMap = new Map()) => {
     const user = (await supabase.auth.getUser()).data.user;
-    const rows = batch.map(entry => ({
-      agency_id:    agencyId,
-      date:         entry.date,         // keep writing date col during transition
-      issued_date:  entry.date,         // primary field
-      product:      entry.product,
-      tier:         entry.tier ?? "monoline",
-      premium:      entry.premium,
-      policy_count: entry.policyCount,
-      item_count:   entry.itemCount ?? 1,
-      policy_no:    entry.policyNo || null,
-      source:       "upload",           // always "upload" — overwrites "manual" on conflict
-      note:         entry.note || null,
-      created_by:   user?.id ?? null,
-    }));
+    const rows = batch.map(entry => {
+      const producerName = entry.bindId
+        ? (employeeBindMap.get(entry.bindId) || "CCC")
+        : null;
+      return {
+        agency_id:    agencyId,
+        date:         entry.date,         // keep writing date col during transition
+        issued_date:  entry.date,         // primary field
+        product:      entry.product,
+        tier:         entry.tier ?? "monoline",
+        premium:      entry.premium,
+        policy_count: entry.policyCount,
+        item_count:   entry.itemCount ?? 1,
+        policy_no:    entry.policyNo || null,
+        source:       "upload",           // always "upload" — overwrites "manual" on conflict
+        note:         entry.note || null,
+        bind_id:      entry.bindId || null,
+        producer_name: producerName,
+        created_by:   user?.id ?? null,
+      };
+    });
 
     // Split: rows WITH policy_no can be upserted (dedup on conflict),
     // rows WITHOUT must be plain-inserted (NULL can't match a unique constraint)

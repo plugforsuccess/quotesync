@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
+import { supabase } from "../../../lib/supabase";
 import * as XLSX from "xlsx";
 
 // ─── Commission Matrix ────────────────────────────────────────────────────────
@@ -122,8 +123,17 @@ function parseAllstateRows(rows) {
   const iPolicyNo = findCol(headers, COL_MAP.policy); // -1 if column absent
   const iItems  = findCol(headers, COL_MAP.items);  // -1 if absent
 
+  // New Business Details report columns
+  const iBindId      = findCol(headers, ["bind id"]);
+  const iBindName    = findCol(headers, ["bind id name"]);
+  const iProductDesc = findCol(headers, ["product description", "product desc"]);
+  const iCustomer    = findCol(headers, ["customer name", "customer", "insured"]);
+
   return rows.slice(1).filter(r => r.some(Boolean)).map((r) => {
-    const raw = r[li]?.toString().toLowerCase() ?? "";
+    // Prefer Product Description (col 11) over Product (col 9) for classification
+    const productRaw = iProductDesc >= 0 ? r[iProductDesc]?.toString().trim()
+                     : li >= 0           ? r[li]?.toString().trim() : "";
+    const raw = productRaw.toLowerCase();
     let product = "other";
     // specialty auto must be checked BEFORE standard auto to avoid false match
     if (raw.includes("specialty auto") || raw.includes("motorcycle") || raw.includes("motor home") || raw.includes("off-road") || raw.includes("trailer")) product = "specialty_auto";
@@ -133,6 +143,7 @@ function parseAllstateRows(rows) {
     else if (raw.includes("landlord")) product = "landlord";
     else if (raw.includes("umbrella") || raw.includes("pup")) product = "pup";
     else if (raw.includes("manufactured")) product = "manufactured";
+    else if (raw.includes("boat")) product = "boat";
     else product = "other";
 
     // Only auto and specialty_auto can have multiple items per policy
@@ -151,13 +162,16 @@ function parseAllstateRows(rows) {
       id: crypto.randomUUID(),
       date,
       product,
-      tier:     normalizeTier(iTier >= 0 ? r[iTier] : ""),
-      premium:  parseFloat(r[pi]?.toString().replace(/[$,]/g, "")) || 0,
-      policyCount: 1,
+      tier:         normalizeTier(iTier >= 0 ? r[iTier] : ""),
+      premium:      parseFloat(r[pi]?.toString().replace(/[$,]/g, "")) || 0,
+      policyCount:  1,
       itemCount,
-      policyNo: iPolicyNo >= 0 ? (r[iPolicyNo]?.toString().trim() || null) : null,
-      source:   "upload",
-      note:     r[li]?.toString() ?? "",
+      policyNo:     iPolicyNo >= 0 ? (r[iPolicyNo]?.toString().trim() || null) : null,
+      bindId:       iBindId >= 0   ? (r[iBindId]?.toString().trim() || null) : null,
+      bindIdName:   iBindName >= 0 ? (r[iBindName]?.toString().trim() || null) : null,
+      customerName: iCustomer >= 0 ? (r[iCustomer]?.toString().trim() || null) : null,
+      source:       "upload",
+      note:         (li >= 0 ? r[li]?.toString() : productRaw) ?? "",
     };
   }).filter(e => e.premium > 0);
 }
@@ -302,6 +316,7 @@ export default function RevenueProjectionsDashboard() {
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
+  const [producerModal, setProducerModal] = useState(null); // null | producer name string
   const [sortCol, setSortCol] = useState("date");   // "date" | "issuedDate" | "product" | "tier" | "premium" | "commission" | "source"
   const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
   const [ratesOpen, setRatesOpen] = useState(window.innerWidth >= 768);
@@ -420,6 +435,27 @@ export default function RevenueProjectionsDashboard() {
 
     return { totalPolicies, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
   }, [filtered, entries, rangeStart]);
+
+  // ─── Producer breakdown ──────────────────────────────────────────────────
+  const byProducer = useMemo(() => {
+    const map = {};
+    filtered.forEach(e => {
+      const name = e.producerName || "Unassigned";
+      if (!map[name]) map[name] = { name, policies: 0, items: 0, premium: 0, commission: 0, points: 0 };
+      map[name].policies   += 1;
+      map[name].items      += e.itemCount ?? 1;
+      map[name].premium    += e.premium ?? 0;
+      map[name].commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline");
+      map[name].points     += (PORTFOLIO_POINTS[e.product] ?? 0) * (e.itemCount ?? 1);
+    });
+    return Object.values(map).sort((a, b) => {
+      const aLast = a.name === "CCC" || a.name === "Unassigned";
+      const bLast = b.name === "CCC" || b.name === "Unassigned";
+      if (aLast && !bLast) return 1;
+      if (!aLast && bLast) return -1;
+      return b.commission - a.commission;
+    });
+  }, [filtered]);
 
   // ─── Monthly trend (rolling 12 or YTD) ────────────────────────────────────
   const trendData = useMemo(() => {
@@ -546,7 +582,21 @@ export default function RevenueProjectionsDashboard() {
       if (parsed.length === 0) {
         setUploadMsg("⚠️ No rows parsed — check column headers match Allstate export format.");
       } else {
-        const { count, error } = await addEntries(parsed);
+        // Build employee bind ID map for producer attribution
+        const { data: empData } = await supabase
+          .from("employees")
+          .select("allstate_bind_id, first_name, last_name, preferred_name")
+          .eq("org_id", agencyId)
+          .not("allstate_bind_id", "is", null);
+
+        const employeeBindMap = new Map(
+          (empData ?? []).map(e => [
+            e.allstate_bind_id,
+            e.preferred_name || `${e.first_name} ${e.last_name}`.trim()
+          ])
+        );
+
+        const { count, error } = await addEntries(parsed, employeeBindMap);
         if (error) {
           console.error("[revenue upload error]", error);
           setUploadMsg(`❌ ${friendlyUploadError(error)}`);
@@ -980,6 +1030,50 @@ export default function RevenueProjectionsDashboard() {
               />
             )}
           </div>
+
+          {/* Producer Leaderboard */}
+          {byProducer.length > 0 && (
+            <div className="card" style={{ gridColumn: "1 / -1" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Producer Breakdown</div>
+              <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+                <table style={{ minWidth: 580 }}>
+                  <thead>
+                    <tr>
+                      <th>Producer</th>
+                      <th>Policies</th>
+                      <th>Items</th>
+                      <th>Premium</th>
+                      <th>Est. Commission</th>
+                      <th>Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {byProducer.map(p => {
+                      const isMuted = p.name === "CCC" || p.name === "Unassigned";
+                      const textColor = isMuted ? "#475569" : "#F1F5F9";
+                      return (
+                        <tr key={p.name}>
+                          <td>
+                            <button
+                              onClick={() => setProducerModal(p.name)}
+                              style={{ background: "none", border: "none", color: isMuted ? "#475569" : "#3B82F6", cursor: "pointer", fontWeight: 600, fontSize: 13, padding: 0, textAlign: "left" }}
+                            >
+                              {p.name}
+                            </button>
+                          </td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: textColor }}>{p.policies}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: textColor }}>{p.items}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: textColor }}>{fmtFull$(p.premium)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(p.commission)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: textColor }}>{p.points}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1645,6 +1739,115 @@ export default function RevenueProjectionsDashboard() {
           </table>
         </DrillDownModal>
       )}
+
+      {/* Producer Drilldown Modal */}
+      {producerModal !== null && (() => {
+        const producerEntries = filtered
+          .filter(e => (e.producerName || "Unassigned") === producerModal)
+          .sort((a, b) => (b.date > a.date ? 1 : b.date < a.date ? -1 : 0));
+
+        const producerTotals = producerEntries.reduce((acc, e) => {
+          acc.policies += 1;
+          acc.items += e.itemCount ?? 1;
+          acc.premium += e.premium ?? 0;
+          acc.commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline");
+          acc.points += (PORTFOLIO_POINTS[e.product] ?? 0) * (e.itemCount ?? 1);
+          return acc;
+        }, { policies: 0, items: 0, premium: 0, commission: 0, points: 0 });
+
+        return (
+          <DrillDownModal title={producerModal} onClose={() => setProducerModal(null)}>
+            {/* Summary strip */}
+            <div style={{ display: "flex", gap: 24, marginBottom: 20, flexWrap: "wrap" }}>
+              {[
+                { label: "Policies",        value: producerTotals.policies },
+                { label: "Items",           value: producerTotals.items },
+                { label: "Premium",         value: fmtFull$(producerTotals.premium) },
+                { label: "Est. Commission", value: fmtFull$(producerTotals.commission), color: "#10B981" },
+                { label: "Points",          value: producerTotals.points },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <span style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                  <span style={{ fontSize: 20, fontWeight: 700, color: color ?? "#F1F5F9" }}>{value}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* CCC context note */}
+            {producerModal === "CCC" && (
+              <p style={{ fontSize: 12, color: "#475569", fontStyle: "italic", marginBottom: 16 }}>
+                Policies bound via Allstate Call Center — not attributed to an agency producer.
+              </p>
+            )}
+
+            {/* Policy detail table */}
+            <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+              <table style={{ minWidth: 800 }}>
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Tier</th>
+                    <th>Policy No</th>
+                    <th>Customer</th>
+                    <th>Items</th>
+                    <th>Premium</th>
+                    <th>Est. Commission</th>
+                    <th>Points</th>
+                    <th>Issued Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {producerEntries.map(entry => {
+                    const tier = entry.tier ?? "monoline";
+                    const comm = calcCommission(entry.premium, entry.product, tier);
+                    const pts = (PORTFOLIO_POINTS[entry.product] ?? 0) * (entry.itemCount ?? 1);
+                    const issuedDate = entry.date ? new Date(entry.date + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) : "—";
+                    return (
+                      <tr key={entry.id}>
+                        <td>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: PRODUCT_COLORS[entry.product] ?? "#64748B", flexShrink: 0 }} />
+                            {PRODUCT_LABELS[entry.product] ?? entry.product}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{
+                            background: (TIER_COLORS[tier] ?? "#64748B") + "22",
+                            color: TIER_COLORS[tier] ?? "#64748B",
+                            borderRadius: 4, padding: "2px 7px", fontSize: 11, fontWeight: 600
+                          }}>
+                            {TIER_LABELS[tier] ?? tier ?? "—"}
+                          </span>
+                        </td>
+                        <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{entry.policyNo ?? "—"}</td>
+                        <td style={{ color: "#94A3B8" }}>{entry.customerName ?? "—"}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{entry.itemCount ?? 1}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(entry.premium)}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(comm)}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{pts}</td>
+                        <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{issuedDate}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr style={{ fontWeight: 700 }}>
+                    <td style={{ color: "#F1F5F9" }}>Total</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9" }}>{producerTotals.items}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9" }}>{fmtFull$(producerTotals.premium)}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(producerTotals.commission)}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9" }}>{producerTotals.points}</td>
+                    <td>—</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </DrillDownModal>
+        );
+      })()}
 
     </>
   );

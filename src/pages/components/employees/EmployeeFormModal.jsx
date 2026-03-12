@@ -40,6 +40,7 @@ const EMPTY_FORM = {
   role_type: 'service',
   hire_date: '',
   allstate_id: '',
+  allstate_bind_id: '',
   rc_display_name: '',
   punch_pin: '',
   default_start_time: '09:00',
@@ -75,6 +76,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
         role_type: employee.role_type || 'service',
         hire_date: employee.hire_date || '',
         allstate_id: employee.allstate_id || '',
+        allstate_bind_id: employee.allstate_bind_id || '',
         rc_display_name: employee.rc_display_name || '',
         punch_pin: employee.punch_pin || '',
         default_start_time: employee.default_start_time?.slice(0, 5) || '09:00',
@@ -141,6 +143,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
     if (!payload.state) payload.state = null;
     if (!payload.zip_code) payload.zip_code = null;
     if (!payload.allstate_id) payload.allstate_id = null;
+    if (!payload.allstate_bind_id) payload.allstate_bind_id = null;
     if (!payload.punch_pin || payload.punch_pin.length !== 4) payload.punch_pin = null;
     if (!payload.hire_date) payload.hire_date = null;
     if (!payload.default_start_time) payload.default_start_time = null;
@@ -317,6 +320,20 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       onChange={(e) => handleChange('allstate_id', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Allstate Bind ID</label>
+                    <input
+                      type="text"
+                      value={form.allstate_bind_id}
+                      onChange={(e) => handleChange('allstate_bind_id', e.target.value.trim().toUpperCase())}
+                      placeholder="e.g. A0C2667"
+                      maxLength={20}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      Found in the "Bind ID" column of the Allstate New Business Details report.
+                    </span>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">RingCentral Display Name *</label>
