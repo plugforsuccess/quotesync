@@ -108,7 +108,7 @@ const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
 const EmployeeRosterPage = lazy(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazy(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
-const RetentionDashboardPage = lazy(() => import('./pages/RetentionDashboardPage'));
+const BookHealthPage = lazy(() => import('./pages/BookHealthPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -372,13 +372,13 @@ function App() {
               }
             />
 
-            {/* Admin - Retention Dashboard (platform_admin+) */}
+            {/* Admin - Book Health Dashboard (platform_admin+) */}
             <Route
-              path="admin/retention"
+              path="admin/book-health"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <Suspense fallback={<PageLoader />}>
-                    <RetentionDashboardPage />
+                    <BookHealthPage />
                   </Suspense>
                 </ProtectedRoute>
               }

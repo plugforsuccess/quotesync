@@ -6,6 +6,36 @@ import { supabase } from "../lib/supabase";
 
 const AGENCY_ID = "00000000-0000-0000-0000-000000000001";
 
+// ─── Portfolio Points Matrix (must match RevenueProjectionsDashboard) ─────────
+const LAPSE_PORTFOLIO_POINTS = {
+  auto:          10,
+  ho:            20,  // HO / Condo — always 1 item per policy
+  renters:        5,
+  landlord:      20,  // same points as HO but tracked separately
+  specialty_auto: 5,
+  pup:            5,  // Personal Umbrella Policy
+  manufactured:   5,
+  other:          0,
+};
+
+function normaliseProduct(raw = "") {
+  const v = raw.toLowerCase().trim();
+  // specialty auto MUST be checked before standard auto — both contain "auto"
+  if (v.includes("specialty auto") || v.includes("motorcycle") || v.includes("motor home") || v.includes("off-road") || v.includes("trailer")) return "specialty_auto";
+  if (v.includes("standard auto") || v.includes("private passenger")) return "auto";
+  if (v.includes("home") || v.includes("condo") || v.includes("ho3") || v.includes("ho6")) return "ho";
+  if (v.includes("rent") || v.includes("ho4")) return "renters";
+  if (v.includes("landlord")) return "landlord";  // separate from ho — same pts but tracked independently
+  if (v.includes("umbrella") || v.includes("pup")) return "pup";
+  if (v.includes("manufactured")) return "manufactured";
+  return "other";
+}
+
+// Points are per ITEM — a 2-car auto lapse = 2 items × 10 pts = 20 pts lost
+function calcLapsePoints(rows) {
+  return rows.reduce((s, r) => s + (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1), 0);
+}
+
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "#F59E0B", bg: "#F59E0B22" },
   contacted:              { label: "Contacted",         color: "#3B82F6", bg: "#3B82F622" },
@@ -570,13 +600,349 @@ function EventDetailModal({ event, onClose, onUpdate }) {
   );
 }
 
+// ─── Lapse XLSX Parser ──────────────────────────────────────────────────────
+
+function parseLapseXLSX(data) {
+  const wb = XLSX.read(data, { type: "array" });
+  const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+  if (rows.length < 2) return [];
+
+  const headers = rows[0].map(h => h?.toString().toLowerCase().trim());
+  const findLapseCol = (candidates) => headers.findIndex(h => candidates.some(c => h?.includes(c)));
+
+  const iPolicy   = findLapseCol(["policy", "policy no", "policy number"]);
+  const iCustomer = findLapseCol(["customer", "insured", "name"]);
+  const iProduct  = findLapseCol(["product", "lob", "line", "type"]);
+  const iPremium  = findLapseCol(["premium"]);
+  const iDate     = findLapseCol(["lapse date", "termination date", "cancel date", "effective date"]);
+  const iReason   = findLapseCol(["reason", "termination reason"]);
+  const iItems    = findLapseCol(["item count", "items", "vehicle count", "vehicles"]);
+
+  // Products that are always 1 item per policy regardless of report value
+  const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured"];
+
+  return rows.slice(1).filter(r => r.some(Boolean)).map(r => {
+    const productRaw = iProduct >= 0 ? r[iProduct]?.toString() ?? "" : "";
+    const product = normaliseProduct(productRaw);
+
+    const rawDate = iDate >= 0 ? r[iDate] : null;
+    let lapseDate = null;
+    if (rawDate) {
+      const d = new Date(rawDate);
+      if (!isNaN(d)) lapseDate = d.toISOString().slice(0, 10);
+    }
+
+    const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
+    const item_count = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
+
+    return {
+      policy_no:          iPolicy >= 0   ? r[iPolicy]?.toString().trim() ?? "" : "",
+      customer_name:      iCustomer >= 0 ? r[iCustomer]?.toString().trim() ?? "" : "",
+      product,
+      product_raw:        productRaw,
+      premium:            iPremium >= 0  ? parseFloat(r[iPremium]?.toString().replace(/[$,]/g, "")) || null : null,
+      item_count,
+      lapse_date:         lapseDate,
+      termination_reason: iReason >= 0   ? r[iReason]?.toString().trim() ?? "" : "",
+    };
+  }).filter(r => r.policy_no);
+}
+
+// ─── Attrition Tab ──────────────────────────────────────────────────────────
+
+function AttritionTab({ agencyId, currentUserId }) {
+  const [lapseFile, setLapseFile] = useState(null);
+  const [reportMonth, setReportMonth] = useState(() => {
+    // Default to first day of current month
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  });
+  const [parsedRows, setParsedRows] = useState(null);
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [commitMsg, setCommitMsg] = useState("");
+  const [parseError, setParseError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Monthly summary data
+  const [monthlySummary, setMonthlySummary] = useState([]); // [{report_month, items, points, premium}]
+  const [loading, setLoading] = useState(true);
+  const lapseFileRef = useRef();
+
+  // Load monthly summary on mount and after each commit
+  useEffect(() => {
+    if (!agencyId) return;
+    (async () => {
+      setLoading(true);
+      const { data } = await supabase
+        .from("lapse_events")
+        .select("report_month, product, premium, item_count")
+        .eq("agency_id", agencyId)
+        .order("report_month", { ascending: false });
+
+      if (data) {
+        const byMonth = {};
+        data.forEach(r => {
+          const m = r.report_month;
+          if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
+          byMonth[m].items += r.item_count ?? 1;
+          byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+          byMonth[m].premium += r.premium ?? 0;
+        });
+        setMonthlySummary(Object.values(byMonth).sort((a, b) => b.report_month.localeCompare(a.report_month)));
+      }
+      setLoading(false);
+    })();
+  }, [agencyId, refreshKey]);
+
+  async function handleFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLapseFile(file);
+    setParseError("");
+    setParsedRows(null);
+    setCommitMsg("");
+    try {
+      const buf = await file.arrayBuffer();
+      const rows = parseLapseXLSX(new Uint8Array(buf));
+      if (rows.length === 0) { setParseError("No valid rows found. Check that your file has a Policy No column."); return; }
+      setParsedRows(rows);
+    } catch (err) {
+      setParseError(`Parse error: ${err.message}`);
+    }
+  }
+
+  async function handleCommit() {
+    if (!parsedRows || !agencyId) return;
+    if (!currentUserId) {
+      setParseError("Session expired. Please refresh and try again.");
+      return;
+    }
+    setIsCommitting(true);
+    try {
+      // Count existing rows for this month to distinguish inserts vs updates
+      const policyNos = parsedRows.map(r => r.policy_no);
+      const { data: existing } = await supabase
+        .from("lapse_events")
+        .select("policy_no")
+        .eq("agency_id", agencyId)
+        .eq("report_month", reportMonth)
+        .in("policy_no", policyNos);
+      const existingCount = existing?.length ?? 0;
+      const newCount = parsedRows.length - existingCount;
+
+      // Create upload record first
+      const { data: upload, error: upErr } = await supabase
+        .from("lapse_uploads")
+        .insert({
+          agency_id: agencyId,
+          uploaded_by: currentUserId,
+          filename: lapseFile?.name ?? "unknown",
+          report_month: reportMonth,
+          rows_added: newCount,
+          rows_updated: existingCount,
+          committed: false,
+        })
+        .select("id")
+        .single();
+      if (upErr) throw new Error(upErr.message);
+
+      // Upsert events
+      const records = parsedRows.map(r => ({
+        agency_id: agencyId,
+        report_month: reportMonth,
+        upload_batch_id: upload.id,
+        ...r,  // includes item_count from parser
+      }));
+
+      const { error: evtErr } = await supabase
+        .from("lapse_events")
+        .upsert(records, { onConflict: "agency_id,policy_no,report_month" });
+      if (evtErr) throw new Error(evtErr.message);
+
+      // Mark upload committed
+      await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
+
+      const msg = existingCount > 0
+        ? `\u2705 ${newCount} added \u00B7 ${existingCount} updated for ${reportMonth.slice(0, 7)}.`
+        : `\u2705 ${parsedRows.length} attrition records committed for ${reportMonth.slice(0, 7)}.`;
+      setCommitMsg(msg);
+      setParsedRows(null);
+      setLapseFile(null);
+      setRefreshKey(k => k + 1);
+    } catch (err) {
+      setParseError(`Commit failed: ${err.message}`);
+    } finally {
+      setIsCommitting(false);
+    }
+  }
+
+  // Gap analysis: compare consecutive months
+  // For each month, the "gap" is items/points lost. The following month must exceed it.
+  const gapAnalysis = useMemo(() => {
+    if (monthlySummary.length < 2) return null;
+    const [current, prior] = monthlySummary; // sorted desc, so [0] = most recent
+    return {
+      currentMonth: current.report_month.slice(0, 7),
+      priorMonth: prior.report_month.slice(0, 7),
+      priorItems: prior.items,
+      priorPoints: prior.points,
+      currentItems: current.items,
+      currentPoints: current.points,
+      itemsDelta: current.items - prior.items,
+      pointsDelta: current.points - prior.points,
+    };
+  }, [monthlySummary]);
+
+  const preview = parsedRows ? {
+    items: parsedRows.reduce((s, r) => s + (r.item_count ?? 1), 0),
+    points: calcLapsePoints(parsedRows),
+    premium: parsedRows.reduce((s, r) => s + (r.premium ?? 0), 0),
+    byProduct: parsedRows.reduce((acc, r) => {
+      acc[r.product] = (acc[r.product] || 0) + 1;
+      return acc;
+    }, {}),
+  } : null;
+
+  return (
+    <div>
+      {/* Gap Alert Banner */}
+      {gapAnalysis && (
+        <div style={{ background: gapAnalysis.pointsDelta > 0 ? "#EF444411" : "#10B98111", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "#EF444433" : "#10B98133"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "#EF4444" : "#10B981", marginBottom: 4 }}>
+            {gapAnalysis.pointsDelta > 0
+              ? `\u26A0 Attrition increased \u2014 ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost \u00B7 New business must exceed this next month to grow`
+              : `\u2713 Attrition decreased vs prior month`}
+          </div>
+          <div style={{ fontSize: 12, color: "#64748B" }}>
+            {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} items \u00B7 {gapAnalysis.priorPoints} pts lost &nbsp;\u2192&nbsp;
+            {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} items \u00B7 {gapAnalysis.currentPoints} pts lost
+            &nbsp;({gapAnalysis.pointsDelta >= 0 ? "+" : ""}{gapAnalysis.pointsDelta} pts)
+          </div>
+        </div>
+      )}
+
+      {/* Monthly Summary Table */}
+      {loading ? (
+        <div style={{ color: "#475569", fontSize: 13, marginBottom: 20 }}>Loading attrition history\u2026</div>
+      ) : monthlySummary.length > 0 ? (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Attrition History</div>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ minWidth: 500 }}>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th>Items Lost</th>
+                  <th>Points Lost</th>
+                  <th>Premium Lost</th>
+                  <th>MoM Items</th>
+                  <th>MoM Points</th>
+                </tr>
+              </thead>
+              <tbody>
+                {monthlySummary.map((row, i) => {
+                  const next = monthlySummary[i + 1]; // prior month (older)
+                  const itemsDelta = next ? row.items - next.items : null;
+                  const pointsDelta = next ? row.points - next.points : null;
+                  return (
+                    <tr key={row.report_month}>
+                      <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{row.report_month.slice(0, 7)}</td>
+                      <td style={{ color: "#F1F5F9", fontWeight: 600 }}>{row.items}</td>
+                      <td style={{ color: "#F59E0B", fontWeight: 600 }}>{row.points}</td>
+                      <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>${Math.round(row.premium).toLocaleString()}</td>
+                      <td style={{ color: itemsDelta == null ? "#334155" : itemsDelta > 0 ? "#EF4444" : "#10B981", fontSize: 12 }}>
+                        {itemsDelta == null ? "\u2014" : `${itemsDelta >= 0 ? "+" : ""}${itemsDelta}`}
+                      </td>
+                      <td style={{ color: pointsDelta == null ? "#334155" : pointsDelta > 0 ? "#EF4444" : "#10B981", fontSize: 12 }}>
+                        {pointsDelta == null ? "\u2014" : `${pointsDelta >= 0 ? "+" : ""}${pointsDelta}`}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>No attrition history yet. Upload your first report below.</div>
+      )}
+
+      {/* Upload Section */}
+      <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Upload Termination Report</div>
+
+      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+        <div>
+          <label style={{ fontSize: 12, color: "#64748B", display: "block", marginBottom: 4 }}>Report Month</label>
+          <input
+            type="month"
+            value={reportMonth.slice(0, 7)}
+            onChange={e => setReportMonth(`${e.target.value}-01`)}
+            style={{ fontFamily: "inherit" }}
+          />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <input ref={lapseFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleFileSelect} />
+          <button className="btn-ghost" onClick={() => lapseFileRef.current?.click()}>
+            {lapseFile ? `\uD83D\uDCC4 ${lapseFile.name}` : "Choose File"}
+          </button>
+        </div>
+      </div>
+
+      {parseError && (
+        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
+          {parseError}
+        </div>
+      )}
+
+      {/* Preview */}
+      {preview && !commitMsg && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Preview \u2014 {reportMonth.slice(0, 7)}</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 16 }}>
+            {[
+              { label: "Items Lost", value: preview.items, color: "#EF4444" },
+              { label: "Points Lost", value: preview.points, color: "#F59E0B" },
+              { label: "Premium Lost", value: `$${Math.round(preview.premium).toLocaleString()}`, color: "#94A3B8" },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, padding: "12px 14px" }}>
+                <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+              </div>
+            ))}
+          </div>
+          {/* Product breakdown */}
+          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 16 }}>
+            {Object.entries(preview.byProduct).map(([prod, count]) => (
+              <span key={prod} style={{ marginRight: 12 }}>{prod}: <strong style={{ color: "#94A3B8" }}>{count}</strong></span>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
+              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+            </button>
+            <button className="btn-ghost" onClick={() => { setParsedRows(null); setLapseFile(null); }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {commitMsg && (
+        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#10B981" }}>
+          {commitMsg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Global Styles ─────────────────────────────────────────────────────────────
 
 const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 13px; } th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #94A3B8; } .urgency-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; } .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; } .triage-row:hover td { background: #1A1D27; cursor: pointer; } .scroll-hint-container { position: relative; } .scroll-hint-container::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, #0f172a); pointer-events: none; opacity: 1; transition: opacity 0.2s; } @media (min-width: 840px) { .scroll-hint-container::after { opacity: 0; } }`;
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
-export default function RetentionDashboardPage() {
+export default function BookHealthPage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("triage");
@@ -593,6 +959,7 @@ export default function RetentionDashboardPage() {
   const fileInputRef = useRef(null);
   const hasFlaggedBroken = useRef(false);
   const [producers, setProducers] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
@@ -606,6 +973,10 @@ export default function RetentionDashboardPage() {
   }, []);
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
 
   // ─── Load producers for bulk assign ────────────────────────────────────────
 
@@ -857,7 +1228,7 @@ export default function RetentionDashboardPage() {
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Retention</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Book Health</h1>
         <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>Pending Cancellation \u00B7 Wiley-Wilson Agency</div>
       </div>
 
@@ -876,7 +1247,7 @@ export default function RetentionDashboardPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["triage","resolved","upload","trends"].map(t => (
+        {["triage","resolved","upload","trends","attrition"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t.charAt(0).toUpperCase() + t.slice(1)}
           </button>
@@ -914,6 +1285,12 @@ export default function RetentionDashboardPage() {
         />
       )}
       {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
+      {activeTab === "attrition" && (
+        <AttritionTab
+          agencyId={AGENCY_ID}
+          currentUserId={currentUserId}
+        />
+      )}
 
       {/* Detail Modal */}
       {selectedEvent && createPortal(

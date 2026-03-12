@@ -101,7 +101,7 @@ function HamburgerMenu({ items }) {
       {isOpen && (
         <div
           ref={menuRef}
-          className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50 animate-fadeIn"
+          className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-[#1a1d28] rounded-lg shadow-lg border border-white/10 py-1 z-50 animate-fadeIn"
           style={{
             animation: 'hamburgerIn 150ms ease-out',
           }}
@@ -116,8 +116,8 @@ function HamburgerMenu({ items }) {
                 [
                   'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-blue-50 text-blue-700 border-l-3 border-blue-600'
-                    : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900',
+                    ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-400'
+                    : 'text-gray-300 hover:bg-white/10 hover:text-white',
                 ].join(' ')
               }
             >
