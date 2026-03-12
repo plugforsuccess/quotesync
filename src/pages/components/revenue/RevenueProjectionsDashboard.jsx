@@ -21,12 +21,12 @@ const COMMISSION_GOAL = 40000;  // primary goal — commission revenue
 const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
 const PRODUCT_COLORS = {
   auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6",
-  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316",
+  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", boat: "#0EA5E9",
 };
 const PRODUCT_LABELS = {
   auto: "Auto", ho: "HO / Condo", renters: "Renters", landlord: "Landlord",
   specialty_auto: "Specialty Auto", pup: "Personal Umbrella",
-  manufactured: "Manufactured Home", other: "Other",
+  manufactured: "Manufactured Home", boat: "Boat Owners", other: "Other",
 };
 
 // ─── Portfolio Points Matrix ──────────────────────────────────────────────────
@@ -39,6 +39,7 @@ const PORTFOLIO_POINTS = {
   specialty_auto: 5,  // Motorcycle, motor home, off-road, trailers
   pup:            5,  // Personal Umbrella Policy
   manufactured:   5,  // Manufactured Home
+  boat:           5,  // Boat Owners — always 1 item per policy
   other:          0,
 };
 
@@ -132,7 +133,7 @@ function parseAllstateRows(rows) {
     else product = "other";
 
     // Only auto and specialty_auto can have multiple items per policy
-    const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured"];
+    const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured", "boat"];
     const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
     const itemCount = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
 
@@ -1018,6 +1019,7 @@ export default function RevenueProjectionsDashboard() {
                   <option value="specialty_auto">Specialty Auto</option>
                   <option value="pup">Personal Umbrella</option>
                   <option value="manufactured">Manufactured Home</option>
+                  <option value="boat">Boat Owners</option>
                   <option value="other">Other</option>
                 </select>
               </div>
@@ -1357,7 +1359,7 @@ export default function RevenueProjectionsDashboard() {
                   const items = policies.reduce((s, e) => s + e.itemCount, 0);
                   const label = {
                     renters: "Renters", landlord: "Landlord", specialty_auto: "Specialty Auto",
-                    pup: "Personal Umbrella", manufactured: "Manufactured Home", other: "Other",
+                    pup: "Personal Umbrella", manufactured: "Manufactured Home", boat: "Boat Owners", other: "Other",
                   }[key];
                   return (
                     <tr key={key} style={{ opacity: 0.5 }}>
