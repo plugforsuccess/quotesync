@@ -91,16 +91,19 @@ FOR EACH ROW EXECUTE FUNCTION public.calc_hours_worked();
 -- 4. Enable RLS + Create Policies
 ALTER TABLE public.employee_time_entries ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "read_own_time_entries" ON public.employee_time_entries;
 CREATE POLICY "read_own_time_entries"
 ON public.employee_time_entries
 FOR SELECT
 USING (auth.uid() = employee_user_id);
 
+DROP POLICY IF EXISTS "insert_own_time_entries" ON public.employee_time_entries;
 CREATE POLICY "insert_own_time_entries"
 ON public.employee_time_entries
 FOR INSERT
 WITH CHECK (auth.uid() = employee_user_id);
 
+DROP POLICY IF EXISTS "update_own_time_entries" ON public.employee_time_entries;
 CREATE POLICY "update_own_time_entries"
 ON public.employee_time_entries
 FOR UPDATE
@@ -109,6 +112,7 @@ WITH CHECK (auth.uid() = employee_user_id);
 
 -- Admin policy: platform admins can access all entries
 -- Uses the profiles table is_platform_user + platform_role pattern
+DROP POLICY IF EXISTS "admin_all_time_entries" ON public.employee_time_entries;
 CREATE POLICY "admin_all_time_entries"
 ON public.employee_time_entries
 FOR ALL
@@ -202,6 +206,7 @@ CREATE INDEX IF NOT EXISTS idx_rc_perf_employee_week
 ALTER TABLE public.rc_performance_data ENABLE ROW LEVEL SECURITY;
 
 -- Admin-only access for RC data
+DROP POLICY IF EXISTS "admin_all_rc_data" ON public.rc_performance_data;
 CREATE POLICY "admin_all_rc_data"
 ON public.rc_performance_data
 FOR ALL

@@ -62,6 +62,7 @@ ALTER TABLE rc_agent_aliases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rc_agent_aliases FORCE ROW LEVEL SECURITY;
 
 -- Admin-only access (same pattern as rc_call_log)
+DROP POLICY IF EXISTS "rc_agent_aliases_select_admin" ON rc_agent_aliases;
 CREATE POLICY "rc_agent_aliases_select_admin"
   ON rc_agent_aliases FOR SELECT
   USING (
@@ -73,6 +74,7 @@ CREATE POLICY "rc_agent_aliases_select_admin"
     )
   );
 
+DROP POLICY IF EXISTS "rc_agent_aliases_insert_admin" ON rc_agent_aliases;
 CREATE POLICY "rc_agent_aliases_insert_admin"
   ON rc_agent_aliases FOR INSERT
   WITH CHECK (
@@ -84,6 +86,7 @@ CREATE POLICY "rc_agent_aliases_insert_admin"
     )
   );
 
+DROP POLICY IF EXISTS "rc_agent_aliases_update_admin" ON rc_agent_aliases;
 CREATE POLICY "rc_agent_aliases_update_admin"
   ON rc_agent_aliases FOR UPDATE
   USING (
@@ -103,6 +106,7 @@ CREATE POLICY "rc_agent_aliases_update_admin"
     )
   );
 
+DROP POLICY IF EXISTS "rc_agent_aliases_delete_admin" ON rc_agent_aliases;
 CREATE POLICY "rc_agent_aliases_delete_admin"
   ON rc_agent_aliases FOR DELETE
   USING (

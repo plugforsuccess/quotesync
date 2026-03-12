@@ -53,6 +53,7 @@ CREATE INDEX IF NOT EXISTS idx_cs_targets_employee
 
 ALTER TABLE public.cs_performance_targets ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "admin_all_cs_targets" ON public.cs_performance_targets;
 CREATE POLICY "admin_all_cs_targets"
 ON public.cs_performance_targets
 FOR ALL
@@ -96,6 +97,7 @@ CREATE TABLE IF NOT EXISTS public.cs_outbound_breakdown (
 
 ALTER TABLE public.cs_outbound_breakdown ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "admin_all_outbound_breakdown" ON public.cs_outbound_breakdown;
 CREATE POLICY "admin_all_outbound_breakdown"
 ON public.cs_outbound_breakdown
 FOR ALL

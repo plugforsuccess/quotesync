@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS rc_call_log_batches (
 ALTER TABLE rc_call_log_batches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rc_call_log_batches FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "rc_call_log_batches_select_admin" ON rc_call_log_batches;
 CREATE POLICY "rc_call_log_batches_select_admin"
   ON rc_call_log_batches FOR SELECT
   USING (
@@ -54,6 +55,7 @@ CREATE POLICY "rc_call_log_batches_select_admin"
     )
   );
 
+DROP POLICY IF EXISTS "rc_call_log_batches_insert_admin" ON rc_call_log_batches;
 CREATE POLICY "rc_call_log_batches_insert_admin"
   ON rc_call_log_batches FOR INSERT
   WITH CHECK (
@@ -146,6 +148,7 @@ ALTER TABLE rc_call_log ENABLE ROW LEVEL SECURITY;
 -- Force RLS even for table owners (defense in depth)
 ALTER TABLE rc_call_log FORCE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "rc_call_log_select_admin" ON rc_call_log;
 CREATE POLICY "rc_call_log_select_admin"
   ON rc_call_log FOR SELECT
   USING (
@@ -157,6 +160,7 @@ CREATE POLICY "rc_call_log_select_admin"
     )
   );
 
+DROP POLICY IF EXISTS "rc_call_log_insert_admin" ON rc_call_log;
 CREATE POLICY "rc_call_log_insert_admin"
   ON rc_call_log FOR INSERT
   WITH CHECK (
@@ -168,6 +172,7 @@ CREATE POLICY "rc_call_log_insert_admin"
     )
   );
 
+DROP POLICY IF EXISTS "rc_call_log_update_admin" ON rc_call_log;
 CREATE POLICY "rc_call_log_update_admin"
   ON rc_call_log FOR UPDATE
   USING (
@@ -187,6 +192,7 @@ CREATE POLICY "rc_call_log_update_admin"
     )
   );
 
+DROP POLICY IF EXISTS "rc_call_log_delete_admin" ON rc_call_log;
 CREATE POLICY "rc_call_log_delete_admin"
   ON rc_call_log FOR DELETE
   USING (
