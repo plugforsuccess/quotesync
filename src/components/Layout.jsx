@@ -2,10 +2,11 @@
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Sparkles } from 'lucide-react';
+import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
+import BottomTabBar from './BottomTabBar';
 import VerificationBanner from './VerificationBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
@@ -88,8 +89,43 @@ function Layout() {
     };
   }, [mobileMenuOpen]);
 
-  // All nav items combined for mobile menu
-  const allNavItems = [...primaryNav, ...secondaryNav];
+  // Mobile drawer state (triggered by "More" tab in bottom bar)
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // Close drawer on route change
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [location]);
+
+  // Prevent body scroll when drawer is open
+  useEffect(() => {
+    if (drawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [drawerOpen]);
+
+  // Bottom tab bar routes (items shown in tab bar, excluded from drawer)
+  const bottomTabRoutes = [
+    '/agency/dashboard',
+    '/agency/leads',
+    '/admin/cs-performance',
+    '/admin/revenue-projections',
+  ];
+
+  // Drawer nav items: secondary items that are NOT in the bottom tab bar, grouped
+  const drawerGroups = buildDrawerGroups(primaryNav, secondaryNav, bottomTabRoutes, currentAgencyRole);
+
+  // Check if a drawer item is currently active (to highlight "More" tab)
+  const allDrawerItems = drawerGroups.flatMap(g => g.items);
+  const isDrawerRouteActive = allDrawerItems.some(
+    item => location.pathname === item.to || location.pathname.startsWith(item.to + '/')
+  );
+
+  // Show bottom tab bar only for agency/platform planes (not consumer)
+  const showBottomTabs = activePlane === PLANES.AGENCY || activePlane === PLANES.PLATFORM;
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white flex flex-col">
@@ -156,27 +192,29 @@ function Layout() {
               />
             </nav>
 
-            {/* Mobile Menu Button with Animation */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 relative group"
-              aria-label="Toggle menu"
-            >
-              <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
-              <div className="relative">
-                {mobileMenuOpen ? (
-                  <X className="w-6 h-6 transition-transform duration-300 rotate-90" />
-                ) : (
-                  <Menu className="w-6 h-6 transition-transform duration-300" />
-                )}
-              </div>
-            </button>
+            {/* Mobile Menu Button — only shown when bottom tab bar is NOT active (consumer plane) */}
+            {!showBottomTabs && (
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-300 relative group"
+                aria-label="Toggle menu"
+              >
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-xl opacity-0 group-hover:opacity-20 blur transition duration-300"></div>
+                <div className="relative">
+                  {mobileMenuOpen ? (
+                    <X className="w-6 h-6 transition-transform duration-300 rotate-90" />
+                  ) : (
+                    <Menu className="w-6 h-6 transition-transform duration-300" />
+                  )}
+                </div>
+              </button>
+            )}
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu with Advanced Overlay */}
-      {mobileMenuOpen && (
+      {/* Mobile Menu with Advanced Overlay — kept for consumer plane (non-tab-bar planes) */}
+      {mobileMenuOpen && !showBottomTabs && (
         <div className="fixed inset-0 z-40 md:hidden">
           {/* Backdrop with blur */}
           <div
@@ -190,7 +228,6 @@ function Layout() {
 
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp overflow-y-auto">
-            {/* Primary nav items */}
             {primaryNav.map((item, idx) => (
               <MobileTabLink
                 key={item.to}
@@ -202,7 +239,6 @@ function Layout() {
               />
             ))}
 
-            {/* Separator between primary and secondary (if both exist) */}
             {primaryNav.length > 0 && secondaryNav.length > 0 && (
               <div className="w-full max-w-sm flex items-center gap-3 my-2">
                 <div className="flex-1 h-px bg-white/20"></div>
@@ -211,7 +247,6 @@ function Layout() {
               </div>
             )}
 
-            {/* Secondary nav items */}
             {secondaryNav.map((item) => (
               <MobileTabLink
                 key={item.to}
@@ -221,7 +256,6 @@ function Layout() {
               />
             ))}
 
-            {/* User Menu for Mobile */}
             <div className="mt-4">
               <UserMenu
                 activePlane={activePlane}
@@ -231,13 +265,97 @@ function Layout() {
                 })}
               />
             </div>
-
-            {/* Decorative element */}
-            <div className="mt-8 flex items-center gap-2 text-sm text-white/50">
-              <Sparkles className="w-4 h-4" />
-              <span>{activePlane === PLANES.PLATFORM ? 'Admin Tools' : activePlane === PLANES.AGENCY ? 'Agency Portal' : 'Choose your path'}</span>
-            </div>
           </nav>
+        </div>
+      )}
+
+      {/* Mobile "More" Drawer — slide-over from right, triggered by bottom tab bar */}
+      {drawerOpen && (activePlane === PLANES.AGENCY || activePlane === PLANES.PLATFORM) && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fadeIn"
+            onClick={() => setDrawerOpen(false)}
+          />
+
+          {/* Drawer panel */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-[280px] max-w-[85vw] bg-[#0f172a] border-l border-white/10 flex flex-col animate-slideInRight overflow-hidden"
+            style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+          >
+            {/* Drawer header */}
+            <div className="flex items-center justify-between px-4 py-4 border-b border-white/10">
+              <span className="text-sm font-semibold text-white">More</span>
+              <button
+                onClick={() => setDrawerOpen(false)}
+                className="p-1 text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/10"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer nav groups */}
+            <nav className="flex-1 overflow-y-auto py-2">
+              {drawerGroups.map((group) => (
+                <div key={group.label}>
+                  {/* Section header */}
+                  <div className="px-4 py-2">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-white/40">
+                      {group.label}
+                    </span>
+                  </div>
+
+                  {/* Section items */}
+                  {group.items.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        [
+                          'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors mx-2 rounded-lg',
+                          isActive
+                            ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-400'
+                            : 'text-gray-300 hover:bg-white/10 hover:text-white',
+                        ].join(' ')
+                      }
+                    >
+                      {item.lucideIcon && <item.lucideIcon className="w-5 h-5 flex-shrink-0" strokeWidth={1.8} />}
+                      <span>{item.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              ))}
+            </nav>
+
+            {/* User footer */}
+            <div className="border-t border-white/10 px-4 py-3">
+              <div className="flex items-center gap-3">
+                {/* Avatar initials */}
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                  {getInitials(profile?.full_name || user?.email)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-white truncate">
+                    {profile?.full_name || user?.email || 'User'}
+                  </div>
+                  <div className="text-xs text-gray-400 capitalize">
+                    {roleLabel || 'User'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Admin tools link — agent role only */}
+              {currentAgencyRole === 'agent' && (
+                <NavLink
+                  to="/admin"
+                  className="flex items-center gap-2 mt-3 px-2 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>Admin Tools</span>
+                </NavLink>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -247,13 +365,20 @@ function Layout() {
       {/* Verification overdue banner — admin only */}
       <VerificationBanner />
 
-      {/* Main content */}
-      <main className="flex-1">
+      {/* Main content — add bottom padding on mobile for tab bar clearance */}
+      <main className={`flex-1 ${showBottomTabs ? 'pb-20 md:pb-0' : ''}`}>
         <Outlet />
       </main>
 
-      {/* ADD FOOTER HERE - Replace the old footer with the new Footer component */}
       <Footer />
+
+      {/* Bottom Tab Bar — mobile only, agency/platform planes */}
+      {showBottomTabs && (
+        <BottomTabBar
+          onMorePress={() => setDrawerOpen(prev => !prev)}
+          moreActive={drawerOpen || isDrawerRouteActive}
+        />
+      )}
     </div>
   );
 }
@@ -388,6 +513,70 @@ function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
       )}
     </NavLink>
   );
+}
+
+// ── Drawer helpers ──────────────────────────────────────────────────────────
+
+// Map of route patterns to Lucide icons for the drawer
+const drawerIconMap = {
+  '/admin/time-attendance': Clock,
+  '/admin/book-health': Shield,
+  '/admin/agencies': Building2,
+  '/admin/agency/employees': Users,
+  '/news': Newspaper,
+  '/admin/audit': Search,
+  '/agency/settings': Settings,
+};
+
+function getDrawerIcon(to) {
+  for (const [pattern, icon] of Object.entries(drawerIconMap)) {
+    if (to === pattern || to.startsWith(pattern + '/')) return icon;
+  }
+  return null;
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return parts[0][0].toUpperCase();
+}
+
+// Build grouped drawer items from primary + secondary nav, excluding bottom tab routes
+function buildDrawerGroups(primaryNav, secondaryNav, bottomTabRoutes, agencyRole) {
+  const all = [...primaryNav, ...secondaryNav];
+  // Filter out items already in bottom tab bar
+  const filtered = all.filter(item => !bottomTabRoutes.includes(item.to));
+
+  // Categorize items into groups
+  const agencyItems = [];
+  const contentItems = [];
+  const adminItems = [];
+
+  const agencyRoutes = ['/admin/time-attendance', '/admin/book-health', '/admin/agencies', '/admin/agency/employees'];
+  const contentRoutes = ['/news', '/admin/audit'];
+
+  for (const item of filtered) {
+    const enriched = { ...item, lucideIcon: getDrawerIcon(item.to) };
+
+    if (agencyRoutes.some(r => item.to === r || item.to.startsWith(r + '/'))) {
+      agencyItems.push(enriched);
+    } else if (contentRoutes.some(r => item.to === r || item.to.startsWith(r + '/'))) {
+      contentItems.push(enriched);
+    } else if (item.to === '/agency/settings') {
+      // Settings goes under agency
+      agencyItems.push(enriched);
+    } else {
+      contentItems.push(enriched);
+    }
+  }
+
+  const groups = [];
+  if (agencyItems.length > 0) groups.push({ label: 'Agency', items: agencyItems });
+  if (contentItems.length > 0) groups.push({ label: 'Content & Tools', items: contentItems });
+  if (adminItems.length > 0) groups.push({ label: 'Admin', items: adminItems });
+
+  return groups;
 }
 
 export default Layout;
