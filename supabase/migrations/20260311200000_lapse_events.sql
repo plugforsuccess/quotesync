@@ -1,0 +1,2 @@
+-- Already applied to remote; local file was removed.
+-- This placeholder prevents supabase db push from re-running the migration.
