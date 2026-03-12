@@ -835,6 +835,15 @@ function AttritionTab({ agencyId, currentUserId }) {
   const gapAnalysis = useMemo(() => {
     if (monthlySummary.length < 2) return null;
     const [current, prior] = monthlySummary; // sorted desc, so [0] = most recent
+
+    // Check if the most recent report_month is the current calendar month
+    const now = new Date();
+    const currentCalendarMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const isPartialMonth = current.report_month.slice(0, 7) === currentCalendarMonth;
+
+    // Calculate how many days into the month we are
+    const daysIntoMonth = now.getDate();
+
     return {
       currentMonth: current.report_month.slice(0, 7),
       priorMonth: prior.report_month.slice(0, 7),
@@ -844,6 +853,8 @@ function AttritionTab({ agencyId, currentUserId }) {
       currentPoints: current.points,
       itemsDelta: current.items - prior.items,
       pointsDelta: current.points - prior.points,
+      isPartialMonth,
+      daysIntoMonth,
     };
   }, [monthlySummary]);
 
@@ -865,13 +876,33 @@ function AttritionTab({ agencyId, currentUserId }) {
           <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "#EF4444" : "#10B981", marginBottom: 4 }}>
             {gapAnalysis.pointsDelta > 0
               ? `⚠ Attrition increased — ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost · New business must exceed this next month to grow`
-              : `\u2713 Attrition decreased vs prior month`}
+              : `✓ Attrition decreased vs prior month`}
           </div>
           <div style={{ fontSize: 12, color: "#64748B" }}>
             {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} items · {gapAnalysis.priorPoints} pts lost &nbsp;→&nbsp;
             {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} items · {gapAnalysis.currentPoints} pts lost
             &nbsp;({gapAnalysis.pointsDelta >= 0 ? "+" : ""}{gapAnalysis.pointsDelta} pts)
           </div>
+        </div>
+      )}
+      {gapAnalysis?.isPartialMonth && (
+        <div style={{
+          fontSize: 11,
+          color: "#F59E0B",
+          background: "#F59E0B11",
+          border: "1px solid #F59E0B33",
+          borderRadius: 6,
+          padding: "6px 12px",
+          marginTop: -12,
+          marginBottom: 20,
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}>
+          <span>⚠</span>
+          <span>
+            {gapAnalysis.currentMonth} is in progress ({gapAnalysis.daysIntoMonth} days in) — comparison will change as the month completes.
+          </span>
         </div>
       )}
 
