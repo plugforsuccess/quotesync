@@ -43,13 +43,13 @@ CREATE TABLE IF NOT EXISTS public.pending_cancel_events (
 );
 
 -- Dedup key: one row per policy per cancel cycle
-CREATE UNIQUE INDEX pending_cancel_events_policy_date_cycle_idx
+CREATE UNIQUE INDEX IF NOT EXISTS pending_cancel_events_policy_date_cycle_idx
   ON pending_cancel_events (agency_id, policy_no, cancel_effective_date, cycle);
 
-CREATE INDEX pending_cancel_events_agency_status_idx
+CREATE INDEX IF NOT EXISTS pending_cancel_events_agency_status_idx
   ON pending_cancel_events (agency_id, status);
 
-CREATE INDEX pending_cancel_events_cancel_date_idx
+CREATE INDEX IF NOT EXISTS pending_cancel_events_cancel_date_idx
   ON pending_cancel_events (agency_id, cancel_effective_date);
 
 -- ── pending_cancel_uploads ────────────────────────────────────────────────
