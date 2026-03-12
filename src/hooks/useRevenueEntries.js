@@ -94,14 +94,33 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
       created_by:   user?.id ?? null,
     }));
 
-    const { data, error } = await supabase
-      .from("revenue_entries")
-      .upsert(rows, { onConflict: "agency_id,policy_no", ignoreDuplicates: false })
-      .select();
+    // Split: rows WITH policy_no can be upserted (dedup on conflict),
+    // rows WITHOUT must be plain-inserted (NULL can't match a unique constraint)
+    const withPolicyNo    = rows.filter(r => r.policy_no);
+    const withoutPolicyNo = rows.filter(r => !r.policy_no);
 
-    if (error) return { count: 0, error: error.message };
+    let totalCount = 0;
+
+    if (withPolicyNo.length > 0) {
+      const { data, error } = await supabase
+        .from("revenue_entries")
+        .upsert(withPolicyNo, { onConflict: "agency_id,policy_no", ignoreDuplicates: false })
+        .select();
+      if (error) return { count: 0, error: error.message };
+      totalCount += data.length;
+    }
+
+    if (withoutPolicyNo.length > 0) {
+      const { data, error } = await supabase
+        .from("revenue_entries")
+        .insert(withoutPolicyNo)
+        .select();
+      if (error) return { count: totalCount, error: error.message };
+      totalCount += data.length;
+    }
+
     await fetch();
-    return { count: data.length, error: null };
+    return { count: totalCount, error: null };
   };
 
   const deleteEntry = async (id) => {

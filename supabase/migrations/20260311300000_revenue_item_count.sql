@@ -15,10 +15,9 @@ ALTER TABLE public.revenue_entries
   ALTER COLUMN issued_date SET NOT NULL;
 
 -- Unique constraint required by the upload upsert (onConflict: "agency_id,policy_no")
--- policy_no can be NULL for manual entries, so use a partial unique index
-CREATE UNIQUE INDEX IF NOT EXISTS revenue_entries_agency_policy_no_uq
-  ON public.revenue_entries (agency_id, policy_no)
-  WHERE policy_no IS NOT NULL;
+-- Only rows WITH a policy_no are upserted; NULL policy_no rows are plain-inserted
+ALTER TABLE public.revenue_entries
+  ADD CONSTRAINT revenue_entries_agency_policy_no_uq UNIQUE (agency_id, policy_no);
 
 -- Expand the product CHECK to include new product types
 ALTER TABLE public.revenue_entries
