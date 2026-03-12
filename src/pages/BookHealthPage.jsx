@@ -48,6 +48,7 @@ const LAPSE_PORTFOLIO_POINTS = {
   specialty_auto: 5,
   pup:            5,  // Personal Umbrella Policy
   manufactured:   5,
+  boat:           5,  // Boat Owners — always 1 item per policy
   other:          0,
 };
 
@@ -56,11 +57,13 @@ function normaliseProduct(raw = "") {
   // specialty auto MUST be checked before standard auto — both contain "auto"
   if (v.includes("specialty auto") || v.includes("auto - special") || v.includes("motorcycle") || v.includes("motor home") || v.includes("off-road") || v.includes("trailer")) return "specialty_auto";
   if (v.includes("standard auto") || v.includes("private passenger") || v.includes("auto -") || v.includes("auto–")) return "auto";
+  // manufactured/mobilehome MUST be checked before ho — "mobilehome" doesn't contain "home" but "manufactured home" does
+  if (v.includes("manufactured") || v.includes("mobilehome") || v.includes("mobile home")) return "manufactured";
   if (v.includes("home") || v.includes("condo") || v.includes("ho3") || v.includes("ho6")) return "ho";
   if (v.includes("rent") || v.includes("ho4")) return "renters";
   if (v.includes("landlord")) return "landlord";  // separate from ho — same pts but tracked independently
   if (v.includes("umbrella") || v.includes("pup")) return "pup";
-  if (v.includes("manufactured")) return "manufactured";
+  if (v.includes("boat") || v.includes("watercraft")) return "boat";
   return "other";
 }
 
@@ -86,9 +89,9 @@ const CONTACT_METHODS = ["phone", "text", "email", "other"];
 const COL_MAP = {
   policy_no:    ["policy number", "policy no", "policy #", "pol no", "pol #"],
   customer:     ["customer name", "insured name", "insured", "name", "customer"],
-  product:      ["product name", "line of business", "lob", "coverage type", "policy type", "product"],
-  premium:      ["written premium", "annual premium", "premium", "policy premium"],
-  cancel_date:  ["cancellation date", "cancel date", "cancel effective date", "eff cancel date", "cancellation effective date"],
+  product:      ["product name", "line code", "product code", "line of business", "lob", "coverage type", "policy type", "product"],
+  premium:      ["premium new", "written premium", "annual premium", "premium", "policy premium"],
+  cancel_date:  ["termination effective", "cancellation date", "cancel date", "cancel effective date", "eff cancel date", "cancellation effective date"],
 };
 
 
@@ -632,22 +635,30 @@ function EventDetailModal({ event, onClose, onUpdate }) {
 
 function parseLapseXLSX(data) {
   const wb = XLSX.read(data, { type: "array" });
-  const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
-  if (rows.length < 2) return [];
+  const allRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+  if (allRows.length < 2) return [];
 
-  const headers = rows[0].map(h => h?.toString().toLowerCase().trim());
+  // Scan first 10 rows for the header row (Format B has 5 metadata rows before headers)
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(10, allRows.length); i++) {
+    const r = allRows[i].map(h => h?.toString().toLowerCase().trim());
+    if (r.some(h => h?.includes("policy"))) { headerIdx = i; break; }
+  }
+
+  const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
+  const rows = allRows.slice(headerIdx);
   const findLapseCol = (candidates) => headers.findIndex(h => candidates.some(c => h?.includes(c)));
 
   const iPolicy   = findLapseCol(["policy", "policy no", "policy number"]);
   const iCustomer = findLapseCol(["customer", "insured", "name"]);
-  const iProduct  = findLapseCol(["product", "lob", "line", "type"]);
-  const iPremium  = findLapseCol(["premium"]);
-  const iDate     = findLapseCol(["lapse date", "termination date", "cancel date", "effective date"]);
-  const iReason   = findLapseCol(["reason", "termination reason"]);
-  const iItems    = findLapseCol(["item count", "items", "vehicle count", "vehicles"]);
+  const iProduct  = findLapseCol(["product name", "line code", "product code", "product", "line of business", "lob"]);
+  const iPremium  = findLapseCol(["premium new", "written premium", "annual premium", "premium"]);
+  const iDate     = findLapseCol(["termination effective", "lapse date", "cancel date", "cancellation date", "eff date", "effective date"]);
+  const iReason   = findLapseCol(["termination reason", "cancel reason", "reason"]);
+  const iItems    = findLapseCol(["number of items", "no. of items", "item count", "items"]);
 
   // Products that are always 1 item per policy regardless of report value
-  const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured"];
+  const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured", "boat"];
 
   return rows.slice(1).filter(r => r.some(Boolean)).map(r => {
     const productRaw = iProduct >= 0 ? r[iProduct]?.toString() ?? "" : "";
