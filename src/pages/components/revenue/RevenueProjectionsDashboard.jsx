@@ -251,6 +251,35 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
   );
 }
 
+// ─── Friendly error messages ──────────────────────────────────────────────────
+function friendlyUploadError(raw = "") {
+  const msg = raw.toLowerCase();
+
+  if (msg.includes("conflict do update command cannot affect row a second time"))
+    return "Your report contains duplicate policy numbers. Remove the duplicates and re-upload.";
+
+  if (msg.includes("row-level security") || msg.includes("rls") || msg.includes("using expression"))
+    return "Permission error — your session may have expired. Please refresh the page and try again.";
+
+  if (msg.includes("unique or exclusion constraint"))
+    return "Database configuration error. Please contact your administrator.";
+
+  if (msg.includes("violates check constraint") && msg.includes("product"))
+    return "One or more rows contains an unrecognized product type. Check the report for unexpected policy categories.";
+
+  if (msg.includes("violates not-null constraint"))
+    return "One or more required fields are missing. Ensure the report has Policy Number, Product, Premium, and Date columns.";
+
+  if (msg.includes("invalid input syntax for type"))
+    return "A value in the report couldn't be read — check for non-numeric premiums or invalid dates.";
+
+  if (msg.includes("network") || msg.includes("fetch") || msg.includes("failed to fetch"))
+    return "Connection error — check your internet and try again.";
+
+  // Fallback: show something generic but not raw Postgres
+  return "Upload failed. If this keeps happening, screenshot this and contact support.";
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function RevenueProjectionsDashboard() {
   const { data: currentAgency } = useCurrentAgency();
@@ -489,7 +518,8 @@ export default function RevenueProjectionsDashboard() {
     setAddEntryMsg("");
     const { error } = await addEntry({ ...newEntry, premium });
     if (error) {
-      setAddEntryMsg(`Unable to add entry: ${error}`);
+      console.error("[revenue upload error]", error);
+      setAddEntryMsg(`❌ ${friendlyUploadError(error)}`);
     } else {
       setNewEntry(emptyEntry());
       setAddEntryMsg("Entry added.");
@@ -514,13 +544,15 @@ export default function RevenueProjectionsDashboard() {
       } else {
         const { count, error } = await addEntries(parsed);
         if (error) {
-          setUploadMsg(`❌ Error saving to database: ${error}`);
+          console.error("[revenue upload error]", error);
+          setUploadMsg(`❌ ${friendlyUploadError(error)}`);
         } else {
-          setUploadMsg(`✅ ${count} policies synced from ${file.name} — duplicates updated in place.`);
+          setUploadMsg(`✅ ${count} ${count === 1 ? "policy" : "policies"} loaded from ${file.name} — revenue totals updated.`);
         }
       }
     } catch (err) {
-      setUploadMsg(`❌ Error: ${err.message}`);
+      console.error("[revenue upload error]", err.message);
+      setUploadMsg(`❌ ${friendlyUploadError(err.message)}`);
     } finally {
       setUploading(false);
       e.target.value = "";

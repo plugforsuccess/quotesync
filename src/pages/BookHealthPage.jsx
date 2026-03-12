@@ -5,6 +5,40 @@ import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
 
+// ─── Friendly error messages ──────────────────────────────────────────────────
+function friendlyUploadError(raw = "") {
+  const msg = raw.toLowerCase();
+
+  if (msg.includes("conflict do update command cannot affect row a second time"))
+    return "Your report contains duplicate policy numbers. Remove the duplicates and re-upload.";
+
+  if (msg.includes("row-level security") || msg.includes("rls") || msg.includes("using expression"))
+    return "Permission error — your session may have expired. Please refresh the page and try again.";
+
+  if (msg.includes("unique or exclusion constraint"))
+    return "Database configuration error. Please contact your administrator.";
+
+  if (msg.includes("violates not-null constraint"))
+    return "One or more required fields are missing. Check that the report has Policy Number and all required columns.";
+
+  if (msg.includes("invalid input syntax for type"))
+    return "A value in the report couldn't be read — check for invalid dates or non-numeric values.";
+
+  if (msg.includes("could not find required columns"))
+    return "Required columns are missing. Make sure the report includes Policy No and Cancel Date columns.";
+
+  if (msg.includes("no valid rows"))
+    return "No readable rows found. Check that the file isn't empty and has a Policy No column.";
+
+  if (msg.includes("file read failed"))
+    return "The file couldn't be opened. Try saving it again as .xlsx or .csv and re-uploading.";
+
+  if (msg.includes("network") || msg.includes("fetch") || msg.includes("failed to fetch"))
+    return "Connection error — check your internet and try again.";
+
+  return "Something went wrong. If this keeps happening, screenshot this and contact support.";
+}
+
 // ─── Portfolio Points Matrix (must match RevenueProjectionsDashboard) ─────────
 const LAPSE_PORTFOLIO_POINTS = {
   auto:          10,
@@ -706,7 +740,8 @@ function AttritionTab({ agencyId, currentUserId }) {
       if (rows.length === 0) { setParseError("No valid rows found. Check that your file has a Policy No column."); return; }
       setParsedRows(rows);
     } catch (err) {
-      setParseError(`Parse error: ${err.message}`);
+      console.error("[attrition parse error]", err.message);
+      setParseError(`❌ ${friendlyUploadError(err.message)}`);
     }
   }
 
@@ -761,15 +796,17 @@ function AttritionTab({ agencyId, currentUserId }) {
       // Mark upload committed
       await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
 
+      const monthLabel = new Date(reportMonth).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
       const msg = existingCount > 0
-        ? `\u2705 ${newCount} added \u00B7 ${existingCount} updated for ${reportMonth.slice(0, 7)}.`
-        : `\u2705 ${parsedRows.length} attrition records committed for ${reportMonth.slice(0, 7)}.`;
+        ? `\u2705 ${newCount} ${newCount === 1 ? "record" : "records"} added \u00B7 ${existingCount} updated for ${monthLabel}.`
+        : `\u2705 ${parsedRows.length} attrition ${parsedRows.length === 1 ? "record" : "records"} loaded for ${monthLabel}.`;
       setCommitMsg(msg);
       setParsedRows(null);
       setLapseFile(null);
       setRefreshKey(k => k + 1);
     } catch (err) {
-      setParseError(`Commit failed: ${err.message}`);
+      console.error("[attrition commit error]", err.message);
+      setParseError(`❌ ${friendlyUploadError(err.message)}`);
     } finally {
       setIsCommitting(false);
     }
@@ -1129,7 +1166,8 @@ export default function BookHealthPage() {
       const diff = diffReport(parsed, events);
       setDiffResult(diff);
     } catch (err) {
-      setUploadError(err.message);
+      console.error("[triage upload error]", err.message);
+      setUploadError(`❌ ${friendlyUploadError(err.message)}`);
     } finally {
       setIsParsing(false);
     }
@@ -1193,7 +1231,8 @@ export default function BookHealthPage() {
       setUploadFile(null);
       await loadEvents();
     } catch (err) {
-      setUploadError(err.message);
+      console.error("[triage commit error]", err.message);
+      setUploadError(`❌ ${friendlyUploadError(err.message)}`);
     } finally {
       setIsCommitting(false);
     }
