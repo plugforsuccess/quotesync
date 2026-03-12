@@ -102,11 +102,11 @@ function findCol(headers, aliases) {
 }
 
 function fmt$(n) {
-  if (!n && n !== 0) return "\u2014";
+  if (!n && n !== 0) return "—";
   return n >= 1000 ? `$${(n/1000).toFixed(1)}k` : `$${n.toLocaleString()}`;
 }
 function fmtFull$(n) {
-  if (!n && n !== 0) return "\u2014";
+  if (!n && n !== 0) return "—";
   return `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
@@ -276,7 +276,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
             return (
               <button key={p.id} className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}
                 onClick={() => bulkAssign(name)}>
-                \u2192 {name}
+                → {name}
               </button>
             );
           })}
@@ -285,7 +285,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
 
       {brokenCount > 0 && (
         <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
-          {brokenCount} broken promise{brokenCount > 1 ? "s" : ""} \u2014 follow up needed
+          {brokenCount} broken promise{brokenCount > 1 ? "s" : ""} — follow up needed
         </div>
       )}
 
@@ -319,17 +319,17 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                       {days <= 0 ? "PAST DUE" : `${days}d`}
                     </span>
                   </td>
-                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "\u2014"}</td>
-                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
+                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "—"}</td>
+                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "—"}</td>
                   <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
-                    {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014"}
+                    {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
                   </td>
                   <td>
                     <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                   </td>
-                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "\u2014"}</td>
+                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "—"}</td>
                   <td style={{ color: event.promise_date ? "#8B5CF6" : "#334155", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                    {event.promise_date || "\u2014"}
+                    {event.promise_date || "—"}
                   </td>
                   <td style={{ color: "#475569", fontSize: 16 }}>\u203A</td>
                 </tr>
@@ -373,20 +373,20 @@ function ResolvedTab({ resolvedEvents }) {
               return (
                 <tr key={event.id}>
                   <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                    {event.resolution_date || event.updated_at?.slice(0, 10) || "\u2014"}
+                    {event.resolution_date || event.updated_at?.slice(0, 10) || "—"}
                   </td>
-                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "\u2014"}</td>
+                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "—"}</td>
                   <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{event.policy_no}</td>
-                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
+                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "—"}</td>
                   <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
-                    {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014"}
+                    {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
                   </td>
                   <td>
                     <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                   </td>
-                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "\u2014"}</td>
+                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "—"}</td>
                   <td style={{ color: "#64748B", fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {event.notes || "\u2014"}
+                    {event.notes || "—"}
                   </td>
                 </tr>
               );
@@ -410,7 +410,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
     <div style={{ maxWidth: 640 }}>
       <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
         Upload the Allstate <span style={{ color: "#64748B", fontFamily: "'DM Mono', monospace" }}>Pending Cancellation</span> report (XLSX).
-        The system will diff against existing active events \u2014 new policies added, resolved policies auto-closed.
+        The system will diff against existing active events — new policies added, resolved policies auto-closed.
       </div>
 
       <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
@@ -547,7 +547,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{event.customer_name || "Unknown Customer"}</div>
             <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
-              Policy {event.policy_no} \u00B7 {event.product?.toUpperCase()} \u00B7 Cycle {event.cycle}
+              Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
             </div>
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>\u00D7</button>
@@ -557,7 +557,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
           {[
             { label: "Cancel Date", value: event.cancel_effective_date, color: urgencyColor(days) },
             { label: "Days Left", value: days <= 0 ? "PAST DUE" : `${days} days`, color: urgencyColor(days) },
-            { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014", color: "#E2E8F0" },
+            { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—", color: "#E2E8F0" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
               <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
@@ -579,7 +579,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
             <div>
               <label>Contact Method</label>
               <select value={form.contact_method} onChange={ev => setForm(p => ({ ...p, contact_method: ev.target.value }))}>
-                <option value="">\u2014</option>
+                <option value="">—</option>
                 {CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
               </select>
             </div>
@@ -604,7 +604,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
               <label>Termination Reason</label>
               <select value={form.termination_reason}
                 onChange={ev => setForm(p => ({ ...p, termination_reason: ev.target.value }))}>
-                <option value="">\u2014 Select reason \u2014</option>
+                <option value="">— Select reason —</option>
                 {TERMINATION_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
               </select>
             </div>
@@ -816,8 +816,8 @@ function AttritionTab({ agencyId, currentUserId }) {
 
       const monthLabel = new Date(reportMonth).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
       const msg = existingCount > 0
-        ? `\u2705 ${newCount} ${newCount === 1 ? "record" : "records"} added \u00B7 ${existingCount} updated for ${monthLabel}.`
-        : `\u2705 ${parsedRows.length} attrition ${parsedRows.length === 1 ? "record" : "records"} loaded for ${monthLabel}.`;
+        ? `✅ ${newCount} ${newCount === 1 ? "record" : "records"} added · ${existingCount} updated for ${monthLabel}.`
+        : `✅ ${parsedRows.length} attrition ${parsedRows.length === 1 ? "record" : "records"} loaded for ${monthLabel}.`;
       setCommitMsg(msg);
       setParsedRows(null);
       setLapseFile(null);
@@ -864,12 +864,12 @@ function AttritionTab({ agencyId, currentUserId }) {
         <div style={{ background: gapAnalysis.pointsDelta > 0 ? "#EF444411" : "#10B98111", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "#EF444433" : "#10B98133"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "#EF4444" : "#10B981", marginBottom: 4 }}>
             {gapAnalysis.pointsDelta > 0
-              ? `\u26A0 Attrition increased \u2014 ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost \u00B7 New business must exceed this next month to grow`
+              ? `⚠ Attrition increased — ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost · New business must exceed this next month to grow`
               : `\u2713 Attrition decreased vs prior month`}
           </div>
           <div style={{ fontSize: 12, color: "#64748B" }}>
-            {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} items \u00B7 {gapAnalysis.priorPoints} pts lost &nbsp;\u2192&nbsp;
-            {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} items \u00B7 {gapAnalysis.currentPoints} pts lost
+            {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} items · {gapAnalysis.priorPoints} pts lost &nbsp;→&nbsp;
+            {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} items · {gapAnalysis.currentPoints} pts lost
             &nbsp;({gapAnalysis.pointsDelta >= 0 ? "+" : ""}{gapAnalysis.pointsDelta} pts)
           </div>
         </div>
@@ -905,10 +905,10 @@ function AttritionTab({ agencyId, currentUserId }) {
                       <td style={{ color: "#F59E0B", fontWeight: 600 }}>{row.points}</td>
                       <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>${Math.round(row.premium).toLocaleString()}</td>
                       <td style={{ color: itemsDelta == null ? "#334155" : itemsDelta > 0 ? "#EF4444" : "#10B981", fontSize: 12 }}>
-                        {itemsDelta == null ? "\u2014" : `${itemsDelta >= 0 ? "+" : ""}${itemsDelta}`}
+                        {itemsDelta == null ? "—" : `${itemsDelta >= 0 ? "+" : ""}${itemsDelta}`}
                       </td>
                       <td style={{ color: pointsDelta == null ? "#334155" : pointsDelta > 0 ? "#EF4444" : "#10B981", fontSize: 12 }}>
-                        {pointsDelta == null ? "\u2014" : `${pointsDelta >= 0 ? "+" : ""}${pointsDelta}`}
+                        {pointsDelta == null ? "—" : `${pointsDelta >= 0 ? "+" : ""}${pointsDelta}`}
                       </td>
                     </tr>
                   );
@@ -951,7 +951,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       {/* Preview */}
       {preview && !commitMsg && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Preview \u2014 {reportMonth.slice(0, 7)}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Preview — {reportMonth.slice(0, 7)}</div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 16 }}>
             {[
               { label: "Items Lost", value: preview.items, color: "#EF4444" },
@@ -1244,7 +1244,7 @@ export default function BookHealthPage() {
         .update({ committed: true })
         .eq("id", batchId);
 
-      setUploadMsg(`${diffResult.toAdd.length} added \u00B7 ${diffResult.toUpdate.length} updated \u00B7 ${diffResult.toAutoResolve.length} auto-resolved`);
+      setUploadMsg(`${diffResult.toAdd.length} added · ${diffResult.toUpdate.length} updated · ${diffResult.toAutoResolve.length} auto-resolved`);
       setDiffResult(null);
       setUploadFile(null);
       await loadEvents();
@@ -1289,7 +1289,7 @@ export default function BookHealthPage() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Book Health</h1>
-        <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>Pending Cancellation \u00B7 Wiley-Wilson Agency</div>
+        <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>Pending Cancellation · Wiley-Wilson Agency</div>
       </div>
 
       {loading && (
@@ -1299,8 +1299,8 @@ export default function BookHealthPage() {
       {/* KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
         <KpiCard label="At Risk" value={fmt$(kpis.premiumAtRisk)} sub={`${kpis.totalActive} policies`} color="#F59E0B" urgent={kpis.urgentCount > 0} urgentCount={kpis.urgentCount} />
-        <KpiCard label="Save Rate" value={kpis.saveRate !== null ? `${Math.round(kpis.saveRate * 100)}%` : "\u2014"} sub="saved / worked" color="#10B981" />
-        <KpiCard label="Contact Rate" value={kpis.contactRate !== null ? `${Math.round(kpis.contactRate * 100)}%` : "\u2014"} sub="of active queue" color="#3B82F6" />
+        <KpiCard label="Save Rate" value={kpis.saveRate !== null ? `${Math.round(kpis.saveRate * 100)}%` : "—"} sub="saved / worked" color="#10B981" />
+        <KpiCard label="Contact Rate" value={kpis.contactRate !== null ? `${Math.round(kpis.contactRate * 100)}%` : "—"} sub="of active queue" color="#3B82F6" />
         <KpiCard label="Premium Saved" value={fmt$(kpis.premiumSaved)} sub="this period" color="#10B981" />
         <KpiCard label="Terminations" value={kpis.terminations} sub="requested cancel" color="#64748B" />
       </div>
