@@ -1,20 +1,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
 
-const AGENCY_ID = "00000000-0000-0000-0000-000000000001";
-
-export function useRevenueEntries({ rangeStart, rangeEnd }) {
+export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
 
   const fetch = useCallback(async () => {
+    if (!agencyId) return;
     setLoading(true);
     setError(null);
     const { data, error } = await supabase
       .from("revenue_entries")
       .select("*")
-      .eq("agency_id", AGENCY_ID)
+      .eq("agency_id", agencyId)
       .gte("issued_date", rangeStart.toISOString().slice(0, 10))
       .lte("issued_date", rangeEnd.toISOString().slice(0, 10))
       .order("issued_date", { ascending: false });
@@ -36,7 +35,7 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
       }))
     );
     setLoading(false);
-  }, [rangeStart, rangeEnd]);
+  }, [agencyId, rangeStart, rangeEnd]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
@@ -44,7 +43,7 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
     const { data, error } = await supabase
       .from("revenue_entries")
       .insert({
-        agency_id:    AGENCY_ID,
+        agency_id:    agencyId,
         date:         entry.date,         // keep writing date col during transition
         issued_date:  entry.date,         // primary field
         product:      entry.product,
@@ -80,7 +79,7 @@ export function useRevenueEntries({ rangeStart, rangeEnd }) {
   const addEntries = async (batch) => {
     const user = (await supabase.auth.getUser()).data.user;
     const rows = batch.map(entry => ({
-      agency_id:    AGENCY_ID,
+      agency_id:    agencyId,
       date:         entry.date,         // keep writing date col during transition
       issued_date:  entry.date,         // primary field
       product:      entry.product,

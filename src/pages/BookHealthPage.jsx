@@ -3,8 +3,7 @@ import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from "recharts";
 import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabase";
-
-const AGENCY_ID = "00000000-0000-0000-0000-000000000001";
+import { useCurrentAgency } from "../hooks/useAgencyLeads";
 
 // ─── Portfolio Points Matrix (must match RevenueProjectionsDashboard) ─────────
 const LAPSE_PORTFOLIO_POINTS = {
@@ -943,6 +942,8 @@ const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function BookHealthPage() {
+  const { data: currentAgency } = useCurrentAgency();
+  const agencyId = currentAgency?.agency_id;
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("triage");
@@ -962,15 +963,16 @@ export default function BookHealthPage() {
   const [currentUserId, setCurrentUserId] = useState(null);
 
   const loadEvents = useCallback(async () => {
+    if (!agencyId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("pending_cancel_events")
       .select("*")
-      .eq("agency_id", AGENCY_ID)
+      .eq("agency_id", agencyId)
       .order("cancel_effective_date", { ascending: true });
     if (!error) setEvents(data ?? []);
     setLoading(false);
-  }, []);
+  }, [agencyId]);
 
   useEffect(() => { loadEvents(); }, [loadEvents]);
 
@@ -981,17 +983,18 @@ export default function BookHealthPage() {
   // ─── Load producers for bulk assign ────────────────────────────────────────
 
   useEffect(() => {
+    if (!agencyId) return;
     (async () => {
       const { data } = await supabase
         .from("employees")
         .select("id, first_name, last_name, preferred_name")
-        .eq("org_id", AGENCY_ID)
+        .eq("org_id", agencyId)
         .eq("employment_status", "active")
         .eq("role_type", "service")
         .order("last_name");
       if (data) setProducers(data);
     })();
-  }, []);
+  }, [agencyId]);
 
   // ─── Promise-Broken Auto-Flag ──────────────────────────────────────────────
 
@@ -1140,7 +1143,7 @@ export default function BookHealthPage() {
       const { data: batch, error: batchErr } = await supabase
         .from("pending_cancel_uploads")
         .insert({
-          agency_id: AGENCY_ID,
+          agency_id: agencyId,
           uploaded_by: (await supabase.auth.getUser()).data.user?.id,
           filename: uploadFile?.name,
           rows_added: diffResult.toAdd.length,
@@ -1157,7 +1160,7 @@ export default function BookHealthPage() {
         const { error } = await supabase
           .from("pending_cancel_events")
           .insert(diffResult.toAdd.map(r => ({
-            agency_id: AGENCY_ID,
+            agency_id: agencyId,
             upload_batch_id: batchId,
             ...r,
           })));
@@ -1287,7 +1290,7 @@ export default function BookHealthPage() {
       {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
       {activeTab === "attrition" && (
         <AttritionTab
-          agencyId={AGENCY_ID}
+          agencyId={agencyId}
           currentUserId={currentUserId}
         />
       )}
