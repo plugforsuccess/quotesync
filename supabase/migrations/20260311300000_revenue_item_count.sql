@@ -17,6 +17,8 @@ ALTER TABLE public.revenue_entries
 -- Unique constraint required by the upload upsert (onConflict: "agency_id,policy_no")
 -- Only rows WITH a policy_no are upserted; NULL policy_no rows are plain-inserted
 ALTER TABLE public.revenue_entries
+  DROP CONSTRAINT IF EXISTS revenue_entries_agency_policy_no_uq;
+ALTER TABLE public.revenue_entries
   ADD CONSTRAINT revenue_entries_agency_policy_no_uq UNIQUE (agency_id, policy_no);
 
 -- Expand the product CHECK to include new product types

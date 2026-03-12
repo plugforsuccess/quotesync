@@ -26,11 +26,11 @@ CREATE TABLE IF NOT EXISTS rc_agent_aliases (
 );
 
 -- Only one active alias per normalized key per org
-CREATE UNIQUE INDEX idx_rc_agent_aliases_key
+CREATE UNIQUE INDEX IF NOT EXISTS idx_rc_agent_aliases_key
   ON rc_agent_aliases (org_id, alias_key) WHERE active = true;
 
 -- Fast lookup by employee for admin UI
-CREATE INDEX idx_rc_agent_aliases_employee
+CREATE INDEX IF NOT EXISTS idx_rc_agent_aliases_employee
   ON rc_agent_aliases (org_id, employee_user_id) WHERE active = true;
 
 -- ── RLS ──────────────────────────────────────────────────────────────────────────
