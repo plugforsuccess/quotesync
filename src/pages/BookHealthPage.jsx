@@ -693,17 +693,29 @@ function AttritionTab({ agencyId, currentUserId }) {
   const [monthlySummary, setMonthlySummary] = useState([]); // [{report_month, items, points, premium}]
   const [loading, setLoading] = useState(true);
   const lapseFileRef = useRef();
+  const mountId = useRef(0);
 
   // Load monthly summary on mount and after each commit
   useEffect(() => {
+    // Increment on every mount so the effect always re-runs even if agencyId
+    // hasn't changed (e.g. after external data truncation or tab switch)
+    mountId.current += 1;
+    const thisMount = mountId.current;
+
     if (!agencyId) return;
+
+    setMonthlySummary([]); // clear immediately so stale rows aren't visible during fetch
+    setLoading(true);
+
     (async () => {
-      setLoading(true);
       const { data } = await supabase
         .from("lapse_events")
         .select("report_month, product, premium, item_count")
         .eq("agency_id", agencyId)
         .order("report_month", { ascending: false });
+
+      // Bail if a newer mount has already taken over
+      if (thisMount !== mountId.current) return;
 
       if (data) {
         const byMonth = {};
@@ -718,7 +730,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       }
       setLoading(false);
     })();
-  }, [agencyId, refreshKey]);
+  }, [agencyId, refreshKey]); // refreshKey still triggers re-fetch after commit
 
   async function handleFileSelect(e) {
     const file = e.target.files?.[0];
