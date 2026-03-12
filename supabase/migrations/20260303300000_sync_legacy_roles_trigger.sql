@@ -45,6 +45,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS sync_legacy_role_trigger ON profiles;
 CREATE TRIGGER sync_legacy_role_trigger
     BEFORE UPDATE ON profiles
     FOR EACH ROW
