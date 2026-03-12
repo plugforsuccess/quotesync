@@ -94,9 +94,11 @@ const COL_MAP = {
 
 
 function findCol(headers, aliases) {
-  return headers.findIndex(h =>
-    aliases.some(a => h?.toString().toLowerCase().trim().includes(a))
-  );
+  for (const a of aliases) {
+    const idx = headers.findIndex(h => h?.toString().toLowerCase().trim().includes(a));
+    if (idx >= 0) return idx;
+  }
+  return -1;
 }
 
 function fmt$(n) {
