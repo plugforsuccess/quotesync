@@ -50,10 +50,13 @@ const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)
 const fmtFull$ = (n) => `$${Math.round(n).toLocaleString()}`;
 const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
 
+// Allstate commissionable premium factor — 93.5% of written premium is commissionable
+const COMMISSIONABLE_FACTOR = 0.935;
+
 function calcCommission(premium, product, tier = "monoline") {
   const key = ["auto","ho","renters"].includes(product) ? product : "other";
   const rates = COMMISSION[key];
-  return premium * (rates[tier] ?? rates.monoline);
+  return premium * COMMISSIONABLE_FACTOR * (rates[tier] ?? rates.monoline);
 }
 
 function normalizeTier(raw = "") {
