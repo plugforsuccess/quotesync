@@ -39,10 +39,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS lapse_events_policy_month_idx
 ALTER TABLE public.lapse_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lapse_uploads ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agency members can manage lapse_events" ON public.lapse_events;
 CREATE POLICY "Agency members can manage lapse_events"
   ON public.lapse_events FOR ALL
   USING (agency_id = (SELECT org_id FROM public.employees WHERE auth_user_id = auth.uid() LIMIT 1));
 
+DROP POLICY IF EXISTS "Agency members can manage lapse_uploads" ON public.lapse_uploads;
 CREATE POLICY "Agency members can manage lapse_uploads"
   ON public.lapse_uploads FOR ALL
   USING (agency_id = (SELECT org_id FROM public.employees WHERE auth_user_id = auth.uid() LIMIT 1));
