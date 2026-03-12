@@ -3,6 +3,7 @@ import { ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
+import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
 import * as XLSX from "xlsx";
 
 // ─── Commission Matrix ────────────────────────────────────────────────────────
@@ -252,6 +253,8 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function RevenueProjectionsDashboard() {
+  const { data: currentAgency } = useCurrentAgency();
+  const agencyId = currentAgency?.agency_id;
   const [newEntry, setNewEntry] = useState(emptyEntry());
   const [view, setView] = useState("month"); // month | ytd
   const [paceMode, setPaceMode] = useState("commission");       // commission | premium
@@ -297,7 +300,7 @@ export default function RevenueProjectionsDashboard() {
     return { rangeStart: new Date(y, m, 1), rangeEnd: new Date(y, m + 1, 0), label: `${MONTH_NAMES[m]} ${y}` };
   }, [view]);
 
-  const { entries, loading, error, addEntry, addEntries, deleteEntry } = useRevenueEntries({ rangeStart, rangeEnd });
+  const { entries, loading, error, addEntry, addEntries, deleteEntry } = useRevenueEntries({ agencyId, rangeStart, rangeEnd });
 
   // ─── Filtered entries ──────────────────────────────────────────────────────
   const filtered = useMemo(() =>
