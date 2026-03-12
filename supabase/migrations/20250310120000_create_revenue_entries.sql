@@ -19,6 +19,7 @@ CREATE INDEX IF NOT EXISTS revenue_entries_agency_date_idx
 ALTER TABLE revenue_entries ENABLE ROW LEVEL SECURITY;
 
 -- platform_admin and platform_master_admin can read all entries for their agency
+DROP POLICY IF EXISTS "revenue_entries_select" ON revenue_entries;
 CREATE POLICY "revenue_entries_select" ON revenue_entries
   FOR SELECT USING (
     agency_id = (
@@ -28,6 +29,7 @@ CREATE POLICY "revenue_entries_select" ON revenue_entries
   );
 
 -- platform_admin and platform_master_admin can insert
+DROP POLICY IF EXISTS "revenue_entries_insert" ON revenue_entries;
 CREATE POLICY "revenue_entries_insert" ON revenue_entries
   FOR INSERT WITH CHECK (
     agency_id = (
@@ -37,6 +39,7 @@ CREATE POLICY "revenue_entries_insert" ON revenue_entries
   );
 
 -- Only the creator or a platform_master_admin can delete
+DROP POLICY IF EXISTS "revenue_entries_delete" ON revenue_entries;
 CREATE POLICY "revenue_entries_delete" ON revenue_entries
   FOR DELETE USING (
     created_by = auth.uid()
