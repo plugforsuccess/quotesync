@@ -661,13 +661,14 @@ function AttritionTab({ agencyId, currentUserId }) {
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitMsg, setCommitMsg] = useState("");
   const [parseError, setParseError] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Monthly summary data
   const [monthlySummary, setMonthlySummary] = useState([]); // [{report_month, items, points, premium}]
   const [loading, setLoading] = useState(true);
   const lapseFileRef = useRef();
 
-  // Load monthly summary on mount
+  // Load monthly summary on mount and after each commit
   useEffect(() => {
     if (!agencyId) return;
     (async () => {
@@ -691,7 +692,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       }
       setLoading(false);
     })();
-  }, [agencyId, commitMsg]); // re-fetch after commit
+  }, [agencyId, refreshKey]);
 
   async function handleFileSelect(e) {
     const file = e.target.files?.[0];
@@ -712,8 +713,23 @@ function AttritionTab({ agencyId, currentUserId }) {
 
   async function handleCommit() {
     if (!parsedRows || !agencyId) return;
+    if (!currentUserId) {
+      setParseError("Session expired. Please refresh and try again.");
+      return;
+    }
     setIsCommitting(true);
     try {
+      // Count existing rows for this month to distinguish inserts vs updates
+      const policyNos = parsedRows.map(r => r.policy_no);
+      const { data: existing } = await supabase
+        .from("lapse_events")
+        .select("policy_no")
+        .eq("agency_id", agencyId)
+        .eq("report_month", reportMonth)
+        .in("policy_no", policyNos);
+      const existingCount = existing?.length ?? 0;
+      const newCount = parsedRows.length - existingCount;
+
       // Create upload record first
       const { data: upload, error: upErr } = await supabase
         .from("lapse_uploads")
@@ -722,7 +738,8 @@ function AttritionTab({ agencyId, currentUserId }) {
           uploaded_by: currentUserId,
           filename: lapseFile?.name ?? "unknown",
           report_month: reportMonth,
-          rows_added: parsedRows.length,
+          rows_added: newCount,
+          rows_updated: existingCount,
           committed: false,
         })
         .select("id")
@@ -745,9 +762,13 @@ function AttritionTab({ agencyId, currentUserId }) {
       // Mark upload committed
       await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
 
-      setCommitMsg(`\u2705 ${parsedRows.length} attrition records committed for ${reportMonth.slice(0, 7)}.`);
+      const msg = existingCount > 0
+        ? `\u2705 ${newCount} added \u00B7 ${existingCount} updated for ${reportMonth.slice(0, 7)}.`
+        : `\u2705 ${parsedRows.length} attrition records committed for ${reportMonth.slice(0, 7)}.`;
+      setCommitMsg(msg);
       setParsedRows(null);
       setLapseFile(null);
+      setRefreshKey(k => k + 1);
     } catch (err) {
       setParseError(`Commit failed: ${err.message}`);
     } finally {
@@ -789,7 +810,7 @@ function AttritionTab({ agencyId, currentUserId }) {
         <div style={{ background: gapAnalysis.pointsDelta > 0 ? "#EF444411" : "#10B98111", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "#EF444433" : "#10B98133"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "#EF4444" : "#10B981", marginBottom: 4 }}>
             {gapAnalysis.pointsDelta > 0
-              ? `\u26A0 Attrition increased \u2014 ${gapAnalysis.priorMonth} gap: ${gapAnalysis.priorPoints} pts lost \u00B7 New business must exceed this to grow`
+              ? `\u26A0 Attrition increased \u2014 ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost \u00B7 New business must exceed this next month to grow`
               : `\u2713 Attrition decreased vs prior month`}
           </div>
           <div style={{ fontSize: 12, color: "#64748B" }}>
