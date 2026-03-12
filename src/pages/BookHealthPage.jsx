@@ -708,27 +708,38 @@ function AttritionTab({ agencyId, currentUserId }) {
     setLoading(true);
 
     (async () => {
-      const { data } = await supabase
-        .from("lapse_events")
-        .select("report_month, product, premium, item_count")
-        .eq("agency_id", agencyId)
-        .order("report_month", { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from("lapse_events")
+          .select("report_month, product, premium, item_count")
+          .eq("agency_id", agencyId)
+          .order("report_month", { ascending: false });
 
-      // Bail if a newer mount has already taken over
-      if (thisMount !== mountId.current) return;
+        // Bail if a newer mount has already taken over
+        if (thisMount !== mountId.current) return;
 
-      if (data) {
-        const byMonth = {};
-        data.forEach(r => {
-          const m = r.report_month;
-          if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
-          byMonth[m].items += r.item_count ?? 1;
-          byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
-          byMonth[m].premium += r.premium ?? 0;
-        });
-        setMonthlySummary(Object.values(byMonth).sort((a, b) => b.report_month.localeCompare(a.report_month)));
+        if (error) {
+          console.error("[attrition fetch error]", error.message);
+          setMonthlySummary([]);
+        } else if (data) {
+          const byMonth = {};
+          data.forEach(r => {
+            const m = r.report_month;
+            if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
+            byMonth[m].items += r.item_count ?? 1;
+            byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+            byMonth[m].premium += r.premium ?? 0;
+          });
+          setMonthlySummary(Object.values(byMonth).sort((a, b) => b.report_month.localeCompare(a.report_month)));
+        } else {
+          setMonthlySummary([]);
+        }
+      } catch (err) {
+        console.error("[attrition fetch error]", err);
+        if (thisMount === mountId.current) setMonthlySummary([]);
+      } finally {
+        if (thisMount === mountId.current) setLoading(false);
       }
-      setLoading(false);
     })();
   }, [agencyId, refreshKey]); // refreshKey still triggers re-fetch after commit
 
