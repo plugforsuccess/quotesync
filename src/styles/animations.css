@@ -120,6 +120,15 @@
   }
 }
 
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
 /* Utility classes for common animation patterns */
 .animate-gradient-x {
   animation: gradient-x 15s ease infinite;
@@ -141,6 +150,10 @@
 
 .animate-slideUp {
   animation: slideUp 0.6s ease-out;
+}
+
+.animate-slideInRight {
+  animation: slideInRight 0.25s ease-out;
 }
 
 .animate-float {
@@ -223,6 +236,7 @@
   .animate-shimmer,
   .animate-mesh,
   .animate-blob,
+  .animate-slideInRight,
   .wizard-slide-in-right,
   .wizard-slide-in-left {
     animation: none !important;
