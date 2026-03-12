@@ -20,8 +20,8 @@ const LAPSE_PORTFOLIO_POINTS = {
 function normaliseProduct(raw = "") {
   const v = raw.toLowerCase().trim();
   // specialty auto MUST be checked before standard auto — both contain "auto"
-  if (v.includes("specialty auto") || v.includes("motorcycle") || v.includes("motor home") || v.includes("off-road") || v.includes("trailer")) return "specialty_auto";
-  if (v.includes("standard auto") || v.includes("private passenger")) return "auto";
+  if (v.includes("specialty auto") || v.includes("auto - special") || v.includes("motorcycle") || v.includes("motor home") || v.includes("off-road") || v.includes("trailer")) return "specialty_auto";
+  if (v.includes("standard auto") || v.includes("private passenger") || v.includes("auto -") || v.includes("auto–")) return "auto";
   if (v.includes("home") || v.includes("condo") || v.includes("ho3") || v.includes("ho6")) return "ho";
   if (v.includes("rent") || v.includes("ho4")) return "renters";
   if (v.includes("landlord")) return "landlord";  // separate from ho — same pts but tracked independently
@@ -52,19 +52,12 @@ const CONTACT_METHODS = ["phone", "text", "email", "other"];
 const COL_MAP = {
   policy_no:    ["policy number", "policy no", "policy #", "pol no", "pol #"],
   customer:     ["customer name", "insured name", "insured", "name", "customer"],
-  product:      ["product", "line of business", "lob", "coverage type", "policy type"],
+  product:      ["product name", "line of business", "lob", "coverage type", "policy type", "product"],
   premium:      ["written premium", "annual premium", "premium", "policy premium"],
   cancel_date:  ["cancellation date", "cancel date", "cancel effective date", "eff cancel date", "cancellation effective date"],
 };
 
-function normalizeProduct(raw) {
-  if (!raw) return "other";
-  const r = raw.toLowerCase();
-  if (r.includes("auto") || r.includes("vehicle")) return "auto";
-  if (r.includes("home") || r.includes("condo") || r.includes("dwelling")) return "ho";
-  if (r.includes("rent")) return "renters";
-  return "other";
-}
+
 
 function findCol(headers, aliases) {
   return headers.findIndex(h =>
@@ -143,7 +136,7 @@ function parseReport(file) {
           rows.push({
             policy_no:            policyNo,
             customer_name:        ci >= 0 ? row[ci]?.toString().trim() : null,
-            product:              normalizeProduct(pri >= 0 ? row[pri]?.toString() : null),
+            product:              normaliseProduct(pri >= 0 ? row[pri]?.toString() : ""),
             premium_at_risk:      premium,
             cancel_effective_date: cancelDate,
           });
