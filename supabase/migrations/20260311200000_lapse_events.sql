@@ -1,3 +1,5 @@
+-- Already applied to remote; local file was removed.
+-- This placeholder prevents supabase db push from re-running the migration.
 -- Lapse tracking tables for Retention Dashboard
 -- lapse_uploads must be created first (referenced by lapse_events)
 
