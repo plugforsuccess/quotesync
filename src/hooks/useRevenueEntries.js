@@ -21,17 +21,20 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
     if (error) setError(error.message);
     else setEntries(
       (data ?? []).map(r => ({
-        id:          r.id,
-        date:        r.issued_date,   // internal alias — all downstream logic uses e.date
-        issuedDate:  r.issued_date,
-        product:     r.product,
-        tier:        r.tier ?? "monoline",
-        premium:     parseFloat(r.premium),
-        policyCount: r.policy_count,
-        itemCount:   r.item_count ?? 1,
-        policyNo:    r.policy_no ?? null,
-        source:      r.source,
-        note:        r.note ?? "",
+        id:           r.id,
+        date:         r.issued_date,   // internal alias — all downstream logic uses e.date
+        issuedDate:   r.issued_date,
+        product:      r.product,
+        tier:         r.tier ?? "monoline",
+        premium:      parseFloat(r.premium),
+        policyCount:  r.policy_count,
+        itemCount:    r.item_count ?? 1,
+        policyNo:     r.policy_no ?? null,
+        bindId:       r.bind_id ?? null,
+        producerName: r.producer_name ?? null,
+        customerName: r.customer_name ?? null,
+        source:       r.source,
+        note:         r.note ?? "",
       }))
     );
     setLoading(false);
@@ -61,37 +64,53 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
 
     if (error) return { error: error.message };
     setEntries(prev => [{
-      id:          data.id,
-      date:        data.issued_date,
-      issuedDate:  data.issued_date,
-      product:     data.product,
-      tier:        data.tier ?? "monoline",
-      premium:     parseFloat(data.premium),
-      policyCount: data.policy_count,
-      itemCount:   data.item_count ?? 1,
-      policyNo:    data.policy_no ?? null,
-      source:      data.source,
-      note:        data.note ?? "",
+      id:           data.id,
+      date:         data.issued_date,
+      issuedDate:   data.issued_date,
+      product:      data.product,
+      tier:         data.tier ?? "monoline",
+      premium:      parseFloat(data.premium),
+      policyCount:  data.policy_count,
+      itemCount:    data.item_count ?? 1,
+      policyNo:     data.policy_no ?? null,
+      bindId:       data.bind_id ?? null,
+      producerName: data.producer_name ?? null,
+      customerName: data.customer_name ?? null,
+      source:       data.source,
+      note:         data.note ?? "",
     }, ...prev]);
     return { error: null };
   };
 
-  const addEntries = async (batch) => {
+  const addEntries = async (batch, employeeBindMap = new Map()) => {
     const user = (await supabase.auth.getUser()).data.user;
-    const rows = batch.map(entry => ({
-      agency_id:    agencyId,
-      date:         entry.date,         // keep writing date col during transition
-      issued_date:  entry.date,         // primary field
-      product:      entry.product,
-      tier:         entry.tier ?? "monoline",
-      premium:      entry.premium,
-      policy_count: entry.policyCount,
-      item_count:   entry.itemCount ?? 1,
-      policy_no:    entry.policyNo || null,
-      source:       "upload",           // always "upload" — overwrites "manual" on conflict
-      note:         entry.note || null,
-      created_by:   user?.id ?? null,
-    }));
+    const rows = batch.map(entry => {
+      const producerName = entry.bindId
+        ? (employeeBindMap.get(entry.bindId) || "CCC")
+        : null;
+      return {
+        agency_id:     agencyId,
+        date:          entry.date,         // keep writing date col during transition
+        issued_date:   entry.date,         // primary field
+        product:       entry.product,
+        tier:          entry.tier ?? "monoline",
+        premium:       entry.premium,
+        policy_count:  entry.policyCount,
+        item_count:    entry.itemCount ?? 1,
+        policy_no:     entry.policyNo || null,
+        bind_id:       entry.bindId || null,
+        producer_name: producerName,
+        // ⚠️  PII — customer_name must never appear in:
+        //   - CSV/Excel exports
+        //   - Producer-facing views (only admin/agent roles)
+        //   - Log statements or error messages
+        //   - Any API response that isn't agency-scoped
+        customer_name: entry.customerName || null,
+        source:        "upload",           // always "upload" — overwrites "manual" on conflict
+        note:          entry.note || null,
+        created_by:    user?.id ?? null,
+      };
+    });
 
     // Split: rows WITH policy_no can be upserted (dedup on conflict),
     // rows WITHOUT must be plain-inserted (NULL can't match a unique constraint)
