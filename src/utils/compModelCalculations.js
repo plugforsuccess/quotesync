@@ -135,7 +135,7 @@ export const DEFAULT_CONFIG = {
 };
 
 export const DEFAULT_PRODUCT_MIX = [
-  { product_name: 'Auto', mix_pct: 0.53, avg_prem_item: 1800, sort_order: 0 },
-  { product_name: 'Home', mix_pct: 0.35, avg_prem_item: 2400, sort_order: 1 },
-  { product_name: 'Condo', mix_pct: 0.12, avg_prem_item: 1500, sort_order: 2 },
+  { product_name: 'Auto', mix_pct: 0.53, avg_prem_item: 1099, sort_order: 0 },
+  { product_name: 'Home', mix_pct: 0.45, avg_prem_item: 2122, sort_order: 1 },
+  { product_name: 'Condo', mix_pct: 0.02, avg_prem_item: 1153, sort_order: 2 },
 ];
