@@ -32,6 +32,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
         policyNo:     r.policy_no ?? null,
         bindId:       r.bind_id ?? null,
         producerName: r.producer_name ?? null,
+        customerName: r.customer_name ?? null,
         source:       r.source,
         note:         r.note ?? "",
       }))
@@ -74,6 +75,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
       policyNo:     data.policy_no ?? null,
       bindId:       data.bind_id ?? null,
       producerName: data.producer_name ?? null,
+      customerName: data.customer_name ?? null,
       source:       data.source,
       note:         data.note ?? "",
     }, ...prev]);
@@ -98,6 +100,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
         policy_no:     entry.policyNo || null,
         bind_id:       entry.bindId || null,
         producer_name: producerName,
+        customer_name: entry.customerName || null,
         source:        "upload",           // always "upload" — overwrites "manual" on conflict
         note:          entry.note || null,
         created_by:    user?.id ?? null,
