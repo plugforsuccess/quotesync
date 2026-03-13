@@ -323,7 +323,7 @@ function CustomerDrilldownModal({ event, onClose }) {
               Policy #{event.policy_no || "\u2014"}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>\u00D7</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
 
         {/* Detail grid */}
@@ -686,7 +686,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
               Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>\u00D7</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 20 }}>
