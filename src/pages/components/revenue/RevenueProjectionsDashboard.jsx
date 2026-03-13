@@ -274,8 +274,10 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
         <span>Product</span>
         <span style={{ display: "flex", gap: 16 }}>
           <span style={{ width: 72, textAlign: "right" }}>Premium</span>
+          <span style={{ width: 44, textAlign: "right" }}>% Mix</span>
           <span style={{ width: 72, textAlign: "right" }}>Commission</span>
           <span style={{ width: 52, textAlign: "right" }}>Rate</span>
+          <span style={{ width: 44, textAlign: "right" }}>Policies</span>
         </span>
       </div>
       {rows.map(([key, val]) => {
@@ -291,8 +293,10 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
               </span>
               <span style={{ display: "flex", gap: 16, fontSize: 12, fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
                 <span style={{ width: 72, textAlign: "right", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</span>
+                <span style={{ width: 44, textAlign: "right", color: "#94A3B8", fontWeight: 600 }}>{(premiumPct * 100).toFixed(1)}%</span>
                 <span style={{ width: 72, textAlign: "right", color: "#10B981" }}>{fmtFull$(val.commission)}</span>
                 <span style={{ width: 52, textAlign: "right", color: "#64748B" }}>{fmtPct(effRate)}</span>
+                <span style={{ width: 44, textAlign: "right", color: "#64748B" }}>{val.count}</span>
               </span>
             </div>
             <div style={{ height: 7, background: "#252A3A", borderRadius: 4, overflow: "hidden", position: "relative" }}>
@@ -485,6 +489,7 @@ export default function RevenueProjectionsDashboard() {
       p.premium += e.premium;
       p.commission += c;
       p.count += e.policyCount;
+      p.itemCount = (p.itemCount ?? 0) + e.itemCount;
     });
     const totalPremium = Object.values(byProduct).reduce((s, v) => s + v.premium, 0);
     const totalCommission = Object.values(byProduct).reduce((s, v) => s + v.commission, 0);
@@ -1939,17 +1944,26 @@ export default function RevenueProjectionsDashboard() {
             />
           </div>
           <table style={{ marginTop: 24 }}>
-            <thead><tr><th>Product</th><th>Premium</th><th>Commission</th><th>Eff. Rate</th><th>Policies</th></tr></thead>
+            <thead><tr><th>Product</th><th>Premium</th><th>% of Total</th><th>Commission</th><th>Eff. Rate</th><th>Policies</th><th>Items</th><th>Avg Premium</th></tr></thead>
             <tbody>
-              {Object.entries(totals.byProduct).filter(([,v]) => v.premium > 0).map(([key, val]) => (
-                <tr key={key}>
-                  <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{fmtPct(val.commission / val.premium)}</td>
-                  <td style={{ color: "#E2E8F0" }}>{val.count}</td>
-                </tr>
-              ))}
+              {Object.entries(totals.byProduct).filter(([,v]) => v.premium > 0)
+                .sort(([,a],[,b]) => b.premium - a.premium)
+                .map(([key, val]) => {
+                  const pct = totals.totalPremium > 0 ? (val.premium / totals.totalPremium * 100).toFixed(1) : "—";
+                  const avgPremiumPerPolicy = val.count > 0 ? val.premium / val.count : null;
+                  return (
+                    <tr key={key}>
+                      <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8", fontWeight: 600 }}>{pct}%</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{fmtPct(val.commission / val.premium)}</td>
+                      <td style={{ color: "#E2E8F0" }}>{val.count}</td>
+                      <td style={{ color: "#64748B" }}>{val.itemCount ?? val.count}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{avgPremiumPerPolicy ? fmtFull$(avgPremiumPerPolicy) : "—"}</td>
+                    </tr>
+                  );
+                })}
             </tbody>
           </table>
         </DrillDownModal>
