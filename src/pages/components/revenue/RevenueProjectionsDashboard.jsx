@@ -371,6 +371,7 @@ export default function RevenueProjectionsDashboard() {
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
+  const [productStatsMode, setProductStatsMode] = useState("vc"); // "all" | "vc" | "nonvc"
   const [producerModal, setProducerModal] = useState(null); // null | producer name string
   const [producerRange, setProducerRange] = useState("main"); // "main" | "ytd" | "YYYY-MM" | "custom"
   const [producerCustomStart, setProducerCustomStart] = useState(""); // "YYYY-MM-DD"
@@ -379,7 +380,7 @@ export default function RevenueProjectionsDashboard() {
   const [sortCol, setSortCol] = useState("date");   // "date" | "issuedDate" | "product" | "tier" | "premium" | "commission" | "source"
   const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
   const [ratesOpen, setRatesOpen] = useState(window.innerWidth >= 768);
-  const closeModal = () => setModal(null);
+  const closeModal = () => { setModal(null); setProductStatsMode("vc"); };
   const fileRef = useRef();
   const paceClickTimer  = useRef(null);
   const dailyClickTimer = useRef(null);
@@ -502,22 +503,7 @@ export default function RevenueProjectionsDashboard() {
     const totalPremium = Object.values(byProduct).reduce((s, v) => s + v.premium, 0);
     const totalCommission = Object.values(byProduct).reduce((s, v) => s + v.commission, 0);
 
-    // VC-eligible products: auto, ho, condo
-    const VC_PRODUCTS = ["auto", "ho", "condo"];
-    const vcPremium    = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.premium    ?? 0), 0);
-    const vcCommission = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.commission ?? 0), 0);
-    const vcItemCount  = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.itemCount  ?? 0), 0);
-    const vcPolicyCount = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.count     ?? 0), 0);
-
-    const vcBlendedRate      = vcPremium > 0 ? vcCommission / vcPremium : null;
-    const vcAvgPremiumPerItem = vcItemCount > 0 ? vcPremium / vcItemCount : null;
-    const vcAvgPremiumPerPolicy = vcPolicyCount > 0 ? vcPremium / vcPolicyCount : null;
-
-    return {
-      byProduct, totalPremium, totalCommission,
-      vcPremium, vcCommission, vcItemCount, vcPolicyCount,
-      vcBlendedRate, vcAvgPremiumPerItem, vcAvgPremiumPerPolicy,
-    };
+    return { byProduct, totalPremium, totalCommission };
   }, [filtered]);
 
   // ─── Policies stats (items, VC baseline, portfolio points) ───────────────
@@ -562,7 +548,7 @@ export default function RevenueProjectionsDashboard() {
     }
 
     if (producerRange === "custom") {
-      if (!producerCustomStart || !producerCustomEnd) return filtered;
+      if (!producerCustomStart || !producerCustomEnd) return [];
       return allYearEntries.filter(e => e.date && e.date >= producerCustomStart && e.date <= producerCustomEnd);
     }
 
@@ -1958,44 +1944,88 @@ export default function RevenueProjectionsDashboard() {
       )}
 
       {/* Product breakdown drill-down */}
-      {modal === "products" && (
+      {modal === "products" && (() => {
+        const VC_KEYS    = ["auto", "ho", "condo"];
+        const NONVC_KEYS = ["renters", "motor_club", "landlord", "specialty_auto", "pup", "manufactured", "boat", "other"];
+
+        const statsKeys = productStatsMode === "vc"
+          ? VC_KEYS
+          : productStatsMode === "nonvc"
+          ? NONVC_KEYS
+          : [...VC_KEYS, ...NONVC_KEYS];
+
+        const statsPremium    = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.premium    ?? 0), 0);
+        const statsCommission = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.commission ?? 0), 0);
+        const statsItemCount  = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.itemCount  ?? 0), 0);
+        const statsPolicyCount = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.count     ?? 0), 0);
+
+        const statsBlendedRate         = statsPremium > 0 ? statsCommission / statsPremium : null;
+        const statsPremiumShare        = totals.totalPremium > 0 ? statsPremium / totals.totalPremium : null;
+        const statsCommissionShare     = totals.totalCommission > 0 ? statsCommission / totals.totalCommission : null;
+
+        return (
         <DrillDownModal title="Revenue by Product Line" onClose={closeModal}>
 
-          {/* VC Stats Strip */}
-          <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+          {/* Mode toggle */}
+          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            {[
+              { key: "all",   label: "All Products" },
+              { key: "vc",    label: "VC Only" },
+              { key: "nonvc", label: "Non-VC Only" },
+            ].map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setProductStatsMode(key)}
+                className={`btn-ghost${productStatsMode === key ? " active" : ""}`}
+                style={{ fontSize: 12, padding: "6px 14px" }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Mode sub-label */}
+          <div style={{ fontSize: 11, color: "#475569", marginBottom: 16 }}>
+            {productStatsMode === "vc"    && "Auto + Homeowners + Condo"}
+            {productStatsMode === "nonvc" && "Renters + Motor Club + Other"}
+            {productStatsMode === "all"   && "All product lines"}
+          </div>
+
+          {/* Stats strip — 5 cards */}
+          <div style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
             {[
               {
-                label: "VC BLENDED RATE",
-                value: totals.vcBlendedRate != null ? fmtPct(totals.vcBlendedRate) : "—",
-                sub: "Auto + HO + Condo only",
+                label: "BLENDED RATE",
+                value: statsBlendedRate != null ? fmtPct(statsBlendedRate) : "—",
+                sub: `${statsPolicyCount} policies · ${statsItemCount} items`,
                 color: "#10B981",
               },
               {
-                label: "VC AVG PREMIUM / ITEM",
-                value: totals.vcAvgPremiumPerItem != null ? fmtFull$(totals.vcAvgPremiumPerItem) : "—",
-                sub: `${totals.vcItemCount} VC items`,
+                label: "TOTAL ITEMS",
+                value: String(statsItemCount),
+                sub: `${statsPolicyCount} policies`,
                 color: "#3B82F6",
               },
               {
-                label: "VC AVG PREMIUM / POLICY",
-                value: totals.vcAvgPremiumPerPolicy != null ? fmtFull$(totals.vcAvgPremiumPerPolicy) : "—",
-                sub: `${totals.vcPolicyCount} VC policies`,
+                label: "AVG COMMISSION / POLICY",
+                value: statsPolicyCount > 0 ? fmtFull$(statsCommission / statsPolicyCount) : "—",
+                sub: "commission ÷ policies",
                 color: "#3B82F6",
               },
               {
-                label: "VC PREMIUM",
-                value: fmtFull$(totals.vcPremium),
-                sub: totals.totalPremium > 0 ? `${(totals.vcPremium / totals.totalPremium * 100).toFixed(1)}% of total` : "—",
+                label: "PREMIUM",
+                value: fmtFull$(statsPremium),
+                sub: statsPremiumShare != null ? `${(statsPremiumShare * 100).toFixed(1)}% of total` : "—",
                 color: "#F59E0B",
               },
               {
-                label: "VC COMMISSION",
-                value: fmtFull$(totals.vcCommission),
-                sub: totals.totalCommission > 0 ? `${(totals.vcCommission / totals.totalCommission * 100).toFixed(1)}% of total` : "—",
+                label: "COMMISSION",
+                value: fmtFull$(statsCommission),
+                sub: statsCommissionShare != null ? `${(statsCommissionShare * 100).toFixed(1)}% of total` : "—",
                 color: "#10B981",
               },
             ].map(({ label, value, sub, color }) => (
-              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 10, padding: "14px 18px", flex: "1 1 140px", minWidth: 130 }}>
+              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 10, padding: "14px 18px", flex: "1 1 130px", minWidth: 120 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
                 <div style={{ fontSize: 11, color: "#475569", marginTop: 3 }}>{sub}</div>
@@ -2003,6 +2033,7 @@ export default function RevenueProjectionsDashboard() {
             ))}
           </div>
 
+          {/* Product breakdown bars — unchanged */}
           <div style={{ marginBottom: 24 }}>
             <ProductBreakdownRows
               byProduct={totals.byProduct}
@@ -2010,14 +2041,28 @@ export default function RevenueProjectionsDashboard() {
               totalCommission={totals.totalCommission}
             />
           </div>
+
+          {/* Product table — add % of Total, Items, Avg Premium columns */}
           <table style={{ marginTop: 24 }}>
-            <thead><tr><th>Product</th><th>Premium</th><th>% of Total</th><th>Commission</th><th>Eff. Rate</th><th>Policies</th><th>Items</th><th>Avg Premium</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Premium</th>
+                <th>% of Total</th>
+                <th>Commission</th>
+                <th>Eff. Rate</th>
+                <th>Policies</th>
+                <th>Items</th>
+                <th>Avg Premium</th>
+              </tr>
+            </thead>
             <tbody>
-              {Object.entries(totals.byProduct).filter(([,v]) => v.premium > 0)
-                .sort(([,a],[,b]) => b.premium - a.premium)
+              {Object.entries(totals.byProduct)
+                .filter(([, v]) => v.premium > 0)
+                .sort(([, a], [, b]) => b.premium - a.premium)
                 .map(([key, val]) => {
                   const pct = totals.totalPremium > 0 ? (val.premium / totals.totalPremium * 100).toFixed(1) : "—";
-                  const avgPremiumPerPolicy = val.count > 0 ? val.premium / val.count : null;
+                  const avgPrem = val.count > 0 ? fmtFull$(val.premium / val.count) : "—";
                   return (
                     <tr key={key}>
                       <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
@@ -2027,14 +2072,16 @@ export default function RevenueProjectionsDashboard() {
                       <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{fmtPct(val.commission / val.premium)}</td>
                       <td style={{ color: "#E2E8F0" }}>{val.count}</td>
                       <td style={{ color: "#64748B" }}>{val.itemCount ?? val.count}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{avgPremiumPerPolicy ? fmtFull$(avgPremiumPerPolicy) : "—"}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{avgPrem}</td>
                     </tr>
                   );
                 })}
             </tbody>
           </table>
+
         </DrillDownModal>
-      )}
+        );
+      })()}
 
       {/* Producer Drilldown Modal */}
       {producerModal != null && (() => {
