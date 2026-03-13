@@ -1144,12 +1144,15 @@ function NetGrowthTab({ agencyId }) {
   const currentYear = new Date().getFullYear().toString();
   let runningNet = 0;
   const monthsWithYTD = months.map(m => {
+    const net_items = m.nb_items - m.lapse_items;
     if (m.month.startsWith(currentYear)) {
       runningNet += m.net_points;
-      return { ...m, net_ytd: runningNet };
+      return { ...m, net_ytd: runningNet, net_items };
     }
-    return { ...m, net_ytd: null };
+    return { ...m, net_ytd: null, net_items };
   });
+
+  const totalNetItems = monthsWithYTD.reduce((s, m) => s + m.net_items, 0);
 
   const finalNetYTD = [...monthsWithYTD]
     .filter(m => m.net_ytd !== null)
@@ -1162,7 +1165,7 @@ function NetGrowthTab({ agencyId }) {
       {/* Summary Strip */}
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
         <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
-          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Written</div>
+          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Gained</div>
           <div style={{ fontSize: 22, fontWeight: 700, color: "#10B981" }}>
             {cur && cur.nb_points > 0 ? cur.nb_points.toLocaleString() : "—"}
           </div>
@@ -1196,8 +1199,9 @@ function NetGrowthTab({ agencyId }) {
           />
           <YAxis tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
           <Tooltip
+            labelFormatter={fmtMonth}
             contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }}
-            formatter={(value, name) => [value, name === "nb_points" ? "Points Written" : name === "lapse_points" ? "Points Lost" : "Net"]}
+            formatter={(value, name) => [value, name === "nb_points" ? "Points Gained" : name === "lapse_points" ? "Points Lost" : "Net"]}
           />
           <ReferenceLine y={0} stroke="#334155" />
           <Bar dataKey="nb_points" name="nb_points" fill="#10B981" radius={[3,3,0,0]} maxBarSize={28} />
@@ -1213,6 +1217,7 @@ function NetGrowthTab({ agencyId }) {
             <YAxis tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
             <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />
             <Tooltip
+              labelFormatter={fmtMonth}
               contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }}
               formatter={(value) => [value, "Net Points"]}
             />
@@ -1238,9 +1243,10 @@ function NetGrowthTab({ agencyId }) {
           <thead>
             <tr>
               <th>Month</th>
-              <th style={{ textAlign: "right" }}>Points Written</th>
+              <th style={{ textAlign: "right" }}>Points Gained</th>
               <th style={{ textAlign: "right" }}>Points Lost</th>
               <th style={{ textAlign: "right" }}>Net Points</th>
+              <th style={{ textAlign: "right" }}>Net Items</th>
               <th style={{ textAlign: "right" }}>Net YTD</th>
               <th style={{ textAlign: "right" }}>Items In</th>
               <th style={{ textAlign: "right" }}>Items Out</th>
@@ -1256,6 +1262,14 @@ function NetGrowthTab({ agencyId }) {
                 <td style={{ textAlign: "right", color: "#EF4444" }}>{m.lapse_points.toLocaleString()}</td>
                 <td style={{ textAlign: "right", color: m.net_points > 0 ? "#10B981" : m.net_points < 0 ? "#EF4444" : "#475569" }}>
                   {m.net_points.toLocaleString()}
+                </td>
+                <td style={{
+                  textAlign: "right",
+                  fontFamily: "'DM Mono', monospace",
+                  color: m.net_items > 0 ? "#10B981" : m.net_items < 0 ? "#EF4444" : "#475569",
+                  fontWeight: 600,
+                }}>
+                  {m.net_items > 0 ? `+${m.net_items}` : String(m.net_items)}
                 </td>
                 <td style={{
                   textAlign: "right",
@@ -1286,6 +1300,14 @@ function NetGrowthTab({ agencyId }) {
               <td style={{ textAlign: "right", color: "#EF4444" }}>{totals.lapse_points.toLocaleString()}</td>
               <td style={{ textAlign: "right", color: totals.net_points > 0 ? "#10B981" : totals.net_points < 0 ? "#EF4444" : "#475569" }}>
                 {totals.net_points.toLocaleString()}
+              </td>
+              <td style={{
+                textAlign: "right",
+                fontFamily: "'DM Mono', monospace",
+                fontWeight: 700,
+                color: totalNetItems > 0 ? "#10B981" : totalNetItems < 0 ? "#EF4444" : "#475569",
+              }}>
+                {totalNetItems > 0 ? `+${totalNetItems}` : String(totalNetItems)}
               </td>
               <td style={{
                 textAlign: "right",
