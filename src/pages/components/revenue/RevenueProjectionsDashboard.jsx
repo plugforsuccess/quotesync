@@ -2058,7 +2058,7 @@ export default function RevenueProjectionsDashboard() {
             </thead>
             <tbody>
               {Object.entries(totals.byProduct)
-                .filter(([, v]) => v.premium > 0)
+                .filter(([key, v]) => v.premium > 0 && statsKeys.includes(key))
                 .sort(([, a], [, b]) => b.premium - a.premium)
                 .map(([key, val]) => {
                   const pct = totals.totalPremium > 0 ? (val.premium / totals.totalPremium * 100).toFixed(1) : "—";
