@@ -17,7 +17,7 @@ const COMMISSION = {
   landlord:       { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Landlord" },
   specialty_auto: { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Specialty Auto" },
   pup:            { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Personal Umbrella" },
-  manufactured:   { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Manufactured Home" },
+  manufactured:   { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Manufactured Home" },
   boat:           { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Boat Owners" },
   motor_club:     { preferred: 0.25, bundled: 0.25, monoline: 0.25, label: "Motor Club" },
   other:          { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
