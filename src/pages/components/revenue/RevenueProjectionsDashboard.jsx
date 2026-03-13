@@ -401,6 +401,40 @@ export default function RevenueProjectionsDashboard() {
 
   const { entries, loading, error, addEntry, addEntries, deleteEntry } = useRevenueEntries({ agencyId, rangeStart, rangeEnd });
 
+  // Fetch all entries for the current year — used by producer breakdown range filter
+  const [allYearEntries, setAllYearEntries] = useState([]);
+  useEffect(() => {
+    if (!agencyId) return;
+    const ytdStart = `${TODAY.getFullYear()}-01-01`;
+    const ytdEnd   = `${TODAY.getFullYear()}-12-31`;
+    supabase
+      .from("revenue_entries")
+      .select("*")
+      .eq("agency_id", agencyId)
+      .gte("issued_date", ytdStart)
+      .lte("issued_date", ytdEnd)
+      .order("issued_date", { ascending: false })
+      .then(({ data }) => {
+        if (!data) return;
+        setAllYearEntries(data.map(r => ({
+          id:           r.id,
+          date:         r.issued_date,
+          issuedDate:   r.issued_date,
+          product:      r.product,
+          tier:         r.tier ?? "monoline",
+          premium:      parseFloat(r.premium),
+          policyCount:  r.policy_count,
+          itemCount:    r.item_count ?? 1,
+          policyNo:     r.policy_no ?? null,
+          bindId:       r.bind_id ?? null,
+          producerName: r.producer_name ?? null,
+          customerName: r.customer_name ?? null,
+          source:       r.source,
+          note:         r.note ?? "",
+        })));
+      });
+  }, [agencyId]);
+
   // ─── Filtered entries ──────────────────────────────────────────────────────
   const filtered = useMemo(() =>
     entries.filter(e => {
@@ -487,15 +521,6 @@ export default function RevenueProjectionsDashboard() {
     return { totalPolicies, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
   }, [filtered, entries, rangeStart]);
 
-  // ─── Available months for producer range filter ─────────────────────────────
-  const availableProducerMonths = useMemo(() => {
-    const seen = new Set();
-    entries.forEach(e => {
-      if (e.date) seen.add(e.date.slice(0, 7)); // "YYYY-MM"
-    });
-    return Array.from(seen).sort().reverse(); // newest first
-  }, [entries]);
-
   // ─── Producer-filtered entries (independent range) ─────────────────────────
   const producerFiltered = useMemo(() => {
     const todayStr = TODAY.toISOString().slice(0, 10);
@@ -504,17 +529,16 @@ export default function RevenueProjectionsDashboard() {
 
     if (producerRange === "ytd") {
       const ytdStart = `${TODAY.getFullYear()}-01-01`;
-      return entries.filter(e => e.date && e.date >= ytdStart && e.date <= todayStr);
+      return allYearEntries.filter(e => e.date && e.date >= ytdStart && e.date <= todayStr);
     }
 
     if (producerRange === "custom") {
       if (!producerCustomStart || !producerCustomEnd) return filtered;
-      return entries.filter(e => e.date && e.date >= producerCustomStart && e.date <= producerCustomEnd);
+      return allYearEntries.filter(e => e.date && e.date >= producerCustomStart && e.date <= producerCustomEnd);
     }
 
-    // "YYYY-MM" — specific month
-    return entries.filter(e => e.date && e.date.startsWith(producerRange));
-  }, [producerRange, producerCustomStart, producerCustomEnd, filtered, entries]);
+    return filtered;
+  }, [producerRange, producerCustomStart, producerCustomEnd, filtered, allYearEntries]);
 
   // ─── Producer breakdown ────────────────────────────────────────────────────
   const byProducer = useMemo(() => {
@@ -1166,14 +1190,6 @@ export default function RevenueProjectionsDashboard() {
                 >
                   <option value="main">Current Month</option>
                   <option value="ytd">Year to Date</option>
-                  {availableProducerMonths.map(ym => {
-                    const [y, m] = ym.split("-");
-                    return (
-                      <option key={ym} value={ym}>
-                        {MONTH_NAMES[parseInt(m, 10) - 1]} {y}
-                      </option>
-                    );
-                  })}
                   <option value="custom">Custom Range…</option>
                 </select>
               </div>
@@ -1946,8 +1962,7 @@ export default function RevenueProjectionsDashboard() {
           if (producerRange === "ytd") return "Year to Date";
           if (producerRange === "custom" && producerCustomStart && producerCustomEnd)
             return `${producerCustomStart} → ${producerCustomEnd}`;
-          const [y, m] = producerRange.split("-");
-          return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
+          return "Current Month";
         })();
 
         const producerEntries = producerFiltered
