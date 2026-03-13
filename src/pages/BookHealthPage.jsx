@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LineChart, ReferenceLine, Cell } from "recharts";
 import * as XLSX from "xlsx";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
@@ -1040,6 +1040,234 @@ function AttritionTab({ agencyId, currentUserId }) {
 
 const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 13px; } th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #94A3B8; } .urgency-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; } .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; } .triage-row:hover td { background: #1A1D27; cursor: pointer; } .scroll-hint-container { position: relative; } .scroll-hint-container::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, #0f172a); pointer-events: none; opacity: 1; transition: opacity 0.2s; } @media (min-width: 840px) { .scroll-hint-container::after { opacity: 0; } }`;
 
+// ─── Net Portfolio Growth Tab ──────────────────────────────────────────────────
+
+const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function NetGrowthTab({ agencyId }) {
+  const [months, setMonths] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!agencyId) return;
+    let cancelled = false;
+
+    (async () => {
+      setLoading(true);
+      const [{ data: nbRows }, { data: lapseRows }] = await Promise.all([
+        supabase
+          .from("revenue_entries")
+          .select("issued_date, product, item_count, premium")
+          .eq("agency_id", agencyId)
+          .order("issued_date", { ascending: true }),
+        supabase
+          .from("lapse_events")
+          .select("report_month, product, item_count, premium")
+          .eq("agency_id", agencyId),
+      ]);
+
+      if (cancelled) return;
+
+      const monthMap = {};
+      const ensure = (m) => {
+        if (!monthMap[m]) monthMap[m] = {
+          month: m,
+          nb_points: 0, nb_items: 0, nb_premium: 0,
+          lapse_points: 0, lapse_items: 0, lapse_premium: 0,
+        };
+      };
+
+      nbRows?.forEach(r => {
+        const m = r.issued_date?.slice(0, 7);
+        if (!m) return;
+        ensure(m);
+        const pts = (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+        monthMap[m].nb_points   += pts;
+        monthMap[m].nb_items    += r.item_count ?? 1;
+        monthMap[m].nb_premium  += r.premium ?? 0;
+      });
+
+      lapseRows?.forEach(r => {
+        const m = r.report_month?.slice(0, 7);
+        if (!m) return;
+        ensure(m);
+        const pts = (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+        monthMap[m].lapse_points   += pts;
+        monthMap[m].lapse_items    += r.item_count ?? 1;
+        monthMap[m].lapse_premium  += r.premium ?? 0;
+      });
+
+      const sorted = Object.values(monthMap)
+        .map(m => ({ ...m, net_points: m.nb_points - m.lapse_points }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      setMonths(sorted);
+      setLoading(false);
+    })();
+
+    return () => { cancelled = true; };
+  }, [agencyId]);
+
+  if (loading) {
+    return <div style={{ color: "#64748B", fontSize: 13, textAlign: "center", padding: "40px 0" }}>Loading…</div>;
+  }
+
+  if (months.length === 0) {
+    return (
+      <div style={{ color: "#475569", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
+        No data yet — upload New Business and Termination reports to see portfolio growth.
+      </div>
+    );
+  }
+
+  const now = new Date();
+  const curMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const cur = months.find(m => m.month === curMonth);
+
+  const fmtMonth = (m) => {
+    const [y, mo] = m.split("-");
+    return `${MONTH_NAMES[parseInt(mo, 10) - 1]} ${y}`;
+  };
+
+  const totals = months.reduce((acc, m) => ({
+    nb_points: acc.nb_points + m.nb_points,
+    lapse_points: acc.lapse_points + m.lapse_points,
+    net_points: acc.net_points + m.net_points,
+    nb_items: acc.nb_items + m.nb_items,
+    lapse_items: acc.lapse_items + m.lapse_items,
+    nb_premium: acc.nb_premium + m.nb_premium,
+    lapse_premium: acc.lapse_premium + m.lapse_premium,
+  }), { nb_points: 0, lapse_points: 0, net_points: 0, nb_items: 0, lapse_items: 0, nb_premium: 0, lapse_premium: 0 });
+
+  const newestFirst = [...months].reverse();
+
+  return (
+    <div className="card" style={{ padding: 24 }}>
+      {/* Summary Strip */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
+        <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Written</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#10B981" }}>
+            {cur && cur.nb_points > 0 ? cur.nb_points.toLocaleString() : "—"}
+          </div>
+        </div>
+        <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Lost</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "#EF4444" }}>
+            {cur && cur.lapse_points > 0 ? cur.lapse_points.toLocaleString() : "—"}
+          </div>
+        </div>
+        <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Net Points</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: cur ? (cur.net_points > 0 ? "#10B981" : cur.net_points < 0 ? "#EF4444" : "#475569") : "#475569" }}>
+            {cur ? cur.net_points.toLocaleString() : "—"}
+          </div>
+        </div>
+      </div>
+
+      {/* Bar Chart */}
+      <ResponsiveContainer width="100%" height={260}>
+        <BarChart data={months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <XAxis
+            dataKey="month"
+            tickFormatter={m => {
+              const [y, mo] = m.split("-");
+              return `${MONTH_SHORT[parseInt(mo, 10) - 1]} '${y.slice(2)}`;
+            }}
+            tick={{ fill: "#475569", fontSize: 11 }}
+            axisLine={false}
+            tickLine={false}
+          />
+          <YAxis tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+          <Tooltip
+            contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }}
+            formatter={(value, name) => [value, name === "nb_points" ? "Points Written" : name === "lapse_points" ? "Points Lost" : "Net"]}
+          />
+          <ReferenceLine y={0} stroke="#334155" />
+          <Bar dataKey="nb_points" name="nb_points" fill="#10B981" radius={[3,3,0,0]} maxBarSize={28} />
+          <Bar dataKey="lapse_points" name="lapse_points" fill="#EF4444" radius={[3,3,0,0]} maxBarSize={28} />
+        </BarChart>
+      </ResponsiveContainer>
+
+      {/* Net Points Line Chart */}
+      <div style={{ marginTop: 16 }}>
+        <ResponsiveContainer width="100%" height={120}>
+          <LineChart data={months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <XAxis dataKey="month" hide />
+            <YAxis tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+            <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />
+            <Tooltip
+              contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }}
+              formatter={(value) => [value, "Net Points"]}
+            />
+            <Line
+              type="monotone"
+              dataKey="net_points"
+              stroke="#3B82F6"
+              strokeWidth={2}
+              dot={({ cx, cy, payload }) => (
+                <circle key={payload.month} cx={cx} cy={cy} r={4}
+                  fill={payload.net_points >= 0 ? "#10B981" : "#EF4444"}
+                  stroke="none"
+                />
+              )}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Monthly Table */}
+      <div style={{ marginTop: 24, overflowX: "auto" }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th style={{ textAlign: "right" }}>Points Written</th>
+              <th style={{ textAlign: "right" }}>Points Lost</th>
+              <th style={{ textAlign: "right" }}>Net Points</th>
+              <th style={{ textAlign: "right" }}>Items In</th>
+              <th style={{ textAlign: "right" }}>Items Out</th>
+              <th style={{ textAlign: "right" }}>Premium In</th>
+              <th style={{ textAlign: "right" }}>Premium Lost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {newestFirst.map(m => (
+              <tr key={m.month} style={m.month === curMonth ? { borderLeft: "2px solid #3B82F6" } : undefined}>
+                <td style={{ fontWeight: 500, color: "#E2E8F0" }}>{fmtMonth(m.month)}</td>
+                <td style={{ textAlign: "right", color: "#10B981" }}>{m.nb_points.toLocaleString()}</td>
+                <td style={{ textAlign: "right", color: "#EF4444" }}>{m.lapse_points.toLocaleString()}</td>
+                <td style={{ textAlign: "right", color: m.net_points > 0 ? "#10B981" : m.net_points < 0 ? "#EF4444" : "#475569" }}>
+                  {m.net_points.toLocaleString()}
+                </td>
+                <td style={{ textAlign: "right" }}>{m.nb_items.toLocaleString()}</td>
+                <td style={{ textAlign: "right" }}>{m.lapse_items.toLocaleString()}</td>
+                <td style={{ textAlign: "right" }}>${m.nb_premium.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+                <td style={{ textAlign: "right" }}>${m.lapse_premium.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr style={{ borderTop: "2px solid #252A3A", fontWeight: 600 }}>
+              <td style={{ color: "#E2E8F0" }}>Total</td>
+              <td style={{ textAlign: "right", color: "#10B981" }}>{totals.nb_points.toLocaleString()}</td>
+              <td style={{ textAlign: "right", color: "#EF4444" }}>{totals.lapse_points.toLocaleString()}</td>
+              <td style={{ textAlign: "right", color: totals.net_points > 0 ? "#10B981" : totals.net_points < 0 ? "#EF4444" : "#475569" }}>
+                {totals.net_points.toLocaleString()}
+              </td>
+              <td style={{ textAlign: "right" }}>{totals.nb_items.toLocaleString()}</td>
+              <td style={{ textAlign: "right" }}>{totals.lapse_items.toLocaleString()}</td>
+              <td style={{ textAlign: "right" }}>${totals.nb_premium.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+              <td style={{ textAlign: "right" }}>${totals.lapse_premium.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function BookHealthPage() {
@@ -1353,9 +1581,10 @@ export default function BookHealthPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["triage","resolved","upload","trends","attrition"].map(t => (
+        {["triage","resolved","upload","trends","attrition","growth"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
+            {t === "triage" ? "Triage" : t === "resolved" ? "Resolved" : t === "upload" ? "Upload" :
+             t === "trends" ? "Trends" : t === "attrition" ? "Attrition" : "Portfolio Growth"}
           </button>
         ))}
       </div>
@@ -1397,6 +1626,7 @@ export default function BookHealthPage() {
           currentUserId={currentUserId}
         />
       )}
+      {activeTab === "growth" && <NetGrowthTab agencyId={agencyId} />}
 
       {/* Detail Modal */}
       {selectedEvent && createPortal(
