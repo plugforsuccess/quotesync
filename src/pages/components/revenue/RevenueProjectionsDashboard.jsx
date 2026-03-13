@@ -51,6 +51,17 @@ const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)
 const fmtFull$ = (n) => `$${Math.round(n).toLocaleString()}`;
 const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
 
+// Mask customer PII — show first name + last initial only (e.g. "JAMES L.")
+// Handles: "JAMES LOGAN", "MARY JO SMITH", "O'BRIEN PATRICK"
+function maskCustomerName(fullName) {
+  if (!fullName) return "—";
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  const first = parts[0];
+  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${first} ${lastInitial}.`;
+}
+
 // Allstate commissionable premium factor — 93.5% of written premium is commissionable
 const COMMISSIONABLE_FACTOR = 0.935;
 
@@ -1821,7 +1832,7 @@ export default function RevenueProjectionsDashboard() {
                           </span>
                         </td>
                         <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{entry.policyNo || "—"}</td>
-                        <td style={{ color: "#94A3B8", fontSize: 12 }}>{entry.customerName || "—"}</td>
+                        <td style={{ color: "#94A3B8", fontSize: 12 }}>{maskCustomerName(entry.customerName)}</td>
                         <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{entry.itemCount ?? 1}</td>
                         <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(entry.premium)}</td>
                         <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(comm)}</td>

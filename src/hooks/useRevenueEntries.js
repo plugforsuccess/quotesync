@@ -100,6 +100,11 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
         policy_no:     entry.policyNo || null,
         bind_id:       entry.bindId || null,
         producer_name: producerName,
+        // ⚠️  PII — customer_name must never appear in:
+        //   - CSV/Excel exports
+        //   - Producer-facing views (only admin/agent roles)
+        //   - Log statements or error messages
+        //   - Any API response that isn't agency-scoped
         customer_name: entry.customerName || null,
         source:        "upload",           // always "upload" — overwrites "manual" on conflict
         note:          entry.note || null,
