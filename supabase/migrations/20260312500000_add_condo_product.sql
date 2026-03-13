@@ -15,9 +15,9 @@ ALTER TABLE public.revenue_entries
 -- Add 'condo' to agency_products for Wiley-Wilson agency
 INSERT INTO public.agency_products (
   agency_id, product_key, label, color,
-  points_per_item, single_item, commissionable_factor, sort_order
+  points_per_item, single_item, sort_order
 ) VALUES (
   '00000000-0000-0000-0000-000000000001',
   'condo', 'Condo', '#34D399',
-  20, true, 0.959, 3
+  20, true, 3
 ) ON CONFLICT (agency_id, product_key) DO NOTHING;
