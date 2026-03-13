@@ -1960,8 +1960,6 @@ export default function RevenueProjectionsDashboard() {
         const statsPolicyCount = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.count     ?? 0), 0);
 
         const statsBlendedRate         = statsPremium > 0 ? statsCommission / statsPremium : null;
-        const statsAvgPremiumPerItem   = statsItemCount > 0 ? statsPremium / statsItemCount : null;
-        const statsAvgPremiumPerPolicy = statsPolicyCount > 0 ? statsPremium / statsPolicyCount : null;
         const statsPremiumShare        = totals.totalPremium > 0 ? statsPremium / totals.totalPremium : null;
         const statsCommissionShare     = totals.totalCommission > 0 ? statsCommission / totals.totalCommission : null;
 
@@ -2003,15 +2001,15 @@ export default function RevenueProjectionsDashboard() {
                 color: "#10B981",
               },
               {
-                label: "AVG PREMIUM / ITEM",
-                value: statsAvgPremiumPerItem != null ? fmtFull$(statsAvgPremiumPerItem) : "—",
-                sub: `${statsItemCount} items`,
+                label: "TOTAL ITEMS",
+                value: String(statsItemCount),
+                sub: `${statsPolicyCount} policies`,
                 color: "#3B82F6",
               },
               {
-                label: "AVG PREMIUM / POLICY",
-                value: statsAvgPremiumPerPolicy != null ? fmtFull$(statsAvgPremiumPerPolicy) : "—",
-                sub: `${statsPolicyCount} policies`,
+                label: "AVG COMMISSION / POLICY",
+                value: statsPolicyCount > 0 ? fmtFull$(statsCommission / statsPolicyCount) : "—",
+                sub: "commission ÷ policies",
                 color: "#3B82F6",
               },
               {
