@@ -347,6 +347,10 @@ export default function RevenueProjectionsDashboard() {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
   const [producerModal, setProducerModal] = useState(null); // null | producer name string
+  const [producerRange, setProducerRange] = useState("main"); // "main" | "ytd" | "YYYY-MM" | "custom"
+  const [producerCustomStart, setProducerCustomStart] = useState(""); // "YYYY-MM-DD"
+  const [producerCustomEnd, setProducerCustomEnd]   = useState(""); // "YYYY-MM-DD"
+  const [producerCustomOpen, setProducerCustomOpen] = useState(false); // show custom date inputs
   const [sortCol, setSortCol] = useState("date");   // "date" | "issuedDate" | "product" | "tier" | "premium" | "commission" | "source"
   const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
   const [ratesOpen, setRatesOpen] = useState(window.innerWidth >= 768);
@@ -466,10 +470,39 @@ export default function RevenueProjectionsDashboard() {
     return { totalPolicies, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
   }, [filtered, entries, rangeStart]);
 
+  // ─── Available months for producer range filter ─────────────────────────────
+  const availableProducerMonths = useMemo(() => {
+    const seen = new Set();
+    entries.forEach(e => {
+      if (e.date) seen.add(e.date.slice(0, 7)); // "YYYY-MM"
+    });
+    return Array.from(seen).sort().reverse(); // newest first
+  }, [entries]);
+
+  // ─── Producer-filtered entries (independent range) ─────────────────────────
+  const producerFiltered = useMemo(() => {
+    const todayStr = TODAY.toISOString().slice(0, 10);
+
+    if (producerRange === "main") return filtered;
+
+    if (producerRange === "ytd") {
+      const ytdStart = `${TODAY.getFullYear()}-01-01`;
+      return entries.filter(e => e.date && e.date >= ytdStart && e.date <= todayStr);
+    }
+
+    if (producerRange === "custom") {
+      if (!producerCustomStart || !producerCustomEnd) return filtered;
+      return entries.filter(e => e.date && e.date >= producerCustomStart && e.date <= producerCustomEnd);
+    }
+
+    // "YYYY-MM" — specific month
+    return entries.filter(e => e.date && e.date.startsWith(producerRange));
+  }, [producerRange, producerCustomStart, producerCustomEnd, filtered, entries]);
+
   // ─── Producer breakdown ────────────────────────────────────────────────────
   const byProducer = useMemo(() => {
     const map = {};
-    filtered.forEach(e => {
+    producerFiltered.forEach(e => {
       const name = e.producerName || "Unassigned";
       if (!map[name]) map[name] = { name, policies: 0, items: 0, premium: 0, commission: 0, points: 0 };
       map[name].policies   += 1;
@@ -478,14 +511,17 @@ export default function RevenueProjectionsDashboard() {
       map[name].commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline");
       map[name].points     += (PORTFOLIO_POINTS[e.product] ?? 0) * (e.itemCount ?? 1);
     });
-    return Object.values(map).sort((a, b) => {
-      const aLast = a.name === "CCC" || a.name === "Unassigned";
-      const bLast = b.name === "CCC" || b.name === "Unassigned";
-      if (aLast && !bLast) return 1;
-      if (!aLast && bLast) return -1;
-      return b.commission - a.commission;
-    });
-  }, [filtered]);
+    const totalCommission = Object.values(map).reduce((s, p) => s + p.commission, 0);
+    return Object.values(map)
+      .map(p => ({ ...p, share: totalCommission > 0 ? p.commission / totalCommission : 0 }))
+      .sort((a, b) => {
+        const aLast = a.name === "CCC" || a.name === "Unassigned";
+        const bLast = b.name === "CCC" || b.name === "Unassigned";
+        if (aLast && !bLast) return 1;
+        if (!aLast && bLast) return -1;
+        return b.commission - a.commission;
+      });
+  }, [producerFiltered]);
 
   // ─── Monthly trend (rolling 12 or YTD) ────────────────────────────────────
   const trendData = useMemo(() => {
@@ -1068,7 +1104,67 @@ export default function RevenueProjectionsDashboard() {
           {/* Producer Leaderboard */}
           {byProducer.length > 0 && byProducer.some(p => p.name !== "Unassigned") && (
             <div className="card" style={{ gridColumn: "1 / -1" }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Producer Breakdown</div>
+              {/* Card header row */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: producerCustomOpen ? 12 : 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8" }}>Producer Breakdown</div>
+
+                <select
+                  value={producerRange}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setProducerRange(val);
+                    setProducerCustomOpen(val === "custom");
+                    if (val !== "custom") {
+                      setProducerCustomStart("");
+                      setProducerCustomEnd("");
+                    }
+                  }}
+                  style={{
+                    background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 6,
+                    color: "#94A3B8", fontSize: 12, padding: "4px 10px", cursor: "pointer",
+                  }}
+                >
+                  <option value="main">{rangeLabel}</option>
+                  <option value="ytd">YTD {TODAY.getFullYear()}</option>
+                  <option disabled>──────────</option>
+                  {availableProducerMonths.map(ym => {
+                    const [y, m] = ym.split("-");
+                    return (
+                      <option key={ym} value={ym}>
+                        {MONTH_NAMES[parseInt(m, 10) - 1]} {y}
+                      </option>
+                    );
+                  })}
+                  <option disabled>──────────</option>
+                  <option value="custom">Custom Range…</option>
+                </select>
+              </div>
+
+              {/* Custom date range inputs — shown only when "Custom Range…" is selected */}
+              {producerCustomOpen && (
+                <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "#64748B" }}>From</span>
+                  <input
+                    type="date"
+                    value={producerCustomStart}
+                    onChange={e => setProducerCustomStart(e.target.value)}
+                    style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 6, color: "#E2E8F0", fontSize: 12, padding: "4px 8px" }}
+                  />
+                  <span style={{ fontSize: 12, color: "#64748B" }}>to</span>
+                  <input
+                    type="date"
+                    value={producerCustomEnd}
+                    onChange={e => setProducerCustomEnd(e.target.value)}
+                    style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 6, color: "#E2E8F0", fontSize: 12, padding: "4px 8px" }}
+                  />
+                  {producerCustomStart && producerCustomEnd && (
+                    <span style={{ fontSize: 11, color: "#475569" }}>
+                      {producerCustomStart} → {producerCustomEnd}
+                    </span>
+                  )}
+                </div>
+              )}
+
               <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
                 <table style={{ minWidth: 580 }}>
                   <thead>
@@ -1078,6 +1174,7 @@ export default function RevenueProjectionsDashboard() {
                       <th>Items</th>
                       <th>Premium</th>
                       <th>Est. Commission</th>
+                      <th>Share</th>
                       <th>Points</th>
                     </tr>
                   </thead>
@@ -1086,20 +1183,41 @@ export default function RevenueProjectionsDashboard() {
                       const isMuted = p.name === "CCC" || p.name === "Unassigned";
                       return (
                         <tr key={p.name}>
-                          <td>
+                          <td style={{ minWidth: 160 }}>
                             <button
                               onClick={() => setProducerModal(p.name)}
-                              style={{ background: "none", border: "none", cursor: "pointer", color: isMuted ? "#475569" : "#F1F5F9", fontWeight: 600, fontSize: 13, padding: 0, fontFamily: "inherit", textDecoration: "underline", textDecorationColor: "transparent", transition: "text-decoration-color 0.15s" }}
+                              style={{
+                                background: "none", border: "none", cursor: "pointer",
+                                color: isMuted ? "#475569" : "#F1F5F9",
+                                fontWeight: 600, fontSize: 13, padding: 0,
+                                fontFamily: "inherit", display: "block", textAlign: "left",
+                                textDecoration: "underline", textDecorationColor: "transparent",
+                                transition: "text-decoration-color 0.15s",
+                                marginBottom: 5,
+                              }}
                               onMouseEnter={e => e.target.style.textDecorationColor = "#3B82F6"}
                               onMouseLeave={e => e.target.style.textDecorationColor = "transparent"}
                             >
                               {p.name}
                             </button>
+                            {/* Commission share bar */}
+                            <div style={{ height: 3, borderRadius: 2, background: "#1E2130", width: "100%", maxWidth: 140 }}>
+                              <div style={{
+                                height: "100%",
+                                borderRadius: 2,
+                                width: `${(p.share * 100).toFixed(1)}%`,
+                                background: isMuted ? "#334155" : "linear-gradient(90deg, #10B981, #3B82F6)",
+                                transition: "width 0.4s ease",
+                              }} />
+                            </div>
                           </td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{p.policies}</td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{p.items}</td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{fmtFull$(p.premium)}</td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#10B981" }}>{fmtFull$(p.commission)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#64748B", fontSize: 12 }}>
+                            {(p.share * 100).toFixed(1)}%
+                          </td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{p.points}</td>
                         </tr>
                       );
@@ -1779,7 +1897,16 @@ export default function RevenueProjectionsDashboard() {
 
       {/* Producer Drilldown Modal */}
       {producerModal != null && (() => {
-        const producerEntries = filtered
+        const producerRangeLabel = (() => {
+          if (producerRange === "main") return rangeLabel;
+          if (producerRange === "ytd") return `YTD ${TODAY.getFullYear()}`;
+          if (producerRange === "custom" && producerCustomStart && producerCustomEnd)
+            return `${producerCustomStart} → ${producerCustomEnd}`;
+          const [y, m] = producerRange.split("-");
+          return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
+        })();
+
+        const producerEntries = producerFiltered
           .filter(e => (e.producerName || "Unassigned") === producerModal)
           .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
 
@@ -1793,7 +1920,7 @@ export default function RevenueProjectionsDashboard() {
         }, { policies: 0, items: 0, premium: 0, commission: 0, points: 0 });
 
         return (
-          <DrillDownModal title={producerModal} onClose={() => setProducerModal(null)}>
+          <DrillDownModal title={`${producerModal} — ${producerRangeLabel}`} onClose={() => setProducerModal(null)}>
             {/* Header summary strip */}
             <div style={{ display: "flex", gap: 24, marginBottom: 20, flexWrap: "wrap" }}>
               {[
