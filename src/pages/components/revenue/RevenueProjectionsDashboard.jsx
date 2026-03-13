@@ -725,12 +725,13 @@ export default function RevenueProjectionsDashboard() {
       if (parsed.length === 0) {
         setUploadMsg("⚠️ No rows parsed — check column headers match Allstate export format.");
       } else {
-        // Build bind ID → employee name map from employee_producer_codes
+        // Build bind ID → employee name map + employee UUID map from employee_producer_codes
         let employeeBindMap = new Map();
+        let employeeIdMap = new Map();
         if (agencyId) {
           const { data: codeData } = await supabase
             .from("employee_producer_codes")
-            .select("code, employees(first_name, last_name, preferred_name)")
+            .select("code, employee_id, employees(first_name, last_name, preferred_name)")
             .eq("agency_id", agencyId)
             .eq("carrier", "allstate");
           employeeBindMap = new Map(
@@ -742,8 +743,11 @@ export default function RevenueProjectionsDashboard() {
               ];
             })
           );
+          employeeIdMap = new Map(
+            (codeData ?? []).map(row => [row.code, row.employee_id])
+          );
         }
-        const { count, error } = await addEntries(parsed, employeeBindMap);
+        const { count, error } = await addEntries(parsed, employeeBindMap, employeeIdMap);
         if (error) {
           console.error("[revenue upload error]", error);
           setUploadMsg(`❌ ${friendlyUploadError(error)}`);

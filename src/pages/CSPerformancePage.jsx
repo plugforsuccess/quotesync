@@ -545,6 +545,8 @@ const CSPerformancePage = () => {
               rcData.map((rc) => {
                 const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
                 const isSelectedEmployee = singleEmployee === rc.employee_user_id;
+                // Resolve roster employee ID for comp model link
+                const rosterEmp = rosterEmployees.find((e) => (e.auth_user_id || e.id) === rc.employee_user_id);
 
                 return (
                   <div key={rc.id} className="space-y-4">
@@ -563,6 +565,7 @@ const CSPerformancePage = () => {
                       weekStart={weekStart}
                       trendData={isSelectedEmployee ? trendData : null}
                       targets={isSelectedEmployee ? employeeTargets : null}
+                      producerId={rosterEmp?.id}
                     />
                   </div>
                 );

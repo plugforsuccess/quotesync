@@ -32,6 +32,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
         policyNo:     r.policy_no ?? null,
         bindId:       r.bind_id ?? null,
         producerName: r.producer_name ?? null,
+        producerId:   r.producer_id ?? null,
         customerName: r.customer_name ?? null,
         source:       r.source,
         note:         r.note ?? "",
@@ -82,7 +83,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
     return { error: null };
   };
 
-  const addEntries = async (batch, employeeBindMap = new Map()) => {
+  const addEntries = async (batch, employeeBindMap = new Map(), employeeIdMap = new Map()) => {
     const user = (await supabase.auth.getUser()).data.user;
     const rows = batch.map(entry => {
       const producerName = entry.bindId
@@ -100,6 +101,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
         policy_no:     entry.policyNo || null,
         bind_id:       entry.bindId || null,
         producer_name: producerName,
+        producer_id:   entry.bindId ? (employeeIdMap.get(entry.bindId) ?? null) : null,
         // ⚠️  PII — customer_name must never appear in:
         //   - CSV/Excel exports
         //   - Producer-facing views (only admin/agent roles)
