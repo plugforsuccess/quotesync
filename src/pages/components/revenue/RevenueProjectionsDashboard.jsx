@@ -444,9 +444,9 @@ export default function RevenueProjectionsDashboard() {
   const policiesStats = useMemo(() => {
     const totalPolicies = filtered.reduce((s, e) => s + e.policyCount, 0);
 
-    // VC Baseline = auto items + HO items (HO always itemCount=1)
+    // VC Baseline = auto items + HO items + condo items (HO always itemCount=1)
     const vcBaselineCount = filtered.reduce((s, e) => {
-      if (e.product === "auto" || e.product === "ho") return s + e.itemCount;
+      if (e.product === "auto" || e.product === "ho" || e.product === "condo") return s + e.itemCount;
       return s;
     }, 0);
 
@@ -879,7 +879,7 @@ export default function RevenueProjectionsDashboard() {
                 label: "VC BASELINE",
                 value: String(vcBaselineCount),
                 sub: vcOnTrack
-                  ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (Auto + HO)`
+                  ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (Auto + HO + Condo)`
                   : `${vcBaselineCount} / ${VC_BASELINE_TARGET} · ${vcShortfall} needed`,
                 subColor: vcOnTrack ? "#10B981" : "#F59E0B",
               },
