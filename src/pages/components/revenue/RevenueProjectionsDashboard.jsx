@@ -13,6 +13,7 @@ const COMMISSION = {
   auto:    { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Auto" },
   ho:      { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "HO / Condo" },
   renters: { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Renters" },
+  motor_club: { preferred: 0.25, bundled: 0.25, monoline: 0.25, label: "Motor Club" },
   other:   { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
 };
 const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
@@ -22,12 +23,12 @@ const COMMISSION_GOAL = 40000;  // primary goal — commission revenue
 const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
 const PRODUCT_COLORS = {
   auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6",
-  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", boat: "#0EA5E9",
+  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", boat: "#0EA5E9", motor_club: "#F43F5E",
 };
 const PRODUCT_LABELS = {
   auto: "Auto", ho: "HO / Condo", renters: "Renters", landlord: "Landlord",
   specialty_auto: "Specialty Auto", pup: "Personal Umbrella",
-  manufactured: "Manufactured Home", boat: "Boat Owners", other: "Other",
+  manufactured: "Manufactured Home", boat: "Boat Owners", motor_club: "Motor Club", other: "Other",
 };
 
 // ─── Portfolio Points Matrix ──────────────────────────────────────────────────
@@ -41,6 +42,7 @@ const PORTFOLIO_POINTS = {
   pup:            5,  // Personal Umbrella Policy
   manufactured:   5,  // Manufactured Home
   boat:           5,  // Boat Owners — always 1 item per policy
+  motor_club:     0,  // Motor Club — not an Allstate VC Baseline product
   other:          0,
 };
 
@@ -64,11 +66,24 @@ function maskCustomerName(fullName) {
 
 // Allstate commissionable premium factor — 93.5% of written premium is commissionable
 const COMMISSIONABLE_FACTOR = 0.935;
+const COMMISSIONABLE_FACTORS = {
+  auto:           0.935,
+  ho:             0.935,
+  renters:        0.935,
+  landlord:       0.935,
+  specialty_auto: 0.935,
+  pup:            0.935,
+  manufactured:   0.935,
+  boat:           0.935,
+  motor_club:     1.000,  // no CAT reinsurance
+  other:          0.935,
+};
 
 function calcCommission(premium, product, tier = "monoline") {
-  const key = ["auto","ho","renters"].includes(product) ? product : "other";
+  const key = ["auto","ho","renters","motor_club"].includes(product) ? product : "other";
   const rates = COMMISSION[key];
-  return premium * COMMISSIONABLE_FACTOR * (rates[tier] ?? rates.monoline);
+  const factor = COMMISSIONABLE_FACTORS[product] ?? COMMISSIONABLE_FACTOR;
+  return premium * factor * (rates[tier] ?? rates.monoline);
 }
 
 function normalizeTier(raw = "") {
@@ -152,10 +167,11 @@ function parseAllstateRows(rows) {
     else if (raw.includes("landlord")) product = "landlord";
     else if (raw.includes("umbrella") || raw.includes("pup")) product = "pup";
     else if (raw.includes("manufactured")) product = "manufactured";
+    else if (raw.includes("motor club")) product = "motor_club";
     else product = "other";
 
     // Only auto and specialty_auto can have multiple items per policy
-    const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured", "boat"];
+    const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured", "boat", "motor_club"];
     const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
     const itemCount = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
 
@@ -1130,6 +1146,7 @@ export default function RevenueProjectionsDashboard() {
                   <option value="pup">Personal Umbrella</option>
                   <option value="manufactured">Manufactured Home</option>
                   <option value="boat">Boat Owners</option>
+                  <option value="motor_club">Motor Club</option>
                   <option value="other">Other</option>
                 </select>
               </div>
