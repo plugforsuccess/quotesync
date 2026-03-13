@@ -84,7 +84,7 @@ const STATUS_CONFIG = {
   promise_broken:         { label: "Promise Broken",    color: "#EF4444", bg: "#EF444422" },
   requested_cancellation: { label: "Termination",       color: "#64748B", bg: "#64748B22" },
   lost:                   { label: "Lost",              color: "#EF4444", bg: "#EF444422" },
-  auto_resolved:          { label: "Auto-Resolved",     color: "#475569", bg: "#47556922" },
+  auto_resolved:          { label: "Auto-Resolved",     color: "#64748B", bg: "#47556922" },
 };
 
 const TERMINATION_REASONS = ["Price", "Service", "Claims", "Moving", "Coverage no longer needed", "Other"];
@@ -291,9 +291,9 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount }) {
           {urgentCount} URGENT
         </div>
       )}
-      <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -319,7 +319,7 @@ function CustomerDrilldownModal({ event, onClose }) {
             <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
-            <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
               Policy #{event.policy_no || "\u2014"}
             </div>
           </div>
@@ -345,7 +345,7 @@ function CustomerDrilldownModal({ event, onClose }) {
             { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "#94A3B8" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
-              <div style={{ fontSize: 10, color: "#475569", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+              <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
             </div>
           ))}
@@ -354,7 +354,7 @@ function CustomerDrilldownModal({ event, onClose }) {
         {/* Notes — full width, only if present */}
         {event.notes && (
           <div style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A", marginTop: 10 }}>
-            <div style={{ fontSize: 10, color: "#475569", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Notes</div>
+            <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Notes</div>
             <div style={{ fontSize: 12, color: "#94A3B8", lineHeight: 1.5 }}>{event.notes}</div>
           </div>
         )}
@@ -386,7 +386,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
           ))}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", flex: "1 1 auto", justifyContent: "flex-end" }}>
-          <span style={{ fontSize: 12, color: "#475569" }}>Bulk assign unassigned pending:</span>
+          <span style={{ fontSize: 12, color: "#64748B" }}>Bulk assign unassigned pending:</span>
           {producers.map(p => {
             const name = p.preferred_name || p.first_name;
             return (
@@ -544,7 +544,7 @@ function ResolvedTab({ resolvedEvents }) {
 function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancel }) {
   return (
     <div style={{ maxWidth: 640 }}>
-      <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
+      <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>
         Upload the Allstate <span style={{ color: "#64748B", fontFamily: "'DM Mono', monospace" }}>Pending Cancellation</span> report (XLSX).
         The system will diff against existing active events — new policies added, resolved policies auto-closed.
       </div>
@@ -558,7 +558,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
         <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
           {uploadFile ? uploadFile.name : "Drop report here or click to browse"}
         </div>
-        {isParsing && <div style={{ fontSize: 12, color: "#475569", marginTop: 8 }}>Parsing\u2026</div>}
+        {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing\u2026</div>}
       </div>
 
       {uploadError && (
@@ -578,7 +578,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               { label: "Auto-Resolved", value: diffResult.toAutoResolve.length, color: "#F59E0B" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, padding: "12px 14px" }}>
-                <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -682,7 +682,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
-            <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
             </div>
           </div>
@@ -696,7 +696,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
             { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—", color: "#E2E8F0" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
-              <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
               <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
             </div>
           ))}
@@ -1052,10 +1052,10 @@ function AttritionTab({ agencyId, currentUserId }) {
 
       {/* Monthly Summary Table */}
       {loading ? (
-        <div style={{ color: "#475569", fontSize: 13, marginBottom: 20 }}>Loading attrition history\u2026</div>
+        <div style={{ color: "#64748B", fontSize: 13, marginBottom: 20 }}>Loading attrition history\u2026</div>
       ) : monthlySummary.length > 0 ? (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Attrition History</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Attrition History</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ minWidth: 500 }}>
               <thead>
@@ -1093,11 +1093,11 @@ function AttritionTab({ agencyId, currentUserId }) {
           </div>
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>No attrition history yet. Upload your first report below.</div>
+        <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>No attrition history yet. Upload your first report below.</div>
       )}
 
       {/* Upload Section */}
-      <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Upload Termination Report</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Upload Termination Report</div>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <div>
@@ -1134,7 +1134,7 @@ function AttritionTab({ agencyId, currentUserId }) {
               { label: "Premium Lost", value: `$${Math.round(preview.premium).toLocaleString()}`, color: "#94A3B8" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, padding: "12px 14px" }}>
-                <div style={{ fontSize: 10, color: "#475569", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -1167,7 +1167,7 @@ function AttritionTab({ agencyId, currentUserId }) {
 
 // ─── Global Styles ─────────────────────────────────────────────────────────────
 
-const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 13px; } th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #94A3B8; } .urgency-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; } .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; } .triage-row:hover td { background: #1A1D27; cursor: pointer; } .scroll-hint-container { position: relative; } .scroll-hint-container::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, #0f172a); pointer-events: none; opacity: 1; transition: opacity 0.2s; } @media (min-width: 840px) { .scroll-hint-container::after { opacity: 0; } }`;
+const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 14px; } th { text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #CBD5E1; } .urgency-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; } .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; } .triage-row:hover td { background: #1A1D27; cursor: pointer; } .scroll-hint-container { position: relative; } .scroll-hint-container::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, #0f172a); pointer-events: none; opacity: 1; transition: opacity 0.2s; } @media (min-width: 840px) { .scroll-hint-container::after { opacity: 0; } }`;
 
 // ─── Net Portfolio Growth Tab ──────────────────────────────────────────────────
 
@@ -1244,7 +1244,7 @@ function NetGrowthTab({ agencyId }) {
 
   if (months.length === 0) {
     return (
-      <div style={{ color: "#475569", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
+      <div style={{ color: "#64748B", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
         No data yet — upload New Business and Termination reports to see portfolio growth.
       </div>
     );
@@ -1307,7 +1307,7 @@ function NetGrowthTab({ agencyId }) {
         </div>
         <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
           <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Net Points</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: cur ? (cur.net_points > 0 ? "#10B981" : cur.net_points < 0 ? "#EF4444" : "#475569") : "#475569" }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: cur ? (cur.net_points > 0 ? "#10B981" : cur.net_points < 0 ? "#EF4444" : "#64748B") : "#64748B" }}>
             {cur ? cur.net_points.toLocaleString() : "—"}
           </div>
         </div>
@@ -1322,11 +1322,11 @@ function NetGrowthTab({ agencyId }) {
               const [y, mo] = m.split("-");
               return `${MONTH_SHORT[parseInt(mo, 10) - 1]} '${y.slice(2)}`;
             }}
-            tick={{ fill: "#475569", fontSize: 11 }}
+            tick={{ fill: "#64748B", fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />
-          <YAxis tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+          <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
           <Tooltip
             labelFormatter={fmtMonth}
             contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }}
@@ -1343,7 +1343,7 @@ function NetGrowthTab({ agencyId }) {
         <ResponsiveContainer width="100%" height={120}>
           <LineChart data={months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <XAxis dataKey="month" hide />
-            <YAxis tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+            <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
             <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />
             <Tooltip
               labelFormatter={fmtMonth}
@@ -1389,13 +1389,13 @@ function NetGrowthTab({ agencyId }) {
                 <td style={{ fontWeight: 500, color: "#E2E8F0" }}>{fmtMonth(m.month)}</td>
                 <td style={{ textAlign: "right", color: "#10B981" }}>{m.nb_points.toLocaleString()}</td>
                 <td style={{ textAlign: "right", color: "#EF4444" }}>{m.lapse_points.toLocaleString()}</td>
-                <td style={{ textAlign: "right", color: m.net_points > 0 ? "#10B981" : m.net_points < 0 ? "#EF4444" : "#475569" }}>
+                <td style={{ textAlign: "right", color: m.net_points > 0 ? "#10B981" : m.net_points < 0 ? "#EF4444" : "#64748B" }}>
                   {m.net_points.toLocaleString()}
                 </td>
                 <td style={{
                   textAlign: "right",
                   fontFamily: "'DM Mono', monospace",
-                  color: m.net_items > 0 ? "#10B981" : m.net_items < 0 ? "#EF4444" : "#475569",
+                  color: m.net_items > 0 ? "#10B981" : m.net_items < 0 ? "#EF4444" : "#64748B",
                   fontWeight: 600,
                 }}>
                   {m.net_items > 0 ? `+${m.net_items}` : String(m.net_items)}
@@ -1407,7 +1407,7 @@ function NetGrowthTab({ agencyId }) {
                     ? "#334155"
                     : m.net_ytd > 0 ? "#10B981"
                     : m.net_ytd < 0 ? "#EF4444"
-                    : "#475569",
+                    : "#64748B",
                   fontWeight: 600,
                 }}>
                   {m.net_ytd === null
@@ -1427,14 +1427,14 @@ function NetGrowthTab({ agencyId }) {
               <td style={{ color: "#E2E8F0" }}>Total</td>
               <td style={{ textAlign: "right", color: "#10B981" }}>{totals.nb_points.toLocaleString()}</td>
               <td style={{ textAlign: "right", color: "#EF4444" }}>{totals.lapse_points.toLocaleString()}</td>
-              <td style={{ textAlign: "right", color: totals.net_points > 0 ? "#10B981" : totals.net_points < 0 ? "#EF4444" : "#475569" }}>
+              <td style={{ textAlign: "right", color: totals.net_points > 0 ? "#10B981" : totals.net_points < 0 ? "#EF4444" : "#64748B" }}>
                 {totals.net_points.toLocaleString()}
               </td>
               <td style={{
                 textAlign: "right",
                 fontFamily: "'DM Mono', monospace",
                 fontWeight: 700,
-                color: totalNetItems > 0 ? "#10B981" : totalNetItems < 0 ? "#EF4444" : "#475569",
+                color: totalNetItems > 0 ? "#10B981" : totalNetItems < 0 ? "#EF4444" : "#64748B",
               }}>
                 {totalNetItems > 0 ? `+${totalNetItems}` : String(totalNetItems)}
               </td>
@@ -1757,11 +1757,11 @@ export default function BookHealthPage() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Book Health</h1>
-        <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>Pending Cancellation · Wiley-Wilson Agency</div>
+        <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>Pending Cancellation · Wiley-Wilson Agency</div>
       </div>
 
       {loading && (
-        <div style={{ color: "#475569", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
+        <div style={{ color: "#64748B", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
       )}
 
       {/* KPI Cards */}

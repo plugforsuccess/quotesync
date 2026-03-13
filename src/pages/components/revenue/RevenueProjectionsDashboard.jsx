@@ -292,7 +292,7 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
               <span style={{ display: "flex", gap: 16, fontSize: 12, fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
                 <span style={{ width: 72, textAlign: "right", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</span>
                 <span style={{ width: 72, textAlign: "right", color: "#10B981" }}>{fmtFull$(val.commission)}</span>
-                <span style={{ width: 52, textAlign: "right", color: "#475569" }}>{fmtPct(effRate)}</span>
+                <span style={{ width: 52, textAlign: "right", color: "#64748B" }}>{fmtPct(effRate)}</span>
               </span>
             </div>
             <div style={{ height: 7, background: "#252A3A", borderRadius: 4, overflow: "hidden", position: "relative" }}>
@@ -857,7 +857,7 @@ export default function RevenueProjectionsDashboard() {
   return (
     <>
     <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", background: "#0F1117", minHeight: "100vh", color: "#E2E8F0", padding: "24px" }}>
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; } .del-btn { background: transparent; border: none; color: #EF4444; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; } .del-btn:hover { background: #2D1A1A; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 13px; } th { text-align: left; padding: 8px 12px; font-size: 11px; font-weight: 600; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #94A3B8; } tr:hover td { background: #161924; } .clickable { cursor: pointer; transition: border-color 0.15s; } .clickable:hover { border-color: #3B82F6; }`}</style>
+      <style>{`@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: 'DM Mono', monospace; } .del-btn { background: transparent; border: none; color: #EF4444; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; } .del-btn:hover { background: #2D1A1A; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 14px; } th { text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #CBD5E1; } tr:hover td { background: #161924; } .clickable { cursor: pointer; transition: border-color 0.15s; } .clickable:hover { border-color: #3B82F6; }`}</style>
 
       {error && (
         <div style={{ background: "#2D1A1A", border: "1px solid #EF4444", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
@@ -865,7 +865,7 @@ export default function RevenueProjectionsDashboard() {
         </div>
       )}
       {loading && (
-        <div style={{ color: "#475569", fontSize: 13, marginBottom: 12 }}>Loading entries...</div>
+        <div style={{ color: "#64748B", fontSize: 13, marginBottom: 12 }}>Loading entries...</div>
       )}
 
       {/* Header */}
@@ -873,7 +873,7 @@ export default function RevenueProjectionsDashboard() {
         <div>
           <div style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>insuredbycam.com</div>
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#F1F5F9" }}>Revenue Projections</h1>
-          <div style={{ fontSize: 13, color: "#475569", marginTop: 2 }}>New Business · Commission Goal: {fmtFull$(COMMISSION_GOAL)}/mo</div>
+          <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>New Business · Commission Goal: {fmtFull$(COMMISSION_GOAL)}/mo</div>
         </div>
         {/* View selector */}
         <div style={{ display: "flex", gap: 6 }}>
@@ -887,20 +887,20 @@ export default function RevenueProjectionsDashboard() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
         {/* Written Premium */}
         <div className="card clickable" onClick={() => setModal("kpi-written")}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Written Premium</div>
+          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Written Premium</div>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalPremium)}</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{rangeLabel}</div>
+          <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{rangeLabel}</div>
         </div>
         {/* Commission Earned */}
         <div className="card clickable" onClick={() => setModal("kpi-commission")}>
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
+          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalCommission)}</div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
+          <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
           {view === "month" && lastMonthCommission > 0 && (() => {
             const delta = totals.totalCommission - lastMonthCommission;
             const pct   = Math.abs(delta / lastMonthCommission * 100).toFixed(1);
             return (
-              <div style={{ fontSize: 11, color: delta >= 0 ? "#10B981" : "#EF4444", marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: delta >= 0 ? "#10B981" : "#EF4444", marginTop: 4 }}>
                 {delta >= 0 ? "▲" : "▼"} {fmtFull$(Math.abs(delta))} ({pct}%) vs last mo
               </div>
             );
@@ -917,7 +917,7 @@ export default function RevenueProjectionsDashboard() {
               label: "POLICIES WRITTEN",
               value: String(totalPolicies),
               sub: `Avg premium: ${totalPolicies > 0 ? fmt$(totals.totalPremium / totalPolicies) : "—"}`,
-              subColor: "#475569",
+              subColor: "#64748B",
             },
             ...(view === "month" ? {
               items: {
@@ -933,7 +933,7 @@ export default function RevenueProjectionsDashboard() {
                 label: "ITEMS WRITTEN",
                 value: String(filtered.reduce((s, e) => s + (e.itemCount ?? 1), 0)),
                 sub: "Total items YTD",
-                subColor: "#475569",
+                subColor: "#64748B",
               },
             }),
             points: {
@@ -944,7 +944,7 @@ export default function RevenueProjectionsDashboard() {
                 : "Portfolio points YTD",
               subColor: view === "month"
                 ? (pointsDelta >= 0 ? "#10B981" : "#EF4444")
-                : "#475569",
+                : "#64748B",
             },
           };
 
@@ -957,13 +957,13 @@ export default function RevenueProjectionsDashboard() {
               title="Click to cycle · Double-click to expand"
               style={{ position: "relative" }}
             >
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
                 {active.label}
               </div>
               <div style={{ fontSize: 26, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace" }}>
                 {active.value}
               </div>
-              <div style={{ fontSize: 11, color: active.subColor, marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: active.subColor, marginTop: 2 }}>
                 {active.sub}
               </div>
               {/* Mode indicator dots */}
@@ -977,7 +977,7 @@ export default function RevenueProjectionsDashboard() {
         })()}
         {/* Commission Goal / YTD Commission */}
         <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={handleGoalClick} title="Click to switch · Double-click to expand">
-          <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
             {view === "month" ? activeGoal.label : "YTD COMMISSION"}
           </div>
           <div style={{ fontSize: 26, fontWeight: 700, color: view === "ytd" ? "#10B981" : activeGoal.valueColor, fontFamily: "'DM Mono', monospace" }}>
@@ -985,7 +985,7 @@ export default function RevenueProjectionsDashboard() {
           </div>
           {view === "month" ? (
             <>
-              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
                 {Math.round(activeGoal.pct * 100)}% of {fmtFull$(activeGoal.goal)} goal
               </div>
               <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
@@ -998,7 +998,7 @@ export default function RevenueProjectionsDashboard() {
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
               {rangeLabel} · {fmtFull$(COMMISSION_GOAL)}/mo goal
             </div>
           )}
@@ -1022,9 +1022,9 @@ export default function RevenueProjectionsDashboard() {
           const activePace = paceModeConfig[paceMode];
           return (
             <div className="card clickable" onClick={handlePaceClick} title="Click to switch · Double-click to expand">
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activePace.label}</div>
+              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activePace.label}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: activePace.color, fontFamily: "'DM Mono', monospace" }}>{activePace.value}</div>
-              <div style={{ fontSize: 11, color: activePace.color, marginTop: 2 }}>{pace.onPace ? "↑ On pace" : "↓ Behind pace"} · {dailyTarget.remaining} business days left</div>
+              <div style={{ fontSize: 12, color: activePace.color, marginTop: 2 }}>{pace.onPace ? "↑ On pace" : "↓ Behind pace"} · {dailyTarget.remaining} business days left</div>
               <div style={{ fontSize: 10, color: "#334155", marginTop: 4 }}>{activePace.subLabel}</div>
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                 {["commission", "premium"].map(m => (
@@ -1043,14 +1043,14 @@ export default function RevenueProjectionsDashboard() {
           const activeDaily = dailyModes[dailyTargetMode];
           return (
             <div className="card clickable" onClick={handleDailyClick} title="Click to switch · Double-click to expand">
-              <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activeDaily.label}</div>
+              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activeDaily.label}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: activeDaily.color, fontFamily: "'DM Mono', monospace" }}>{activeDaily.value}</div>
-              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>{activeDaily.unit} · {dailyTarget.remaining} business days left</div>
+              <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{activeDaily.unit} · {dailyTarget.remaining} business days left</div>
               <div style={{ borderTop: "1px solid #252A3A", marginTop: 10, paddingTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
                 {Object.entries(dailyModes)
                   .filter(([key]) => key !== dailyTargetMode)
                   .map(([key, m]) => (
-                    <div key={key} style={{ fontSize: 11, color: "#475569" }}>
+                    <div key={key} style={{ fontSize: 11, color: "#64748B" }}>
                       <span style={{ color: m.color, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{m.value}</span>
                       {" "}{m.unit}
                     </div>
@@ -1212,7 +1212,7 @@ export default function RevenueProjectionsDashboard() {
                     style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 6, color: "#E2E8F0", fontSize: 12, padding: "4px 8px" }}
                   />
                   {producerCustomStart && producerCustomEnd && (
-                    <span style={{ fontSize: 11, color: "#475569" }}>
+                    <span style={{ fontSize: 11, color: "#64748B" }}>
                       {producerCustomStart} → {producerCustomEnd}
                     </span>
                   )}
@@ -1243,7 +1243,7 @@ export default function RevenueProjectionsDashboard() {
                               onClick={() => setProducerModal(p.name)}
                               style={{
                                 background: "none", border: "none", cursor: "pointer",
-                                color: isMuted ? "#475569" : "#F1F5F9",
+                                color: isMuted ? "#64748B" : "#F1F5F9",
                                 fontWeight: 600, fontSize: 13, padding: 0,
                                 fontFamily: "inherit", display: "block", textAlign: "left",
                                 textDecoration: "underline", textDecorationColor: "transparent",
@@ -1266,17 +1266,17 @@ export default function RevenueProjectionsDashboard() {
                               }} />
                             </div>
                           </td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{p.policies}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{p.items}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{fmtFull$(p.premium)}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#10B981" }}>{fmtFull$(p.commission)}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#94A3B8", fontSize: 12 }}>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{p.policies}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{p.items}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{fmtFull$(p.premium)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#10B981" }}>{fmtFull$(p.commission)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#94A3B8", fontSize: 12 }}>
                             {p.premium > 0 ? fmtPct(p.blendedRate) : "—"}
                           </td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#64748B", fontSize: 12 }}>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#64748B", fontSize: 12 }}>
                             {(p.share * 100).toFixed(1)}%
                           </td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{p.points}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{p.points}</td>
                         </tr>
                       );
                     })}
@@ -1353,7 +1353,7 @@ export default function RevenueProjectionsDashboard() {
                 const isItemLocked = ["ho", "renters", "landlord", "pup", "manufactured"].includes(newEntry.product);
                 return (
                   <div>
-                    <label style={{ fontSize: 11, color: "#475569" }}>Items</label>
+                    <label style={{ fontSize: 11, color: "#64748B" }}>Items</label>
                     <input
                       type="number"
                       min={1}
@@ -1433,7 +1433,7 @@ export default function RevenueProjectionsDashboard() {
                       <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
                       <td style={{ color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier))}</td>
                       <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "#94A3B8" }}>{e.source}</span></td>
-                      <td style={{ color: "#475569", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
+                      <td style={{ color: "#64748B", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
                       <td><button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button></td>
                     </tr>
                   );
@@ -1457,7 +1457,7 @@ export default function RevenueProjectionsDashboard() {
       {activeTab === "upload" && (
         <div className="card">
           <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 4 }}>Upload Allstate Export</div>
-          <div style={{ fontSize: 12, color: "#475569", marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 20 }}>
             Accepts XLSX or CSV. Expects columns: <span style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>Effective Date, Written Premium, Line of Business, Bundle Tier</span> (or similar Allstate report headers). <span style={{ color: "#64748B" }}>Bundle Tier column is optional — rows without it default to Monoline.</span>
           </div>
           <div className="upload-zone" onClick={() => fileRef.current?.click()}>
@@ -1470,7 +1470,7 @@ export default function RevenueProjectionsDashboard() {
             <div style={{ marginTop: 14, padding: "10px 16px", background: "#1A1D27", borderRadius: 8, fontSize: 13, color: "#94A3B8" }}>{uploadMsg}</div>
           )}
           <div style={{ marginTop: 24, padding: 16, background: "#1A1D27", borderRadius: 10, border: "1px solid #252A3A" }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#475569", marginBottom: 8 }}>Commission Reference — New Business Rates by Tier</div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", marginBottom: 8 }}>Commission Reference — New Business Rates by Tier</div>
             <table>
               <thead>
                 <tr>
@@ -1556,7 +1556,7 @@ export default function RevenueProjectionsDashboard() {
       {modal === "kpi-written" && (
         <DrillDownModal title="Written Premium" onClose={closeModal}>
           <div style={{ fontSize: 42, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(totals.totalPremium)}</div>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 24 }}>Total written premium · {rangeLabel}</div>
+          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>Total written premium · {rangeLabel}</div>
           <table>
             <thead><tr><th>Month</th><th>Premium</th><th>Commission</th></tr></thead>
             <tbody>
@@ -1576,7 +1576,7 @@ export default function RevenueProjectionsDashboard() {
       {modal === "kpi-commission" && (
         <DrillDownModal title="Commission Earned" onClose={closeModal}>
           <div style={{ fontSize: 42, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(totals.totalCommission)}</div>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 24 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"} · {rangeLabel}</div>
+          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"} · {rangeLabel}</div>
           <table>
             <thead><tr><th>Product</th><th>Premium</th><th>Commission</th><th>Eff. Rate</th></tr></thead>
             <tbody>
@@ -1597,7 +1597,7 @@ export default function RevenueProjectionsDashboard() {
       {modal === "kpi-policies" && (
         <DrillDownModal title="Policies Written" onClose={closeModal}>
           <div style={{ fontSize: 42, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{filtered.reduce((s,e) => s + e.policyCount, 0)}</div>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 24 }}>Total policies · {rangeLabel} · Avg premium: {filtered.length > 0 ? fmtFull$(totals.totalPremium / filtered.reduce((s,e) => s + e.policyCount, 0)) : "—"}</div>
+          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>Total policies · {rangeLabel} · Avg premium: {filtered.length > 0 ? fmtFull$(totals.totalPremium / filtered.reduce((s,e) => s + e.policyCount, 0)) : "—"}</div>
           <table>
             <thead><tr><th>Product</th><th>Policies</th><th>Premium</th><th>Commission</th></tr></thead>
             <tbody>
@@ -1626,9 +1626,9 @@ export default function RevenueProjectionsDashboard() {
           <DrillDownModal title="VC Baseline" onClose={closeModal}>
             {/* Total + progress bar */}
             <div style={{ fontSize: 42, fontWeight: 700, color: onTrack ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
-              {vcBaselineCount} <span style={{ fontSize: 20, color: "#475569" }}>/ {VC_BASELINE_TARGET}</span>
+              {vcBaselineCount} <span style={{ fontSize: 20, color: "#64748B" }}>/ {VC_BASELINE_TARGET}</span>
             </div>
-            <div style={{ fontSize: 13, color: "#475569", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: "#64748B", marginBottom: 12 }}>
               Auto + HO items · {rangeLabel}
             </div>
             <div style={{ height: 8, background: "#252A3A", borderRadius: 4, overflow: "hidden", marginBottom: 24 }}>
@@ -1741,7 +1741,7 @@ export default function RevenueProjectionsDashboard() {
                     </td>
                     <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>{val.policies}</td>
                     <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{val.items}</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#475569" }}>{PORTFOLIO_POINTS[key] ?? 0}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{PORTFOLIO_POINTS[key] ?? 0}</td>
                     <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9", fontWeight: 700 }}>{val.points}</td>
                   </tr>
                 ))}
@@ -1762,7 +1762,7 @@ export default function RevenueProjectionsDashboard() {
 
             {/* Prior month comparison */}
             {priorPoints > 0 && (
-              <div style={{ marginTop: 16, fontSize: 12, color: "#475569", borderTop: "1px solid #1A1D27", paddingTop: 12 }}>
+              <div style={{ marginTop: 16, fontSize: 12, color: "#64748B", borderTop: "1px solid #1A1D27", paddingTop: 12 }}>
                 Prior month: <span style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>{priorPoints} pts</span>
                 &nbsp;·&nbsp;
                 Net: <span style={{ fontFamily: "'DM Mono', monospace", color: pointsDelta >= 0 ? "#10B981" : "#EF4444" }}>
@@ -1782,7 +1782,7 @@ export default function RevenueProjectionsDashboard() {
               <div style={{ fontSize: 42, fontWeight: 700, color: "#3B82F6", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
                 {Math.round((totals.totalPremium / PREMIUM_GOAL) * 100)}%
               </div>
-              <div style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>
+              <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
                 {fmtFull$(totals.totalPremium)} written of {fmtFull$(PREMIUM_GOAL)} goal · {rangeLabel}
               </div>
               <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
@@ -1808,7 +1808,7 @@ export default function RevenueProjectionsDashboard() {
               <div style={{ fontSize: 42, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
                 {Math.round(commissionGoalPct * 100)}%
               </div>
-              <div style={{ fontSize: 13, color: "#475569", marginBottom: 16 }}>
+              <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
                 {fmtFull$(totals.totalCommission)} earned of {fmtFull$(COMMISSION_GOAL)} goal · {rangeLabel}
               </div>
               <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
@@ -1842,7 +1842,7 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 40, fontWeight: 700, color: modalMode === "commission" ? (pace.onPace ? "#10B981" : "#F59E0B") : "#3B82F6", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
             {modalMode === "commission" ? fmtFull$(pace.projectedCommission) : fmtFull$(pace.projectedPremium)}
           </div>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>
             {pace.onPace ? "↑ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays} · projected by month-end
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1853,7 +1853,7 @@ export default function RevenueProjectionsDashboard() {
               { label: "Projected Premium",    value: fmtFull$(pace.projectedPremium),    color: "#3B82F6" },
             ].map(({ label, value, color }) => (
               <div key={label} style={{ background: "#1A1D27", borderRadius: 10, padding: "14px 16px", border: "1px solid #252A3A" }}>
-                <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>{label}</div>
+                <div style={{ fontSize: 11, color: "#64748B", marginBottom: 6 }}>{label}</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -1881,7 +1881,7 @@ export default function RevenueProjectionsDashboard() {
             <div style={{ fontSize: 40, fontWeight: 700, color: active.color, fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
               {active.value}
             </div>
-            <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>
               {active.unit} · {dailyTarget.remaining} business days left
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1892,7 +1892,7 @@ export default function RevenueProjectionsDashboard() {
                 { label: "Policies / Day",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", color: "#10B981" },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: "#1A1D27", borderRadius: 10, padding: "14px 16px", border: "1px solid #252A3A" }}>
-                  <div style={{ fontSize: 11, color: "#475569", marginBottom: 6 }}>{label}</div>
+                  <div style={{ fontSize: 11, color: "#64748B", marginBottom: 6 }}>{label}</div>
                   <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
                 </div>
               ))}
@@ -1998,7 +1998,7 @@ export default function RevenueProjectionsDashboard() {
 
             {/* CCC context note */}
             {producerModal === "CCC" && (
-              <p style={{ fontSize: 12, color: "#475569", fontStyle: "italic", marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: "#64748B", fontStyle: "italic", marginBottom: 16 }}>
                 Policies bound via Allstate Call Center — not attributed to an agency producer.
               </p>
             )}
