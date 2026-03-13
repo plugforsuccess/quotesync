@@ -49,11 +49,14 @@ const PORTFOLIO_POINTS = {
   pup:            5,  // Personal Umbrella Policy
   manufactured:   5,  // Manufactured Home
   boat:           5,  // Boat Owners — always 1 item per policy
-  motor_club:     0,  // Motor Club — not an Allstate VC Baseline product
+  motor_club:     0,  // Motor Club — excluded from Allstate VC Baseline
   other:          0,
 };
 
-// VC Baseline = Auto items + HO items (target 53/month)
+// VC-eligible product keys for item count calculations
+const VC_ITEM_PRODUCTS = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured"];
+
+// VC Baseline = all VC-eligible product items (target 53/month)
 const VC_BASELINE_TARGET = 53;
 
 const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n).toLocaleString()}`;
@@ -527,9 +530,9 @@ export default function RevenueProjectionsDashboard() {
   const policiesStats = useMemo(() => {
     const totalPolicies = filtered.reduce((s, e) => s + e.policyCount, 0);
 
-    // VC Baseline = auto items + HO items + condo items (HO always itemCount=1)
+    // VC Baseline = all VC-eligible product items
     const vcBaselineCount = filtered.reduce((s, e) => {
-      if (e.product === "auto" || e.product === "ho" || e.product === "condo") return s + e.itemCount;
+      if (VC_ITEM_PRODUCTS.includes(e.product)) return s + e.itemCount;
       return s;
     }, 0);
 
@@ -2005,8 +2008,8 @@ export default function RevenueProjectionsDashboard() {
 
       {/* Product breakdown drill-down */}
       {modal === "products" && (() => {
-        const VC_KEYS    = ["auto", "ho", "condo"];
-        const NONVC_KEYS = ["renters", "motor_club", "landlord", "specialty_auto", "pup", "manufactured", "boat", "other"];
+        const VC_KEYS    = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured"];
+        const NONVC_KEYS = ["motor_club", "other"];
 
         const statsKeys = productStatsMode === "vc"
           ? VC_KEYS

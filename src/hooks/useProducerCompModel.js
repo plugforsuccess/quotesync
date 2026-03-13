@@ -208,7 +208,7 @@ export function useVcProductKeys(agencyId) {
         .from('agency_products')
         .select('product_key')
         .eq('agency_id', agencyId)
-        .gt('points_per_item', 0);
+        .eq('is_vc_eligible', true);
       if (error) throw error;
       return (data || []).map((r) => r.product_key);
     },
