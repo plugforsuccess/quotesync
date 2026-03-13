@@ -513,7 +513,11 @@ export default function RevenueProjectionsDashboard() {
     });
     const totalCommission = Object.values(map).reduce((s, p) => s + p.commission, 0);
     return Object.values(map)
-      .map(p => ({ ...p, share: totalCommission > 0 ? p.commission / totalCommission : 0 }))
+      .map(p => ({
+        ...p,
+        share: totalCommission > 0 ? p.commission / totalCommission : 0,
+        blendedRate: p.premium > 0 ? p.commission / p.premium : 0,
+      }))
       .sort((a, b) => {
         const aLast = a.name === "CCC" || a.name === "Unassigned";
         const bLast = b.name === "CCC" || b.name === "Unassigned";
@@ -1193,6 +1197,7 @@ export default function RevenueProjectionsDashboard() {
                       <th>Items</th>
                       <th>Premium</th>
                       <th>Est. Commission</th>
+                      <th>Blended Rate</th>
                       <th>Share</th>
                       <th>Points</th>
                     </tr>
@@ -1234,6 +1239,9 @@ export default function RevenueProjectionsDashboard() {
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{p.items}</td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#E2E8F0" }}>{fmtFull$(p.premium)}</td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#10B981" }}>{fmtFull$(p.commission)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#94A3B8", fontSize: 12 }}>
+                            {p.premium > 0 ? fmtPct(p.blendedRate) : "—"}
+                          </td>
                           <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#475569" : "#64748B", fontSize: 12 }}>
                             {(p.share * 100).toFixed(1)}%
                           </td>
