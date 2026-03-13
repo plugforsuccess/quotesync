@@ -109,6 +109,7 @@ const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
 const EmployeeRosterPage = lazy(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazy(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
 const BookHealthPage = lazy(() => import('./pages/BookHealthPage'));
+const ProducerCompModelPage = lazy(() => import('./pages/ProducerCompModelPage'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -367,6 +368,18 @@ function App() {
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <Suspense fallback={<PageLoader />}>
                     <RevenueProjectionsDashboard />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin - Producer Compensation Model (agency principals) */}
+            <Route
+              path="admin/producers/:producerId/comp-model"
+              element={
+                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                  <Suspense fallback={<PageLoader />}>
+                    <ProducerCompModelPage />
                   </Suspense>
                 </ProtectedRoute>
               }

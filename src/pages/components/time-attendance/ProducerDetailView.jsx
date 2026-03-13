@@ -3,7 +3,8 @@
 // No grades, no PDF export — this is Cameron's visibility tool for producer call effort.
 
 import { useState } from 'react';
-import { Phone, TrendingUp, CalendarDays, ChevronDown, ChevronRight, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Phone, TrendingUp, CalendarDays, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, DollarSign } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer,
@@ -67,7 +68,7 @@ function StatCard({ label, value, target, unit }) {
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export default function ProducerDetailView({ rcData, employeeName, weekStart, trendData, targets }) {
+export default function ProducerDetailView({ rcData, employeeName, weekStart, trendData, targets, producerId }) {
   const [dailyExpanded, setDailyExpanded] = useState(true);
 
   if (!rcData) {
@@ -101,15 +102,28 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="flex items-center gap-3 mb-1">
-          <Phone className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-bold text-gray-900">{employeeName}</h2>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-gray-500">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
-            Producer
-          </span>
-          <span>{formatWeekRange(weekStart)}</span>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <Phone className="w-6 h-6 text-blue-600" />
+              <h2 className="text-xl font-bold text-gray-900">{employeeName}</h2>
+            </div>
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
+                Producer
+              </span>
+              <span>{formatWeekRange(weekStart)}</span>
+            </div>
+          </div>
+          {producerId && (
+            <Link
+              to={`/admin/producers/${producerId}/comp-model`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors"
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              Comp Model
+            </Link>
+          )}
         </div>
       </div>
 
