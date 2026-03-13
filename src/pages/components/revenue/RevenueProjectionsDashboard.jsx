@@ -519,15 +519,6 @@ export default function RevenueProjectionsDashboard() {
     return { totalPolicies, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
   }, [filtered, entries, rangeStart]);
 
-  // ─── Available months for producer range filter ─────────────────────────────
-  const availableProducerMonths = useMemo(() => {
-    const seen = new Set();
-    allYearEntries.forEach(e => {
-      if (e.date) seen.add(e.date.slice(0, 7)); // "YYYY-MM"
-    });
-    return Array.from(seen).sort().reverse(); // newest first
-  }, [allYearEntries]);
-
   // ─── Producer-filtered entries (independent range) ─────────────────────────
   const producerFiltered = useMemo(() => {
     const todayStr = TODAY.toISOString().slice(0, 10);
@@ -544,8 +535,7 @@ export default function RevenueProjectionsDashboard() {
       return allYearEntries.filter(e => e.date && e.date >= producerCustomStart && e.date <= producerCustomEnd);
     }
 
-    // "YYYY-MM" — specific month
-    return allYearEntries.filter(e => e.date && e.date.startsWith(producerRange));
+    return filtered;
   }, [producerRange, producerCustomStart, producerCustomEnd, filtered, allYearEntries]);
 
   // ─── Producer breakdown ────────────────────────────────────────────────────
@@ -1198,14 +1188,6 @@ export default function RevenueProjectionsDashboard() {
                 >
                   <option value="main">Current Month</option>
                   <option value="ytd">Year to Date</option>
-                  {availableProducerMonths.map(ym => {
-                    const [y, m] = ym.split("-");
-                    return (
-                      <option key={ym} value={ym}>
-                        {MONTH_NAMES[parseInt(m, 10) - 1]} {y}
-                      </option>
-                    );
-                  })}
                   <option value="custom">Custom Range…</option>
                 </select>
               </div>
@@ -1976,8 +1958,7 @@ export default function RevenueProjectionsDashboard() {
           if (producerRange === "ytd") return "Year to Date";
           if (producerRange === "custom" && producerCustomStart && producerCustomEnd)
             return `${producerCustomStart} → ${producerCustomEnd}`;
-          const [y, m] = producerRange.split("-");
-          return `${MONTH_NAMES[parseInt(m, 10) - 1]} ${y}`;
+          return "Current Month";
         })();
 
         const producerEntries = producerFiltered
