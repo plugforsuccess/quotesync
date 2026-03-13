@@ -247,13 +247,15 @@ function DrillDownModal({ title, onClose, children }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
   return createPortal(
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 16, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 28px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 8 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "98vw", height: "96vh", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px 16px", borderBottom: "1px solid #252A3A", flexShrink: 0 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{title}</div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer", minWidth: 44, minHeight: 44 }}>×</button>
         </div>
-        {children}
+        <div style={{ flex: 1, overflow: "auto", padding: "20px 28px", minHeight: 0, display: "flex", flexDirection: "column" }}>
+          {children}
+        </div>
       </div>
     </div>,
     document.body
@@ -1891,20 +1893,22 @@ export default function RevenueProjectionsDashboard() {
       {/* Trend chart drill-down */}
       {modal === "trend" && (
         <DrillDownModal title="Monthly Commission Earned vs $40K Goal" onClose={closeModal}>
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={trendData} barSize={24}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
-              <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
-              <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
-              <Bar dataKey="commission" radius={[4,4,0,0]}>
-                {trendData.map((entry, i) => (
-                  <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <div style={{ flex: 1, minHeight: 0 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={trendData} barSize={24}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
+                <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
+                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
+                <Bar dataKey="commission" radius={[4,4,0,0]}>
+                  {trendData.map((entry, i) => (
+                    <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </DrillDownModal>
       )}
 
