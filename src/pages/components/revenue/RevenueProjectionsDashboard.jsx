@@ -481,7 +481,7 @@ export default function RevenueProjectionsDashboard() {
 
   // ─── Aggregated totals ─────────────────────────────────────────────────────
   const totals = useMemo(() => {
-    const base = { premium: 0, commission: 0, count: 0 };
+    const base = { premium: 0, commission: 0, count: 0, itemCount: 0 };
     const byProduct = {
       auto: {...base}, ho: {...base}, condo: {...base}, renters: {...base},
       landlord: {...base}, specialty_auto: {...base}, pup: {...base},
@@ -493,11 +493,27 @@ export default function RevenueProjectionsDashboard() {
       p.premium += e.premium;
       p.commission += c;
       p.count += e.policyCount;
-      p.itemCount = (p.itemCount ?? 0) + e.itemCount;
+      p.itemCount += e.itemCount ?? 1;
     });
     const totalPremium = Object.values(byProduct).reduce((s, v) => s + v.premium, 0);
     const totalCommission = Object.values(byProduct).reduce((s, v) => s + v.commission, 0);
-    return { byProduct, totalPremium, totalCommission };
+
+    // VC-eligible products: auto, ho, condo
+    const VC_PRODUCTS = ["auto", "ho", "condo"];
+    const vcPremium    = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.premium    ?? 0), 0);
+    const vcCommission = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.commission ?? 0), 0);
+    const vcItemCount  = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.itemCount  ?? 0), 0);
+    const vcPolicyCount = VC_PRODUCTS.reduce((s, k) => s + (byProduct[k]?.count     ?? 0), 0);
+
+    const vcBlendedRate      = vcPremium > 0 ? vcCommission / vcPremium : null;
+    const vcAvgPremiumPerItem = vcItemCount > 0 ? vcPremium / vcItemCount : null;
+    const vcAvgPremiumPerPolicy = vcPolicyCount > 0 ? vcPremium / vcPolicyCount : null;
+
+    return {
+      byProduct, totalPremium, totalCommission,
+      vcPremium, vcCommission, vcItemCount, vcPolicyCount,
+      vcBlendedRate, vcAvgPremiumPerItem, vcAvgPremiumPerPolicy,
+    };
   }, [filtered]);
 
   // ─── Policies stats (items, VC baseline, portfolio points) ───────────────
@@ -1940,6 +1956,49 @@ export default function RevenueProjectionsDashboard() {
       {/* Product breakdown drill-down */}
       {modal === "products" && (
         <DrillDownModal title="Revenue by Product Line" onClose={closeModal}>
+
+          {/* VC Stats Strip */}
+          <div style={{ display: "flex", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+            {[
+              {
+                label: "VC BLENDED RATE",
+                value: totals.vcBlendedRate != null ? fmtPct(totals.vcBlendedRate) : "—",
+                sub: "Auto + HO + Condo only",
+                color: "#10B981",
+              },
+              {
+                label: "VC AVG PREMIUM / ITEM",
+                value: totals.vcAvgPremiumPerItem != null ? fmtFull$(totals.vcAvgPremiumPerItem) : "—",
+                sub: `${totals.vcItemCount} VC items`,
+                color: "#3B82F6",
+              },
+              {
+                label: "VC AVG PREMIUM / POLICY",
+                value: totals.vcAvgPremiumPerPolicy != null ? fmtFull$(totals.vcAvgPremiumPerPolicy) : "—",
+                sub: `${totals.vcPolicyCount} VC policies`,
+                color: "#3B82F6",
+              },
+              {
+                label: "VC PREMIUM",
+                value: fmtFull$(totals.vcPremium),
+                sub: totals.totalPremium > 0 ? `${(totals.vcPremium / totals.totalPremium * 100).toFixed(1)}% of total` : "—",
+                color: "#F59E0B",
+              },
+              {
+                label: "VC COMMISSION",
+                value: fmtFull$(totals.vcCommission),
+                sub: totals.totalCommission > 0 ? `${(totals.vcCommission / totals.totalCommission * 100).toFixed(1)}% of total` : "—",
+                color: "#10B981",
+              },
+            ].map(({ label, value, sub, color }) => (
+              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 10, padding: "14px 18px", flex: "1 1 140px", minWidth: 130 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
+                <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+                <div style={{ fontSize: 11, color: "#475569", marginTop: 3 }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+
           <div style={{ marginBottom: 24 }}>
             <ProductBreakdownRows
               byProduct={totals.byProduct}
