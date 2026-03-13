@@ -482,7 +482,11 @@ export default function RevenueProjectionsDashboard() {
   // ─── Aggregated totals ─────────────────────────────────────────────────────
   const totals = useMemo(() => {
     const base = { premium: 0, commission: 0, count: 0 };
-    const byProduct = { auto: {...base}, ho: {...base}, renters: {...base}, other: {...base} };
+    const byProduct = {
+      auto: {...base}, ho: {...base}, condo: {...base}, renters: {...base},
+      landlord: {...base}, specialty_auto: {...base}, pup: {...base},
+      manufactured: {...base}, boat: {...base}, motor_club: {...base}, other: {...base},
+    };
     filtered.forEach(e => {
       const c = calcCommission(e.premium, e.product, e.tier ?? "monoline");
       const p = byProduct[e.product] ?? byProduct.other;
