@@ -967,7 +967,7 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalCommission)}</div>
           <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
-          {view === "month" && view !== "custom" && lastMonthCommission > 0 && (() => {
+          {view === "month" && lastMonthCommission > 0 && (() => {
             const delta = totals.totalCommission - lastMonthCommission;
             const pct   = Math.abs(delta / lastMonthCommission * 100).toFixed(1);
             return (
@@ -990,7 +990,7 @@ export default function RevenueProjectionsDashboard() {
               sub: `Avg premium: ${totalPolicies > 0 ? fmt$(totals.totalPremium / totalPolicies) : "—"}`,
               subColor: "#64748B",
             },
-            ...(view === "month" ? {
+            ...(view !== "ytd" ? {
               items: {
                 label: "VC BASELINE",
                 value: String(vcBaselineCount),
@@ -1010,10 +1010,10 @@ export default function RevenueProjectionsDashboard() {
             points: {
               label: "PORTFOLIO POINTS",
               value: String(totalPoints),
-              sub: view === "month"
+              sub: view !== "ytd"
                 ? (pointsDelta >= 0 ? `+${pointsDelta} vs last month` : `${pointsDelta} vs last month`)
                 : "Portfolio points YTD",
-              subColor: view === "month"
+              subColor: view !== "ytd"
                 ? (pointsDelta >= 0 ? "#10B981" : "#EF4444")
                 : "#64748B",
             },
@@ -1049,12 +1049,12 @@ export default function RevenueProjectionsDashboard() {
         {/* Commission Goal / YTD Commission */}
         <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={handleGoalClick} title="Click to switch · Double-click to expand">
           <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
-            {view === "month" ? activeGoal.label : "YTD COMMISSION"}
+            {view !== "ytd" ? activeGoal.label : "YTD COMMISSION"}
           </div>
           <div style={{ fontSize: 26, fontWeight: 700, color: view === "ytd" ? "#10B981" : activeGoal.valueColor, fontFamily: "'DM Mono', monospace" }}>
-            {view === "month" ? fmtFull$(activeGoal.earned) : fmtFull$(totals.totalCommission)}
+            {view !== "ytd" ? fmtFull$(activeGoal.earned) : fmtFull$(totals.totalCommission)}
           </div>
-          {view === "month" ? (
+          {view !== "ytd" ? (
             <>
               <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
                 {Math.round(activeGoal.pct * 100)}% of {fmtFull$(activeGoal.goal)} goal
