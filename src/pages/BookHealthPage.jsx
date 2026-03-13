@@ -66,7 +66,7 @@ function normaliseProduct(raw = "") {
   if (v.includes("rent") || v.includes("ho4")) return "renters";
   if (v.includes("landlord")) return "landlord";  // separate from ho — same pts but tracked independently
   if (v.includes("umbrella") || v.includes("pup")) return "pup";
-  if (v.includes("boat") || v.includes("watercraft")) return "boat";
+  if (v.includes("boat") || v.includes("watercraft") || v.includes("inland marine")) return "boat";
   if (v.includes("motor club")) return "motor_club";
   return "other";
 }
