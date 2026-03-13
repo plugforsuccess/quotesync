@@ -371,7 +371,7 @@ export default function RevenueProjectionsDashboard() {
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
-  const [productStatsMode, setProductStatsMode] = useState("vc"); // "all" | "vc" | "nonvc"
+  const [productStatsMode, setProductStatsMode] = useState("all"); // "all" | "vc" | "nonvc"
   const [producerModal, setProducerModal] = useState(null); // null | producer name string
   const [producerRange, setProducerRange] = useState("main"); // "main" | "ytd" | "YYYY-MM" | "custom"
   const [producerCustomStart, setProducerCustomStart] = useState(""); // "YYYY-MM-DD"
