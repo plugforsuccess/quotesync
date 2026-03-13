@@ -131,7 +131,8 @@ const emptyEntry = () => ({
 function parseAllstateRows(rows) {
   // Best-effort mapping for common Allstate export column names
   const COL_MAP = {
-    date:    ["date written", "issued date", "effective date", "policy date", "date", "eff date"],
+    date_written: ["date written", "written date"],
+    issued_date:  ["issued date", "issue date", "effective date", "policy date", "eff date", "date"],
     premium: ["written premium", "premium", "annual premium", "prem"],
     product: ["line of business", "lob", "product", "type"],
     policy:  ["policy number", "policy #", "policy no"],
@@ -146,7 +147,8 @@ function parseAllstateRows(rows) {
 
   if (!rows || rows.length < 2) return [];
   const headers = rows[0];
-  const di      = findCol(headers, COL_MAP.date);
+  const di         = findCol(headers, COL_MAP.issued_date);
+  const dWritten   = findCol(headers, COL_MAP.date_written);
   const pi      = findCol(headers, COL_MAP.premium);
   const li      = findCol(headers, COL_MAP.product);
   const iTier   = findCol(headers, COL_MAP.tier);   // -1 if column absent
@@ -181,12 +183,25 @@ function parseAllstateRows(rows) {
     const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
     const itemCount = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
 
-    const rawDate = di >= 0 ? r[di] : null;
-    let date = TODAY.toISOString().slice(0, 10);
-    if (rawDate) {
-      const d = new Date(rawDate);
-      if (!isNaN(d)) date = d.toISOString().slice(0, 10);
+    const rawIssued  = di >= 0       ? r[di]       : null;
+    const rawWritten = dWritten >= 0 ? r[dWritten] : null;
+
+    let issuedDateStr  = TODAY.toISOString().slice(0, 10);
+    let writtenDateStr = null;
+
+    if (rawIssued) {
+      const d = new Date(rawIssued);
+      if (!isNaN(d)) issuedDateStr = d.toISOString().slice(0, 10);
     }
+    if (rawWritten) {
+      const d = new Date(rawWritten);
+      if (!isNaN(d)) writtenDateStr = d.toISOString().slice(0, 10);
+    }
+
+    // Skip endorsements: if both dates are present and differ, this is not NB
+    if (writtenDateStr && writtenDateStr !== issuedDateStr) return null;
+
+    const date = issuedDateStr;
 
     return {
       id: crypto.randomUUID(),
@@ -203,7 +218,7 @@ function parseAllstateRows(rows) {
       source:       "upload",
       note:         r[li]?.toString() ?? "",
     };
-  }).filter(e => e.premium > 0 && e.bindId !== "USSGOVP");
+  }).filter(e => e !== null && e.premium > 0 && e.bindId !== "USSGOVP");
 }
 
 // ─── Sortable Table Header ────────────────────────────────────────────────────
