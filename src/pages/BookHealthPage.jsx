@@ -91,11 +91,16 @@ const TERMINATION_REASONS = ["Price", "Service", "Claims", "Moving", "Coverage n
 const CONTACT_METHODS = ["phone", "text", "email", "other"];
 
 const COL_MAP = {
-  policy_no:    ["policy number", "policy no", "policy #", "pol no", "pol #"],
-  customer:     ["customer name", "insured name", "insured", "name", "customer"],
-  product:      ["product name", "line code", "product code", "line of business", "lob", "coverage type", "policy type", "product"],
-  premium:      ["premium new", "written premium", "annual premium", "premium", "policy premium"],
-  cancel_date:  ["termination effective", "cancellation date", "cancel date", "cancel effective date", "eff cancel date", "cancellation effective date"],
+  policy_no:      ["policy number", "policy no", "policy #", "pol no", "pol #"],
+  customer_first: ["insured first name", "first name"],
+  customer_last:  ["insured last name", "last name"],
+  customer:       ["customer name", "insured name", "insured", "name", "customer"],
+  product:        ["product name", "line code", "product code", "line of business", "lob", "coverage type", "policy type", "product"],
+  premium:        ["premium new($)", "premium new", "written premium", "annual premium", "premium", "policy premium"],
+  prior_premium:  ["premium old($)", "premium old", "prior premium", "previous premium", "original premium"],
+  phone:          ["insured phone", "phone number", "phone", "mobile", "cell"],
+  items:          ["no. of items", "item count", "items", "number of items"],
+  cancel_date:    ["pending cancel date", "termination effective", "cancellation date", "cancel date", "cancel effective date", "eff cancel date", "cancellation effective date"],
 };
 
 
@@ -115,6 +120,13 @@ function fmt$(n) {
 function fmtFull$(n) {
   if (!n && n !== 0) return "—";
   return `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
+function maskCustomerName(name) {
+  if (!name) return "—";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0];
+  return `${parts[0]} ${parts[parts.length - 1][0]}.`;
 }
 
 function daysUntilCancel(dateStr) {
@@ -149,10 +161,15 @@ function parseReport(file) {
 
         const headers = raw[headerRow].map(h => h?.toString().toLowerCase().trim());
         const pi = findCol(headers, COL_MAP.policy_no);
-        const ci = findCol(headers, COL_MAP.customer);
+        const ciFirst    = findCol(headers, COL_MAP.customer_first);
+        const ciLast     = findCol(headers, COL_MAP.customer_last);
+        const ciCombined = findCol(headers, COL_MAP.customer);
         const pri = findCol(headers, COL_MAP.product);
         const pmi = findCol(headers, COL_MAP.premium);
         const di = findCol(headers, COL_MAP.cancel_date);
+        const phoneI     = findCol(headers, COL_MAP.phone);
+        const priorPmI   = findCol(headers, COL_MAP.prior_premium);
+        const itemsI     = findCol(headers, COL_MAP.items);
 
         if (pi < 0 || di < 0) throw new Error("Could not find required columns (Policy No, Cancel Date). Check report format.");
 
@@ -176,11 +193,33 @@ function parseReport(file) {
             if (!isNaN(p)) premium = p;
           }
 
+          let customerName = null;
+          if (ciFirst >= 0 && ciLast >= 0) {
+            const first = row[ciFirst]?.toString().trim() || "";
+            const last  = row[ciLast]?.toString().trim() || "";
+            if (first || last) customerName = `${first} ${last}`.trim();
+          } else if (ciCombined >= 0) {
+            customerName = row[ciCombined]?.toString().trim() || null;
+          }
+
+          const phone = phoneI >= 0 ? (row[phoneI]?.toString().trim() || null) : null;
+
+          let prior_premium = null;
+          if (priorPmI >= 0 && row[priorPmI]) {
+            const p = parseFloat(row[priorPmI].toString().replace(/[$,]/g, ""));
+            if (!isNaN(p)) prior_premium = p;
+          }
+
+          const item_count = itemsI >= 0 ? (parseInt(row[itemsI]) || 1) : null;
+
           rows.push({
-            policy_no:            policyNo,
-            customer_name:        ci >= 0 ? row[ci]?.toString().trim() : null,
-            product:              normaliseProduct(pri >= 0 ? row[pri]?.toString() : ""),
-            premium_at_risk:      premium,
+            policy_no:             policyNo,
+            customer_name:         customerName,
+            product:               normaliseProduct(pri >= 0 ? row[pri]?.toString() : ""),
+            premium_at_risk:       premium,
+            prior_premium,
+            phone,
+            item_count,
             cancel_effective_date: cancelDate,
           });
         }
@@ -215,7 +254,7 @@ function diffReport(parsed, existing) {
     if (activeKeys.has(key)) {
       const ex = activeKeys.get(key);
       if (ex.last_seen_on !== today || ex.premium_at_risk !== row.premium_at_risk) {
-        toUpdate.push({ id: ex.id, last_seen_on: today, premium_at_risk: row.premium_at_risk });
+        toUpdate.push({ id: ex.id, last_seen_on: today, premium_at_risk: row.premium_at_risk, prior_premium: row.prior_premium });
       } else {
         duplicates.push(key);
       }
@@ -259,9 +298,79 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount }) {
   );
 }
 
+// ─── Customer Drilldown Modal ──────────────────────────────────────────────────────
+
+function CustomerDrilldownModal({ event, onClose }) {
+  const days = daysUntilCancel(event.cancel_effective_date);
+  const premiumChangePct = event.prior_premium && event.premium_at_risk
+    ? ((event.premium_at_risk - event.prior_premium) / event.prior_premium) * 100
+    : null;
+
+  return (
+    <div
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
+      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+    >
+      <div style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: 500, padding: "24px 20px" }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>
+              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+            </div>
+            <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
+              Policy #{event.policy_no || "\u2014"}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>\u00D7</button>
+        </div>
+
+        {/* Detail grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
+          {[
+            { label: "Product",          value: event.product?.toUpperCase() || "\u2014",                              color: "#E2E8F0" },
+            { label: "Cancel Date",      value: event.cancel_effective_date || "\u2014",                               color: urgencyColor(days) },
+            { label: "Days Left",        value: days <= 0 ? "PAST DUE" : `${days} days`,                         color: urgencyColor(days) },
+            { label: "Phone",            value: event.phone || "\u2014",                                               color: event.phone ? "#E2E8F0" : "#334155" },
+            { label: "Premium at Risk",  value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014",    color: "#E2E8F0" },
+            { label: "Prior Premium",    value: event.prior_premium ? fmtFull$(event.prior_premium) : "\u2014",        color: "#94A3B8" },
+            {
+              label: "Premium Change",
+              value: premiumChangePct !== null ? `${premiumChangePct >= 0 ? "+" : ""}${premiumChangePct.toFixed(1)}%` : "\u2014",
+              color: premiumChangePct === null ? "#334155" : premiumChangePct > 0 ? "#EF4444" : "#10B981",
+            },
+            { label: "Items at Risk",    value: event.item_count != null ? String(event.item_count) : "\u2014",        color: "#E2E8F0" },
+            { label: "Status",           value: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).label,     color: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).color },
+            { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "#94A3B8" },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
+              <div style={{ fontSize: 10, color: "#475569", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Notes — full width, only if present */}
+        {event.notes && (
+          <div style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A", marginTop: 10 }}>
+            <div style={{ fontSize: 10, color: "#475569", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Notes</div>
+            <div style={{ fontSize: 12, color: "#94A3B8", lineHeight: 1.5 }}>{event.notes}</div>
+          </div>
+        )}
+
+        <div style={{ fontSize: 11, color: "#334155", marginTop: 16, textAlign: "center" }}>
+          Click the row to open the full edit modal
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Triage Tab ──────────────────────────────────────────────────────────────
 
 function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sortCol, sortDir, onSort, setSelectedEvent, producers, bulkAssign }) {
+  const [drilldownEvent, setDrilldownEvent] = useState(null);
   const brokenCount = events.filter(e => e.status === "promise_broken").length;
 
   return (
@@ -302,14 +411,13 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
             <thead>
               <tr>
                 <SortTh col="cancel_effective_date" label="Cancel Date" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <th>Days Left</th>
+                <SortTh col="days_left" label="Days Left" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <th>Product</th>
                 <SortTh col="premium_at_risk" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="assigned_to" label="Assigned" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <th>Promise Date</th>
-                <th></th>
               </tr>
             </thead>
           <tbody>
@@ -326,7 +434,22 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                       {days <= 0 ? "PAST DUE" : `${days}d`}
                     </span>
                   </td>
-                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "—"}</td>
+                  <td>
+                    <button
+                      onClick={e => { e.stopPropagation(); setDrilldownEvent(event); }}
+                      style={{
+                        background: "none", border: "none", cursor: "pointer",
+                        color: "#E2E8F0", fontWeight: 600, fontSize: 13,
+                        padding: 0, fontFamily: "inherit",
+                        textDecoration: "underline", textDecorationColor: "transparent",
+                        transition: "text-decoration-color 0.15s",
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.textDecorationColor = "#3B82F6"}
+                      onMouseLeave={e => e.currentTarget.style.textDecorationColor = "transparent"}
+                    >
+                      {maskCustomerName(event.customer_name)}
+                    </button>
+                  </td>
                   <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "—"}</td>
                   <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
                     {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
@@ -338,12 +461,11 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                   <td style={{ color: event.promise_date ? "#8B5CF6" : "#334155", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                     {event.promise_date || "—"}
                   </td>
-                  <td style={{ color: "#475569", fontSize: 16 }}>\u203A</td>
                 </tr>
               );
             })}
             {filteredEvents.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+              <tr><td colSpan={8} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
                 No events in this filter
               </td></tr>
             )}
@@ -351,6 +473,13 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
           </table>
         </div>
       </div>
+
+      {drilldownEvent && (
+        <CustomerDrilldownModal
+          event={drilldownEvent}
+          onClose={() => setDrilldownEvent(null)}
+        />
+      )}
     </div>
   );
 }
@@ -382,7 +511,7 @@ function ResolvedTab({ resolvedEvents }) {
                   <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                     {event.resolution_date || event.updated_at?.slice(0, 10) || "—"}
                   </td>
-                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{event.customer_name || "—"}</td>
+                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{maskCustomerName(event.customer_name)}</td>
                   <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{event.policy_no}</td>
                   <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "—"}</td>
                   <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
@@ -552,7 +681,7 @@ function EventDetailModal({ event, onClose, onUpdate }) {
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{event.customer_name || "Unknown Customer"}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
             <div style={{ fontSize: 12, color: "#475569", marginTop: 2 }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
             </div>
@@ -1465,6 +1594,7 @@ export default function BookHealthPage() {
         case "premium_at_risk": av = a.premium_at_risk || 0; bv = b.premium_at_risk || 0; break;
         case "status": av = a.status; bv = b.status; break;
         case "assigned_to": av = a.assigned_to || ""; bv = b.assigned_to || ""; break;
+        case "days_left": av = daysUntilCancel(a.cancel_effective_date); bv = daysUntilCancel(b.cancel_effective_date); break;
         default: av = a.cancel_effective_date; bv = b.cancel_effective_date;
       }
       if (av < bv) return sortDir === "asc" ? -1 : 1;
@@ -1501,7 +1631,8 @@ export default function BookHealthPage() {
       setSortDir(d => d === "asc" ? "desc" : "asc");
     } else {
       setSortCol(col);
-      setSortDir("asc");
+      if (col === "days_left") setSortDir("asc");
+      else setSortDir("asc");
     }
   }
 
@@ -1559,9 +1690,11 @@ export default function BookHealthPage() {
       }
 
       for (const u of diffResult.toUpdate) {
+        const updatePayload = { last_seen_on: u.last_seen_on, premium_at_risk: u.premium_at_risk };
+        if (u.prior_premium != null) updatePayload.prior_premium = u.prior_premium;
         await supabase
           .from("pending_cancel_events")
-          .update({ last_seen_on: u.last_seen_on, premium_at_risk: u.premium_at_risk })
+          .update(updatePayload)
           .eq("id", u.id);
       }
 
