@@ -800,12 +800,6 @@ export default function RevenueProjectionsDashboard() {
   };
 
   useEffect(() => {
-    if (view === "ytd" && policiesMode === "items") {
-      setPoliciesMode("count");
-    }
-  }, [view, policiesMode]);
-
-  useEffect(() => {
     return () => {
       if (paceClickTimer.current) clearTimeout(paceClickTimer.current);
       if (dailyClickTimer.current) clearTimeout(dailyClickTimer.current);
@@ -889,7 +883,14 @@ export default function RevenueProjectionsDashboard() {
                   : `${vcBaselineCount} / ${VC_BASELINE_TARGET} · ${vcShortfall} needed`,
                 subColor: vcOnTrack ? "#10B981" : "#F59E0B",
               },
-            } : {}),
+            } : {
+              items: {
+                label: "ITEMS WRITTEN",
+                value: String(filtered.reduce((s, e) => s + (e.itemCount ?? 1), 0)),
+                sub: "Total items YTD",
+                subColor: "#475569",
+              },
+            }),
             points: {
               label: "PORTFOLIO POINTS",
               value: String(totalPoints),
@@ -922,7 +923,7 @@ export default function RevenueProjectionsDashboard() {
               </div>
               {/* Mode indicator dots */}
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                {Object.keys(modes).map(m => (
+                {["count", "items", "points"].map(m => (
                   <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: policiesMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
                 ))}
               </div>
