@@ -281,6 +281,7 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
           <span style={{ width: 44, textAlign: "right" }}>% Mix</span>
           <span style={{ width: 72, textAlign: "right" }}>Commission</span>
           <span style={{ width: 52, textAlign: "right" }}>Rate</span>
+          <span style={{ width: 72, textAlign: "right" }}>Avg/Item</span>
           <span style={{ width: 44, textAlign: "right" }}>Policies</span>
         </span>
       </div>
@@ -300,6 +301,7 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
                 <span style={{ width: 44, textAlign: "right", color: "#94A3B8", fontWeight: 600 }}>{(premiumPct * 100).toFixed(1)}%</span>
                 <span style={{ width: 72, textAlign: "right", color: "#10B981" }}>{fmtFull$(val.commission)}</span>
                 <span style={{ width: 52, textAlign: "right", color: "#64748B" }}>{fmtPct(effRate)}</span>
+                <span style={{ width: 72, textAlign: "right", color: "#94A3B8" }}>{val.itemCount > 0 ? fmtFull$(Math.round(val.premium / val.itemCount)) : "—"}</span>
                 <span style={{ width: 44, textAlign: "right", color: "#64748B" }}>{val.count}</span>
               </span>
             </div>
