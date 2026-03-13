@@ -64,8 +64,8 @@ export default function DraftRestoreModal({
       ></div>
 
       {/* Modal */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl bg-white rounded-lg shadow-xl">
+      <div className="flex min-h-full items-center justify-center p-2">
+        <div className="relative w-full max-w-[98vw] h-[96vh] overflow-y-auto bg-white rounded-lg shadow-xl">
           {/* Header */}
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
@@ -90,7 +90,7 @@ export default function DraftRestoreModal({
           </div>
 
           {/* Body */}
-          <div className="px-6 py-4 max-h-96 overflow-y-auto">
+          <div className="px-6 py-4">
             {/* Draft Preview */}
             <div className="space-y-4">
               {/* Title Preview */}

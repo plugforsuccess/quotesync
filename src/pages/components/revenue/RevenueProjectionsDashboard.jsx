@@ -247,8 +247,8 @@ function DrillDownModal({ title, onClose, children }) {
     return () => window.removeEventListener("keydown", handler);
   }, [onClose]);
   return createPortal(
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px 16px" }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 16, width: "100%", maxWidth: 1100, maxHeight: "90vh", overflow: "auto", padding: "24px 28px" }}>
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 16, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 28px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{title}</div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer", minWidth: 44, minHeight: 44 }}>×</button>

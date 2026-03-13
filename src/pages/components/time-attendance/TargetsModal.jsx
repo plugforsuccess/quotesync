@@ -114,9 +114,9 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-t-2xl sm:rounded-2xl sm:max-w-2xl max-h-[90vh] overflow-y-auto bg-white p-5 sm:p-7">
+      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto bg-white p-5 sm:p-7">
           {/* Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 pb-4 mb-4 z-10">
             <div className="flex items-center justify-between">

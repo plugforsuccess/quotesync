@@ -44,9 +44,9 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
   const displayName = employee.preferred_name || employee.first_name;
 
   return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6">
+    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-t-2xl sm:rounded-2xl sm:max-w-md max-h-[90vh] overflow-y-auto bg-white p-5 sm:p-7">
+      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto bg-white p-5 sm:p-7">
           <div className="border-b border-gray-200 pb-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-600" />
