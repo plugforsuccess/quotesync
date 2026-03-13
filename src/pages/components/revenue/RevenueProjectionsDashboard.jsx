@@ -203,7 +203,7 @@ function parseAllstateRows(rows) {
       source:       "upload",
       note:         r[li]?.toString() ?? "",
     };
-  }).filter(e => e.premium > 0);
+  }).filter(e => e.premium > 0 && e.bindId !== "USSGOVP");
 }
 
 // ─── Sortable Table Header ────────────────────────────────────────────────────
