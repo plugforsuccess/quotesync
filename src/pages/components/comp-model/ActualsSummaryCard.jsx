@@ -39,6 +39,8 @@ export default function ActualsSummaryCard({
   const actuals = useMemo(() => {
     if (!config || !entries || !vcProductKeys) return null;
 
+    // vcProductKeys comes from agency_products.is_vc_eligible = true
+    // Includes: auto, specialty_auto, ho, condo, renters, landlord, pup, boat, manufactured
     const vcEntries = entries.filter((e) => vcProductKeys.includes(e.product));
     const actualVcPrem = vcEntries.reduce((s, e) => s + e.premium, 0);
     const actualVcItems = vcEntries.reduce((s, e) => s + e.itemCount, 0);

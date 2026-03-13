@@ -110,6 +110,27 @@ export function calcMixPctTotal(productMix) {
   return productMix.reduce((sum, p) => sum + (Number(p.mix_pct) || 0), 0);
 }
 
+// ── VC Product Keys ─────────────────────────────────────────────────────────
+// Allstate NB VC-eligible product keys
+// Source: Allstate NB Variable Compensation eligibility rules (effective Jan 1, 2023)
+export const VC_PRODUCT_KEYS = [
+  'auto',
+  'specialty_auto',
+  'ho',
+  'condo',
+  'renters',
+  'landlord',
+  'pup',
+  'boat',
+  'manufactured',
+];
+
+// Non-VC product keys (tracked for non-VC bonus purposes)
+export const NON_VC_PRODUCT_KEYS = [
+  'motor_club',
+  'other',
+];
+
 // ── Constants ───────────────────────────────────────────────────────────────
 
 export const PRESET_SCENARIOS = [
@@ -135,7 +156,13 @@ export const DEFAULT_CONFIG = {
 };
 
 export const DEFAULT_PRODUCT_MIX = [
-  { product_name: 'Auto', mix_pct: 0.53, avg_prem_item: 1099, sort_order: 0 },
-  { product_name: 'Home', mix_pct: 0.45, avg_prem_item: 2122, sort_order: 1 },
-  { product_name: 'Condo', mix_pct: 0.02, avg_prem_item: 1153, sort_order: 2 },
+  { product_name: 'Auto',             mix_pct: 0.53, avg_prem_item: 1099, sort_order: 0 },
+  { product_name: 'Home',             mix_pct: 0.45, avg_prem_item: 2122, sort_order: 1 },
+  { product_name: 'Condo',            mix_pct: 0.02, avg_prem_item: 1153, sort_order: 2 },
+  { product_name: 'Renters',          mix_pct: 0.00, avg_prem_item:  400, sort_order: 3 },
+  { product_name: 'Landlord',         mix_pct: 0.00, avg_prem_item: 1200, sort_order: 4 },
+  { product_name: 'Personal Umbrella',mix_pct: 0.00, avg_prem_item:  350, sort_order: 5 },
+  { product_name: 'Boat Owners',      mix_pct: 0.00, avg_prem_item:  600, sort_order: 6 },
+  { product_name: 'Manufactured Home',mix_pct: 0.00, avg_prem_item:  900, sort_order: 7 },
+  { product_name: 'Specialty Auto',   mix_pct: 0.00, avg_prem_item:  800, sort_order: 8 },
 ];
