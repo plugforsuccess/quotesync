@@ -10,12 +10,17 @@ import * as XLSX from "xlsx";
 // ─── Commission Matrix ────────────────────────────────────────────────────────
 // Three-tier rates: Preferred / Bundled / Monoline (new business only)
 const COMMISSION = {
-  auto:    { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Auto" },
-  ho:      { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Homeowners" },
-  condo:   { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Condo" },
-  renters: { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Renters" },
-  motor_club: { preferred: 0.25, bundled: 0.25, monoline: 0.25, label: "Motor Club" },
-  other:   { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
+  auto:           { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Auto" },
+  ho:             { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Homeowners" },
+  condo:          { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Condo" },
+  renters:        { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Renters" },
+  landlord:       { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Landlord" },
+  specialty_auto: { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Specialty Auto" },
+  pup:            { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Personal Umbrella" },
+  manufactured:   { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Manufactured Home" },
+  boat:           { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Boat Owners" },
+  motor_club:     { preferred: 0.25, bundled: 0.25, monoline: 0.25, label: "Motor Club" },
+  other:          { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
 };
 const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
 const TIER_COLORS = { preferred: "#10B981", bundled: "#3B82F6", monoline: "#64748B" };
@@ -84,8 +89,7 @@ const COMMISSIONABLE_FACTORS = {
 };
 
 function calcCommission(premium, product, tier = "monoline") {
-  const key = ["auto","ho","condo","renters","motor_club"].includes(product) ? product : "other";
-  const rates = COMMISSION[key];
+  const rates = COMMISSION[product] ?? COMMISSION.other;
   const factor = COMMISSIONABLE_FACTORS[product] ?? 1.0;
   return premium * factor * (rates[tier] ?? rates.monoline);
 }
