@@ -548,7 +548,7 @@ export default function RevenueProjectionsDashboard() {
     }
 
     if (producerRange === "custom") {
-      if (!producerCustomStart || !producerCustomEnd) return filtered;
+      if (!producerCustomStart || !producerCustomEnd) return [];
       return allYearEntries.filter(e => e.date && e.date >= producerCustomStart && e.date <= producerCustomEnd);
     }
 
@@ -1946,7 +1946,7 @@ export default function RevenueProjectionsDashboard() {
       {/* Product breakdown drill-down */}
       {modal === "products" && (() => {
         const VC_KEYS    = ["auto", "ho", "condo"];
-        const NONVC_KEYS = ["renters", "motor_club", "other"];
+        const NONVC_KEYS = ["renters", "motor_club", "landlord", "specialty_auto", "pup", "manufactured", "boat", "other"];
 
         const statsKeys = productStatsMode === "vc"
           ? VC_KEYS
