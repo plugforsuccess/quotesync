@@ -1162,9 +1162,8 @@ export default function RevenueProjectionsDashboard() {
                     color: "#94A3B8", fontSize: 12, padding: "4px 10px", cursor: "pointer",
                   }}
                 >
-                  <option value="main">{rangeLabel}</option>
-                  <option value="ytd">YTD {TODAY.getFullYear()}</option>
-                  <option disabled>──────────</option>
+                  <option value="main">Current Month</option>
+                  <option value="ytd">Year to Date</option>
                   {availableProducerMonths.map(ym => {
                     const [y, m] = ym.split("-");
                     return (
@@ -1173,7 +1172,6 @@ export default function RevenueProjectionsDashboard() {
                       </option>
                     );
                   })}
-                  <option disabled>──────────</option>
                   <option value="custom">Custom Range…</option>
                 </select>
               </div>
@@ -1940,8 +1938,8 @@ export default function RevenueProjectionsDashboard() {
       {/* Producer Drilldown Modal */}
       {producerModal != null && (() => {
         const producerRangeLabel = (() => {
-          if (producerRange === "main") return rangeLabel;
-          if (producerRange === "ytd") return `YTD ${TODAY.getFullYear()}`;
+          if (producerRange === "main") return "Current Month";
+          if (producerRange === "ytd") return "Year to Date";
           if (producerRange === "custom" && producerCustomStart && producerCustomEnd)
             return `${producerCustomStart} → ${producerCustomEnd}`;
           const [y, m] = producerRange.split("-");
