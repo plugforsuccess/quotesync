@@ -1140,7 +1140,22 @@ function NetGrowthTab({ agencyId }) {
     lapse_premium: acc.lapse_premium + m.lapse_premium,
   }), { nb_points: 0, lapse_points: 0, net_points: 0, nb_items: 0, lapse_items: 0, nb_premium: 0, lapse_premium: 0 });
 
-  const newestFirst = [...months].reverse();
+  // Running cumulative — only accumulate months within the current year
+  const currentYear = new Date().getFullYear().toString();
+  let runningNet = 0;
+  const monthsWithYTD = months.map(m => {
+    if (m.month.startsWith(currentYear)) {
+      runningNet += m.net_points;
+      return { ...m, net_ytd: runningNet };
+    }
+    return { ...m, net_ytd: null };
+  });
+
+  const finalNetYTD = [...monthsWithYTD]
+    .filter(m => m.net_ytd !== null)
+    .at(-1)?.net_ytd ?? null;
+
+  const newestFirst = [...monthsWithYTD].reverse();
 
   return (
     <div className="card" style={{ padding: 24 }}>
@@ -1226,6 +1241,7 @@ function NetGrowthTab({ agencyId }) {
               <th style={{ textAlign: "right" }}>Points Written</th>
               <th style={{ textAlign: "right" }}>Points Lost</th>
               <th style={{ textAlign: "right" }}>Net Points</th>
+              <th style={{ textAlign: "right" }}>Net YTD</th>
               <th style={{ textAlign: "right" }}>Items In</th>
               <th style={{ textAlign: "right" }}>Items Out</th>
               <th style={{ textAlign: "right" }}>Premium In</th>
@@ -1241,6 +1257,21 @@ function NetGrowthTab({ agencyId }) {
                 <td style={{ textAlign: "right", color: m.net_points > 0 ? "#10B981" : m.net_points < 0 ? "#EF4444" : "#475569" }}>
                   {m.net_points.toLocaleString()}
                 </td>
+                <td style={{
+                  textAlign: "right",
+                  fontFamily: "'DM Mono', monospace",
+                  color: m.net_ytd === null
+                    ? "#334155"
+                    : m.net_ytd > 0 ? "#10B981"
+                    : m.net_ytd < 0 ? "#EF4444"
+                    : "#475569",
+                  fontWeight: 600,
+                }}>
+                  {m.net_ytd === null
+                    ? "—"
+                    : m.net_ytd > 0 ? `+${m.net_ytd}` : String(m.net_ytd)
+                  }
+                </td>
                 <td style={{ textAlign: "right" }}>{m.nb_items.toLocaleString()}</td>
                 <td style={{ textAlign: "right" }}>{m.lapse_items.toLocaleString()}</td>
                 <td style={{ textAlign: "right" }}>${m.nb_premium.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
@@ -1255,6 +1286,14 @@ function NetGrowthTab({ agencyId }) {
               <td style={{ textAlign: "right", color: "#EF4444" }}>{totals.lapse_points.toLocaleString()}</td>
               <td style={{ textAlign: "right", color: totals.net_points > 0 ? "#10B981" : totals.net_points < 0 ? "#EF4444" : "#475569" }}>
                 {totals.net_points.toLocaleString()}
+              </td>
+              <td style={{
+                textAlign: "right",
+                fontFamily: "'DM Mono', monospace",
+                fontWeight: 700,
+                color: finalNetYTD === null ? "#334155" : finalNetYTD >= 0 ? "#10B981" : "#EF4444",
+              }}>
+                {finalNetYTD === null ? "—" : finalNetYTD > 0 ? `+${finalNetYTD}` : String(finalNetYTD)}
               </td>
               <td style={{ textAlign: "right" }}>{totals.nb_items.toLocaleString()}</td>
               <td style={{ textAlign: "right" }}>{totals.lapse_items.toLocaleString()}</td>
