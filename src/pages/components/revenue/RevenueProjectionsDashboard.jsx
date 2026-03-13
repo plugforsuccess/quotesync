@@ -11,8 +11,10 @@ import * as XLSX from "xlsx";
 // Three-tier rates: Preferred / Bundled / Monoline (new business only)
 const COMMISSION = {
   auto:    { preferred: 0.25, bundled: 0.20, monoline: 0.15, label: "Auto" },
-  ho:      { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "HO / Condo" },
+  ho:      { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Homeowners" },
+  condo:   { preferred: 0.29, bundled: 0.25, monoline: 0.16, label: "Condo" },
   renters: { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Renters" },
+  motor_club: { preferred: 0.25, bundled: 0.25, monoline: 0.25, label: "Motor Club" },
   other:   { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
 };
 const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
@@ -21,26 +23,28 @@ const TIER_COLORS = { preferred: "#10B981", bundled: "#3B82F6", monoline: "#6474
 const COMMISSION_GOAL = 40000;  // primary goal — commission revenue
 const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
 const PRODUCT_COLORS = {
-  auto: "#3B82F6", ho: "#10B981", renters: "#F59E0B", other: "#8B5CF6",
-  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", boat: "#0EA5E9",
+  auto: "#3B82F6", ho: "#10B981", condo: "#34D399", renters: "#F59E0B", other: "#8B5CF6",
+  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", boat: "#0EA5E9", motor_club: "#F43F5E",
 };
 const PRODUCT_LABELS = {
-  auto: "Auto", ho: "HO / Condo", renters: "Renters", landlord: "Landlord",
+  auto: "Auto", ho: "Homeowners", condo: "Condo", renters: "Renters", landlord: "Landlord",
   specialty_auto: "Specialty Auto", pup: "Personal Umbrella",
-  manufactured: "Manufactured Home", boat: "Boat Owners", other: "Other",
+  manufactured: "Manufactured Home", boat: "Boat Owners", motor_club: "Motor Club", other: "Other",
 };
 
 // ─── Portfolio Points Matrix ──────────────────────────────────────────────────
 // Points are per ITEM (not per policy). A 2-car auto policy = 2 items × 10 pts = 20 pts.
 const PORTFOLIO_POINTS = {
   auto:          10,
-  ho:            20,  // HO / Condo — always 1 item per policy
+  ho:            20,  // Homeowners — always 1 item per policy
+  condo:         20,  // Condo — always 1 item per policy
   renters:        5,
   landlord:      20,  // same points as HO but tracked separately
   specialty_auto: 5,  // Motorcycle, motor home, off-road, trailers
   pup:            5,  // Personal Umbrella Policy
   manufactured:   5,  // Manufactured Home
   boat:           5,  // Boat Owners — always 1 item per policy
+  motor_club:     0,  // Motor Club — not an Allstate VC Baseline product
   other:          0,
 };
 
@@ -62,13 +66,28 @@ function maskCustomerName(fullName) {
   return `${first} ${lastInitial}.`;
 }
 
-// Allstate commissionable premium factor — 93.5% of written premium is commissionable
-const COMMISSIONABLE_FACTOR = 0.935;
+// CAT reinsurance retention factors by product
+// commissionable premium = written premium × retention factor
+// Source: Allstate CAT reinsurance premium schedule
+const COMMISSIONABLE_FACTORS = {
+  auto:           0.998,  // 0.2% CAT reinsurance
+  specialty_auto: 0.998,  // 0.2% CAT reinsurance
+  ho:             0.935,  // 6.5% CAT reinsurance (HO3 Homeowners)
+  condo:          0.959,  // 4.1% CAT reinsurance (HO6 Condo)
+  renters:        1.000,  // no CAT reinsurance
+  landlord:       1.000,  // no CAT reinsurance
+  pup:            1.000,  // no CAT reinsurance
+  manufactured:   1.000,  // no CAT reinsurance
+  boat:           1.000,  // no CAT reinsurance
+  motor_club:     1.000,  // no CAT reinsurance
+  other:          1.000,  // no CAT reinsurance
+};
 
 function calcCommission(premium, product, tier = "monoline") {
-  const key = ["auto","ho","renters"].includes(product) ? product : "other";
+  const key = ["auto","ho","condo","renters","motor_club"].includes(product) ? product : "other";
   const rates = COMMISSION[key];
-  return premium * COMMISSIONABLE_FACTOR * (rates[tier] ?? rates.monoline);
+  const factor = COMMISSIONABLE_FACTORS[product] ?? 1.0;
+  return premium * factor * (rates[tier] ?? rates.monoline);
 }
 
 function normalizeTier(raw = "") {
@@ -147,15 +166,17 @@ function parseAllstateRows(rows) {
     // specialty auto must be checked BEFORE standard auto to avoid false match
     if (raw.includes("specialty auto") || raw.includes("motorcycle") || raw.includes("motor home") || raw.includes("off-road") || raw.includes("trailer")) product = "specialty_auto";
     else if (raw.includes("standard auto") || raw.includes("private passenger")) product = "auto";
-    else if (raw.includes("home") || raw.includes("condo") || raw.includes("ho3") || raw.includes("ho6")) product = "ho";
+    else if (raw.includes("condo") || raw.includes("ho6")) product = "condo";
+    else if (raw.includes("home") || raw.includes("ho3")) product = "ho";
     else if (raw.includes("rent") || raw.includes("ho4")) product = "renters";
     else if (raw.includes("landlord")) product = "landlord";
     else if (raw.includes("umbrella") || raw.includes("pup")) product = "pup";
     else if (raw.includes("manufactured")) product = "manufactured";
+    else if (raw.includes("motor club")) product = "motor_club";
     else product = "other";
 
     // Only auto and specialty_auto can have multiple items per policy
-    const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured", "boat"];
+    const SINGLE_ITEM_PRODUCTS = ["ho", "condo", "renters", "landlord", "pup", "manufactured", "boat", "motor_club"];
     const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
     const itemCount = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
 
@@ -1123,13 +1144,15 @@ export default function RevenueProjectionsDashboard() {
                   setNewEntry(p => ({ ...p, product: val, itemCount: locked ? 1 : p.itemCount }));
                 }}>
                   <option value="auto">Auto</option>
-                  <option value="ho">HO / Condo</option>
+                  <option value="ho">Homeowners</option>
+                  <option value="condo">Condo</option>
                   <option value="renters">Renters</option>
                   <option value="landlord">Landlord</option>
                   <option value="specialty_auto">Specialty Auto</option>
                   <option value="pup">Personal Umbrella</option>
                   <option value="manufactured">Manufactured Home</option>
                   <option value="boat">Boat Owners</option>
+                  <option value="motor_club">Motor Club</option>
                   <option value="other">Other</option>
                 </select>
               </div>

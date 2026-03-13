@@ -42,13 +42,15 @@ function friendlyUploadError(raw = "") {
 // ─── Portfolio Points Matrix (must match RevenueProjectionsDashboard) ─────────
 const LAPSE_PORTFOLIO_POINTS = {
   auto:          10,
-  ho:            20,  // HO / Condo — always 1 item per policy
+  ho:            20,  // Homeowners — always 1 item per policy
+  condo:         20,  // Condo — always 1 item per policy
   renters:        5,
   landlord:      20,  // same points as HO but tracked separately
   specialty_auto: 5,
   pup:            5,  // Personal Umbrella Policy
   manufactured:   5,
   boat:           5,  // Boat Owners — always 1 item per policy
+  motor_club:     0,  // Motor Club — not an Allstate VC Baseline product
   other:          0,
 };
 
@@ -59,11 +61,13 @@ function normaliseProduct(raw = "") {
   if (v.includes("standard auto") || v.includes("private passenger") || v.includes("auto -") || v.includes("auto–")) return "auto";
   // manufactured/mobilehome MUST be checked before ho — "mobilehome" doesn't contain "home" but "manufactured home" does
   if (v.includes("manufactured") || v.includes("mobilehome") || v.includes("mobile home")) return "manufactured";
-  if (v.includes("home") || v.includes("condo") || v.includes("ho3") || v.includes("ho6")) return "ho";
+  if (v.includes("condo") || v.includes("ho6")) return "condo";
+  if (v.includes("home") || v.includes("ho3")) return "ho";
   if (v.includes("rent") || v.includes("ho4")) return "renters";
   if (v.includes("landlord")) return "landlord";  // separate from ho — same pts but tracked independently
   if (v.includes("umbrella") || v.includes("pup")) return "pup";
   if (v.includes("boat") || v.includes("watercraft")) return "boat";
+  if (v.includes("motor club")) return "motor_club";
   return "other";
 }
 
@@ -658,7 +662,7 @@ function parseLapseXLSX(data) {
   const iItems    = findLapseCol(["number of items", "no. of items", "item count", "items"]);
 
   // Products that are always 1 item per policy regardless of report value
-  const SINGLE_ITEM_PRODUCTS = ["ho", "renters", "landlord", "pup", "manufactured", "boat"];
+  const SINGLE_ITEM_PRODUCTS = ["ho", "condo", "renters", "landlord", "pup", "manufactured", "boat", "motor_club"];
 
   return rows.slice(1).filter(r => r.some(Boolean)).map(r => {
     const productRaw = iProduct >= 0 ? r[iProduct]?.toString() ?? "" : "";
