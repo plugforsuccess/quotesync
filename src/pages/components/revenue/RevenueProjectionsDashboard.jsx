@@ -2092,7 +2092,7 @@ export default function RevenueProjectionsDashboard() {
           {/* Product breakdown bars — filtered by mode */}
           <div style={{ marginBottom: 24 }}>
             <ProductBreakdownRows
-              byProduct={Object.fromEntries(statsKeys.map(k => [k, totals.byProduct[k]]).filter(([, v]) => v))}
+              byProduct={Object.fromEntries(statsKeys.filter(k => totals.byProduct[k]).map(k => [k, totals.byProduct[k]]))}
               totalPremium={statsPremium}
               totalCommission={statsCommission}
             />
