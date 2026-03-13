@@ -375,7 +375,7 @@ function App() {
 
             {/* Admin - Producer Compensation Model (agency principals) */}
             <Route
-              path="admin/producers/:producerId/comp-model"
+              path="admin/producers/:employeeId/comp-model"
               element={
                 <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
                   <Suspense fallback={<PageLoader />}>

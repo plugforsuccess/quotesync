@@ -2,127 +2,116 @@
 // Pure functions for all Producer Compensation Model formulas.
 // No side effects — safe for useMemo and unit tests.
 
-/**
- * Blended average VC premium per item from the product mix.
- * blended_avg = SUM(product.mix_pct × product.avg_prem_item)
- */
-export function calcBlendedAvg(productMix) {
-  if (!productMix || productMix.length === 0) return 0;
-  return productMix.reduce(
-    (sum, p) => sum + (Number(p.mix_pct) || 0) * (Number(p.avg_prem_item) || 0),
-    0
-  );
-}
+// ── Core formula exports (spec-aligned signatures) ──────────────────────────
 
-/**
- * Monthly VC Premium given item count n.
- */
-export function calcVcPremiumMonthly(n, blendedAvg) {
-  return n * blendedAvg;
-}
+export const blendedAvg = (productMix) =>
+  (productMix || []).reduce((sum, p) => sum + (Number(p.mix_pct) || 0) * (Number(p.avg_prem_item) || 0), 0);
 
-/**
- * Monthly agency commission on VC premium.
- */
-export function calcAgencyCommissionMonthly(vcPremiumMonthly, vcCommissionRate) {
-  return vcPremiumMonthly * vcCommissionRate;
-}
+export const vcPremium = (n, blended) => n * blended;
 
-/**
- * Monthly VC base comp (producer cost).
- */
-export function calcVcBaseCompMonthly(vcPremiumMonthly, vcBaseCompPct) {
-  return vcPremiumMonthly * vcBaseCompPct;
-}
+export const agencyCommission = (vcPrem, commRate) => vcPrem * commRate;
 
-/**
- * Monthly Top Performer bonus (two-band marginal structure).
- */
-export function calcTpBonus(n, config) {
-  const { tp_band1_threshold, tp_band1_addon, tp_band2_threshold, tp_band2_addon } = config;
-  const b1 = Number(tp_band1_threshold) || 0;
-  const b2 = Number(tp_band2_threshold) || 0;
-  const a1 = Number(tp_band1_addon) || 0;
-  const a2 = Number(tp_band2_addon) || 0;
+export const vcBaseComp = (vcPrem, basePct) => vcPrem * basePct;
 
+export const tpBonus = (n, cfg) => {
+  const b1 = Number(cfg.tp_band1_threshold) || 0;
+  const b2 = Number(cfg.tp_band2_threshold) || 0;
+  const a1 = Number(cfg.tp_band1_addon) || 0;
+  const a2 = Number(cfg.tp_band2_addon) || 0;
   if (n <= b1) return 0;
   if (n <= b2) return (n - b1) * a1;
   return (b2 - b1) * a1 + (n - b2) * a2;
-}
+};
 
-/**
- * Monthly fixed cost to agency.
- */
+export const fixedCostMonthly = (cfg) =>
+  (Number(cfg.base_salary_annual) || 0) / 12 + (Number(cfg.employer_burden_monthly) || 0);
+
+export const totalCostMonthly = (n, cfg, blended) =>
+  fixedCostMonthly(cfg) +
+  vcBaseComp(vcPremium(n, blended), Number(cfg.vc_base_comp_pct) || 0) +
+  tpBonus(n, cfg) +
+  (Number(cfg.non_vc_bonus_monthly) || 0);
+
+export const agencyProfitMonthly = (n, cfg, blended) =>
+  agencyCommission(vcPremium(n, blended), Number(cfg.vc_commission_rate) || 0) -
+  totalCostMonthly(n, cfg, blended);
+
+export const breakEvenItems = (cfg, blended) => {
+  for (let n = 1; n <= 100; n++) {
+    if (agencyProfitMonthly(n, cfg, blended) >= 0) return n;
+  }
+  return null;
+};
+
+export const scenarioRow = (n, cfg, blended) => {
+  const vcPrem     = vcPremium(n, blended);
+  const commission = agencyCommission(vcPrem, Number(cfg.vc_commission_rate) || 0);
+  const vcComp     = vcBaseComp(vcPrem, Number(cfg.vc_base_comp_pct) || 0);
+  const tp         = tpBonus(n, cfg);
+  const nonVc      = Number(cfg.non_vc_bonus_monthly) || 0;
+  const fixed      = fixedCostMonthly(cfg);
+  const totalCost  = fixed + vcComp + tp + nonVc;
+  const profitMo   = commission - totalCost;
+  return {
+    vcPremium:        vcPrem,
+    agencyCommission: commission,
+    vcBaseComp:       vcComp,
+    tpBonus:          tp,
+    nonVcBonus:       nonVc,
+    totalCost,
+    profitMonthly:    profitMo,
+    profitAnnual:     profitMo * 12,
+    totalAnnualComp:  (Number(cfg.base_salary_annual) || 0) + (vcComp * 12) + (tp * 12) + (nonVc * 12),
+  };
+};
+
+// ── Convenience aliases (used by existing components) ───────────────────────
+
+export const calcBlendedAvg = blendedAvg;
+export const calcVcPremiumMonthly = vcPremium;
+export const calcAgencyCommissionMonthly = agencyCommission;
+export const calcVcBaseCompMonthly = vcBaseComp;
+export const calcTpBonus = tpBonus;
+
 export function calcFixedCostMonthly(baseSalaryAnnual, employerBurdenMonthly) {
   return (Number(baseSalaryAnnual) || 0) / 12 + (Number(employerBurdenMonthly) || 0);
 }
 
-/**
- * Compute full scenario output for a given item count.
- */
 export function computeScenario(n, config, productMix) {
-  const blendedAvg = calcBlendedAvg(productMix);
-  const vcPremiumMonthly = calcVcPremiumMonthly(n, blendedAvg);
-  const agencyCommissionMonthly = calcAgencyCommissionMonthly(
-    vcPremiumMonthly,
-    Number(config.vc_commission_rate) || 0
-  );
-  const vcBaseCompMonthly = calcVcBaseCompMonthly(
-    vcPremiumMonthly,
-    Number(config.vc_base_comp_pct) || 0
-  );
-  const tpBonus = calcTpBonus(n, config);
-  const nonVcBonus = Number(config.non_vc_bonus_monthly) || 0;
-  const fixedCostMonthly = calcFixedCostMonthly(
-    config.base_salary_annual,
-    config.employer_burden_monthly
-  );
-  const totalCostMonthly = fixedCostMonthly + vcBaseCompMonthly + tpBonus + nonVcBonus;
-  const profitMonthly = agencyCommissionMonthly - totalCostMonthly;
-
-  const baseSalaryAnnual = Number(config.base_salary_annual) || 0;
-  const annualComp = baseSalaryAnnual + (vcBaseCompMonthly * 12) + (tpBonus * 12) + (nonVcBonus * 12);
-  const profitAnnual = profitMonthly * 12;
-
+  const blended = blendedAvg(productMix);
+  const row = scenarioRow(n, config, blended);
   return {
     items: n,
-    blendedAvg,
-    vcPremiumMonthly,
-    agencyCommissionMonthly,
-    vcBaseCompMonthly,
-    tpBonus,
-    nonVcBonus,
-    fixedCostMonthly,
-    totalCostMonthly,
-    profitMonthly,
-    baseSalaryAnnual,
-    annualComp,
-    profitAnnual,
+    blendedAvg: blended,
+    vcPremiumMonthly: row.vcPremium,
+    agencyCommissionMonthly: row.agencyCommission,
+    vcBaseCompMonthly: row.vcBaseComp,
+    tpBonus: row.tpBonus,
+    nonVcBonus: row.nonVcBonus,
+    fixedCostMonthly: fixedCostMonthly(config),
+    totalCostMonthly: row.totalCost,
+    profitMonthly: row.profitMonthly,
+    baseSalaryAnnual: Number(config.base_salary_annual) || 0,
+    annualComp: row.totalAnnualComp,
+    profitAnnual: row.profitAnnual,
   };
 }
 
-/**
- * Find the break-even item count (smallest n where agency profit >= 0).
- */
 export function calcBreakEven(config, productMix, maxItems = 200) {
+  const blended = blendedAvg(productMix);
   for (let n = 1; n <= maxItems; n++) {
-    const scenario = computeScenario(n, config, productMix);
-    if (scenario.profitMonthly >= 0) return n;
+    if (agencyProfitMonthly(n, config, blended) >= 0) return n;
   }
-  return null; // no break-even found within range
+  return null;
 }
 
-/**
- * Sum of mix_pct across all product mix rows.
- */
 export function calcMixPctTotal(productMix) {
   if (!productMix || productMix.length === 0) return 0;
   return productMix.reduce((sum, p) => sum + (Number(p.mix_pct) || 0), 0);
 }
 
-/**
- * Preset scenario definitions.
- */
+// ── Constants ───────────────────────────────────────────────────────────────
+
 export const PRESET_SCENARIOS = [
   { name: 'Floor', items: 12 },
   { name: 'Good', items: 15 },
@@ -133,9 +122,6 @@ export const PRESET_SCENARIOS = [
   { name: 'Star', items: 40 },
 ];
 
-/**
- * Default config values for new configs.
- */
 export const DEFAULT_CONFIG = {
   base_salary_annual: 35000,
   employer_burden_monthly: 279,
@@ -148,9 +134,6 @@ export const DEFAULT_CONFIG = {
   tp_band2_addon: 50,
 };
 
-/**
- * Default product mix for new configs.
- */
 export const DEFAULT_PRODUCT_MIX = [
   { product_name: 'Auto', mix_pct: 0.53, avg_prem_item: 1800, sort_order: 0 },
   { product_name: 'Home', mix_pct: 0.35, avg_prem_item: 2400, sort_order: 1 },

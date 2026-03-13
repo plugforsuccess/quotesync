@@ -1,5 +1,5 @@
 // src/hooks/useProducerCompModel.js
-// React Query hooks for Producer Compensation Model config and product mix.
+// React Query hooks for Producer Compensation Model config, product mix, and actuals.
 // All reads/writes scoped to agency_id via RLS.
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,27 +9,29 @@ import { DEFAULT_CONFIG, DEFAULT_PRODUCT_MIX } from '../utils/compModelCalculati
 // ── Query key factories ─────────────────────────────────────────────────────
 
 export const compModelKeys = {
-  config: (agencyId, producerId) => ['comp-model', 'config', agencyId, producerId],
+  config: (agencyId, employeeId) => ['comp-model', 'config', agencyId, employeeId],
   productMix: (configId) => ['comp-model', 'product-mix', configId],
-  producer: (producerId) => ['comp-model', 'producer', producerId],
+  producer: (employeeId) => ['comp-model', 'producer', employeeId],
   carrier: (carrierId) => ['comp-model', 'carrier', carrierId],
+  actuals: (agencyId, employeeId, month) => ['comp-model', 'actuals', agencyId, employeeId, month],
+  vcProducts: (agencyId) => ['comp-model', 'vc-products', agencyId],
 };
 
 // ── Fetch producer info ─────────────────────────────────────────────────────
 
-export function useProducerInfo(producerId) {
+export function useProducerInfo(employeeId) {
   return useQuery({
-    queryKey: compModelKeys.producer(producerId),
+    queryKey: compModelKeys.producer(employeeId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
         .select('id, first_name, last_name, preferred_name, org_id')
-        .eq('id', producerId)
+        .eq('id', employeeId)
         .single();
       if (error) throw error;
       return data;
     },
-    enabled: !!producerId,
+    enabled: !!employeeId,
   });
 }
 
@@ -51,23 +53,23 @@ export function useCarrierInfo(carrierId) {
   });
 }
 
-// ── Fetch active comp config for a producer ─────────────────────────────────
+// ── Fetch active comp config for an employee ────────────────────────────────
 
-export function useCompConfig(agencyId, producerId) {
+export function useCompConfig(agencyId, employeeId) {
   return useQuery({
-    queryKey: compModelKeys.config(agencyId, producerId),
+    queryKey: compModelKeys.config(agencyId, employeeId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from('producer_comp_configs')
         .select('*')
         .eq('agency_id', agencyId)
-        .eq('producer_id', producerId)
+        .eq('employee_id', employeeId)
         .eq('is_active', true)
         .maybeSingle();
       if (error) throw error;
       return data; // null if no config exists yet
     },
-    enabled: !!agencyId && !!producerId,
+    enabled: !!agencyId && !!employeeId,
   });
 }
 
@@ -95,13 +97,13 @@ export function useCreateCompConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ agencyId, producerId, carrierId }) => {
+    mutationFn: async ({ agencyId, employeeId, carrierId }) => {
       // 1. Create config
       const { data: config, error: configError } = await supabase
         .from('producer_comp_configs')
         .insert({
           agency_id: agencyId,
-          producer_id: producerId,
+          employee_id: employeeId,
           carrier_id: carrierId || null,
           ...DEFAULT_CONFIG,
         })
@@ -125,7 +127,7 @@ export function useCreateCompConfig() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: compModelKeys.config(data.agency_id, data.producer_id),
+        queryKey: compModelKeys.config(data.agency_id, data.employee_id),
       });
     },
   });
@@ -137,7 +139,7 @@ export function useUpdateCompConfig() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, agencyId, producerId, ...updates }) => {
+    mutationFn: async ({ id, agencyId, employeeId, ...updates }) => {
       const { data, error } = await supabase
         .from('producer_comp_configs')
         .update({ ...updates, updated_at: new Date().toISOString() })
@@ -149,7 +151,7 @@ export function useUpdateCompConfig() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: compModelKeys.config(data.agency_id, data.producer_id),
+        queryKey: compModelKeys.config(data.agency_id, data.employee_id),
       });
     },
   });
@@ -193,5 +195,69 @@ export function useSaveProductMix() {
         queryKey: compModelKeys.productMix(data.configId),
       });
     },
+  });
+}
+
+// ── Actuals: Fetch VC-eligible product keys from agency_products ─────────────
+
+export function useVcProductKeys(agencyId) {
+  return useQuery({
+    queryKey: compModelKeys.vcProducts(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agency_products')
+        .select('product_key')
+        .eq('agency_id', agencyId)
+        .gt('points_per_item', 0);
+      if (error) throw error;
+      return (data || []).map((r) => r.product_key);
+    },
+    enabled: !!agencyId,
+    staleTime: 10 * 60 * 1000, // 10 min — product config rarely changes
+  });
+}
+
+// ── Actuals: Fetch revenue entries for a producer in a given month ───────────
+
+export function useProducerActuals(agencyId, employeeId, monthStart, monthEnd) {
+  return useQuery({
+    queryKey: compModelKeys.actuals(agencyId, employeeId, monthStart),
+    queryFn: async () => {
+      // Fetch entries attributed to this producer
+      const { data: entries, error: entriesError } = await supabase
+        .from('revenue_entries')
+        .select('id, issued_date, policy_no, product, premium, item_count, customer_name, producer_id, producer_name')
+        .eq('agency_id', agencyId)
+        .eq('producer_id', employeeId)
+        .gte('issued_date', monthStart)
+        .lte('issued_date', monthEnd)
+        .order('issued_date', { ascending: false });
+      if (entriesError) throw entriesError;
+
+      // Also count unattributed entries for the warning banner
+      const { count: unattributedCount, error: countError } = await supabase
+        .from('revenue_entries')
+        .select('id', { count: 'exact', head: true })
+        .eq('agency_id', agencyId)
+        .is('producer_id', null)
+        .gte('issued_date', monthStart)
+        .lte('issued_date', monthEnd);
+
+      return {
+        entries: (entries || []).map((r) => ({
+          id: r.id,
+          date: r.issued_date,
+          policyNo: r.policy_no,
+          product: r.product,
+          premium: parseFloat(r.premium),
+          itemCount: r.item_count ?? 1,
+          customerName: r.customer_name,
+          producerId: r.producer_id,
+          producerName: r.producer_name,
+        })),
+        unattributedCount: countError ? 0 : (unattributedCount || 0),
+      };
+    },
+    enabled: !!agencyId && !!employeeId && !!monthStart && !!monthEnd,
   });
 }

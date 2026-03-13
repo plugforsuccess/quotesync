@@ -10,7 +10,7 @@
 CREATE TABLE public.producer_comp_configs (
   id                        uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id                 uuid NOT NULL REFERENCES agencies(id) ON DELETE CASCADE,
-  producer_id               uuid NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
+  employee_id               uuid NOT NULL REFERENCES employees(id) ON DELETE CASCADE,
   carrier_id                uuid REFERENCES agency_carrier_config(id) ON DELETE SET NULL,
 
   -- Fixed compensation
@@ -34,14 +34,13 @@ CREATE TABLE public.producer_comp_configs (
   created_at                timestamptz   NOT NULL DEFAULT now(),
   updated_at                timestamptz   NOT NULL DEFAULT now(),
 
-  UNIQUE (agency_id, producer_id, is_active)   -- only one active config per producer
+  UNIQUE (agency_id, employee_id, is_active)   -- only one active config per producer
 );
 
 ALTER TABLE public.producer_comp_configs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "agent_manages_own_agency_comp_configs"
-  ON public.producer_comp_configs
-  FOR ALL
+CREATE POLICY "agent_manages_comp_configs"
+  ON public.producer_comp_configs FOR ALL
   USING (
     agency_id IN (
       SELECT am.agency_id FROM agency_memberships am
@@ -68,9 +67,8 @@ CREATE TABLE public.producer_comp_product_mix (
 
 ALTER TABLE public.producer_comp_product_mix ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "agent_manages_own_agency_product_mix"
-  ON public.producer_comp_product_mix
-  FOR ALL
+CREATE POLICY "agent_manages_product_mix"
+  ON public.producer_comp_product_mix FOR ALL
   USING (
     agency_id IN (
       SELECT am.agency_id FROM agency_memberships am
