@@ -358,7 +358,10 @@ export default function RevenueProjectionsDashboard() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
   const [newEntry, setNewEntry] = useState(emptyEntry());
-  const [view, setView] = useState("month"); // month | ytd
+  const [view, setView] = useState("month"); // month | ytd | custom
+  const [customStart, setCustomStart] = useState(""); // "YYYY-MM-DD"
+  const [customEnd,   setCustomEnd]   = useState(""); // "YYYY-MM-DD"
+  const [customOpen,  setCustomOpen]  = useState(false); // show date inputs inline
   const [paceMode, setPaceMode] = useState("commission");       // commission | premium
   const [dailyTargetMode, setDailyTargetMode] = useState("commission"); // commission | premium | policies
   const [goalMode, setGoalMode] = useState("commission"); // commission | premium
@@ -380,7 +383,7 @@ export default function RevenueProjectionsDashboard() {
   const [sortCol, setSortCol] = useState("date");   // "date" | "issuedDate" | "product" | "tier" | "premium" | "commission" | "source"
   const [sortDir, setSortDir] = useState("desc");   // "asc" | "desc"
   const [ratesOpen, setRatesOpen] = useState(window.innerWidth >= 768);
-  const closeModal = () => { setModal(null); setProductStatsMode("vc"); };
+  const closeModal = () => { setModal(null); setProductStatsMode("all"); };
   const fileRef = useRef();
   const paceClickTimer  = useRef(null);
   const dailyClickTimer = useRef(null);
@@ -404,9 +407,23 @@ export default function RevenueProjectionsDashboard() {
         label: `YTD ${y}`,
       };
     }
+    if (view === "custom" && customStart && customEnd) {
+      const s = new Date(customStart + "T00:00:00");
+      const e = new Date(customEnd   + "T23:59:59");
+      if (s > e) return { rangeStart: new Date(9999,0,1), rangeEnd: new Date(9999,0,1), label: "Custom Range" };
+      const fmtDate = (d) => `${MONTH_NAMES[d.getMonth()].slice(0,3)} ${d.getDate()}, ${d.getFullYear()}`;
+      return {
+        rangeStart: s,
+        rangeEnd:   e,
+        label:      `${fmtDate(s)} – ${fmtDate(e)}`,
+      };
+    }
+    if (view === "custom") {
+      return { rangeStart: new Date(9999,0,1), rangeEnd: new Date(9999,0,1), label: "Custom Range" };
+    }
     // fallback (should not reach)
     return { rangeStart: new Date(y, m, 1), rangeEnd: new Date(y, m + 1, 0), label: `${MONTH_NAMES[m]} ${y}` };
-  }, [view]);
+  }, [view, customStart, customEnd]);
 
   const { entries, loading, error, addEntry, addEntries, deleteEntry } = useRevenueEntries({ agencyId, rangeStart, rangeEnd });
 
@@ -891,10 +908,49 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>New Business · Commission Goal: {fmtFull$(COMMISSION_GOAL)}/mo</div>
         </div>
         {/* View selector */}
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
           {[["month","This Month"],["ytd","YTD"]].map(([v,l]) => (
-            <button key={v} className={`btn-ghost ${view===v?"active":""}`} onClick={() => setView(v)}>{l}</button>
+            <button
+              key={v}
+              className={`btn-ghost ${view===v?"active":""}`}
+              onClick={() => { setView(v); setCustomOpen(false); }}
+            >
+              {l}
+            </button>
           ))}
+          <button
+            className={`btn-ghost ${view==="custom"?"active":""}`}
+            onClick={() => { setView("custom"); setCustomOpen(true); }}
+          >
+            Custom Range
+          </button>
+
+          {/* Inline date pickers — only visible when custom is active */}
+          {view === "custom" && (
+            <div style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: 4 }}>
+              <input
+                type="date"
+                value={customStart}
+                max={customEnd || undefined}
+                onChange={e => setCustomStart(e.target.value)}
+                style={{
+                  background: "#1E293B", border: "1px solid #334155", borderRadius: 6,
+                  color: "#F1F5F9", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                }}
+              />
+              <span style={{ color: "#64748B", fontSize: 12 }}>to</span>
+              <input
+                type="date"
+                value={customEnd}
+                min={customStart || undefined}
+                onChange={e => setCustomEnd(e.target.value)}
+                style={{
+                  background: "#1E293B", border: "1px solid #334155", borderRadius: 6,
+                  color: "#F1F5F9", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -911,7 +967,7 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalCommission)}</div>
           <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
-          {view === "month" && lastMonthCommission > 0 && (() => {
+          {view === "month" && view !== "custom" && lastMonthCommission > 0 && (() => {
             const delta = totals.totalCommission - lastMonthCommission;
             const pct   = Math.abs(delta / lastMonthCommission * 100).toFixed(1);
             return (
@@ -1167,7 +1223,7 @@ export default function RevenueProjectionsDashboard() {
           </div>
 
           {/* Revenue by Product Line */}
-          <div className="card clickable" style={{ gridColumn: "1 / -1" }} onClick={() => setModal("products")}>
+          <div className="card clickable" style={{ gridColumn: "1 / -1" }} onClick={() => { setModal("products"); setProductStatsMode("all"); }}>
             <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Revenue by Product Line</div>
             {totals.totalPremium === 0 ? (
               <div style={{ color: "#334155", textAlign: "center", padding: "30px 0", fontSize: 13 }}>No data in range</div>
