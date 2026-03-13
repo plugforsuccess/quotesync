@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 
 const ROLE_OPTIONS = [
   { value: 'service', label: 'Service' },
@@ -54,7 +55,7 @@ const EMPTY_FORM = {
   highest_education: '',
 };
 
-export default function EmployeeFormModal({ open, onClose, onSave, saving, employee }) {
+export default function EmployeeFormModal({ open, onClose, onSave, saving, employee, agencyId }) {
   const isEdit = !!employee;
   const [form, setForm] = useState(EMPTY_FORM);
 
@@ -88,10 +89,23 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
         years_commercial_experience: employee.years_commercial_experience ?? '',
         highest_education: employee.highest_education || '',
       });
+      // Load Allstate Bind ID from employee_producer_codes
+      if (agencyId && employee.id) {
+        supabase
+          .from("employee_producer_codes")
+          .select("code")
+          .eq("employee_id", employee.id)
+          .eq("agency_id", agencyId)
+          .eq("carrier", "allstate")
+          .maybeSingle()
+          .then(({ data: codeRow }) => {
+            setForm(f => ({ ...f, allstate_bind_id: codeRow?.code || '' }));
+          });
+      }
     } else {
-      setForm(EMPTY_FORM);
+      setForm({ ...EMPTY_FORM, allstate_bind_id: '' });
     }
-  }, [employee, open]);
+  }, [employee, open, agencyId]);
 
   const handleEsc = useCallback((e) => {
     if (e.key === 'Escape') onClose();
@@ -122,9 +136,11 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
     });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     const payload = { ...form };
+    const bindIdValue = payload.allstate_bind_id;
+    delete payload.allstate_bind_id; // not a column on employees table
     // Clean optional numeric fields
     if (payload.years_insurance_experience === '') payload.years_insurance_experience = null;
     else payload.years_insurance_experience = parseInt(payload.years_insurance_experience, 10);
@@ -150,6 +166,16 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
     if (!payload.license_verified_date) payload.license_verified_date = null;
     if (!payload.highest_education) payload.highest_education = null;
     if (payload.professional_designations.length === 0) payload.professional_designations = null;
+
+    // Upsert Allstate Bind ID to employee_producer_codes after save
+    if (isEdit && agencyId && employee?.id && bindIdValue) {
+      await supabase.from("employee_producer_codes").upsert({
+        agency_id:   agencyId,
+        employee_id: employee.id,
+        carrier:     "allstate",
+        code:        bindIdValue,
+      }, { onConflict: "agency_id,carrier,code" });
+    }
 
     onSave(payload);
   }
@@ -311,12 +337,18 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Allstate ID</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Allstate Bind ID</label>
                     <input
-                      value={form.allstate_id}
-                      onChange={(e) => handleChange('allstate_id', e.target.value)}
+                      type="text"
+                      value={form.allstate_bind_id || ''}
+                      onChange={(e) => handleChange('allstate_bind_id', e.target.value.trim().toUpperCase())}
+                      placeholder="e.g. A0C2667"
+                      maxLength={20}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     />
+                    <div className="text-xs text-gray-500 mt-1">
+                      Found in the "Bind ID" column of the Allstate New Business Details report.
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">RingCentral Display Name *</label>
