@@ -800,6 +800,12 @@ export default function RevenueProjectionsDashboard() {
   };
 
   useEffect(() => {
+    if (view === "ytd" && policiesMode === "items") {
+      setPoliciesMode("count");
+    }
+  }, [view, policiesMode]);
+
+  useEffect(() => {
     return () => {
       if (paceClickTimer.current) clearTimeout(paceClickTimer.current);
       if (dailyClickTimer.current) clearTimeout(dailyClickTimer.current);
@@ -851,7 +857,7 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
           <div style={{ fontSize: 26, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalCommission)}</div>
           <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
-          {lastMonthCommission > 0 && (() => {
+          {view === "month" && lastMonthCommission > 0 && (() => {
             const delta = totals.totalCommission - lastMonthCommission;
             const pct   = Math.abs(delta / lastMonthCommission * 100).toFixed(1);
             return (
@@ -874,21 +880,25 @@ export default function RevenueProjectionsDashboard() {
               sub: `Avg premium: ${totalPolicies > 0 ? fmt$(totals.totalPremium / totalPolicies) : "—"}`,
               subColor: "#475569",
             },
-            items: {
-              label: "VC BASELINE",
-              value: String(vcBaselineCount),
-              sub: vcOnTrack
-                ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (Auto + HO)`
-                : `${vcBaselineCount} / ${VC_BASELINE_TARGET} · ${vcShortfall} needed`,
-              subColor: vcOnTrack ? "#10B981" : "#F59E0B",
-            },
+            ...(view === "month" ? {
+              items: {
+                label: "VC BASELINE",
+                value: String(vcBaselineCount),
+                sub: vcOnTrack
+                  ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (Auto + HO)`
+                  : `${vcBaselineCount} / ${VC_BASELINE_TARGET} · ${vcShortfall} needed`,
+                subColor: vcOnTrack ? "#10B981" : "#F59E0B",
+              },
+            } : {}),
             points: {
               label: "PORTFOLIO POINTS",
               value: String(totalPoints),
-              sub: pointsDelta >= 0
-                ? `+${pointsDelta} vs last month`
-                : `${pointsDelta} vs last month`,
-              subColor: pointsDelta >= 0 ? "#10B981" : "#EF4444",
+              sub: view === "month"
+                ? (pointsDelta >= 0 ? `+${pointsDelta} vs last month` : `${pointsDelta} vs last month`)
+                : "Portfolio points YTD",
+              subColor: view === "month"
+                ? (pointsDelta >= 0 ? "#10B981" : "#EF4444")
+                : "#475569",
             },
           };
 
@@ -912,35 +922,43 @@ export default function RevenueProjectionsDashboard() {
               </div>
               {/* Mode indicator dots */}
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-                {["count", "items", "points"].map(m => (
+                {Object.keys(modes).map(m => (
                   <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: policiesMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
                 ))}
               </div>
             </div>
           );
         })()}
-        {/* Commission Goal */}
+        {/* Commission Goal / YTD Commission */}
         <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={handleGoalClick} title="Click to switch · Double-click to expand">
           <div style={{ fontSize: 11, color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
-            {activeGoal.label}
+            {view === "month" ? activeGoal.label : "YTD COMMISSION"}
           </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: activeGoal.valueColor, fontFamily: "'DM Mono', monospace" }}>
-            {fmtFull$(activeGoal.earned)}
+          <div style={{ fontSize: 26, fontWeight: 700, color: view === "ytd" ? "#10B981" : activeGoal.valueColor, fontFamily: "'DM Mono', monospace" }}>
+            {view === "month" ? fmtFull$(activeGoal.earned) : fmtFull$(totals.totalCommission)}
           </div>
-          <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
-            {Math.round(activeGoal.pct * 100)}% of {fmtFull$(activeGoal.goal)} goal
-          </div>
-          <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${Math.min(activeGoal.pct * 100, 100)}%`, background: activeGoal.barColor, borderRadius: 2, transition: "width 0.4s" }} />
-          </div>
-          <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
-            {["commission", "premium"].map(m => (
-              <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: goalMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
-            ))}
-          </div>
+          {view === "month" ? (
+            <>
+              <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+                {Math.round(activeGoal.pct * 100)}% of {fmtFull$(activeGoal.goal)} goal
+              </div>
+              <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
+                <div style={{ height: "100%", width: `${Math.min(activeGoal.pct * 100, 100)}%`, background: activeGoal.barColor, borderRadius: 2, transition: "width 0.4s" }} />
+              </div>
+              <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
+                {["commission", "premium"].map(m => (
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: goalMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                ))}
+              </div>
+            </>
+          ) : (
+            <div style={{ fontSize: 11, color: "#475569", marginTop: 2 }}>
+              {rangeLabel} · {fmtFull$(COMMISSION_GOAL)}/mo goal
+            </div>
+          )}
         </div>
         {/* Pace (month only) */}
-        {pace && (() => {
+        {view === "month" && pace && (() => {
           const paceModeConfig = {
             commission: {
               label: "PROJECTED COMMISSION",
@@ -1008,8 +1026,8 @@ export default function RevenueProjectionsDashboard() {
         })()}
       </div>
 
-      {/* Goal Tracking */}
-      <div className="card" style={{ marginBottom: 20, padding: "16px 20px" }}>
+      {/* Goal Tracking (month only) */}
+      {view === "month" && <div className="card" style={{ marginBottom: 20, padding: "16px 20px" }}>
         {/* Commission Goal — primary */}
         <div style={{ marginBottom: 16, cursor: "pointer" }} onClick={() => setModal("commission")}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12 }}>
@@ -1056,7 +1074,7 @@ export default function RevenueProjectionsDashboard() {
             ))}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 16, overflowX: "auto", paddingBottom: 2 }}>
