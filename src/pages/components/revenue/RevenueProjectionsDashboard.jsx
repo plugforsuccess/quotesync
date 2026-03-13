@@ -74,7 +74,7 @@ const COMMISSIONABLE_FACTORS = {
   specialty_auto: 0.998,  // 0.2% CAT reinsurance
   ho:             0.935,  // 6.5% CAT reinsurance (HO3 Homeowners)
   condo:          0.959,  // 4.1% CAT reinsurance (HO6 Condo)
-  renters:        0.959,  // 4.1% CAT reinsurance
+  renters:        1.000,  // no CAT reinsurance
   landlord:       1.000,  // no CAT reinsurance
   pup:            1.000,  // no CAT reinsurance
   manufactured:   1.000,  // no CAT reinsurance
