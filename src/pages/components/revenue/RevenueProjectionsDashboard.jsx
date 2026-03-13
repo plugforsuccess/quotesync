@@ -172,6 +172,7 @@ function parseAllstateRows(rows) {
     else if (raw.includes("landlord")) product = "landlord";
     else if (raw.includes("umbrella") || raw.includes("pup")) product = "pup";
     else if (raw.includes("manufactured")) product = "manufactured";
+    else if (raw.includes("boat") || raw.includes("watercraft") || raw.includes("inland marine")) product = "boat";
     else if (raw.includes("motor club")) product = "motor_club";
     else product = "other";
 
