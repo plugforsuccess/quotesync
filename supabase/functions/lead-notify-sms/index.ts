@@ -5,44 +5,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { sendSMS, formatPhoneUS, checkRequiredEnvVars, generateInternalToken } from '../_shared/twilio.ts'
-
-// Initiate outbound call via Twilio REST API
-async function initiateCall(
-  accountSid: string,
-  authToken: string,
-  from: string,
-  to: string,
-  twimlUrl: string,
-  timeout: number = 20
-): Promise<{ success: boolean; sid?: string; error?: string; code?: number }> {
-  const auth = btoa(`${accountSid}:${authToken}`)
-  const params = new URLSearchParams()
-  params.append('To', to)
-  params.append('From', from)
-  params.append('Url', twimlUrl)
-  params.append('Timeout', timeout.toString())
-  params.append('StatusCallback', twimlUrl.split('?')[0] + '?action=status')
-  params.append('StatusCallbackEvent', 'completed')
-
-  const response = await fetch(
-    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`,
-    {
-      method: 'POST',
-      headers: {
-        'Authorization': `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: params.toString(),
-    }
-  )
-
-  const data = await response.json()
-  if (!response.ok) {
-    return { success: false, error: data.message || 'Twilio call failed', code: data.code }
-  }
-  return { success: true, sid: data.sid }
-}
+import { sendSMS, formatPhoneUS, checkRequiredEnvVars } from '../_shared/twilio.ts'
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -69,7 +32,7 @@ Deno.serve(async (req) => {
   // Validate required env vars
   const missingVar = checkRequiredEnvVars([
     'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
-    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER', 'AGENT_PHONE_NUMBER',
+    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER',
   ])
   if (missingVar) {
     console.error(`[LEAD_NOTIFY_SMS] Missing required env var: ${missingVar}`)
@@ -86,7 +49,6 @@ Deno.serve(async (req) => {
   const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
   const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
   const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
-  const AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
 
   try {
     const body = await req.json()
@@ -154,97 +116,16 @@ Deno.serve(async (req) => {
       })
     }
 
-    // ====== STEP 2: Speed-to-call (T+30s) ======
-    // Wait 30 seconds before initiating the call bridge.
-    // Safety timeout at 120s to prevent the Edge Function from hanging.
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 120000)
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 30000))
-
-      // Build TwiML webhook URL for the whisper
-      // Include HMAC token so voice-handler can verify this is a legitimate internal call
-      const whisperToken = await generateInternalToken(lead_id, TWILIO_AUTH_TOKEN)
-      const voiceHandlerUrl = `${supabaseUrl}/functions/v1/twilio-voice-handler`
-      const whisperParams = new URLSearchParams({
-        action: 'whisper',
-        lead_id: lead_id,
-        token: whisperToken,
-        lead_name: name,
-        zip: zip || '',
-        home: owns_home ? 'yes' : 'no',
-        vehicles: (vehicle_count || 1).toString(),
-        lead_phone: formattedPhone,
-      })
-      const twimlUrl = `${voiceHandlerUrl}?${whisperParams.toString()}`
-
-      // Call the agent first
-      const callResult = await initiateCall(
-        TWILIO_ACCOUNT_SID,
-        TWILIO_AUTH_TOKEN,
-        TWILIO_PHONE_NUMBER,
-        AGENT_PHONE_NUMBER,
-        twimlUrl,
-        20 // 20 second timeout
-      )
-
-      if (callResult.success) {
-        // Update lead: call_initiated
-        await supabase
-          .from('leads')
-          .update({ call_initiated: true, call_initiated_at: new Date().toISOString() })
-          .eq('id', lead_id)
-
-        // Log call message
-        await supabase.from('lead_messages').insert({
-          lead_id,
-          direction: 'outbound',
-          channel: 'call',
-          body: `Speed-to-call initiated to agent, bridging to ${formattedPhone}`,
-          twilio_sid: callResult.sid,
-          status: 'initiated',
-        })
-
-        // Audit log
-        await supabase.from('audit_log').insert({
-          event_type: 'CALL_INITIATED',
-          lead_id,
-          metadata: { twilio_sid: callResult.sid },
-        })
-      } else {
-        console.error('[LEAD_NOTIFY_SMS] Call initiation failed:', callResult.error, 'code:', callResult.code)
-
-        // Agent didn't answer — send follow-up SMS to lead
-        const missedBody =
-          `Hey ${name}, I just tried calling but missed you! I've got your quotes ready. What's a good time to chat tomorrow? Or reply here and I can text you your estimate.`
-
-        const followUpResult = await sendSMS(
-          TWILIO_ACCOUNT_SID,
-          TWILIO_AUTH_TOKEN,
-          TWILIO_PHONE_NUMBER,
-          formattedPhone,
-          missedBody
-        )
-
-        await supabase.from('lead_messages').insert({
-          lead_id,
-          direction: 'outbound',
-          channel: 'sms',
-          body: missedBody,
-          twilio_sid: followUpResult.sid || null,
-          status: followUpResult.success ? 'sent' : 'failed',
-        })
-
-        await supabase.from('audit_log').insert({
-          event_type: 'CALL_MISSED',
-          lead_id,
-          metadata: { error: callResult.error, code: callResult.code, followup_sms_sent: followUpResult.success },
-        })
-      }
-    } finally {
-      clearTimeout(timeoutId)
-    }
+    // ====== STEP 2: Enqueue speed-to-call (fires 30s later via pg_cron) ======
+    await supabase.from('call_queue').insert({
+      lead_id,
+      phone: formattedPhone,
+      first_name: name,
+      zip: zip || null,
+      owns_home: owns_home ?? null,
+      vehicle_count: vehicle_count ?? null,
+      fire_after: new Date(Date.now() + 30_000).toISOString(),
+    })
 
     return new Response(JSON.stringify({
       success: true,

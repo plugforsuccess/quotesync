@@ -98,6 +98,15 @@ export function computeLeadScore(lead, quoteSummary = null) {
 }
 
 /**
+ * Risk flag display config
+ */
+export const RISK_FLAG_CONFIG = {
+  green:  { label: 'Clean',     bg: 'bg-green-100',  text: 'text-green-700',  dot: 'bg-green-500'  },
+  yellow: { label: 'Review',    bg: 'bg-yellow-100', text: 'text-yellow-700', dot: 'bg-yellow-500' },
+  red:    { label: 'High Risk', bg: 'bg-red-100',    text: 'text-red-700',    dot: 'bg-red-500'    },
+};
+
+/**
  * Format score factors for display
  * @param {Array} factors - Score factors array
  * @returns {string[]} - Array of display strings

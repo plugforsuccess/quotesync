@@ -114,9 +114,7 @@ export default function SaveWizardPage() {
   const defaultAgencyId = useRef(null);
   const partialLeadInserted = useRef(false);
 
-  useEffect(() => {
-    document.title = 'See How Much You Could Save | Insured By Cam';
-  }, []);
+  // SEO tags are rendered as JSX below (React 19 hoisting)
 
   // Fetch default agency for partial lead insert
   useEffect(() => {
@@ -196,12 +194,13 @@ export default function SaveWizardPage() {
     const handleBeforeUnload = () => {
       const leadId = sessionStorage.getItem(SESSION_KEYS.LEAD_ID);
       if (leadId && currentStepId !== 'confirmation') {
-        trackQuoteAbandoned(currentStepId, currentIndex);
+        const timeOnCurrentStep = Date.now() - (wizard.stepEnteredAt?.current ?? Date.now());
+        trackQuoteAbandoned(currentStepId, currentIndex, { time_on_step_ms: timeOnCurrentStep });
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [currentStepId, currentIndex]);
+  }, [currentStepId, currentIndex, wizard.stepEnteredAt]);
 
   // ─── Final Submission ──────────────────────────────────────────
 
@@ -349,8 +348,13 @@ export default function SaveWizardPage() {
   const handleAutoAdvance = useCallback(() => {
     setError(null);
     onStepLeaving(currentStepId);
-    goNext();
-  }, [currentStepId, goNext, onStepLeaving]);
+    const timeMs = goNext();
+    trackFunnelStep(currentStepId, {
+      time_ms: timeMs,
+      step_index: currentIndex,
+      answer_given: true,
+    });
+  }, [currentStepId, currentIndex, goNext, onStepLeaving]);
 
   const handleEarlyPhoneSkip = useCallback(() => {
     setAnswer('phoneSkipped', true);
@@ -374,16 +378,24 @@ export default function SaveWizardPage() {
       return;
     }
 
-    goNext();
-  }, [currentStepId, answers, goNext, onStepLeaving, handleFinalSubmit]);
+    const timeMs = goNext();
+    trackFunnelStep(currentStepId, {
+      time_ms: timeMs,
+      step_index: currentIndex,
+      answer_given: !!answers[currentStepId],
+    });
+  }, [currentStepId, currentIndex, answers, goNext, onStepLeaving, handleFinalSubmit]);
 
   const handleBack = useCallback(() => {
     setError(null);
     setSubmitError(null);
     const fromStep = currentStepId;
-    goBack();
-    trackEvent('funnel_step_back', { from_step: fromStep, to_step: wizard.stepSequence[currentIndex - 1] });
-  }, [goBack, currentStepId, currentIndex, wizard.stepSequence]);
+    const timeMs = goBack();
+    trackFunnelStep(`${currentStepId}_back`, {
+      time_ms: timeMs,
+      step_index: currentIndex,
+    });
+  }, [goBack, currentStepId, currentIndex]);
 
   // ─── Step Renderer ─────────────────────────────────────────────
 
@@ -532,6 +544,9 @@ export default function SaveWizardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
+      <title>See How Much You Could Save | insuredbycam</title>
+      <meta name="description" content="Get a personalized Georgia auto and home insurance quote in 60 seconds. No forms, no spam calls." />
+      <meta name="robots" content="noindex" />
       {/* Background decorations */}
       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI2MCIgaGVpZ2h0PSI2MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAxMCAwIEwgMCAwIDAgMTAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
       <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>

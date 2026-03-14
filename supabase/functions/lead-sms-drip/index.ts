@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     // - Has a phone number
     const { data: leads, error: queryError } = await supabase
       .from('leads')
-      .select('id, first_name, phone, zip, drip_stage, created_at')
+      .select('id, first_name, phone, zip, drip_stage, created_at, sms_sent_at')
       .eq('sms_sent', true)
       .eq('call_connected', false)
       .eq('sms_opted_out', false)
@@ -108,8 +108,11 @@ Deno.serve(async (req) => {
     let sent = 0
 
     for (const lead of leads) {
-      const createdAt = new Date(lead.created_at).getTime()
-      const elapsed = now - createdAt
+      // Use sms_sent_at if available, fall back to created_at
+      const baseTime = lead.sms_sent_at
+        ? new Date(lead.sms_sent_at).getTime()
+        : new Date(lead.created_at).getTime()
+      const elapsed = now - baseTime
       const nextStage = lead.drip_stage + 1
 
       // Check if enough time has passed for the next drip stage
@@ -172,6 +175,13 @@ Deno.serve(async (req) => {
         })
       } else {
         console.error(`[SMS_DRIP] Failed to send drip ${nextStage} to lead ${lead.id}:`, smsResult.error, 'code:', smsResult.code)
+
+        // Log failure to audit_log
+        await supabase.from('audit_log').insert({
+          event_type: 'SMS_DRIP_FAILED',
+          lead_id: lead.id,
+          metadata: { drip_stage: nextStage, error: smsResult.error, code: smsResult.code },
+        })
 
         // Roll back drip_stage on SMS failure so next run retries
         await supabase

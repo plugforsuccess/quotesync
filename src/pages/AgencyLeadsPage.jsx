@@ -8,7 +8,7 @@ import {
   ChevronRight, Users, AlertCircle, BarChart3
 } from 'lucide-react';
 import { useCurrentAgency, useAgencyLeads, useAgencySLAMetrics } from '../hooks/useAgencyLeads';
-import { getScoreColor } from '../lib/leadScoring';
+import { getScoreColor, RISK_FLAG_CONFIG } from '../lib/leadScoring';
 import PageSpinner from '../components/PageSpinner';
 
 const STATUS_OPTIONS = [
@@ -34,6 +34,13 @@ const DOCS_OPTIONS = [
   { value: 'all', label: 'All' },
   { value: 'yes', label: 'Docs Available' },
   { value: 'no', label: 'No Docs' }
+];
+
+const RISK_OPTIONS = [
+  { value: 'all',    label: 'All Risk Levels' },
+  { value: 'green',  label: 'Clean' },
+  { value: 'yellow', label: 'Review' },
+  { value: 'red',    label: 'High Risk' },
 ];
 
 function formatTimeAgo(date) {
@@ -73,6 +80,7 @@ const AgencyLeadsPage = () => {
     zip: '',
     source: 'all',
     hasDocuments: 'all',
+    riskFlag: 'all',
     minScore: '',
     maxScore: ''
   });
@@ -84,6 +92,7 @@ const AgencyLeadsPage = () => {
     zip: filters.zip || undefined,
     source: filters.source,
     hasDocuments: filters.hasDocuments,
+    riskFlag: filters.riskFlag,
     minScore: filters.minScore ? parseInt(filters.minScore) : undefined,
     maxScore: filters.maxScore ? parseInt(filters.maxScore) : undefined
   }), [filters]);
@@ -231,6 +240,18 @@ const AgencyLeadsPage = () => {
                 </select>
               </div>
               <div>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Risk Level</label>
+                <select
+                  value={filters.riskFlag}
+                  onChange={(e) => handleFilterChange('riskFlag', e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                >
+                  {RISK_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Min Score</label>
                 <input
                   type="number"
@@ -342,16 +363,15 @@ const AgencyLeadsPage = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                           <span>{lead.product_intent || '-'}</span>
-                          {lead.risk_flag === 'red' && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700" title="Exceeds carrier limits">
-                              {'\uD83D\uDD34'} Risk
-                            </span>
-                          )}
-                          {lead.risk_flag === 'yellow' && (
-                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700" title="Needs review">
-                              {'\uD83D\uDFE1'} Review
-                            </span>
-                          )}
+                          {lead.risk_flag && lead.risk_flag !== 'green' && (() => {
+                            const cfg = RISK_FLAG_CONFIG[lead.risk_flag];
+                            return cfg ? (
+                              <span className={`ml-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+                                {cfg.label}
+                              </span>
+                            ) : null;
+                          })()}
                           {lead.allstate_conflict && (
                             <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-purple-100 text-purple-700" title="Current carrier is Allstate — cannot write">
                               🟣 Allstate

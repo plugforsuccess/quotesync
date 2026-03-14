@@ -21,87 +21,47 @@ const formatBody = (body) => {
 };
 
 /**
- * SEO Meta Tags Component
+ * SEO Meta Tags — React 19 document metadata (hoists to <head>)
  */
 const StoryMeta = ({ story }) => {
-  useEffect(() => {
-    if (!story) return;
+  if (!story) {
+    return <title>Newsroom | insuredbycam</title>;
+  }
 
-    // Update page title
-    document.title = story.meta_title || `${story.title} | InsuredByCam Insurance Newsroom`;
+  const storyTitle = story.meta_title || `${story.title} | insuredbycam Newsroom`;
+  const description = story.meta_description || story.preview_hook || '';
+  const ogImage = story.og_image || story.video_thumbnail || '/og-default.jpg';
+  const url = `https://insuredbycam.com/news/${story.slug}`;
 
-    // Update meta description
-    const metaDescription = document.querySelector('meta[name="description"]');
-    if (metaDescription) {
-      metaDescription.setAttribute('content', story.meta_description || story.preview_hook);
-    } else {
-      const meta = document.createElement('meta');
-      meta.name = 'description';
-      meta.content = story.meta_description || story.preview_hook;
-      document.head.appendChild(meta);
-    }
-
-    // OpenGraph tags
-    const ogTags = {
-      'og:title': story.meta_title || story.title,
-      'og:description': story.meta_description || story.preview_hook,
-      'og:image': story.og_image || story.video_thumbnail || '/og-default.jpg',
-      'og:url': `${window.location.origin}/news/${story.slug}`,
-      'og:type': 'article',
-      'article:published_time': story.published_at,
-      'article:author': 'InsuredByCam',
-      'article:section': story.category
-    };
-
-    Object.entries(ogTags).forEach(([property, content]) => {
-      if (!content) return;
-
-      let meta = document.querySelector(`meta[property="${property}"]`);
-      if (meta) {
-        meta.setAttribute('content', content);
-      } else {
-        meta = document.createElement('meta');
-        meta.setAttribute('property', property);
-        meta.setAttribute('content', content);
-        document.head.appendChild(meta);
-      }
-    });
-
-    // Twitter Card tags
-    const twitterTags = {
-      'twitter:card': 'summary_large_image',
-      'twitter:title': story.meta_title || story.title,
-      'twitter:description': story.meta_description || story.preview_hook,
-      'twitter:image': story.og_image || story.video_thumbnail || '/og-default.jpg'
-    };
-
-    Object.entries(twitterTags).forEach(([name, content]) => {
-      if (!content) return;
-
-      let meta = document.querySelector(`meta[name="${name}"]`);
-      if (meta) {
-        meta.setAttribute('content', content);
-      } else {
-        meta = document.createElement('meta');
-        meta.setAttribute('name', name);
-        meta.setAttribute('content', content);
-        document.head.appendChild(meta);
-      }
-    });
-
-    // Canonical URL
-    let canonical = document.querySelector('link[rel="canonical"]');
-    if (canonical) {
-      canonical.setAttribute('href', `${window.location.origin}/news/${story.slug}`);
-    } else {
-      canonical = document.createElement('link');
-      canonical.setAttribute('rel', 'canonical');
-      canonical.setAttribute('href', `${window.location.origin}/news/${story.slug}`);
-      document.head.appendChild(canonical);
-    }
-  }, [story]);
-
-  return null;
+  return (
+    <>
+      <title>{storyTitle}</title>
+      <meta name="description" content={description} />
+      <meta property="og:type" content="article" />
+      <meta property="og:title" content={story.title} />
+      <meta property="og:description" content={description} />
+      <meta property="og:url" content={url} />
+      <meta property="og:image" content={ogImage} />
+      <meta property="article:published_time" content={story.published_at} />
+      <meta property="article:author" content={story.author_name || 'insuredbycam'} />
+      <link rel="canonical" href={url} />
+      <script type="application/ld+json">{JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "NewsArticle",
+        "headline": story.title,
+        "description": description,
+        "url": url,
+        "datePublished": story.published_at,
+        "author": { "@type": "Person", "name": story.author_name || "Cameron" },
+        "publisher": {
+          "@type": "Organization",
+          "name": "insuredbycam",
+          "url": "https://insuredbycam.com"
+        },
+        ...(ogImage !== '/og-default.jpg' ? { "image": ogImage } : {}),
+      })}</script>
+    </>
+  );
 };
 
 const StoryDetailPage = () => {
