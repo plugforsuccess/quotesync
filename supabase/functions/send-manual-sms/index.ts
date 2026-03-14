@@ -117,10 +117,20 @@ Deno.serve(async (req) => {
       .single()
 
     if (membershipError || !membership) {
-      return new Response(JSON.stringify({ error: 'Access denied' }), {
-        status: 403,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      // Fallback: allow platform users with admin/support roles
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('platform_role, is_platform_user')
+        .eq('id', user.id)
+        .single()
+
+      const allowedPlatformRoles = ['platform_master_admin', 'platform_admin', 'platform_support']
+      if (!profile?.is_platform_user || !allowedPlatformRoles.includes(profile.platform_role)) {
+        return new Response(JSON.stringify({ error: 'Access denied' }), {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
     }
 
     // Format phone
