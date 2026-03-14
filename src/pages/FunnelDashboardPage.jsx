@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import { BarChart3, List, AlertCircle } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useFunnelMetrics } from '../hooks/useFunnelMetrics';
+import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
 import KPICards from './components/dashboard/KPICards';
 import FunnelDropoff from './components/dashboard/FunnelDropoff';
 import LeadQuality from './components/dashboard/LeadQuality';
@@ -42,16 +43,6 @@ function persistInputs(inputs) {
   } catch { /* ignore */ }
 }
 
-// ─── Allstate New Business Commission Schedule ──────────────────────────────
-
-const COMMISSION_MATRIX = {
-  'Standard Auto':             { preferredBundled: 16, bundled: 11, monoline: 6 },
-  'Homeowners / Condo':        { preferredBundled: 20, bundled: 16, monoline: 7 },
-  'Other Personal Lines':      { preferredBundled: 17, bundled: 12, monoline: 6 },
-};
-
-const BASE_COMMISSION = 9;
-
 // Renewal info — used for first-year projection and commission reference table
 const RENEWAL_INFO = {
   'Standard Auto': {
@@ -77,24 +68,6 @@ const TIER_OPTIONS = [
   { key: 'monoline',         label: 'Monoline' },
 ];
 
-const DEFAULT_POLICY_MIX = [
-  { productLine: 'Standard Auto',        tier: 'bundled',          avgPremium: 2200, mixPct: 40 },
-  { productLine: 'Standard Auto',        tier: 'monoline',         avgPremium: 1800, mixPct: 20 },
-  { productLine: 'Homeowners / Condo',   tier: 'preferredBundled', avgPremium: 2000, mixPct: 15 },
-  { productLine: 'Homeowners / Condo',   tier: 'bundled',          avgPremium: 1800, mixPct: 10 },
-  { productLine: 'Other Personal Lines', tier: 'monoline',         avgPremium: 1200, mixPct: 15 },
-];
-
-const DEFAULT_PLANNER = {
-  targetSubmissions: 700,
-  avgCPC: 7.0,
-  landingPageConvRate: 20,
-  closeRate: 18,
-  policyMix: DEFAULT_POLICY_MIX,
-  commissionMatrix: COMMISSION_MATRIX,
-  baseCommission: BASE_COMMISSION,
-};
-
 const DEFAULT_STAFFING = {
   activeProducers: 1,
   avgQuoteTime: 45,
@@ -110,12 +83,20 @@ const FunnelDashboardPage = () => {
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
 
+  // Fetch commission rates from DB (falls back to hardcoded Allstate defaults)
+  const agencyRates = useAgencyCommissionRates(agencyId);
+
   const [timeRange, setTimeRange] = useState('30d');
 
   // Load persisted inputs or use defaults (with migration from old format)
   const [plannerInputs, setPlannerInputs] = useState(() => {
     const saved = loadPersistedInputs();
-    const planner = saved?.planner || DEFAULT_PLANNER;
+    const planner = saved?.planner || {
+      targetSubmissions: 700,
+      avgCPC: 7.0,
+      landingPageConvRate: 20,
+      closeRate: 18,
+    };
     // Migrate from old single-field format
     if (!planner.policyMix && planner.avgPremium != null) {
       planner.policyMix = [{
@@ -124,17 +105,19 @@ const FunnelDashboardPage = () => {
         avgPremium: planner.avgPremium,
         mixPct: 100,
       }];
-      planner.commissionMatrix = COMMISSION_MATRIX;
-      planner.baseCommission = BASE_COMMISSION;
       delete planner.avgPremium;
       delete planner.commissionRate;
     }
-    // Fallbacks for corrupted/partial localStorage
-    if (!planner.policyMix) planner.policyMix = DEFAULT_POLICY_MIX;
-    if (!planner.commissionMatrix) planner.commissionMatrix = COMMISSION_MATRIX;
-    if (planner.baseCommission == null) planner.baseCommission = BASE_COMMISSION;
     return planner;
   });
+
+  // Merge DB-sourced commission config into planner inputs
+  const effectivePlanner = {
+    ...plannerInputs,
+    policyMix: plannerInputs.policyMix || agencyRates.policyMix,
+    commissionMatrix: agencyRates.commissionMatrix,
+    baseCommission: agencyRates.baseCommission,
+  };
 
   const [staffingInputs, setStaffingInputs] = useState(() => {
     const saved = loadPersistedInputs();
@@ -268,13 +251,13 @@ const FunnelDashboardPage = () => {
             {/* Section 4: Capacity Planning */}
             <CapacityPlanner
               kpis={metrics.kpis}
-              plannerInputs={plannerInputs}
+              plannerInputs={effectivePlanner}
               onInputChange={handlePlannerChange}
               onMixChange={handleMixChange}
               onMixAdd={handleMixAdd}
               onMixRemove={handleMixRemove}
               tierOptions={TIER_OPTIONS}
-              productLines={Object.keys(COMMISSION_MATRIX)}
+              productLines={Object.keys(agencyRates.commissionMatrix)}
               renewalInfo={RENEWAL_INFO}
             />
 
@@ -282,7 +265,7 @@ const FunnelDashboardPage = () => {
             <StaffingCapacity
               staffingInputs={staffingInputs}
               onStaffingChange={handleStaffingChange}
-              plannerInputs={plannerInputs}
+              plannerInputs={effectivePlanner}
             />
 
             {/* Section 6: Partial Lead Recovery */}

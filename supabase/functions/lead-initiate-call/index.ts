@@ -87,8 +87,8 @@ Deno.serve(async (req) => {
 
   const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
   const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
-  const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
-  const AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
+  const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
+  const ENV_AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
 
   try {
     // Claim pending rows where fire_after <= now() (concurrency guard)
@@ -113,11 +113,50 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Fetch agency config for each lead in the batch
+    const leadIds = claimed.map(r => r.lead_id)
+    const { data: leadAgencies } = await supabase
+      .from('leads')
+      .select('id, agency_id')
+      .in('id', leadIds)
+
+    const leadAgencyMap: Record<string, string> = {}
+    if (leadAgencies) {
+      for (const la of leadAgencies) {
+        if (la.agency_id) leadAgencyMap[la.id] = la.agency_id
+      }
+    }
+
+    // Fetch agency Twilio configs
+    const agencyIds = [...new Set(Object.values(leadAgencyMap))]
+    const agencyMap: Record<string, { twilio_from_number: string | null; agent_cell_number: string | null; brand_name: string | null }> = {}
+    if (agencyIds.length > 0) {
+      const { data: agencies } = await supabase
+        .from('agencies')
+        .select('id, twilio_from_number, agent_cell_number, brand_name')
+        .in('id', agencyIds)
+      if (agencies) {
+        for (const a of agencies) {
+          agencyMap[a.id] = {
+            twilio_from_number: a.twilio_from_number,
+            agent_cell_number: a.agent_cell_number,
+            brand_name: a.brand_name,
+          }
+        }
+      }
+    }
+
     let completed = 0
     let failed = 0
 
     for (const row of claimed) {
       const name = row.first_name || 'there'
+
+      // Resolve per-agency Twilio numbers
+      const agencyId = leadAgencyMap[row.lead_id]
+      const agencyConfig = agencyId ? agencyMap[agencyId] : null
+      const twilioFromNumber = agencyConfig?.twilio_from_number || ENV_TWILIO_PHONE_NUMBER
+      const agentPhoneNumber = agencyConfig?.agent_cell_number || ENV_AGENT_PHONE_NUMBER
 
       try {
         // Build TwiML webhook URL for the whisper
@@ -139,8 +178,8 @@ Deno.serve(async (req) => {
         const callResult = await initiateCall(
           TWILIO_ACCOUNT_SID,
           TWILIO_AUTH_TOKEN,
-          TWILIO_PHONE_NUMBER,
-          AGENT_PHONE_NUMBER,
+          twilioFromNumber,
+          agentPhoneNumber,
           twimlUrl,
           20
         )
@@ -202,7 +241,7 @@ Deno.serve(async (req) => {
           const followUpResult = await sendSMS(
             TWILIO_ACCOUNT_SID,
             TWILIO_AUTH_TOKEN,
-            TWILIO_PHONE_NUMBER,
+            twilioFromNumber,
             row.phone,
             missedBody
           )

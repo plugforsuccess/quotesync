@@ -7,7 +7,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { sendSMS, formatPhoneUS, checkRequiredEnvVars } from '../_shared/twilio.ts'
 
-// Drip message templates
+// Drip message templates — agency-agnostic (no agent name baked in)
 function getDripMessage(
   stage: number,
   firstName: string,
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
 
   const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
   const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
-  const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
+  const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
 
   try {
     // Query leads eligible for drip messages:
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
     // - Has a phone number
     const { data: leads, error: queryError } = await supabase
       .from('leads')
-      .select('id, first_name, phone, zip, drip_stage, created_at, sms_sent_at')
+      .select('id, first_name, phone, zip, drip_stage, created_at, sms_sent_at, agency_id')
       .eq('sms_sent', true)
       .eq('call_connected', false)
       .eq('sms_opted_out', false)
@@ -101,6 +101,21 @@ Deno.serve(async (req) => {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // Pre-fetch agency Twilio configs for all unique agency_ids in this batch
+    const agencyIds = [...new Set(leads.map(l => l.agency_id).filter(Boolean))]
+    const agencyMap: Record<string, { twilio_from_number: string | null }> = {}
+    if (agencyIds.length > 0) {
+      const { data: agencies } = await supabase
+        .from('agencies')
+        .select('id, twilio_from_number')
+        .in('id', agencyIds)
+      if (agencies) {
+        for (const a of agencies) {
+          agencyMap[a.id] = { twilio_from_number: a.twilio_from_number }
+        }
+      }
     }
 
     const now = Date.now()
@@ -132,6 +147,10 @@ Deno.serve(async (req) => {
       const message = getDripMessage(nextStage, lead.first_name, lead.zip)
       if (!message) continue
 
+      // Resolve per-agency Twilio number, falling back to env var
+      const agencyConfig = lead.agency_id ? agencyMap[lead.agency_id] : null
+      const twilioFromNumber = agencyConfig?.twilio_from_number || ENV_TWILIO_PHONE_NUMBER
+
       // Optimistic lock: claim the lead by updating drip_stage first.
       // Uses eq on current drip_stage as a concurrency guard — if another
       // invocation already advanced this lead, the update will match 0 rows.
@@ -149,7 +168,7 @@ Deno.serve(async (req) => {
       const smsResult = await sendSMS(
         TWILIO_ACCOUNT_SID,
         TWILIO_AUTH_TOKEN,
-        TWILIO_PHONE_NUMBER,
+        twilioFromNumber,
         formattedPhone,
         message
       )

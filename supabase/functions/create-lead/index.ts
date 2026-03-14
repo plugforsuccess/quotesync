@@ -548,6 +548,7 @@ Deno.serve(async (req) => {
           zip: zip,
           owns_home: body.owns_home || false,
           vehicle_count: body.vehicle_count || 1,
+          agency_id: lead.agency_id || finalAgencyId,
         }),
       }).catch(smsError => {
         // Don't fail lead creation if SMS fails
