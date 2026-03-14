@@ -57,12 +57,17 @@ class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      // If a fallback prop was provided (route-level boundary), render it instead
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4" role="alert">
           <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-8">
             <div className="flex items-start gap-4 mb-6">
               <div className="flex-shrink-0">
-                <AlertTriangle className="w-12 h-12 text-red-600" />
+                <AlertTriangle className="w-12 h-12 text-red-600" aria-hidden="true" />
               </div>
               <div className="flex-1">
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">

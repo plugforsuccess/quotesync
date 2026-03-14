@@ -9,6 +9,7 @@ import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
 import ErrorBoundary from './components/ErrorBoundary';
+import PageError from './components/PageError';
 import PageSpinner from './components/PageSpinner';
 import { validateCacheVersion } from './utils/cacheVersion';
 import { persistUtmParams } from './lib/leadsApi';
@@ -71,33 +72,31 @@ queryClient.getMutationCache().config.onError = (error) => {
   }
 };
 
-// Public pages - loaded immediately
+// Homepage — eager (landing page, always needed on first load)
 import InsuranceQuotesPage from './pages/InsuranceQuotesPage';
-import ThankYouPage from './pages/ThankYouPage';
-import DriversEdPage from './pages/DriversEdPage';
-import StorePage from './pages/StorePage';
-import ProductDetailPage from './pages/ProductDetailPage';
-import PurchaseSuccessPage from './pages/PurchaseSuccessPage';
-import PrivacyPage from './pages/PrivacyPage';
-import TermsPage from './pages/TermsPage';
-import NewsroomPage from './pages/NewsroomPage';
-import StoryDetailPage from './pages/StoryDetailPage';
-import LoginPage from './pages/LoginPage';
-import PunchPage from './pages/PunchPage';
 
-// Lead generation funnel — V2 single-question wizard
-import SaveWizardPage from './pages/SaveWizardPage';
-import SaveConfirmationPage from './pages/SaveConfirmationPage';
+// All other pages — lazy loaded for code splitting
+const ThankYouPage = lazy(() => import('./pages/ThankYouPage'));
+const DriversEdPage = lazy(() => import('./pages/DriversEdPage'));
+const StorePage = lazy(() => import('./pages/StorePage'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
+const PurchaseSuccessPage = lazy(() => import('./pages/PurchaseSuccessPage'));
+const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
+const NewsroomPage = lazy(() => import('./pages/NewsroomPage'));
+const StoryDetailPage = lazy(() => import('./pages/StoryDetailPage'));
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const PunchPage = lazy(() => import('./pages/PunchPage'));
+const SaveWizardPage = lazy(() => import('./pages/SaveWizardPage'));
+const SaveConfirmationPage = lazy(() => import('./pages/SaveConfirmationPage'));
+const AgencyApplyPage = lazy(() => import('./pages/AgencyApplyPage'));
 
-// Admin pages - lazy loaded for code splitting
+// Admin & agency pages — lazy loaded
 const NewsroomDashboardPage = lazy(() => import('./pages/NewsroomDashboardPage'));
 const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
 const ArchivedStoriesPage = lazy(() => import('./pages/ArchivedStoriesPage'));
 const StoryPreviewPage = lazy(() => import('./pages/StoryPreviewPage'));
 const EditorialStandardsPage = lazy(() => import('./pages/EditorialStandardsPage'));
-
-// Agency pages
-import AgencyApplyPage from './pages/AgencyApplyPage';
 const AdminAgenciesPage = lazy(() => import('./pages/AdminAgenciesPage'));
 const AdminAgencyDetailPage = lazy(() => import('./pages/AdminAgencyDetailPage'));
 const AdminAuditPage = lazy(() => import('./pages/AdminAuditPage'));
@@ -127,17 +126,17 @@ function App() {
   }, []);
 
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <ErrorBoundary>
           <AuthProvider>
             <ScrollToTop />
             <Routes>
           {/* Admin login page (no layout) - obscured path for security */}
-          <Route path="/admin-access-8by2X" element={<LoginPage />} />
+          <Route path="/admin-access-8by2X" element={<Suspense fallback={<PageLoader />}><LoginPage /></Suspense>} />
 
           {/* Employee punch clock — public, no auth required */}
-          <Route path="/punch" element={<PunchPage />} />
+          <Route path="/punch" element={<Suspense fallback={<PageLoader />}><PunchPage /></Suspense>} />
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}
           <Route path="/" element={<Layout />}>
@@ -146,14 +145,14 @@ function App() {
             <Route path="quotes" element={<InsuranceQuotesPage />} />
 
             {/* Drivers Ed tab */}
-            <Route path="courses" element={<DriversEdPage />} />
+            <Route path="courses" element={<Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense>} />
 
             {/* Keep your old route working too if it's already linked */}
-            <Route path="defensive-driving" element={<DriversEdPage />} />
+            <Route path="defensive-driving" element={<Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense>} />
 
             {/* Newsroom - Insurance News Feed */}
-            <Route path="news" element={<NewsroomPage />} />
-            <Route path="news/:slug" element={<StoryDetailPage />} />
+            <Route path="news" element={<Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense>} />
+            <Route path="news/:slug" element={<Suspense fallback={<PageLoader />}><StoryDetailPage /></Suspense>} />
 
             {/* Story Preview (Protected - Editor/Admin only) */}
             <Route
@@ -182,9 +181,11 @@ function App() {
               path="news/editor"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <NewsroomEditorPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <NewsroomEditorPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -192,9 +193,11 @@ function App() {
               path="news/editor/:id"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <NewsroomEditorPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <NewsroomEditorPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -220,24 +223,24 @@ function App() {
             />
 
             {/* Online Store */}
-            <Route path="store" element={<StorePage />} />
-            <Route path="store/:slug" element={<ProductDetailPage />} />
-            <Route path="store/purchase-success" element={<PurchaseSuccessPage />} />
+            <Route path="store" element={<Suspense fallback={<PageLoader />}><StorePage /></Suspense>} />
+            <Route path="store/:slug" element={<Suspense fallback={<PageLoader />}><ProductDetailPage /></Suspense>} />
+            <Route path="store/purchase-success" element={<Suspense fallback={<PageLoader />}><PurchaseSuccessPage /></Suspense>} />
 
             {/* Lead generation funnel — V2 single-question wizard */}
-            <Route path="save" element={<SaveWizardPage />} />
+            <Route path="save" element={<Suspense fallback={<PageLoader />}><SaveWizardPage /></Suspense>} />
             <Route path="save/details" element={<Navigate to="/save" replace />} />
-            <Route path="save/confirmation" element={<SaveConfirmationPage />} />
+            <Route path="save/confirmation" element={<Suspense fallback={<PageLoader />}><SaveConfirmationPage /></Suspense>} />
 
             {/* Thank you page (after form / Canopy redirect) */}
-            <Route path="success" element={<ThankYouPage />} />
+            <Route path="success" element={<Suspense fallback={<PageLoader />}><ThankYouPage /></Suspense>} />
 
             {/* Privacy Policy and Terms of Service */}
-            <Route path="privacy" element={<PrivacyPage />} />
-            <Route path="terms" element={<TermsPage />} />
+            <Route path="privacy" element={<Suspense fallback={<PageLoader />}><PrivacyPage /></Suspense>} />
+            <Route path="terms" element={<Suspense fallback={<PageLoader />}><TermsPage /></Suspense>} />
 
             {/* Agency Partnership - Public Application */}
-            <Route path="partners/apply" element={<AgencyApplyPage />} />
+            <Route path="partners/apply" element={<Suspense fallback={<PageLoader />}><AgencyApplyPage /></Suspense>} />
 
             {/* Agency Funnel Dashboard (Protected for agency users) */}
             <Route
@@ -348,9 +351,11 @@ function App() {
               path="admin/cs-performance"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <CSPerformancePage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <CSPerformancePage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -384,9 +389,11 @@ function App() {
               path="admin/book-health"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <BookHealthPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <BookHealthPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -422,9 +429,9 @@ function App() {
           </Routes>
           </AuthProvider>
           <Analytics />
-        </BrowserRouter>
-      </QueryClientProvider>
-    </ErrorBoundary>
+        </ErrorBoundary>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
