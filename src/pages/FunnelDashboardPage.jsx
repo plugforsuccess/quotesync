@@ -12,6 +12,7 @@ import LeadQuality from './components/dashboard/LeadQuality';
 import CapacityPlanner from './components/dashboard/CapacityPlanner';
 import StaffingCapacity from './components/dashboard/StaffingCapacity';
 import PartialRecovery from './components/dashboard/PartialRecovery';
+import PageSpinner from '../components/PageSpinner';
 
 // ─── Time Range Filter ────────────────────────────────────────────────────────
 
@@ -182,14 +183,7 @@ const FunnelDashboardPage = () => {
 
   // Loading state
   if (agencyLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4" />
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   if (!currentAgency) {
@@ -213,14 +207,14 @@ const FunnelDashboardPage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-4">
           <div>
             <div className="flex items-center gap-3">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
+              <BarChart3 className="w-6 h-6 text-primary-600" />
               <h1 className="text-2xl font-bold text-gray-900">Funnel Dashboard</h1>
             </div>
             <div className="flex items-center gap-4 mt-2">
               <p className="text-gray-600">{currentAgency.agencies?.name || 'Agency'}</p>
               <Link
                 to="/agency/leads"
-                className="text-sm text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                className="text-sm text-primary-600 hover:text-primary-800 inline-flex items-center gap-1"
               >
                 <List className="w-4 h-4" />
                 View Lead Pipeline
@@ -236,7 +230,7 @@ const FunnelDashboardPage = () => {
                 onClick={() => setTimeRange(key)}
                 className={`px-3 py-2 text-sm font-medium transition-colors ${
                   timeRange === key
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary-600 text-white'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
@@ -249,7 +243,7 @@ const FunnelDashboardPage = () => {
         {/* Loading / Error */}
         {metricsLoading && (
           <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4" />
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4" />
             <p className="text-gray-500">Loading dashboard metrics...</p>
           </div>
         )}

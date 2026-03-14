@@ -22,12 +22,12 @@ export default function GeorgiaDriverEducationPage() {
   };
 
   return (
-    <div className="bg-slate-950 text-slate-50 min-h-screen">
+    <div className="bg-gray-950 text-gray-50 min-h-screen">
       <div className="max-w-6xl mx-auto px-4 py-12 lg:py-16">
         {/* Returning Customer Banner */}
         <div className="mb-8 -mt-4">
-          <div className="bg-slate-900/60 border border-slate-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
-            <p className="text-sm text-slate-300">
+          <div className="bg-gray-900/60 border border-gray-700/50 rounded-xl px-4 py-3 flex items-center justify-between gap-4">
+            <p className="text-sm text-gray-300">
               Already enrolled in a course?
             </p>
             <button
@@ -49,7 +49,7 @@ export default function GeorgiaDriverEducationPage() {
           <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3">
             Georgia Driver Education &amp; Insurance Discounts
           </h1>
-          <p className="text-sm md:text-base text-slate-300 max-w-3xl">
+          <p className="text-sm md:text-base text-gray-300 max-w-3xl">
             Complete your driver education online—whether you're earning your license or looking to save on insurance. Both courses are 100% online and state-approved.
           </p>
         </header>
@@ -57,9 +57,9 @@ export default function GeorgiaDriverEducationPage() {
         {/* Course Cards */}
         <div className="grid gap-6 lg:grid-cols-2 mb-12">
           {/* Defensive Driving Card - Featured */}
-          <div className="bg-gradient-to-br from-success-500/10 to-slate-900/60 border-2 border-success-500/40 rounded-2xl p-6 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-success-500/10 to-gray-900/60 border-2 border-success-500/40 rounded-2xl p-6 relative overflow-hidden">
             {/* Popular badge */}
-            <div className="absolute top-4 right-4 bg-success-400 text-slate-950 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+            <div className="absolute top-4 right-4 bg-success-400 text-gray-950 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
               Most Popular
             </div>
 
@@ -70,12 +70,12 @@ export default function GeorgiaDriverEducationPage() {
               <h2 className="text-2xl font-bold mb-2">
                 Defensive Driving Course
               </h2>
-              <p className="text-sm text-slate-300 mb-4">
+              <p className="text-sm text-gray-300 mb-4">
                 Save on your insurance premium by completing this 6-hour online defensive driving course. Many Georgia insurers offer recurring discounts.
               </p>
             </div>
 
-            <div className="space-y-2 text-sm text-slate-300 mb-6">
+            <div className="space-y-2 text-sm text-gray-300 mb-6">
               <div className="flex items-start gap-2">
                 <span className="text-success-400 mt-0.5">✓</span>
                 <span>6-hour online course, complete at your own pace</span>
@@ -95,20 +95,20 @@ export default function GeorgiaDriverEducationPage() {
             </div>
 
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-xs line-through text-slate-500">$59.95</span>
+              <span className="text-xs line-through text-gray-500">$59.95</span>
               <span className="text-2xl font-bold text-success-300">$37.00*</span>
             </div>
 
             <button
               onClick={handleDefensiveDrivingClick}
-              className="w-full rounded-full py-3.5 text-sm font-semibold bg-success-400 hover:bg-success-300 text-slate-950 transition-all shadow-lg hover:shadow-success-400/20"
+              className="w-full rounded-full py-3.5 text-sm font-semibold bg-success-400 hover:bg-success-300 text-gray-950 transition-all shadow-lg hover:shadow-success-400/20"
             >
               Start Defensive Driving Course
             </button>
           </div>
 
           {/* Joshua's Law Card */}
-          <div className="bg-slate-900/60 border border-slate-700 hover:border-slate-600 rounded-2xl p-6 transition-all">
+          <div className="bg-gray-900/60 border border-gray-700 hover:border-gray-600 rounded-2xl p-6 transition-all">
             <div className="mb-4">
               <p className="text-xs font-semibold text-primary-300 mb-2 uppercase tracking-[0.18em]">
                 Teen Drivers (15-17)
@@ -116,12 +116,12 @@ export default function GeorgiaDriverEducationPage() {
               <h2 className="text-2xl font-bold mb-2">
                 Joshua's Law Course
               </h2>
-              <p className="text-sm text-slate-300 mb-4">
+              <p className="text-sm text-gray-300 mb-4">
                 Required for Georgia teens to get their Class D license. Complete the 30-hour course online to fulfill your driver's ed requirement.
               </p>
             </div>
 
-            <div className="space-y-2 text-sm text-slate-300 mb-6">
+            <div className="space-y-2 text-sm text-gray-300 mb-6">
               <div className="flex items-start gap-2">
                 <span className="text-primary-400 mt-0.5">✓</span>
                 <span>30-hour state-approved curriculum</span>
@@ -141,12 +141,12 @@ export default function GeorgiaDriverEducationPage() {
             </div>
 
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-2xl font-bold text-slate-50">$29.00</span>
+              <span className="text-2xl font-bold text-gray-50">$29.00</span>
             </div>
 
             <button
               onClick={handleJoshuasLawClick}
-              className="w-full rounded-full py-3.5 text-sm font-semibold bg-slate-700 hover:bg-slate-600 text-slate-50 transition-all"
+              className="w-full rounded-full py-3.5 text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-gray-50 transition-all"
             >
               Start Joshua's Law Course
             </button>
@@ -157,13 +157,13 @@ export default function GeorgiaDriverEducationPage() {
         <div className="grid gap-8 lg:grid-cols-2 mb-12">
           {/* Defensive Driving Details */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold border-b border-slate-800 pb-2">
+            <h3 className="text-xl font-bold border-b border-gray-800 pb-2">
               About Defensive Driving
             </h3>
             
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-success-400">How It Works</h4>
-              <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside pl-1">
+              <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside pl-1">
                 <li>Check with your insurer to confirm they accept this course</li>
                 <li>Enroll and complete the 6-hour program at your own pace</li>
                 <li>Download your completion certificate</li>
@@ -174,7 +174,7 @@ export default function GeorgiaDriverEducationPage() {
 
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-success-400">Course Features</h4>
-              <ul className="text-sm text-slate-300 space-y-2">
+              <ul className="text-sm text-gray-300 space-y-2">
                 <li>• Works on mobile, tablet, or desktop</li>
                 <li>• Mix of text, videos, and animations</li>
                 <li>• Automatic progress saving</li>
@@ -183,9 +183,9 @@ export default function GeorgiaDriverEducationPage() {
               </ul>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-              <p className="text-xs text-slate-400 mb-2 font-semibold">Quick Answer</p>
-              <p className="text-sm text-slate-300">
+            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
+              <p className="text-xs text-gray-400 mb-2 font-semibold">Quick Answer</p>
+              <p className="text-sm text-gray-300">
                 <span className="font-semibold">Will I get a discount?</span> Most Georgia insurers offer defensive driving discounts, but you should always verify with your specific carrier before enrolling.
               </p>
             </div>
@@ -193,13 +193,13 @@ export default function GeorgiaDriverEducationPage() {
 
           {/* Joshua's Law Details */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold border-b border-slate-800 pb-2">
+            <h3 className="text-xl font-bold border-b border-gray-800 pb-2">
               About Joshua's Law
             </h3>
             
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-primary-400">How It Works</h4>
-              <ol className="text-sm text-slate-300 space-y-2 list-decimal list-inside pl-1">
+              <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside pl-1">
                 <li>Enroll in the 30-hour online course</li>
                 <li>Complete interactive lessons and quizzes</li>
                 <li>Pass the final exam</li>
@@ -210,7 +210,7 @@ export default function GeorgiaDriverEducationPage() {
 
             <div className="space-y-3">
               <h4 className="text-sm font-semibold text-primary-400">Requirements</h4>
-              <ul className="text-sm text-slate-300 space-y-2">
+              <ul className="text-sm text-gray-300 space-y-2">
                 <li>• Required for teens ages 15-17 in Georgia</li>
                 <li>• Must complete before applying for Class D license</li>
                 <li>• No in-person classroom attendance needed</li>
@@ -219,9 +219,9 @@ export default function GeorgiaDriverEducationPage() {
               </ul>
             </div>
 
-            <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-4">
-              <p className="text-xs text-slate-400 mb-2 font-semibold">Quick Answer</p>
-              <p className="text-sm text-slate-300">
+            <div className="bg-gray-900/60 border border-gray-800 rounded-xl p-4">
+              <p className="text-xs text-gray-400 mb-2 font-semibold">Quick Answer</p>
+              <p className="text-sm text-gray-300">
                 <span className="font-semibold">Is this state-approved?</span> Yes, this course is fully approved by the Georgia Department of Driver Services and satisfies Joshua's Law requirements.
               </p>
             </div>
@@ -229,30 +229,30 @@ export default function GeorgiaDriverEducationPage() {
         </div>
 
         {/* FAQ Section */}
-        <section className="bg-slate-900/40 border border-slate-800 rounded-2xl p-8">
+        <section className="bg-gray-900/40 border border-gray-800 rounded-2xl p-8">
           <h3 className="text-xl font-bold mb-6">Frequently Asked Questions</h3>
           <div className="grid gap-6 md:grid-cols-2">
             <div>
               <p className="font-semibold text-sm mb-2">Can I take both courses?</p>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-gray-300">
                 Absolutely! If you're a parent helping your teen, you can enroll in Defensive Driving for your own insurance discount while your teen completes Joshua's Law.
               </p>
             </div>
             <div>
               <p className="font-semibold text-sm mb-2">How long do I have access?</p>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-gray-300">
                 Both courses give you extended access to complete at your own pace. You can log in and out as needed, and your progress is automatically saved.
               </p>
             </div>
             <div>
               <p className="font-semibold text-sm mb-2">Are certificates sent automatically?</p>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-gray-300">
                 Joshua's Law certificates are sent directly to Georgia DDS. Defensive Driving certificates are downloadable for you to submit to your insurer.
               </p>
             </div>
             <div>
               <p className="font-semibold text-sm mb-2">What if I need help during the course?</p>
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-gray-300">
                 Both course providers offer customer support via phone and email during extended business hours.
               </p>
             </div>
@@ -263,11 +263,11 @@ export default function GeorgiaDriverEducationPage() {
         <section className="my-12">
           <div className="bg-gradient-to-r from-primary-500/10 to-secondary-500/10 border border-primary-500/30 rounded-2xl p-8 text-center">
             <h3 className="text-2xl font-bold mb-3">Need an Insurance Quote?</h3>
-            <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
+            <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
               Skip the long forms. Compares rates in less than a minute.
             </p>
              <a
-              className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-primary-700 hover:via-primary-800 hover:to-secondary-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-blue-500/50 group no-underline"
+              className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-primary-700 hover:via-primary-800 hover:to-secondary-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-primary-500/50 group no-underline"
               href="https://app.usecanopy.com/c/insuredbycam"
               target="_blank"
                 >
@@ -277,8 +277,8 @@ export default function GeorgiaDriverEducationPage() {
         </section>
 
         {/* Disclosure */}
-        <section className="mt-8 pt-6 border-t border-slate-800">
-          <p className="text-[11px] text-slate-500 leading-relaxed">
+        <section className="mt-8 pt-6 border-t border-gray-800">
+          <p className="text-[11px] text-gray-500 leading-relaxed">
             Some programs on this page are partner or affiliate offers. If you enroll through these links, insuredbycam.com may earn a commission at no extra cost to you. Only programs that provide real safety or savings benefits are recommended here. *Pricing shown is approximate and may vary based on active promotions—see partner site for current rates.
           </p>
         </section>

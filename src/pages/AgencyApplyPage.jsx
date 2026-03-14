@@ -109,7 +109,7 @@ const AgencyApplyPage = () => {
   if (submitted) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-xl shadow-md p-8 text-center">
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
@@ -120,7 +120,7 @@ const AgencyApplyPage = () => {
           </p>
           <Link
             to="/"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
           >
             Return Home
           </Link>
@@ -131,11 +131,11 @@ const AgencyApplyPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Building2 className="w-8 h-8 text-blue-600" />
+          <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-8 h-8 text-primary-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Agency Partnership Application</h1>
           <p className="text-gray-600">
@@ -144,7 +144,7 @@ const AgencyApplyPage = () => {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-md p-8">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -165,7 +165,7 @@ const AgencyApplyPage = () => {
                   name="legalName"
                   value={formData.legalName}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="ABC Insurance Agency, LLC"
                   required
                 />
@@ -179,7 +179,7 @@ const AgencyApplyPage = () => {
                   name="brandName"
                   value={formData.brandName}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="ABC Insurance"
                 />
               </div>
@@ -199,7 +199,7 @@ const AgencyApplyPage = () => {
                   name="contactName"
                   value={formData.contactName}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="John Smith"
                   required
                 />
@@ -213,7 +213,7 @@ const AgencyApplyPage = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="john@example.com"
                   required
                 />
@@ -227,7 +227,7 @@ const AgencyApplyPage = () => {
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="(555) 123-4567"
                   required
                 />
@@ -247,7 +247,7 @@ const AgencyApplyPage = () => {
                   onClick={() => toggleState(state)}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                     formData.statesLicensed.includes(state)
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -256,7 +256,7 @@ const AgencyApplyPage = () => {
               ))}
             </div>
             {formData.statesLicensed.length > 0 && (
-              <p className="mt-2 text-sm text-blue-600">
+              <p className="mt-2 text-sm text-primary-600">
                 Selected: {formData.statesLicensed.join(', ')}
               </p>
             )}
@@ -273,7 +273,7 @@ const AgencyApplyPage = () => {
                   onClick={() => toggleLOB(lob.value)}
                   className={`p-3 rounded-lg text-sm font-medium text-left transition-colors ${
                     formData.linesOfBusiness.includes(lob.value)
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
@@ -295,7 +295,7 @@ const AgencyApplyPage = () => {
                 value={formData.licenseIdentifiers}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="NPN: 12345678&#10;TX License: 1234567&#10;CA License: 0A12345"
               />
             </div>
@@ -313,7 +313,7 @@ const AgencyApplyPage = () => {
                 value={formData.desiredTerritories}
                 onChange={handleChange}
                 rows={3}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Dallas-Fort Worth metro area&#10;ZIP codes: 75001-75099&#10;Houston, TX"
               />
               <p className="mt-1 text-sm text-gray-500">
@@ -326,7 +326,7 @@ const AgencyApplyPage = () => {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 disabled:bg-primary-400 text-white font-semibold rounded-lg transition-colors"
           >
             {submitting ? (
               <>
@@ -343,9 +343,9 @@ const AgencyApplyPage = () => {
 
           <p className="mt-4 text-center text-sm text-gray-500">
             By submitting, you agree to our{' '}
-            <Link to="/terms" className="text-blue-600 hover:underline">Terms of Service</Link>
+            <Link to="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
             {' '}and{' '}
-            <Link to="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>
+            <Link to="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
           </p>
         </form>
       </div>

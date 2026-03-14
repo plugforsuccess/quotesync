@@ -110,7 +110,7 @@ export default function FixedAssumptionsForm({ config, onUpdate }) {
                     onChange={(e) => handleChange(field.key, e.target.value, field.type)}
                     onFocus={() => setEditingField(field.key)}
                     onBlur={() => setEditingField(null)}
-                    className={`w-full text-sm border border-gray-200 rounded-lg py-1.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                    className={`w-full text-sm border border-gray-200 rounded-lg py-1.5 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors ${
                       field.type === 'currency' ? 'pl-6 pr-3' : field.type === 'percent' ? 'pl-3 pr-6' : 'pl-3 pr-3'
                     }`}
                   />

@@ -11,6 +11,7 @@ import { useNavigationBlock } from '../hooks/useNavigationBlock';
 import DraftRestoreModal from '../components/DraftRestoreModal';
 import UserMenu from '../components/newsroom/UserMenu';
 import { STORY_CATEGORIES, SECONDARY_TAGS, DEFAULT_CATEGORY, getCategoryBySlug } from '../lib/categories';
+import PageSpinner from '../components/PageSpinner';
 
 const NewsroomEditorPage = () => {
   const { id } = useParams(); // If editing existing story
@@ -441,14 +442,7 @@ const NewsroomEditorPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading editor...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading editor..." />;
   }
 
   // Check if content is immutable (in_review status and user is not admin)
@@ -458,7 +452,7 @@ const NewsroomEditorPage = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 py-4">
+        <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
             <button
               onClick={() => navigate('/news/dashboard')}
@@ -503,7 +497,7 @@ const NewsroomEditorPage = () => {
                   <button
                     onClick={handleSubmitForReview}
                     disabled={saving}
-                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-xs sm:text-sm whitespace-nowrap"
                   >
                     <Send className="w-4 h-4" />
                     <span className="hidden sm:inline">Submit for Review</span>
@@ -536,8 +530,8 @@ const NewsroomEditorPage = () => {
                 <div className="flex items-center gap-1">
                   {autosave.isSaving && (
                     <>
-                      <Clock className="w-4 h-4 animate-spin text-blue-500" />
-                      <span className="text-blue-600">Saving...</span>
+                      <Clock className="w-4 h-4 animate-spin text-primary-500" />
+                      <span className="text-primary-600">Saving...</span>
                     </>
                   )}
                   {autosave.hasSaved && !autosave.isSaving && (
@@ -568,7 +562,7 @@ const NewsroomEditorPage = () => {
       </div>
 
       {/* Editor Form */}
-      <div className="max-w-5xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
+      <div className="max-w-4xl mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {isContentImmutable && (
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded">
             <div className="flex">
@@ -596,7 +590,7 @@ const NewsroomEditorPage = () => {
               value={story.title}
               onChange={(e) => handleChange('title', e.target.value)}
               disabled={isContentImmutable}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg font-semibold text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-lg font-semibold text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="Enter story title..."
             />
           </div>
@@ -611,7 +605,7 @@ const NewsroomEditorPage = () => {
               value={story.slug}
               onChange={(e) => handleChange('slug', e.target.value)}
               disabled={isContentImmutable}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               placeholder="story-url-slug"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -628,7 +622,7 @@ const NewsroomEditorPage = () => {
               value={story.preview_hook}
               onChange={(e) => handleChange('preview_hook', e.target.value)}
               disabled={isContentImmutable}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               rows={3}
               placeholder="Write a compelling preview that appears in the feed..."
             />
@@ -646,7 +640,7 @@ const NewsroomEditorPage = () => {
               value={story.body}
               onChange={(e) => handleChange('body', e.target.value)}
               disabled={isContentImmutable}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 font-mono text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono text-sm text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
               rows={15}
               placeholder="Write the full article body... (Use double line breaks for paragraphs)"
             />
@@ -661,7 +655,7 @@ const NewsroomEditorPage = () => {
               <select
                 value={story.category}
                 onChange={(e) => handleChange('category', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
               >
                 {STORY_CATEGORIES.map((cat) => (
                   <option key={cat.slug} value={cat.slug}>
@@ -683,7 +677,7 @@ const NewsroomEditorPage = () => {
               <select
                 value={story.region}
                 onChange={(e) => handleChange('region', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
               >
                 <option value="">Select region...</option>
                 <option value="Georgia">Georgia (Statewide)</option>
@@ -723,7 +717,7 @@ const NewsroomEditorPage = () => {
                     }}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
                       isSelected
-                        ? 'bg-blue-600 text-white ring-2 ring-blue-600 ring-offset-1'
+                        ? 'bg-primary-600 text-white ring-2 ring-primary-600 ring-offset-1'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
@@ -742,13 +736,13 @@ const NewsroomEditorPage = () => {
                     return (
                       <span
                         key={tagSlug}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-800 rounded-full text-xs"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary-100 text-primary-800 rounded-full text-xs"
                       >
                         {tag?.label || tagSlug}
                         <button
                           type="button"
                           onClick={() => handleChange('secondary_tags', story.secondary_tags.filter(t => t !== tagSlug))}
-                          className="hover:text-blue-600"
+                          className="hover:text-primary-600"
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -771,7 +765,7 @@ const NewsroomEditorPage = () => {
               <select
                 value={story.video_type || ''}
                 onChange={(e) => handleChange('video_type', e.target.value || null)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
               >
                 <option value="">No video</option>
                 <option value="youtube_embed">YouTube</option>
@@ -790,7 +784,7 @@ const NewsroomEditorPage = () => {
                     type="url"
                     value={story.video_url}
                     onChange={(e) => handleChange('video_url', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                     placeholder="https://youtube.com/watch?v=..."
                   />
                 </div>
@@ -803,7 +797,7 @@ const NewsroomEditorPage = () => {
                     type="url"
                     value={story.video_thumbnail}
                     onChange={(e) => handleChange('video_thumbnail', e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                     placeholder="https://example.com/thumbnail.jpg"
                   />
                 </div>
@@ -824,7 +818,7 @@ const NewsroomEditorPage = () => {
                   type="text"
                   value={story.source_name}
                   onChange={(e) => handleChange('source_name', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                   placeholder="WSB-TV Atlanta"
                 />
               </div>
@@ -837,7 +831,7 @@ const NewsroomEditorPage = () => {
                   type="url"
                   value={story.source_url}
                   onChange={(e) => handleChange('source_url', e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                   placeholder="https://..."
                 />
               </div>
@@ -856,7 +850,7 @@ const NewsroomEditorPage = () => {
                 type="text"
                 value={story.meta_title}
                 onChange={(e) => handleChange('meta_title', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                 placeholder="Auto-populated from title (edit as needed)"
                 maxLength={60}
               />
@@ -872,7 +866,7 @@ const NewsroomEditorPage = () => {
               <textarea
                 value={story.meta_description}
                 onChange={(e) => handleChange('meta_description', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                 rows={3}
                 placeholder="Auto-populated from preview hook (edit as needed)"
                 maxLength={160}
@@ -890,7 +884,7 @@ const NewsroomEditorPage = () => {
                 type="url"
                 value={story.og_image}
                 onChange={(e) => handleChange('og_image', e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
                 placeholder="https://example.com/og-image.jpg"
               />
             </div>

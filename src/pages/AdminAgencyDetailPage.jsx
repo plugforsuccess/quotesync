@@ -8,6 +8,7 @@ import {
   MapPin, Users, FileText, History, Save, AlertCircle, UserPlus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import PageSpinner from '../components/PageSpinner';
 import {
   useAgencyDetail,
   useAgencyRoutingRules,
@@ -85,11 +86,7 @@ const AdminAgencyDetailPage = () => {
   }
 
   if (agencyLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   if (agencyError || !agency) {
@@ -98,7 +95,7 @@ const AdminAgencyDetailPage = () => {
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-xl font-bold text-gray-900 mb-2">Agency Not Found</h2>
-          <Link to="/admin/agencies" className="text-blue-600 hover:underline">Back to Agencies</Link>
+          <Link to="/admin/agencies" className="text-primary-600 hover:underline">Back to Agencies</Link>
         </div>
       </div>
     );
@@ -195,7 +192,7 @@ const AdminAgencyDetailPage = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="max-w-4xl mx-auto px-4 py-6">
           <div className="flex items-center gap-4 mb-4">
             <button
               onClick={() => navigate('/admin/agencies')}
@@ -205,7 +202,7 @@ const AdminAgencyDetailPage = () => {
             </button>
             <div className="flex-1">
               <div className="flex items-center gap-3">
-                <Building2 className="w-6 h-6 text-blue-600" />
+                <Building2 className="w-6 h-6 text-primary-600" />
                 <h1 className="text-2xl font-bold text-gray-900">{agency.name}</h1>
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[agency.status]}`}>
                   {agency.status}
@@ -255,7 +252,7 @@ const AdminAgencyDetailPage = () => {
 
       {/* Tabs */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-4">
+        <div className="max-w-4xl mx-auto px-4">
           <div className="flex gap-1">
             {[
               { id: 'application', label: 'Application', icon: FileText },
@@ -268,7 +265,7 @@ const AdminAgencyDetailPage = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-600 text-blue-600'
+                    ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -281,7 +278,7 @@ const AdminAgencyDetailPage = () => {
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Application Tab */}
         {activeTab === 'application' && (
           <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -316,7 +313,7 @@ const AdminAgencyDetailPage = () => {
                 <div className="flex flex-wrap gap-2">
                   {agency.state_licenses?.length > 0 ? (
                     agency.state_licenses.map(s => (
-                      <span key={s} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">{s}</span>
+                      <span key={s} className="px-2 py-1 bg-primary-100 text-primary-700 rounded text-sm">{s}</span>
                     ))
                   ) : <span className="text-gray-400">-</span>}
                 </div>
@@ -371,7 +368,7 @@ const AdminAgencyDetailPage = () => {
                   setRuleForm({ state: '', zip: '', exclusivity_level: 'none', priority_tier: 0, capacity_enabled: true, rule_type: 'geographic', min_score: '', max_score: '', carrier_filter: '' });
                   setShowRuleForm(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg"
               >
                 <Plus className="w-4 h-4" />
                 Add Rule
@@ -494,7 +491,7 @@ const AdminAgencyDetailPage = () => {
                       id="capacity_enabled"
                       checked={ruleForm.capacity_enabled}
                       onChange={(e) => setRuleForm(f => ({ ...f, capacity_enabled: e.target.checked }))}
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                      className="w-4 h-4 text-primary-600 border-gray-300 rounded"
                     />
                     <label htmlFor="capacity_enabled" className="text-sm text-gray-700">Enabled</label>
                   </div>
@@ -503,7 +500,7 @@ const AdminAgencyDetailPage = () => {
                   <button
                     onClick={handleSaveRule}
                     disabled={createRule.isPending || updateRule.isPending}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
                   >
                     <Save className="w-4 h-4" />
                     Save
@@ -546,7 +543,7 @@ const AdminAgencyDetailPage = () => {
                         <td className="px-4 py-3 text-sm">
                           <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                             rule.rule_type === 'quality' ? 'bg-purple-100 text-purple-700' :
-                            rule.rule_type === 'combined' ? 'bg-blue-100 text-blue-700' :
+                            rule.rule_type === 'combined' ? 'bg-primary-100 text-primary-700' :
                             'bg-gray-100 text-gray-700'
                           }`}>
                             {rule.rule_type || 'geographic'}
@@ -586,7 +583,7 @@ const AdminAgencyDetailPage = () => {
               <h2 className="text-lg font-semibold text-gray-900">Agency Users</h2>
               <button
                 onClick={() => setShowUserForm(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg"
+                className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg"
               >
                 <UserPlus className="w-4 h-4" />
                 Invite User
@@ -624,7 +621,7 @@ const AdminAgencyDetailPage = () => {
                   <button
                     onClick={handleInviteUser}
                     disabled={inviteUser.isPending}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
                   >
                     <UserPlus className="w-4 h-4" />
                     Invite

@@ -216,9 +216,9 @@ export default function WeeklyTimeTable({
   const isNoTime = (code) => NO_TIME_CODES.includes(code);
 
   const inputCls =
-    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
+    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white';
   const selectCls =
-    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white';
+    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white';
   const disabledInputCls =
     'w-full px-2 py-1.5 text-sm border border-gray-200 rounded bg-gray-100 text-gray-400 cursor-not-allowed';
 
@@ -342,7 +342,7 @@ export default function WeeklyTimeTable({
         <button
           disabled={!canSave}
           onClick={saveWeek}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {saving ? (
             <Loader2 className="w-4 h-4 animate-spin" />

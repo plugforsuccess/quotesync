@@ -47,11 +47,11 @@ export default function AnnualCompTable({ config, productMix }) {
             {scenarios.map((s) => (
               <tr
                 key={s.name}
-                className={s.isTarget ? 'bg-blue-50/50' : 'hover:bg-gray-50'}
+                className={s.isTarget ? 'bg-primary-50/50' : 'hover:bg-gray-50'}
               >
                 <td className="py-2 pr-3 font-medium text-gray-900 whitespace-nowrap">
                   {s.name}
-                  {s.isTarget && <span className="ml-1 text-blue-500">&#9733;</span>}
+                  {s.isTarget && <span className="ml-1 text-primary-500">&#9733;</span>}
                 </td>
                 <td className="py-2 px-2 text-right text-gray-700">{s.items}</td>
                 <td className="py-2 px-2 text-right text-gray-700">{fmt(s.baseSalaryAnnual)}</td>

@@ -165,13 +165,13 @@ const EmployeeRosterPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
             onClick={() => refetch()}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mx-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -188,7 +188,7 @@ const EmployeeRosterPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Users className="w-8 h-8 text-blue-600" />
+              <Users className="w-8 h-8 text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Employee Roster</h1>
                 <p className="text-gray-600 text-sm">Manage team members, roles, and verification</p>
@@ -198,14 +198,14 @@ const EmployeeRosterPage = () => {
               <button
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
                 title="Refresh"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
               </button>
               <button
                 onClick={handleAddOpen}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors"
               >
                 <Plus className="w-4 h-4" />
                 Add Employee
@@ -258,7 +258,7 @@ const EmployeeRosterPage = () => {
               onClick={() => setStatusFilter(f.value)}
               className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                 statusFilter === f.value
-                  ? 'bg-blue-100 text-blue-700'
+                  ? 'bg-primary-100 text-primary-700'
                   : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
               }`}
             >
@@ -270,7 +270,7 @@ const EmployeeRosterPage = () => {
         {/* Employee table */}
         {isLoading ? (
           <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3" />
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-3" />
             <p className="text-gray-600 text-sm">Loading employees...</p>
           </div>
         ) : filteredEmployees.length === 0 ? (
@@ -369,7 +369,7 @@ const EmployeeRosterPage = () => {
                               <>
                                 <button
                                   onClick={() => handleEditOpen(emp)}
-                                  className="text-gray-500 hover:text-blue-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                                  className="text-gray-500 hover:text-primary-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                   title="Edit"
                                 >
                                   <Edit2 className="w-4 h-4" />
@@ -377,7 +377,7 @@ const EmployeeRosterPage = () => {
                                 {emp.role_type === 'producer' && (
                                   <Link
                                     to={`/admin/producers/${emp.id}/comp-model`}
-                                    className="text-gray-500 hover:text-blue-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                                    className="text-gray-500 hover:text-primary-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                     title="Comp Model"
                                   >
                                     <BarChart3 className="w-4 h-4" />

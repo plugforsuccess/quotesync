@@ -138,7 +138,7 @@ const LoginPage = () => {
       }}
     >
       <div
-        className="w-full max-w-md rounded-2xl p-8"
+        className="w-full max-w-md rounded-xl p-8"
         style={{
           background: 'rgba(255, 255, 255, 0.04)',
           backdropFilter: 'blur(12px)',

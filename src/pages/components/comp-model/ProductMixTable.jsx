@@ -81,7 +81,7 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
           Product Mix
         </h3>
         {carrierName && (
-          <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+          <span className="text-xs font-medium text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full">
             {carrierName}
           </span>
         )}
@@ -109,7 +109,7 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
                       value={row.product_name || ''}
                       onChange={(e) => updateRow(idx, 'product_name', e.target.value)}
                       placeholder="Product name"
-                      className="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-200 rounded px-2 py-1 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </td>
                   <td className="py-1.5 px-2">
@@ -119,7 +119,7 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
                         inputMode="decimal"
                         value={((Number(row.mix_pct) || 0) * 100).toFixed(0)}
                         onChange={(e) => updateRow(idx, 'mix_pct', e.target.value)}
-                        className="w-20 ml-auto block text-right border border-gray-200 rounded px-2 py-1 pr-6 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-20 ml-auto block text-right border border-gray-200 rounded px-2 py-1 pr-6 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                       <span className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">%</span>
                     </div>
@@ -132,7 +132,7 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
                         inputMode="decimal"
                         value={Number(row.avg_prem_item) || ''}
                         onChange={(e) => updateRow(idx, 'avg_prem_item', e.target.value)}
-                        className="w-24 ml-auto block text-right border border-gray-200 rounded pl-5 pr-2 py-1 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-24 ml-auto block text-right border border-gray-200 rounded pl-5 pr-2 py-1 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                   </td>
@@ -179,17 +179,17 @@ export default function ProductMixTable({ productMix, carrierName, onSave }) {
 
       <button
         onClick={addRow}
-        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+        className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-primary-600 hover:text-primary-700 transition-colors"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Product
       </button>
 
-      <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-100">
-        <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-0.5">
+      <div className="mt-4 p-3 bg-primary-50 rounded-lg border border-primary-100">
+        <p className="text-xs font-medium text-primary-600 uppercase tracking-wide mb-0.5">
           Blended Avg VC Premium / Item
         </p>
-        <p className="text-2xl font-bold text-blue-900">
+        <p className="text-2xl font-bold text-primary-900">
           {formatCurrency(blendedAvg)}
         </p>
       </div>

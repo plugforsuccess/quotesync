@@ -55,10 +55,10 @@ export default function DailyBreakdown({ rcData, callLogDaily }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors"
       >
-        <CalendarDays className="w-5 h-5 text-blue-600" />
+        <CalendarDays className="w-5 h-5 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Daily Detail</h4>
         {useCallLog && (
-          <span className="text-xs text-blue-500 font-normal ml-1">(from call log)</span>
+          <span className="text-xs text-primary-500 font-normal ml-1">(from call log)</span>
         )}
         {expanded ? (
           <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />

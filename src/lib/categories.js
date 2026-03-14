@@ -171,7 +171,7 @@ export const DEFAULT_CATEGORY = 'policy-regulation';
 export const SECONDARY_TAGS = [
   { slug: 'breaking', label: 'Breaking News', color: 'bg-red-100 text-red-800' },
   { slug: 'exclusive', label: 'Exclusive', color: 'bg-purple-100 text-purple-800' },
-  { slug: 'analysis', label: 'Analysis', color: 'bg-blue-100 text-blue-800' },
+  { slug: 'analysis', label: 'Analysis', color: 'bg-primary-100 text-primary-800' },
   { slug: 'opinion', label: 'Opinion', color: 'bg-yellow-100 text-yellow-800' },
   { slug: 'explainer', label: 'Explainer', color: 'bg-green-100 text-green-800' },
   { slug: 'investigation', label: 'Investigation', color: 'bg-orange-100 text-orange-800' },

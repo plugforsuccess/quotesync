@@ -39,6 +39,7 @@ import OutboundBreakdownForm from './components/time-attendance/OutboundBreakdow
 import ProducerDetailView from './components/time-attendance/ProducerDetailView';
 import CallLogTable from './components/time-attendance/CallLogTable';
 import AgentAliasManager from './components/time-attendance/AgentAliasManager';
+import PageSpinner from '../components/PageSpinner';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -339,26 +340,19 @@ const CSPerformancePage = () => {
   // ── Loading / Error States ───────────────────────────────────────────────
 
   if (isLoading && entries.length === 0 && rcData.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4" />
-          <p className="text-gray-600">Loading performance data...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading performance data..." />;
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
             onClick={refetchAll}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mx-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -375,7 +369,7 @@ const CSPerformancePage = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <BarChart3 className="w-8 h-8 text-blue-600" />
+              <BarChart3 className="w-8 h-8 text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Performance Dashboard</h1>
                 <p className="text-gray-600 text-sm">RingCentral metrics, scorecards, trends, and team comparison</p>
@@ -384,7 +378,7 @@ const CSPerformancePage = () => {
             <button
               onClick={refetchAll}
               disabled={isLoading}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50 min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -406,7 +400,7 @@ const CSPerformancePage = () => {
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                     active
-                      ? 'border-blue-600 text-blue-600'
+                      ? 'border-primary-600 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -431,7 +425,7 @@ const CSPerformancePage = () => {
                   onClick={() => setRoleFilter(opt.key)}
                   className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     roleFilter === opt.key
-                      ? 'bg-blue-600 text-white'
+                      ? 'bg-primary-600 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-50'
                   } ${opt.key !== 'service' ? 'border-l border-gray-300' : ''}`}
                 >
@@ -445,7 +439,7 @@ const CSPerformancePage = () => {
           {activeTab === 'individual' && selectedEmployeeRole && (
             <button
               onClick={handleBackToTeam}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Team
@@ -456,7 +450,7 @@ const CSPerformancePage = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, -1))}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -465,7 +459,7 @@ const CSPerformancePage = () => {
             </span>
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -478,7 +472,7 @@ const CSPerformancePage = () => {
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-blue-500"
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Employees</option>
                 {employeeOptions.map((emp) => (
@@ -496,7 +490,7 @@ const CSPerformancePage = () => {
           {activeTab === 'individual' && singleEmployee && (
             <button
               onClick={() => setTargetsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               title="Edit performance goals"
             >
               <Target className="w-4 h-4" />
@@ -507,7 +501,7 @@ const CSPerformancePage = () => {
           {/* Quick jump to current week */}
           <button
             onClick={() => setWeekStart(toMonday(new Date()))}
-            className="text-sm text-blue-600 hover:text-blue-700 font-medium ml-auto"
+            className="text-sm text-primary-600 hover:text-primary-700 font-medium ml-auto"
           >
             This Week
           </button>
@@ -521,7 +515,7 @@ const CSPerformancePage = () => {
           <div className="space-y-6">
             {teamLoading ? (
               <div className="text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4" />
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4" />
                 <p className="text-gray-600">Loading team data...</p>
               </div>
             ) : (
@@ -623,7 +617,7 @@ const CSPerformancePage = () => {
                     <button
                       onClick={() => handleDownloadPDF(rcData.find((r) => r.employee_user_id === singleEmployee) || rcData[0])}
                       disabled={pdfGenerating}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
                       title="Download PDF scorecard"
                     >
                       <Download className="w-4 h-4" />
@@ -721,7 +715,7 @@ const CSPerformancePage = () => {
                       <button
                         onClick={() => handleDownloadPDF(rc)}
                         disabled={pdfGenerating}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
                         title="Download PDF scorecard"
                       >
                         <Download className="w-4 h-4" />

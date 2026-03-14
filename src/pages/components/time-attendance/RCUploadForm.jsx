@@ -313,22 +313,22 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
         </div>
         <button
           onClick={() => setShowHelp(!showHelp)}
-          className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors"
+          className="p-2 text-gray-400 hover:text-primary-600 rounded-lg transition-colors"
         >
           <HelpCircle className="w-5 h-5" />
         </button>
       </div>
 
       {showHelp && (
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+        <div className="mb-4 p-4 bg-primary-50 rounded-lg text-sm text-primary-800">
           <p className="font-medium mb-2">How to export from RingCentral:</p>
-          <ol className="list-decimal list-inside space-y-1 text-blue-700 mb-3">
+          <ol className="list-decimal list-inside space-y-1 text-primary-700 mb-3">
             <li>Go to RingCentral Analytics &rarr; User Performance</li>
             <li>Set date range to the target week (Mon&ndash;Fri)</li>
             <li>Export as XLSX</li>
           </ol>
           <p className="font-medium mb-2">Expected columns from the "Users" sheet:</p>
-          <ul className="list-disc list-inside space-y-1 text-blue-700">
+          <ul className="list-disc list-inside space-y-1 text-primary-700">
             <li><strong>Name</strong> &mdash; employee matching</li>
             <li><strong>Total Calls</strong>, <strong># Inbound</strong>, <strong># Outbound</strong>, <strong># Answered</strong></li>
             <li><strong># Missed (w/VM)</strong>, <strong># Transfers</strong>, <strong># Holds</strong></li>
@@ -414,7 +414,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
             <button
               onClick={submitUpload}
               disabled={uploading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
               {uploading ? 'Uploading...' : 'Confirm Upload'}
@@ -485,7 +485,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                 </button>
                 <button
                   onClick={() => doUpload(confirmModal.matchedRows, confirmModal.skippedCount)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   Upload Matched Only
                 </button>

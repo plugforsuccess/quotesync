@@ -55,7 +55,7 @@ function FilterPill({ label, options, value, onChange }) {
             onClick={() => onChange(opt.value)}
             className={`px-2.5 py-1 text-xs font-medium transition-colors ${
               value === opt.value
-                ? 'bg-blue-600 text-white'
+                ? 'bg-primary-600 text-white'
                 : 'bg-white text-gray-600 hover:bg-gray-50'
             } ${opt.value !== options[0].value ? 'border-l border-gray-300' : ''}`}
           >
@@ -115,7 +115,7 @@ export default function CallLogTable({ calls }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors"
       >
-        <PhoneCall className="w-5 h-5 text-blue-600" />
+        <PhoneCall className="w-5 h-5 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Call Log Detail
         </h4>
@@ -206,7 +206,7 @@ export default function CallLogTable({ calls }) {
                       ? 'border-l-4 border-l-amber-400'
                       : 'border-l-4 border-l-transparent';
 
-                  const bgClass = isFirstOutbound ? 'bg-blue-50/30' : '';
+                  const bgClass = isFirstOutbound ? 'bg-primary-50/30' : '';
 
                   // Contact: masked phone number of the other party (PII protection)
                   const contact = call.call_direction === 'Outbound'
@@ -220,7 +220,7 @@ export default function CallLogTable({ calls }) {
                       </td>
                       <td className="px-4 py-2">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          call.call_direction === 'Outbound' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                          call.call_direction === 'Outbound' ? 'bg-primary-100 text-primary-700' : 'bg-green-100 text-green-700'
                         }`}>
                           {call.call_direction === 'Outbound' ? 'Out' : 'In'}
                         </span>
@@ -229,7 +229,7 @@ export default function CallLogTable({ calls }) {
                         <span className={`text-xs font-medium ${
                           call.call_result === 'VM/Missed' ? 'text-red-600' :
                           call.call_result === 'Not Connected' ? 'text-amber-600' :
-                          call.call_result === 'Connected' ? 'text-blue-600' : 'text-green-600'
+                          call.call_result === 'Connected' ? 'text-primary-600' : 'text-green-600'
                         }`}>
                           {call.call_result === 'VM/Missed' ? 'Missed' : call.call_result}
                         </span>

@@ -11,6 +11,7 @@ import { useSessionValidation } from '../hooks/useSessionValidation.jsx';
 import { useAuth } from '../contexts/AuthContext';
 import { getBuildString } from '../utils/cacheVersion';
 import { getCategoryLabel } from '../lib/categories';
+import PageSpinner from '../components/PageSpinner';
 
 const NewsroomDashboardPage = () => {
   const navigate = useNavigate();
@@ -231,22 +232,14 @@ const NewsroomDashboardPage = () => {
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
-          <p className="text-xs text-gray-400 mt-2">{getBuildString()}</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading dashboard..." />;
   }
 
   // Error state with retry
   if (hasError) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load Dashboard</h2>
           <p className="text-gray-600 mb-2">
@@ -258,7 +251,7 @@ const NewsroomDashboardPage = () => {
           <div className="flex flex-col gap-3">
             <button
               onClick={handleRefreshAll}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
             >
               <RefreshCw className="w-4 h-4" />
               Retry
@@ -302,7 +295,7 @@ const NewsroomDashboardPage = () => {
             <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={handleRefreshAll}
-                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                 title="Refresh Data"
               >
                 <RefreshCw className="w-4 h-4" />
@@ -330,7 +323,7 @@ const NewsroomDashboardPage = () => {
 
               <Link
                 to="/news/editor"
-                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
+                className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors text-sm whitespace-nowrap"
               >
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">New Story</span>
@@ -372,7 +365,7 @@ const NewsroomDashboardPage = () => {
               onClick={() => setFilter('all')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === 'all'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -382,7 +375,7 @@ const NewsroomDashboardPage = () => {
               onClick={() => setFilter('draft')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === 'draft'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -392,7 +385,7 @@ const NewsroomDashboardPage = () => {
               onClick={() => setFilter('in_review')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === 'in_review'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -402,7 +395,7 @@ const NewsroomDashboardPage = () => {
               onClick={() => setFilter('published')}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === 'published'
-                  ? 'bg-blue-600 text-white'
+                  ? 'bg-primary-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
@@ -437,7 +430,7 @@ const NewsroomDashboardPage = () => {
             </p>
             <Link
               to="/news/editor"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
             >
               <Plus className="w-4 h-4" />
               Create Story
@@ -527,7 +520,7 @@ const NewsroomDashboardPage = () => {
                               <button
                                 onClick={() => handleRestore(story.id, story.title)}
                                 disabled={actionLoading === story.id}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="p-2 text-primary-600 hover:bg-primary-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Restore"
                               >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -551,7 +544,7 @@ const NewsroomDashboardPage = () => {
                           <>
                             <Link
                               to={`/news/editor/${story.id}`}
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                               title="Edit"
                             >
                               <Edit className="w-4 h-4" />
@@ -566,7 +559,7 @@ const NewsroomDashboardPage = () => {
                                   navigate(`/news/preview/${story.id}`);
                                 }
                               }}
-                              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
                               title={story.status === 'published' ? 'View Published Story' : 'Preview (Draft/In Review)'}
                             >
                               <Eye className="w-4 h-4" />

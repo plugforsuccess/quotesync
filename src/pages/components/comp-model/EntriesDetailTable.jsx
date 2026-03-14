@@ -46,7 +46,7 @@ export default function EntriesDetailTable({ entries }) {
         onClick={() => setExpanded(!expanded)}
         className="w-full px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors"
       >
-        <FileText className="w-4 h-4 text-blue-600" />
+        <FileText className="w-4 h-4 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Entry Detail ({entries.length} {entries.length === 1 ? 'entry' : 'entries'})
         </h4>

@@ -230,22 +230,22 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
         </div>
         <button
           onClick={() => setShowHelp(!showHelp)}
-          className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors"
+          className="p-2 text-gray-400 hover:text-primary-600 rounded-lg transition-colors"
         >
           <HelpCircle className="w-5 h-5" />
         </button>
       </div>
 
       {showHelp && (
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+        <div className="mb-4 p-4 bg-primary-50 rounded-lg text-sm text-primary-800">
           <p className="font-medium mb-2">How to export the Queues report from RingCentral:</p>
-          <ol className="list-decimal list-inside space-y-1 text-blue-700 mb-3">
+          <ol className="list-decimal list-inside space-y-1 text-primary-700 mb-3">
             <li>Go to RingCentral Analytics &rarr; Performance Reports &rarr; Queues</li>
             <li>Set the date range to the target day</li>
             <li>Export as XLSX</li>
           </ol>
           <p className="font-medium mb-2">Expected sheets:</p>
-          <ul className="list-disc list-inside space-y-1 text-blue-700">
+          <ul className="list-disc list-inside space-y-1 text-primary-700">
             <li><strong>Filters</strong> &mdash; date range auto-detection</li>
             <li><strong>Queues</strong> &mdash; per-queue breakdown (Name, # Inbound, # Answered, # Abandoned, etc.)</li>
           </ul>
@@ -334,7 +334,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
             <button
               onClick={confirmUpload}
               disabled={uploading || !detectedDate}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
               {uploading ? 'Uploading...' : 'Confirm Upload'}

@@ -6,7 +6,7 @@ const SmarterFasterSection = ({ isVisible }) => {
   const benefits = [
     {
       icon: Clock,
-      color: 'from-blue-500 to-blue-600',
+      color: 'from-primary-500 to-primary-600',
       title: 'Start Your Quote',
       desc: "Connect your current insurance instantly using our secure portal. That's it. No forms. No hassle.",
     },
@@ -63,7 +63,7 @@ const SmarterFasterSection = ({ isVisible }) => {
 
       {/* Logo Carousel */}
       <div className="mt-24 text-center">
-        <p className="text-blue-100 font-semibold mb-6 text-lg">
+        <p className="text-primary-100 font-semibold mb-6 text-lg">
           Helping Customers Save More By Switching from These Carriers
         </p>
         <div className="bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 overflow-hidden relative shadow-xl">

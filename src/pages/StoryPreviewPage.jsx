@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Eye, AlertTriangle } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
+import PageSpinner from '../components/PageSpinner';
 
 const StoryPreviewPage = () => {
   const { id } = useParams();
@@ -63,14 +64,7 @@ const StoryPreviewPage = () => {
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading preview...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading preview..." />;
   }
 
   if (error || !story) {
@@ -82,7 +76,7 @@ const StoryPreviewPage = () => {
           <p className="text-gray-600 mb-6">{error || 'Story not found'}</p>
           <button
             onClick={() => navigate('/news/dashboard')}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -137,7 +131,7 @@ const StoryPreviewPage = () => {
       <article className="max-w-4xl mx-auto px-4 py-8 sm:py-12">
         {/* Category Badge */}
         <div className="mb-4">
-          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full uppercase tracking-wide">
+          <span className="inline-block px-3 py-1 bg-primary-100 text-primary-800 text-xs font-semibold rounded-full uppercase tracking-wide">
             {story.category}
           </span>
         </div>
@@ -179,7 +173,7 @@ const StoryPreviewPage = () => {
 
         {/* Video Embed (if exists) */}
         {story.video_url && story.video_type && (
-          <div className="mb-8 rounded-lg overflow-hidden shadow-lg">
+          <div className="mb-8 rounded-lg overflow-hidden shadow-sm">
             {story.video_type === 'youtube_embed' && (
               <div className="relative pb-[56.25%] h-0">
                 <iframe
@@ -234,7 +228,7 @@ const StoryPreviewPage = () => {
                 href={story.source_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-600 hover:text-blue-800 underline"
+                className="text-primary-600 hover:text-primary-800 underline"
               >
                 {story.source_name}
               </a>

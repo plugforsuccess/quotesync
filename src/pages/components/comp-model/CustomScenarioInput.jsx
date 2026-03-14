@@ -26,7 +26,7 @@ export default function CustomScenarioInput({ config, productMix }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <div className="flex items-center gap-2 mb-3">
-        <Calculator className="w-4 h-4 text-blue-600" />
+        <Calculator className="w-4 h-4 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Custom Scenario</h4>
       </div>
 
@@ -38,7 +38,7 @@ export default function CustomScenarioInput({ config, productMix }) {
           value={itemCount}
           onChange={(e) => setItemCount(e.target.value)}
           placeholder="e.g. 22"
-          className="w-24 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-24 border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
       </div>
 

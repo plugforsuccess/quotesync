@@ -80,7 +80,7 @@ export default function TrendsView({ trendData, targets }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <TrendingUp className="w-5 h-5 text-blue-600" />
+        <TrendingUp className="w-5 h-5 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">8-Week Trends</h4>
       </div>
 

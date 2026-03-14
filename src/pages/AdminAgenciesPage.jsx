@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Clock, CheckCircle, XCircle, Ban, Eye, RefreshCw, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAgencies } from '../hooks/useAgencies';
+import PageSpinner from '../components/PageSpinner';
 
 const STATUS_CONFIG = {
   pending: { label: 'Pending', icon: Clock, color: 'yellow', bg: 'bg-yellow-100', text: 'text-yellow-700' },
@@ -44,26 +45,19 @@ const AdminAgenciesPage = () => {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading agencies...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading agencies..." />;
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
             onClick={() => refetch()}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mx-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -80,7 +74,7 @@ const AdminAgenciesPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <Building2 className="w-8 h-8 text-blue-600" />
+              <Building2 className="w-8 h-8 text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Agency Management</h1>
                 <p className="text-gray-600 text-sm">Review applications and manage agency partners</p>
@@ -88,7 +82,7 @@ const AdminAgenciesPage = () => {
             </div>
             <button
               onClick={() => refetch()}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
               title="Refresh"
             >
               <RefreshCw className="w-5 h-5" />
@@ -131,7 +125,7 @@ const AdminAgenciesPage = () => {
                 onClick={() => setFilter(status)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   filter === status
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-primary-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -227,7 +221,7 @@ const AdminAgenciesPage = () => {
                         <td className="px-6 py-4 text-right">
                           <Link
                             to={`/admin/agencies/${agency.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
                           >
                             <Eye className="w-4 h-4" />
                             View
