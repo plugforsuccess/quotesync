@@ -161,6 +161,7 @@ export function useWizard() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState('forward');
   const hasRestoredStep = useRef(false);
+  const stepEnteredAt = useRef(Date.now());
 
   const stepSequence = useMemo(() => computeStepSequence(answers), [answers]);
   const currentStepId = stepSequence[currentIndex] || 'zip';
@@ -177,6 +178,7 @@ export function useWizard() {
       if (saved > 0 && saved < stepSequence.length) {
         setCurrentIndex(saved);
       }
+      stepEnteredAt.current = Date.now();
     }
   }, [stepSequence.length]);
 
@@ -229,6 +231,8 @@ export function useWizard() {
   }, []);
 
   const goNext = useCallback(() => {
+    const timeMs = Date.now() - stepEnteredAt.current;
+    stepEnteredAt.current = Date.now();
     setDirection('forward');
     setAnswers(prev => { persistToSession(prev); return prev; });
     setCurrentIndex(prev => {
@@ -236,15 +240,19 @@ export function useWizard() {
       sessionStorage.setItem(SESSION_KEYS.CURRENT_STEP, String(next));
       return next;
     });
+    return timeMs;
   }, [stepSequence.length]);
 
   const goBack = useCallback(() => {
+    const timeMs = Date.now() - stepEnteredAt.current;
+    stepEnteredAt.current = Date.now();
     setDirection('back');
     setCurrentIndex(prev => {
       const next = Math.max(prev - 1, 0);
       sessionStorage.setItem(SESSION_KEYS.CURRENT_STEP, String(next));
       return next;
     });
+    return timeMs;
   }, []);
 
   const persistAll = useCallback(() => persistToSession(answers), [answers]);
@@ -281,5 +289,6 @@ export function useWizard() {
     persistAll,
     stepSequence,
     productIntentOptions,
+    stepEnteredAt,
   };
 }

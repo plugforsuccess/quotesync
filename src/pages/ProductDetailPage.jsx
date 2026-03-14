@@ -85,6 +85,32 @@ const ProductDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
+      {product && (
+        <>
+          <title>{product.name} | insuredbycam Store</title>
+          <meta name="description" content={product.description || `${product.name} \u2014 available in the insuredbycam store.`} />
+          <meta property="og:type" content="product" />
+          <meta property="og:title" content={product.name} />
+          <meta property="og:description" content={product.description || ''} />
+          <meta property="og:url" content={`https://insuredbycam.com/store/${product.slug}`} />
+          {product.image_url && <meta property="og:image" content={product.image_url} />}
+          <script type="application/ld+json">{JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Product",
+            "name": product.name,
+            "description": product.description || '',
+            "url": `https://insuredbycam.com/store/${product.slug}`,
+            "offers": {
+              "@type": "Offer",
+              "price": product.price,
+              "priceCurrency": "USD",
+              "availability": "https://schema.org/InStock",
+              "seller": { "@type": "Organization", "name": "insuredbycam" }
+            },
+            ...(product.image_url ? { "image": product.image_url } : {}),
+          })}</script>
+        </>
+      )}
       {/* Background Effects */}
       <div className="absolute inset-0 opacity-30 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-64 h-64 bg-primary-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>

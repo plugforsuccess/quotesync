@@ -84,6 +84,9 @@ export const useAgencyLeads = (agencyId, filters = {}) => {
           query = query.eq('utm_source', filters.source);
         }
       }
+      if (filters.riskFlag && filters.riskFlag !== 'all') {
+        query = query.eq('risk_flag', filters.riskFlag);
+      }
       if (filters.hasDocuments !== undefined && filters.hasDocuments !== 'all') {
         // Filter via lead_quotes relationship handled client-side
       }
@@ -145,6 +148,24 @@ export const useLeadDetail = (leadId, agencyId) => {
     enabled: !!leadId && !!agencyId
   });
 };
+
+// Fetch lead messages
+export function useLeadMessages(leadId) {
+  return useQuery({
+    queryKey: ['lead_messages', leadId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lead_messages')
+        .select('id, direction, channel, body, status, created_at, twilio_sid')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!leadId,
+    staleTime: 30 * 1000,
+  });
+}
 
 // Fetch audit log for a specific lead
 export const useLeadAuditLog = (leadId) => {

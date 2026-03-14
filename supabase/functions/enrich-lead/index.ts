@@ -8,6 +8,102 @@ import { normalizeToQuoteSummary } from '../_shared/canopyClient.ts'
 
 const MAX_ATTEMPTS = 3
 
+// Inlined lead scoring (ported from src/lib/leadScoring.js)
+interface ScoreFactor {
+  label: string
+  points: number
+}
+
+function computeLeadScore(
+  lead: { zip?: string | null; state?: string | null; utm_source?: string | null; utm_campaign?: string | null; referral_code?: string | null },
+  quoteSummary: Record<string, unknown> | null = null
+): { score: number; factors: ScoreFactor[] } {
+  const factors: ScoreFactor[] = []
+  let score = 0
+
+  // 1. Location completeness (max 10)
+  if (lead.zip && lead.state) {
+    factors.push({ label: 'Location complete', points: 10 })
+    score += 10
+  } else if (lead.zip || lead.state) {
+    factors.push({ label: 'Partial location', points: 5 })
+    score += 5
+  }
+
+  // 2. Enrichment available (max 15)
+  if (quoteSummary && Object.keys(quoteSummary).length > 0) {
+    factors.push({ label: 'Enrichment data', points: 15 })
+    score += 15
+  }
+
+  // 3. Bundle potential (max 20)
+  const policyTypes = (quoteSummary?.policy_types as string[]) || []
+  if (policyTypes.length >= 3) {
+    factors.push({ label: 'Multi-policy bundle', points: 20 })
+    score += 20
+  } else if (policyTypes.length === 2) {
+    factors.push({ label: 'Two policies', points: 15 })
+    score += 15
+  } else if (policyTypes.length === 1) {
+    factors.push({ label: 'Single policy', points: 5 })
+    score += 5
+  }
+
+  // 4. Size proxy (max 15)
+  const vehicleCount = (quoteSummary?.vehicle_count as number) || 0
+  const driverCount = (quoteSummary?.driver_count as number) || 0
+  const propertyCount = (quoteSummary?.property_count as number) || 0
+  const totalAssets = vehicleCount + driverCount + propertyCount
+  if (totalAssets >= 4) {
+    factors.push({ label: `${totalAssets} assets`, points: 15 })
+    score += 15
+  } else if (totalAssets >= 2) {
+    factors.push({ label: `${totalAssets} assets`, points: 10 })
+    score += 10
+  } else if (totalAssets >= 1) {
+    factors.push({ label: `${totalAssets} asset`, points: 5 })
+    score += 5
+  }
+
+  // 5. Renewal proximity (max 15)
+  const renewalDays = (quoteSummary?.renewal_days as number) ?? null
+  if (renewalDays !== null) {
+    if (renewalDays <= 14) {
+      factors.push({ label: 'Renewal < 2 weeks', points: 15 })
+      score += 15
+    } else if (renewalDays <= 30) {
+      factors.push({ label: 'Renewal < 30 days', points: 12 })
+      score += 12
+    } else if (renewalDays <= 60) {
+      factors.push({ label: 'Renewal < 60 days', points: 8 })
+      score += 8
+    }
+  }
+
+  // 6. Documents available (max 10)
+  const hasDocuments = (quoteSummary?.has_documents as boolean) || false
+  const documentCount = (quoteSummary?.document_count as number) || 0
+  if (hasDocuments && documentCount > 0) {
+    factors.push({ label: `${documentCount} doc(s) available`, points: 10 })
+    score += 10
+  }
+
+  // 7. Attribution quality (max 15)
+  if (lead.referral_code) {
+    factors.push({ label: 'Referral', points: 15 })
+    score += 15
+  } else if (lead.utm_campaign) {
+    factors.push({ label: 'Campaign tracked', points: 8 })
+    score += 8
+  } else if (lead.utm_source) {
+    factors.push({ label: 'Source tracked', points: 5 })
+    score += 5
+  }
+
+  score = Math.min(score, 100)
+  return { score, factors }
+}
+
 interface EnrichmentJob {
   id: string
   lead_id: string
@@ -24,10 +120,10 @@ async function processJob(
 ): Promise<{ success: boolean; error?: string }> {
   const { id: jobId, lead_id: leadId, pull_id: pullId, event_type: eventType, payload } = job
 
-  // Get lead with agency_id
+  // Get lead with agency_id and score-relevant columns
   const { data: lead } = await supabase
     .from('leads')
-    .select('id, agency_id')
+    .select('id, agency_id, zip, state, utm_source, utm_campaign, referral_code')
     .eq('id', leadId)
     .single()
 
@@ -72,12 +168,22 @@ async function processJob(
 
     if (upsertError) throw upsertError
 
-    // Update leads table with enrichment status
+    // Compute and persist lead score
+    const { score, factors } = computeLeadScore(
+      { zip: lead.zip, state: lead.state, utm_source: lead.utm_source,
+        utm_campaign: lead.utm_campaign, referral_code: lead.referral_code },
+      { ...quoteSummary, has_documents: hasDocuments }
+    )
+
+    // Update leads table with enrichment status + score in a single round-trip
     await supabase
       .from('leads')
       .update({
         enrichment_status: 'enriched',
         quote_updated_at: new Date().toISOString(),
+        lead_score: score,
+        score_factors: factors,
+        score_updated_at: new Date().toISOString(),
       })
       .eq('id', leadId)
 
@@ -100,6 +206,7 @@ async function processJob(
         pull_id: pullId,
         has_documents: hasDocuments,
         policy_types: quoteSummary.policy_types,
+        lead_score: score,
       },
     })
 

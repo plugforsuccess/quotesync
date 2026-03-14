@@ -161,6 +161,13 @@ const NewsroomPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <title>Insurance News & Resources | insuredbycam Newsroom</title>
+      <meta name="description" content="Georgia insurance news, coverage tips, and resources from Cameron at insuredbycam. Stay informed about auto, home, and renters insurance." />
+      <meta property="og:type" content="website" />
+      <meta property="og:title" content="Newsroom | insuredbycam" />
+      <meta property="og:description" content="Insurance news, tips, and resources for Georgia residents." />
+      <meta property="og:url" content="https://insuredbycam.com/news" />
+      <link rel="canonical" href="https://insuredbycam.com/news" />
       {/* Header with subtle brand gradient */}
       <div className="sticky top-0 z-30 bg-gradient-to-r from-primary-50/80 via-teal-50/60 to-primary-50/80 border-b border-gray-200 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-5">

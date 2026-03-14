@@ -1,22 +1,26 @@
 // src/pages/AgencyLeadDetailPage.jsx
 // Agency Lead Detail View with Quote Summary and Workflow Actions
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Clock, MapPin, FileText, Tag, Phone,
-  CheckCircle, AlertCircle, ExternalLink, RefreshCw
+  CheckCircle, AlertCircle, ExternalLink, RefreshCw, MessageSquare
 } from 'lucide-react';
 import {
   useCurrentAgency,
   useLeadDetail,
   useLeadAuditLog,
+  useLeadMessages,
   useUpdateLeadStatus,
   useSetFirstContact,
   useRecomputeLeadScore
 } from '../hooks/useAgencyLeads';
-import { getScoreColor, formatScoreFactors } from '../lib/leadScoring';
+import { getScoreColor, formatScoreFactors, RISK_FLAG_CONFIG } from '../lib/leadScoring';
+import { supabase } from '../lib/supabase';
 import PageSpinner from '../components/PageSpinner';
+import LeadMessageThread from './components/LeadMessageThread';
 
 const STATUS_ACTIONS = [
   { value: 'contacted', label: 'Contacted', color: 'green' },
@@ -68,8 +72,27 @@ const AgencyLeadDetailPage = () => {
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
 
+  const queryClient = useQueryClient();
   const { data: lead, isLoading: leadLoading, error } = useLeadDetail(leadId, agencyId);
   const { data: auditLog } = useLeadAuditLog(leadId);
+  const { data: messages = [], isLoading: messagesLoading } = useLeadMessages(leadId);
+
+  // Realtime subscription for new messages
+  useEffect(() => {
+    if (!leadId) return;
+    const channel = supabase
+      .channel(`lead-messages-${leadId}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'lead_messages',
+        filter: `lead_id=eq.${leadId}`,
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['lead_messages', leadId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [leadId, queryClient]);
 
   const updateStatus = useUpdateLeadStatus();
   const setFirstContact = useSetFirstContact();
@@ -184,7 +207,31 @@ const AgencyLeadDetailPage = () => {
                 `}>
                   {lead.status}
                 </span>
+                {lead.risk_flag && (() => {
+                  const cfg = RISK_FLAG_CONFIG[lead.risk_flag];
+                  return cfg ? (
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${cfg.bg} ${cfg.text}`}>
+                      <span className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                      {cfg.label} risk
+                    </div>
+                  ) : null;
+                })()}
               </div>
+              {/* Risk detail */}
+              {(lead.auto_driving_record || lead.home_claims_history) && (
+                <div className="text-xs text-gray-500 mt-1 space-y-0.5">
+                  {lead.auto_driving_record && (
+                    <div>Driving record: <span className="font-medium text-gray-700">
+                      {{ clean: 'Clean', '1-2': '1\u20132 incidents', '3+': '3+ incidents' }[lead.auto_driving_record] ?? lead.auto_driving_record}
+                    </span></div>
+                  )}
+                  {lead.home_claims_history && (
+                    <div>Home claims: <span className="font-medium text-gray-700">
+                      {{ '0-1': '0\u20131 claims', '2+': '2+ claims' }[lead.home_claims_history] ?? lead.home_claims_history}
+                    </span></div>
+                  )}
+                </div>
+              )}
               <p className="text-sm text-gray-500">
                 Created {formatDate(lead.created_at)}
               </p>
@@ -198,7 +245,7 @@ const AgencyLeadDetailPage = () => {
                   onClick={handleRecomputeScore}
                   disabled={updating}
                   className="p-2 text-gray-400 hover:text-gray-600 rounded"
-                  title="Recalculate score"
+                  title="Refresh score"
                 >
                   <RefreshCw className={`w-4 h-4 ${updating ? 'animate-spin' : ''}`} />
                 </button>
@@ -219,6 +266,22 @@ const AgencyLeadDetailPage = () => {
                 </span>
               ))}
             </div>
+          )}
+
+          {/* Drip status */}
+          {lead.sms_sent && lead.status === 'new' && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-gray-500">
+              <span>Drip stage:</span>
+              <span className="font-medium text-gray-700">{lead.drip_stage} / 3</span>
+              {lead.sms_opted_out && (
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">Opted out</span>
+              )}
+            </div>
+          )}
+
+          {/* Score updated timestamp */}
+          {lead.score_updated_at && (
+            <p className="text-xs text-gray-400 mt-1">Score updated {formatTimeAgo(lead.score_updated_at)}</p>
           )}
         </div>
 
@@ -438,6 +501,20 @@ const AgencyLeadDetailPage = () => {
               ) : (
                 <p className="text-gray-500">No enrichment data available yet.</p>
               )}
+            </div>
+
+            {/* Messages */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-gray-400" />
+                Messages
+              </h3>
+              <LeadMessageThread
+                messages={messages}
+                isLoading={messagesLoading}
+                leadId={leadId}
+                leadPhone={lead?.phone}
+              />
             </div>
 
             {/* Activity / Audit Log */}

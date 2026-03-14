@@ -67,8 +67,8 @@ export const trackZipSubmitted = (zip) => {
  * @param {string} lastStep - ID of the last step the user was on
  * @param {number} stepIndex - Index of the last step
  */
-export const trackQuoteAbandoned = (lastStep, stepIndex) => {
-  trackEvent('QuoteAbandoned', { last_step: lastStep, step_index: stepIndex });
+export const trackQuoteAbandoned = (lastStep, stepIndex, extra = {}) => {
+  trackEvent('QuoteAbandoned', { last_step: lastStep, step_index: stepIndex, ...extra });
   if (typeof window !== 'undefined' && window.fbq) {
     window.fbq('trackCustom', 'QuoteAbandoned', { last_step: lastStep });
   }
