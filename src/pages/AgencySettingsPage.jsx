@@ -65,6 +65,8 @@ const AgencySettingsPage = () => {
       email: agency.email || '',
       phone: agency.phone || '',
       primary_contact_name: agency.primary_contact_name || '',
+      twilio_from_number: agency.twilio_from_number || '',
+      agent_cell_number: agency.agent_cell_number || '',
     });
     setEditing(true);
   };
@@ -79,6 +81,8 @@ const AgencySettingsPage = () => {
           email: form.email,
           phone: form.phone || null,
           primary_contact_name: form.primary_contact_name || null,
+          twilio_from_number: form.twilio_from_number || null,
+          agent_cell_number: form.agent_cell_number || null,
         })
         .eq('id', currentAgencyId);
 
@@ -172,6 +176,31 @@ const AgencySettingsPage = () => {
                   />
                 </div>
               </div>
+
+              <h3 className="text-sm font-semibold text-gray-700 mt-4 mb-2">Twilio Configuration</h3>
+              <p className="text-xs text-gray-500 mb-3">Per-agency phone numbers for SMS and calls. Leave blank to use the platform default.</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Twilio From Number</label>
+                  <input
+                    type="tel"
+                    value={form.twilio_from_number}
+                    onChange={(e) => setForm(f => ({ ...f, twilio_from_number: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="+1XXXXXXXXXX"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Agent Cell Number</label>
+                  <input
+                    type="tel"
+                    value={form.agent_cell_number}
+                    onChange={(e) => setForm(f => ({ ...f, agent_cell_number: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="+1XXXXXXXXXX"
+                  />
+                </div>
+              </div>
               <div className="flex gap-2 pt-2">
                 <button
                   onClick={handleSave}
@@ -220,6 +249,14 @@ const AgencySettingsPage = () => {
               <div>
                 <label className="block text-sm font-medium text-gray-500 mb-1">Member Since</label>
                 <p className="text-gray-900">{new Date(agency.created_at).toLocaleDateString()}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Twilio From Number</label>
+                <p className="text-gray-900">{agency.twilio_from_number || 'Platform default'}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-500 mb-1">Agent Cell Number</label>
+                <p className="text-gray-900">{agency.agent_cell_number || 'Platform default'}</p>
               </div>
             </div>
           )}

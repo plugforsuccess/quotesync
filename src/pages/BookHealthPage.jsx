@@ -1757,7 +1757,7 @@ export default function BookHealthPage() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Book Health</h1>
-        <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>Pending Cancellation · Wiley-Wilson Agency</div>
+        <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>Pending Cancellation · {currentAgency?.agencies?.name || 'Agency'}</div>
       </div>
 
       {loading && (

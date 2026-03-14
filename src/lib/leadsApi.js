@@ -12,7 +12,7 @@ const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
  * @returns {string} Session ID
  */
 export function getSessionId() {
-  const STORAGE_KEY = 'insuredbycam_session_id';
+  const STORAGE_KEY = 'quotesync_session_id';
   let sessionId = sessionStorage.getItem(STORAGE_KEY);
 
   if (!sessionId) {

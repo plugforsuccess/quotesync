@@ -241,7 +241,7 @@ export default function SaveWizardPage() {
           address_source: answers.addressSource || 'manual_entry',
           source: 'funnel',
           lead_score: leadScore,
-          session_id: sessionStorage.getItem('insuredbycam_session_id'),
+          session_id: sessionStorage.getItem('quotesync_session_id'),
           landing_page: '/save',
           consent_given_at: new Date().toISOString(),
           consent_version: TCPA_CONSENT_VERSION,

@@ -67,8 +67,8 @@ Deno.serve(async (req) => {
   const supabase = createClient(supabaseUrl, supabaseKey)
 
   const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
-  const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
-  const AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
+  const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
+  const ENV_AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
 
   try {
     // Parse Twilio webhook body (form-encoded)
@@ -101,11 +101,33 @@ Deno.serve(async (req) => {
       await sendSMS(
         TWILIO_ACCOUNT_SID,
         TWILIO_AUTH_TOKEN,
-        TWILIO_PHONE_NUMBER,
-        AGENT_PHONE_NUMBER,
+        ENV_TWILIO_PHONE_NUMBER,
+        ENV_AGENT_PHONE_NUMBER,
         `Incoming SMS from unknown number ${fromNumber}: ${body}`
       )
       return twimlResponse()
+    }
+
+    // Fetch agency branding and phone config for this lead's agency
+    let agencyBrand = 'Insured By Cam'
+    let agencyEmail = 'cameron@insuredbycam.com'
+    let agencyDescription = 'Insurance quotes'
+    let twilioFromNumber = ENV_TWILIO_PHONE_NUMBER
+    let agentPhoneNumber = ENV_AGENT_PHONE_NUMBER
+
+    if (lead.agency_id) {
+      const { data: agency } = await supabase
+        .from('agencies')
+        .select('brand_name, email, twilio_from_number, agent_cell_number')
+        .eq('id', lead.agency_id)
+        .single()
+
+      if (agency) {
+        if (agency.brand_name) agencyBrand = agency.brand_name
+        if (agency.email) agencyEmail = agency.email
+        if (agency.twilio_from_number) twilioFromNumber = agency.twilio_from_number
+        if (agency.agent_cell_number) agentPhoneNumber = agency.agent_cell_number
+      }
     }
 
     // Log inbound message
@@ -135,7 +157,7 @@ Deno.serve(async (req) => {
         .eq('id', lead.id)
 
       return twimlResponse(
-        'You have been opted out and will not receive further messages from Insured By Cam. Reply START to re-subscribe.'
+        `You have been opted out and will not receive further messages from ${agencyBrand}. Reply START to re-subscribe.`
       )
     }
 
@@ -147,14 +169,14 @@ Deno.serve(async (req) => {
         .eq('id', lead.id)
 
       return twimlResponse(
-        'Welcome back! You have been re-subscribed to messages from Insured By Cam.'
+        `Welcome back! You have been re-subscribed to messages from ${agencyBrand}.`
       )
     }
 
     // Handle HELP — CTIA compliance requirement
     if (keyword === 'HELP') {
       return twimlResponse(
-        'Insured By Cam: Insurance quotes for Georgia residents. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out. Contact: cameron@insuredbycam.com'
+        `${agencyBrand}: ${agencyDescription}. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out. Contact: ${agencyEmail}`
       )
     }
 
@@ -170,13 +192,13 @@ Deno.serve(async (req) => {
       await sendSMS(
         TWILIO_ACCOUNT_SID,
         TWILIO_AUTH_TOKEN,
-        TWILIO_PHONE_NUMBER,
-        AGENT_PHONE_NUMBER,
+        twilioFromNumber,
+        agentPhoneNumber,
         `${leadName} replied "${body}" and is interested! Phone: ${fromNumber}. Call them ASAP.`
       )
 
       return twimlResponse(
-        `Great choice, ${lead.first_name || 'there'}! Cam will reach out shortly with your personalized quote. Talk soon!`
+        `Great choice, ${lead.first_name || 'there'}! ${agencyBrand} will reach out shortly with your personalized quote. Talk soon!`
       )
     }
 
@@ -185,8 +207,8 @@ Deno.serve(async (req) => {
     await sendSMS(
       TWILIO_ACCOUNT_SID,
       TWILIO_AUTH_TOKEN,
-      TWILIO_PHONE_NUMBER,
-      AGENT_PHONE_NUMBER,
+      twilioFromNumber,
+      agentPhoneNumber,
       `SMS from ${leadName} (${fromNumber}): ${body}`
     )
 
