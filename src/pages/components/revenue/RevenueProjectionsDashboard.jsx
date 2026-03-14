@@ -377,7 +377,7 @@ export default function RevenueProjectionsDashboard() {
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
-  const [productStatsMode, setProductStatsMode] = useState("all"); // "all" | "vc" | "nonvc"
+  const [productStatsMode, setProductStatsMode] = useState("all"); // "all" | "vc" | "core"
   const [producerModal, setProducerModal] = useState(null); // null | producer name string
   const [producerRange, setProducerRange] = useState("main"); // "main" | "ytd" | "YYYY-MM" | "custom"
   const [producerCustomStart, setProducerCustomStart] = useState(""); // "YYYY-MM-DD"
@@ -2009,13 +2009,14 @@ export default function RevenueProjectionsDashboard() {
       {/* Product breakdown drill-down */}
       {modal === "products" && (() => {
         const VC_KEYS    = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured"];
-        const NONVC_KEYS = ["motor_club", "other"];
+        const CORE_KEYS  = ["auto", "ho", "condo"];
+        const ALL_KEYS   = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured", "motor_club", "other"];
 
         const statsKeys = productStatsMode === "vc"
           ? VC_KEYS
-          : productStatsMode === "nonvc"
-          ? NONVC_KEYS
-          : [...VC_KEYS, ...NONVC_KEYS];
+          : productStatsMode === "core"
+          ? CORE_KEYS
+          : ALL_KEYS;
 
         const statsPremium    = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.premium    ?? 0), 0);
         const statsCommission = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.commission ?? 0), 0);
@@ -2032,9 +2033,9 @@ export default function RevenueProjectionsDashboard() {
           {/* Mode toggle */}
           <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
             {[
-              { key: "all",   label: "All Products" },
-              { key: "vc",    label: "VC Only" },
-              { key: "nonvc", label: "Non-VC Only" },
+              { key: "all",  label: "All Products" },
+              { key: "vc",   label: "VC Eligible" },
+              { key: "core", label: "Auto + Home + Condo" },
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -2049,9 +2050,9 @@ export default function RevenueProjectionsDashboard() {
 
           {/* Mode sub-label */}
           <div style={{ fontSize: 11, color: "#475569", marginBottom: 16 }}>
-            {productStatsMode === "vc"    && "Auto + Homeowners + Condo"}
-            {productStatsMode === "nonvc" && "Renters + Motor Club + Other"}
-            {productStatsMode === "all"   && "All product lines"}
+            {productStatsMode === "vc"   && "Auto · Specialty Auto · Home · Condo · Renters · Landlord · PUP · Boat · Manufactured"}
+            {productStatsMode === "core" && "Auto · Homeowners · Condo"}
+            {productStatsMode === "all"  && "All product lines"}
           </div>
 
           {/* Stats strip — 5 cards */}
