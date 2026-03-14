@@ -4,7 +4,8 @@
 // Access: platform_admin, platform_master_admin
 
 import { useState, useMemo } from 'react';
-import { Users, Plus, RefreshCw, AlertCircle, Edit2, UserX, ShieldCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Users, Plus, RefreshCw, AlertCircle, Edit2, UserX, ShieldCheck, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import {
@@ -373,6 +374,15 @@ const EmployeeRosterPage = () => {
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
+                                {emp.role_type === 'producer' && (
+                                  <Link
+                                    to={`/admin/producers/${emp.id}/comp-model`}
+                                    className="text-gray-500 hover:text-blue-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                                    title="Comp Model"
+                                  >
+                                    <BarChart3 className="w-4 h-4" />
+                                  </Link>
+                                )}
                                 <button
                                   onClick={() =>
                                     verifyingId === emp.id
