@@ -1,0 +1,12 @@
+{
+  "name": "ai-voicemail-script",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "node generate-voicemail.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "openai": "^5.0.0"
+  }
+}
