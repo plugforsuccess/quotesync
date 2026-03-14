@@ -197,12 +197,12 @@ function parseAllstateRows(rows) {
     let writtenDateStr = null;
 
     if (rawIssued) {
-      const d = new Date(rawIssued);
-      if (!isNaN(d)) issuedDateStr = d.toISOString().slice(0, 10);
+      const d = rawIssued instanceof Date ? rawIssued : new Date(rawIssued);
+      if (!isNaN(d.getTime())) issuedDateStr = d.toISOString().slice(0, 10);
     }
     if (rawWritten) {
-      const d = new Date(rawWritten);
-      if (!isNaN(d)) writtenDateStr = d.toISOString().slice(0, 10);
+      const d = rawWritten instanceof Date ? rawWritten : new Date(rawWritten);
+      if (!isNaN(d.getTime())) writtenDateStr = d.toISOString().slice(0, 10);
     }
 
     // Skip endorsements: if both dates are present and differ, this is not NB
@@ -721,7 +721,7 @@ export default function RevenueProjectionsDashboard() {
     setUploadMsg("");
     try {
       const buf = await file.arrayBuffer();
-      const wb = XLSX.read(buf, { type: "array" });
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
       const sheetName = wb.SheetNames.find(n => n.toLowerCase() !== "filters") ?? wb.SheetNames[0];
       const rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { header: 1, defval: "" });
       const parsed = parseAllstateRows(rows);
