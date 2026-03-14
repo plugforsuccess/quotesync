@@ -285,7 +285,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-        <Users className="w-5 h-5 text-blue-600" />
+        <Users className="w-5 h-5 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Team Comparison</h4>
         <span className="text-xs text-gray-500 ml-auto">{rows.length} {countLabel}</span>
       </div>
@@ -303,7 +303,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
                   <span className="inline-flex items-center gap-1">
                     {col.label}
                     {col.sortable && (
-                      <ArrowUpDown className={`w-3 h-3 ${sortKey === col.key ? 'text-blue-600' : 'text-gray-300'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortKey === col.key ? 'text-primary-600' : 'text-gray-300'}`} />
                     )}
                   </span>
                 </th>
@@ -315,7 +315,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
               <tr
                 key={row.employeeId}
                 onClick={() => onSelectEmployee?.(row.employeeId, row.roleType)}
-                className="hover:bg-blue-50/50 cursor-pointer transition-colors"
+                className="hover:bg-primary-50/50 cursor-pointer transition-colors"
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">

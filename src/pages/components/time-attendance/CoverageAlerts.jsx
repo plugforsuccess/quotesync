@@ -173,10 +173,10 @@ const SEVERITY_CONFIG = {
   },
   info: {
     icon: Info,
-    bg: 'bg-blue-50',
-    border: 'border-l-4 border-blue-500',
-    text: 'text-blue-800',
-    iconColor: 'text-blue-600',
+    bg: 'bg-primary-50',
+    border: 'border-l-4 border-primary-500',
+    text: 'text-primary-800',
+    iconColor: 'text-primary-600',
   },
 };
 

@@ -7,11 +7,11 @@ export default function PrivacyPage() {
     window.scrollTo(0, 0);
   }, []);
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-primary-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-8 md:p-12">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/" className="text-blue-600 hover:text-blue-700 font-semibold mb-4 inline-block">
+          <Link to="/" className="text-primary-600 hover:text-primary-700 font-semibold mb-4 inline-block">
             ← Back to Home
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
@@ -247,15 +247,15 @@ export default function PrivacyPage() {
         {/* Footer Navigation */}
         <div className="mt-12 pt-8 border-t border-gray-200">
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link to="/" className="text-primary-600 hover:text-primary-700 font-semibold">
               Home
             </Link>
             <span className="text-gray-400">•</span>
-            <Link to="/terms" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link to="/terms" className="text-primary-600 hover:text-primary-700 font-semibold">
               Terms of Service
             </Link>
             <span className="text-gray-400">•</span>
-            <a href="mailto:cameron@insuredbycam.com" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <a href="mailto:cameron@insuredbycam.com" className="text-primary-600 hover:text-primary-700 font-semibold">
               Contact Us
             </a>
           </div>

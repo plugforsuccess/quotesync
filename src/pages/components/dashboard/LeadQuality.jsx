@@ -58,7 +58,7 @@ function OwnerRenterCard({ owners, renters }) {
       <div className="flex items-center gap-2 mb-2">
         <div className="flex-1 h-4 rounded-full bg-gray-100 overflow-hidden flex">
           <div
-            className="h-full bg-blue-500 transition-all"
+            className="h-full bg-primary-500 transition-all"
             style={{ width: `${ownerPct}%` }}
           />
           <div
@@ -69,7 +69,7 @@ function OwnerRenterCard({ owners, renters }) {
       </div>
       <div className="flex justify-between text-xs text-gray-600">
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
+          <span className="w-2 h-2 rounded-full bg-primary-500 inline-block" />
           Owners: {owners} ({ownerPct}%)
         </span>
         <span className="flex items-center gap-1">

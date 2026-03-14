@@ -6,10 +6,11 @@ import { FileSearch, RefreshCw, AlertCircle, Filter, Calendar, User, Building2, 
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { supabase } from '../lib/supabase';
+import PageSpinner from '../components/PageSpinner';
 
 const EVENT_TYPE_CONFIG = {
   LEAD_CREATED: { label: 'Lead Created', color: 'green', bg: 'bg-green-100', text: 'text-green-700' },
-  ROUTED: { label: 'Lead Routed', color: 'blue', bg: 'bg-blue-100', text: 'text-blue-700' },
+  ROUTED: { label: 'Lead Routed', color: 'blue', bg: 'bg-primary-100', text: 'text-primary-700' },
   NOTIFIED: { label: 'Notification Sent', color: 'purple', bg: 'bg-purple-100', text: 'text-purple-700' },
   ROUTING_FALLBACK: { label: 'Routing Fallback', color: 'yellow', bg: 'bg-yellow-100', text: 'text-yellow-700' },
   STATUS_CHANGED: { label: 'Status Changed', color: 'orange', bg: 'bg-orange-100', text: 'text-orange-700' },
@@ -85,26 +86,19 @@ const AdminAuditPage = () => {
   }
 
   if (isLoading && logs.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading audit logs...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading audit logs..." />;
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
             onClick={fetchLogs}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mx-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -124,7 +118,7 @@ const AdminAuditPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <FileSearch className="w-8 h-8 text-blue-600" />
+              <FileSearch className="w-8 h-8 text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
                 <p className="text-gray-600 text-sm">View system activity and compliance records</p>
@@ -133,7 +127,7 @@ const AdminAuditPage = () => {
             <button
               onClick={fetchLogs}
               disabled={isLoading}
-              className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -146,11 +140,11 @@ const AdminAuditPage = () => {
               <div className="text-2xl font-bold text-gray-900">{totalCount}</div>
               <div className="text-sm text-gray-600">Total Events</div>
             </div>
-            <div className="bg-blue-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-blue-700">
+            <div className="bg-primary-50 rounded-lg p-4">
+              <div className="text-2xl font-bold text-primary-700">
                 {logs.filter(l => l.event_type?.startsWith('LEAD_')).length}
               </div>
-              <div className="text-sm text-blue-600">Lead Events (page)</div>
+              <div className="text-sm text-primary-600">Lead Events (page)</div>
             </div>
             <div className="bg-purple-50 rounded-lg p-4">
               <div className="text-2xl font-bold text-purple-700">
@@ -179,7 +173,7 @@ const AdminAuditPage = () => {
                 setEventTypeFilter(e.target.value);
                 setPage(0);
               }}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-blue-500"
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-primary-500"
             >
               <option value="all">All Event Types</option>
               {Object.entries(EVENT_TYPE_CONFIG).map(([key, config]) => (
@@ -304,7 +298,7 @@ const AdminAuditPage = () => {
                           <td className="px-6 py-4">
                             {log.metadata && Object.keys(log.metadata).length > 0 ? (
                               <details className="text-sm">
-                                <summary className="cursor-pointer text-blue-600 hover:text-blue-700">
+                                <summary className="cursor-pointer text-primary-600 hover:text-primary-700">
                                   View details
                                 </summary>
                                 <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto max-w-xs">

@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Design-token component classes
+ *
+ * Card tiers:
+ *   Default  → rounded-lg shadow-sm
+ *   Elevated → rounded-xl shadow-md
+ *   Modal    → rounded-2xl shadow-xl
+ *
+ * Page backgrounds:
+ *   Consumer/public  → gradient (keep per-page)
+ *   Authenticated    → bg-gray-50
+ *
+ * Max-width:
+ *   Admin/dashboard  → max-w-7xl
+ *   Detail/form      → max-w-4xl
+ *   Narrow content   → max-w-3xl
+ */
+
+@layer components {
+  /* ── Buttons ─────────────────────────────────────────────── */
+  .btn-primary-lg {
+    @apply px-6 py-3 bg-primary-600 hover:bg-primary-700
+           text-white font-semibold rounded-lg transition-colors;
+  }
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-600 hover:bg-primary-700
+           text-white font-semibold rounded-lg transition-colors;
+  }
+  .btn-ghost {
+    @apply px-4 py-2 border border-gray-300 text-gray-700
+           hover:bg-gray-50 font-medium rounded-lg transition-colors;
+  }
+
+  /* ── Form inputs ─────────────────────────────────────────── */
+  .input-base {
+    @apply w-full border border-gray-300 rounded-lg px-3 py-2
+           text-gray-900 bg-white
+           focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+           transition-colors;
+  }
+}
+
 /* Force dark text on all form controls so inputs remain readable
    regardless of inherited color (e.g. white text from nav header). */
 @layer base {

@@ -16,6 +16,7 @@ import {
   useRecomputeLeadScore
 } from '../hooks/useAgencyLeads';
 import { getScoreColor, formatScoreFactors } from '../lib/leadScoring';
+import PageSpinner from '../components/PageSpinner';
 
 const STATUS_ACTIONS = [
   { value: 'contacted', label: 'Contacted', color: 'green' },
@@ -121,14 +122,7 @@ const AgencyLeadDetailPage = () => {
   };
 
   if (agencyLoading || leadLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading lead details...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading lead details..." />;
   }
 
   if (!currentAgency) {
@@ -150,7 +144,7 @@ const AgencyLeadDetailPage = () => {
           <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Lead Not Found</h2>
           <p className="text-gray-600 mb-4">This lead does not exist or you do not have access to it.</p>
-          <Link to="/agency/leads" className="text-blue-600 hover:underline">
+          <Link to="/agency/leads" className="text-primary-600 hover:underline">
             Back to Leads
           </Link>
         </div>
@@ -163,7 +157,7 @@ const AgencyLeadDetailPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Link */}
         <Link
           to="/agency/leads"
@@ -182,7 +176,7 @@ const AgencyLeadDetailPage = () => {
                   Lead {lead.zip || ''} / {lead.state || ''}
                 </h1>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
-                  ${lead.status === 'new' ? 'bg-blue-100 text-blue-700' : ''}
+                  ${lead.status === 'new' ? 'bg-primary-100 text-primary-700' : ''}
                   ${lead.status === 'contacted' ? 'bg-green-100 text-green-700' : ''}
                   ${lead.status === 'quoted' ? 'bg-purple-100 text-purple-700' : ''}
                   ${lead.status === 'advanced' ? 'bg-indigo-100 text-indigo-700' : ''}
@@ -347,8 +341,8 @@ const AgencyLeadDetailPage = () => {
 
               {/* Contact Info Note */}
               {lead.source === 'canopy' ? (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                <div className="mt-4 p-3 bg-primary-50 rounded-lg">
+                  <p className="text-sm text-primary-800">
                     <Phone className="w-4 h-4 inline mr-1" />
                     Contact details captured via Canopy. View full profile in your Canopy dashboard.
                   </p>
@@ -375,7 +369,7 @@ const AgencyLeadDetailPage = () => {
                       <dt className="text-sm text-gray-500 mb-1">Policy Types</dt>
                       <dd className="flex flex-wrap gap-2">
                         {quoteSummary.policy_types.map((type, idx) => (
-                          <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">
+                          <span key={idx} className="px-2 py-1 bg-primary-100 text-primary-700 rounded text-sm">
                             {type}
                           </span>
                         ))}

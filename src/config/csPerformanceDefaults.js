@@ -29,7 +29,7 @@ export const DEFAULT_TARGETS = {
 
 export const GRADE_CONFIG = {
   A: { color: 'text-green-700', bg: 'bg-green-100', border: 'border-green-300', desc: 'Elite performance', numeric: 5 },
-  B: { color: 'text-blue-700', bg: 'bg-blue-100', border: 'border-blue-300', desc: 'Solid — meets all expectations', numeric: 4 },
+  B: { color: 'text-primary-700', bg: 'bg-primary-100', border: 'border-primary-300', desc: 'Solid — meets all expectations', numeric: 4 },
   C: { color: 'text-yellow-700', bg: 'bg-yellow-100', border: 'border-yellow-300', desc: 'Minimum acceptable — needs improvement', numeric: 3 },
   D: { color: 'text-orange-700', bg: 'bg-orange-100', border: 'border-orange-300', desc: 'Underperforming — coaching required', numeric: 2 },
   F: { color: 'text-red-700', bg: 'bg-red-100', border: 'border-red-300', desc: 'Intervention required', numeric: 1 },

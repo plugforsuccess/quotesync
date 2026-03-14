@@ -179,7 +179,7 @@ export default function AgentAliasManager({ orgId, employees }) {
                 <select
                   value={selectedMapping[name] || ''}
                   onChange={(e) => setSelectedMapping((prev) => ({ ...prev, [name]: e.target.value }))}
-                  className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 max-w-[200px]"
+                  className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 max-w-[200px]"
                 >
                   <option value="">Select employee...</option>
                   {mappableEmployees.map((emp) => (
@@ -193,14 +193,14 @@ export default function AgentAliasManager({ orgId, employees }) {
                     type="checkbox"
                     checked={backfillChecked[name] || false}
                     onChange={(e) => setBackfillChecked((prev) => ({ ...prev, [name]: e.target.checked }))}
-                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                   />
                   Backfill
                 </label>
                 <button
                   onClick={() => handleSaveAlias(name, nameKey)}
                   disabled={!selectedMapping[name] || saving || backfilling}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-lg transition-colors disabled:opacity-50 whitespace-nowrap"
                 >
                   <Link2 className="w-3.5 h-3.5" />
                   {saving || backfilling ? 'Saving...' : 'Save'}
@@ -234,7 +234,7 @@ export default function AgentAliasManager({ orgId, employees }) {
                     <td className="px-3 py-2 text-gray-700">{getEmployeeNameById(alias.employee_user_id)}</td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        alias.source === 'manual' ? 'bg-blue-100 text-blue-700' :
+                        alias.source === 'manual' ? 'bg-primary-100 text-primary-700' :
                         alias.source === 'auto' ? 'bg-green-100 text-green-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>

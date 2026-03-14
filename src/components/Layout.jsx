@@ -224,7 +224,7 @@ function Layout() {
 
           {/* Floating gradient orbs */}
           <div className="absolute top-20 right-20 w-64 h-64 bg-gradient-to-br from-emerald-500/20 to-teal-500/20 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute bottom-20 left-20 w-64 h-64 bg-gradient-to-br from-cyan-500/20 to-blue-500/20 rounded-full blur-3xl animate-float-delayed"></div>
+          <div className="absolute bottom-20 left-20 w-64 h-64 bg-gradient-to-br from-cyan-500/20 to-primary-500/20 rounded-full blur-3xl animate-float-delayed"></div>
 
           {/* Menu Content */}
           <nav className="relative h-full flex flex-col items-center justify-center gap-4 p-8 animate-slideUp overflow-y-auto">

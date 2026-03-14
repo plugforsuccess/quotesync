@@ -39,7 +39,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
       aria-labelledby="modal-title"
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900/95 via-primary-900/85 to-secondary-900/95 backdrop-blur-xl animate-fadeIn" />
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900/95 via-primary-900/85 to-secondary-900/95 backdrop-blur-xl animate-fadeIn" />
 
       {/* Orbs */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-primary-500/30 to-secondary-500/30 rounded-full blur-3xl animate-float" />
@@ -88,7 +88,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
           className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar"
         >
           <div className="p-6 space-y-6">
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border border-indigo-100 shadow-sm">
+            <div className="bg-gradient-to-br from-primary-50 to-indigo-50 rounded-2xl p-5 border border-indigo-100 shadow-sm">
               <p className="text-gray-700 leading-relaxed">{detail.description}</p>
             </div>
 

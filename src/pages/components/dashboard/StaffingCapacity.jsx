@@ -17,7 +17,7 @@ function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
           min={min}
           max={max}
           step={step}
-          className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
         />
         {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
       </div>
@@ -151,7 +151,7 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Users className="w-5 h-5 text-blue-600" />
+        <Users className="w-5 h-5 text-primary-600" />
         <h2 className="text-lg font-semibold text-gray-900">Staffing & Quoting Capacity</h2>
       </div>
 
@@ -160,7 +160,7 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Staffing Calculator</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Inputs */}
-          <div className="bg-blue-50 rounded-lg p-4">
+          <div className="bg-primary-50 rounded-lg p-4">
             <InputRow label="Active Producers" value={activeProducers} onChange={(v) => onStaffingChange('activeProducers', v)} min={1} max={50} />
             <InputRow label="Avg Quote Time" value={avgQuoteTime} onChange={(v) => onStaffingChange('avgQuoteTime', v)} suffix="min" min={5} max={120} />
             <InputRow label="Working Hours/Day" value={workingHours} onChange={(v) => onStaffingChange('workingHours', v)} suffix="hrs" min={1} max={16} />
@@ -199,11 +199,11 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
             <span className="text-amber-600">~{callsInNonQuoting} calls @ 5 min</span>
           </div>
           <div
-            className="bg-blue-100 flex flex-col items-center justify-center px-2 text-blue-800"
+            className="bg-primary-100 flex flex-col items-center justify-center px-2 text-primary-800"
             style={{ width: `${quotingPct}%`, minWidth: '80px' }}
           >
             <span>Quoting ({Math.round(quotingPct)}%)</span>
-            <span className="text-blue-600">~{quotesInQuoting.toFixed(1)} quotes @ {avgQuoteTime} min</span>
+            <span className="text-primary-600">~{quotesInQuoting.toFixed(1)} quotes @ {avgQuoteTime} min</span>
           </div>
         </div>
       </div>
@@ -227,13 +227,13 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
                 <tr
                   key={s.producers}
                   className={s.producers === activeProducers
-                    ? 'border-l-4 border-l-blue-500 bg-blue-50'
+                    ? 'border-l-4 border-l-primary-500 bg-primary-50'
                     : ''
                   }
                 >
                   <td className="py-2 pr-4 font-medium text-gray-900">
                     {s.producers}
-                    {s.producers === activeProducers && <span className="ml-2 text-xs text-blue-600">(current)</span>}
+                    {s.producers === activeProducers && <span className="ml-2 text-xs text-primary-600">(current)</span>}
                   </td>
                   <td className="py-2 px-4 text-right text-gray-700">{s.qpm.toLocaleString()}</td>
                   <td className="py-2 px-4 text-right text-gray-700">{s.canHandle.toLocaleString()}</td>

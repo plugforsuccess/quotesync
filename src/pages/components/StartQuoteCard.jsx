@@ -9,12 +9,12 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
   return (
     <div
       className={`w-full px-4 sm:px-6 lg:px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+        isVisible ? 'opacity-100 trangray-y-0' : 'opacity-0 trangray-y-10'
       }`}
     >
       <div
         className={`max-w-5xl pt-0 mx-auto transition-all duration-1000 delay-500 ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'
+          isVisible ? 'opacity-100 trangray-y-0' : 'opacity-0 trangray-y-10'
         }`}
       >
         {/* Main Card with Advanced Glassmorphism */}
@@ -60,12 +60,12 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                     {/* Button Content */}
                     <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-5 rounded-2xl transition-all duration-300">
                       {/* Shine Effect */}
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
 
                       <span className="relative z-10 text-white font-black text-lg tracking-wide whitespace-nowrap">
                         Check My Savings
                       </span>
-                      <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:translate-x-2" />
+                      <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:trangray-x-2" />
                     </div>
                   </button>
 
@@ -83,7 +83,7 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                       Bank-level security
                     </span>
                     <span className="flex items-center gap-1">
-                      <Zap className="w-4 h-4 text-blue-600" />
+                      <Zap className="w-4 h-4 text-primary-600" />
                       Takes 30 seconds
                     </span>
                   </div>
@@ -119,7 +119,7 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
   return (
     <div className="mt-16 relative">
       {/* Background Card with Advanced Gradient */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-secondary-50 to-blue-50 border-2 border-primary-200 p-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-secondary-50 to-primary-50 border-2 border-primary-200 p-8 shadow-2xl">
         {/* Animated Background Pattern */}
         <div className="absolute inset-0 opacity-5">
           <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(99,102,241,0.1)_25%,rgba(99,102,241,0.1)_50%,transparent_50%,transparent_75%,rgba(99,102,241,0.1)_75%,rgba(99,102,241,0.1))] bg-[length:20px_20px] animate-slide"></div>
@@ -154,7 +154,7 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
                 <div className={`absolute -inset-0.5 bg-gradient-to-r from-primary-500 via-primary-600 to-secondary-500 rounded-2xl opacity-0 group-hover:opacity-50 blur transition duration-300`}></div>
 
                 {/* Step Card */}
-                <div className="relative flex items-start gap-4 bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-md group-hover:shadow-2xl transition-all duration-300 transform group-hover:-translate-y-1 border border-primary-100 group-hover:border-primary-300">
+                <div className="relative flex items-start gap-4 bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-md group-hover:shadow-2xl transition-all duration-300 transform group-hover:-trangray-y-1 border border-primary-100 group-hover:border-primary-300">
                   {/* Step Number with Advanced Styling */}
                   <div className="flex-shrink-0 relative">
                     <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-600 flex items-center justify-center shadow-lg transition-all duration-300 ${
@@ -164,7 +164,7 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
                     </div>
                     {/* Connecting Line (except last) */}
                     {item.step < steps.length && (
-                      <div className="absolute top-12 left-1/2 -translate-x-1/2 w-0.5 h-3 bg-gradient-to-b from-primary-300 to-transparent"></div>
+                      <div className="absolute top-12 left-1/2 -trangray-x-1/2 w-0.5 h-3 bg-gradient-to-b from-primary-300 to-transparent"></div>
                     )}
                   </div>
 
@@ -198,7 +198,7 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
               {/* Button Content */}
               <div className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-8 py-4 rounded-2xl transition-all duration-300 transform">
                 <span className="text-white font-black text-lg whitespace-nowrap">Start My Quote</span>
-                <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:translate-x-2" />
+                <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:trangray-x-2" />
               </div>
             </button>
             <p className="text-xs text-gray-500 mt-3 flex items-center justify-center gap-4">
@@ -207,7 +207,7 @@ const ProcessSteps = ({ setModalStep, onGetQuote }) => {
                 No credit check
               </span>
               <span className="flex items-center gap-1">
-                <Lock className="w-3 h-3 text-blue-600" />
+                <Lock className="w-3 h-3 text-primary-600" />
                 No card required
               </span>
             </p>
@@ -237,13 +237,13 @@ const HowItWorks = ({ onGetQuote }) => {
   return (
     <div className="mt-12 space-y-8">
       {/* How it works Section */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-50 via-primary-50 to-secondary-50 border-2 border-blue-200 p-8 shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-primary-50 to-secondary-50 border-2 border-primary-200 p-8 shadow-xl">
         {/* Animated Background */}
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-blue-400/10 to-transparent rounded-full blur-3xl"></div>
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary-400/10 to-transparent rounded-full blur-3xl"></div>
         
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
               <span className="text-2xl">💡</span>
             </div>
             <h3 className="text-2xl font-black text-gray-900">How Does This Work?</h3>
@@ -270,16 +270,16 @@ const HowItWorks = ({ onGetQuote }) => {
             {/* Modern Way */}
             <div className="relative group">
               <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500 via-primary-600 to-secondary-500 rounded-2xl opacity-50 group-hover:opacity-75 blur transition duration-300"></div>
-              <div className="relative bg-white backdrop-blur-sm rounded-2xl p-6 border-2 border-blue-300 transition-all duration-300 group-hover:shadow-xl group-hover:scale-[1.02]">
+              <div className="relative bg-white backdrop-blur-sm rounded-2xl p-6 border-2 border-primary-300 transition-all duration-300 group-hover:shadow-xl group-hover:scale-[1.02]">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">✨</span>
-                  <p className="text-sm font-bold text-blue-600 uppercase tracking-wider">
+                  <p className="text-sm font-bold text-primary-600 uppercase tracking-wider">
                     The Modern Way
                   </p>
                 </div>
                 <p className="text-gray-700 leading-relaxed">
                   Skip the forms and spam. Just link your current insurance policy{' '}
-                  <span className="font-bold text-blue-600">one time</span> in{' '}
+                  <span className="font-bold text-primary-600">one time</span> in{' '}
                   <span className="font-bold text-gray-900">2 minutes</span>.
                 </p>
               </div>
@@ -287,10 +287,10 @@ const HowItWorks = ({ onGetQuote }) => {
           </div>
 
           {/* Comparison */}
-          <div className="bg-gradient-to-r from-blue-100/50 to-indigo-100/50 rounded-2xl p-6 border border-blue-200">
+          <div className="bg-gradient-to-r from-primary-100/50 to-indigo-100/50 rounded-2xl p-6 border border-primary-200">
             <p className="text-gray-700 leading-relaxed text-center">
               <span className="font-semibold text-gray-900">Think of it like Plaid</span> (which links your bank to Venmo or Cash App) –{' '}
-              <span className="font-semibold text-blue-600">same security, way faster</span> than typing everything manually.
+              <span className="font-semibold text-primary-600">same security, way faster</span> than typing everything manually.
             </p>
           </div>
         </div>
@@ -323,15 +323,15 @@ const HowItWorks = ({ onGetQuote }) => {
         >
           <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
           <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-5 rounded-2xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
             <span className="relative z-10 text-white font-black text-lg whitespace-nowrap">Compare Rates Now</span>
-            <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform group-hover:translate-x-2" />
+            <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform group-hover:trangray-x-2" />
           </div>
         </button>
       </div>
 
       {/* Canopy FAQ */}
-      <details className="group bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl border-2 border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+      <details className="group bg-gradient-to-br from-gray-50 to-gray-50 rounded-2xl border-2 border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
         <summary className="cursor-pointer p-6 font-bold text-gray-900 flex items-center justify-between group-hover:bg-gray-100 transition-colors">
           <span className="flex items-center gap-2">
             <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center">

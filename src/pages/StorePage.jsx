@@ -22,7 +22,7 @@ function StorePage() {
   const filteredProducts = getFilteredProducts();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-primary-900 to-secondary-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 opacity-30 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-64 h-64 bg-primary-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>
@@ -96,7 +96,7 @@ function StorePage() {
                 onClick={() => setFilter('all')}
                 className={`px-6 py-3 rounded-full font-semibold transition-all ${
                   filter === 'all'
-                    ? 'bg-white text-slate-900 shadow-lg'
+                    ? 'bg-white text-gray-900 shadow-lg'
                     : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
                 }`}
               >
@@ -106,7 +106,7 @@ function StorePage() {
                 onClick={() => setFilter('featured')}
                 className={`px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2 ${
                   filter === 'featured'
-                    ? 'bg-white text-slate-900 shadow-lg'
+                    ? 'bg-white text-gray-900 shadow-lg'
                     : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
                 }`}
               >
@@ -117,7 +117,7 @@ function StorePage() {
                 onClick={() => setFilter('bestsellers')}
                 className={`px-6 py-3 rounded-full font-semibold transition-all flex items-center gap-2 ${
                   filter === 'bestsellers'
-                    ? 'bg-white text-slate-900 shadow-lg'
+                    ? 'bg-white text-gray-900 shadow-lg'
                     : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
                 }`}
               >

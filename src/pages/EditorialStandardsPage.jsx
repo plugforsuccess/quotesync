@@ -8,11 +8,11 @@ export default function EditorialStandardsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-xl p-8 md:p-12">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-primary-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-md p-8 md:p-12">
         {/* Header */}
         <div className="mb-8">
-          <Link to="/news/dashboard" className="text-blue-600 hover:text-blue-700 font-semibold mb-4 inline-block">
+          <Link to="/news/dashboard" className="text-primary-600 hover:text-primary-700 font-semibold mb-4 inline-block">
             &larr; Back to Newsroom
           </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Editorial Standards</h1>
@@ -28,7 +28,7 @@ export default function EditorialStandardsPage() {
             <p className="text-gray-700 leading-relaxed mb-4">
               The InsuredByCam Newsroom exists to educate and empower consumers with accurate, timely, and actionable information about insurance, financial protection, and safe driving. We aim to demystify insurance topics and help readers make informed decisions.
             </p>
-            <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+            <div className="bg-primary-50 border-l-4 border-primary-500 p-4 rounded-r-lg">
               <p className="text-gray-700 italic">
                 "Our goal is to be the trusted voice that simplifies insurance for everyday people."
               </p>
@@ -200,7 +200,7 @@ export default function EditorialStandardsPage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Questions?</h2>
             <p className="text-gray-700 leading-relaxed">
               If you have questions about these editorial standards or need guidance on a specific piece of content, please reach out to your editor or contact the editorial team at{' '}
-              <a href="mailto:cameron@insuredbycam.com" className="text-blue-600 hover:text-blue-700 font-semibold">
+              <a href="mailto:cameron@insuredbycam.com" className="text-primary-600 hover:text-primary-700 font-semibold">
                 cameron@insuredbycam.com
               </a>
             </p>
@@ -211,11 +211,11 @@ export default function EditorialStandardsPage() {
         {/* Footer Navigation */}
         <div className="mt-12 pt-8 border-t border-gray-200">
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/news/dashboard" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link to="/news/dashboard" className="text-primary-600 hover:text-primary-700 font-semibold">
               Newsroom Dashboard
             </Link>
             <span className="text-gray-400">|</span>
-            <Link to="/news" className="text-blue-600 hover:text-blue-700 font-semibold">
+            <Link to="/news" className="text-primary-600 hover:text-primary-700 font-semibold">
               Public Newsroom
             </Link>
           </div>

@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAgencyDetail } from '../hooks/useAgencies';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import PageSpinner from '../components/PageSpinner';
 
 const AgencySettingsPage = () => {
   const { currentAgencyId, currentAgencyRole, agencyMemberships } = useAuth();
@@ -43,11 +44,7 @@ const AgencySettingsPage = () => {
   }
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   if (error || !agency) {
@@ -108,7 +105,7 @@ const AgencySettingsPage = () => {
       <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <Building2 className="w-8 h-8 text-blue-600" />
+          <Building2 className="w-8 h-8 text-primary-600" />
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Agency Settings</h1>
             <p className="text-gray-500">Manage your agency profile and information</p>
@@ -126,7 +123,7 @@ const AgencySettingsPage = () => {
               {currentAgencyRole === 'agent' && !editing && (
                 <button
                   onClick={startEditing}
-                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
                 >
                   Edit
                 </button>
@@ -143,7 +140,7 @@ const AgencySettingsPage = () => {
                     type="text"
                     value={form.brand_name}
                     onChange={(e) => setForm(f => ({ ...f, brand_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Display name for your agency"
                   />
                 </div>
@@ -153,7 +150,7 @@ const AgencySettingsPage = () => {
                     type="text"
                     value={form.primary_contact_name}
                     onChange={(e) => setForm(f => ({ ...f, primary_contact_name: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
@@ -162,7 +159,7 @@ const AgencySettingsPage = () => {
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm(f => ({ ...f, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <div>
@@ -171,7 +168,7 @@ const AgencySettingsPage = () => {
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm(f => ({ ...f, phone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               </div>
@@ -179,7 +176,7 @@ const AgencySettingsPage = () => {
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
                 >
                   <Save className="w-4 h-4" />
                   {saving ? 'Saving...' : 'Save Changes'}
@@ -232,8 +229,8 @@ const AgencySettingsPage = () => {
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           <div className="bg-white rounded-lg border border-gray-200 p-5">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Shield className="w-5 h-5 text-blue-600" />
+              <div className="p-2 bg-primary-100 rounded-lg">
+                <Shield className="w-5 h-5 text-primary-600" />
               </div>
               <div>
                 <p className="text-sm text-gray-500">Status</p>
@@ -277,7 +274,7 @@ const AgencySettingsPage = () => {
                   <label className="block text-sm font-medium text-gray-500 mb-2">Licensed States</label>
                   <div className="flex flex-wrap gap-2">
                     {agency.state_licenses.map(s => (
-                      <span key={s} className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm">{s}</span>
+                      <span key={s} className="px-2 py-1 bg-primary-100 text-primary-700 rounded text-sm">{s}</span>
                     ))}
                   </div>
                 </div>

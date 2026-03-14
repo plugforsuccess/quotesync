@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, RotateCcw, Trash2, Archive, AlertCircle } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
+import PageSpinner from '../components/PageSpinner';
 
 const ArchivedStoriesPage = () => {
   const navigate = useNavigate();
@@ -136,14 +137,7 @@ const ArchivedStoriesPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading archived stories...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading archived stories..." />;
   }
 
   return (
@@ -176,12 +170,12 @@ const ArchivedStoriesPage = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Info Banner */}
-        <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 rounded">
+        <div className="bg-primary-50 border-l-4 border-primary-400 p-4 mb-6 rounded">
           <div className="flex">
-            <AlertCircle className="h-5 w-5 text-blue-400 mr-3 flex-shrink-0" />
-            <div className="text-sm text-blue-700">
+            <AlertCircle className="h-5 w-5 text-primary-400 mr-3 flex-shrink-0" />
+            <div className="text-sm text-primary-700">
               <p className="font-medium mb-1">About Archived Stories</p>
-              <ul className="list-disc list-inside space-y-1 text-blue-600">
+              <ul className="list-disc list-inside space-y-1 text-primary-600">
                 <li>Archived stories are hidden from public view and the normal dashboard</li>
                 <li>You can restore stories to their previous status (draft, in_review, or published)</li>
                 <li>Stories must be archived for at least 7 days before permanent deletion</li>
@@ -270,7 +264,7 @@ const ArchivedStoriesPage = () => {
                           <button
                             onClick={() => handleRestore(story.id, story.previous_status, story.title)}
                             disabled={restoring === story.id}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-100 text-primary-700 hover:bg-primary-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Restore story"
                           >
                             <RotateCcw className="w-4 h-4" />

@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import PageSpinner from '../components/PageSpinner';
 
 /**
  * Hook to validate session on mount and provide session error recovery
@@ -154,14 +155,7 @@ export const withSessionValidation = (Component, requiredRole = null) => {
     const { isValid, isChecking, error, retry, handleSignOut } = useSessionValidation(requiredRole);
 
     if (isChecking) {
-      return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-            <p className="text-gray-600">Validating session...</p>
-          </div>
-        </div>
-      );
+      return <PageSpinner label="Validating session..." />;
     }
 
     if (!isValid || error) {
@@ -174,7 +168,7 @@ export const withSessionValidation = (Component, requiredRole = null) => {
             <div className="flex flex-col gap-3">
               <button
                 onClick={retry}
-                className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
               >
                 Retry
               </button>

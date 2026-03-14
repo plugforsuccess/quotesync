@@ -30,7 +30,7 @@ const PurchaseSuccessPage = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-600 via-primary-900 to-secondary-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 flex items-center justify-center p-4">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-4">Purchase Not Found</h1>
           <Link
@@ -45,7 +45,7 @@ const PurchaseSuccessPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-primary-900 to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Confetti */}
       {confetti.map((item) => (
         <div
@@ -82,7 +82,7 @@ const PurchaseSuccessPage = () => {
           <div className="w-20 h-20 bg-gradient-to-br from-success-400 to-success-600 rounded-full flex items-center justify-center mx-auto shadow-lg animate-bounce">
             <CheckCircle className="w-12 h-12 text-white" />
           </div>
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-32 bg-success-400/20 rounded-full blur-2xl -z-10 animate-pulse"></div>
+          <div className="absolute top-0 left-1/2 -trangray-x-1/2 w-32 h-32 bg-success-400/20 rounded-full blur-2xl -z-10 animate-pulse"></div>
         </div>
 
         {/* Title */}
@@ -96,7 +96,7 @@ const PurchaseSuccessPage = () => {
 
         {/* Download Card */}
         <div className="bg-gradient-to-r from-primary-50 to-secondary-50 rounded-2xl p-6 mb-8 border-2 border-primary-200 relative overflow-hidden group hover:shadow-xl transition-shadow duration-300">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary-400/0 via-secondary-400/10 to-primary-400/0 translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-400/0 via-secondary-400/10 to-primary-400/0 trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
 
           <div className="relative">
             <FileText className="w-16 h-16 mx-auto mb-4 text-primary-600" />

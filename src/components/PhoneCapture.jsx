@@ -30,7 +30,7 @@ const PhoneCapture = ({ onSave, onSkip }) => {
   }, [phone, onSave]);
 
   return (
-    <div className="text-center mt-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
+    <div className="text-center mt-4 p-4 bg-primary-50 rounded-xl border border-primary-200">
       <p className="text-sm font-medium text-gray-700 mb-2">
         Enter your phone to save your progress
       </p>
@@ -41,13 +41,13 @@ const PhoneCapture = ({ onSave, onSkip }) => {
           value={phone}
           onChange={handleChange}
           placeholder="(404) 555-0100"
-          className="flex-1 px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-300 outline-none"
+          className="flex-1 px-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-lg focus:border-primary-500 focus:ring-1 focus:ring-primary-300 outline-none"
         />
         <button
           type="button"
           onClick={handleSave}
           disabled={phone.replace(/\D/g, '').length !== 10}
-          className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="px-4 py-2 bg-primary-600 text-white text-sm font-semibold rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           Save &amp; Continue
         </button>

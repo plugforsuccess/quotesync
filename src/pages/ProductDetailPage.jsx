@@ -20,7 +20,7 @@ const ProductDetailPage = () => {
 
   if (!product) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-600 via-primary-900 to-secondary-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 flex items-center justify-center p-4">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-white mb-4">Product Not Found</h1>
           <Link
@@ -84,7 +84,7 @@ const ProductDetailPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-600 via-primary-900 to-secondary-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
       {/* Background Effects */}
       <div className="absolute inset-0 opacity-30 overflow-hidden pointer-events-none">
         <div className="absolute top-10 left-10 w-64 h-64 bg-primary-500 rounded-full mix-blend-multiply filter blur-xl animate-blob"></div>

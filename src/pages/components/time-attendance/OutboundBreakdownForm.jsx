@@ -86,14 +86,14 @@ export default function OutboundBreakdownForm({
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
       <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-        <PhoneOutgoing className="w-5 h-5 text-blue-600" />
+        <PhoneOutgoing className="w-5 h-5 text-primary-600" />
         <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
           Outbound Call Breakdown
         </h4>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            className="ml-auto text-xs text-blue-600 hover:text-blue-700 font-medium"
+            className="ml-auto text-xs text-primary-600 hover:text-primary-700 font-medium"
           >
             Edit
           </button>
@@ -115,7 +115,7 @@ export default function OutboundBreakdownForm({
                     min="0"
                     value={form[cat.key]}
                     onChange={(e) => handleChange(cat.key, e.target.value)}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               ))}
@@ -136,7 +136,7 @@ export default function OutboundBreakdownForm({
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded hover:bg-primary-700 transition-colors disabled:opacity-50"
                 >
                   <Save className="w-3 h-3" />
                   {saving ? 'Saving...' : 'Save'}

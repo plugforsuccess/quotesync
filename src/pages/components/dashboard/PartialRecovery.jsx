@@ -26,7 +26,7 @@ export default function PartialRecovery({ partials }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <RefreshCw className="w-5 h-5 text-blue-600" />
+        <RefreshCw className="w-5 h-5 text-primary-600" />
         <h2 className="text-lg font-semibold text-gray-900">Partial Lead Recovery</h2>
       </div>
 
@@ -128,7 +128,7 @@ export default function PartialRecovery({ partials }) {
                     <td className="py-2 pl-4">
                       <Link
                         to={`/agency/leads/${p.id}`}
-                        className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-xs"
+                        className="text-primary-600 hover:text-primary-800 inline-flex items-center gap-1 text-xs"
                       >
                         View <ChevronRight className="w-3 h-3" />
                       </Link>

@@ -139,9 +139,9 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
         onClick={() => setOpen(!open)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-blue-400 transition-colors min-w-[220px] justify-center"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-primary-400 transition-colors min-w-[220px] justify-center"
       >
-        <Calendar className="w-4 h-4 text-blue-600" />
+        <Calendar className="w-4 h-4 text-primary-600" />
         {label}
       </button>
 
@@ -149,7 +149,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
         <div
           role="dialog"
           aria-label="Pick a week"
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white rounded-xl shadow-xl border border-gray-200 p-4 w-[300px]"
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white rounded-xl shadow-md border border-gray-200 p-4 w-[300px]"
         >
           {/* Month/Year header */}
           <div className="flex items-center justify-between mb-3">
@@ -201,15 +201,15 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
                   className={`
                     py-1.5 text-xs text-center transition-colors relative
                     ${!currentMonth ? 'text-gray-300' : isWeekend ? 'text-gray-400' : 'text-gray-700'}
-                    ${inWeek ? 'bg-blue-100 text-blue-800 font-semibold' : 'hover:bg-gray-100'}
+                    ${inWeek ? 'bg-primary-100 text-primary-800 font-semibold' : 'hover:bg-gray-100'}
                     ${isMonday ? 'rounded-l-lg' : ''}
                     ${isFriday ? 'rounded-r-lg' : ''}
-                    ${isToday && !inWeek ? 'font-bold text-blue-600' : ''}
+                    ${isToday && !inWeek ? 'font-bold text-primary-600' : ''}
                   `}
                 >
                   {date.getDate()}
                   {isToday && (
-                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500" />
+                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary-500" />
                   )}
                 </button>
               );
@@ -225,7 +225,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
           <div className="mt-2 pt-3 border-t border-gray-100 flex justify-between">
             <button
               onClick={() => { onChange(toMonday(new Date())); setOpen(false); }}
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+              className="text-xs text-primary-600 hover:text-primary-700 font-medium"
             >
               This Week
             </button>

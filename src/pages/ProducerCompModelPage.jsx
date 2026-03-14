@@ -18,6 +18,7 @@ import {
   useVcProductKeys,
   useProducerActuals,
 } from '../hooks/useProducerCompModel';
+import PageSpinner from '../components/PageSpinner';
 import AssumptionsTab from './components/comp-model/AssumptionsTab';
 import ScenariosTab from './components/comp-model/ScenariosTab';
 import ActualsSummaryCard from './components/comp-model/ActualsSummaryCard';
@@ -162,14 +163,7 @@ export default function ProducerCompModelPage() {
   const isLoading = loadingProducer || loadingConfig;
 
   if (isLoading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-3"></div>
-          <p className="text-gray-500">Loading compensation model...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading compensation model..." />;
   }
 
   if (!producer) {
@@ -178,7 +172,7 @@ export default function ProducerCompModelPage() {
         <div className="text-center">
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Producer not found</h2>
           <p className="text-gray-600 mb-4">The producer you're looking for doesn't exist or you don't have access.</p>
-          <Link to="/admin/cs-performance" className="text-blue-600 hover:text-blue-700 font-medium">
+          <Link to="/admin/cs-performance" className="text-primary-600 hover:text-primary-700 font-medium">
             Back to Performance
           </Link>
         </div>
@@ -214,7 +208,7 @@ export default function ProducerCompModelPage() {
           <button
             onClick={handleCreateConfig}
             disabled={createConfig.isPending}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
           >
             {createConfig.isPending ? (
               <>
@@ -323,7 +317,7 @@ export default function ProducerCompModelPage() {
                   onClick={() => setActiveTab(tab.key)}
                   className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
                     isActive
-                      ? 'border-blue-600 text-blue-600'
+                      ? 'border-primary-600 text-primary-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -363,14 +357,14 @@ export default function ProducerCompModelPage() {
               type="month"
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
-              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
 
           {loadingActuals ? (
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-2"></div>
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-2"></div>
                 <p className="text-sm text-gray-500">Loading actuals for {monthLabel}...</p>
               </div>
             </div>

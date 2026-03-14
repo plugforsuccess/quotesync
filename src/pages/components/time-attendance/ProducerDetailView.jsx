@@ -105,7 +105,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Phone className="w-6 h-6 text-blue-600" />
+              <Phone className="w-6 h-6 text-primary-600" />
               <h2 className="text-xl font-bold text-gray-900">{employeeName}</h2>
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-500">
@@ -139,7 +139,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
       {chartData.length >= 2 ? (
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-blue-600" />
+            <TrendingUp className="w-5 h-5 text-primary-600" />
             <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">8-Week Outbound Trend</h4>
           </div>
           <ResponsiveContainer width="100%" height={240}>
@@ -185,7 +185,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
             onClick={() => setDailyExpanded(!dailyExpanded)}
             className="w-full px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors"
           >
-            <CalendarDays className="w-5 h-5 text-blue-600" />
+            <CalendarDays className="w-5 h-5 text-primary-600" />
             <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Daily Detail</h4>
             {dailyExpanded
               ? <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />

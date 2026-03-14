@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useCurrentAgency, useAgencyLeads, useAgencySLAMetrics } from '../hooks/useAgencyLeads';
 import { getScoreColor } from '../lib/leadScoring';
+import PageSpinner from '../components/PageSpinner';
 
 const STATUS_OPTIONS = [
   { value: 'all', label: 'All Statuses' },
@@ -95,14 +96,7 @@ const AgencyLeadsPage = () => {
   };
 
   if (agencyLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner />;
   }
 
   if (!currentAgency) {
@@ -131,7 +125,7 @@ const AgencyLeadsPage = () => {
             <p className="text-gray-600">Manage and track your leads</p>
             <Link
               to="/agency/dashboard"
-              className="text-sm text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+              className="text-sm text-primary-600 hover:text-primary-800 inline-flex items-center gap-1"
             >
               <BarChart3 className="w-4 h-4" />
               Funnel Dashboard
@@ -184,7 +178,7 @@ const AgencyLeadsPage = () => {
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 {STATUS_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -197,7 +191,7 @@ const AgencyLeadsPage = () => {
                   placeholder="ZIP code..."
                   value={filters.zip}
                   onChange={(e) => handleFilterChange('zip', e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-32"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 w-32"
                 />
               </div>
             </div>
@@ -268,7 +262,7 @@ const AgencyLeadsPage = () => {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           {leadsLoading ? (
             <div className="p-8 text-center">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mb-2"></div>
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mb-2"></div>
               <p className="text-gray-500 text-sm">Loading leads...</p>
             </div>
           ) : error ? (
@@ -332,7 +326,7 @@ const AgencyLeadsPage = () => {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
                           <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium
-                            ${lead.status === 'new' ? 'bg-blue-100 text-blue-700' : ''}
+                            ${lead.status === 'new' ? 'bg-primary-100 text-primary-700' : ''}
                             ${lead.status === 'contacted' ? 'bg-green-100 text-green-700' : ''}
                             ${lead.status === 'quoted' ? 'bg-purple-100 text-purple-700' : ''}
                             ${lead.status === 'advanced' ? 'bg-indigo-100 text-indigo-700' : ''}
@@ -385,7 +379,7 @@ const AgencyLeadsPage = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-right">
                           <Link
                             to={`/agency/leads/${lead.id}`}
-                            className="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1 text-sm"
+                            className="text-primary-600 hover:text-primary-800 inline-flex items-center gap-1 text-sm"
                           >
                             View <ChevronRight className="w-4 h-4" />
                           </Link>

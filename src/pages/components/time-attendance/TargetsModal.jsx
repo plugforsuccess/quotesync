@@ -121,7 +121,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
           <div className="sticky top-0 bg-white border-b border-gray-200 pb-4 mb-4 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-blue-600" />
+                <Target className="w-5 h-5 text-primary-600" />
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">Performance Goals</h3>
                   <p className="text-sm text-gray-500">{employeeName}</p>
@@ -142,7 +142,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
                 type="date"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               />
               <p className="text-xs text-gray-500 mt-1">
                 Targets apply from this date forward. Historical weeks before this date keep their original targets.
@@ -161,7 +161,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
                         step={field.type === 'float' ? '0.1' : '1'}
                         value={form[field.key]}
                         onChange={(e) => handleChange(field.key, e.target.value, field.type)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                   ))}
@@ -189,7 +189,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 <Save className="w-4 h-4" />
                 {saving ? 'Saving...' : 'Save Targets'}

@@ -19,7 +19,7 @@ const EducationPreview = () => {
       description: "What discount carriers don't tell you about claims handling and coverage gaps",
       readTime: "5 min read",
       tag: "Smart Shopping",
-      color: "from-blue-500 to-indigo-500"
+      color: "from-primary-500 to-indigo-500"
     },
     {
       icon: Shield,

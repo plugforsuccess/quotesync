@@ -160,9 +160,9 @@ const NewsroomPage = () => {
   const categories = getCategoryOptions(true);
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Header with subtle brand gradient */}
-      <div className="sticky top-0 z-30 bg-gradient-to-r from-blue-50/80 via-teal-50/60 to-blue-50/80 border-b border-gray-200 backdrop-blur-sm">
+      <div className="sticky top-0 z-30 bg-gradient-to-r from-primary-50/80 via-teal-50/60 to-primary-50/80 border-b border-gray-200 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto px-4 py-5">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
@@ -198,7 +198,7 @@ const NewsroomPage = () => {
                 onClick={() => handleCategoryChange(cat.value)}
                 className={`px-3 py-1.5 text-sm font-semibold whitespace-nowrap transition-all border-b-2 ${
                   selectedCategory === cat.value
-                    ? 'text-blue-700 border-blue-600'
+                    ? 'text-primary-700 border-primary-600'
                     : 'text-gray-600 border-transparent hover:text-gray-900 hover:border-gray-300'
                 }`}
               >

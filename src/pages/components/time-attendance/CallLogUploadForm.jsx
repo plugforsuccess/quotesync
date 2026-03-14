@@ -542,7 +542,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Phone className="w-6 h-6 text-blue-600" />
+          <Phone className="w-6 h-6 text-primary-600" />
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Daily Call Log Upload</h3>
             <p className="text-sm text-gray-500">
@@ -552,22 +552,22 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         </div>
         <button
           onClick={() => setShowHelp(!showHelp)}
-          className="p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-colors"
+          className="p-2 text-gray-400 hover:text-primary-600 rounded-lg transition-colors"
         >
           <HelpCircle className="w-5 h-5" />
         </button>
       </div>
 
       {showHelp && (
-        <div className="mb-4 p-4 bg-blue-50 rounded-lg text-sm text-blue-800">
+        <div className="mb-4 p-4 bg-primary-50 rounded-lg text-sm text-primary-800">
           <p className="font-medium mb-2">How to export the Call Log from RingCentral:</p>
-          <ol className="list-decimal list-inside space-y-1 text-blue-700 mb-3">
+          <ol className="list-decimal list-inside space-y-1 text-primary-700 mb-3">
             <li>Go to RingCentral Analytics &rarr; Performance Reports &rarr; Calls</li>
             <li>Set the date range to the target day or week</li>
             <li>Export as XLSX or CSV</li>
           </ol>
           <p className="font-medium mb-2">Expected columns (from the &ldquo;Calls&rdquo; sheet):</p>
-          <ul className="list-disc list-inside space-y-1 text-blue-700">
+          <ul className="list-disc list-inside space-y-1 text-primary-700">
             <li><strong>From Name</strong>, <strong>To Name</strong> &mdash; agent identification</li>
             <li><strong>Call Direction</strong> &mdash; Inbound or Outbound</li>
             <li><strong>Result</strong> &mdash; Connected, Not Connected, Answered, or VM/Missed</li>
@@ -646,7 +646,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        row.call_direction === 'Outbound' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
+                        row.call_direction === 'Outbound' ? 'bg-primary-100 text-primary-700' : 'bg-green-100 text-green-700'
                       }`}>
                         {row.call_direction === 'Outbound' ? 'Out' : 'In'}
                       </span>
@@ -655,7 +655,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                       <span className={`text-xs font-medium ${
                         row.call_result === 'VM/Missed' ? 'text-red-600' :
                         row.call_result === 'Not Connected' ? 'text-amber-600' :
-                        row.call_result === 'Connected' ? 'text-blue-600' : 'text-green-600'
+                        row.call_result === 'Connected' ? 'text-primary-600' : 'text-green-600'
                       }`}>
                         {row.call_result === 'VM/Missed' ? 'Missed' : row.call_result}
                       </span>
@@ -676,7 +676,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             <button
               onClick={submitUpload}
               disabled={uploading}
-              className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
             >
               <Upload className="w-4 h-4" />
               {uploading ? 'Uploading...' : 'Confirm Upload'}
@@ -773,7 +773,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                 </button>
                 <button
                   onClick={() => doUpload(confirmModal.matchedRows, confirmModal.skippedCount)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 transition-colors"
                 >
                   Upload Matched Only
                 </button>

@@ -210,7 +210,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       required
                       value={form.first_name}
                       onChange={(e) => handleChange('first_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -219,7 +219,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       required
                       value={form.last_name}
                       onChange={(e) => handleChange('last_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -227,7 +227,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <input
                       value={form.preferred_name}
                       onChange={(e) => handleChange('preferred_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -236,7 +236,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       type="email"
                       value={form.personal_email}
                       onChange={(e) => handleChange('personal_email', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -244,7 +244,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <input
                       value={form.cell_phone}
                       onChange={(e) => handleChange('cell_phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -252,7 +252,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <input
                       value={form.home_phone}
                       onChange={(e) => handleChange('home_phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -267,7 +267,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <input
                       value={form.address_line1}
                       onChange={(e) => handleChange('address_line1', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div className="sm:col-span-2">
@@ -275,7 +275,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <input
                       value={form.address_line2}
                       onChange={(e) => handleChange('address_line2', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -283,7 +283,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <input
                       value={form.city}
                       onChange={(e) => handleChange('city', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -291,7 +291,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <select
                       value={form.state}
                       onChange={(e) => handleChange('state', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
                       <option value="">Select...</option>
                       {US_STATES.map((s) => (
@@ -304,7 +304,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <input
                       value={form.zip_code}
                       onChange={(e) => handleChange('zip_code', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       required
                       value={form.role_type}
                       onChange={(e) => handleChange('role_type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
                       {ROLE_OPTIONS.map((r) => (
                         <option key={r.value} value={r.value}>{r.label}</option>
@@ -333,7 +333,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       type="date"
                       value={form.hire_date}
                       onChange={(e) => handleChange('hire_date', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -344,7 +344,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       onChange={(e) => handleChange('allstate_bind_id', e.target.value.trim().toUpperCase())}
                       placeholder="e.g. A0C2667"
                       maxLength={20}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                     <div className="text-xs text-gray-500 mt-1">
                       Found in the "Bind ID" column of the Allstate New Business Details report.
@@ -357,7 +357,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       value={form.rc_display_name}
                       onChange={(e) => handleChange('rc_display_name', e.target.value)}
                       placeholder="e.g. Tracy Peacock"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -375,7 +375,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                         handleChange('punch_pin', val || '');
                       }}
                       pattern="\d{4}"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
                       Employees use this PIN at /punch to clock in and out
@@ -395,7 +395,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       type="time"
                       value={form.default_start_time}
                       onChange={(e) => handleChange('default_start_time', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -404,7 +404,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       type="time"
                       value={form.default_lunch_out}
                       onChange={(e) => handleChange('default_lunch_out', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -413,7 +413,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       type="time"
                       value={form.default_lunch_in}
                       onChange={(e) => handleChange('default_lunch_in', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                   <div>
@@ -422,7 +422,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       type="time"
                       value={form.default_end_time}
                       onChange={(e) => handleChange('default_end_time', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
                 </div>
@@ -440,7 +440,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                         onChange={(e) => handleChange('is_licensed', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
                     </label>
                     <span className="text-sm font-medium text-gray-700">Licensed</span>
                   </div>
@@ -452,7 +452,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                         type="date"
                         value={form.license_verified_date}
                         onChange={(e) => handleChange('license_verified_date', e.target.value)}
-                        className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       />
                     </div>
                   )}
@@ -465,7 +465,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                           key={d}
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer border transition-colors ${
                             (form.professional_designations || []).includes(d)
-                              ? 'bg-blue-100 text-blue-800 border-blue-300'
+                              ? 'bg-primary-100 text-primary-800 border-primary-300'
                               : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
                           }`}
                         >
@@ -487,7 +487,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       <select
                         value={form.years_insurance_experience}
                         onChange={(e) => handleChange('years_insurance_experience', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="">Select...</option>
                         {yearOptions.map((y) => (
@@ -500,7 +500,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       <select
                         value={form.years_commercial_experience}
                         onChange={(e) => handleChange('years_commercial_experience', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="">Select...</option>
                         {yearOptions.map((y) => (
@@ -515,7 +515,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <select
                       value={form.highest_education}
                       onChange={(e) => handleChange('highest_education', e.target.value)}
-                      className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
                       {EDUCATION_OPTIONS.map((ed) => (
                         <option key={ed} value={ed}>{ed || 'Select...'}</option>
@@ -538,7 +538,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
               <button
                 type="submit"
                 disabled={saving}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="px-4 py-2 text-sm font-medium text-white bg-primary-600 border border-transparent rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
               >
                 {saving ? 'Saving...' : isEdit ? 'Save Changes' : 'Save Employee'}
               </button>

@@ -155,7 +155,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
               </div>
 
               {/* "Why this matters" section */}
-              <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6">
+              <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-3">
                   Why This Matters for Georgia Drivers
                 </h2>
@@ -195,7 +195,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <button
                     onClick={() => handleCTAClick('compare_policy')}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+                    className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
                   >
                     Compare Your Policy
                   </button>

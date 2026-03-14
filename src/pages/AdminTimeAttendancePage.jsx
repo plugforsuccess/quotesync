@@ -545,13 +545,13 @@ const AdminTimeAttendancePage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
           <p className="text-gray-600 mb-6">{error.message}</p>
           <button
             onClick={refetchAll}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors mx-auto"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -568,7 +568,7 @@ const AdminTimeAttendancePage = () => {
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Clock className="w-8 h-8 text-blue-600" />
+              <Clock className="w-8 h-8 text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Time &amp; Attendance</h1>
                 <p className="text-gray-600 text-sm">Weekly time entry for all employees</p>
@@ -578,7 +578,7 @@ const AdminTimeAttendancePage = () => {
               <button
                 onClick={refetchAll}
                 disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
                 title="Refresh"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -608,7 +608,7 @@ const AdminTimeAttendancePage = () => {
             <select
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-blue-500 min-w-[200px]"
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-primary-500 min-w-[200px]"
             >
               <option value="">Select Employee...</option>
               {dropdownEmployees.map((emp) => (
@@ -625,7 +625,7 @@ const AdminTimeAttendancePage = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, -1))}
-              className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+              className="p-1.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -636,7 +636,7 @@ const AdminTimeAttendancePage = () => {
             />
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
-              className="p-1.5 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+              className="p-1.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -716,11 +716,11 @@ const AdminTimeAttendancePage = () => {
               <div className="text-2xl font-bold text-gray-900">{totalEntries}</div>
               <div className="text-sm text-gray-600">Total Entries</div>
             </div>
-            <div className="bg-blue-50 rounded-lg border border-blue-100 p-4">
-              <div className="text-2xl font-bold text-blue-700">
+            <div className="bg-primary-50 rounded-lg border border-primary-100 p-4">
+              <div className="text-2xl font-bold text-primary-700">
                 {totalHours.toFixed(1)}h
               </div>
-              <div className="text-sm text-blue-600">Total Hours</div>
+              <div className="text-sm text-primary-600">Total Hours</div>
             </div>
             <div className="bg-green-50 rounded-lg border border-green-100 p-4">
               <div className="text-2xl font-bold text-green-700">
@@ -761,7 +761,7 @@ const AdminTimeAttendancePage = () => {
 
                 {isLoading ? (
                   <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3" />
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-3" />
                     <p className="text-gray-600 text-sm">Loading entries...</p>
                   </div>
                 ) : (

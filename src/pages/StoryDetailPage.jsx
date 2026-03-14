@@ -7,6 +7,7 @@ import { ArrowLeft, ExternalLink, Share2 } from 'lucide-react';
 import VideoEmbed from '../components/newsroom/VideoEmbed';
 import { supabase } from '../lib/supabase';
 import { trackReadMoreOpen, trackVideoPlay, trackNewsroomShare, trackNewsroomCTAClick } from '../lib/newsroomAnalytics';
+import PageSpinner from '../components/PageSpinner';
 
 /**
  * Format body text with basic paragraph support
@@ -193,14 +194,7 @@ const StoryDetailPage = () => {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading story...</p>
-        </div>
-      </div>
-    );
+    return <PageSpinner label="Loading story..." />;
   }
 
   if (!story) {
@@ -214,7 +208,7 @@ const StoryDetailPage = () => {
           </p>
           <Link
             to="/news"
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Newsroom
@@ -234,7 +228,7 @@ const StoryDetailPage = () => {
           <div className="max-w-4xl mx-auto px-4 py-4">
             <Link
               to="/news"
-              className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+              className="inline-flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Newsroom
@@ -281,7 +275,7 @@ const StoryDetailPage = () => {
 
             <button
               onClick={handleShare}
-              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium text-sm transition-colors"
+              className="flex items-center gap-2 text-primary-600 hover:text-primary-700 font-medium text-sm transition-colors"
             >
               <Share2 className="w-4 h-4" />
               Share
@@ -324,7 +318,7 @@ const StoryDetailPage = () => {
           </div>
 
           {/* Why This Matters */}
-          <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-8">
+          <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
               Why This Matters for Georgia Drivers
             </h2>
@@ -368,7 +362,7 @@ const StoryDetailPage = () => {
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => handleCTAClick('compare_policy')}
-                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
+                className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
               >
                 Compare Your Policy
               </button>
@@ -393,7 +387,7 @@ const StoryDetailPage = () => {
                     className="group"
                   >
                     <div className="bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors">
-                      <h4 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+                      <h4 className="font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
                         {related.title}
                       </h4>
                       <p className="text-sm text-gray-600 line-clamp-2">

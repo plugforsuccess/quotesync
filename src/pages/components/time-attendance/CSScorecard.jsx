@@ -161,7 +161,7 @@ export default function CSScorecard({
           <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
           {employeeName && <p className="text-xs text-gray-500 mt-1">{employeeName}</p>}
           {hasCallLog && (
-            <p className="text-xs text-blue-500 mt-0.5">Based on call log data</p>
+            <p className="text-xs text-primary-500 mt-0.5">Based on call log data</p>
           )}
         </div>
         <div className="flex items-center gap-3">
@@ -173,7 +173,7 @@ export default function CSScorecard({
       {/* Section A: Activity Metrics */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-          <Phone className="w-5 h-5 text-blue-600" />
+          <Phone className="w-5 h-5 text-primary-600" />
           <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section A — Activity</h4>
         </div>
         <table className="w-full">
@@ -203,7 +203,7 @@ export default function CSScorecard({
       {/* Section B: Efficiency & Quality */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-blue-600" />
+          <Shield className="w-5 h-5 text-primary-600" />
           <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section B — Efficiency & Quality</h4>
         </div>
         <table className="w-full">
@@ -272,7 +272,7 @@ export default function CSScorecard({
       {hasCallLog && (clm.salesCalls > 0 || clm.serviceCalls > 0) && (
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-blue-600" />
+            <BarChart2 className="w-5 h-5 text-primary-600" />
             <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section C — Queue Breakdown</h4>
             <span className="text-xs text-gray-400 ml-auto flex items-center gap-1">
               <Info className="w-3 h-3" /> Baseline tracking — no grade impact
@@ -287,7 +287,7 @@ export default function CSScorecard({
                 </div>
                 <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-blue-500 rounded-full transition-all"
+                    className="h-full bg-primary-500 rounded-full transition-all"
                     style={{ width: `${clm.salesPct}%` }}
                   />
                 </div>
@@ -312,7 +312,7 @@ export default function CSScorecard({
       {/* Section D: Proactivity Score */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-blue-600" />
+          <Activity className="w-5 h-5 text-primary-600" />
           <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section D — Proactivity</h4>
         </div>
         <table className="w-full">
@@ -355,9 +355,9 @@ export default function CSScorecard({
               {Math.round(t.outbound_calls_weekly / 5)}/day &middot; {t.outbound_calls_weekly}/week
             </p>
           </div>
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-xs text-blue-500 uppercase font-medium">Grade A Threshold</p>
-            <p className="text-lg font-bold text-blue-900 mt-1">
+          <div className="p-3 bg-primary-50 rounded-lg">
+            <p className="text-xs text-primary-500 uppercase font-medium">Grade A Threshold</p>
+            <p className="text-lg font-bold text-primary-900 mt-1">
               {Math.round(t.grade_a_outbound / 5)}/day &middot; {t.grade_a_outbound}/week
             </p>
           </div>

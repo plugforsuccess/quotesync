@@ -101,7 +101,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
       <div className="flex items-center gap-3 mb-6">
-        <Clock className="w-6 h-6 text-blue-600" />
+        <Clock className="w-6 h-6 text-primary-600" />
         <div>
           <h3 className="text-lg font-semibold text-gray-900">Time Entry</h3>
           <p className="text-sm text-gray-500">{employeeName} &middot; Week of {weekStart}</p>
@@ -116,7 +116,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="date"
             value={workDate}
             onChange={(e) => setWorkDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
@@ -126,7 +126,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           <select
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             {LOCATIONS.map((loc) => (
               <option key={loc.value} value={loc.value}>{loc.label}</option>
@@ -140,7 +140,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           <select
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           >
             {CODES.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -156,7 +156,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             min={0}
             value={unpaidBreakMinutes}
             onChange={(e) => setUnpaidBreakMinutes(parseInt(e.target.value || '0', 10))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
@@ -169,7 +169,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
@@ -182,7 +182,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
@@ -193,7 +193,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={lunchOut}
             onChange={(e) => setLunchOut(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
@@ -204,7 +204,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             type="time"
             value={lunchIn}
             onChange={(e) => setLunchIn(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
         </div>
 
@@ -217,7 +217,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
             placeholder={notesRequired ? 'Please provide details for this entry...' : 'Optional notes...'}
           />
         </div>
@@ -228,7 +228,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
         <button
           disabled={!canSave || saving}
           onClick={saveEntry}
-          className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Save className="w-4 h-4" />
           {saving ? 'Saving...' : 'Save Entry'}

@@ -20,7 +20,7 @@ export const AllstateBadge = ({ variant = 'default' }) => {
 
     // Hero badge - larger, more prominent
     hero: (
-      <div className="inline-flex items-center gap-3 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-lg border border-blue-200">
+      <div className="inline-flex items-center gap-3 bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-lg border border-primary-200">
         <div className="w-10 h-10 bg-gradient-to-br from-[#0033A0] to-[#0047AB] rounded-xl flex items-center justify-center shadow-md">
           <span className="text-white font-black text-lg">A</span>
         </div>
@@ -43,7 +43,7 @@ export const AllstateBadge = ({ variant = 'default' }) => {
 
     // Trust badge - emphasis on credibility
     trust: (
-      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-[#0033A0] rounded-xl p-4 inline-block">
+      <div className="bg-gradient-to-br from-primary-50 to-indigo-50 border-2 border-[#0033A0] rounded-xl p-4 inline-block">
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 bg-gradient-to-br from-[#0033A0] to-[#0047AB] rounded-xl flex items-center justify-center shadow-lg">
             <span className="text-white font-black text-xl">A</span>
@@ -59,7 +59,7 @@ export const AllstateBadge = ({ variant = 'default' }) => {
     // Text only - subtle branding
     text: (
       <span className="text-white font-semibold">
-        Powered by <span className="text-blue-300">Allstate</span>
+        Powered by <span className="text-primary-300">Allstate</span>
       </span>
     ),
   };

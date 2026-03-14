@@ -59,7 +59,7 @@ class ErrorBoundary extends Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm p-8">
             <div className="flex items-start gap-4 mb-6">
               <div className="flex-shrink-0">
                 <AlertTriangle className="w-12 h-12 text-red-600" />
@@ -100,7 +100,7 @@ class ErrorBoundary extends Component {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={this.handleReload}
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors"
               >
                 <RefreshCw className="w-4 h-4" />
                 Reload Page

@@ -30,7 +30,7 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
             min={min}
             max={max}
             step={step}
-            className={`w-24 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${prefix ? 'pl-6 pr-2' : suffix ? 'pl-2 pr-6' : 'px-2'}`}
+            className={`w-24 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${prefix ? 'pl-6 pr-2' : suffix ? 'pl-2 pr-6' : 'px-2'}`}
           />
           {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">{suffix}</span>}
         </div>
@@ -54,7 +54,7 @@ function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-sm font-medium text-blue-700 hover:text-blue-900"
+        className="flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-900"
       >
         New Business Commission Schedule
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -63,7 +63,7 @@ function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full text-xs">
             <thead>
-              <tr className="border-b border-blue-200">
+              <tr className="border-b border-primary-200">
                 <th className="text-left py-1 pr-3 font-medium text-gray-500" />
                 {tiers.map(k => (
                   <th key={k} className="text-right py-1 px-2 font-medium text-gray-500">
@@ -147,7 +147,7 @@ function PolicyMixTable({
               <select
                 value={row.productLine}
                 onChange={(e) => onMixChange(idx, 'productLine', e.target.value)}
-                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 {productLines.map(pl => (
                   <option key={pl} value={pl}>{pl}</option>
@@ -158,7 +158,7 @@ function PolicyMixTable({
               <select
                 value={row.tier}
                 onChange={(e) => onMixChange(idx, 'tier', e.target.value)}
-                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 {tierOptions.map(t => (
                   <option key={t.key} value={t.key}>{t.label}</option>
@@ -174,7 +174,7 @@ function PolicyMixTable({
                   onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                   min={0}
                   step={100}
-                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
@@ -189,7 +189,7 @@ function PolicyMixTable({
                   onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                   min={0}
                   max={100}
-                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
               </div>
@@ -219,7 +219,7 @@ function PolicyMixTable({
                 <select
                   value={row.productLine}
                   onChange={(e) => onMixChange(idx, 'productLine', e.target.value)}
-                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   {productLines.map(pl => (
                     <option key={pl} value={pl}>{pl}</option>
@@ -228,7 +228,7 @@ function PolicyMixTable({
                 <select
                   value={row.tier}
                   onChange={(e) => onMixChange(idx, 'tier', e.target.value)}
-                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   {tierOptions.map(t => (
                     <option key={t.key} value={t.key}>{t.label}</option>
@@ -253,7 +253,7 @@ function PolicyMixTable({
                     onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                     min={0}
                     step={100}
-                    className="w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
                 <span className="text-gray-600 bg-gray-50 font-medium px-2 py-1 rounded text-sm">{commRate}%</span>
@@ -264,7 +264,7 @@ function PolicyMixTable({
                     onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                     min={0}
                     max={100}
-                    className="w-14 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-14 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                   <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
                 </div>
@@ -284,7 +284,7 @@ function PolicyMixTable({
         <button
           type="button"
           onClick={onMixAdd}
-          className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 font-medium"
+          className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-800 font-medium"
         >
           <Plus className="w-4 h-4" /> Add Row
         </button>
@@ -409,7 +409,7 @@ export default function CapacityPlanner({
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center gap-2 mb-4">
-        <Calculator className="w-5 h-5 text-blue-600" />
+        <Calculator className="w-5 h-5 text-primary-600" />
         <h2 className="text-lg font-semibold text-gray-900">Capacity Planning Model</h2>
       </div>
 
@@ -434,7 +434,7 @@ export default function CapacityPlanner({
         {/* Right: Scenario Planner */}
         <div>
           <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Scenario Planner</h3>
-          <div className="bg-blue-50 rounded-lg p-4 mb-4">
+          <div className="bg-primary-50 rounded-lg p-4 mb-4">
             <InputRow
               label="Target Submissions/mo"
               value={targetSubmissions}
@@ -486,7 +486,7 @@ export default function CapacityPlanner({
             />
 
             {/* Blended summary */}
-            <div className="flex items-center justify-between mt-3 pt-2 border-t border-blue-200 text-sm text-gray-700">
+            <div className="flex items-center justify-between mt-3 pt-2 border-t border-primary-200 text-sm text-gray-700">
               <span>Blended Premium: <span className="font-semibold text-gray-900">${outputs.blendedPremium.toLocaleString()}</span></span>
               <span title="Premium-weighted average across your product mix">Blended Commission: <span className="font-semibold text-gray-900">{outputs.blendedCommission}%</span></span>
             </div>
@@ -554,7 +554,7 @@ export default function CapacityPlanner({
 
             {/* Leads per day context */}
             <div className="border-t border-gray-200 my-2" />
-            <StatRow label="Leads Per Day" value={outputs.leadsPerDay.toFixed(1)} highlight="text-blue-600" />
+            <StatRow label="Leads Per Day" value={outputs.leadsPerDay.toFixed(1)} highlight="text-primary-600" />
 
             {!mixValid && (
               <p className="text-xs text-red-500 mt-2">
@@ -567,7 +567,7 @@ export default function CapacityPlanner({
               <button
                 type="button"
                 onClick={() => setShowBreakeven(!showBreakeven)}
-                className="flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-900"
+                className="flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-900"
               >
                 Breakeven Analysis
                 {showBreakeven ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}

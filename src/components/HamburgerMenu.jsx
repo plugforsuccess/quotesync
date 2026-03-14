@@ -66,7 +66,7 @@ function HamburgerMenu({ items }) {
         className={[
           'relative p-2.5 rounded-full font-semibold transition-all text-sm group overflow-hidden',
           hasActiveSecondary
-            ? 'text-slate-900'
+            ? 'text-gray-900'
             : 'text-gray-300 hover:text-white',
         ].join(' ')}
         aria-label="More pages"
