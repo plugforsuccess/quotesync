@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { CheckCircle, Zap, Shield, Clock, ArrowRight, Star, MapPin, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { isTargetZip } from '../../../config/targetZips';
+import { isTargetZip as defaultIsTargetZip } from '../../../config/targetZips';
 import { formatPhoneInput } from '../../../utils/phoneFormat';
 import { useCanopyLauncher } from '../../../hooks/useCanopyLauncher';
 import { SESSION_KEYS } from '../../../hooks/useWizard';
@@ -89,7 +89,9 @@ function InputField({ id, label, type = 'text', value, onChange, placeholder, er
 // ─── Step 1: ZIP Code ──────────────────────────────────────────────
 
 // UX-2: ZIP step supports editing when navigating back
-export function ZipStep({ value, onChange, onAutoAdvance }) {
+export function ZipStep({ value, onChange, onAutoAdvance, isTargetZip: isTargetZipProp, licensedStatesLabel }) {
+  const isTargetZip = isTargetZipProp || defaultIsTargetZip;
+  const areaLabel = licensedStatesLabel || 'Georgia';
   const navigate = useNavigate();
   const [isValid, setIsValid] = useState(false);
   const [isRejected, setIsRejected] = useState(false);
@@ -140,8 +142,8 @@ export function ZipStep({ value, onChange, onAutoAdvance }) {
         </div>
         <StepHeading>We don&apos;t serve your area yet</StepHeading>
         <p className="text-gray-600 mb-6 leading-relaxed">
-          We&apos;re a licensed Georgia insurance agency and can only offer quotes
-          for Georgia residents at this time.
+          We&apos;re a licensed {areaLabel} insurance agency and can only offer quotes
+          for {areaLabel} residents at this time.
           <br /><br />
           We&apos;re expanding — check back soon!
         </p>
@@ -191,7 +193,7 @@ export function ZipStep({ value, onChange, onAutoAdvance }) {
       </div>
       {!isValid && value.length < 5 && (
         <p className="mt-3 text-sm text-gray-500 text-center">
-          We currently serve Georgia ZIP codes
+          We currently serve {areaLabel} ZIP codes
         </p>
       )}
       {isValid && (
@@ -288,9 +290,8 @@ export function EarlyPhoneStep({ value, onChange, onSkip }) {
         />
       </div>
       <p className="mt-4 text-xs text-gray-400 text-center leading-relaxed max-w-sm mx-auto">
-        By entering your number, you agree to receive a text from Insured By
-        Cam with your quote status. Msg &amp; data rates may apply. Reply STOP
-        to opt out.
+        By entering your number, you agree to receive a text with your quote
+        status. Msg &amp; data rates may apply. Reply STOP to opt out.
       </p>
       <div className="mt-4 text-center">
         <button
@@ -637,7 +638,7 @@ export function DobStep({ value, onChange }) {
 
 // ─── Step 9: Street Address (with Google Places Autocomplete) ─────
 
-export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChange, onCityChange, onZipCorrected, onAddressSourceChange, onLatLngChange }) {
+export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange, onAptChange, onCityChange, onZipCorrected, onAddressSourceChange, onLatLngChange }) {
   const [manualMode, setManualMode] = useState(false);
   const [zipMismatch, setZipMismatch] = useState(null);
 
@@ -730,7 +731,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
           )}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">State</label>
-            <div className={readOnlyClasses}>GA</div>
+            <div className={readOnlyClasses}>{stateCode || 'GA'}</div>
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">ZIP</label>
@@ -774,7 +775,7 @@ export function AddressStep({ street, apt, city, zip, onStreetChange, onAptChang
 
 // ─── Step 10: Contact Information ───────────────────────────────────
 
-export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, errors }) {
+export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, errors, agentName, brandName }) {
   const handlePhoneChange = (e) => {
     onPhoneChange(formatPhoneInput(e.target.value));
   };
@@ -782,7 +783,7 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
   return (
     <div>
       <StepHeading>Where should we send your personalized quote?</StepHeading>
-      <StepDescription>Cam will personally review your info within minutes.</StepDescription>
+      <StepDescription>{agentName || 'Your agent'} will personally review your info within minutes.</StepDescription>
       <div className="space-y-4 max-w-sm mx-auto">
         <div className="grid grid-cols-2 gap-3">
           <InputField
@@ -823,8 +824,7 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
           error={errors?.email}
         />
         <p className="text-xs text-gray-500 leading-relaxed">
-          By clicking &apos;Get My Free Quote&apos;, you agree to be contacted by Insured By
-          Cam regarding insurance quotes via phone, SMS, and email at the number provided,
+          By clicking &apos;Get My Free Quote&apos;, you agree to be contacted by {brandName || 'our agency'} regarding insurance quotes via phone, SMS, and email at the number provided,
           including through automated technology. Consent is not a condition of purchase. Msg
           &amp; data rates may apply. Reply STOP to opt out at any time.
         </p>
@@ -858,7 +858,7 @@ const getSavingsEstimate = (ownsHome, vehicleCount, productIntent) => {
   return { range: '$150 – $500/year', message: "Let's find you a better rate." };
 };
 
-export function ConfirmationStep({ answers }) {
+export function ConfirmationStep({ answers, agentName, brandName }) {
   const { launchCanopy } = useCanopyLauncher();
   const savings = getSavingsEstimate(answers.ownsHome, answers.vehicleCount, answers.productIntent);
 
@@ -884,7 +884,7 @@ export function ConfirmationStep({ answers }) {
           You&apos;re All Set!
         </h2>
         <p className="text-gray-600">
-          Cam will reach out within the next few minutes to walk you through your options.
+          {agentName || 'Your agent'} will reach out within the next few minutes to walk you through your options.
         </p>
       </div>
 
@@ -912,7 +912,7 @@ export function ConfirmationStep({ answers }) {
           </h3>
         </div>
         <p className="text-sm text-gray-600 mb-4">
-          Sync your current policy and Cam can have your comparison ready before the call.
+          Sync your current policy and {agentName || 'your agent'} can have your comparison ready before the call.
         </p>
         <div className="space-y-2 mb-4">
           {[
@@ -941,29 +941,17 @@ export function ConfirmationStep({ answers }) {
         </button>
       </div>
 
-      {/* About Cam */}
+      {/* About Agent */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary-200 shadow-lg flex-shrink-0">
-            <img
-              src="/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
-              alt="Cameron Wiley"
-              className="w-full h-full object-cover"
-              style={{ objectPosition: '50% 30%' }}
-            />
+          <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-primary-200 shadow-lg flex-shrink-0 bg-primary-100 flex items-center justify-center">
+            <span className="text-xl font-bold text-primary-600">{(agentName || 'A').charAt(0)}</span>
           </div>
           <div>
-            <h3 className="font-bold text-gray-900">About Cam</h3>
+            <h3 className="font-bold text-gray-900">About {agentName || 'Your Agent'}</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              Cameron is a licensed Allstate agent in Georgia who personally reviews every quote.
+              {brandName || 'Your agency'} — licensed insurance agent who personally reviews every quote.
             </p>
-            <div className="flex items-center gap-1 mt-1">
-              {[...Array(4)].map((_, i) => (
-                <Star key={i} className="w-3.5 h-3.5 text-accent-500 fill-accent-500" />
-              ))}
-              <Star className="w-3.5 h-3.5 text-gray-300" />
-              <span className="text-xs text-gray-500 ml-1">4.1 (265 reviews)</span>
-            </div>
           </div>
         </div>
       </div>

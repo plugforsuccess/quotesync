@@ -29,7 +29,7 @@ function sanitizeUtm(val) {
   return val.slice(0, 256).replace(/<[^>]*>/g, '');
 }
 
-const UTM_SESSION_KEY = 'insuredbycam_utm_params';
+const UTM_SESSION_KEY = 'qs_utm_params';
 const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 
 /**
@@ -79,7 +79,7 @@ export function getUtmParams() {
  * @returns {Object|null} { zip, state } or null
  */
 export function getValidatedLocation() {
-  const STORAGE_KEY = 'insuredbycam_validated_zip';
+  const STORAGE_KEY = 'qs_validated_zip';
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {

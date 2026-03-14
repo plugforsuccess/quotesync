@@ -6,7 +6,8 @@ import { supabase } from '../lib/supabase';
 import { trackFunnelStep, trackLeadSubmission, trackGoogleAdsConversion, trackEvent, trackZipSubmitted, trackQuoteAbandoned } from '../lib/analytics';
 import { getSessionId, getUtmParams } from '../lib/leadsApi';
 import { toE164, isValidPhone } from '../utils/phoneFormat';
-import { isTargetZip } from '../config/targetZips';
+import { buildZipValidator, getStateFromZip } from '../config/targetZips';
+import { useFunnelAgency } from '../hooks/useFunnelAgency';
 import {
   ZipStep,
   OwnsHomeStep,
@@ -111,23 +112,26 @@ export default function SaveWizardPage() {
   const [animKey, setAnimKey] = useState(0);
 
   const utmParams = useRef(getUtmParams());
-  const defaultAgencyId = useRef(null);
   const partialLeadInserted = useRef(false);
 
-  // SEO tags are rendered as JSX below (React 19 hoisting)
+  // MT-08: Fetch agency from ?agency= slug param (or default agency)
+  const { data: funnelAgency } = useFunnelAgency();
+  const agencyId = funnelAgency?.id || null;
 
-  // Fetch default agency for partial lead insert
-  useEffect(() => {
-    supabase
-      .from('agencies')
-      .select('id')
-      .eq('is_default', true)
-      .single()
-      .then(({ data }) => { if (data) defaultAgencyId.current = data.id; });
-  }, []);
+  // Build ZIP validator from agency's licensed states
+  const isTargetZip = useCallback(
+    (zip) => {
+      const licensedStates = funnelAgency?.licensed_states?.length > 0
+        ? funnelAgency.licensed_states
+        : ['GA'];
+      return buildZipValidator(licensedStates)(zip);
+    },
+    [funnelAgency?.licensed_states]
+  );
 
   // ZIP prefill from landing page URL (e.g. /save?zip=30331)
   useEffect(() => {
+    if (!funnelAgency) return; // Wait for agency to load before validating ZIP
     const params = new URLSearchParams(window.location.search);
     const prefilledZip = params.get('zip');
 
@@ -136,7 +140,7 @@ export default function SaveWizardPage() {
       insertPartialLead(prefilledZip);
       setCurrentIndex(1); // Skip to step 2 (Own / Rent / Other)
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [funnelAgency]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Trigger animation on step change
   useEffect(() => {
@@ -146,18 +150,19 @@ export default function SaveWizardPage() {
   // ─── Partial Lead Insert (at ZIP step) ─────────────────────────
 
   const insertPartialLead = useCallback(async (zipOverride) => {
-    if (partialLeadInserted.current || !defaultAgencyId.current) return;
+    if (partialLeadInserted.current || !agencyId) return;
     partialLeadInserted.current = true;
 
     const zip = zipOverride || answers.zip;
+    const state = getStateFromZip(zip) || 'GA';
     try {
       const sessionId = getSessionId();
       const { data } = await supabase.from('leads').insert({
         status: 'partial',
         source: 'funnel',
-        agency_id: defaultAgencyId.current,
+        agency_id: agencyId,
         zip,
-        state: 'GA',
+        state,
         session_id: sessionId,
         utm_source: utmParams.current.utm_source,
         utm_medium: utmParams.current.utm_medium,
@@ -174,7 +179,7 @@ export default function SaveWizardPage() {
     } catch (err) {
       console.error('Failed to create partial lead:', err);
     }
-  }, [answers.zip]);
+  }, [answers.zip, agencyId]);
 
   // ─── Progressive Lead Update ───────────────────────────────────
 
@@ -212,6 +217,8 @@ export default function SaveWizardPage() {
       const phoneE164 = toE164(answers.phone);
       const leadScore = computeLeadScore(answers, utmParams.current);
 
+      const derivedState = getStateFromZip(answers.zip) || 'GA';
+
       const response = await fetch(EDGE_FUNCTION_URL, {
         method: 'POST',
         headers: {
@@ -224,7 +231,7 @@ export default function SaveWizardPage() {
           phone: phoneE164,
           email: answers.email.trim(),
           zip: answers.zip,
-          state: 'GA',
+          state: derivedState,
           owns_home: answers.ownsHome,
           vehicle_count: answers.vehicleCount,
           product_intent: answers.productIntent,
@@ -407,6 +414,8 @@ export default function SaveWizardPage() {
             value={answers.zip}
             onChange={(v) => setAnswer('zip', v)}
             onAutoAdvance={handleAutoAdvance}
+            isTargetZip={isTargetZip}
+            licensedStatesLabel={funnelAgency?.licensed_states?.join(', ') || 'Georgia'}
           />
         );
       case 'ownsHome':
@@ -505,6 +514,7 @@ export default function SaveWizardPage() {
             apt={answers.apt}
             city={answers.city}
             zip={answers.zip}
+            stateCode={getStateFromZip(answers.zip) || 'GA'}
             onStreetChange={(v) => setAnswer('street', v)}
             onAptChange={(v) => setAnswer('apt', v)}
             onCityChange={(v) => setAnswer('city', v)}
@@ -524,10 +534,12 @@ export default function SaveWizardPage() {
             onPhoneChange={(v) => setAnswer('phone', v)}
             onEmailChange={(v) => setAnswer('email', v)}
             errors={typeof error === 'object' ? error : undefined}
+            agentName={funnelAgency?.agent_first_name}
+            brandName={funnelAgency?.brand_name}
           />
         );
       case 'confirmation':
-        return <ConfirmationStep answers={answers} />;
+        return <ConfirmationStep answers={answers} agentName={funnelAgency?.agent_first_name} brandName={funnelAgency?.brand_name} />;
       default:
         return null;
     }
@@ -544,7 +556,7 @@ export default function SaveWizardPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
-      <title>See How Much You Could Save | insuredbycam</title>
+      <title>See How Much You Could Save | {funnelAgency?.brand_name || 'QuoteSync'}</title>
       <meta name="description" content="Get a personalized Georgia auto and home insurance quote in 60 seconds. No forms, no spam calls." />
       <meta name="robots" content="noindex" />
       {/* Background decorations */}
@@ -663,7 +675,7 @@ export default function SaveWizardPage() {
               <div className="flex flex-wrap items-center justify-center gap-4 mb-4">
                 <div className="flex items-center gap-2 text-white/80 text-sm">
                   <img src="/logos/allstate-logo.svg" alt="Allstate" className="h-5 opacity-80" onError={(e) => { e.target.style.display = 'none'; }} />
-                  <span className="font-semibold">Licensed Georgia Agent</span>
+                  <span className="font-semibold">Licensed {funnelAgency?.licensed_states?.[0] || 'GA'} Agent</span>
                 </div>
                 <div className="w-px h-4 bg-white/30 hidden sm:block"></div>
                 <span className="text-white/70 text-sm font-medium">500+ Quotes Delivered</span>

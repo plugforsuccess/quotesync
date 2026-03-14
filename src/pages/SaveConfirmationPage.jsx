@@ -3,12 +3,16 @@ import { useEffect } from 'react';
 import { CheckCircle, Zap, Shield, Clock, ArrowRight, Star } from 'lucide-react';
 import { trackFunnelStep, trackEvent } from '../lib/analytics';
 import { useCanopyLauncher } from '../hooks/useCanopyLauncher';
+import { useFunnelAgency } from '../hooks/useFunnelAgency';
 
 export default function SaveConfirmationPage() {
   const { launchCanopy } = useCanopyLauncher();
+  const { data: funnelAgency } = useFunnelAgency();
+  const agentName = funnelAgency?.agent_first_name || 'Your agent';
+  const brandName = funnelAgency?.brand_name || 'your insurance agency';
 
   useEffect(() => {
-    document.title = "You're All Set! | Insured By Cam";
+    document.title = `You're All Set! | ${funnelAgency?.brand_name || 'QuoteSync'}`;
 
     // F-10 fix: Deduplicate pixel fires — only fire once per funnel completion
     const TRACKED_KEY = 'qs_confirmation_tracked';
@@ -52,35 +56,23 @@ export default function SaveConfirmationPage() {
               You&apos;re All Set! Your Personalized Quote Is Being Prepared.
             </h1>
             <p className="text-lg text-white/80">
-              Cam will reach out within the next few minutes to walk you through your options.
+              {agentName} will reach out within the next few minutes to walk you through your options.
             </p>
           </div>
 
-          {/* About Cam Card */}
+          {/* About Agent Card */}
           <div className="relative mb-8">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-600 to-secondary-600 rounded-2xl opacity-50 blur-sm"></div>
             <div className="relative bg-white rounded-2xl shadow-xl p-6">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-primary-200 shadow-lg flex-shrink-0">
-                  <img
-                    src="/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
-                    alt="Cameron Wiley"
-                    className="w-full h-full object-cover"
-                    style={{ objectPosition: '50% 30%' }}
-                  />
+                <div className="w-16 h-16 rounded-full overflow-hidden border-3 border-primary-200 shadow-lg flex-shrink-0 bg-primary-100 flex items-center justify-center">
+                  <span className="text-2xl font-bold text-primary-600">{agentName.charAt(0)}</span>
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-lg">About Cam</h3>
+                  <h3 className="font-bold text-gray-900 text-lg">About {agentName}</h3>
                   <p className="text-sm text-gray-600 leading-relaxed">
-                    Cameron is a licensed Allstate agent in Georgia who personally reviews every quote.
+                    {brandName} — licensed insurance agent who personally reviews every quote.
                   </p>
-                  <div className="flex items-center gap-1 mt-1">
-                    {[...Array(4)].map((_, i) => (
-                      <Star key={i} className="w-4 h-4 text-accent-500 fill-accent-500" />
-                    ))}
-                    <Star className="w-4 h-4 text-gray-300" />
-                    <span className="text-sm text-gray-500 ml-1">4.1 (265 reviews) on Google</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -98,7 +90,7 @@ export default function SaveConfirmationPage() {
               </div>
 
               <p className="text-gray-600 mb-5 leading-relaxed">
-                Sync your current policy and Cam can have your comparison ready before the call.
+                Sync your current policy and {agentName} can have your comparison ready before the call.
               </p>
 
               <div className="space-y-3 mb-6">
@@ -137,7 +129,7 @@ export default function SaveConfirmationPage() {
           {/* Social Proof */}
           <div className="text-center">
             <p className="text-white/70 text-sm font-medium mb-2">
-              Trusted by 500+ Georgia families
+              Trusted by 500+ families
             </p>
             <div className="flex items-center justify-center gap-1">
               {[...Array(5)].map((_, i) => (

@@ -6,7 +6,7 @@
 // - localStorage schema
 // - IndexedDB schema
 // - Data models
-const CACHE_VERSION = '1.1.0'; // Updated for preview navigation fix
+const CACHE_VERSION = '1.2.0'; // MT-08: multi-tenancy storage key rename
 const BUILD_TIMESTAMP = new Date().toISOString();
 
 // Get build info (git SHA will be injected at build time via env var)
@@ -15,7 +15,8 @@ const BUILD_SHA = import.meta.env.VITE_GIT_SHA || 'dev';
 const CACHE_VERSION_KEY = 'quotesync_cache_version';
 const APP_DATA_KEYS = [
   'quotesync_draft_',     // Draft storage fallback prefix
-  'insuredbycam_validated_zip',  // ZIP validation
+  'qs_validated_zip',            // ZIP validation
+  'insuredbycam_validated_zip',  // Legacy key cleanup
   // Add more app-specific keys here as needed
 ];
 

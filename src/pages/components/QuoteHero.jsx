@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import ZipHeroInput from '../../components/ZipHeroInput';
 import { trackEvent } from '../../lib/analytics';
 
-const STORAGE_KEY = 'insuredbycam_validated_zip';
+const STORAGE_KEY = 'qs_validated_zip';
 
 const QuoteHero = ({ isVisible }) => {
   const navigate = useNavigate();

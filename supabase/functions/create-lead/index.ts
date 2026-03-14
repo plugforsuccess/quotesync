@@ -13,6 +13,12 @@ const envOrigin = Deno.env.get('CORS_ALLOWED_ORIGIN')
 if (envOrigin && !allowedOrigins.includes(envOrigin)) {
   allowedOrigins.push(envOrigin)
 }
+// Multi-agency: additional origins via comma-separated env var
+const extraOrigins = (Deno.env.get('CORS_EXTRA_ORIGINS') || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean)
+allowedOrigins.push(...extraOrigins)
 function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req.headers.get('origin') || ''
   const isAllowed = allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')

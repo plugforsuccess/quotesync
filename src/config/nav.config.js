@@ -113,6 +113,7 @@ export const agencyNav = {
     ],
     secondary: [
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
+      { to: '/agency/team', label: 'Team', icon: '👥' },
     ],
   },
   producer: {
@@ -150,12 +151,17 @@ export function getAllNavItems(plane, platformRole, agencyRole) {
 }
 
 // Get default landing page after login
-export function getDefaultLanding(platformRole, agencyRole) {
+// Pass agency object to check setup status for onboarding redirect
+export function getDefaultLanding(platformRole, agencyRole, agency = null) {
   if (platformRole) {
     if (platformRole === 'platform_editor') return '/news/dashboard';
     return '/agency/dashboard';
   }
   if (agencyRole) {
+    // MT-04: Redirect new agents to setup page if onboarding not complete
+    if (agencyRole === 'agent' && agency && !agency.setup_completed_at) {
+      return '/agency/setup';
+    }
     if (agencyRole === 'agent') return '/agency/dashboard';
     return '/agency/leads';
   }

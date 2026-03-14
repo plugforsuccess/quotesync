@@ -83,7 +83,49 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json()
-    const { lead_id, body: messageBody } = body
+    const { lead_id, body: messageBody, to_override } = body
+
+    // Support test sends: to_override allows sending without a lead
+    if (to_override) {
+      const formattedTo = formatPhoneUS(to_override)
+      if (!formattedTo) {
+        return new Response(JSON.stringify({ error: 'Invalid to_override phone number' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      if (!messageBody?.trim()) {
+        return new Response(JSON.stringify({ error: 'body is required' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
+      const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
+      const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
+
+      const smsResult = await sendSMS(
+        TWILIO_ACCOUNT_SID,
+        TWILIO_AUTH_TOKEN,
+        ENV_TWILIO_PHONE_NUMBER,
+        formattedTo,
+        messageBody.trim()
+      )
+
+      if (!smsResult.success) {
+        return new Response(JSON.stringify({ error: smsResult.error || 'SMS send failed' }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      return new Response(JSON.stringify({ success: true, sid: smsResult.sid, test: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
 
     if (!lead_id || !messageBody?.trim()) {
       return new Response(JSON.stringify({ error: 'lead_id and body are required' }), {
@@ -142,15 +184,25 @@ Deno.serve(async (req) => {
       })
     }
 
-    // Send SMS
+    // Per-agency Twilio number lookup
     const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
     const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
-    const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
+    const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
+
+    let twilioFromNumber = ENV_TWILIO_PHONE_NUMBER
+    if (lead.agency_id) {
+      const { data: agencyPhones } = await supabase
+        .from('agencies')
+        .select('twilio_from_number')
+        .eq('id', lead.agency_id)
+        .single()
+      if (agencyPhones?.twilio_from_number) twilioFromNumber = agencyPhones.twilio_from_number
+    }
 
     const smsResult = await sendSMS(
       TWILIO_ACCOUNT_SID,
       TWILIO_AUTH_TOKEN,
-      TWILIO_PHONE_NUMBER,
+      twilioFromNumber,
       formattedPhone,
       messageBody.trim()
     )

@@ -1,21 +1,43 @@
 // src/config/targetZips.js
-// Target ZIP codes for Cameron's territory
+// Target ZIP codes — MT-08: multi-state support via buildZipValidator
 
-export const TARGET_ZIPS = [
-  // Phase 1: Cameron's core territory
-  // TODO: Cameron to populate with his 5-7 priority ZIP codes
-  // Example format:
-  // '30301', '30302', '30303', '30304', '30305', '30306', '30307',
-];
+export const TARGET_ZIPS = [];
 
-// F-08 fix: If array is empty, accept Georgia ZIPs only (300-319, 398-399)
-// Previous version accepted any ZIP starting with '3' (included AL, FL, MS, TN)
-export const isTargetZip = (zip) => {
-  if (zip.length !== 5 || !/^\d{5}$/.test(zip)) return false;
-
-  if (TARGET_ZIPS.length === 0) {
-    // Georgia ZIP ranges: 300xx-319xx and 398xx-399xx
-    return /^3(0[0-9]|1[0-9]|98|99)\d{2}$/.test(zip);
-  }
-  return TARGET_ZIPS.includes(zip);
+// State-to-ZIP regex map — expand as agencies expand
+const STATE_ZIP_RANGES = {
+  GA: /^3(0[0-9]|1[0-9]|98|99)\d{2}$/,
+  TX: /^7[5-9]\d{3}$|^8[0-1]\d{3}$/,
+  FL: /^3[2-4]\d{3}$/,
+  AL: /^3[5-6]\d{3}$/,
+  SC: /^29\d{3}$/,
+  NC: /^2[7-8]\d{3}$/,
+  TN: /^3[7-8]\d{3}$/,
 };
+
+/**
+ * Build a ZIP validator for the given licensed states.
+ * Returns a function (zip) => boolean.
+ */
+export function buildZipValidator(licensedStates = ['GA']) {
+  return function isTargetZipForStates(zip) {
+    if (zip.length !== 5 || !/^\d{5}$/.test(zip)) return false;
+    return licensedStates.some(state => STATE_ZIP_RANGES[state]?.test(zip));
+  };
+}
+
+/**
+ * Derive state code from ZIP prefix.
+ * Returns 2-letter state code or null.
+ */
+export function getStateFromZip(zip) {
+  if (!zip || zip.length < 3) return null;
+  for (const [state, regex] of Object.entries(STATE_ZIP_RANGES)) {
+    // Pad to 5 digits for regex test
+    const padded = zip.length === 5 ? zip : zip.padEnd(5, '0');
+    if (regex.test(padded)) return state;
+  }
+  return null;
+}
+
+// Default isTargetZip — Georgia only (backward compat)
+export const isTargetZip = buildZipValidator(['GA']);
