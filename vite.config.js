@@ -13,6 +13,11 @@ export default defineConfig({
           // Separate vendor chunks for better caching
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
           'icons': ['lucide-react'],
+          // Heavy libraries used on 1-2 pages — keep out of shared chunks
+          'charts': ['recharts'],
+          'pdf': ['@react-pdf/renderer'],
+          'xlsx': ['xlsx'],
+          'stripe': ['@stripe/stripe-js'],
         }
       }
     },
