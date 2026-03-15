@@ -340,6 +340,15 @@ export const AuthProvider = ({ children }) => {
 
     initAuth();
 
+    // Safety net: if loading is still true after 8 seconds, something silently
+    // failed. Clear it so the user isn't permanently locked on a spinner.
+    const loadingTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn('[AUTH] loading timeout hit — force-clearing loading state');
+        setLoading(false);
+      }
+    }, 8000);
+
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -349,7 +358,9 @@ export const AuthProvider = ({ children }) => {
 
         if (event === 'SIGNED_IN') {
           if (!session?.user) return;
-          setLoading(true);
+          // Don't set loading:true here — the listener fires after initial mount,
+          // and blocking the UI on every SIGNED_IN (including page-refresh replays)
+          // causes flicker. initAuth already handles the initial loading state.
           try {
             await fetchUserProfile(session.user);
           } catch (e) {
@@ -363,15 +374,14 @@ export const AuthProvider = ({ children }) => {
         }
 
         if (event === 'INITIAL_SESSION') {
-          // Session restore on tab focus — user is already loaded, just update the token.
-          // Do NOT re-run fetchUserProfile here; that triggers 3 DB queries and races
-          // with React Query refetches that are also calling getSession() simultaneously.
+          // Tab focus session restore — session is valid, user already loaded.
+          // Never set loading:true here — it will freeze the UI if anything
+          // async fails. Just silently update the user token metadata.
           if (session?.user) {
-            setUser(session.user); // update token metadata only
+            setUser(session.user);
           } else if (!session) {
-            // Genuinely no session on restore — sign out cleanly
             resetState();
-            setLoading(false);
+            // loading stays false — user is already on a page, don't block them
           }
           return;
         }
@@ -408,6 +418,7 @@ export const AuthProvider = ({ children }) => {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      clearTimeout(loadingTimeout);
     };
   }, []);
 
