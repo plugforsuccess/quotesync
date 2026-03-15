@@ -15,16 +15,18 @@ import PageSpinner from './components/PageSpinner';
 import { validateCacheVersion } from './utils/cacheVersion';
 import { persistUtmParams } from './lib/leadsApi';
 
-// Delay React Query's window focus detection by 1 second.
-// Supabase refreshes its auth token when the tab regains focus —
-// if React Query fires refetches immediately, queries race the token
-// refresh and get 400/401 errors. The 1s delay lets the token settle first.
+// Override React Query's focus detection to use visibilitychange instead of
+// window focus events. visibilitychange fires reliably when the user returns
+// to the browser from another app or window. The 1s delay lets Supabase
+// complete its internal token refresh before queries fire, preventing 400s.
 focusManager.setEventListener((handleFocus) => {
-  const onFocus = () => {
-    setTimeout(handleFocus, 1000);
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') {
+      setTimeout(handleFocus, 1000);
+    }
   };
-  window.addEventListener('focus', onFocus, { passive: true });
-  return () => window.removeEventListener('focus', onFocus);
+  document.addEventListener('visibilitychange', onVisible);
+  return () => document.removeEventListener('visibilitychange', onVisible);
 });
 
 // Configure React Query with auth-aware error handling
