@@ -7,6 +7,7 @@
 // Access: platform_master_admin, platform_admin only
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   BarChart3, Users, RefreshCw, ShieldOff, AlertCircle, ChevronLeft, ChevronRight,
   Filter, Target, Download, ArrowLeft, TrendingUp,
@@ -144,7 +145,10 @@ const CSPerformancePage = () => {
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('all');
-  const [activeTab, setActiveTab] = useState('individual');
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    () => searchParams.get('tab') || 'individual'
+  );
   const [targetsModalOpen, setTargetsModalOpen] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [roleFilter, setRoleFilter] = useState('service');
