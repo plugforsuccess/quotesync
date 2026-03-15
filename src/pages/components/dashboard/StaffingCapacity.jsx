@@ -131,10 +131,11 @@ export default function StaffingCapacity({
 
   // Scenarios table
   const scenarios = useMemo(() => {
+    const commPct = commissionRate / 100;
     return [1, 2, 3, 4, 5].map(producers => {
       const qpm = Math.round(outputs.quotesPerProducerMonthRaw * producers);
       const canHandle = outputs.qualPct > 0 ? Math.round(qpm / outputs.qualPct) : 0;
-      const monthlyRevenue = (qpm * outputs.closePct * avgPremium * outputs.commPct) / 12;
+      const monthlyRevenue = qpm * outputs.closePct * avgPremium * commPct;
 
       let status, statusColor;
       if (canHandle < targetSubmissions * 0.8) {
@@ -150,7 +151,7 @@ export default function StaffingCapacity({
 
       return { producers, qpm, canHandle, monthlyRevenue, status, statusColor };
     });
-  }, [outputs, avgPremium, targetSubmissions]);
+  }, [outputs, avgPremium, commissionRate, targetSubmissions]);
 
   // Daily breakdown bar widths
   const nonQuotingPct = (1 - outputs.allocPct) * 100;
