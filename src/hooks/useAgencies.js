@@ -242,6 +242,14 @@ export const useInviteAgencyUser = () => {
 
         if (error) throw error;
 
+        // Link employee record to this auth user (if an employee with matching email exists)
+        await supabase
+          .from('employees')
+          .update({ auth_user_id: profiles.id })
+          .eq('org_id', agencyId)
+          .eq('personal_email', email)
+          .is('auth_user_id', null);
+
         // Log the action
         await supabase.from('audit_log').insert({
           agency_id: agencyId,
@@ -263,6 +271,8 @@ export const useInviteAgencyUser = () => {
     },
     onSuccess: (_, { agencyId }) => {
       queryClient.invalidateQueries({ queryKey: ['agency_users', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['agency_team', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['agency_team_full', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['audit_log', agencyId] });
     }
   });
@@ -313,7 +323,7 @@ export function useAgencyTeam(agencyId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agency_memberships')
-        .select('id, agency_role, status, created_at, user_id, profiles(id, email, first_name, last_name)')
+        .select('id, agency_role, status, created_at, user_id, profiles(id, email, full_name)')
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: true });
       if (error) throw error;
@@ -336,6 +346,24 @@ export function useRemoveTeamMember(agencyId) {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agency_team', agencyId] }),
+  });
+}
+
+// MT-05: Fetch team from employee_platform_access view (employees + membership status)
+export function useAgencyTeamWithEmployees(agencyId) {
+  return useQuery({
+    queryKey: ['agency_team_full', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_platform_access')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('last_name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
