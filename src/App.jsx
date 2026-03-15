@@ -48,16 +48,21 @@ let authCheckInFlight = false;
 const handleAuthError = (source) => {
   if (authCheckInFlight) return;
   authCheckInFlight = true;
-  supabase.auth.getSession().then(({ data }) => {
-    if (!data?.session) {
-      console.warn(`[${source}] Auth error confirmed — no valid session, signing out`);
-      supabase.auth.signOut();
-    } else {
-      console.warn(`[${source}] Auth error was transient (token refreshed) — skipping sign-out`);
-    }
-  }).finally(() => {
-    authCheckInFlight = false;
-  });
+  // Wait briefly — token refresh may be in progress (lock held by Supabase internals).
+  // Checking immediately can return null even when a valid session exists in storage
+  // because the refresh hasn't completed yet.
+  setTimeout(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data?.session) {
+        console.warn(`[${source}] Auth error confirmed — no valid session, signing out`);
+        supabase.auth.signOut();
+      } else {
+        console.warn(`[${source}] Auth error was transient (token refreshed) — skipping sign-out`);
+      }
+    }).finally(() => {
+      authCheckInFlight = false;
+    });
+  }, 500);
 };
 
 queryClient.getQueryCache().config.onError = (error) => {

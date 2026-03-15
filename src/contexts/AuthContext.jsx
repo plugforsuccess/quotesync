@@ -63,9 +63,12 @@ function isAbortError(e) {
   return e?.name === 'AbortError';
 }
 
-// Supabase stores under: sb-<project-ref>-auth-token
+// Remove the explicit storage key set in supabase.js + legacy sb-* keys
 function clearSupabaseAuthTokenFromStorage() {
   try {
+    // Remove the explicit storage key set in supabase.js
+    localStorage.removeItem('qs_auth_token');
+    // Also clear legacy sb-* keys in case of migration from old key
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
       if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
@@ -304,7 +307,7 @@ export const AuthProvider = ({ children }) => {
         // self-heal to a clean signed-out state.
         if (isAbortError(e)) {
           console.warn('[AUTH] init aborted; retrying once after delay');
-          await sleep(200);
+          await sleep(300); // slightly longer delay to let lock contention clear
           if (!mounted) return;
           try {
             const { data } = await safeGetSession(1);
@@ -314,10 +317,10 @@ export const AuthProvider = ({ children }) => {
               resetState();
             }
           } catch (e2) {
-            console.warn('[AUTH] init retry failed; resetting session storage', e2);
-            // Hard reset only Supabase token (not all localStorage)
-            clearSupabaseAuthTokenFromStorage();
-            try { await supabase.auth.signOut(); } catch (_) {}
+            // Second abort: still don't sign out — just reset UI state silently.
+            // The session in storage is likely still valid; Supabase will recover
+            // it on the next API call. Signing out here destroys a valid session.
+            console.warn('[AUTH] init double-abort; resetting UI state only (not signing out)', e2);
             resetState();
           } finally {
             if (mounted) setLoading(false);
@@ -325,10 +328,11 @@ export const AuthProvider = ({ children }) => {
           return;
         }
 
-        // Non-abort init errors: clear only Supabase token + sign out
-        // to avoid "bricked" loops from corrupted stored session
-        clearSupabaseAuthTokenFromStorage();
-        try { await supabase.auth.signOut(); } catch (_) {}
+        // Non-abort init errors: reset UI state but don't destroy the session.
+        // The session token in storage is likely still valid — the error was a
+        // transient network/DB failure during RBAC resolution. Let the user stay
+        // logged in; the next page action will re-try RBAC resolution.
+        console.error('[AUTH] initAuth non-abort failure; resetting UI without signing out:', e);
         resetState();
         setLoading(false);
       }
