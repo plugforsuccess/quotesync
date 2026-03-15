@@ -219,9 +219,29 @@ export const AuthProvider = ({ children }) => {
         const yearStart = `${today.getFullYear()}-01-01`;
         const yearEnd   = `${today.getFullYear()}-12-31`;
 
-        // Fire all prefetches in parallel — don't await, let them warm in background
+        // Fire all prefetches in parallel — don't await, let them warm in background.
+        // NOTE: funnel_metrics is intentionally skipped — its queryFn runs
+        // computeAllMetrics which lives inside useFunnelMetrics. Prefetching raw
+        // leads under that key would cause a shape mismatch. The dashboard is the
+        // landing page and always loads fresh anyway.
         Promise.allSettled([
-          // Agency leads (Leads page)
+          // current_agency — used by every authenticated page
+          queryClient.prefetchQuery({
+            queryKey: ['current_agency', currentUser.id],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('agency_memberships')
+                .select('agency_id, agency_role, agencies(id, name, brand_name)')
+                .eq('user_id', currentUser.id)
+                .eq('status', 'active')
+                .limit(1)
+                .single();
+              return data ? { ...data, role: data.agency_role } : null;
+            },
+            staleTime: 10 * 60 * 1000,
+          }),
+
+          // agency_leads — Leads page
           queryClient.prefetchQuery({
             queryKey: ['agency_leads', resolvedAgencyId, {}],
             queryFn: async () => {
@@ -237,21 +257,7 @@ export const AuthProvider = ({ children }) => {
             staleTime: 2 * 60 * 1000,
           }),
 
-          // Funnel metrics (Dashboard page)
-          queryClient.prefetchQuery({
-            queryKey: ['funnel_metrics', resolvedAgencyId, '30d'],
-            queryFn: async () => {
-              const { data } = await supabase
-                .from('leads')
-                .select('*')
-                .eq('agency_id', resolvedAgencyId)
-                .neq('status', 'partial');
-              return data || [];
-            },
-            staleTime: 2 * 60 * 1000,
-          }),
-
-          // Revenue entries (Revenue page)
+          // revenue_entries — Revenue page
           queryClient.prefetchQuery({
             queryKey: ['revenue_entries', resolvedAgencyId, yearStart, yearEnd],
             queryFn: async () => {
@@ -267,7 +273,37 @@ export const AuthProvider = ({ children }) => {
             staleTime: 2 * 60 * 1000,
           }),
 
-          // Lapse events summary (Book Health page)
+          // revenue_entries_ytd — Revenue producer breakdown
+          queryClient.prefetchQuery({
+            queryKey: ['revenue_entries_ytd', resolvedAgencyId],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('revenue_entries')
+                .select('*')
+                .eq('agency_id', resolvedAgencyId)
+                .gte('issued_date', yearStart)
+                .lte('issued_date', yearEnd)
+                .order('issued_date', { ascending: false });
+              return data || [];
+            },
+            staleTime: 2 * 60 * 1000,
+          }),
+
+          // lapse_events — Book Health page
+          queryClient.prefetchQuery({
+            queryKey: ['lapse_events', resolvedAgencyId],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('lapse_events')
+                .select('*')
+                .eq('agency_id', resolvedAgencyId)
+                .order('cancel_effective_date', { ascending: true });
+              return data || [];
+            },
+            staleTime: 2 * 60 * 1000,
+          }),
+
+          // lapse_events_summary — Book Health summary view
           queryClient.prefetchQuery({
             queryKey: ['lapse_events_summary', resolvedAgencyId],
             queryFn: async () => {
@@ -289,18 +325,29 @@ export const AuthProvider = ({ children }) => {
             staleTime: 2 * 60 * 1000,
           }),
 
-          // Current agency membership (used everywhere)
+          // agency_commission_rates — Dashboard + Revenue
           queryClient.prefetchQuery({
-            queryKey: ['current_agency', currentUser.id],
+            queryKey: ['agency_commission_rates', resolvedAgencyId],
             queryFn: async () => {
               const { data } = await supabase
-                .from('agency_memberships')
-                .select('agency_id, agency_role, agencies(id, name, brand_name)')
-                .eq('user_id', currentUser.id)
-                .eq('status', 'active')
-                .limit(1)
+                .from('agency_commission_rates')
+                .select('product_key, tier_key, rate')
+                .eq('agency_id', resolvedAgencyId);
+              return data || [];
+            },
+            staleTime: 10 * 60 * 1000,
+          }),
+
+          // agency_carrier_config — Dashboard + Revenue
+          queryClient.prefetchQuery({
+            queryKey: ['agency_carrier_config', resolvedAgencyId],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('agency_carrier_config')
+                .select('commissionable_factor, commission_goal, premium_goal, base_commission_floor')
+                .eq('agency_id', resolvedAgencyId)
                 .single();
-              return data ? { ...data, role: data.agency_role } : null;
+              return data || null;
             },
             staleTime: 10 * 60 * 1000,
           }),

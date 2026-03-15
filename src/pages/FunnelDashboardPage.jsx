@@ -1,7 +1,7 @@
 // src/pages/FunnelDashboardPage.jsx
 // Funnel Performance Dashboard — main page component
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, List, AlertCircle } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
@@ -111,13 +111,16 @@ const FunnelDashboardPage = () => {
     return planner;
   });
 
-  // Merge DB-sourced commission config into planner inputs
-  const effectivePlanner = {
+  // Merge DB-sourced commission config into planner inputs.
+  // Always render with defaults immediately — swap in DB rates when they arrive.
+  const effectivePlanner = useMemo(() => ({
     ...plannerInputs,
-    policyMix: plannerInputs.policyMix || agencyRates.policyMix,
+    policyMix: plannerInputs.policyMix?.length
+      ? plannerInputs.policyMix
+      : agencyRates.policyMix,
     commissionMatrix: agencyRates.commissionMatrix,
     baseCommission: agencyRates.baseCommission,
-  };
+  }), [plannerInputs, agencyRates]);
 
   const [staffingInputs, setStaffingInputs] = useState(() => {
     const saved = loadPersistedInputs();
