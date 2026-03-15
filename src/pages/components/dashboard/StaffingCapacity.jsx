@@ -217,7 +217,7 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
               <tr className="border-b border-gray-200">
                 <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 uppercase">Producers</th>
                 <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Quotes/Mo</th>
-                <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Can Handle</th>
+                <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Lead Capacity</th>
                 <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Max Monthly Rev</th>
                 <th className="text-left py-2 pl-4 text-xs font-medium text-gray-500 uppercase">Status</th>
               </tr>
