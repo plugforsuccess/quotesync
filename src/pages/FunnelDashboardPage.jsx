@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, List, AlertCircle, Users } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
+import { useAgencyTeam } from '../hooks/useAgencies';
 import { useFunnelMetrics } from '../hooks/useFunnelMetrics';
 import KPICards from './components/dashboard/KPICards';
 import FunnelDropoff from './components/dashboard/FunnelDropoff';
@@ -29,6 +30,7 @@ const FunnelDashboardPage = () => {
   const agencyId = currentAgency?.agency_id;
 
   const [timeRange, setTimeRange] = useState('30d');
+  const { data: team = [] } = useAgencyTeam(agencyId);
 
   // Fetch metrics
   const { data: metrics, isLoading: metricsLoading, error } = useFunnelMetrics(agencyId, timeRange);
@@ -122,7 +124,9 @@ const FunnelDashboardPage = () => {
               const quotableLeads = Math.round((metrics.totalLeads || 0) * 0.65);
               const quotesPerProducerMonth = 141;
               const producersNeeded = Math.ceil(quotableLeads / quotesPerProducerMonth);
-              const currentProducers = 2;
+              const currentProducers = (team || []).filter(
+                m => m.status === 'active' && m.agency_role === 'producer'
+              ).length;
 
               return (
                 <div className="bg-white rounded-lg shadow-sm p-5 flex items-center justify-between">
@@ -143,7 +147,7 @@ const FunnelDashboardPage = () => {
                     </div>
                   </div>
                   <Link
-                    to="/admin/cs-performance"
+                    to="/admin/cs-performance?tab=capacity"
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
                   >
                     View Capacity &rarr;
