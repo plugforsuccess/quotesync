@@ -1,15 +1,16 @@
 // src/pages/AgencyTeamPage.jsx
 // MT-05: Agency Team Management Page
+// Shows all active employees with platform access status
 
 import { useState } from 'react';
-import { Users, UserPlus, Trash2, AlertCircle } from 'lucide-react';
+import { Users, UserPlus, Trash2, AlertCircle, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useAgencyTeam, useRemoveTeamMember, useInviteAgencyUser } from '../hooks/useAgencies';
+import { useAgencyTeamWithEmployees, useRemoveTeamMember, useInviteAgencyUser } from '../hooks/useAgencies';
 import PageSpinner from '../components/PageSpinner';
 
 export default function AgencyTeamPage() {
   const { currentAgencyId, user } = useAuth();
-  const { data: team, isLoading } = useAgencyTeam(currentAgencyId);
+  const { data: team, isLoading } = useAgencyTeamWithEmployees(currentAgencyId);
   const removeMember = useRemoveTeamMember(currentAgencyId);
   const inviteUser = useInviteAgencyUser();
 
@@ -21,12 +22,12 @@ export default function AgencyTeamPage() {
 
   if (isLoading) return <PageSpinner />;
 
-  const activeMembers = (team || []).filter(m => m.status === 'active');
-  const pendingMembers = (team || []).filter(m => m.status === 'pending');
-  const removedMembers = (team || []).filter(m => m.status === 'removed');
+  const employees = team || [];
 
   // Guard: count active agents to prevent removing the last one
-  const activeAgentCount = activeMembers.filter(m => m.agency_role === 'agent').length;
+  const activeAgentCount = employees.filter(
+    e => e.agency_role === 'agent' && e.membership_status === 'active'
+  ).length;
 
   const handleRemove = async (membershipId) => {
     if (!confirm('Remove this team member? They will lose access to the agency.')) return;
@@ -67,13 +68,15 @@ export default function AgencyTeamPage() {
     }
   };
 
-  const getMemberName = (member) => {
-    const p = member.profiles;
-    if (p?.first_name || p?.last_name) {
-      return `${p.first_name || ''} ${p.last_name || ''}`.trim();
+  const getEmployeeName = (emp) => {
+    if (emp.first_name || emp.last_name) {
+      return `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
     }
-    return p?.email || 'Unknown';
+    return emp.full_name || emp.email || 'Unknown';
   };
+
+  const hasAccess = (emp) => !!emp.membership_id && emp.membership_status === 'active';
+  const isPending = (emp) => !!emp.membership_id && emp.membership_status === 'pending';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -154,67 +157,94 @@ export default function AgencyTeamPage() {
           </div>
         )}
 
-        {/* Active Members */}
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+        {/* Team Members Table */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900">Active Members ({activeMembers.length})</h2>
+            <h2 className="font-semibold text-gray-900">Team ({employees.length})</h2>
           </div>
-          {activeMembers.length === 0 ? (
-            <div className="px-6 py-8 text-center text-gray-500">No active team members.</div>
+          {employees.length === 0 ? (
+            <div className="px-6 py-8 text-center text-gray-500">No active employees.</div>
           ) : (
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Platform Access</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {activeMembers.map((member) => {
-                  const isOwner = member.agency_role === 'agent' && activeAgentCount <= 1;
-                  const isSelf = member.user_id === user?.id;
+                {employees.map((emp) => {
+                  const access = hasAccess(emp);
+                  const pending = isPending(emp);
+                  const isOwner = emp.agency_role === 'agent' && activeAgentCount <= 1;
+                  const isSelf = emp.auth_user_id === user?.id;
 
                   return (
-                    <tr key={member.id}>
+                    <tr key={emp.employee_id}>
                       <td className="px-6 py-4">
                         <div>
-                          <p className="font-medium text-gray-900">{getMemberName(member)}</p>
-                          <p className="text-sm text-gray-500">{member.profiles?.email}</p>
+                          <p className="font-medium text-gray-900">{getEmployeeName(emp)}</p>
+                          {emp.email && (
+                            <p className="text-sm text-gray-500">{emp.email}</p>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          member.agency_role === 'agent'
+                          emp.role_type === 'admin' || emp.agency_role === 'agent'
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {member.agency_role === 'agent' ? 'Agent' : 'Producer'}
+                          {emp.agency_role === 'agent' ? 'Agent' : emp.role_type === 'producer' ? 'Producer' : emp.role_type === 'service' ? 'CS Rep' : emp.role_type || 'Staff'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                          Active
-                        </span>
+                        {access ? (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                            Active
+                          </span>
+                        ) : pending ? (
+                          <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
+                            Pending
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-500 rounded-full text-xs font-medium">
+                            No access
+                          </span>
+                        )}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                        {isOwner ? (
+                      <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                        {access && isOwner ? (
                           <span className="text-xs text-gray-400" title="Can't remove the last agency owner">
                             Owner
                           </span>
-                        ) : isSelf ? (
+                        ) : access && isSelf ? (
                           <span className="text-xs text-gray-400">You</span>
-                        ) : (
+                        ) : access ? (
                           <button
-                            onClick={() => handleRemove(member.id)}
+                            onClick={() => handleRemove(emp.membership_id)}
                             disabled={removeMember.isPending}
                             className="text-red-500 hover:text-red-700 p-1 rounded disabled:opacity-50"
                             title="Remove member"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
-                        )}
+                        ) : !emp.membership_id ? (
+                          <button
+                            onClick={() => {
+                              setInviteEmail(emp.email || '');
+                              setInviteRole('producer');
+                              setShowInvite(true);
+                            }}
+                            className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium"
+                            title="Send platform invite"
+                          >
+                            <Mail className="w-4 h-4" />
+                            Invite
+                          </button>
+                        ) : null}
                       </td>
                     </tr>
                   );
@@ -223,52 +253,6 @@ export default function AgencyTeamPage() {
             </table>
           )}
         </div>
-
-        {/* Pending Invites */}
-        {pendingMembers.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100">
-              <h2 className="font-semibold text-gray-900">Pending Invites ({pendingMembers.length})</h2>
-            </div>
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {pendingMembers.map((member) => (
-                  <tr key={member.id}>
-                    <td className="px-6 py-4 text-gray-900">{member.profiles?.email || 'Unknown'}</td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
-                        {member.agency_role === 'agent' ? 'Agent' : 'Producer'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">
-                        Pending
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <button
-                        onClick={() => handleRemove(member.id)}
-                        disabled={removeMember.isPending}
-                        className="text-red-500 hover:text-red-700 p-1 rounded disabled:opacity-50"
-                        title="Cancel invite"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
       </div>
     </div>
   );

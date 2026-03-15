@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BarChart3, List, AlertCircle, Users } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
-import { useAgencyTeam } from '../hooks/useAgencies';
 import { useFunnelMetrics } from '../hooks/useFunnelMetrics';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import KPICards from './components/dashboard/KPICards';
 import FunnelDropoff from './components/dashboard/FunnelDropoff';
 import LeadQuality from './components/dashboard/LeadQuality';
@@ -30,7 +30,7 @@ const FunnelDashboardPage = () => {
   const agencyId = currentAgency?.agency_id;
 
   const [timeRange, setTimeRange] = useState('30d');
-  const { data: team = [] } = useAgencyTeam(agencyId);
+  const { data: activeEmployees = [] } = useActiveEmployees(agencyId);
 
   // Fetch metrics
   const { data: metrics, isLoading: metricsLoading, error } = useFunnelMetrics(agencyId, timeRange);
@@ -124,8 +124,8 @@ const FunnelDashboardPage = () => {
               const quotableLeads = Math.round((metrics.totalLeads || 0) * 0.65);
               const quotesPerProducerMonth = 141;
               const producersNeeded = Math.ceil(quotableLeads / quotesPerProducerMonth);
-              const currentProducers = (team || []).filter(
-                m => m.status === 'active' && m.agency_role === 'producer'
+              const currentProducers = activeEmployees.filter(
+                e => e.role_type === 'producer'
               ).length;
 
               return (
