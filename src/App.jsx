@@ -95,6 +95,13 @@ queryClient.getMutationCache().config.onError = (error) => {
 // Homepage — eager (landing page, always needed on first load)
 import InsuranceQuotesPage from './pages/InsuranceQuotesPage';
 
+// Clear chunk-error reload flag synchronously at module load time.
+// Must happen BEFORE lazyWithRetry is defined — if the flag is set from a
+// previous reload and we don't clear it here, lazyWithRetry will see it and
+// re-throw on the next chunk error instead of reloading again.
+// useEffect is too late — lazyWithRetry runs during import, before React mounts.
+try { sessionStorage.removeItem('qs_chunk_error_reloaded'); } catch (_) {}
+
 // Retry wrapper for lazy imports — handles chunk load failures after deploys.
 // On first chunk error: reload the page (new assets will be fetched).
 // On second failure (already reloaded): let ErrorBoundary handle it.
@@ -170,8 +177,6 @@ function App() {
       console.log('[App] Cache was invalidated due to version mismatch');
     }
     persistUtmParams();
-    // Clear chunk-error reload flag on successful load — prevents infinite reload loops
-    sessionStorage.removeItem('qs_chunk_error_reloaded');
   }, []);
 
   return (
