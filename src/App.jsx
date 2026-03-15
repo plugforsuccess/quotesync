@@ -21,7 +21,7 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: 2 * 60 * 1000, // 2 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
-      refetchOnWindowFocus: true,
+      refetchOnWindowFocus: false,  // was true — caused getSession() race on tab focus
       refetchOnReconnect: true,
       retry: (failureCount, error) => {
         // Never retry auth failures — the token is dead, retrying just cascades errors
