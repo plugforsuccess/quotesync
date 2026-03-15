@@ -343,15 +343,15 @@ export const AuthProvider = ({ children }) => {
 
         console.log('[AUTH] state changed', { event, email: session?.user?.email || null });
 
-        if (event === 'SIGNED_IN') {
-          // Full RBAC resolution only on initial sign-in
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          // Full RBAC resolution on sign-in and session restore (e.g. tab regains focus)
           if (!session?.user) return;
           setLoading(true);
           try {
             await fetchUserProfile(session.user);
           } catch (e) {
             if (!isAbortError(e)) {
-              console.error('[AUTHZ] fetchUserProfile failed on sign-in:', e);
+              console.error('[AUTHZ] fetchUserProfile failed on', event, ':', e);
             }
           } finally {
             if (mounted) setLoading(false);
