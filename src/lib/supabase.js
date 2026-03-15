@@ -13,12 +13,22 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const browserStorage = typeof window !== 'undefined' ? window.localStorage : undefined;
 
+// One-time migration: if session was stored under the old custom key, remove it
+// so Supabase re-stores under its default key on next getSession().
+try {
+  const custom = localStorage.getItem('qs_auth_token');
+  if (custom) {
+    localStorage.removeItem('qs_auth_token');
+  }
+} catch (_) {
+  // ignore (SSR / sandboxed iframe)
+}
+
 const createSupabaseClient = () => createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storageKey: 'qs_auth_token',
     storage: browserStorage
   },
   global: {
@@ -43,6 +53,12 @@ export const supabase = globalThis[SUPABASE_SINGLETON_KEY] || createSupabaseClie
 if (!globalThis[SUPABASE_SINGLETON_KEY]) {
   globalThis[SUPABASE_SINGLETON_KEY] = supabase;
 }
+
+// Cross-tab auth coordination channel — used to prevent multi-tab refresh races.
+// When one tab refreshes the token, it broadcasts to others so they don't re-request.
+export const authChannel = typeof BroadcastChannel !== 'undefined'
+  ? new BroadcastChannel('qs_auth')
+  : null;
 
 // Re-authenticate when the tab regains focus.
 // Supabase's autoRefreshToken timer pauses when the tab is backgrounded,
