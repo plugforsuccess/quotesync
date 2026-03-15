@@ -1,17 +1,14 @@
 // src/pages/FunnelDashboardPage.jsx
 // Funnel Performance Dashboard — main page component
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, List, AlertCircle } from 'lucide-react';
+import { BarChart3, List, AlertCircle, Users } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useFunnelMetrics } from '../hooks/useFunnelMetrics';
-import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
 import KPICards from './components/dashboard/KPICards';
 import FunnelDropoff from './components/dashboard/FunnelDropoff';
 import LeadQuality from './components/dashboard/LeadQuality';
-import CapacityPlanner from './components/dashboard/CapacityPlanner';
-import StaffingCapacity from './components/dashboard/StaffingCapacity';
 import PartialRecovery from './components/dashboard/PartialRecovery';
 import PageSpinner from '../components/PageSpinner';
 
@@ -25,144 +22,13 @@ const TIME_RANGES = [
   { key: 'all', label: 'All Time' },
 ];
 
-// ─── localStorage persistence for planner/staffing inputs ─────────────────────
-
-const STORAGE_KEY = 'quotesync_dashboard_inputs';
-
-function loadPersistedInputs() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
-  return null;
-}
-
-function persistInputs(inputs) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(inputs));
-  } catch { /* ignore */ }
-}
-
-// Renewal info — used for first-year projection and commission reference table
-const RENEWAL_INFO = {
-  'Standard Auto': {
-    cycleMonths: 6,
-    renewalRates: null,      // same as new business
-    renewalBase: 9,
-  },
-  'Homeowners / Condo': {
-    cycleMonths: 12,
-    renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 },
-    renewalBase: 7,
-  },
-  'Other Personal Lines': {
-    cycleMonths: 12,
-    renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 },
-    renewalBase: 7,
-  },
-};
-
-const TIER_OPTIONS = [
-  { key: 'preferredBundled', label: 'Preferred Bundled' },
-  { key: 'bundled',          label: 'Bundled' },
-  { key: 'monoline',         label: 'Monoline' },
-];
-
-const DEFAULT_STAFFING = {
-  activeProducers: 1,
-  avgQuoteTime: 45,
-  workingHours: 8,
-  quotingAllocation: 60,
-  qualificationRate: 65,
-  workingDays: 22,
-};
-
 // ─── Page Component ───────────────────────────────────────────────────────────
 
 const FunnelDashboardPage = () => {
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
 
-  // Fetch commission rates from DB (falls back to hardcoded Allstate defaults)
-  const agencyRates = useAgencyCommissionRates(agencyId);
-
   const [timeRange, setTimeRange] = useState('30d');
-
-  // Load persisted inputs or use defaults (with migration from old format)
-  const [plannerInputs, setPlannerInputs] = useState(() => {
-    const saved = loadPersistedInputs();
-    const planner = saved?.planner || {
-      targetSubmissions: 700,
-      avgCPC: 7.0,
-      landingPageConvRate: 20,
-      closeRate: 18,
-    };
-    // Migrate from old single-field format
-    if (!planner.policyMix && planner.avgPremium != null) {
-      planner.policyMix = [{
-        productLine: 'Standard Auto',
-        tier: 'bundled',
-        avgPremium: planner.avgPremium,
-        mixPct: 100,
-      }];
-      delete planner.avgPremium;
-      delete planner.commissionRate;
-    }
-    return planner;
-  });
-
-  // Merge DB-sourced commission config into planner inputs.
-  // Always render with defaults immediately — swap in DB rates when they arrive.
-  const effectivePlanner = useMemo(() => ({
-    ...plannerInputs,
-    policyMix: plannerInputs.policyMix?.length
-      ? plannerInputs.policyMix
-      : agencyRates.policyMix,
-    commissionMatrix: agencyRates.commissionMatrix,
-    baseCommission: agencyRates.baseCommission,
-  }), [plannerInputs, agencyRates]);
-
-  const [staffingInputs, setStaffingInputs] = useState(() => {
-    const saved = loadPersistedInputs();
-    return saved?.staffing || DEFAULT_STAFFING;
-  });
-
-  // Persist inputs on change
-  useEffect(() => {
-    persistInputs({ planner: plannerInputs, staffing: staffingInputs });
-  }, [plannerInputs, staffingInputs]);
-
-  const handlePlannerChange = useCallback((key, value) => {
-    setPlannerInputs(prev => ({ ...prev, [key]: value }));
-  }, []);
-
-  const handleMixChange = useCallback((index, field, value) => {
-    setPlannerInputs(prev => {
-      const updated = [...prev.policyMix];
-      updated[index] = { ...updated[index], [field]: value };
-      return { ...prev, policyMix: updated };
-    });
-  }, []);
-
-  const handleMixAdd = useCallback(() => {
-    setPlannerInputs(prev => ({
-      ...prev,
-      policyMix: [...prev.policyMix, {
-        productLine: 'Standard Auto', tier: 'monoline', avgPremium: 1500, mixPct: 0,
-      }],
-    }));
-  }, []);
-
-  const handleMixRemove = useCallback((index) => {
-    setPlannerInputs(prev => {
-      if (prev.policyMix.length <= 1) return prev;
-      return { ...prev, policyMix: prev.policyMix.filter((_, i) => i !== index) };
-    });
-  }, []);
-
-  const handleStaffingChange = useCallback((key, value) => {
-    setStaffingInputs(prev => ({ ...prev, [key]: value }));
-  }, []);
 
   // Fetch metrics
   const { data: metrics, isLoading: metricsLoading, error } = useFunnelMetrics(agencyId, timeRange);
@@ -251,27 +117,42 @@ const FunnelDashboardPage = () => {
             {/* Section 3: Lead Quality & Scoring */}
             <LeadQuality quality={metrics.quality} channels={metrics.channels} />
 
-            {/* Section 4: Capacity Planning */}
-            <CapacityPlanner
-              kpis={metrics.kpis}
-              plannerInputs={effectivePlanner}
-              onInputChange={handlePlannerChange}
-              onMixChange={handleMixChange}
-              onMixAdd={handleMixAdd}
-              onMixRemove={handleMixRemove}
-              tierOptions={TIER_OPTIONS}
-              productLines={Object.keys(agencyRates.commissionMatrix)}
-              renewalInfo={RENEWAL_INFO}
-            />
+            {/* Staffing Summary — links to CS Performance > Capacity tab */}
+            {(() => {
+              const quotableLeads = Math.round((metrics.totalLeads || 0) * 0.65);
+              const quotesPerProducerMonth = 141;
+              const producersNeeded = Math.ceil(quotableLeads / quotesPerProducerMonth);
+              const currentProducers = 2;
 
-            {/* Section 5: Staffing & Quoting Capacity */}
-            <StaffingCapacity
-              staffingInputs={staffingInputs}
-              onStaffingChange={handleStaffingChange}
-              plannerInputs={effectivePlanner}
-            />
+              return (
+                <div className="bg-white rounded-lg shadow-sm p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-primary-50 rounded-lg">
+                      <Users className="w-5 h-5 text-primary-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Staffing Capacity</p>
+                      <p className="text-sm text-gray-500">
+                        {producersNeeded} producer{producersNeeded !== 1 ? 's' : ''} needed
+                        {' '}&middot; {currentProducers} active
+                        {producersNeeded > currentProducers
+                          ? <span className="text-red-600 font-medium"> &middot; Gap: -{producersNeeded - currentProducers}</span>
+                          : <span className="text-green-600 font-medium"> &middot; Comfortable</span>
+                        }
+                      </p>
+                    </div>
+                  </div>
+                  <Link
+                    to="/admin/cs-performance"
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
+                  >
+                    View Capacity &rarr;
+                  </Link>
+                </div>
+              );
+            })()}
 
-            {/* Section 6: Partial Lead Recovery */}
+            {/* Section 4: Partial Lead Recovery */}
             <PartialRecovery partials={metrics.partials} />
           </div>
         )}
