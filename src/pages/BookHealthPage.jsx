@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LineChart, ReferenceLine, Cell } from "recharts";
 import * as XLSX from "xlsx";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
 
@@ -833,61 +834,34 @@ function AttritionTab({ agencyId, currentUserId }) {
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitMsg, setCommitMsg] = useState("");
   const [parseError, setParseError] = useState("");
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Monthly summary data
-  const [monthlySummary, setMonthlySummary] = useState([]); // [{report_month, items, points, premium}]
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const lapseFileRef = useRef();
-  const mountId = useRef(0);
 
-  // Load monthly summary on mount and after each commit
-  useEffect(() => {
-    // Increment on every mount so the effect always re-runs even if agencyId
-    // hasn't changed (e.g. after external data truncation or tab switch)
-    mountId.current += 1;
-    const thisMount = mountId.current;
+  // Monthly summary data — React Query cache survives unmount/remount
+  const { data: monthlySummary = [], isLoading: loading } = useQuery({
+    queryKey: ["lapse_events_summary", agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("lapse_events")
+        .select("report_month, product, premium, item_count")
+        .eq("agency_id", agencyId)
+        .order("report_month", { ascending: false });
 
-    if (!agencyId) return;
+      if (error) throw error;
 
-    setMonthlySummary([]); // clear immediately so stale rows aren't visible during fetch
-    setLoading(true);
-
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("lapse_events")
-          .select("report_month, product, premium, item_count")
-          .eq("agency_id", agencyId)
-          .order("report_month", { ascending: false });
-
-        // Bail if a newer mount has already taken over
-        if (thisMount !== mountId.current) return;
-
-        if (error) {
-          console.error("[attrition fetch error]", error.message);
-          setMonthlySummary([]);
-        } else if (data) {
-          const byMonth = {};
-          data.forEach(r => {
-            const m = r.report_month;
-            if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
-            byMonth[m].items += r.item_count ?? 1;
-            byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
-            byMonth[m].premium += r.premium ?? 0;
-          });
-          setMonthlySummary(Object.values(byMonth).sort((a, b) => b.report_month.localeCompare(a.report_month)));
-        } else {
-          setMonthlySummary([]);
-        }
-      } catch (err) {
-        console.error("[attrition fetch error]", err);
-        if (thisMount === mountId.current) setMonthlySummary([]);
-      } finally {
-        if (thisMount === mountId.current) setLoading(false);
-      }
-    })();
-  }, [agencyId, refreshKey]); // refreshKey still triggers re-fetch after commit
+      const byMonth = {};
+      (data ?? []).forEach(r => {
+        const m = r.report_month;
+        if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
+        byMonth[m].items += r.item_count ?? 1;
+        byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+        byMonth[m].premium += r.premium ?? 0;
+      });
+      return Object.values(byMonth).sort((a, b) => b.report_month.localeCompare(a.report_month));
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   async function handleFileSelect(e) {
     const file = e.target.files?.[0];
@@ -965,7 +939,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       setCommitMsg(msg);
       setParsedRows(null);
       setLapseFile(null);
-      setRefreshKey(k => k + 1);
+      queryClient.invalidateQueries({ queryKey: ["lapse_events_summary", agencyId] });
     } catch (err) {
       console.error("[attrition commit error]", err.message);
       setParseError(`❌ ${friendlyUploadError(err.message)}`);
@@ -1175,15 +1149,9 @@ const MONTH_NAMES = ["January","February","March","April","May","June","July","A
 const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 function NetGrowthTab({ agencyId }) {
-  const [months, setMonths] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!agencyId) return;
-    let cancelled = false;
-
-    (async () => {
-      setLoading(true);
+  const { data: months = [], isLoading: loading } = useQuery({
+    queryKey: ["net_growth", agencyId],
+    queryFn: async () => {
       const [{ data: nbRows }, { data: lapseRows }] = await Promise.all([
         supabase
           .from("revenue_entries")
@@ -1196,8 +1164,6 @@ function NetGrowthTab({ agencyId }) {
           .eq("agency_id", agencyId),
       ]);
 
-      if (cancelled) return;
-
       const monthMap = {};
       const ensure = (m) => {
         if (!monthMap[m]) monthMap[m] = {
@@ -1207,7 +1173,7 @@ function NetGrowthTab({ agencyId }) {
         };
       };
 
-      nbRows?.forEach(r => {
+      (nbRows ?? []).forEach(r => {
         const m = r.issued_date?.slice(0, 7);
         if (!m) return;
         ensure(m);
@@ -1217,7 +1183,7 @@ function NetGrowthTab({ agencyId }) {
         monthMap[m].nb_premium  += r.premium ?? 0;
       });
 
-      lapseRows?.forEach(r => {
+      (lapseRows ?? []).forEach(r => {
         const m = r.report_month?.slice(0, 7);
         if (!m) return;
         ensure(m);
@@ -1227,16 +1193,13 @@ function NetGrowthTab({ agencyId }) {
         monthMap[m].lapse_premium  += r.premium ?? 0;
       });
 
-      const sorted = Object.values(monthMap)
+      return Object.values(monthMap)
         .map(m => ({ ...m, net_points: m.nb_points - m.lapse_points }))
         .sort((a, b) => a.month.localeCompare(b.month));
-
-      setMonths(sorted);
-      setLoading(false);
-    })();
-
-    return () => { cancelled = true; };
-  }, [agencyId]);
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   if (loading) {
     return <div style={{ color: "#64748B", fontSize: 13, textAlign: "center", padding: "40px 0" }}>Loading…</div>;
@@ -1463,8 +1426,7 @@ function NetGrowthTab({ agencyId }) {
 export default function BookHealthPage() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
-  const [events, setEvents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("triage");
   const [statusFilter, setStatusFilter] = useState("active");
   const [sortCol, setSortCol] = useState("cancel_effective_date");
@@ -1478,22 +1440,26 @@ export default function BookHealthPage() {
   const [isCommitting, setIsCommitting] = useState(false);
   const fileInputRef = useRef(null);
   const hasFlaggedBroken = useRef(false);
-  const [producers, setProducers] = useState([]);
   const [currentUserId, setCurrentUserId] = useState(null);
 
-  const loadEvents = useCallback(async () => {
-    if (!agencyId) return;
-    setLoading(true);
-    const { data, error } = await supabase
-      .from("pending_cancel_events")
-      .select("*")
-      .eq("agency_id", agencyId)
-      .order("cancel_effective_date", { ascending: true });
-    if (!error) setEvents(data ?? []);
-    setLoading(false);
-  }, [agencyId]);
+  const { data: events = [], isLoading: loading } = useQuery({
+    queryKey: ["pending_cancel_events", agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pending_cancel_events")
+        .select("*")
+        .eq("agency_id", agencyId)
+        .order("cancel_effective_date", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  useEffect(() => { loadEvents(); }, [loadEvents]);
+  const loadEvents = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["pending_cancel_events", agencyId] });
+  }, [queryClient, agencyId]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
@@ -1501,19 +1467,22 @@ export default function BookHealthPage() {
 
   // ─── Load producers for bulk assign ────────────────────────────────────────
 
-  useEffect(() => {
-    if (!agencyId) return;
-    (async () => {
-      const { data } = await supabase
+  const { data: producers = [] } = useQuery({
+    queryKey: ["producers", agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
         .from("employees")
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
         .eq("role_type", "service")
         .order("last_name");
-      if (data) setProducers(data);
-    })();
-  }, [agencyId]);
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   // ─── Promise-Broken Auto-Flag ──────────────────────────────────────────────
 
@@ -1730,7 +1699,9 @@ export default function BookHealthPage() {
       .update(updates)
       .eq("id", id);
     if (!error) {
-      setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+      queryClient.setQueryData(["pending_cancel_events", agencyId], (prev) =>
+        (prev ?? []).map(e => e.id === id ? { ...e, ...updates } : e)
+      );
       if (selectedEvent?.id === id) setSelectedEvent(prev => ({ ...prev, ...updates }));
     }
     return error;

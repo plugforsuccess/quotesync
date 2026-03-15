@@ -1,47 +1,55 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 
+function mapRow(r) {
+  return {
+    id:           r.id,
+    date:         r.issued_date,   // internal alias — all downstream logic uses e.date
+    issuedDate:   r.issued_date,
+    product:      r.product,
+    tier:         r.tier ?? "monoline",
+    premium:      parseFloat(r.premium),
+    policyCount:  r.policy_count,
+    itemCount:    r.item_count ?? 1,
+    policyNo:     r.policy_no ?? null,
+    bindId:       r.bind_id ?? null,
+    producerName: r.producer_name ?? null,
+    producerId:   r.producer_id ?? null,
+    customerName: r.customer_name ?? null,
+    source:       r.source,
+    note:         r.note ?? "",
+  };
+}
+
 export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState(null);
+  const queryClient = useQueryClient();
+  const rangeStartStr = rangeStart.toISOString().slice(0, 10);
+  const rangeEndStr   = rangeEnd.toISOString().slice(0, 10);
 
-  const fetch = useCallback(async () => {
-    if (!agencyId) return;
-    setLoading(true);
-    setError(null);
-    const { data, error } = await supabase
-      .from("revenue_entries")
-      .select("*")
-      .eq("agency_id", agencyId)
-      .gte("issued_date", rangeStart.toISOString().slice(0, 10))
-      .lte("issued_date", rangeEnd.toISOString().slice(0, 10))
-      .order("issued_date", { ascending: false });
+  const { data: entries = [], isLoading: loading, error: queryError } = useQuery({
+    queryKey: ["revenue_entries", agencyId, rangeStartStr, rangeEndStr],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("revenue_entries")
+        .select("*")
+        .eq("agency_id", agencyId)
+        .gte("issued_date", rangeStartStr)
+        .lte("issued_date", rangeEndStr)
+        .order("issued_date", { ascending: false });
 
-    if (error) setError(error.message);
-    else setEntries(
-      (data ?? []).map(r => ({
-        id:           r.id,
-        date:         r.issued_date,   // internal alias — all downstream logic uses e.date
-        issuedDate:   r.issued_date,
-        product:      r.product,
-        tier:         r.tier ?? "monoline",
-        premium:      parseFloat(r.premium),
-        policyCount:  r.policy_count,
-        itemCount:    r.item_count ?? 1,
-        policyNo:     r.policy_no ?? null,
-        bindId:       r.bind_id ?? null,
-        producerName: r.producer_name ?? null,
-        producerId:   r.producer_id ?? null,
-        customerName: r.customer_name ?? null,
-        source:       r.source,
-        note:         r.note ?? "",
-      }))
-    );
-    setLoading(false);
-  }, [agencyId, rangeStart, rangeEnd]);
+      if (error) throw error;
+      return (data ?? []).map(mapRow);
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  useEffect(() => { fetch(); }, [fetch]);
+  const error = queryError?.message ?? null;
+
+  const invalidate = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["revenue_entries", agencyId] });
+  }, [queryClient, agencyId]);
 
   const addEntry = async (entry) => {
     const { data, error } = await supabase
@@ -64,22 +72,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
       .single();
 
     if (error) return { error: error.message };
-    setEntries(prev => [{
-      id:           data.id,
-      date:         data.issued_date,
-      issuedDate:   data.issued_date,
-      product:      data.product,
-      tier:         data.tier ?? "monoline",
-      premium:      parseFloat(data.premium),
-      policyCount:  data.policy_count,
-      itemCount:    data.item_count ?? 1,
-      policyNo:     data.policy_no ?? null,
-      bindId:       data.bind_id ?? null,
-      producerName: data.producer_name ?? null,
-      customerName: data.customer_name ?? null,
-      source:       data.source,
-      note:         data.note ?? "",
-    }, ...prev]);
+    invalidate();
     return { error: null };
   };
 
@@ -139,7 +132,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
       totalCount += data.length;
     }
 
-    await fetch();
+    invalidate();
     return { count: totalCount, error: null };
   };
 
@@ -149,8 +142,13 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
       .delete()
       .eq("id", id);
 
-    if (!error) setEntries(prev => prev.filter(e => e.id !== id));
+    if (!error) {
+      queryClient.setQueryData(
+        ["revenue_entries", agencyId, rangeStartStr, rangeEndStr],
+        (prev) => (prev ?? []).filter(e => e.id !== id)
+      );
+    }
   };
 
-  return { entries, loading, error, addEntry, addEntries, deleteEntry, refetch: fetch };
+  return { entries, loading, error, addEntry, addEntries, deleteEntry, refetch: invalidate };
 }
