@@ -351,6 +351,42 @@ export const AuthProvider = ({ children }) => {
             },
             staleTime: 10 * 60 * 1000,
           }),
+
+          // ytd_blended — Staffing Capacity scenarios (blended avg premium + commission rate)
+          queryClient.prefetchQuery({
+            queryKey: ['ytd_blended', resolvedAgencyId, today.getFullYear()],
+            queryFn: async () => {
+              const { data, error } = await supabase
+                .from('revenue_entries')
+                .select('premium, product, tier, policy_count')
+                .eq('agency_id', resolvedAgencyId)
+                .gte('issued_date', yearStart)
+                .lte('issued_date', yearEnd);
+              if (error || !data || data.length === 0) return null;
+              // Mirror calcCommission from useYTDBlended
+              const CF = { auto: 0.998, specialty_auto: 0.998, ho: 0.935, condo: 0.959, renters: 1.0, landlord: 1.0, pup: 1.0, manufactured: 1.0, boat: 1.0, motor_club: 1.0, other: 1.0 };
+              const CR = { auto: { preferred: 0.25, bundled: 0.20, monoline: 0.15 }, ho: { preferred: 0.29, bundled: 0.25, monoline: 0.16 }, renters: { preferred: 0.26, bundled: 0.21, monoline: 0.15 }, other: { preferred: 0.26, bundled: 0.21, monoline: 0.15 } };
+              let totalPremium = 0, totalCommission = 0, totalPolicies = 0;
+              for (const e of data) {
+                const prem = parseFloat(e.premium) || 0;
+                const policies = e.policy_count || 1;
+                const rates = CR[e.product] ?? CR.other;
+                const factor = CF[e.product] ?? 1.0;
+                const tier = e.tier ?? 'monoline';
+                totalPremium += prem;
+                totalCommission += prem * factor * (rates[tier] ?? rates.monoline);
+                totalPolicies += policies;
+              }
+              if (totalPolicies === 0 || totalPremium === 0) return null;
+              return {
+                avgPremiumPerPolicy: totalPremium / totalPolicies,
+                avgCommissionPerPolicy: totalCommission / totalPolicies,
+                blendedCommissionRate: totalCommission / totalPremium,
+                totalPolicies, totalPremium, totalCommission,
+              };
+            },
+            staleTime: 5 * 60 * 1000,
+          }),
         ]).catch(() => {}); // prefetch failures are non-fatal — pages will fetch on demand
       }
 

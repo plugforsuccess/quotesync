@@ -42,6 +42,7 @@ import CallLogTable from './components/time-attendance/CallLogTable';
 import AgentAliasManager from './components/time-attendance/AgentAliasManager';
 import CapacityPlanner from './components/dashboard/CapacityPlanner';
 import StaffingCapacity from './components/dashboard/StaffingCapacity';
+import { useYTDBlended } from '../hooks/useYTDBlended';
 import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
 import PageSpinner from '../components/PageSpinner';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
@@ -158,6 +159,7 @@ const CSPerformancePage = () => {
   // ── Capacity tab state ──────────────────────────────────────────────────────
 
   const agencyRates = useAgencyCommissionRates(currentAgencyId);
+  const { data: ytdBlended } = useYTDBlended(currentAgencyId);
 
   const [plannerInputs, setPlannerInputs] = useState(() => {
     try {
@@ -647,6 +649,8 @@ const CSPerformancePage = () => {
               staffingInputs={staffingInputs}
               onStaffingChange={handleStaffingChange}
               plannerInputs={effectivePlanner}
+              ytdAvgPremium={ytdBlended?.avgPremiumPerPolicy}
+              ytdCommissionRate={ytdBlended ? ytdBlended.blendedCommissionRate * 100 : undefined}
             />
           </div>
         ) : activeTab === 'team' ? (
