@@ -5,7 +5,7 @@
 
 import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Users, Plus, RefreshCw, AlertCircle, Edit2, UserX, ShieldCheck, BarChart3 } from 'lucide-react';
+import { Users, Plus, RefreshCw, ShieldOff, AlertCircle, Edit2, UserX, ShieldCheck, BarChart3 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import {
@@ -152,9 +152,9 @@ const EmployeeRosterPage = () => {
 
   if (!platform.isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
           <p className="text-gray-600">You do not have permission to view this page.</p>
         </div>

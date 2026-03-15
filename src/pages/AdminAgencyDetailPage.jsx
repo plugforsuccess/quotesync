@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Building2, CheckCircle, XCircle, Ban, Clock, Plus, Trash2,
-  MapPin, Users, FileText, History, Save, AlertCircle, UserPlus
+  MapPin, Users, FileText, History, Save, ShieldOff, UserPlus
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageSpinner from '../components/PageSpinner';
@@ -75,9 +75,9 @@ const AdminAgencyDetailPage = () => {
 
   if (userRole !== 'admin') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
           <p className="text-gray-600">You do not have permission to view this page.</p>
         </div>
