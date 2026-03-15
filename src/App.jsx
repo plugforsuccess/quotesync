@@ -95,43 +95,68 @@ queryClient.getMutationCache().config.onError = (error) => {
 // Homepage — eager (landing page, always needed on first load)
 import InsuranceQuotesPage from './pages/InsuranceQuotesPage';
 
+// Retry wrapper for lazy imports — handles chunk load failures after deploys.
+// On first chunk error: reload the page (new assets will be fetched).
+// On second failure (already reloaded): let ErrorBoundary handle it.
+function lazyWithRetry(importFn) {
+  return lazy(() =>
+    importFn().catch((err) => {
+      const isChunkError =
+        err?.message?.includes('Failed to fetch dynamically imported module') ||
+        err?.message?.includes('Importing a module script failed') ||
+        err?.name === 'ChunkLoadError';
+
+      if (isChunkError) {
+        const reloadKey = 'qs_chunk_error_reloaded';
+        if (!sessionStorage.getItem(reloadKey)) {
+          sessionStorage.setItem(reloadKey, '1');
+          window.location.reload();
+          // Return a never-resolving promise — reload is in progress
+          return new Promise(() => {});
+        }
+      }
+      throw err; // not a chunk error, or already reloaded — let ErrorBoundary handle it
+    })
+  );
+}
+
 // All other pages — lazy loaded for code splitting
-const ThankYouPage = lazy(() => import('./pages/ThankYouPage'));
-const DriversEdPage = lazy(() => import('./pages/DriversEdPage'));
-const StorePage = lazy(() => import('./pages/StorePage'));
-const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage'));
-const PurchaseSuccessPage = lazy(() => import('./pages/PurchaseSuccessPage'));
-const PrivacyPage = lazy(() => import('./pages/PrivacyPage'));
-const TermsPage = lazy(() => import('./pages/TermsPage'));
-const NewsroomPage = lazy(() => import('./pages/NewsroomPage'));
-const StoryDetailPage = lazy(() => import('./pages/StoryDetailPage'));
-const LoginPage = lazy(() => import('./pages/LoginPage'));
-const PunchPage = lazy(() => import('./pages/PunchPage'));
-const SaveWizardPage = lazy(() => import('./pages/SaveWizardPage'));
-const SaveConfirmationPage = lazy(() => import('./pages/SaveConfirmationPage'));
-const AgencyApplyPage = lazy(() => import('./pages/AgencyApplyPage'));
+const ThankYouPage = lazyWithRetry(() => import('./pages/ThankYouPage'));
+const DriversEdPage = lazyWithRetry(() => import('./pages/DriversEdPage'));
+const StorePage = lazyWithRetry(() => import('./pages/StorePage'));
+const ProductDetailPage = lazyWithRetry(() => import('./pages/ProductDetailPage'));
+const PurchaseSuccessPage = lazyWithRetry(() => import('./pages/PurchaseSuccessPage'));
+const PrivacyPage = lazyWithRetry(() => import('./pages/PrivacyPage'));
+const TermsPage = lazyWithRetry(() => import('./pages/TermsPage'));
+const NewsroomPage = lazyWithRetry(() => import('./pages/NewsroomPage'));
+const StoryDetailPage = lazyWithRetry(() => import('./pages/StoryDetailPage'));
+const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
+const PunchPage = lazyWithRetry(() => import('./pages/PunchPage'));
+const SaveWizardPage = lazyWithRetry(() => import('./pages/SaveWizardPage'));
+const SaveConfirmationPage = lazyWithRetry(() => import('./pages/SaveConfirmationPage'));
+const AgencyApplyPage = lazyWithRetry(() => import('./pages/AgencyApplyPage'));
 
 // Admin & agency pages — lazy loaded
-const NewsroomDashboardPage = lazy(() => import('./pages/NewsroomDashboardPage'));
-const NewsroomEditorPage = lazy(() => import('./pages/NewsroomEditorPage'));
-const ArchivedStoriesPage = lazy(() => import('./pages/ArchivedStoriesPage'));
-const StoryPreviewPage = lazy(() => import('./pages/StoryPreviewPage'));
-const EditorialStandardsPage = lazy(() => import('./pages/EditorialStandardsPage'));
-const AdminAgenciesPage = lazy(() => import('./pages/AdminAgenciesPage'));
-const AdminAgencyDetailPage = lazy(() => import('./pages/AdminAgencyDetailPage'));
-const AdminAuditPage = lazy(() => import('./pages/AdminAuditPage'));
-const AdminTimeAttendancePage = lazy(() => import('./pages/AdminTimeAttendancePage'));
-const CSPerformancePage = lazy(() => import('./pages/CSPerformancePage'));
-const AgencyLeadsPage = lazy(() => import('./pages/AgencyLeadsPage'));
-const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
-const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
-const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
-const AgencySetupPage = lazy(() => import('./pages/AgencySetupPage'));
-const AgencyTeamPage = lazy(() => import('./pages/AgencyTeamPage'));
-const EmployeeRosterPage = lazy(() => import('./pages/EmployeeRosterPage'));
-const RevenueProjectionsDashboard = lazy(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
-const BookHealthPage = lazy(() => import('./pages/BookHealthPage'));
-const ProducerCompModelPage = lazy(() => import('./pages/ProducerCompModelPage'));
+const NewsroomDashboardPage = lazyWithRetry(() => import('./pages/NewsroomDashboardPage'));
+const NewsroomEditorPage = lazyWithRetry(() => import('./pages/NewsroomEditorPage'));
+const ArchivedStoriesPage = lazyWithRetry(() => import('./pages/ArchivedStoriesPage'));
+const StoryPreviewPage = lazyWithRetry(() => import('./pages/StoryPreviewPage'));
+const EditorialStandardsPage = lazyWithRetry(() => import('./pages/EditorialStandardsPage'));
+const AdminAgenciesPage = lazyWithRetry(() => import('./pages/AdminAgenciesPage'));
+const AdminAgencyDetailPage = lazyWithRetry(() => import('./pages/AdminAgencyDetailPage'));
+const AdminAuditPage = lazyWithRetry(() => import('./pages/AdminAuditPage'));
+const AdminTimeAttendancePage = lazyWithRetry(() => import('./pages/AdminTimeAttendancePage'));
+const CSPerformancePage = lazyWithRetry(() => import('./pages/CSPerformancePage'));
+const AgencyLeadsPage = lazyWithRetry(() => import('./pages/AgencyLeadsPage'));
+const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage'));
+const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
+const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
+const AgencySetupPage = lazyWithRetry(() => import('./pages/AgencySetupPage'));
+const AgencyTeamPage = lazyWithRetry(() => import('./pages/AgencyTeamPage'));
+const EmployeeRosterPage = lazyWithRetry(() => import('./pages/EmployeeRosterPage'));
+const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
+const BookHealthPage = lazyWithRetry(() => import('./pages/BookHealthPage'));
+const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
 
 // Loading fallback component
 const PageLoader = () => <PageSpinner />;
@@ -145,6 +170,8 @@ function App() {
       console.log('[App] Cache was invalidated due to version mismatch');
     }
     persistUtmParams();
+    // Clear chunk-error reload flag on successful load — prevents infinite reload loops
+    sessionStorage.removeItem('qs_chunk_error_reloaded');
   }, []);
 
   return (
@@ -155,10 +182,10 @@ function App() {
             <ScrollToTop />
             <Routes>
           {/* Admin login page (no layout) - obscured path for security */}
-          <Route path="/admin-access-8by2X" element={<Suspense fallback={<PageLoader />}><LoginPage /></Suspense>} />
+          <Route path="/admin-access-8by2X" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><LoginPage /></Suspense></ErrorBoundary>} />
 
           {/* Employee punch clock — public, no auth required */}
-          <Route path="/punch" element={<Suspense fallback={<PageLoader />}><PunchPage /></Suspense>} />
+          <Route path="/punch" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PunchPage /></Suspense></ErrorBoundary>} />
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}
           <Route path="/" element={<Layout />}>
@@ -167,23 +194,25 @@ function App() {
             <Route path="quotes" element={<InsuranceQuotesPage />} />
 
             {/* Drivers Ed tab */}
-            <Route path="courses" element={<Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense>} />
+            <Route path="courses" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
 
             {/* Keep your old route working too if it's already linked */}
-            <Route path="defensive-driving" element={<Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense>} />
+            <Route path="defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
 
             {/* Newsroom - Insurance News Feed */}
-            <Route path="news" element={<Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense>} />
-            <Route path="news/:slug" element={<Suspense fallback={<PageLoader />}><StoryDetailPage /></Suspense>} />
+            <Route path="news" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense></ErrorBoundary>} />
+            <Route path="news/:slug" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><StoryDetailPage /></Suspense></ErrorBoundary>} />
 
             {/* Story Preview (Protected - Editor/Admin only) */}
             <Route
               path="news/preview/:id"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <StoryPreviewPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <StoryPreviewPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -193,9 +222,11 @@ function App() {
               path="news/dashboard"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <NewsroomDashboardPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <NewsroomDashboardPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -227,9 +258,11 @@ function App() {
               path="news/archived"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <ArchivedStoriesPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <ArchivedStoriesPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -237,41 +270,45 @@ function App() {
               path="news/standards"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <EditorialStandardsPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <EditorialStandardsPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
 
             {/* Online Store */}
-            <Route path="store" element={<Suspense fallback={<PageLoader />}><StorePage /></Suspense>} />
-            <Route path="store/:slug" element={<Suspense fallback={<PageLoader />}><ProductDetailPage /></Suspense>} />
-            <Route path="store/purchase-success" element={<Suspense fallback={<PageLoader />}><PurchaseSuccessPage /></Suspense>} />
+            <Route path="store" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><StorePage /></Suspense></ErrorBoundary>} />
+            <Route path="store/:slug" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ProductDetailPage /></Suspense></ErrorBoundary>} />
+            <Route path="store/purchase-success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PurchaseSuccessPage /></Suspense></ErrorBoundary>} />
 
             {/* Lead generation funnel — V2 single-question wizard */}
-            <Route path="save" element={<Suspense fallback={<PageLoader />}><SaveWizardPage /></Suspense>} />
+            <Route path="save" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><SaveWizardPage /></Suspense></ErrorBoundary>} />
             <Route path="save/details" element={<Navigate to="/save" replace />} />
-            <Route path="save/confirmation" element={<Suspense fallback={<PageLoader />}><SaveConfirmationPage /></Suspense>} />
+            <Route path="save/confirmation" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><SaveConfirmationPage /></Suspense></ErrorBoundary>} />
 
             {/* Thank you page (after form / Canopy redirect) */}
-            <Route path="success" element={<Suspense fallback={<PageLoader />}><ThankYouPage /></Suspense>} />
+            <Route path="success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ThankYouPage /></Suspense></ErrorBoundary>} />
 
             {/* Privacy Policy and Terms of Service */}
-            <Route path="privacy" element={<Suspense fallback={<PageLoader />}><PrivacyPage /></Suspense>} />
-            <Route path="terms" element={<Suspense fallback={<PageLoader />}><TermsPage /></Suspense>} />
+            <Route path="privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PrivacyPage /></Suspense></ErrorBoundary>} />
+            <Route path="terms" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><TermsPage /></Suspense></ErrorBoundary>} />
 
             {/* Agency Partnership - Public Application */}
-            <Route path="partners/apply" element={<Suspense fallback={<PageLoader />}><AgencyApplyPage /></Suspense>} />
+            <Route path="partners/apply" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><AgencyApplyPage /></Suspense></ErrorBoundary>} />
 
             {/* Agency Funnel Dashboard (Protected for agency users) */}
             <Route
               path="agency/dashboard"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <FunnelDashboardPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <FunnelDashboardPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -281,9 +318,11 @@ function App() {
               path="agency/leads"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <AgencyLeadsPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AgencyLeadsPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -291,9 +330,11 @@ function App() {
               path="agency/leads/:id"
               element={
                 <ProtectedRoute requiredRole="editor">
-                  <Suspense fallback={<PageLoader />}>
-                    <AgencyLeadDetailPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AgencyLeadDetailPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -303,9 +344,11 @@ function App() {
               path="agency/settings"
               element={
                 <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
-                  <Suspense fallback={<PageLoader />}>
-                    <AgencySettingsPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AgencySettingsPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -315,9 +358,11 @@ function App() {
               path="agency/setup"
               element={
                 <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
-                  <Suspense fallback={<PageLoader />}>
-                    <AgencySetupPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AgencySetupPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -327,9 +372,11 @@ function App() {
               path="agency/team"
               element={
                 <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
-                  <Suspense fallback={<PageLoader />}>
-                    <AgencyTeamPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AgencyTeamPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -339,9 +386,11 @@ function App() {
               path="admin/agencies"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <AdminAgenciesPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminAgenciesPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -349,9 +398,11 @@ function App() {
               path="admin/agencies/:id"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <AdminAgencyDetailPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminAgencyDetailPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -361,9 +412,11 @@ function App() {
               path="admin/agency/employees"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <EmployeeRosterPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <EmployeeRosterPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -373,9 +426,11 @@ function App() {
               path="admin/audit"
               element={
                 <ProtectedRoute requiredRole="admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <AdminAuditPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminAuditPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -385,9 +440,11 @@ function App() {
               path="admin/time-attendance"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <AdminTimeAttendancePage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AdminTimeAttendancePage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -411,9 +468,11 @@ function App() {
               path="admin/revenue-projections"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <Suspense fallback={<PageLoader />}>
-                    <RevenueProjectionsDashboard />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <RevenueProjectionsDashboard />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
@@ -423,9 +482,11 @@ function App() {
               path="admin/producers/:employeeId/comp-model"
               element={
                 <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
-                  <Suspense fallback={<PageLoader />}>
-                    <ProducerCompModelPage />
-                  </Suspense>
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <ProducerCompModelPage />
+                    </Suspense>
+                  </ErrorBoundary>
                 </ProtectedRoute>
               }
             />
