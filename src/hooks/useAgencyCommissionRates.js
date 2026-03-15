@@ -104,10 +104,12 @@ export function useAgencyCommissionRates(agencyId) {
     };
   }
 
+  // No agencyId = platform user (or agency still resolving) — defaults are always
+  // available, so report isLoaded: true immediately so the dashboard renders.
   return {
     commissionMatrix: DEFAULT_COMMISSION_MATRIX,
     baseCommission,
     policyMix: DEFAULT_POLICY_MIX,
-    isLoaded: !agencyId || (rates !== undefined),
+    isLoaded: true,
   };
 }
