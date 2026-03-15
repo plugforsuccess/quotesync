@@ -18,6 +18,7 @@ const createSupabaseClient = () => createClient(supabaseUrl || '', supabaseAnonK
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    storageKey: 'qs_auth_token',
     storage: browserStorage
   },
   global: {
