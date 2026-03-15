@@ -34,7 +34,13 @@ function OutputRow({ label, value, color }) {
   );
 }
 
-export default function StaffingCapacity({ staffingInputs, onStaffingChange, plannerInputs }) {
+export default function StaffingCapacity({
+  staffingInputs,
+  onStaffingChange,
+  plannerInputs,
+  ytdAvgPremium,       // from useYTDBlended — overrides planner default when set
+  ytdCommissionRate,   // from useYTDBlended — overrides planner default when set
+}) {
   const {
     activeProducers, avgQuoteTime, workingHours,
     quotingAllocation, qualificationRate, workingDays,
@@ -43,10 +49,14 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
   const { targetSubmissions, closeRate, policyMix, commissionMatrix, baseCommission } = plannerInputs;
 
   // Derive blended avgPremium and commissionRate from policy mix
-  const { avgPremium, commissionRate } = useMemo(
+  const { avgPremium: plannerAvgPremium, commissionRate: plannerCommissionRate } = useMemo(
     () => getBlendedValues(policyMix, commissionMatrix, baseCommission),
     [policyMix, commissionMatrix, baseCommission]
   );
+
+  // Use YTD actuals when available, fall back to planner hypotheticals
+  const avgPremium     = ytdAvgPremium     ?? plannerAvgPremium;
+  const commissionRate = ytdCommissionRate ?? plannerCommissionRate;
 
   // Computed outputs
   const outputs = useMemo(() => {
@@ -210,7 +220,12 @@ export default function StaffingCapacity({ staffingInputs, onStaffingChange, pla
 
       {/* Row 3: Staffing Scenarios Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Staffing Scenarios</h3>
+        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Staffing Scenarios</h3>
+        <p className="text-xs text-gray-400 mb-3">
+          {ytdAvgPremium
+            ? `Using YTD actuals: $${Math.round(ytdAvgPremium).toLocaleString()} avg premium · ${ytdCommissionRate.toFixed(1)}% blended rate`
+            : 'Using planner estimates — add revenue entries for actual rates'}
+        </p>
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
