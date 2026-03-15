@@ -106,6 +106,8 @@ const AgencyLeadsPage = lazy(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazy(() => import('./pages/AgencyLeadDetailPage'));
 const FunnelDashboardPage = lazy(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazy(() => import('./pages/AgencySettingsPage'));
+const AgencySetupPage = lazy(() => import('./pages/AgencySetupPage'));
+const AgencyTeamPage = lazy(() => import('./pages/AgencyTeamPage'));
 const EmployeeRosterPage = lazy(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazy(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
 const BookHealthPage = lazy(() => import('./pages/BookHealthPage'));
@@ -283,6 +285,30 @@ function App() {
                 <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
                   <Suspense fallback={<PageLoader />}>
                     <AgencySettingsPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Agency Setup / Onboarding (agent only) */}
+            <Route
+              path="agency/setup"
+              element={
+                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                  <Suspense fallback={<PageLoader />}>
+                    <AgencySetupPage />
+                  </Suspense>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Agency Team Management (agent only) */}
+            <Route
+              path="agency/team"
+              element={
+                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                  <Suspense fallback={<PageLoader />}>
+                    <AgencyTeamPage />
                   </Suspense>
                 </ProtectedRoute>
               }

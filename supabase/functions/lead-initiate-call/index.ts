@@ -68,10 +68,10 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Validate required env vars
+  // Validate required env vars (AGENT_PHONE_NUMBER is now optional — falls back gracefully per-agency)
   const missingVar = checkRequiredEnvVars([
     'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
-    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER', 'AGENT_PHONE_NUMBER',
+    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER',
   ])
   if (missingVar) {
     console.error(`[LEAD_INITIATE_CALL] Missing required env var: ${missingVar}`)
@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
   const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
   const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN')!
   const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
-  const ENV_AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
+  const ENV_AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER') || ''
 
   try {
     // Claim pending rows where fire_after <= now() (concurrency guard)
@@ -127,13 +127,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch agency Twilio configs
+    // Fetch agency Twilio configs and branding
     const agencyIds = [...new Set(Object.values(leadAgencyMap))]
-    const agencyMap: Record<string, { twilio_from_number: string | null; agent_cell_number: string | null; brand_name: string | null }> = {}
+    const agencyMap: Record<string, { twilio_from_number: string | null; agent_cell_number: string | null; brand_name: string | null; agent_first_name: string | null }> = {}
     if (agencyIds.length > 0) {
       const { data: agencies } = await supabase
         .from('agencies')
-        .select('id, twilio_from_number, agent_cell_number, brand_name')
+        .select('id, twilio_from_number, agent_cell_number, brand_name, agent_first_name')
         .in('id', agencyIds)
       if (agencies) {
         for (const a of agencies) {
@@ -141,6 +141,7 @@ Deno.serve(async (req) => {
             twilio_from_number: a.twilio_from_number,
             agent_cell_number: a.agent_cell_number,
             brand_name: a.brand_name,
+            agent_first_name: a.agent_first_name,
           }
         }
       }
@@ -234,9 +235,10 @@ Deno.serve(async (req) => {
             })
             .eq('id', row.id)
 
-          // Send fallback "missed you" SMS
+          // Send fallback "missed you" SMS with agency branding
+          const agentDisplayName = agencyConfig?.agent_first_name || 'Your agent'
           const missedBody =
-            `Hey ${name}, I just tried calling but missed you! I've got your quotes ready. What's a good time to chat tomorrow? Or reply here and I can text you your estimate.`
+            `Hey ${name}, ${agentDisplayName} just tried calling but missed you! I've got your quotes ready. What's a good time to chat tomorrow? Or reply here and I can text you your estimate.`
 
           const followUpResult = await sendSMS(
             TWILIO_ACCOUNT_SID,

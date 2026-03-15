@@ -64,7 +64,7 @@ export function useAgencyCommissionRates(agencyId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agency_carrier_config')
-        .select('commissionable_factor, commission_goal, premium_goal')
+        .select('commissionable_factor, commission_goal, premium_goal, base_commission_floor')
         .eq('agency_id', agencyId)
         .single();
       if (error) throw error;
@@ -72,6 +72,11 @@ export function useAgencyCommissionRates(agencyId) {
     },
     enabled: !!agencyId,
   });
+
+  // MT-07: Use per-agency base commission floor from DB when available
+  const baseCommission = carrierConfig?.base_commission_floor
+    ? Number(carrierConfig.base_commission_floor)
+    : DEFAULT_BASE_COMMISSION;
 
   // If we have DB rates, transform them into the dashboard format
   if (rates && rates.length > 0) {
@@ -88,12 +93,12 @@ export function useAgencyCommissionRates(agencyId) {
       // The DB stores total rate as decimal. The dashboard uses base + variable.
       // E.g., DB: 0.25 (25%) → base=9, variable=16
       const totalPct = Math.round(row.rate * 100);
-      matrix[productLabel][tierKey] = totalPct - DEFAULT_BASE_COMMISSION;
+      matrix[productLabel][tierKey] = totalPct - baseCommission;
     }
 
     return {
       commissionMatrix: matrix,
-      baseCommission: DEFAULT_BASE_COMMISSION,
+      baseCommission,
       policyMix: DEFAULT_POLICY_MIX,
       isLoaded: true,
     };
@@ -101,7 +106,7 @@ export function useAgencyCommissionRates(agencyId) {
 
   return {
     commissionMatrix: DEFAULT_COMMISSION_MATRIX,
-    baseCommission: DEFAULT_BASE_COMMISSION,
+    baseCommission,
     policyMix: DEFAULT_POLICY_MIX,
     isLoaded: !agencyId || (rates !== undefined),
   };

@@ -73,25 +73,27 @@ Deno.serve(async (req) => {
     const name = first_name || 'there'
 
     // Fetch agency branding and Twilio config
-    let agencyBrand = 'Insured By Cam'
+    let agentName = 'your agent'
+    let brandName = 'your insurance agency'
     let twilioFromNumber = ENV_TWILIO_PHONE_NUMBER
 
     if (agency_id) {
       const { data: agency } = await supabase
         .from('agencies')
-        .select('brand_name, twilio_from_number')
+        .select('brand_name, agent_first_name, twilio_from_number')
         .eq('id', agency_id)
         .single()
 
       if (agency) {
-        if (agency.brand_name) agencyBrand = agency.brand_name
+        if (agency.agent_first_name) agentName = agency.agent_first_name
+        if (agency.brand_name) brandName = agency.brand_name
         if (agency.twilio_from_number) twilioFromNumber = agency.twilio_from_number
       }
     }
 
     // ====== STEP 1: Send immediate SMS (T+0) ======
     const smsBody =
-      `Hey ${name}! This is ${agencyBrand}. I'm pulling up your personalized auto + home quotes right now. I'll call you in about 30 seconds to walk you through your options. Talk soon!`
+      `Hey ${name}! This is ${agentName} from ${brandName}. I'm pulling up your personalized quotes right now. I'll call you in about 30 seconds to walk you through your options. Talk soon!`
 
     const smsResult = await sendSMS(
       TWILIO_ACCOUNT_SID,

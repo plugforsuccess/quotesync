@@ -1,7 +1,7 @@
 // src/hooks/zipValidation.js
 import { useState, useEffect, useRef } from 'react';
 
-const STORAGE_KEY = 'insuredbycam_validated_zip';
+const STORAGE_KEY = 'qs_validated_zip';
 const EXPIRY_HOURS = 24;
 
 export const useZipValidation = () => {

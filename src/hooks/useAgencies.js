@@ -289,6 +289,169 @@ export const useDeleteAgencyUser = () => {
   });
 };
 
+// MT-04: Mark agency setup as complete
+export function useMarkSetupComplete(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from('agencies')
+        .update({ setup_completed_at: new Date().toISOString() })
+        .eq('id', agencyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agency', agencyId] });
+    },
+  });
+}
+
+// MT-05: Fetch team members for an agency
+export function useAgencyTeam(agencyId) {
+  return useQuery({
+    queryKey: ['agency_team', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agency_memberships')
+        .select('id, agency_role, status, created_at, user_id, profiles(id, email, first_name, last_name)')
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+}
+
+// MT-05: Remove team member (soft delete)
+export function useRemoveTeamMember(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (membershipId) => {
+      const { error } = await supabase
+        .from('agency_memberships')
+        .update({ status: 'removed' })
+        .eq('id', membershipId)
+        .eq('agency_id', agencyId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agency_team', agencyId] }),
+  });
+}
+
+// MT-06: Fetch agency carrier config
+export function useAgencyCarrierConfig(agencyId) {
+  return useQuery({
+    queryKey: ['agency_carrier_config', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agency_carrier_config')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .single();
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || null;
+    },
+    enabled: !!agencyId,
+  });
+}
+
+// MT-06: Fetch agency commission rates
+export function useAgencyCommissionRatesRaw(agencyId) {
+  return useQuery({
+    queryKey: ['agency_commission_rates_raw', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agency_commission_rates')
+        .select('*')
+        .eq('agency_id', agencyId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+}
+
+// MT-06: Bulk upsert commission rates
+export function useUpsertCommissionRates(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (rates) => {
+      // Delete existing and re-insert (simpler than individual upserts)
+      const { error: deleteError } = await supabase
+        .from('agency_commission_rates')
+        .delete()
+        .eq('agency_id', agencyId);
+      if (deleteError) throw deleteError;
+
+      if (rates.length > 0) {
+        const rows = rates.map(r => ({ ...r, agency_id: agencyId }));
+        const { error: insertError } = await supabase
+          .from('agency_commission_rates')
+          .insert(rows);
+        if (insertError) throw insertError;
+      }
+
+      // Update setup_steps.commission
+      const { error: stepError } = await supabase
+        .from('agencies')
+        .update({
+          setup_steps: supabase.rpc ? undefined : undefined,
+        })
+        .eq('id', agencyId);
+      // Use raw SQL approach for jsonb_set
+      await supabase.rpc('update_setup_step', { p_agency_id: agencyId, p_step: 'commission', p_value: true }).catch(() => {
+        // Fallback: direct update
+        supabase.from('agencies')
+          .update({ setup_steps: { commission: true } })
+          .eq('id', agencyId);
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agency_commission_rates_raw', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['agency_commission_rates', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['agency', agencyId] });
+    },
+  });
+}
+
+// MT-06: Fetch routing rules for agent self-service
+export function useAgencyRoutingRulesForAgent(agencyId) {
+  return useQuery({
+    queryKey: ['agency_routing_rules_agent', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('routing_rules')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+}
+
+// MT-06: Create routing rule with pending_approval status
+export function useCreateAgencyRoutingRule(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (rule) => {
+      const { data, error } = await supabase
+        .from('routing_rules')
+        .insert({ ...rule, agency_id: agencyId, status: 'pending_approval' })
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agency_routing_rules_agent', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['routing_rules', agencyId] });
+    },
+  });
+}
+
 // Submit agency application (public)
 export const submitAgencyApplication = async (applicationData) => {
   const { data, error } = await supabase

@@ -13,6 +13,13 @@ if (envOrigin && !allowedOrigins.includes(envOrigin)) {
   allowedOrigins.push(envOrigin)
 }
 
+// Multi-agency: additional origins via comma-separated env var
+const extraOrigins = (Deno.env.get('CORS_EXTRA_ORIGINS') || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean)
+allowedOrigins.push(...extraOrigins)
+
 /**
  * Dynamic CORS headers — matches the request's Origin against the allowlist.
  * Use this in functions that receive browser requests.

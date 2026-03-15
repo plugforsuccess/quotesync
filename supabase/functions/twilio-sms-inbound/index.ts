@@ -36,10 +36,10 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Validate required env vars
+  // Validate required env vars (AGENT_PHONE_NUMBER is now optional — falls back gracefully per-agency)
   const missingVar = checkRequiredEnvVars([
     'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
-    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER', 'AGENT_PHONE_NUMBER',
+    'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER',
   ])
   if (missingVar) {
     console.error(`[SMS_INBOUND] Missing required env var: ${missingVar}`)
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
 
   const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID')!
   const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
-  const ENV_AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER')!
+  const ENV_AGENT_PHONE_NUMBER = Deno.env.get('AGENT_PHONE_NUMBER') || ''
 
   try {
     // Parse Twilio webhook body (form-encoded)
@@ -111,20 +111,21 @@ Deno.serve(async (req) => {
     // Fetch agency branding and phone config for this lead's agency
     let agencyBrand = 'Insured By Cam'
     let agencyEmail = 'cameron@insuredbycam.com'
-    let agencyDescription = 'Insurance quotes'
+    let agentName = 'your agent'
     let twilioFromNumber = ENV_TWILIO_PHONE_NUMBER
     let agentPhoneNumber = ENV_AGENT_PHONE_NUMBER
 
     if (lead.agency_id) {
       const { data: agency } = await supabase
         .from('agencies')
-        .select('brand_name, email, twilio_from_number, agent_cell_number')
+        .select('brand_name, email, agent_first_name, twilio_from_number, agent_cell_number')
         .eq('id', lead.agency_id)
         .single()
 
       if (agency) {
         if (agency.brand_name) agencyBrand = agency.brand_name
         if (agency.email) agencyEmail = agency.email
+        if (agency.agent_first_name) agentName = agency.agent_first_name
         if (agency.twilio_from_number) twilioFromNumber = agency.twilio_from_number
         if (agency.agent_cell_number) agentPhoneNumber = agency.agent_cell_number
       }
@@ -176,7 +177,7 @@ Deno.serve(async (req) => {
     // Handle HELP — CTIA compliance requirement
     if (keyword === 'HELP') {
       return twimlResponse(
-        `${agencyBrand}: ${agencyDescription}. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out. Contact: ${agencyEmail}`
+        `${agencyBrand}: Insurance quotes. Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out.${agencyEmail ? ` Contact: ${agencyEmail}` : ''}`
       )
     }
 
@@ -198,7 +199,7 @@ Deno.serve(async (req) => {
       )
 
       return twimlResponse(
-        `Great choice, ${lead.first_name || 'there'}! ${agencyBrand} will reach out shortly with your personalized quote. Talk soon!`
+        `Great choice, ${lead.first_name || 'there'}! ${agentName} will reach out shortly with your personalized quote. Talk soon!`
       )
     }
 
