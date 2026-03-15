@@ -16,10 +16,43 @@ class ErrorBoundary extends Component {
   }
 
   static getDerivedStateFromError(error) {
+    // Chunk load failure after a new deploy — componentDidCatch will auto-reload.
+    // Don't flash the error screen while the reload is in progress.
+    const isChunkError =
+      error?.message?.includes('Failed to fetch dynamically imported module') ||
+      error?.message?.includes('Importing a module script failed') ||
+      error?.message?.includes('Unable to preload CSS for') ||
+      error?.name === 'ChunkLoadError';
+
+    if (isChunkError && !sessionStorage.getItem('qs_chunk_error_reloaded')) {
+      return null;
+    }
+
     return { hasError: true };
   }
 
   componentDidCatch(error, errorInfo) {
+    // Chunk load failure — happens when a new deploy invalidates old chunk hashes.
+    // The browser has stale HTML referencing filenames that no longer exist on the CDN.
+    // Auto-reload once to fetch the new bundle. The sessionStorage guard prevents
+    // an infinite reload loop if the chunk is genuinely missing rather than stale.
+    const isChunkError =
+      error?.message?.includes('Failed to fetch dynamically imported module') ||
+      error?.message?.includes('Importing a module script failed') ||
+      error?.message?.includes('Unable to preload CSS for') ||
+      error?.name === 'ChunkLoadError';
+
+    if (isChunkError) {
+      const reloadKey = 'qs_chunk_error_reloaded';
+      if (!sessionStorage.getItem(reloadKey)) {
+        sessionStorage.setItem(reloadKey, '1');
+        window.location.reload();
+        return; // Don't set error state — reload is in progress
+      }
+      // Already reloaded once and still failing — show error screen as normal
+      sessionStorage.removeItem(reloadKey);
+    }
+
     console.error('[ErrorBoundary] Caught error:', error, errorInfo);
     this.setState({
       error,
