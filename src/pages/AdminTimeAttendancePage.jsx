@@ -4,7 +4,7 @@
 // Route: /admin/time-attendance
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Clock, Users, RefreshCw, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
+import { Clock, Users, RefreshCw, ShieldOff, AlertCircle, ChevronLeft, ChevronRight, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
@@ -530,9 +530,9 @@ const AdminTimeAttendancePage = () => {
 
   if (!platform.isAdmin) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
+          <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
           <p className="text-gray-600">You do not have permission to view this page.</p>
         </div>
