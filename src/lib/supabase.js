@@ -60,18 +60,6 @@ export const authChannel = typeof BroadcastChannel !== 'undefined'
   ? new BroadcastChannel('qs_auth')
   : null;
 
-// Re-authenticate when the tab regains focus.
-// Supabase's autoRefreshToken timer pauses when the tab is backgrounded,
-// causing the session to expire silently. This forces a refresh on return
-// so queries don't fail until the user manually reloads.
-if (typeof document !== 'undefined') {
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') {
-      supabase.auth.getSession();
-    }
-  });
-}
-
 // =============================================================================
 // ROLE HIERARCHIES
 // =============================================================================

@@ -347,18 +347,31 @@ export const AuthProvider = ({ children }) => {
 
         console.log('[AUTH] state changed', { event, email: session?.user?.email || null });
 
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          // Full RBAC resolution on sign-in and session restore (e.g. tab regains focus)
+        if (event === 'SIGNED_IN') {
           if (!session?.user) return;
           setLoading(true);
           try {
             await fetchUserProfile(session.user);
           } catch (e) {
             if (!isAbortError(e)) {
-              console.error('[AUTHZ] fetchUserProfile failed on', event, ':', e);
+              console.error('[AUTHZ] fetchUserProfile failed on SIGNED_IN:', e);
             }
           } finally {
             if (mounted) setLoading(false);
+          }
+          return;
+        }
+
+        if (event === 'INITIAL_SESSION') {
+          // Session restore on tab focus — user is already loaded, just update the token.
+          // Do NOT re-run fetchUserProfile here; that triggers 3 DB queries and races
+          // with React Query refetches that are also calling getSession() simultaneously.
+          if (session?.user) {
+            setUser(session.user); // update token metadata only
+          } else if (!session) {
+            // Genuinely no session on restore — sign out cleanly
+            resetState();
+            setLoading(false);
           }
           return;
         }
