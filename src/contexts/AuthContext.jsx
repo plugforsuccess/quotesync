@@ -4,7 +4,7 @@
 // Tenant plane: agency users (agent, manager, producer, viewer)
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, authChannel } from '../lib/supabase';
 
 const AuthContext = createContext({
   user: null,
@@ -63,12 +63,12 @@ function isAbortError(e) {
   return e?.name === 'AbortError';
 }
 
-// Remove the explicit storage key set in supabase.js + legacy sb-* keys
+// Clear all Supabase auth tokens from storage (custom key + default sb-* keys)
 function clearSupabaseAuthTokenFromStorage() {
   try {
-    // Remove the explicit storage key set in supabase.js
+    // Remove qs_auth_token in case it exists from the previous custom key
     localStorage.removeItem('qs_auth_token');
-    // Also clear legacy sb-* keys in case of migration from old key
+    // Clear default Supabase keys
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
       if (k && k.startsWith('sb-') && k.endsWith('-auth-token')) {
@@ -370,6 +370,8 @@ export const AuthProvider = ({ children }) => {
           if (session?.user) {
             console.log('[AUTH] token refreshed, keeping existing RBAC state');
             setUser(session.user);
+            // Tell other tabs the token refreshed so they don't re-request
+            authChannel?.postMessage({ type: 'TOKEN_REFRESHED', userId: session.user.id });
           }
           return;
         }
@@ -393,6 +395,30 @@ export const AuthProvider = ({ children }) => {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+    };
+  }, []);
+
+  // Listen for token refresh broadcasts from other tabs.
+  // When another tab successfully refreshes the token, we re-read the session
+  // from storage instead of making a new network request (avoiding the race).
+  useEffect(() => {
+    if (!authChannel) return;
+    let mounted = true;
+    const handler = (event) => {
+      if (event.data?.type === 'TOKEN_REFRESHED') {
+        // Another tab already refreshed — just re-read session from storage
+        supabase.auth.getSession().then(({ data }) => {
+          if (data?.session?.user && mounted) {
+            console.log('[AUTH] token refreshed by another tab, updating session');
+            setUser(data.session.user);
+          }
+        });
+      }
+    };
+    authChannel.addEventListener('message', handler);
+    return () => {
+      mounted = false;
+      authChannel.removeEventListener('message', handler);
     };
   }, []);
 
