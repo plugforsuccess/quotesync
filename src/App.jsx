@@ -2,7 +2,7 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ShieldOff, Home, Building2 as Building2Icon } from 'lucide-react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
@@ -15,13 +15,25 @@ import PageSpinner from './components/PageSpinner';
 import { validateCacheVersion } from './utils/cacheVersion';
 import { persistUtmParams } from './lib/leadsApi';
 
+// Delay React Query's window focus detection by 1 second.
+// Supabase refreshes its auth token when the tab regains focus —
+// if React Query fires refetches immediately, queries race the token
+// refresh and get 400/401 errors. The 1s delay lets the token settle first.
+focusManager.setEventListener((handleFocus) => {
+  const onFocus = () => {
+    setTimeout(handleFocus, 1000);
+  };
+  window.addEventListener('focus', onFocus, { passive: true });
+  return () => window.removeEventListener('focus', onFocus);
+});
+
 // Configure React Query with auth-aware error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 2 * 60 * 1000, // 2 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
-      refetchOnWindowFocus: false,  // was true — caused getSession() race on tab focus
+      refetchOnWindowFocus: true,  // back to true — focusManager delay prevents the race
       refetchOnReconnect: true,
       retry: (failureCount, error) => {
         // Never retry auth failures — the token is dead, retrying just cascades errors
