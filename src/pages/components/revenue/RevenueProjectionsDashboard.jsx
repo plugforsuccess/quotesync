@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
+import { useQuery } from "@tanstack/react-query";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
 import { supabase } from "../../../lib/supabase";
@@ -431,38 +432,38 @@ export default function RevenueProjectionsDashboard() {
   const { entries, loading, error, addEntry, addEntries, deleteEntry } = useRevenueEntries({ agencyId, rangeStart, rangeEnd });
 
   // Fetch all entries for the current year — used by producer breakdown range filter
-  const [allYearEntries, setAllYearEntries] = useState([]);
-  useEffect(() => {
-    if (!agencyId) return;
-    const ytdStart = `${TODAY.getFullYear()}-01-01`;
-    const ytdEnd   = `${TODAY.getFullYear()}-12-31`;
-    supabase
-      .from("revenue_entries")
-      .select("*")
-      .eq("agency_id", agencyId)
-      .gte("issued_date", ytdStart)
-      .lte("issued_date", ytdEnd)
-      .order("issued_date", { ascending: false })
-      .then(({ data }) => {
-        if (!data) return;
-        setAllYearEntries(data.map(r => ({
-          id:           r.id,
-          date:         r.issued_date,
-          issuedDate:   r.issued_date,
-          product:      r.product,
-          tier:         r.tier ?? "monoline",
-          premium:      parseFloat(r.premium),
-          policyCount:  r.policy_count,
-          itemCount:    r.item_count ?? 1,
-          policyNo:     r.policy_no ?? null,
-          bindId:       r.bind_id ?? null,
-          producerName: r.producer_name ?? null,
-          customerName: r.customer_name ?? null,
-          source:       r.source,
-          note:         r.note ?? "",
-        })));
-      });
-  }, [agencyId]);
+  const selectedYear = TODAY.getFullYear();
+  const { data: allYearEntries = [] } = useQuery({
+    queryKey: ["revenue_entries", agencyId, `${selectedYear}-01-01`, `${selectedYear}-12-31`],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("revenue_entries")
+        .select("*")
+        .eq("agency_id", agencyId)
+        .gte("issued_date", `${selectedYear}-01-01`)
+        .lte("issued_date", `${selectedYear}-12-31`)
+        .order("issued_date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []).map(r => ({
+        id:           r.id,
+        date:         r.issued_date,
+        issuedDate:   r.issued_date,
+        product:      r.product,
+        tier:         r.tier ?? "monoline",
+        premium:      parseFloat(r.premium),
+        policyCount:  r.policy_count,
+        itemCount:    r.item_count ?? 1,
+        policyNo:     r.policy_no ?? null,
+        bindId:       r.bind_id ?? null,
+        producerName: r.producer_name ?? null,
+        customerName: r.customer_name ?? null,
+        source:       r.source,
+        note:         r.note ?? "",
+      }));
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
 
   // ─── Filtered entries ──────────────────────────────────────────────────────
   const filtered = useMemo(() =>
