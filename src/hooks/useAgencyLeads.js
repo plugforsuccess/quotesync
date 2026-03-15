@@ -27,7 +27,8 @@ export const useCurrentAgency = () => {
       // Map agency_role to role for backward compat with consumers of this hook
       return data ? { ...data, role: data.agency_role } : null;
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 10 * 60 * 1000, // 10 min — agency membership rarely changes mid-session
   });
 };
 

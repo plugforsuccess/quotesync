@@ -24,8 +24,8 @@ function mapRow(r) {
 
 export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
   const queryClient = useQueryClient();
-  const rangeStartStr = rangeStart.toISOString().slice(0, 10);
-  const rangeEndStr   = rangeEnd.toISOString().slice(0, 10);
+  const rangeStartStr = rangeStart?.toISOString().slice(0, 10);
+  const rangeEndStr   = rangeEnd?.toISOString().slice(0, 10);
 
   const { data: entries = [], isLoading: loading, error: queryError } = useQuery({
     queryKey: ["revenue_entries", agencyId, rangeStartStr, rangeEndStr],
@@ -41,7 +41,7 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
       if (error) throw error;
       return (data ?? []).map(mapRow);
     },
-    enabled: !!agencyId,
+    enabled: !!agencyId && !!rangeStartStr && !!rangeEndStr,
     staleTime: 2 * 60 * 1000,
   });
 
