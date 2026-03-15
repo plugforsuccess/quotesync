@@ -5,6 +5,9 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, authChannel } from '../lib/supabase';
+import { queryClient } from '../App';
+import { mapRow } from '../hooks/useRevenueEntries';
+import { LAPSE_PORTFOLIO_POINTS } from '../lib/lapseConstants';
 
 const AuthContext = createContext({
   user: null,
@@ -202,6 +205,106 @@ export const AuthProvider = ({ children }) => {
       } else {
         setCurrentAgencyId(null);
         setCurrentAgencyRole(null);
+      }
+
+      // Prefetch all primary page data so every page cache is warm on login.
+      // This eliminates the cold-cache empty state when navigating to an
+      // unvisited page after window minimize/restore.
+      const resolvedAgencyId = activeMemberships[0]?.agency_id
+        ?? activeImpersonation?.target_agency_id
+        ?? null;
+
+      if (resolvedAgencyId) {
+        const today = new Date();
+        const yearStart = `${today.getFullYear()}-01-01`;
+        const yearEnd   = `${today.getFullYear()}-12-31`;
+
+        // Fire all prefetches in parallel — don't await, let them warm in background
+        Promise.allSettled([
+          // Agency leads (Leads page)
+          queryClient.prefetchQuery({
+            queryKey: ['agency_leads', resolvedAgencyId, {}],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('leads')
+                .select('*')
+                .eq('agency_id', resolvedAgencyId)
+                .neq('status', 'partial')
+                .order('created_at', { ascending: false })
+                .limit(50);
+              return data || [];
+            },
+            staleTime: 2 * 60 * 1000,
+          }),
+
+          // Funnel metrics (Dashboard page)
+          queryClient.prefetchQuery({
+            queryKey: ['funnel_metrics', resolvedAgencyId, '30d'],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('leads')
+                .select('*')
+                .eq('agency_id', resolvedAgencyId)
+                .neq('status', 'partial');
+              return data || [];
+            },
+            staleTime: 2 * 60 * 1000,
+          }),
+
+          // Revenue entries (Revenue page)
+          queryClient.prefetchQuery({
+            queryKey: ['revenue_entries', resolvedAgencyId, yearStart, yearEnd],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('revenue_entries')
+                .select('*')
+                .eq('agency_id', resolvedAgencyId)
+                .gte('issued_date', yearStart)
+                .lte('issued_date', yearEnd)
+                .order('issued_date', { ascending: false });
+              return (data || []).map(mapRow);
+            },
+            staleTime: 2 * 60 * 1000,
+          }),
+
+          // Lapse events summary (Book Health page)
+          queryClient.prefetchQuery({
+            queryKey: ['lapse_events_summary', resolvedAgencyId],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('lapse_events')
+                .select('report_month, product, premium, item_count')
+                .eq('agency_id', resolvedAgencyId)
+                .order('report_month', { ascending: false });
+              const byMonth = {};
+              (data ?? []).forEach(r => {
+                const m = r.report_month;
+                if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
+                byMonth[m].items += r.item_count ?? 1;
+                byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+                byMonth[m].premium += r.premium ?? 0;
+              });
+              return Object.values(byMonth).sort((a, b) => b.report_month.localeCompare(a.report_month));
+            },
+            staleTime: 2 * 60 * 1000,
+          }),
+
+          // Current agency membership (used everywhere)
+          queryClient.prefetchQuery({
+            queryKey: ['current_agency', currentUser.id],
+            queryFn: async () => {
+              const { data } = await supabase
+                .from('agency_memberships')
+                .select('agency_id, agency_role, agencies(id, name, brand_name)')
+                .eq('user_id', currentUser.id)
+                .eq('status', 'active')
+                .limit(1)
+                .single();
+              return data ? { ...data, role: data.agency_role } : null;
+            },
+            staleTime: 10 * 60 * 1000,
+          }),
+        ]).catch(() => {}); // prefetch failures are non-fatal — pages will fetch on demand
       }
 
       console.log('[AUTHZ] resolved', {

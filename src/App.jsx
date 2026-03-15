@@ -30,7 +30,7 @@ focusManager.setEventListener((handleFocus) => {
 });
 
 // Configure React Query with auth-aware error handling
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 2 * 60 * 1000, // 2 minutes
