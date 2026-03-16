@@ -4,7 +4,7 @@
 // Revised: Uses total handle time and answer rate as proxy indicators
 // for desk presence and engagement (RC does not export logged-in time).
 
-import { AlertTriangle, AlertCircle, Info } from 'lucide-react';
+import { AlertTriangle, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 const SEVERITY_CONFIG = {
   red: { icon: AlertCircle, bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', iconColor: 'text-red-600' },
@@ -150,6 +150,71 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, role
           </div>
         );
       })}
+    </div>
+  );
+}
+
+// Monthly bonus verification summary alert — service_outbound retention saves
+export function BonusVerificationAlert({ verificationData, month }) {
+  if (!verificationData) return null;
+  if (verificationData.unverified === 0 && verificationData.noPhone === 0) {
+    return (
+      <div className="flex gap-3 p-4 rounded-lg border bg-green-50 border-green-200">
+        <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-green-600" />
+        <div>
+          <p className="text-sm font-medium text-green-800">
+            All {verificationData.verified} reached attempts verified against RingCentral
+          </p>
+          <p className="text-xs text-green-600 mt-0.5">
+            {month} — full bonus eligibility confirmed
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {verificationData.unverified > 0 && (
+        <div className="flex gap-3 p-4 rounded-lg border bg-red-50 border-red-200">
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-600" />
+          <div>
+            <p className="text-sm font-medium text-red-800">
+              {verificationData.unverified} reached attempt{verificationData.unverified > 1 ? 's' : ''} not found in RingCentral
+            </p>
+            <p className="text-xs text-red-600 mt-1">
+              These saves are ineligible for bonus until a matching outbound connected call is found.
+            </p>
+            <div className="mt-2 space-y-1">
+              {verificationData.attempts
+                .filter(a => !a.verified)
+                .map(a => (
+                  <div key={a.attemptId} className="text-xs text-red-700 flex gap-2">
+                    <span className="font-mono">{a.policy_no}</span>
+                    <span>{a.customer}</span>
+                    <span className="text-red-400">{a.attemptDate}</span>
+                    <span className="text-red-400 italic">
+                      {a.reason === 'invalid_phone' ? 'no phone on file' : 'no RC match'}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      )}
+      {verificationData.noPhone > 0 && (
+        <div className="flex gap-3 p-4 rounded-lg border bg-yellow-50 border-yellow-200">
+          <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0 text-yellow-600" />
+          <div>
+            <p className="text-sm font-medium text-yellow-800">
+              {verificationData.noPhone} case{verificationData.noPhone > 1 ? 's' : ''} missing phone number — cannot verify
+            </p>
+            <p className="text-xs text-yellow-600 mt-0.5">
+              Add phone numbers to these cases to enable RC verification.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
