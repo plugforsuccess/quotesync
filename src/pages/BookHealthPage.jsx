@@ -2583,12 +2583,6 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
               ))}
             </div>
 
-            <div style={{ marginTop: 4 }}>
-              <a href="#" onClick={e => { e.preventDefault(); onClose(); }}
-                style={{ fontSize: 12, color: '#F59E0B', textDecoration: 'none' }}>
-                Open in Cancellations →
-              </a>
-            </div>
           </div>
         )}
 
@@ -2649,12 +2643,6 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
               ))}
             </div>
 
-            <div style={{ marginTop: 4 }}>
-              <a href="#" onClick={e => { e.preventDefault(); onClose(); }}
-                style={{ fontSize: 12, color: '#3B82F6', textDecoration: 'none' }}>
-                Open in Renewal Queue →
-              </a>
-            </div>
           </div>
         )}
 
@@ -2907,8 +2895,8 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     <span style={{
                       display: 'inline-block', padding: '2px 8px', borderRadius: 4,
                       fontSize: 10, fontWeight: 700,
-                      background: row.risk_type === 'dual_risk' ? '#EF444422' : row.risk_type === 'pending_cancel' ? '#F59E0B22' : '#3B82F622',
-                      color:      row.risk_type === 'dual_risk' ? '#EF4444'   : row.risk_type === 'pending_cancel' ? '#F59E0B'   : '#3B82F6',
+                      background: row.risk_type === 'dual_risk' ? '#EF444433' : row.risk_type === 'pending_cancel' ? '#F59E0B33' : '#3B82F633',
+                      color:      row.risk_type === 'dual_risk' ? '#EF4444'   : row.risk_type === 'pending_cancel' ? '#F59E0B'   : '#60A5FA',
                     }}>
                       {row.risk_type === 'dual_risk' ? '⚡ DUAL' : row.risk_type === 'pending_cancel' ? 'CANCEL' : 'RENEWAL'}
                     </span>
