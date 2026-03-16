@@ -2577,9 +2577,14 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
     setSaving(true);
     try {
       if (side === 'cancel' && r.cancel_event_id) {
+        // Sync both assigned_to_id (FK) and assigned_to (legacy text) for display
+        const rep = producers.find(p => p.id === employeeId);
+        const displayName = rep
+          ? (rep.preferred_name || `${rep.first_name || ''} ${rep.last_name || ''}`.trim())
+          : null;
         const { error } = await supabase
           .from('pending_cancel_events')
-          .update({ assigned_to_id: employeeId || null })
+          .update({ assigned_to_id: employeeId || null, assigned_to: displayName })
           .eq('id', r.cancel_event_id);
         if (error) throw error;
         setLocalRow(prev => ({ ...prev, cancel_assigned_to_id: employeeId || null }));
@@ -3219,6 +3224,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           onUpdate={updateCancelEvent}
           agencyId={agencyId}
           currentEmployeeId={currentEmployeeId}
+          producers={producers}
         />
       )}
       {drilldown && drilldown.side === 'renewal' && (
@@ -3822,7 +3828,7 @@ export default function BookHealthPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .eq("role_type", "service")
+        .contains("roles", ["service"])
         .order("last_name");
 
       const activeReps = reps || [];
