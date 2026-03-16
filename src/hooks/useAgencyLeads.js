@@ -72,6 +72,8 @@ export const useAgencyLeads = (agencyId, filters = {}) => {
       // Apply filters
       if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
+      } else if (!filters.status || filters.status === 'all') {
+        query = query.not('status', 'in', '("closed_won","closed_lost")');
       }
       if (filters.zip) {
         query = query.ilike('zip', `${filters.zip}%`);
@@ -272,6 +274,53 @@ export const useSetFirstContact = () => {
       queryClient.invalidateQueries({ queryKey: ['lead_detail', leadId] });
       queryClient.invalidateQueries({ queryKey: ['lead_audit_log', leadId] });
     }
+  });
+};
+
+// Dispose lead (close or convert)
+export const useDisposeLead = () => {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ leadId, agencyId, outcome, reason, note }) => {
+      const status = outcome === 'quoted_in_lm' ? 'closed_won' : 'closed_lost';
+      const dispositionReason = outcome === 'quoted_in_lm' ? 'quoted_in_lm' : reason;
+
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          status,
+          disposition_reason: dispositionReason,
+          disposition_note:   note || null,
+          disposed_at:        new Date().toISOString(),
+          disposed_by:        user?.id,
+          sms_opted_out:      true,
+          updated_at:         new Date().toISOString(),
+        })
+        .eq('id', leadId)
+        .eq('agency_id', agencyId);
+
+      if (error) throw error;
+
+      // Audit log
+      await supabase.from('audit_log').insert({
+        event_type: 'LEAD_DISPOSED',
+        lead_id:    leadId,
+        agency_id:  agencyId,
+        metadata: {
+          status,
+          disposition_reason: dispositionReason,
+          disposition_note:   note || null,
+          actor_user_id:      user?.id,
+        },
+      });
+    },
+    onSuccess: (_, { leadId, agencyId }) => {
+      queryClient.invalidateQueries({ queryKey: ['lead_detail', leadId] });
+      queryClient.invalidateQueries({ queryKey: ['agency_leads', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['lead_audit_log', leadId] });
+    },
   });
 };
 
