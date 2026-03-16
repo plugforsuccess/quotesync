@@ -8,7 +8,10 @@ import { supabase } from '../lib/supabase';
 export function useRetentionCallVerification({ employeeId, agencyId, month }) {
   // month format: 'YYYY-MM' e.g. '2026-04'
   const monthStart = month ? `${month}-01` : null;
-  const monthEnd   = month ? `${month}-31` : null;
+  const monthEnd   = month
+    ? new Date(parseInt(month.slice(0, 4)), parseInt(month.slice(5, 7)), 0)
+        .toISOString().slice(0, 10)
+    : null;
 
   return useQuery({
     queryKey: ['retention_call_verification', employeeId, agencyId, month],

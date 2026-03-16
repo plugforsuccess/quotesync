@@ -186,7 +186,7 @@ export function BonusVerificationAlert({ verificationData, month }) {
               These saves are ineligible for bonus until a matching outbound connected call is found.
             </p>
             <div className="mt-2 space-y-1">
-              {verificationData.attempts
+              {(verificationData.attempts || [])
                 .filter(a => !a.verified)
                 .map(a => (
                   <div key={a.attemptId} className="text-xs text-red-700 flex gap-2">
