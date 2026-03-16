@@ -125,6 +125,18 @@ export const agencyNav = {
   },
 };
 
+// ── Employee plane navigation (service_inbound / service_outbound) ──────────
+// Employees see only their personal queue, scorecard, and punch clock.
+
+export const employeeNav = {
+  primary: [
+    { to: '/my/queue',     label: 'Queue',     icon: '\u26A1', isPrimary: true },
+    { to: '/my/scorecard', label: 'Scorecard', icon: '\uD83D\uDCCA', isPrimary: true },
+    { to: '/punch',        label: 'Punch',     icon: '\u23F1\uFE0F', isPrimary: true },
+  ],
+  secondary: [],
+};
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 // Get structured nav { primary, secondary } based on plane and role

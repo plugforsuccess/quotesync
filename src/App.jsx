@@ -8,6 +8,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
+import EmployeeRoute from './components/EmployeeRoute';
+import EmployeeLayout from './components/EmployeeLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import PageError from './components/PageError';
 import PageSpinner from './components/PageSpinner';
@@ -89,6 +91,10 @@ const PlanningHub = lazyWithRetry(() => import('./pages/PlanningHub'));
 const BookHealthPage = lazyWithRetry(() => import('./pages/BookHealthPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
 
+// Employee-scoped pages
+const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
+const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
+
 // Loading fallback component
 const PageLoader = () => <PageSpinner />;
 
@@ -121,6 +127,17 @@ function App() {
 
           {/* Employee punch clock — public, no auth required */}
           <Route path="/punch" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PunchPage /></Suspense></ErrorBoundary>} />
+
+          {/* Employee-scoped routes — personal queue, scorecard */}
+          <Route path="/my" element={
+            <EmployeeRoute>
+              <EmployeeLayout />
+            </EmployeeRoute>
+          }>
+            <Route index element={<Navigate to="/my/queue" replace />} />
+            <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
+            <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+          </Route>
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}
           <Route path="/" element={<Layout />}>

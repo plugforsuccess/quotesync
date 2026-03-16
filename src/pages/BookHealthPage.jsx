@@ -3662,6 +3662,8 @@ function ImportTab({
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 
+export { EventDetailModal, RenewalDetailModal };
+
 export default function BookHealthPage() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;

@@ -6,10 +6,12 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getDefaultLanding } from '../config/nav.config';
+import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading, currentAgencyId, platformRole, currentAgencyRole } = useAuth();
+  const { user, loading: authLoading, currentAgencyId, platformRole, currentAgencyRole, isPlatformUser } = useAuth();
+  const { data: employeeRecord, isLoading: empLoading } = useCurrentEmployee();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,12 +22,19 @@ const LoginPage = () => {
   // If user is already authenticated (or becomes authenticated after login),
   // redirect to the appropriate landing page. This replaces both the old
   // checkSession useEffect and the post-login navigation in handleLogin.
+  // Employees (non-platform users) go to /my/queue; platform/agency users
+  // go to their role-based landing page.
   useEffect(() => {
-    if (!authLoading && user) {
-      const agencyRoleVal = currentAgencyId ? currentAgencyRole : null;
-      navigate(getDefaultLanding(platformRole, agencyRoleVal), { replace: true });
+    if (!authLoading && !empLoading && user) {
+      // Employee (not platform admin) → send to their queue
+      if (employeeRecord && !isPlatformUser) {
+        navigate('/my/queue', { replace: true });
+      } else {
+        const agencyRoleVal = currentAgencyId ? currentAgencyRole : null;
+        navigate(getDefaultLanding(platformRole, agencyRoleVal), { replace: true });
+      }
     }
-  }, [authLoading, user, platformRole, currentAgencyRole, currentAgencyId, navigate]);
+  }, [authLoading, empLoading, user, employeeRecord, isPlatformUser, platformRole, currentAgencyRole, currentAgencyId, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
