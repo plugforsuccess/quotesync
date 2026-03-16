@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
+import { calcRenewalPriority, calcCancelPriority, CURRENT_YEAR } from '../lib/retentionPriority';
 
 // ─── Friendly error messages ──────────────────────────────────────────────────
 function friendlyUploadError(raw = "") {
@@ -408,15 +409,17 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
           <table style={{ minWidth: 800 }}>
             <thead>
               <tr>
-                <SortTh col="cancel_effective_date" label="Cancel Date" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="days_left" label="Days Left" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+                <SortTh col="priority" label="Priority" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+                <SortTh col="cancel_effective_date" label="Cancel" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+                <SortTh col="days_left" label="Days" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <th>Product</th>
+                <SortTh col="product" label="Product" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="premium_at_risk" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <th>Attempts</th>
+                <SortTh col="cycle" label="Cycle" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+                <SortTh col="attempt_count" label="Attempts" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="assigned_to" label="Assigned" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <th>Promise Date</th>
+                <SortTh col="promise_date" label="Promise" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
               </tr>
             </thead>
           <tbody>
@@ -425,6 +428,18 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
               const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
               return (
                 <tr key={event.id} className="triage-row" onClick={() => setSelectedEvent(event)}>
+                  <td>
+                    <span style={{
+                      display: 'inline-block', padding: '2px 8px', borderRadius: 10,
+                      fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
+                      background: event._priority >= 80 ? '#EF444422'
+                                : event._priority >= 55 ? '#F59E0B22'
+                                : event._priority >= 30 ? '#3B82F622' : '#64748B22',
+                      color: event._priority >= 80 ? '#EF4444'
+                           : event._priority >= 55 ? '#F59E0B'
+                           : event._priority >= 30 ? '#3B82F6' : '#64748B',
+                    }}>{event._priority}</span>
+                  </td>
                   <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                     {event.cancel_effective_date}
                   </td>
@@ -453,6 +468,14 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                   <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
                     {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
                   </td>
+                  <td style={{
+                    fontFamily: "'DM Mono', monospace", fontSize: 12,
+                    color: (event.cycle || 1) >= 3 ? '#EF4444'
+                         : (event.cycle || 1) === 2 ? '#F59E0B' : '#64748B'
+                  }}>
+                    {event.cycle || 1}
+                    {(event.cycle || 1) >= 3 && <span style={{ marginLeft: 4, fontSize: 10 }}>↻</span>}
+                  </td>
                   <td style={{ color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#64748B", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
                     {event.attempt_count || 0}
                   </td>
@@ -460,14 +483,20 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                     <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                   </td>
                   <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "—"}</td>
-                  <td style={{ color: event.promise_date ? "#8B5CF6" : "#334155", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                    {event.promise_date || "—"}
+                  <td style={{ fontSize: 12, fontFamily: "'DM Mono', monospace",
+                    color: (() => {
+                      if (!event.promise_date) return '#64748B';
+                      const d = Math.ceil((new Date(event.promise_date) - new Date()) / 86400000);
+                      return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : '#94A3B8';
+                    })()
+                  }}>
+                    {event.promise_date || '—'}
                   </td>
                 </tr>
               );
             })}
             {filteredEvents.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+              <tr><td colSpan={11} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
                 No events in this filter
               </td></tr>
             )}
@@ -1070,57 +1099,7 @@ function renewalUrgencyColor(days) {
 }
 
 // ─── Priority Score ─────────────────────────────────────────────────────────
-
-const CURRENT_YEAR = new Date().getFullYear();
-
-function calcRenewalPriority(event) {
-  const days = daysUntilRenewal(event.renewal_date);
-  const changePct = event.premium_change_pct || 0;
-  const tenure = event.original_year ? CURRENT_YEAR - event.original_year : 0;
-  const premium = event.premium || 0;
-
-  // Time factor (0-100)
-  const timeFactor =
-    days <= 0  ? 100 :
-    days <= 7  ? 95  :
-    days <= 14 ? 70  :
-    days <= 21 ? 40  :
-    days <= 30 ? 20  : 5;
-
-  // Shopping propensity (0-100)
-  const shoppingFactor =
-    changePct >= 20 ? 100 :
-    changePct >= 15 ? 85  :
-    changePct >= 10 ? 65  :
-    changePct >= 5  ? 30  :
-    changePct > 0   ? 10  : 0;
-
-  // Tenure churn risk (0-100): retention is lowest for 0-5yr customers.
-  // Counterintuitively, SHORT tenure = HIGHER priority for outreach —
-  // they haven't built loyalty inertia yet and are most likely to leave.
-  // Long-tenure customers have lower churn probability even with rate increases.
-  const tenureFactor =
-    tenure <= 1  ? 85 :  // 0-1 yr: highest churn risk
-    tenure <= 2  ? 90 :  // 1-2 yr: peak churn window
-    tenure <= 5  ? 75 :  // 2-5 yr: still elevated
-    tenure <= 10 ? 50 :  // 5-10 yr: loyalty building
-    tenure <= 20 ? 35 :  // 10-20 yr: established relationship
-                   20;   // 20+ yr: strong inertia, low churn risk
-
-  // Premium value factor (small weight — don't ignore low-premium new customers)
-  const valueFactor = Math.min((premium / 50), 100);
-
-  // Easy Pay modifier: autopay = renewal inertia, deprioritize slightly
-  const paymentModifier = event.easy_pay === true ? -15 : 0;
-
-  return Math.round(
-    (timeFactor    * 0.40) +
-    (shoppingFactor * 0.30) +
-    (tenureFactor  * 0.20) +
-    (valueFactor   * 0.05) +
-    paymentModifier
-  );
-}
+// calcRenewalPriority and calcCancelPriority imported from ../lib/retentionPriority
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
 
@@ -2472,8 +2451,8 @@ export default function BookHealthPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("triage");
   const [statusFilter, setStatusFilter] = useState("active");
-  const [sortCol, setSortCol] = useState("cancel_effective_date");
-  const [sortDir, setSortDir] = useState("asc");
+  const [sortCol, setSortCol] = useState("priority");
+  const [sortDir, setSortDir] = useState("desc");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [uploadFile, setUploadFile] = useState(null);
   const [diffResult, setDiffResult] = useState(null);
@@ -2617,16 +2596,24 @@ export default function BookHealthPage() {
       list = list.filter(e => ["saved","lost","auto_resolved","requested_cancellation"].includes(e.status));
     }
 
-    return list.sort((a, b) => {
+    // Add priority scores to each event
+    const withScores = list.map(e => ({ ...e, _priority: calcCancelPriority(e) }));
+
+    return withScores.sort((a, b) => {
       let av, bv;
       switch (sortCol) {
+        case "priority": av = a._priority || 0; bv = b._priority || 0; break;
         case "cancel_effective_date": av = a.cancel_effective_date; bv = b.cancel_effective_date; break;
         case "customer_name": av = a.customer_name || ""; bv = b.customer_name || ""; break;
         case "premium_at_risk": av = a.premium_at_risk || 0; bv = b.premium_at_risk || 0; break;
+        case "product": av = a.product || ""; bv = b.product || ""; break;
+        case "cycle": av = a.cycle || 1; bv = b.cycle || 1; break;
+        case "attempt_count": av = a.attempt_count || 0; bv = b.attempt_count || 0; break;
         case "status": av = a.status; bv = b.status; break;
         case "assigned_to": av = a.assigned_to || ""; bv = b.assigned_to || ""; break;
+        case "promise_date": av = a.promise_date || ""; bv = b.promise_date || ""; break;
         case "days_left": av = daysUntilCancel(a.cancel_effective_date); bv = daysUntilCancel(b.cancel_effective_date); break;
-        default: av = a.cancel_effective_date; bv = b.cancel_effective_date;
+        default: av = a._priority || 0; bv = b._priority || 0;
       }
       if (av < bv) return sortDir === "asc" ? -1 : 1;
       if (av > bv) return sortDir === "asc" ? 1 : -1;
