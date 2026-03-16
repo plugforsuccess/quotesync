@@ -318,7 +318,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     <label className="block text-sm font-medium text-gray-700 mb-1">Roles *</label>
                     <div style={{ display: 'flex', gap: 16, marginTop: 6 }}>
                       {ROLE_OPTIONS.map(opt => (
-                        <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer', color: '#374151' }}>
+                        <label key={opt.value} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
                           <input
                             type="checkbox"
                             checked={form.roles?.includes(opt.value) || false}
@@ -329,7 +329,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                               if (next.length > 0) handleChange('roles', next);
                             }}
                           />
-                          {opt.label}
+                          <span>{opt.label}</span>
                         </label>
                       ))}
                     </div>
