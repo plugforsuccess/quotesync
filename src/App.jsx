@@ -138,8 +138,14 @@ function App() {
             <Route index element={<Navigate to="/my/queue" replace />} />
             <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
             <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
-            <Route path="mfa-settings" element={<Suspense fallback={<PageLoader />}><MFASettingsPage /></Suspense>} />
           </Route>
+
+          {/* MFA settings — standalone route, any authenticated user (no employee record required) */}
+          <Route path="/mfa-settings" element={
+            <ProtectedRoute>
+              <Suspense fallback={<PageLoader />}><MFASettingsPage /></Suspense>
+            </ProtectedRoute>
+          } />
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}
           <Route path="/" element={<Layout />}>

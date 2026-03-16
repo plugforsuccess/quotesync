@@ -63,8 +63,10 @@ const LoginPage = () => {
 
       if (aal?.nextLevel === 'aal2' && aal?.currentLevel === 'aal1') {
         // User has a factor enrolled — needs to verify it
+        // Prefer a verified factor; fall back to first available
         const { data: factors } = await supabase.auth.mfa.listFactors();
-        const totpFactor = factors?.totp?.[0];
+        const totpFactor = factors?.totp?.find(f => f.status === 'verified')
+          ?? factors?.totp?.[0];
         if (!totpFactor) throw new Error('MFA factor not found. Contact your administrator.');
 
         // Create challenge
@@ -78,6 +80,13 @@ const LoginPage = () => {
         setStep('mfa_verify');
       } else if (aal?.currentLevel === 'aal1' && aal?.nextLevel === 'aal1') {
         // No factor enrolled — force enrollment
+        // Clean up any leftover unverified factors from abandoned enrollments
+        const { data: existingFactors } = await supabase.auth.mfa.listFactors();
+        const unverified = existingFactors?.totp?.filter(f => f.status !== 'verified') || [];
+        for (const f of unverified) {
+          await supabase.auth.mfa.unenroll({ factorId: f.id });
+        }
+
         const { data: enroll, error: enrollErr } = await supabase.auth.mfa.enroll({
           factorType: 'totp',
           friendlyName: 'Google Authenticator',
@@ -120,10 +129,16 @@ const LoginPage = () => {
       if (error) throw error;
       // AuthContext picks up the upgraded session automatically
     } catch (err) {
-      setError(err.message?.includes('Invalid')
-        ? 'Incorrect code. Check Google Authenticator and try again.'
-        : err.message || 'Verification failed.');
-      setCode('');
+      if (err.message?.includes('expired')) {
+        setError('Code expired. Please sign in again.');
+        setStep('credentials');
+        setCode('');
+      } else {
+        setError(err.message?.includes('Invalid')
+          ? 'Incorrect code. Check Google Authenticator and try again.'
+          : err.message || 'Verification failed.');
+        setCode('');
+      }
     } finally {
       setLoading(false);
     }
@@ -151,10 +166,16 @@ const LoginPage = () => {
       if (error) throw error;
       // Session upgraded to aal2 — AuthContext useEffect redirects
     } catch (err) {
-      setError(err.message?.includes('Invalid')
-        ? 'Incorrect code. Make sure you scanned the QR code and entered the current 6-digit code.'
-        : err.message || 'Enrollment failed.');
-      setCode('');
+      if (err.message?.includes('expired')) {
+        setError('Code expired. Please sign in again.');
+        setStep('credentials');
+        setCode('');
+      } else {
+        setError(err.message?.includes('Invalid')
+          ? 'Incorrect code. Make sure you scanned the QR code and entered the current 6-digit code.'
+          : err.message || 'Enrollment failed.');
+        setCode('');
+      }
     } finally {
       setLoading(false);
     }
