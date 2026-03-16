@@ -362,7 +362,7 @@ function CustomerDrilldownModal({ event, onClose }) {
 
 // ─── Triage Tab ──────────────────────────────────────────────────────────────
 
-function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sortCol, sortDir, onSort, setSelectedEvent, producers, bulkAssign, currentEmployee }) {
+function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sortCol, sortDir, onSort, setSelectedEvent, producers, bulkAssign, currentEmployee, uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancelUpload }) {
   const [drilldownEvent, setDrilldownEvent] = useState(null);
   const [myCasesOnly, setMyCasesOnly] = useState(false);
   const brokenCount = events.filter(e => e.status === "promise_broken").length;
@@ -373,6 +373,25 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
 
   return (
     <div>
+      {/* Upload Section */}
+      <div style={{ marginBottom: 24, borderBottom: '1px solid #252A3A', paddingBottom: 24 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+          Upload Pending Cancellation Report
+        </div>
+        <UploadTab
+          uploadFile={uploadFile}
+          uploadError={uploadError}
+          uploadMsg={uploadMsg}
+          isParsing={isParsing}
+          isCommitting={isCommitting}
+          diffResult={diffResult}
+          fileInputRef={fileInputRef}
+          onFileSelect={onFileSelect}
+          onCommit={onCommit}
+          onCancel={onCancelUpload}
+        />
+      </div>
+
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap", rowGap: 8 }}>
         <div style={{ display: "flex", gap: 4 }}>
           {[
@@ -526,6 +545,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
           onClose={() => setDrilldownEvent(null)}
         />
       )}
+
     </div>
   );
 }
@@ -3327,10 +3347,10 @@ export default function BookHealthPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["at_risk","triage","renewals","resolved","attrition","growth","trends","upload"].map(t => (
+        {["at_risk","triage","renewals","resolved","attrition","growth","trends"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "at_risk" ? "⚡ At Risk" : t === "triage" ? "Cancellations" : t === "renewals" ? "Renewal Queue" : t === "resolved" ? "Closed" :
-             t === "attrition" ? "Lapse History" : t === "growth" ? "Net Growth" : t === "trends" ? "Cancel Trends" : "Import"}
+             t === "attrition" ? "Lapse History" : t === "growth" ? "Net Growth" : "Cancel Trends"}
           </button>
         ))}
       </div>
@@ -3356,14 +3376,6 @@ export default function BookHealthPage() {
           producers={producers}
           bulkAssign={bulkAssign}
           currentEmployee={currentEmployee}
-        />
-      )}
-      {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
-      {activeTab === "renewals" && (
-        <RenewalTab agencyId={agencyId} currentUserId={currentUserId} currentEmployeeId={currentEmployee?.id ?? null} />
-      )}
-      {activeTab === "upload" && (
-        <UploadTab
           uploadFile={uploadFile}
           uploadError={uploadError}
           uploadMsg={uploadMsg}
@@ -3373,8 +3385,12 @@ export default function BookHealthPage() {
           fileInputRef={fileInputRef}
           onFileSelect={handleFileSelect}
           onCommit={handleCommitUpload}
-          onCancel={() => { setDiffResult(null); setUploadFile(null); }}
+          onCancelUpload={() => { setDiffResult(null); setUploadFile(null); }}
         />
+      )}
+      {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
+      {activeTab === "renewals" && (
+        <RenewalTab agencyId={agencyId} currentUserId={currentUserId} currentEmployeeId={currentEmployee?.id ?? null} />
       )}
       {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
       {activeTab === "attrition" && (
