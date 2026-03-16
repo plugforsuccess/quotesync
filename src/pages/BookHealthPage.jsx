@@ -714,7 +714,7 @@ function TrendsTab({ trendsData }) {
 
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
-function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId }) {
+function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [] }) {
   const days = daysUntilCancel(event.cancel_effective_date);
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
@@ -722,7 +722,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
   const [form, setForm] = useState({
     status: event.status,
-    assigned_to: event.assigned_to || "",
+    assigned_to_id: event.assigned_to_id || "",
     contact_method: event.contact_method || "",
     promise_date: event.promise_date || "",
     termination_reason: event.termination_reason || "",
@@ -777,6 +777,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     }
     if (["saved","lost","requested_cancellation"].includes(form.status) && !event.resolution_date) {
       updates.resolution_date = new Date().toISOString().slice(0,10);
+    }
+    // Sync assigned_to (legacy text) with assigned_to_id (employee FK)
+    if (!updates.assigned_to_id) {
+      updates.assigned_to_id = null;
+      updates.assigned_to = null;
+    } else {
+      const rep = producers.find(p => p.id === updates.assigned_to_id);
+      updates.assigned_to = rep
+        ? (rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim())
+        : null;
     }
     await onUpdate(event.id, updates);
     setSaving(false);
@@ -908,9 +918,14 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div>
               <label>Assigned To</label>
-              <input type="text" value={form.assigned_to}
-                onChange={ev => setForm(p => ({ ...p, assigned_to: ev.target.value }))}
-                placeholder="Producer name" />
+              <select value={form.assigned_to_id} onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}>
+                <option value="">Unassigned</option>
+                {producers.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label>Promise Date</label>
@@ -2562,9 +2577,14 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
     setSaving(true);
     try {
       if (side === 'cancel' && r.cancel_event_id) {
+        // Sync both assigned_to_id (FK) and assigned_to (legacy text) for display
+        const rep = producers.find(p => p.id === employeeId);
+        const displayName = rep
+          ? (rep.preferred_name || `${rep.first_name || ''} ${rep.last_name || ''}`.trim())
+          : null;
         const { error } = await supabase
           .from('pending_cancel_events')
-          .update({ assigned_to_id: employeeId || null })
+          .update({ assigned_to_id: employeeId || null, assigned_to: displayName })
           .eq('id', r.cancel_event_id);
         if (error) throw error;
         setLocalRow(prev => ({ ...prev, cancel_assigned_to_id: employeeId || null }));
@@ -3204,6 +3224,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           onUpdate={updateCancelEvent}
           agencyId={agencyId}
           currentEmployeeId={currentEmployeeId}
+          producers={producers}
         />
       )}
       {drilldown && drilldown.side === 'renewal' && (
@@ -3801,6 +3822,45 @@ export default function BookHealthPage() {
     if (!diffResult || !agencyId || isCommitting) return;
     setIsCommitting(true);
     try {
+      // 1. Load active service reps for round-robin assignment
+      const { data: reps } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, preferred_name")
+        .eq("org_id", agencyId)
+        .eq("employment_status", "active")
+        .contains("roles", ["service"])
+        .order("last_name");
+
+      const activeReps = reps || [];
+
+      // 2. Seed running count with existing caseloads for balanced distribution
+      const runningCount = {};
+      if (activeReps.length > 0) {
+        const { data: caseloads } = await supabase
+          .from("pending_cancel_events")
+          .select("assigned_to_id")
+          .eq("agency_id", agencyId)
+          .not("assigned_to_id", "is", null)
+          .not("status", "in", '("saved","lost","auto_resolved","requested_cancellation")');
+
+        activeReps.forEach(r => { runningCount[r.id] = 0; });
+        (caseloads || []).forEach(c => {
+          if (runningCount[c.assigned_to_id] !== undefined) {
+            runningCount[c.assigned_to_id]++;
+          }
+        });
+      }
+
+      function pickNextRep() {
+        if (activeReps.length === 0) return null;
+        const sorted = [...activeReps].sort(
+          (a, b) => (runningCount[a.id] || 0) - (runningCount[b.id] || 0)
+        );
+        const picked = sorted[0];
+        runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
+        return picked;
+      }
+
       // Create batch record with committed=false; flip to true only after all writes succeed
       const { data: batch, error: batchErr } = await supabase
         .from("pending_cancel_uploads")
@@ -3821,11 +3881,18 @@ export default function BookHealthPage() {
       if (diffResult.toAdd.length > 0) {
         const { error } = await supabase
           .from("pending_cancel_events")
-          .insert(diffResult.toAdd.map(r => ({
-            agency_id: agencyId,
-            upload_batch_id: batchId,
-            ...r,
-          })));
+          .insert(diffResult.toAdd.map(r => {
+            const rep = pickNextRep();
+            return {
+              agency_id: agencyId,
+              upload_batch_id: batchId,
+              ...(rep ? {
+                assigned_to_id: rep.id,
+                assigned_to: rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim(),
+              } : {}),
+              ...r,
+            };
+          }));
         if (error) throw new Error(error.message);
       }
 
@@ -3852,7 +3919,16 @@ export default function BookHealthPage() {
         .update({ committed: true })
         .eq("id", batchId);
 
-      setUploadMsg(`${diffResult.toAdd.length} added · ${diffResult.toUpdate.length} updated · ${diffResult.toAutoResolve.length} auto-resolved`);
+      const repNames = activeReps.map(r =>
+        r.preferred_name || `${r.first_name || ""} ${r.last_name || ""}`.trim()
+      );
+      const assignmentSummary = activeReps.length === 0
+        ? "cases unassigned"
+        : activeReps.length === 1
+        ? `assigned to ${repNames[0]}`
+        : `distributed across ${repNames.join(", ")}`;
+
+      setUploadMsg(`${diffResult.toAdd.length} added · ${diffResult.toUpdate.length} updated · ${diffResult.toAutoResolve.length} auto-resolved · ${assignmentSummary}`);
       setDiffResult(null);
       setUploadFile(null);
       await loadEvents();
@@ -3980,6 +4056,7 @@ export default function BookHealthPage() {
           onUpdate={updateEvent}
           agencyId={agencyId}
           currentEmployeeId={currentEmployee?.id ?? null}
+          producers={producers}
         />,
         document.body
       )}
