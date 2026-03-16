@@ -388,7 +388,7 @@ function App() {
 
             {/* Admin - Agency Management */}
             <Route
-              path="admin/agencies"
+              path="/admin/agencies"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <ErrorBoundary fallback={<PageError />}>
@@ -400,7 +400,7 @@ function App() {
               }
             />
             <Route
-              path="admin/agencies/:id"
+              path="/admin/agencies/:id"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <ErrorBoundary fallback={<PageError />}>
@@ -414,7 +414,7 @@ function App() {
 
             {/* Admin - Employee Roster */}
             <Route
-              path="admin/agency/employees"
+              path="/admin/agency/employees"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <ErrorBoundary fallback={<PageError />}>
@@ -428,7 +428,7 @@ function App() {
 
             {/* Admin - Audit Log */}
             <Route
-              path="admin/audit"
+              path="/admin/audit"
               element={
                 <ProtectedRoute requiredRole="admin">
                   <ErrorBoundary fallback={<PageError />}>
@@ -442,7 +442,7 @@ function App() {
 
             {/* Admin - Time & Attendance (platform_admin+) */}
             <Route
-              path="admin/time-attendance"
+              path="/admin/time-attendance"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <ErrorBoundary fallback={<PageError />}>
@@ -456,7 +456,7 @@ function App() {
 
             {/* Admin - CS Performance Dashboard (platform_admin+) */}
             <Route
-              path="admin/cs-performance"
+              path="/admin/cs-performance"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <ErrorBoundary fallback={<PageError />}>
@@ -470,7 +470,7 @@ function App() {
 
             {/* Admin - Revenue Projections Dashboard (platform_admin+) */}
             <Route
-              path="admin/revenue-projections"
+              path="/admin/revenue-projections"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <ErrorBoundary fallback={<PageError />}>
@@ -484,7 +484,7 @@ function App() {
 
             {/* Admin - Producer Compensation Model (agency principals) */}
             <Route
-              path="admin/producers/:employeeId/comp-model"
+              path="/admin/producers/:employeeId/comp-model"
               element={
                 <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
                   <ErrorBoundary fallback={<PageError />}>
@@ -498,7 +498,7 @@ function App() {
 
             {/* Admin - Book Health Dashboard (platform_admin+) */}
             <Route
-              path="admin/book-health"
+              path="/admin/book-health"
               element={
                 <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                   <ErrorBoundary fallback={<PageError />}>
