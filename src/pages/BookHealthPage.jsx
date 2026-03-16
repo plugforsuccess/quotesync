@@ -1287,7 +1287,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
 // ─── Renewal Tab ────────────────────────────────────────────────────────────
 
-function RenewalTab({ agencyId, currentUserId }) {
+function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
   const queryClient = useQueryClient();
   const [selectedRenewal, setSelectedRenewal] = useState(null);
   const [statusFilter, setStatusFilter] = useState("active");
@@ -1346,7 +1346,9 @@ function RenewalTab({ agencyId, currentUserId }) {
   }, [producers, assignToId]);
 
   // Auto-flag unreachable: 5+ attempts with no reached result, past renewal date
+  const hasFlaggedUnreachable = useRef(false);
   useEffect(() => {
+    if (hasFlaggedUnreachable.current) return;
     const today = new Date().toISOString().slice(0, 10);
     const toFlag = renewalEvents.filter(e =>
       e.status === "attempting" &&
@@ -1354,6 +1356,7 @@ function RenewalTab({ agencyId, currentUserId }) {
       e.renewal_date <= today
     );
     if (toFlag.length === 0) return;
+    hasFlaggedUnreachable.current = true;
     Promise.all(
       toFlag.map(e =>
         supabase.from("renewal_events")
@@ -1673,7 +1676,7 @@ function RenewalTab({ agencyId, currentUserId }) {
           onUpdate={updateRenewalEvent}
           producers={producers}
           agencyId={agencyId}
-          currentEmployeeId={currentUserId}
+          currentEmployeeId={currentEmployeeId}
         />,
         document.body
       )}
@@ -2325,6 +2328,23 @@ export default function BookHealthPage() {
     supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
   }, []);
 
+  // ─── Resolve current user's employee record (auth UID → employees.id) ─────
+  const { data: currentEmployee } = useQuery({
+    queryKey: ["current_employee", agencyId, currentUserId],
+    queryFn: async () => {
+      if (!agencyId || !currentUserId) return null;
+      const { data } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, role_type")
+        .eq("org_id", agencyId)
+        .eq("auth_user_id", currentUserId)
+        .maybeSingle();
+      return data || null;
+    },
+    enabled: !!agencyId && !!currentUserId,
+    staleTime: 10 * 60 * 1000,
+  });
+
   // ─── Load producers for bulk assign ────────────────────────────────────────
 
   const { data: producers = [] } = useQuery({
@@ -2640,7 +2660,7 @@ export default function BookHealthPage() {
       )}
       {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
       {activeTab === "renewals" && (
-        <RenewalTab agencyId={agencyId} currentUserId={currentUserId} />
+        <RenewalTab agencyId={agencyId} currentUserId={currentUserId} currentEmployeeId={currentEmployee?.id ?? null} />
       )}
       {activeTab === "upload" && (
         <UploadTab
@@ -2672,7 +2692,7 @@ export default function BookHealthPage() {
           onClose={() => setSelectedEvent(null)}
           onUpdate={updateEvent}
           agencyId={agencyId}
-          currentEmployeeId={currentUserId}
+          currentEmployeeId={currentEmployee?.id ?? null}
         />,
         document.body
       )}
