@@ -832,11 +832,15 @@ function parseRenewalXLSX(data) {
 
   const iPolicy    = findRenewalCol(["policy number", "policy no", "policy #", "pol no"]);
   const iCustomer  = findRenewalCol(["customer name", "insured name", "insured", "name", "customer"]);
+  const iFirstName = findRenewalCol(["insured first name", "first name"]);
+  const iLastName  = findRenewalCol(["insured last name", "last name"]);
   const iProduct   = findRenewalCol(["product name", "line code", "product code", "line of business", "lob", "product"]);
   const iPremium   = findRenewalCol(["renewal premium", "premium new", "written premium", "annual premium", "premium"]);
   const iRenewDate = findRenewalCol(["renewal date", "renewal effective", "policy renewal", "expiration date", "exp date", "renewal"]);
   const iPhone     = findRenewalCol(["insured phone", "phone number", "phone", "mobile", "cell"]);
+  const iEmail     = findRenewalCol(["insured email", "email address", "email"]);
   const iItems     = findRenewalCol(["no. of items", "item count", "items", "number of items"]);
+  const iRenewalStatus = findRenewalCol(["renewal status"]);
 
   return rows.filter(r => r.some(Boolean)).map(r => {
     const policyNo = iPolicy >= 0 ? r[iPolicy]?.toString().trim() : null;
@@ -863,15 +867,27 @@ function parseRenewalXLSX(data) {
     const itemsRaw = iItems >= 0 ? parseInt(r[iItems]) : null;
     const itemCount = !isNaN(itemsRaw) && itemsRaw > 0 ? itemsRaw : 1;
 
+    // Build full customer name: prefer first+last columns, fall back to single name column
+    let customerName = null;
+    if (iFirstName >= 0 && iLastName >= 0) {
+      const first = r[iFirstName]?.toString().trim() || "";
+      const last  = r[iLastName]?.toString().trim() || "";
+      customerName = `${first} ${last}`.trim() || null;
+    } else if (iCustomer >= 0) {
+      customerName = r[iCustomer]?.toString().trim() || null;
+    }
+
     return {
       policy_no:    policyNo,
-      customer_name: iCustomer >= 0 ? r[iCustomer]?.toString().trim() || null : null,
+      customer_name: customerName,
       product,
       product_raw:  productRaw,
       premium,
       item_count:   itemCount,
       renewal_date: renewalDate,
       phone:        iPhone >= 0 ? r[iPhone]?.toString().trim() || null : null,
+      email:        iEmail >= 0 ? r[iEmail]?.toString().trim() || null : null,
+      renewal_status: iRenewalStatus >= 0 ? r[iRenewalStatus]?.toString().trim() || null : null,
     };
   }).filter(Boolean);
 }
@@ -1018,6 +1034,7 @@ function RenewalTab({ agencyId, currentUserId }) {
   // Upload state
   const [uploadFile, setUploadFile] = useState(null);
   const [parsedRows, setParsedRows] = useState(null);
+  const [excludedCount, setExcludedCount] = useState(0);
   const [uploadError, setUploadError] = useState("");
   const [uploadMsg, setUploadMsg] = useState("");
   const [isParsing, setIsParsing] = useState(false);
@@ -1128,6 +1145,7 @@ function RenewalTab({ agencyId, currentUserId }) {
     setUploadError("");
     setUploadMsg("");
     setParsedRows(null);
+    setExcludedCount(0);
     setIsParsing(true);
     try {
       const buf = await file.arrayBuffer();
@@ -1136,7 +1154,21 @@ function RenewalTab({ agencyId, currentUserId }) {
         setUploadError("No valid rows found. Check that the file has Policy No and Renewal Date columns.");
         return;
       }
-      setParsedRows(rows);
+      // Filter to actionable rows — only "Renewal Not Taken" (or rows without a renewal_status column)
+      const hasStatusCol = rows.some(r => r.renewal_status);
+      if (hasStatusCol) {
+        const actionable = rows.filter(r => !r.renewal_status || r.renewal_status === "Renewal Not Taken");
+        const excluded = rows.length - actionable.length;
+        setExcludedCount(excluded);
+        if (actionable.length === 0) {
+          setUploadError(`All ${rows.length} rows are already renewed or not applicable. No actionable rows to import.`);
+          return;
+        }
+        setParsedRows(actionable);
+      } else {
+        setExcludedCount(0);
+        setParsedRows(rows);
+      }
     } catch (err) {
       console.error("[renewal parse error]", err.message);
       setUploadError(friendlyUploadError(err.message));
@@ -1210,6 +1242,7 @@ function RenewalTab({ agencyId, currentUserId }) {
 
       setUploadMsg(`${toAdd.length} added · ${updatedCount} updated`);
       setParsedRows(null);
+      setExcludedCount(0);
       setUploadFile(null);
       queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] });
     } catch (err) {
@@ -1261,12 +1294,19 @@ function RenewalTab({ agencyId, currentUserId }) {
 
         {parsedRows && !uploadMsg && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Preview — {parsedRows.length} rows parsed</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>
+              Preview — {parsedRows.length} actionable rows
+              {excludedCount > 0 && (
+                <span style={{ fontWeight: 400, fontSize: 12, color: "#64748B", marginLeft: 8 }}>
+                  ({excludedCount} already renewed excluded)
+                </span>
+              )}
+            </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
                 {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
               </button>
-              <button className="btn-ghost" onClick={() => { setParsedRows(null); setUploadFile(null); }}>
+              <button className="btn-ghost" onClick={() => { setParsedRows(null); setExcludedCount(0); setUploadFile(null); }}>
                 Cancel
               </button>
             </div>
