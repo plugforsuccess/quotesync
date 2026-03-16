@@ -73,7 +73,7 @@ const STATUS_CONFIG = {
   contacted:              { label: "Contacted",         color: "#3B82F6", bg: "#3B82F622" }, // legacy
   payment_plan_requested: { label: "Payment Plan",      color: "#8B5CF6", bg: "#8B5CF622" },
   promise_to_pay:         { label: "Promise to Pay",    color: "#8B5CF6", bg: "#8B5CF622" },
-  saved:                  { label: "Saved \u2713",      color: "#10B981", bg: "#10B98122" },
+  saved:                  { label: "Saved ✓",      color: "#10B981", bg: "#10B98122" },
   promise_broken:         { label: "Promise Broken",    color: "#EF4444", bg: "#EF444422" },
   requested_cancellation: { label: "Wants to Cancel",   color: "#EF4444", bg: "#EF444422" },
   lost:                   { label: "Lost",              color: "#64748B", bg: "#64748B22" },
@@ -908,7 +908,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 <option value="contacted">Contacted — no action yet</option>
                 <option value="payment_plan_requested">Wants Payment Plan</option>
                 <option value="promise_to_pay">Promised to Pay</option>
-                <option value="saved">Saved \u2713</option>
+                <option value="saved">Saved ✓</option>
                 <option value="requested_cancellation">Wants to Cancel</option>
                 <option value="lost">Lost</option>
               </select>
@@ -1125,7 +1125,7 @@ const RENEWAL_STATUS_CONFIG = {
   left_voicemail:   { label: "Left Voicemail",   color: "#F59E0B", bg: "#FEF3C7" },
   review_requested: { label: "Review Requested", color: "#3B82F6", bg: "#DBEAFE" },
   shopping:         { label: "Shopping",         color: "#EF4444", bg: "#FEE2E2" },
-  confirmed:        { label: "Confirmed \u2713", color: "#10B981", bg: "#D1FAE5" },
+  confirmed:        { label: "Confirmed ✓", color: "#10B981", bg: "#D1FAE5" },
   at_risk:          { label: "At Risk",          color: "#EF4444", bg: "#FEE2E2" },
   escalated:        { label: "Escalated",        color: "#8B5CF6", bg: "#EDE9FE" },
   lost:             { label: "Lost",             color: "#6B7280", bg: "#F3F4F6" },
@@ -1267,7 +1267,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 : "\u2014",
               color: event.premium_change == null ? "#94A3B8"
                 : event.premium_change > 0 ? "#EF4444" : "#10B981" },
-            { label: "Easy Pay",      value: event.easy_pay === true ? "Yes \u2713" : event.easy_pay === false ? "No" : "\u2014" },
+            { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
             { label: "Tenure",        value: event.original_year
                 ? `${CURRENT_YEAR - event.original_year} yrs (${event.original_year})`
                 : "\u2014" },
@@ -1372,7 +1372,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             <div>
               <label>Outcome (reached customer)</label>
               <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
-                <option value="confirmed">Confirmed Renewal \u2713</option>
+                <option value="confirmed">Confirmed Renewal ✓</option>
                 <option value="review_requested">Wants Policy Review</option>
                 <option value="shopping">Shopping Competitors</option>
                 <option value="at_risk">At Risk (payment/unhappy)</option>
