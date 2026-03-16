@@ -145,10 +145,13 @@ export function calcCancelPriority(event) {
     cycle === 2 ? 40 :
     cycle >= 3  ? 20 : 20;
 
-  return Math.round(
+  const score = Math.round(
     (timeFactor    * 0.45) +
     (valueFactor   * 0.30) +
     (attemptFactor * 0.15) +
     (cycleFactor   * 0.10)
   );
+
+  const stageBoost = event.stage === 'cancelled' ? 15 : 0;
+  return Math.min(100, score + stageBoost);
 }

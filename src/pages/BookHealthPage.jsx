@@ -94,6 +94,9 @@ const COL_MAP = {
   phone:          ["insured phone", "phone number", "phone", "mobile", "cell"],
   items:          ["no. of items", "item count", "items", "number of items"],
   cancel_date:    ["pending cancel date", "termination effective", "cancellation date", "cancel date", "cancel effective date", "eff cancel date", "cancellation effective date"],
+  amount_due:     ["amount due($)", "amount due", "amt due", "balance due"],
+  cancel_status:  ["status"],
+  original_year:  ["original year", "orig year", "policy year"],
 };
 
 
@@ -163,6 +166,9 @@ function parseReport(file) {
         const phoneI     = findCol(headers, COL_MAP.phone);
         const priorPmI   = findCol(headers, COL_MAP.prior_premium);
         const itemsI     = findCol(headers, COL_MAP.items);
+        const amountDueI    = findCol(headers, COL_MAP.amount_due);
+        const cancelStatusI = findCol(headers, COL_MAP.cancel_status);
+        const origYearI     = findCol(headers, COL_MAP.original_year);
 
         if (pi < 0 || di < 0) throw new Error("Could not find required columns (Policy No, Cancel Date). Check report format.");
 
@@ -214,6 +220,11 @@ function parseReport(file) {
             phone,
             item_count,
             cancel_effective_date: cancelDate,
+            amount_due:    amountDueI >= 0 ? (parseFloat(String(row[amountDueI]).replace(/[$,]/g, '')) || null) : null,
+            original_year: origYearI >= 0 ? parseInt(row[origYearI]) || null : null,
+            stage: (cancelStatusI >= 0 && row[cancelStatusI]?.toString().trim() === 'Cancelled')
+              ? 'cancelled'
+              : 'pending_cancel',
           });
         }
 
@@ -246,8 +257,19 @@ function diffReport(parsed, existing) {
     const key = makeKey(row.policy_no, row.cancel_effective_date);
     if (activeKeys.has(key)) {
       const ex = activeKeys.get(key);
-      if (ex.last_seen_on !== today || ex.premium_at_risk !== row.premium_at_risk) {
-        toUpdate.push({ id: ex.id, last_seen_on: today, premium_at_risk: row.premium_at_risk, prior_premium: row.prior_premium });
+      const needsUpdate =
+        ex.last_seen_on !== today ||
+        ex.premium_at_risk !== row.premium_at_risk ||
+        (row.stage === 'cancelled' && ex.stage !== 'cancelled') ||
+        (row.amount_due != null && ex.amount_due !== row.amount_due);
+      if (needsUpdate) {
+        toUpdate.push({
+          id: ex.id,
+          last_seen_on: today,
+          premium_at_risk: row.premium_at_risk,
+          prior_premium: row.prior_premium,
+          ...(row.stage === 'cancelled' ? { stage: 'cancelled', amount_due: row.amount_due } : {}),
+        });
       } else {
         duplicates.push(key);
       }
@@ -360,196 +382,6 @@ function CustomerDrilldownModal({ event, onClose }) {
   );
 }
 
-// ─── Triage Tab ──────────────────────────────────────────────────────────────
-
-function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sortCol, sortDir, onSort, setSelectedEvent, producers, bulkAssign, currentEmployee, uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancelUpload }) {
-  const [drilldownEvent, setDrilldownEvent] = useState(null);
-  const [myCasesOnly, setMyCasesOnly] = useState(false);
-  const brokenCount = events.filter(e => e.status === "promise_broken").length;
-
-  const displayEvents = myCasesOnly && currentEmployee
-    ? filteredEvents.filter(e => e.assigned_to_id === currentEmployee.id)
-    : filteredEvents;
-
-  return (
-    <div>
-      {/* Upload Section */}
-      <div style={{ marginBottom: 24, borderBottom: '1px solid #252A3A', paddingBottom: 24 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-          Upload Pending Cancellation Report
-        </div>
-        <UploadTab
-          uploadFile={uploadFile}
-          uploadError={uploadError}
-          uploadMsg={uploadMsg}
-          isParsing={isParsing}
-          isCommitting={isCommitting}
-          diffResult={diffResult}
-          fileInputRef={fileInputRef}
-          onFileSelect={onFileSelect}
-          onCommit={onCommit}
-          onCancel={onCancelUpload}
-        />
-      </div>
-
-      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap", rowGap: 8 }}>
-        <div style={{ display: "flex", gap: 4 }}>
-          {[
-            { key: "active", label: "Active" },
-            { key: "attempting", label: "Attempting" },
-            { key: "reached", label: "Reached" },
-            { key: "all", label: "All" },
-            { key: "resolved", label: "Resolved" },
-          ].map(f => (
-            <button key={f.key} className={`btn-ghost ${statusFilter === f.key ? "active" : ""}`}
-              onClick={() => setStatusFilter(f.key)}
-              style={{ padding: "5px 12px", fontSize: 12 }}>
-              {f.label}
-            </button>
-          ))}
-        </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", flex: "1 1 auto", justifyContent: "flex-end" }}>
-          {currentEmployee?.roles?.includes('service') && (
-            <button
-              onClick={() => setMyCasesOnly(v => !v)}
-              className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
-              style={{ fontSize: 12 }}
-            >
-              {"\uD83D\uDC64"} My Cases
-              {myCasesOnly && ` (${displayEvents.length})`}
-            </button>
-          )}
-          <span style={{ fontSize: 12, color: "#64748B" }}>Bulk assign unassigned pending:</span>
-          {producers.map(p => {
-            const name = p.preferred_name || p.first_name;
-            return (
-              <button key={p.id} className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}
-                onClick={() => bulkAssign(p)}>
-                {"\u2192"} {name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {brokenCount > 0 && (
-        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
-          {brokenCount} broken promise{brokenCount > 1 ? "s" : ""} — follow up needed
-        </div>
-      )}
-
-      <div className="scroll-hint-container">
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ minWidth: 800 }}>
-            <thead>
-              <tr>
-                <SortTh col="priority" label="Priority" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="cancel_effective_date" label="Cancel" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="days_left" label="Days" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="product" label="Product" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="premium_at_risk" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="cycle" label="Cycle" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="attempt_count" label="Attempts" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="assigned_to" label="Assigned" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-                <SortTh col="promise_date" label="Promise" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
-              </tr>
-            </thead>
-          <tbody>
-            {displayEvents.map(event => {
-              const days = daysUntilCancel(event.cancel_effective_date);
-              const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
-              return (
-                <tr key={event.id} className="triage-row" onClick={() => setSelectedEvent(event)}>
-                  <td>
-                    <span style={{
-                      display: 'inline-block', padding: '2px 8px', borderRadius: 10,
-                      fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
-                      background: event._priority >= 80 ? '#EF444422'
-                                : event._priority >= 55 ? '#F59E0B22'
-                                : event._priority >= 30 ? '#3B82F622' : '#64748B22',
-                      color: event._priority >= 80 ? '#EF4444'
-                           : event._priority >= 55 ? '#F59E0B'
-                           : event._priority >= 30 ? '#3B82F6' : '#64748B',
-                    }}>{event._priority}</span>
-                  </td>
-                  <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                    {event.cancel_effective_date}
-                  </td>
-                  <td>
-                    <span className="urgency-badge" style={{ background: `${urgencyColor(days)}22`, color: urgencyColor(days) }}>
-                      {days <= 0 ? "PAST DUE" : `${days}d`}
-                    </span>
-                  </td>
-                  <td>
-                    <button
-                      onClick={e => { e.stopPropagation(); setDrilldownEvent(event); }}
-                      style={{
-                        background: "none", border: "none", cursor: "pointer",
-                        color: "#E2E8F0", fontWeight: 600, fontSize: 13,
-                        padding: 0, fontFamily: "inherit",
-                        textDecoration: "underline", textDecorationColor: "transparent",
-                        transition: "text-decoration-color 0.15s",
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.textDecorationColor = "#3B82F6"}
-                      onMouseLeave={e => e.currentTarget.style.textDecorationColor = "transparent"}
-                    >
-                      {maskCustomerName(event.customer_name)}
-                    </button>
-                  </td>
-                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "—"}</td>
-                  <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
-                    {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
-                  </td>
-                  <td style={{
-                    fontFamily: "'DM Mono', monospace", fontSize: 12,
-                    color: (event.cycle || 1) >= 3 ? '#EF4444'
-                         : (event.cycle || 1) === 2 ? '#F59E0B' : '#64748B'
-                  }}>
-                    {event.cycle || 1}
-                    {(event.cycle || 1) >= 3 && <span style={{ marginLeft: 4, fontSize: 10 }}>↻</span>}
-                  </td>
-                  <td style={{ color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#64748B", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
-                    {event.attempt_count || 0}
-                  </td>
-                  <td>
-                    <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
-                  </td>
-                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "—"}</td>
-                  <td style={{ fontSize: 12, fontFamily: "'DM Mono', monospace",
-                    color: (() => {
-                      if (!event.promise_date) return '#64748B';
-                      const d = Math.ceil((new Date(event.promise_date) - new Date()) / 86400000);
-                      return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : '#94A3B8';
-                    })()
-                  }}>
-                    {event.promise_date || '—'}
-                  </td>
-                </tr>
-              );
-            })}
-            {displayEvents.length === 0 && (
-              <tr><td colSpan={11} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
-                No events in this filter
-              </td></tr>
-            )}
-          </tbody>
-          </table>
-        </div>
-      </div>
-
-      {drilldownEvent && (
-        <CustomerDrilldownModal
-          event={drilldownEvent}
-          onClose={() => setDrilldownEvent(null)}
-        />
-      )}
-
-    </div>
-  );
-}
-
 // ─── Resolved Tab ────────────────────────────────────────────────────────────
 
 function ResolvedTab({ resolvedEvents }) {
@@ -649,6 +481,15 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               </div>
             ))}
           </div>
+
+          {/* Stage breakdown — shown for Cancellation Audit uploads */}
+          {diffResult && (diffResult.stage1Count != null || diffResult.stage2Count != null) && (
+            <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 6, marginBottom: 10 }}>
+              <span style={{ color: '#F59E0B' }}>⚠ {diffResult.stage1Count ?? 0} pending (Cancel)</span>
+              {' · '}
+              <span style={{ color: '#EF4444' }}>🚫 {diffResult.stage2Count ?? 0} lapsed (Cancelled)</span>
+            </div>
+          )}
 
           {diffResult.toAutoResolve.length > 0 && (
             <div style={{ fontSize: 12, color: "#F59E0B", marginBottom: 14, background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
@@ -813,6 +654,25 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
+
+        {event.stage === 'cancelled' && (
+          <div style={{ background: '#EF444411', border: '1px solid #EF444433',
+            borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#EF4444',
+              textTransform: 'uppercase', marginBottom: 6 }}>
+              🚫 Coverage Lapsed — Reinstatement Required
+            </div>
+            <div style={{ fontSize: 13, color: '#E2E8F0' }}>
+              Amount to Reinstate:{' '}
+              <strong style={{ color: '#F59E0B', fontFamily: "'DM Mono', monospace" }}>
+                {event.amount_due ? `$${Number(event.amount_due).toLocaleString()}` : '—'}
+              </strong>
+            </div>
+            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+              Customer must pay this amount to restore coverage before termination.
+            </div>
+          </div>
+        )}
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 20 }}>
           {[
@@ -3132,6 +2992,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           <thead>
             <tr>
               <SortTh col="priority"           label="Priority"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th>Stage</th>
               <SortTh col="customer_name"      label="Customer"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               {/* Cancel column — hide when filtering to renewal-only */}
               {riskFilter !== 'renewal' && (
@@ -3174,6 +3035,21 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     }}>{row._priority}</span>
                   </td>
 
+                  {/* Stage */}
+                  <td>
+                    {row.cancel_stage === 'cancelled' ? (
+                      <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
+                        fontSize: 10, fontWeight: 700, background: '#EF444422', color: '#EF4444' }}>
+                        🚫 Lapsed
+                      </span>
+                    ) : row.cancel_event_id ? (
+                      <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
+                        fontSize: 10, fontWeight: 700, background: '#F59E0B22', color: '#F59E0B' }}>
+                        ⚠ Pending
+                      </span>
+                    ) : null}
+                  </td>
+
                   {/* Customer name */}
                   <td style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 13 }}>
                     {maskCustomerName(row.customer_name)}
@@ -3181,7 +3057,6 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                       <span style={{ marginLeft: 6, fontSize: 10, color: '#EF4444' }}>⚡</span>
                     )}
                   </td>
-
 
                   {/* Cancel urgency cell */}
                   {riskFilter !== 'renewal' && (
@@ -3249,7 +3124,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               );
             })}
             {filteredRows.length === 0 && (
-              <tr><td colSpan={9} style={{ textAlign: 'center', color: '#334155', padding: '32px 0' }}>
+              <tr><td colSpan={10} style={{ textAlign: 'center', color: '#334155', padding: '32px 0' }}>
                 No at-risk policies in this filter
               </td></tr>
             )}
@@ -3620,6 +3495,9 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 function ImportTab({
   uploadFile, uploadError, uploadMsg, isParsing, isCommitting,
   diffResult, fileInputRef, onFileSelect, onCommit, onCancelUpload,
+  cancelAuditFile, cancelAuditError, cancelAuditMsg, isCancelAuditParsing,
+  isCancelAuditCommitting, cancelAuditDiff, cancelAuditFileInputRef,
+  onCancelAuditFileSelect, onCancelAuditCommit, onCancelAuditCancel,
   agencyId, currentUserId, currentEmployeeId,
 }) {
   return (
@@ -3662,6 +3540,34 @@ function ImportTab({
         </div>
 
       </div>
+
+      {/* Cancellation Audit — full width below */}
+      <div style={{ marginTop: 16, background: '#161924', border: '1px solid #EF444433',
+        borderRadius: 12, padding: 20 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#EF4444',
+          textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+          🚫 Cancellation Audit
+        </div>
+        <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
+          Upload the Allstate{' '}
+          <span style={{ fontFamily: "'DM Mono', monospace" }}>Cancellation Audit</span> report (XLSX).
+          <br />
+          <span style={{ color: '#F59E0B' }}>Cancel</span> rows → Stage 1 (pending).{' '}
+          <span style={{ color: '#EF4444' }}>Cancelled</span> rows → Stage 2 (coverage lapsed).
+        </div>
+        <UploadTab
+          uploadFile={cancelAuditFile}
+          uploadError={cancelAuditError}
+          uploadMsg={cancelAuditMsg}
+          isParsing={isCancelAuditParsing}
+          isCommitting={isCancelAuditCommitting}
+          diffResult={cancelAuditDiff}
+          fileInputRef={cancelAuditFileInputRef}
+          onFileSelect={onCancelAuditFileSelect}
+          onCommit={onCancelAuditCommit}
+          onCancel={onCancelAuditCancel}
+        />
+      </div>
     </div>
   );
 }
@@ -3685,6 +3591,15 @@ export default function BookHealthPage() {
   const [isCommitting, setIsCommitting] = useState(false);
   const fileInputRef = useRef(null);
   const hasFlaggedBroken = useRef(false);
+
+  // Cancellation Audit upload state
+  const [cancelAuditFile, setCancelAuditFile]               = useState(null);
+  const [cancelAuditDiff, setCancelAuditDiff]               = useState(null);
+  const [cancelAuditMsg, setCancelAuditMsg]                 = useState('');
+  const [cancelAuditError, setCancelAuditError]             = useState('');
+  const [isCancelAuditParsing, setIsCancelAuditParsing]     = useState(false);
+  const [isCancelAuditCommitting, setIsCancelAuditCommitting] = useState(false);
+  const cancelAuditFileInputRef = useRef(null);
   const [currentUserId, setCurrentUserId] = useState(null);
 
   const { data: events = [], isLoading: loading } = useQuery({
@@ -3979,6 +3894,8 @@ export default function BookHealthPage() {
       for (const u of diffResult.toUpdate) {
         const updatePayload = { last_seen_on: u.last_seen_on, premium_at_risk: u.premium_at_risk };
         if (u.prior_premium != null) updatePayload.prior_premium = u.prior_premium;
+        if (u.stage != null)         updatePayload.stage = u.stage;
+        if (u.amount_due != null)    updatePayload.amount_due = u.amount_due;
         await supabase
           .from("pending_cancel_events")
           .update(updatePayload)
@@ -4018,6 +3935,199 @@ export default function BookHealthPage() {
       setUploadError(`❌ ${friendlyUploadError(err.message)}`);
     } finally {
       setIsCommitting(false);
+    }
+  }
+
+  // ─── Cancellation Audit Upload Flow ─────────────────────────────────────────
+
+  async function handleCancelAuditFileSelect(file) {
+    if (!file) return;
+    setCancelAuditFile(file);
+    setCancelAuditError('');
+    setCancelAuditMsg('');
+    setCancelAuditDiff(null);
+    setIsCancelAuditParsing(true);
+    try {
+      const rows = await parseReport(file);
+      const stage1Count = rows.filter(r => r.stage === 'pending_cancel').length;
+      const stage2Count = rows.filter(r => r.stage === 'cancelled').length;
+      const diff = diffReport(rows, events);
+      setCancelAuditDiff({ ...diff, stage1Count, stage2Count });
+    } catch (err) {
+      setCancelAuditError(`❌ ${friendlyUploadError(err.message)}`);
+    } finally {
+      setIsCancelAuditParsing(false);
+    }
+  }
+
+  async function handleCancelAuditCommit() {
+    if (!cancelAuditDiff || !agencyId || isCancelAuditCommitting) return;
+    setIsCancelAuditCommitting(true);
+    try {
+      // 1. Load active service reps for round-robin assignment
+      const { data: reps } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, preferred_name")
+        .eq("org_id", agencyId)
+        .eq("employment_status", "active")
+        .contains("roles", ["service"])
+        .order("last_name");
+
+      const activeReps = reps || [];
+
+      // 2. Seed running count with existing caseloads
+      const runningCount = {};
+      if (activeReps.length > 0) {
+        const { data: caseloads } = await supabase
+          .from("pending_cancel_events")
+          .select("assigned_to_id")
+          .eq("agency_id", agencyId)
+          .not("assigned_to_id", "is", null)
+          .not("status", "in", '("saved","lost","auto_resolved","requested_cancellation","cancelled")');
+
+        activeReps.forEach(r => { runningCount[r.id] = 0; });
+        (caseloads || []).forEach(c => {
+          if (runningCount[c.assigned_to_id] !== undefined) {
+            runningCount[c.assigned_to_id]++;
+          }
+        });
+      }
+
+      function pickNextRep() {
+        if (activeReps.length === 0) return null;
+        const sorted = [...activeReps].sort(
+          (a, b) => (runningCount[a.id] || 0) - (runningCount[b.id] || 0)
+        );
+        const picked = sorted[0];
+        runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
+        return picked;
+      }
+
+      // 3. Collect parsed policy numbers for stage advancement matching
+      const parsedRows = [];
+      // Re-parse to get the rows (cancelAuditDiff only has toAdd/toUpdate/etc.)
+      // We use the toAdd rows which have stage/amount_due via ...row spread
+      const allPolicyNos = [
+        ...cancelAuditDiff.toAdd.map(r => r.policy_no),
+        ...cancelAuditDiff.toUpdate.map(r => r.policy_no || ''),
+      ].filter(Boolean);
+
+      // 4. Stage advancement: find existing events by policy_no only (not composite key)
+      // This handles cases where cancel_effective_date differs between Pending Cancel and Cancellation Audit
+      const policyNosFromAdd = cancelAuditDiff.toAdd.map(r => r.policy_no).filter(Boolean);
+      let stageAdvanceMap = new Map();
+      if (policyNosFromAdd.length > 0) {
+        const { data: existing } = await supabase
+          .from('pending_cancel_events')
+          .select('id, policy_no, stage, status, cancel_effective_date')
+          .eq('agency_id', agencyId)
+          .in('policy_no', policyNosFromAdd)
+          .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)');
+        (existing || []).forEach(e => {
+          stageAdvanceMap.set(e.policy_no.toLowerCase(), e);
+        });
+      }
+
+      // 5. Create batch record
+      const { data: batch, error: batchErr } = await supabase
+        .from("cancellation_uploads")
+        .insert({
+          agency_id: agencyId,
+          uploaded_by: (await supabase.auth.getUser()).data.user?.id,
+          filename: cancelAuditFile?.name,
+          rows_added: 0,
+          rows_updated: 0,
+          committed: false,
+        })
+        .select().single();
+      if (batchErr) throw new Error(batchErr.message);
+
+      const batchId = batch.id;
+      let rowsAdded = 0;
+      let rowsUpdated = 0;
+
+      // 6. Process toAdd: check for stage advancement by policy_no
+      if (cancelAuditDiff.toAdd.length > 0) {
+        const trueInserts = [];
+        for (const r of cancelAuditDiff.toAdd) {
+          const existingByPolicyNo = stageAdvanceMap.get(r.policy_no.toLowerCase());
+          if (existingByPolicyNo) {
+            // Stage advancement: update existing record
+            const advancePayload = {
+              last_seen_on: new Date().toISOString().slice(0, 10),
+              ...(r.stage === 'cancelled' ? { stage: 'cancelled' } : {}),
+              ...(r.amount_due != null ? { amount_due: r.amount_due } : {}),
+              ...(r.cancel_effective_date ? { cancel_effective_date: r.cancel_effective_date } : {}),
+              ...(r.premium_at_risk != null ? { premium_at_risk: r.premium_at_risk } : {}),
+            };
+            await supabase
+              .from('pending_cancel_events')
+              .update(advancePayload)
+              .eq('id', existingByPolicyNo.id);
+            rowsUpdated++;
+          } else {
+            // True insert
+            const rep = pickNextRep();
+            trueInserts.push({
+              agency_id: agencyId,
+              upload_batch_id: batchId,
+              ...(rep ? {
+                assigned_to_id: rep.id,
+                assigned_to: rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim(),
+              } : {}),
+              ...r,
+            });
+            rowsAdded++;
+          }
+        }
+        if (trueInserts.length > 0) {
+          const { error } = await supabase
+            .from("pending_cancel_events")
+            .insert(trueInserts);
+          if (error) throw new Error(error.message);
+        }
+      }
+
+      // 7. Process toUpdate (composite key matches)
+      for (const u of cancelAuditDiff.toUpdate) {
+        const updatePayload = { last_seen_on: u.last_seen_on, premium_at_risk: u.premium_at_risk };
+        if (u.prior_premium != null) updatePayload.prior_premium = u.prior_premium;
+        if (u.stage != null)         updatePayload.stage = u.stage;
+        if (u.amount_due != null)    updatePayload.amount_due = u.amount_due;
+        await supabase
+          .from("pending_cancel_events")
+          .update(updatePayload)
+          .eq("id", u.id);
+        rowsUpdated++;
+      }
+
+      // 8. No auto-resolve for Cancellation Audit — different population than Pending Cancel
+
+      // 9. Mark batch committed
+      await supabase
+        .from("cancellation_uploads")
+        .update({ committed: true, rows_added: rowsAdded, rows_updated: rowsUpdated })
+        .eq("id", batchId);
+
+      const repNames = activeReps.map(r =>
+        r.preferred_name || `${r.first_name || ""} ${r.last_name || ""}`.trim()
+      );
+      const assignmentSummary = activeReps.length === 0
+        ? "cases unassigned"
+        : activeReps.length === 1
+        ? `assigned to ${repNames[0]}`
+        : `distributed across ${repNames.join(", ")}`;
+
+      setCancelAuditMsg(`${cancelAuditDiff.stage1Count ?? 0} pending · ${cancelAuditDiff.stage2Count ?? 0} lapsed · ${rowsUpdated} updated · ${assignmentSummary}`);
+      setCancelAuditDiff(null);
+      setCancelAuditFile(null);
+      await loadEvents();
+      queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
+    } catch (err) {
+      console.error("[cancel audit commit error]", err.message);
+      setCancelAuditError(`❌ ${friendlyUploadError(err.message)}`);
+    } finally {
+      setIsCancelAuditCommitting(false);
     }
   }
 
@@ -4122,6 +4232,16 @@ export default function BookHealthPage() {
           onFileSelect={handleFileSelect}
           onCommit={handleCommitUpload}
           onCancelUpload={() => { setDiffResult(null); setUploadFile(null); setUploadError(''); }}
+          cancelAuditFile={cancelAuditFile}
+          cancelAuditError={cancelAuditError}
+          cancelAuditMsg={cancelAuditMsg}
+          isCancelAuditParsing={isCancelAuditParsing}
+          isCancelAuditCommitting={isCancelAuditCommitting}
+          cancelAuditDiff={cancelAuditDiff}
+          cancelAuditFileInputRef={cancelAuditFileInputRef}
+          onCancelAuditFileSelect={handleCancelAuditFileSelect}
+          onCancelAuditCommit={handleCancelAuditCommit}
+          onCancelAuditCancel={() => { setCancelAuditDiff(null); setCancelAuditFile(null); setCancelAuditError(''); }}
           agencyId={agencyId}
           currentUserId={currentUserId}
           currentEmployeeId={currentEmployee?.id ?? null}
