@@ -380,8 +380,8 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
             const name = p.preferred_name || p.first_name;
             return (
               <button key={p.id} className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}
-                onClick={() => bulkAssign(name)}>
-                → {name}
+                onClick={() => bulkAssign(p)}>
+                {"\u2192"} {name}
               </button>
             );
           })}
@@ -807,6 +807,561 @@ function parseLapseXLSX(data) {
       termination_reason: iReason >= 0   ? r[iReason]?.toString().trim() ?? "" : "",
     };
   }).filter(r => r.policy_no);
+}
+
+// ─── Renewal XLSX Parser ────────────────────────────────────────────────────
+
+// Allstate "Upcoming Renewals" / "Renewal Review" report parser
+// Handles standard Dash export format
+function parseRenewalXLSX(data) {
+  const wb = XLSX.read(data, { type: "array" });
+  const allRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+  if (allRows.length < 2) return [];
+
+  // Scan first 10 rows for header
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(10, allRows.length); i++) {
+    const r = allRows[i].map(h => h?.toString().toLowerCase().trim());
+    if (r.some(h => h?.includes("policy"))) { headerIdx = i; break; }
+  }
+
+  const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
+  const rows = allRows.slice(headerIdx + 1);
+  const findRenewalCol = (candidates) =>
+    headers.findIndex(h => candidates.some(c => h?.includes(c)));
+
+  const iPolicy    = findRenewalCol(["policy number", "policy no", "policy #", "pol no"]);
+  const iCustomer  = findRenewalCol(["customer name", "insured name", "insured", "name", "customer"]);
+  const iProduct   = findRenewalCol(["product name", "line code", "product code", "line of business", "lob", "product"]);
+  const iPremium   = findRenewalCol(["renewal premium", "premium new", "written premium", "annual premium", "premium"]);
+  const iRenewDate = findRenewalCol(["renewal date", "renewal effective", "policy renewal", "expiration date", "exp date", "renewal"]);
+  const iPhone     = findRenewalCol(["insured phone", "phone number", "phone", "mobile", "cell"]);
+  const iItems     = findRenewalCol(["no. of items", "item count", "items", "number of items"]);
+
+  return rows.filter(r => r.some(Boolean)).map(r => {
+    const policyNo = iPolicy >= 0 ? r[iPolicy]?.toString().trim() : null;
+    if (!policyNo) return null;
+
+    const productRaw = iProduct >= 0 ? r[iProduct]?.toString() ?? "" : "";
+    const product = normaliseProduct(productRaw);
+
+    let renewalDate = null;
+    if (iRenewDate >= 0 && r[iRenewDate]) {
+      const raw = r[iRenewDate];
+      if (raw instanceof Date) {
+        renewalDate = raw.toISOString().slice(0, 10);
+      } else {
+        const parsed = new Date(raw);
+        if (!isNaN(parsed)) renewalDate = parsed.toISOString().slice(0, 10);
+      }
+    }
+    if (!renewalDate) return null;
+
+    const premiumRaw = iPremium >= 0 ? r[iPremium] : null;
+    const premium = premiumRaw ? parseFloat(String(premiumRaw).replace(/[^0-9.]/g, "")) || null : null;
+
+    const itemsRaw = iItems >= 0 ? parseInt(r[iItems]) : null;
+    const itemCount = !isNaN(itemsRaw) && itemsRaw > 0 ? itemsRaw : 1;
+
+    return {
+      policy_no:    policyNo,
+      customer_name: iCustomer >= 0 ? r[iCustomer]?.toString().trim() || null : null,
+      product,
+      product_raw:  productRaw,
+      premium,
+      item_count:   itemCount,
+      renewal_date: renewalDate,
+      phone:        iPhone >= 0 ? r[iPhone]?.toString().trim() || null : null,
+    };
+  }).filter(Boolean);
+}
+
+// ─── Renewal Status Config ──────────────────────────────────────────────────
+
+const RENEWAL_STATUS_CONFIG = {
+  pending:       { label: "Pending",       color: "#F59E0B", bg: "#FEF3C7" },
+  contacted:     { label: "Contacted",     color: "#3B82F6", bg: "#DBEAFE" },
+  confirmed:     { label: "Confirmed",     color: "#10B981", bg: "#D1FAE5" },
+  at_risk:       { label: "At Risk",       color: "#EF4444", bg: "#FEE2E2" },
+  lost:          { label: "Lost",          color: "#6B7280", bg: "#F3F4F6" },
+  auto_resolved: { label: "Auto Resolved", color: "#94A3B8", bg: "#F1F5F9" },
+};
+
+const RENEWAL_CONTACT_METHODS = ["phone", "text", "email", "other"];
+
+function daysUntilRenewal(dateStr) {
+  const d = new Date(dateStr);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  return Math.ceil((d - today) / 86400000);
+}
+
+function renewalUrgencyColor(days) {
+  if (days < 7) return "#EF4444";
+  if (days <= 21) return "#F59E0B";
+  return "#10B981";
+}
+
+// ─── Renewal Detail Modal ───────────────────────────────────────────────────
+
+function RenewalDetailModal({ event, onClose, onUpdate, producers }) {
+  const days = daysUntilRenewal(event.renewal_date);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    status: event.status,
+    assigned_to_id: event.assigned_to_id || "",
+    contact_method: event.contact_method || "",
+    notes: event.notes || "",
+  });
+
+  async function save() {
+    setSaving(true);
+    const updates = { ...form };
+    if (["contacted","confirmed","at_risk"].includes(form.status) && !event.contacted_at) {
+      updates.contacted_at = new Date().toISOString();
+    }
+    if (["confirmed","lost"].includes(form.status) && !event.resolution_date) {
+      updates.resolution_date = new Date().toISOString().slice(0,10);
+    }
+    if (!updates.assigned_to_id) updates.assigned_to_id = null;
+    await onUpdate(event.id, updates);
+    setSaving(false);
+    onClose();
+  }
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
+      onClick={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
+      <div style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
+
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
+            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+              Policy {event.policy_no} · {event.product?.toUpperCase()}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 20 }}>
+          {[
+            { label: "Renewal Date", value: event.renewal_date, color: renewalUrgencyColor(days) },
+            { label: "Days Until Renewal", value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
+            { label: "Premium", value: event.premium ? fmtFull$(event.premium) : "\u2014", color: "#E2E8F0" },
+          ].map(({ label, value, color }) => (
+            <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
+              <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
+            <div>
+              <label>Status</label>
+              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
+                {Object.entries(RENEWAL_STATUS_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label>Contact Method</label>
+              <select value={form.contact_method} onChange={ev => setForm(p => ({ ...p, contact_method: ev.target.value }))}>
+                <option value="">{"\u2014"}</option>
+                {RENEWAL_CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label>Assigned To</label>
+            <select value={form.assigned_to_id} onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}>
+              <option value="">Unassigned</option>
+              {producers.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label>Notes</label>
+            <textarea value={form.notes}
+              onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
+              rows={3}
+              style={{ width: "100%", background: "#1E2130", color: "#E2E8F0", border: "1px solid #2D3348", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
+              placeholder="Call notes, customer response..." />
+          </div>
+
+          <button className="btn-primary" onClick={save} disabled={saving} style={{ width: "100%" }}>
+            {saving ? "Saving\u2026" : "Save"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Renewal Tab ────────────────────────────────────────────────────────────
+
+function RenewalTab({ agencyId, currentUserId }) {
+  const queryClient = useQueryClient();
+  const [selectedRenewal, setSelectedRenewal] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("active");
+  const [sortCol, setSortCol] = useState("renewal_date");
+  const [sortDir, setSortDir] = useState("asc");
+
+  // Upload state
+  const [uploadFile, setUploadFile] = useState(null);
+  const [parsedRows, setParsedRows] = useState(null);
+  const [uploadError, setUploadError] = useState("");
+  const [uploadMsg, setUploadMsg] = useState("");
+  const [isParsing, setIsParsing] = useState(false);
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [assignToId, setAssignToId] = useState("");
+  const fileInputRef = useRef(null);
+
+  // Load renewal events
+  const { data: renewalEvents = [], isLoading: loading } = useQuery({
+    queryKey: ["renewal_events", agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("renewal_events")
+        .select("*")
+        .eq("agency_id", agencyId)
+        .order("renewal_date", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Load producers (cs_rep employees)
+  const { data: producers = [] } = useQuery({
+    queryKey: ["producers", agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, preferred_name")
+        .eq("org_id", agencyId)
+        .eq("employment_status", "active")
+        .eq("role_type", "cs_rep")
+        .order("last_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Default assign dropdown to first producer
+  useEffect(() => {
+    if (producers.length > 0 && !assignToId) {
+      setAssignToId(producers[0].id);
+    }
+  }, [producers, assignToId]);
+
+  const employeeMap = useMemo(() => {
+    const m = {};
+    producers.forEach(p => { m[p.id] = p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim(); });
+    return m;
+  }, [producers]);
+
+  // Filter & sort
+  const filteredRenewals = useMemo(() => {
+    let list = [...renewalEvents];
+    if (statusFilter === "active") {
+      list = list.filter(e => ["pending","contacted","at_risk"].includes(e.status));
+    } else if (statusFilter === "confirmed") {
+      list = list.filter(e => e.status === "confirmed");
+    } else if (statusFilter === "lost") {
+      list = list.filter(e => ["lost","auto_resolved"].includes(e.status));
+    }
+
+    return list.sort((a, b) => {
+      let av, bv;
+      switch (sortCol) {
+        case "renewal_date": av = a.renewal_date; bv = b.renewal_date; break;
+        case "customer_name": av = a.customer_name || ""; bv = b.customer_name || ""; break;
+        case "premium": av = a.premium || 0; bv = b.premium || 0; break;
+        case "status": av = a.status; bv = b.status; break;
+        case "days_until": av = daysUntilRenewal(a.renewal_date); bv = daysUntilRenewal(b.renewal_date); break;
+        default: av = a.renewal_date; bv = b.renewal_date;
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [renewalEvents, statusFilter, sortCol, sortDir]);
+
+  function handleSort(col) {
+    if (sortCol === col) {
+      setSortDir(d => d === "asc" ? "desc" : "asc");
+    } else {
+      setSortCol(col);
+      setSortDir("asc");
+    }
+  }
+
+  async function updateRenewalEvent(id, updates) {
+    const { error } = await supabase
+      .from("renewal_events")
+      .update(updates)
+      .eq("id", id);
+    if (!error) {
+      queryClient.setQueryData(["renewal_events", agencyId], (prev) =>
+        (prev ?? []).map(e => e.id === id ? { ...e, ...updates } : e)
+      );
+    }
+    return error;
+  }
+
+  // Upload flow
+  async function handleFileSelect(file) {
+    if (!file) return;
+    setUploadFile(file);
+    setUploadError("");
+    setUploadMsg("");
+    setParsedRows(null);
+    setIsParsing(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const rows = parseRenewalXLSX(new Uint8Array(buf));
+      if (rows.length === 0) {
+        setUploadError("No valid rows found. Check that the file has Policy No and Renewal Date columns.");
+        return;
+      }
+      setParsedRows(rows);
+    } catch (err) {
+      console.error("[renewal parse error]", err.message);
+      setUploadError(friendlyUploadError(err.message));
+    } finally {
+      setIsParsing(false);
+    }
+  }
+
+  async function handleCommit() {
+    if (!parsedRows || !agencyId || isCommitting) return;
+    setIsCommitting(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+
+      // Check existing
+      const policyNos = parsedRows.map(r => r.policy_no);
+      const { data: existing } = await supabase
+        .from("renewal_events")
+        .select("policy_no, renewal_date")
+        .eq("agency_id", agencyId)
+        .in("policy_no", policyNos);
+      const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
+
+      const toAdd = [];
+      let updatedCount = 0;
+      for (const row of parsedRows) {
+        const key = `${row.policy_no}|${row.renewal_date}`;
+        if (existingKeys.has(key)) {
+          updatedCount++;
+        } else {
+          toAdd.push(row);
+        }
+      }
+
+      // Create upload record
+      const { data: upload, error: upErr } = await supabase
+        .from("renewal_uploads")
+        .insert({
+          agency_id: agencyId,
+          uploaded_by: currentUserId,
+          filename: uploadFile?.name ?? "unknown",
+          rows_added: toAdd.length,
+          rows_updated: updatedCount,
+          committed: false,
+        })
+        .select("id")
+        .single();
+      if (upErr) throw new Error(upErr.message);
+
+      // Upsert all rows (new ones get assigned_to_id)
+      const records = parsedRows.map(r => {
+        const key = `${r.policy_no}|${r.renewal_date}`;
+        const isNew = !existingKeys.has(key);
+        return {
+          agency_id: agencyId,
+          upload_batch_id: upload.id,
+          first_seen_on: today,
+          last_seen_on: today,
+          ...(isNew && assignToId ? { assigned_to_id: assignToId } : {}),
+          ...r,
+        };
+      });
+
+      const { error: evtErr } = await supabase
+        .from("renewal_events")
+        .upsert(records, { onConflict: "agency_id,policy_no,renewal_date" });
+      if (evtErr) throw new Error(evtErr.message);
+
+      // Mark upload committed
+      await supabase.from("renewal_uploads").update({ committed: true }).eq("id", upload.id);
+
+      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated`);
+      setParsedRows(null);
+      setUploadFile(null);
+      queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] });
+    } catch (err) {
+      console.error("[renewal commit error]", err.message);
+      setUploadError(friendlyUploadError(err.message));
+    } finally {
+      setIsCommitting(false);
+    }
+  }
+
+  return (
+    <div>
+      {/* Upload Section */}
+      <div style={{ maxWidth: 640, marginBottom: 24 }}>
+        <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
+          Upload the Allstate <span style={{ fontFamily: "'DM Mono', monospace" }}>Renewal Review</span> report (XLSX).
+        </div>
+
+        <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => { e.preventDefault(); handleFileSelect(e.dataTransfer.files[0]); }}>
+          <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }}
+            onChange={e => handleFileSelect(e.target.files[0])} />
+          <div style={{ fontSize: 32, marginBottom: 8 }}>{"\uD83D\uDCC4"}</div>
+          <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
+            {uploadFile ? uploadFile.name : "Drop renewal report here or click to browse"}
+          </div>
+          {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing{"\u2026"}</div>}
+        </div>
+
+        {/* Assign dropdown */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+          <span style={{ fontSize: 12, color: "#64748B" }}>Assign all new renewals to:</span>
+          <select value={assignToId} onChange={e => setAssignToId(e.target.value)} style={{ fontSize: 13 }}>
+            <option value="">None</option>
+            {producers.map(p => (
+              <option key={p.id} value={p.id}>
+                {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {uploadError && (
+          <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
+            {uploadError}
+          </div>
+        )}
+
+        {parsedRows && !uploadMsg && (
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Preview — {parsedRows.length} rows parsed</div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
+                {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+              </button>
+              <button className="btn-ghost" onClick={() => { setParsedRows(null); setUploadFile(null); }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+
+        {uploadMsg && (
+          <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#10B981" }}>
+            {uploadMsg}
+          </div>
+        )}
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap", rowGap: 8 }}>
+        <div style={{ display: "flex", gap: 4 }}>
+          {["active","all","confirmed","lost"].map(f => (
+            <button key={f} className={`btn-ghost ${statusFilter === f ? "active" : ""}`}
+              onClick={() => setStatusFilter(f)}
+              style={{ padding: "5px 12px", fontSize: 12 }}>
+              {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {loading && <div style={{ color: "#64748B", fontSize: 13, marginBottom: 12 }}>Loading renewals{"\u2026"}</div>}
+
+      {/* Triage Table */}
+      <div className="scroll-hint-container">
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ minWidth: 800 }}>
+            <thead>
+              <tr>
+                <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <th>Product</th>
+                <SortTh col="premium" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <SortTh col="renewal_date" label="Renewal Date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <SortTh col="days_until" label="Days Until" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <th>Assigned To</th>
+                <th>Contact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredRenewals.map(event => {
+                const days = daysUntilRenewal(event.renewal_date);
+                const sc = RENEWAL_STATUS_CONFIG[event.status] || RENEWAL_STATUS_CONFIG.pending;
+                return (
+                  <tr key={event.id} className="triage-row" onClick={() => setSelectedRenewal(event)}>
+                    <td style={{ color: "#E2E8F0", fontWeight: 600, fontSize: 13 }}>
+                      {maskCustomerName(event.customer_name)}
+                    </td>
+                    <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
+                    <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
+                      {event.premium ? fmtFull$(event.premium) : "\u2014"}
+                    </td>
+                    <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                      {event.renewal_date}
+                    </td>
+                    <td>
+                      <span className="urgency-badge" style={{ background: `${renewalUrgencyColor(days)}22`, color: renewalUrgencyColor(days) }}>
+                        {days <= 0 ? "PAST DUE" : `${days}d`}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
+                    </td>
+                    <td style={{ color: "#64748B", fontSize: 12 }}>{employeeMap[event.assigned_to_id] || "\u2014"}</td>
+                    <td style={{ color: "#64748B", fontSize: 12 }}>{event.contact_method || "\u2014"}</td>
+                  </tr>
+                );
+              })}
+              {filteredRenewals.length === 0 && (
+                <tr><td colSpan={8} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+                  No renewal events in this filter
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Detail Modal */}
+      {selectedRenewal && createPortal(
+        <RenewalDetailModal
+          event={selectedRenewal}
+          onClose={() => setSelectedRenewal(null)}
+          onUpdate={updateRenewalEvent}
+          producers={producers}
+        />,
+        document.body
+      )}
+    </div>
+  );
 }
 
 // ─── Attrition Tab ──────────────────────────────────────────────────────────
@@ -1463,7 +2018,7 @@ export default function BookHealthPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .eq("role_type", "service")
+        .eq("role_type", "cs_rep")
         .order("last_name");
       if (error) throw error;
       return data ?? [];
@@ -1695,14 +2250,21 @@ export default function BookHealthPage() {
     return error;
   }
 
-  async function bulkAssign(producerName) {
+  async function bulkAssign(employee) {
+    // employee = { id, first_name, last_name, preferred_name }
+    const displayName = employee.preferred_name ||
+      `${employee.first_name || ""} ${employee.last_name || ""}`.trim();
+
     const pendingIds = filteredEvents
-      .filter(e => e.status === "pending" && !e.assigned_to)
+      .filter(e => e.status === "pending" && !e.assigned_to_id)
       .map(e => e.id);
     if (!pendingIds.length) return;
     await supabase
       .from("pending_cancel_events")
-      .update({ assigned_to: producerName })
+      .update({
+        assigned_to_id: employee.id,
+        assigned_to:    displayName,  // keep in sync for display
+      })
       .in("id", pendingIds);
     await loadEvents();
   }
@@ -1734,10 +2296,10 @@ export default function BookHealthPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["triage","resolved","upload","trends","attrition","growth"].map(t => (
+        {["triage","resolved","renewals","upload","trends","attrition","growth"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "triage" ? "Triage" : t === "resolved" ? "Resolved" : t === "upload" ? "Upload" :
-             t === "trends" ? "Trends" : t === "attrition" ? "Attrition" : "Portfolio Growth"}
+            {t === "triage" ? "Triage" : t === "resolved" ? "Resolved" : t === "renewals" ? "Renewals" :
+             t === "upload" ? "Upload" : t === "trends" ? "Trends" : t === "attrition" ? "Attrition" : "Portfolio Growth"}
           </button>
         ))}
       </div>
@@ -1758,6 +2320,9 @@ export default function BookHealthPage() {
         />
       )}
       {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
+      {activeTab === "renewals" && (
+        <RenewalTab agencyId={agencyId} currentUserId={currentUserId} />
+      )}
       {activeTab === "upload" && (
         <UploadTab
           uploadFile={uploadFile}
