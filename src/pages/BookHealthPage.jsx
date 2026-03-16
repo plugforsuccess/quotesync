@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
 import { calcRenewalPriority, calcCancelPriority, CURRENT_YEAR } from '../lib/retentionPriority';
+import { useOtherActiveCases } from '../hooks/useOtherActiveCases';
 
 // ─── Friendly error messages ──────────────────────────────────────────────────
 function friendlyUploadError(raw = "") {
@@ -553,6 +554,51 @@ function TrendsTab({ trendsData }) {
   );
 }
 
+// ─── Other Cases Warning ─────────────────────────────────────────────────────
+
+function OtherCasesWarning({ cases }) {
+  if (!cases || cases.length === 0) return null;
+
+  return (
+    <div style={{
+      background: '#F59E0B11',
+      border: '1px solid #F59E0B44',
+      borderRadius: 8,
+      padding: '10px 14px',
+      marginBottom: 12,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B',
+        textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+        ⚠ {cases.length} Other Active {cases.length === 1 ? 'Case' : 'Cases'} — Same Customer
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {cases.map(c => (
+          <div key={c.id} style={{ fontSize: 12, color: '#CBD5E1', display: 'flex', gap: 8 }}>
+            <span style={{
+              display: 'inline-block', padding: '1px 6px', borderRadius: 3,
+              fontSize: 10, fontWeight: 700,
+              background: c.type === 'cancel' ? '#F59E0B22' : '#3B82F622',
+              color: c.type === 'cancel' ? '#F59E0B' : '#3B82F6',
+            }}>
+              {c.type === 'cancel'
+                ? (c.stage === 'cancelled' ? '🚫 Lapsed' : '⚠ Pending Cancel')
+                : '🔄 Renewal'}
+            </span>
+            <span style={{ color: '#94A3B8' }}>{c.policy_no}</span>
+            <span>{c.product}</span>
+            <span style={{ color: '#64748B', marginLeft: 'auto' }}>
+              {c.date}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 11, color: '#64748B', marginTop: 6 }}>
+        Address all active cases in one call when possible.
+      </div>
+    </div>
+  );
+}
+
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
 function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [] }) {
@@ -568,6 +614,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     promise_date: event.promise_date || "",
     termination_reason: event.termination_reason || "",
     notes: event.notes || "",
+  });
+
+  const { data: otherCases = [] } = useOtherActiveCases({
+    agencyId,
+    customerName: event.customer_name,
+    excludeEventId: event.id,
+    excludeRenewalId: null,
   });
 
   useEffect(() => {
@@ -654,6 +707,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
+
+        <OtherCasesWarning cases={otherCases} />
 
         {event.stage === 'cancelled' && (
           <div style={{ background: '#EF444411', border: '1px solid #EF444433',
@@ -1029,6 +1084,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     shopping_reason: event.shopping_reason || "",
   });
 
+  const { data: otherCases = [] } = useOtherActiveCases({
+    agencyId,
+    customerName: event.customer_name,
+    excludeEventId: null,
+    excludeRenewalId: event.id,
+  });
+
   useEffect(() => {
     supabase
       .from("renewal_attempts")
@@ -1114,6 +1176,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           </div>
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
+
+        <OtherCasesWarning cases={otherCases} />
 
         {/* Stats row */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, marginBottom: 16 }}>
