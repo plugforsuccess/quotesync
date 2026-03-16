@@ -617,17 +617,31 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
-    // NOTE: No visibilitychange handler here. The Supabase client automatically
-    // refreshes expired tokens on each API call (via its internal lock mechanism).
-    // Adding a manual getSession() on tab focus causes lock contention with React
-    // Query's refetchOnWindowFocus refetches, which also trigger getSession()
-    // internally — leading to queries hanging or failing on tab restore.
-    // True session expiry is handled by the QueryCache error handler in App.jsx.
+    // Proactively refresh the session when the tab becomes visible again.
+    // Browsers throttle timers in background tabs, so Supabase's internal
+    // autoRefreshToken timer may not fire before the access token expires.
+    // This is safe from lock contention because React Query's focusManager
+    // is disabled (see queryClient.js) — no parallel refetches will race us.
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== 'visible' || !mounted) return;
+      supabase.auth.getSession().then(({ data, error }) => {
+        if (!mounted) return;
+        if (error) {
+          console.warn('[AUTH] visibilitychange getSession error:', error.message);
+          return;
+        }
+        if (data?.session?.user) {
+          setUser(data.session.user);
+        }
+      });
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
       clearTimeout(loadingTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
