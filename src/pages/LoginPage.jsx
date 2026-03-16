@@ -1,13 +1,15 @@
 // src/pages/LoginPage.jsx
 // Login page for platform staff and agency users
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase, getUserProfile } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { getDefaultLanding } from '../config/nav.config';
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading, currentAgencyId, platformRole, currentAgencyRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -15,63 +17,20 @@ const LoginPage = () => {
   const [mode, setMode] = useState('login');
   const [resetSuccess, setResetSuccess] = useState('');
 
-  const resolveAuthz = useCallback(async (userId) => {
-    try {
-      const result = await getUserProfile(userId);
-      const platformRole = result.platformRole;
-      const activeMemberships = (result.agencyMemberships || []).filter(
-        m => m.status === 'active' && m.agencies?.status === 'approved'
-      );
-      const agencyRole = activeMemberships.length > 0
-        ? activeMemberships[0].agency_role
-        : null;
-
-      return {
-        status: 'ok',
-        derived: {
-          platformRole,
-          agencyRole,
-          landingPath: getDefaultLanding(platformRole, agencyRole)
-        }
-      };
-    } catch (err) {
-      return {
-        status: 'error',
-        error: err
-      };
-    }
-  }, []);
-
-  // If user is already authenticated, redirect to dashboard instead of
-  // showing the login page. This prevents the "already signed in" alert
-  // and the confusing state where a logged-in user sees a login form.
+  // If user is already authenticated (or becomes authenticated after login),
+  // redirect to the appropriate landing page. This replaces both the old
+  // checkSession useEffect and the post-login navigation in handleLogin.
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (session?.user && !error) {
-          console.log('[LoginPage] Existing session detected, redirecting to dashboard');
-          const authz = await resolveAuthz(session.user.id);
-          if (authz.status === 'ok') {
-            navigate(authz.derived.landingPath, { replace: true });
-          } else {
-            // Can't resolve permissions — let them re-login
-            console.warn('[LoginPage] Could not resolve authz for existing session');
-          }
-        }
-      } catch (error) {
-        console.error('[LoginPage] Error checking session:', error);
-      }
-    };
-    checkSession();
-  }, [navigate, resolveAuthz]);
+    if (!authLoading && user) {
+      const agencyRoleVal = currentAgencyId ? currentAgencyRole : null;
+      navigate(getDefaultLanding(platformRole, agencyRoleVal), { replace: true });
+    }
+  }, [authLoading, user, platformRole, currentAgencyRole, currentAgencyId, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    console.log('[LoginPage] Attempting login...');
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -79,32 +38,19 @@ const LoginPage = () => {
         password
       });
 
-      if (error) {
-        console.error('[LoginPage] Login error:', error);
-        throw error;
-      }
+      if (error) throw error;
 
       if (!data?.session?.user?.id) {
-        throw new Error('No session returned from sign in. Please try again.');
+        throw new Error('No session returned. Please try again.');
       }
 
-      const authz = await resolveAuthz(data.session.user.id);
-      if (authz.status === 'error') {
-        throw authz.error || new Error('Failed to resolve permissions after sign in.');
-      }
-
-      console.log('[LoginPage] Login successful, navigating to:', authz.derived.landingPath);
-      navigate(authz.derived.landingPath);
+      // AuthContext SIGNED_IN handler takes it from here — don't call resolveAuthz
     } catch (error) {
-      console.error('[LoginPage] Login failed:', error);
-
-      // Check if it's a network error (could be ad blocker)
       if (error.message?.includes('Failed to fetch') || error.message?.includes('network')) {
-        setError('Network error: Please check your internet connection or disable ad blockers/extensions that may be blocking Supabase.');
+        setError('Network error: check your connection or disable ad blockers.');
       } else {
         setError(error.message || 'Login failed. Please try again.');
       }
-
       setLoading(false);
     }
   };
