@@ -2598,6 +2598,29 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
     staleTime: 2 * 60 * 1000,
   });
 
+  const { data: producers = [] } = useQuery({
+    queryKey: ['producers', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, preferred_name')
+        .eq('org_id', agencyId)
+        .eq('employment_status', 'active')
+        .eq('role_type', 'cs_rep')
+        .order('last_name');
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const employeeMap = useMemo(() => {
+    const m = {};
+    producers.forEach(p => { m[p.id] = p.preferred_name || `${p.first_name || ''} ${p.last_name || ''}`.trim(); });
+    return m;
+  }, [producers]);
+
   const [riskFilter, setRiskFilter] = useState('all');
   const [myCasesOnly, setMyCasesOnly] = useState(false);
   const [sortCol, setSortCol] = useState('priority');
@@ -2695,7 +2718,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         />
         <KpiCard
           label="Premium Exposed"
-          value={fmt$(rows.reduce((s, r) => s + (r.premium_at_risk || r.renewal_premium || 0), 0))}
+          value={fmt$(rows.reduce((s, r) => s + (r.premium_at_risk || 0) + (r.renewal_premium || 0), 0))}
           sub="total at risk"
           color="#8B5CF6"
         />
@@ -2815,7 +2838,15 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                   </td>
 
                   <td style={{ color: '#64748B', fontSize: 12 }}>
-                    {row.cancel_assigned_to_id || row.renewal_assigned_to_id ? '✓' : '—'}
+                    {(() => {
+                      const cId = row.cancel_assigned_to_id;
+                      const rId = row.renewal_assigned_to_id;
+                      if (!cId && !rId) return '—';
+                      const cName = cId ? employeeMap[cId] : null;
+                      const rName = rId ? employeeMap[rId] : null;
+                      if (cId && rId && cId !== rId) return `${cName || '✓'} / ${rName || '✓'}`;
+                      return cName || rName || '✓';
+                    })()}
                   </td>
                 </tr>
               );
