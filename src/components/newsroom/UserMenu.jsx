@@ -1,7 +1,7 @@
 // src/components/newsroom/UserMenu.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { LogOut, User, ArrowLeftRight } from 'lucide-react';
+import { LogOut, User, ArrowLeftRight, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const UserMenu = ({ activePlane, onTogglePlane }) => {
@@ -102,6 +102,15 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
             </>
           )}
 
+          <a
+            href="/my/mfa-settings"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/10 transition-colors"
+            onClick={() => setShowDropdown(false)}
+          >
+            <Shield className="w-4 h-4" />
+            MFA Settings
+          </a>
+          <div className="mx-3 my-1 border-t border-white/10"></div>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-white/10 transition-colors"

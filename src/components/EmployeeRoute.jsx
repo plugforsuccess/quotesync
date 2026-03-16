@@ -3,19 +3,40 @@
 // Redirects unauthenticated users to login.
 // Shows error for authenticated non-employees.
 
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { supabase } from '../lib/supabase';
 import PageSpinner from './PageSpinner';
 
 export default function EmployeeRoute({ children }) {
   const { user, loading: authLoading } = useAuth();
   const { data: employee, isLoading: empLoading } = useCurrentEmployee();
 
-  if (authLoading || empLoading) return <PageSpinner />;
+  // MFA assurance level check
+  const [aalLevel, setAalLevel] = useState(null);
+  const [aalLoading, setAalLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setAalLoading(false); return; }
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
+      setAalLevel(data);
+      setAalLoading(false);
+    });
+  }, [user]);
+
+  if (authLoading || empLoading || aalLoading) return <PageSpinner />;
 
   // Not logged in → login page
   if (!user) return <Navigate to="/admin-access-8by2X" replace />;
+
+  // If user has a factor enrolled but current session is only aal1,
+  // redirect back to login to complete MFA
+  if (aalLevel?.nextLevel === 'aal2' && aalLevel?.currentLevel !== 'aal2') {
+    return <Navigate to="/admin-access-8by2X" replace
+      state={{ reason: 'mfa_required', message: 'Please complete two-factor authentication.' }} />;
+  }
 
   // Employee record not found → show an informative error
   if (!employee) {

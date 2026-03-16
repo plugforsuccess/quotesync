@@ -30,6 +30,10 @@ export default function EmployeeLayout() {
           <span style={{ fontSize: 13, color: '#64748B' }}>
             {employee?.preferred_name || employee?.first_name}
           </span>
+          <a href="/my/mfa-settings"
+            style={{ fontSize: 12, color: '#64748B', textDecoration: 'none' }}>
+            MFA
+          </a>
           <button onClick={handleSignOut}
             style={{ fontSize: 12, color: '#64748B', background: 'none',
               border: 'none', cursor: 'pointer' }}>

@@ -94,6 +94,7 @@ const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompMo
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
 const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
+const MFASettingsPage = lazyWithRetry(() => import('./pages/MFASettingsPage'));
 
 // Loading fallback component
 const PageLoader = () => <PageSpinner />;
@@ -137,6 +138,7 @@ function App() {
             <Route index element={<Navigate to="/my/queue" replace />} />
             <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
             <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+            <Route path="mfa-settings" element={<Suspense fallback={<PageLoader />}><MFASettingsPage /></Suspense>} />
           </Route>
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}

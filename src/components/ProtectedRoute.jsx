@@ -2,9 +2,10 @@
 // Route protection component with two-plane RBAC support
 // Supports both platform roles and agency roles
 
+import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { hasPermission } from '../lib/supabase';
+import { hasPermission, supabase } from '../lib/supabase';
 import PageSpinner from './PageSpinner';
 
 /**
@@ -38,8 +39,20 @@ const ProtectedRoute = ({
     agencyMemberships
   } = useAuth();
 
+  // MFA assurance level check
+  const [aalLevel, setAalLevel] = useState(null);
+  const [aalLoading, setAalLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setAalLoading(false); return; }
+    supabase.auth.mfa.getAuthenticatorAssuranceLevel().then(({ data }) => {
+      setAalLevel(data);
+      setAalLoading(false);
+    });
+  }, [user]);
+
   // Show loading spinner while checking auth
-  if (loading) {
+  if (loading || aalLoading) {
     return <PageSpinner />;
   }
 
@@ -79,6 +92,13 @@ const ProtectedRoute = ({
       // localStorage unavailable — fall through to redirect
     }
     return <Navigate to={redirectTo} replace />;
+  }
+
+  // If user has a factor enrolled but current session is only aal1,
+  // redirect back to login to complete MFA
+  if (aalLevel?.nextLevel === 'aal2' && aalLevel?.currentLevel !== 'aal2') {
+    return <Navigate to="/admin-access-8by2X" replace
+      state={{ reason: 'mfa_required', message: 'Please complete two-factor authentication.' }} />;
   }
 
   // Check platform user requirement
