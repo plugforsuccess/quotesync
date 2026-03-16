@@ -3210,7 +3210,7 @@ function ImportTab({
   agencyId, currentUserId, currentEmployeeId,
 }) {
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 996, margin: '0 auto' }}>
       <div style={{ fontSize: 13, color: '#64748B', marginBottom: 28, textAlign: 'center' }}>
         Upload Allstate reports to refresh the At Risk queue. Each report is processed independently.
       </div>
