@@ -241,7 +241,9 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
     const avg = (key) => rows.reduce((s, r) => s + (r[key] || 0), 0) / rows.length;
 
     // Grade average only makes sense for services
-    const serviceRows = rows.filter((r) => r.roleType === 'service');
+    const serviceRows = rows.filter((r) =>
+      ['service', 'service_inbound', 'service_outbound'].includes(r.roleType)
+    );
     let gradeLabel = null;
     if (serviceRows.length > 0) {
       const gradeAvg = serviceRows.reduce((s, r) => s + r.gradeNumeric, 0) / serviceRows.length;
