@@ -161,6 +161,7 @@ const AgencySetupPage = lazyWithRetry(() => import('./pages/AgencySetupPage'));
 const AgencyTeamPage = lazyWithRetry(() => import('./pages/AgencyTeamPage'));
 const EmployeeRosterPage = lazyWithRetry(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
+const PlanningHub = lazyWithRetry(() => import('./pages/PlanningHub'));
 const BookHealthPage = lazyWithRetry(() => import('./pages/BookHealthPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
 
@@ -478,13 +479,14 @@ function App() {
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
-            <Route path="revenue-projections" element={
+            <Route path="planning" element={
               <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                 <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><RevenueProjectionsDashboard /></Suspense>
+                  <Suspense fallback={<PageLoader />}><PlanningHub /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
+            <Route path="revenue-projections" element={<Navigate to="/admin/planning" replace />} />
             <Route path="producers/:employeeId/comp-model" element={
               <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
