@@ -219,7 +219,7 @@ async function fetchTeamData(weekStart) {
       .order('effective_date', { ascending: false }),
     supabase
       .from('employees')
-      .select('id, auth_user_id, first_name, last_name, preferred_name, role_type')
+      .select('id, auth_user_id, first_name, last_name, preferred_name, roles')
       .in('auth_user_id', employeeIds),
   ]);
 
@@ -234,7 +234,7 @@ async function fetchTeamData(weekStart) {
     }
   }
 
-  // Build a map of auth_user_id -> employee data (with role_type)
+  // Build a map of auth_user_id -> employee data (with roles)
   const employeesMap = {};
   for (const emp of (employeesResult.data || [])) {
     const key = emp.auth_user_id || emp.id;
