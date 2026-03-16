@@ -64,6 +64,20 @@ const ProtectedRoute = ({
 
   // Must be authenticated
   if (!user) {
+    // Before redirecting to login, check if the Supabase session token still
+    // exists in localStorage. If it does, React state is temporarily wrong
+    // (spurious SIGNED_OUT) and AuthContext will re-hydrate shortly.
+    // Show a spinner instead of booting the user to the login page.
+    try {
+      const hasToken = Object.keys(localStorage).some(
+        k => k.startsWith('sb-') && k.endsWith('-auth-token')
+      );
+      if (hasToken) {
+        return <PageSpinner />;
+      }
+    } catch (_) {
+      // localStorage unavailable — fall through to redirect
+    }
     return <Navigate to={redirectTo} replace />;
   }
 

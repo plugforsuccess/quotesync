@@ -13,17 +13,6 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 const browserStorage = typeof window !== 'undefined' ? window.localStorage : undefined;
 
-// One-time migration: if session was stored under the old custom key, remove it
-// so Supabase re-stores under its default key on next getSession().
-try {
-  const custom = localStorage.getItem('qs_auth_token');
-  if (custom) {
-    localStorage.removeItem('qs_auth_token');
-  }
-} catch (_) {
-  // ignore (SSR / sandboxed iframe)
-}
-
 const createSupabaseClient = () => createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
     persistSession: true,
