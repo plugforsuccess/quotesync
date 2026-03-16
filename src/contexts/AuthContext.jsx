@@ -297,7 +297,7 @@ export const AuthProvider = ({ children }) => {
                 .from('lapse_events')
                 .select('*')
                 .eq('agency_id', resolvedAgencyId)
-                .order('cancel_effective_date', { ascending: true });
+                .order('lapse_date', { ascending: true });
               return data || [];
             },
             staleTime: 2 * 60 * 1000,
