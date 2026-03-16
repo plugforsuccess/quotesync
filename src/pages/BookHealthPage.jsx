@@ -2352,7 +2352,7 @@ export default function BookHealthPage() {
         .from("pending_cancel_events")
         .select("*")
         .eq("agency_id", agencyId)
-        .order("cancel_effective_date", { ascending: true });
+        .order("lapse_date", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
