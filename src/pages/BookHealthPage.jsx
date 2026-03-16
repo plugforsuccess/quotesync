@@ -1627,10 +1627,10 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .order("last_name");
 
       const activeReps = reps || [];
+      const assignmentQueue = [...activeReps];
 
-      // 3. Load current open caseload per rep (active, unresolved renewal cases)
-      let assignmentQueue = [];
-
+      // 3. Build assignment rotation — seed with existing caseloads for balanced distribution
+      const runningCount = {};
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from("renewal_events")
@@ -1639,22 +1639,13 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
           .not("assigned_to_id", "is", null)
           .not("status", "in", '("confirmed","lost","auto_resolved","unreachable")');
 
-        const caseCount = {};
-        activeReps.forEach(r => { caseCount[r.id] = 0; });
+        activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
-          if (caseCount[c.assigned_to_id] !== undefined) {
-            caseCount[c.assigned_to_id]++;
+          if (runningCount[c.assigned_to_id] !== undefined) {
+            runningCount[c.assigned_to_id]++;
           }
         });
-
-        assignmentQueue = [...activeReps].sort(
-          (a, b) => (caseCount[a.id] || 0) - (caseCount[b.id] || 0)
-        );
       }
-
-      // 4. Build assignment rotation — each new case goes to rep with fewest cases
-      const runningCount = {};
-      activeReps.forEach(r => { runningCount[r.id] = 0; });
 
       function pickNextRep() {
         if (assignmentQueue.length === 0) return null;
@@ -1666,7 +1657,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         return picked.id;
       }
 
-      // 5. Create upload record
+      // 4. Create upload record
       const { data: upload, error: upErr } = await supabase
         .from("renewal_uploads")
         .insert({
@@ -1681,28 +1672,47 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .single();
       if (upErr) throw new Error(upErr.message);
 
-      // 6. Build upsert records
-      const records = parsedRows.map(r => {
-        const isNew = !existingKeys.has(`${r.policy_no}|${r.renewal_date}`);
-        const assignedId = isNew ? pickNextRep() : undefined;
+      // 5. Insert new rows (with assignment) and update existing rows separately
+      //    Mixing them in a single upsert causes PostgREST to normalize columns,
+      //    which either drops assigned_to_id on new rows or nullifies it on existing rows.
+      const newRecords = toAdd.map(r => {
+        const assignedId = pickNextRep();
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
           first_seen_on: today,
           last_seen_on: today,
-          ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
+          ...(assignedId ? { assigned_to_id: assignedId } : {}),
           ...r,
         };
       });
 
-      const { error: evtErr } = await supabase
-        .from("renewal_events")
-        .upsert(records, { onConflict: "agency_id,policy_no,renewal_date" });
-      if (evtErr) throw new Error(evtErr.message);
+      const existingRows = parsedRows.filter(r => existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
+      const updateRecords = existingRows.map(r => ({
+        agency_id: agencyId,
+        upload_batch_id: upload.id,
+        first_seen_on: today,
+        last_seen_on: today,
+        ...r,
+      }));
+
+      if (newRecords.length > 0) {
+        const { error: insErr } = await supabase
+          .from("renewal_events")
+          .insert(newRecords);
+        if (insErr) throw new Error(insErr.message);
+      }
+
+      if (updateRecords.length > 0) {
+        const { error: updErr } = await supabase
+          .from("renewal_events")
+          .upsert(updateRecords, { onConflict: "agency_id,policy_no,renewal_date" });
+        if (updErr) throw new Error(updErr.message);
+      }
 
       await supabase.from("renewal_uploads").update({ committed: true }).eq("id", upload.id);
 
-      // 7. Build summary message
+      // 6. Build summary message
       const repNames = assignmentQueue.map(r =>
         r.preferred_name || `${r.first_name || ""} ${r.last_name || ""}`.trim()
       );
@@ -3135,10 +3145,10 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .order('last_name');
 
       const activeReps = reps || [];
+      const assignmentQueue = [...activeReps];
 
-      // 3. Load current open caseload per rep (active, unresolved renewal cases)
-      let assignmentQueue = [];
-
+      // 3. Build assignment rotation — seed with existing caseloads for balanced distribution
+      const runningCount = {};
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from('renewal_events')
@@ -3147,22 +3157,13 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           .not('assigned_to_id', 'is', null)
           .not('status', 'in', '("confirmed","lost","auto_resolved","unreachable")');
 
-        const caseCount = {};
-        activeReps.forEach(r => { caseCount[r.id] = 0; });
+        activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
-          if (caseCount[c.assigned_to_id] !== undefined) {
-            caseCount[c.assigned_to_id]++;
+          if (runningCount[c.assigned_to_id] !== undefined) {
+            runningCount[c.assigned_to_id]++;
           }
         });
-
-        assignmentQueue = [...activeReps].sort(
-          (a, b) => (caseCount[a.id] || 0) - (caseCount[b.id] || 0)
-        );
       }
-
-      // 4. Build assignment rotation — each new case goes to rep with fewest cases
-      const runningCount = {};
-      activeReps.forEach(r => { runningCount[r.id] = 0; });
 
       function pickNextRep() {
         if (assignmentQueue.length === 0) return null;
@@ -3174,7 +3175,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         return picked.id;
       }
 
-      // 5. Create upload record
+      // 4. Create upload record
       const { data: upload, error: upErr } = await supabase
         .from('renewal_uploads')
         .insert({
@@ -3189,28 +3190,47 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .single();
       if (upErr) throw new Error(upErr.message);
 
-      // 6. Build upsert records
-      const records = parsedRows.map(r => {
-        const isNew = !existingKeys.has(`${r.policy_no}|${r.renewal_date}`);
-        const assignedId = isNew ? pickNextRep() : undefined;
+      // 5. Insert new rows (with assignment) and update existing rows separately
+      //    Mixing them in a single upsert causes PostgREST to normalize columns,
+      //    which either drops assigned_to_id on new rows or nullifies it on existing rows.
+      const newRecords = toAdd.map(r => {
+        const assignedId = pickNextRep();
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
           first_seen_on: today,
           last_seen_on: today,
-          ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
+          ...(assignedId ? { assigned_to_id: assignedId } : {}),
           ...r,
         };
       });
 
-      const { error: evtErr } = await supabase
-        .from('renewal_events')
-        .upsert(records, { onConflict: 'agency_id,policy_no,renewal_date' });
-      if (evtErr) throw new Error(evtErr.message);
+      const existingRows = parsedRows.filter(r => existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
+      const updateRecords = existingRows.map(r => ({
+        agency_id: agencyId,
+        upload_batch_id: upload.id,
+        first_seen_on: today,
+        last_seen_on: today,
+        ...r,
+      }));
+
+      if (newRecords.length > 0) {
+        const { error: insErr } = await supabase
+          .from('renewal_events')
+          .insert(newRecords);
+        if (insErr) throw new Error(insErr.message);
+      }
+
+      if (updateRecords.length > 0) {
+        const { error: updErr } = await supabase
+          .from('renewal_events')
+          .upsert(updateRecords, { onConflict: 'agency_id,policy_no,renewal_date' });
+        if (updErr) throw new Error(updErr.message);
+      }
 
       await supabase.from('renewal_uploads').update({ committed: true }).eq('id', upload.id);
 
-      // 7. Build summary message
+      // 6. Build summary message
       const repNames = assignmentQueue.map(r =>
         r.preferred_name || `${r.first_name || ''} ${r.last_name || ''}`.trim()
       );
