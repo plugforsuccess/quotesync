@@ -3348,10 +3348,26 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         setUploadError("No valid rows found. Check that the file has Policy No and Renewal Date columns.");
         return;
       }
-      // Pass all rows through — handleCommit will auto-resolve existing rows
-      // whose renewal_status is "Renewal Taken" or "Not Applicable"
-      setExcludedCount(0);
-      setParsedRows(rows);
+      // Filter out already-resolved rows at parse time so the preview count
+      // only shows actionable rows. The auto-resolve logic in handleCommit
+      // handles Renewal Taken rows by fetching existing DB rows and comparing
+      // — it does NOT need Renewal Taken rows in parsedRows to work correctly.
+      const hasStatusCol = rows.some(r => r.renewal_status);
+      if (hasStatusCol) {
+        const actionable = rows.filter(
+          r => !r.renewal_status || r.renewal_status === 'Renewal Not Taken'
+        );
+        const excluded = rows.length - actionable.length;
+        setExcludedCount(excluded);
+        if (actionable.length === 0) {
+          setUploadError(`All ${rows.length} rows are already renewed or not applicable. No actionable rows to import.`);
+          return;
+        }
+        setParsedRows(actionable);
+      } else {
+        setExcludedCount(0);
+        setParsedRows(rows);
+      }
     } catch (err) {
       console.error("[renewal parse error]", err.message);
       setUploadError(friendlyUploadError(err.message));
