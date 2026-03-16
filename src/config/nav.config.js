@@ -23,7 +23,7 @@ const primaryItems = {
   leads:          { to: '/agency/leads',           label: 'Leads',              icon: '📋' },
   timeAttendance: { to: '/admin/time-attendance',  label: 'Attendance',         icon: '⏱️' },
   csPerformance:  { to: '/admin/cs-performance',   label: 'Performance',        icon: '📈' },
-  revenueProjections: { to: '/admin/revenue-projections', label: 'Revenue',        icon: '💰' },
+  planning:           { to: '/admin/planning',             label: 'Planning',       icon: '📊' },
   bookHealth:     { to: '/admin/book-health',        label: 'Book Health',        icon: '🛡️' },
   newsroom:       { to: '/news/dashboard',         label: 'Newsroom',           icon: '📰' },
 };
@@ -36,7 +36,7 @@ const secondaryItems = {
   agencyMgmt:          { to: '/admin/agencies',              label: 'Agency Management',   icon: '🏢' },
   employeeRoster:      { to: '/admin/agency/employees',      label: 'Employee Roster',     icon: '👥' },
   audit:               { to: '/admin/audit',                 label: 'Audit',               icon: '🔍' },
-  revenueProjections:  { to: '/admin/revenue-projections',   label: 'Revenue Projections', icon: '💰' },
+  planning:            { to: '/admin/planning',               label: 'Planning',            icon: '📊' },
 };
 
 // ── Platform plane navigation by role ────────────────────────────────────────
@@ -48,7 +48,7 @@ export const platformNav = {
       primaryItems.funnel,
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
-      primaryItems.revenueProjections,
+      primaryItems.planning,
       primaryItems.bookHealth,
     ],
     secondary: [
@@ -64,7 +64,7 @@ export const platformNav = {
       primaryItems.funnel,
       primaryItems.timeAttendance,
       primaryItems.csPerformance,
-      primaryItems.revenueProjections,
+      primaryItems.planning,
       primaryItems.bookHealth,
     ],
     secondary: [
