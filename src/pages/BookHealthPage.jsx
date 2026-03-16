@@ -2475,7 +2475,7 @@ function NetGrowthTab({ agencyId }) {
 
 // ─── Unified Detail Modal ───────────────────────────────────────────────────
 
-function UnifiedDetailModal({ row, onClose, agencyId }) {
+function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#161924', borderRadius: 14, maxWidth: '98vw', width: '100%', maxHeight: '96vh', overflow: 'auto', padding: '24px 20px' }}>
@@ -2517,27 +2517,56 @@ function UnifiedDetailModal({ row, onClose, agencyId }) {
         {/* Pending cancel section */}
         {row.cancel_event_id && (
           <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #F59E0B44' }}>
-            <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               ⚠ Pending Cancellation
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+
+            {/* Row 1 — Urgency + Status */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
               {[
-                { label: 'Cancel Date', value: row.cancel_effective_date, color: urgencyColor(daysUntilCancel(row.cancel_effective_date)) },
-                { label: 'Premium at Risk', value: row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—' },
-                { label: 'Status', value: STATUS_CONFIG[row.cancel_status]?.label || row.cancel_status },
-                { label: 'Cycle', value: `#${row.cycle || 1}`, color: (row.cycle || 1) >= 3 ? '#EF4444' : '#94A3B8' },
-                { label: 'Attempts', value: row.cancel_attempts || 0 },
-                { label: 'Promise Date', value: row.promise_date || '—' },
+                { label: 'Cancel Date', value: row.cancel_effective_date,
+                  color: urgencyColor(daysUntilCancel(row.cancel_effective_date)) },
+                { label: 'Days Left',
+                  value: (() => { const d = daysUntilCancel(row.cancel_effective_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
+                  color: urgencyColor(daysUntilCancel(row.cancel_effective_date)) },
+                { label: 'Status',
+                  value: STATUS_CONFIG[row.cancel_status]?.label || row.cancel_status || '—' },
+                { label: 'Promise Date', value: row.promise_date || '—',
+                  color: (() => {
+                    if (!row.promise_date) return '#64748B';
+                    const d = Math.ceil((new Date(row.promise_date) - new Date()) / 86400000);
+                    return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : '#94A3B8';
+                  })() },
               ].map(({ label, value, color }) => (
-                <div key={label}>
-                  <div style={{ fontSize: 10, color: '#64748B' }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value}</div>
+                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 8 }}>
-              <a href={`/admin/book-health`} style={{ fontSize: 12, color: '#F59E0B' }}>
-                Open in Triage →
+
+            {/* Row 2 — Financial + Context */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
+              {[
+                { label: 'Premium at Risk', value: row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—' },
+                { label: 'Cycle', value: `#${row.cycle || 1}`,
+                  color: (row.cycle || 1) >= 3 ? '#EF4444' : (row.cycle || 1) === 2 ? '#F59E0B' : '#94A3B8' },
+                { label: 'Attempts', value: row.cancel_attempts || 0,
+                  color: (row.cancel_attempts || 0) >= 3 ? '#EF4444' : '#94A3B8' },
+                { label: 'Assigned',
+                  value: row.cancel_assigned_to_id ? (employeeMap?.[row.cancel_assigned_to_id] || '✓') : '—' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 4 }}>
+              <a href="#" onClick={e => { e.preventDefault(); onClose(); }}
+                style={{ fontSize: 12, color: '#F59E0B', textDecoration: 'none' }}>
+                Open in Cancellations →
               </a>
             </div>
           </div>
@@ -2546,31 +2575,64 @@ function UnifiedDetailModal({ row, onClose, agencyId }) {
         {/* Renewal section */}
         {row.renewal_event_id && (
           <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #3B82F644' }}>
-            <div style={{ fontSize: 11, color: '#3B82F6', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 11, color: '#3B82F6', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               🔄 Renewal
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+
+            {/* Row 1 — Urgency + Status (4 fields) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
               {[
-                { label: 'Renewal Date', value: row.renewal_date, color: renewalUrgencyColor(daysUntilRenewal(row.renewal_date)) },
-                { label: 'Premium', value: row.renewal_premium ? fmtFull$(row.renewal_premium) : '—' },
-                { label: 'Premium Δ', value: row.premium_change != null ? `${row.premium_change > 0 ? '+' : ''}${fmtFull$(row.premium_change)}` : '—',
-                  color: row.premium_change > 0 ? '#EF4444' : '#10B981' },
-                { label: 'Δ%', value: row.premium_change_pct != null ? `${row.premium_change_pct > 0 ? '+' : ''}${row.premium_change_pct.toFixed(1)}%` : '—',
-                  color: row.premium_change_pct > 0 ? '#EF4444' : '#10B981' },
-                { label: 'Status', value: RENEWAL_STATUS_CONFIG[row.renewal_status]?.label || row.renewal_status },
-                { label: 'Easy Pay', value: row.easy_pay === true ? 'Yes ✓' : row.easy_pay === false ? 'No' : '—' },
-                { label: 'Tenure', value: row.original_year ? `${CURRENT_YEAR - row.original_year} yrs` : '—' },
+                { label: 'Renewal Date', value: row.renewal_date,
+                  color: renewalUrgencyColor(daysUntilRenewal(row.renewal_date)) },
+                { label: 'Days Until',
+                  value: (() => { const d = daysUntilRenewal(row.renewal_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
+                  color: renewalUrgencyColor(daysUntilRenewal(row.renewal_date)) },
+                { label: 'Status',
+                  value: RENEWAL_STATUS_CONFIG[row.renewal_status]?.label || row.renewal_status || '—' },
                 { label: 'Attempts', value: row.renewal_attempts || 0 },
               ].map(({ label, value, color }) => (
-                <div key={label}>
-                  <div style={{ fontSize: 10, color: '#64748B' }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value}</div>
+                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: 8 }}>
-              <a href={`/admin/book-health`} style={{ fontSize: 12, color: '#3B82F6' }}>
-                Open in Renewals →
+
+            {/* Row 2 — Financial + Context (5 fields) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 10 }}>
+              {[
+                { label: 'Premium',
+                  value: row.renewal_premium ? fmtFull$(row.renewal_premium) : '—' },
+                { label: 'Premium Δ',
+                  value: row.premium_change != null
+                    ? `${row.premium_change > 0 ? '+' : ''}${fmtFull$(row.premium_change)}`
+                    : '—',
+                  color: row.premium_change == null ? '#94A3B8'
+                       : row.premium_change > 0 ? '#EF4444' : '#10B981' },
+                { label: 'Δ%',
+                  value: row.premium_change_pct != null
+                    ? `${row.premium_change_pct > 0 ? '+' : ''}${row.premium_change_pct.toFixed(1)}%`
+                    : '—',
+                  color: row.premium_change_pct == null ? '#94A3B8'
+                       : row.premium_change_pct > 0 ? '#EF4444' : '#10B981' },
+                { label: 'Tenure',
+                  value: row.original_year
+                    ? `${new Date().getFullYear() - row.original_year} yrs (${row.original_year})`
+                    : '—' },
+                { label: 'Easy Pay',
+                  value: row.easy_pay === true ? 'Yes ✓' : row.easy_pay === false ? 'No' : '—' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ marginTop: 4 }}>
+              <a href="#" onClick={e => { e.preventDefault(); onClose(); }}
+                style={{ fontSize: 12, color: '#3B82F6', textDecoration: 'none' }}>
+                Open in Renewal Queue →
               </a>
             </div>
           </div>
@@ -2783,14 +2845,14 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         <table style={{ minWidth: 1000 }}>
           <thead>
             <tr>
-              <SortTh col="priority"      label="Priority"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="priority"           label="Priority"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="customer_name"      label="Customer"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th>Risk</th>
-              <SortTh col="customer_name" label="Customer"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <SortTh col="product"       label="Product"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <SortTh col="cancel_date"   label="Cancel"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <SortTh col="renewal_date"  label="Renewal"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <SortTh col="premium_at_risk" label="At Risk"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <SortTh col="premium_change_pct" label="Δ%"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="cancel_date"        label="Cancel"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="renewal_date"       label="Renewal"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="premium_at_risk"    label="At Risk"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="premium_change_pct" label="Δ%"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="product"            label="Product"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th>Attempts</th>
               <th>Assigned</th>
             </tr>
@@ -2815,6 +2877,11 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     }}>{row._priority}</span>
                   </td>
 
+                  {/* Customer name */}
+                  <td style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 13 }}>
+                    {maskCustomerName(row.customer_name)}
+                  </td>
+
                   {/* Risk type badge */}
                   <td>
                     <span style={{
@@ -2825,13 +2892,6 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     }}>
                       {row.risk_type === 'dual_risk' ? '⚡ DUAL' : row.risk_type === 'pending_cancel' ? 'CANCEL' : 'RENEWAL'}
                     </span>
-                  </td>
-
-                  <td style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 13 }}>
-                    {maskCustomerName(row.customer_name)}
-                  </td>
-                  <td style={{ color: '#94A3B8', fontSize: 12 }}>
-                    {row.product?.toUpperCase() || '—'}
                   </td>
 
                   {/* Cancel date */}
@@ -2861,6 +2921,11 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     color: row.premium_change_pct == null ? '#64748B' : row.premium_change_pct > 0 ? '#EF4444' : '#10B981'
                   }}>
                     {row.premium_change_pct != null ? `${row.premium_change_pct > 0 ? '+' : ''}${row.premium_change_pct.toFixed(1)}%` : '—'}
+                  </td>
+
+                  {/* Product */}
+                  <td style={{ color: '#94A3B8', fontSize: 12 }}>
+                    {row.product?.toUpperCase() || '—'}
                   </td>
 
                   <td style={{ color: '#64748B', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
@@ -2896,6 +2961,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           row={selectedUnified}
           onClose={() => setSelectedUnified(null)}
           agencyId={agencyId}
+          employeeMap={employeeMap}
         />
       )}
     </div>
