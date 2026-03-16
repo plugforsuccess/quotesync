@@ -2540,7 +2540,41 @@ function NetGrowthTab({ agencyId }) {
 
 // ─── Unified Detail Modal ───────────────────────────────────────────────────
 
-function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
+function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [], onReassign }) {
+  const [saving, setSaving] = useState(false);
+  const [localRow, setLocalRow] = useState(row);
+
+  // Use localRow for display so reassignment reflects immediately without closing modal
+  const r = localRow;
+
+  async function reassign(side, employeeId) {
+    // side: 'cancel' | 'renewal'
+    setSaving(true);
+    try {
+      if (side === 'cancel' && r.cancel_event_id) {
+        const { error } = await supabase
+          .from('pending_cancel_events')
+          .update({ assigned_to_id: employeeId || null })
+          .eq('id', r.cancel_event_id);
+        if (error) throw error;
+        setLocalRow(prev => ({ ...prev, cancel_assigned_to_id: employeeId || null }));
+      }
+      if (side === 'renewal' && r.renewal_event_id) {
+        const { error } = await supabase
+          .from('renewal_events')
+          .update({ assigned_to_id: employeeId || null })
+          .eq('id', r.renewal_event_id);
+        if (error) throw error;
+        setLocalRow(prev => ({ ...prev, renewal_assigned_to_id: employeeId || null }));
+      }
+      if (onReassign) onReassign(localRow);
+    } catch (err) {
+      console.error('[reassign error]', err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#161924', borderRadius: 14, maxWidth: '98vw', width: '100%', maxHeight: '96vh', overflow: 'auto', padding: '24px 20px' }}>
@@ -2548,31 +2582,31 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
         {/* Header */}
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
-            {maskCustomerName(row.customer_name)}
+            {maskCustomerName(r.customer_name)}
           </div>
           <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
-            Policy {row.policy_no} · {row.product?.toUpperCase()}
-            {row.risk_type === 'dual_risk' && (
+            Policy {r.policy_no} · {r.product?.toUpperCase()}
+            {r.risk_type === 'dual_risk' && (
               <span style={{ marginLeft: 8, color: '#EF4444', fontWeight: 700 }}>⚡ DUAL RISK</span>
             )}
           </div>
         </div>
 
         {/* Contact info */}
-        {(row.phone || row.email) && (
+        {(r.phone || r.email) && (
           <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 16, border: '1px solid #252A3A' }}>
             <div style={{ fontSize: 11, color: '#64748B', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>Contact</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-              {row.phone && (
+              {r.phone && (
                 <div>
                   <div style={{ fontSize: 10, color: '#475569' }}>Phone</div>
-                  <div style={{ fontSize: 13, color: '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{row.phone}</div>
+                  <div style={{ fontSize: 13, color: '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{r.phone}</div>
                 </div>
               )}
-              {row.email && (
+              {r.email && (
                 <div>
                   <div style={{ fontSize: 10, color: '#475569' }}>Email</div>
-                  <div style={{ fontSize: 13, color: '#94A3B8' }}>{row.email}</div>
+                  <div style={{ fontSize: 13, color: '#94A3B8' }}>{r.email}</div>
                 </div>
               )}
             </div>
@@ -2580,7 +2614,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
         )}
 
         {/* Pending cancel section */}
-        {row.cancel_event_id && (
+        {r.cancel_event_id && (
           <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #F59E0B44' }}>
             <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               ⚠ Pending Cancellation
@@ -2589,17 +2623,17 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
             {/* Row 1 — Urgency + Status */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
               {[
-                { label: 'Cancel Date', value: row.cancel_effective_date,
-                  color: urgencyColor(daysUntilCancel(row.cancel_effective_date)) },
+                { label: 'Cancel Date', value: r.cancel_effective_date,
+                  color: urgencyColor(daysUntilCancel(r.cancel_effective_date)) },
                 { label: 'Days Left',
-                  value: (() => { const d = daysUntilCancel(row.cancel_effective_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
-                  color: urgencyColor(daysUntilCancel(row.cancel_effective_date)) },
+                  value: (() => { const d = daysUntilCancel(r.cancel_effective_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
+                  color: urgencyColor(daysUntilCancel(r.cancel_effective_date)) },
                 { label: 'Status',
-                  value: STATUS_CONFIG[row.cancel_status]?.label || row.cancel_status || '—' },
-                { label: 'Promise Date', value: row.promise_date || '—',
+                  value: STATUS_CONFIG[r.cancel_status]?.label || r.cancel_status || '—' },
+                { label: 'Promise Date', value: r.promise_date || '—',
                   color: (() => {
-                    if (!row.promise_date) return '#64748B';
-                    const d = Math.ceil((new Date(row.promise_date) - new Date()) / 86400000);
+                    if (!r.promise_date) return '#64748B';
+                    const d = Math.ceil((new Date(r.promise_date) - new Date()) / 86400000);
                     return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : '#94A3B8';
                   })() },
               ].map(({ label, value, color }) => (
@@ -2613,26 +2647,46 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
             {/* Row 2 — Financial + Context */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
               {[
-                { label: 'Premium at Risk', value: row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—' },
-                { label: 'Cycle', value: `#${row.cycle || 1}`,
-                  color: (row.cycle || 1) >= 3 ? '#EF4444' : (row.cycle || 1) === 2 ? '#F59E0B' : '#94A3B8' },
-                { label: 'Attempts', value: row.cancel_attempts || 0,
-                  color: (row.cancel_attempts || 0) >= 3 ? '#EF4444' : '#94A3B8' },
-                { label: 'Assigned',
-                  value: row.cancel_assigned_to_id ? (employeeMap?.[row.cancel_assigned_to_id] || '✓') : '—' },
+                { label: 'Premium at Risk', value: r.premium_at_risk ? fmtFull$(r.premium_at_risk) : '—' },
+                { label: 'Cycle', value: `#${r.cycle || 1}`,
+                  color: (r.cycle || 1) >= 3 ? '#EF4444' : (r.cycle || 1) === 2 ? '#F59E0B' : '#94A3B8' },
+                { label: 'Attempts', value: r.cancel_attempts || 0,
+                  color: (r.cancel_attempts || 0) >= 3 ? '#EF4444' : '#94A3B8' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
                   <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
+
+              {/* Assigned — inline dropdown */}
+              <div style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
+                <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>Assigned To</div>
+                <select
+                  value={r.cancel_assigned_to_id || ''}
+                  onChange={e => reassign('cancel', e.target.value || null)}
+                  disabled={saving}
+                  style={{
+                    background: 'transparent', color: '#E2E8F0', border: 'none',
+                    fontSize: 12, fontWeight: 600, fontFamily: "'DM Mono', monospace",
+                    cursor: 'pointer', width: '100%', padding: 0, outline: 'none',
+                  }}
+                >
+                  <option value="">— Unassigned</option>
+                  {producers.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.preferred_name || `${p.first_name || ''} ${p.last_name || ''}`.trim()}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
           </div>
         )}
 
         {/* Renewal section */}
-        {row.renewal_event_id && (
+        {r.renewal_event_id && (
           <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #3B82F644' }}>
             <div style={{ fontSize: 11, color: '#3B82F6', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               🔄 Renewal
@@ -2641,14 +2695,14 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
             {/* Row 1 — Urgency + Status (4 fields) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
               {[
-                { label: 'Renewal Date', value: row.renewal_date,
-                  color: renewalUrgencyColor(daysUntilRenewal(row.renewal_date)) },
+                { label: 'Renewal Date', value: r.renewal_date,
+                  color: renewalUrgencyColor(daysUntilRenewal(r.renewal_date)) },
                 { label: 'Days Until',
-                  value: (() => { const d = daysUntilRenewal(row.renewal_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
-                  color: renewalUrgencyColor(daysUntilRenewal(row.renewal_date)) },
+                  value: (() => { const d = daysUntilRenewal(r.renewal_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
+                  color: renewalUrgencyColor(daysUntilRenewal(r.renewal_date)) },
                 { label: 'Status',
-                  value: RENEWAL_STATUS_CONFIG[row.renewal_status]?.label || row.renewal_status || '—' },
-                { label: 'Attempts', value: row.renewal_attempts || 0 },
+                  value: RENEWAL_STATUS_CONFIG[r.renewal_status]?.label || r.renewal_status || '—' },
+                { label: 'Attempts', value: r.renewal_attempts || 0 },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
                   <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
@@ -2657,35 +2711,57 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap }) {
               ))}
             </div>
 
-            {/* Row 2 — Financial + Context (5 fields) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 10 }}>
+            {/* Row 2 — Financial + Context (6 fields) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 10 }}>
               {[
                 { label: 'Premium',
-                  value: row.renewal_premium ? fmtFull$(row.renewal_premium) : '—' },
+                  value: r.renewal_premium ? fmtFull$(r.renewal_premium) : '—' },
                 { label: 'Premium Δ',
-                  value: row.premium_change != null
-                    ? `${row.premium_change > 0 ? '+' : ''}${fmtFull$(row.premium_change)}`
+                  value: r.premium_change != null
+                    ? `${r.premium_change > 0 ? '+' : ''}${fmtFull$(r.premium_change)}`
                     : '—',
-                  color: row.premium_change == null ? '#94A3B8'
-                       : row.premium_change > 0 ? '#EF4444' : '#10B981' },
+                  color: r.premium_change == null ? '#94A3B8'
+                       : r.premium_change > 0 ? '#EF4444' : '#10B981' },
                 { label: 'Δ%',
-                  value: row.premium_change_pct != null
-                    ? `${row.premium_change_pct > 0 ? '+' : ''}${row.premium_change_pct.toFixed(1)}%`
+                  value: r.premium_change_pct != null
+                    ? `${r.premium_change_pct > 0 ? '+' : ''}${r.premium_change_pct.toFixed(1)}%`
                     : '—',
-                  color: row.premium_change_pct == null ? '#94A3B8'
-                       : row.premium_change_pct > 0 ? '#EF4444' : '#10B981' },
+                  color: r.premium_change_pct == null ? '#94A3B8'
+                       : r.premium_change_pct > 0 ? '#EF4444' : '#10B981' },
                 { label: 'Tenure',
-                  value: row.original_year
-                    ? `${new Date().getFullYear() - row.original_year} yrs (${row.original_year})`
+                  value: r.original_year
+                    ? `${new Date().getFullYear() - r.original_year} yrs (${r.original_year})`
                     : '—' },
                 { label: 'Easy Pay',
-                  value: row.easy_pay === true ? 'Yes ✓' : row.easy_pay === false ? 'No' : '—' },
+                  value: r.easy_pay === true ? 'Yes ✓' : r.easy_pay === false ? 'No' : '—' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
                   <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
+
+              {/* Assigned — inline dropdown */}
+              <div style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
+                <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>Assigned To</div>
+                <select
+                  value={r.renewal_assigned_to_id || ''}
+                  onChange={e => reassign('renewal', e.target.value || null)}
+                  disabled={saving}
+                  style={{
+                    background: 'transparent', color: '#E2E8F0', border: 'none',
+                    fontSize: 12, fontWeight: 600, fontFamily: "'DM Mono', monospace",
+                    cursor: 'pointer', width: '100%', padding: 0, outline: 'none',
+                  }}
+                >
+                  <option value="">— Unassigned</option>
+                  {producers.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.preferred_name || `${p.first_name || ''} ${p.last_name || ''}`.trim()}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
           </div>
@@ -3035,6 +3111,12 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           onClose={() => setSelectedUnified(null)}
           agencyId={agencyId}
           employeeMap={employeeMap}
+          producers={producers}
+          onReassign={(updatedRow) => {
+            // Update the row in local state so the triage table reflects the change immediately
+            queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+            setSelectedUnified(updatedRow);
+          }}
         />
       )}
     </div>
