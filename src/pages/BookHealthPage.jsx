@@ -1609,12 +1609,13 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
       const policyNos = parsedRows.map(r => r.policy_no);
       const { data: existing } = await supabase
         .from("renewal_events")
-        .select("policy_no, renewal_date")
+        .select("policy_no, renewal_date, assigned_to_id")
         .eq("agency_id", agencyId)
         .in("policy_no", policyNos);
-      const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
+      const existingMap = {};
+      (existing ?? []).forEach(e => { existingMap[`${e.policy_no}|${e.renewal_date}`] = e; });
 
-      const toAdd = parsedRows.filter(r => !existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
+      const toAdd = parsedRows.filter(r => !existingMap[`${r.policy_no}|${r.renewal_date}`]);
       const updatedCount = parsedRows.length - toAdd.length;
 
       // 2. Load all active service reps
@@ -1683,14 +1684,20 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
 
       // 6. Build upsert records
       const records = parsedRows.map(r => {
-        const isNew = !existingKeys.has(`${r.policy_no}|${r.renewal_date}`);
-        const assignedId = isNew ? pickNextRep() : undefined;
+        const key = `${r.policy_no}|${r.renewal_date}`;
+        const existingRow = existingMap[key];
+        const isNew = !existingRow;
+        // Assign new rows and existing unassigned rows via workload balancing;
+        // preserve existing assignments for already-assigned rows.
+        const assignedId = (isNew || !existingRow.assigned_to_id)
+          ? pickNextRep()
+          : existingRow.assigned_to_id;
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
           first_seen_on: today,
           last_seen_on: today,
-          ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
+          assigned_to_id: assignedId,
           ...r,
         };
       });
@@ -3117,12 +3124,13 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       const policyNos = parsedRows.map(r => r.policy_no);
       const { data: existing } = await supabase
         .from('renewal_events')
-        .select('policy_no, renewal_date')
+        .select('policy_no, renewal_date, assigned_to_id')
         .eq('agency_id', agencyId)
         .in('policy_no', policyNos);
-      const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
+      const existingMap = {};
+      (existing ?? []).forEach(e => { existingMap[`${e.policy_no}|${e.renewal_date}`] = e; });
 
-      const toAdd = parsedRows.filter(r => !existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
+      const toAdd = parsedRows.filter(r => !existingMap[`${r.policy_no}|${r.renewal_date}`]);
       const updatedCount = parsedRows.length - toAdd.length;
 
       // 2. Load all active service reps
@@ -3191,14 +3199,20 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
       // 6. Build upsert records
       const records = parsedRows.map(r => {
-        const isNew = !existingKeys.has(`${r.policy_no}|${r.renewal_date}`);
-        const assignedId = isNew ? pickNextRep() : undefined;
+        const key = `${r.policy_no}|${r.renewal_date}`;
+        const existingRow = existingMap[key];
+        const isNew = !existingRow;
+        // Assign new rows and existing unassigned rows via workload balancing;
+        // preserve existing assignments for already-assigned rows.
+        const assignedId = (isNew || !existingRow.assigned_to_id)
+          ? pickNextRep()
+          : existingRow.assigned_to_id;
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
           first_seen_on: today,
           last_seen_on: today,
-          ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
+          assigned_to_id: assignedId,
           ...r,
         };
       });
