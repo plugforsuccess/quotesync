@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 import { Users, Clock, Zap, AlertTriangle } from 'lucide-react';
 import { getBlendedValues } from '../../../lib/commissionUtils';
+import { totalCostMonthly } from '../../../utils/compModelCalculations';
 
 function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
   return (
@@ -40,6 +41,9 @@ export default function StaffingCapacity({
   plannerInputs,
   ytdAvgPremium,       // from useYTDBlended — overrides planner default when set
   ytdCommissionRate,   // from useYTDBlended — overrides planner default when set
+  producerConfigs,        // array from useAllProducerConfigs
+  selectedProducerConfig, // the chosen config object (or null = no cost data)
+  onProducerConfigChange, // callback(configId: string | 'none')
 }) {
   const {
     activeProducers, avgQuoteTime, workingHours,
@@ -135,7 +139,24 @@ export default function StaffingCapacity({
     return [1, 2, 3, 4, 5].map(producers => {
       const qpm = Math.round(outputs.quotesPerProducerMonthRaw * producers);
       const canHandle = outputs.qualPct > 0 ? Math.round(qpm / outputs.qualPct) : 0;
-      const monthlyRevenue = qpm * outputs.closePct * avgPremium * commPct;
+      const grossRevenue = qpm * outputs.closePct * avgPremium * commPct;
+
+      // Net profit calculation — requires a selected producer config
+      let netProfit    = null;
+      let producerCost = null;
+
+      if (selectedProducerConfig) {
+        const itemsPerProducer = producers > 0
+          ? Math.round(qpm * outputs.closePct / producers)
+          : 0;
+        const costPerProducer = totalCostMonthly(
+          itemsPerProducer,
+          selectedProducerConfig,
+          avgPremium
+        );
+        producerCost = costPerProducer * producers;
+        netProfit    = grossRevenue - producerCost;
+      }
 
       let status, statusColor;
       if (canHandle < targetSubmissions * 0.8) {
@@ -149,9 +170,9 @@ export default function StaffingCapacity({
         statusColor = 'text-green-600';
       }
 
-      return { producers, qpm, canHandle, monthlyRevenue, status, statusColor };
+      return { producers, qpm, canHandle, grossRevenue, producerCost, netProfit, status, statusColor };
     });
-  }, [outputs, avgPremium, commissionRate, targetSubmissions]);
+  }, [outputs, avgPremium, commissionRate, targetSubmissions, selectedProducerConfig]);
 
   // Daily breakdown bar widths
   const nonQuotingPct = (1 - outputs.allocPct) * 100;
@@ -178,6 +199,31 @@ export default function StaffingCapacity({
             <InputRow label="Quoting Allocation" value={quotingAllocation} onChange={(v) => onStaffingChange('quotingAllocation', v)} suffix="%" min={10} max={100} />
             <InputRow label="Qualification Rate" value={qualificationRate} onChange={(v) => onStaffingChange('qualificationRate', v)} suffix="%" min={1} max={100} />
             <InputRow label="Working Days/Month" value={workingDays} onChange={(v) => onStaffingChange('workingDays', v)} min={1} max={31} />
+            {/* Producer Cost Template */}
+            {producerConfigs?.length > 0 && (
+              <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                <label className="text-sm text-gray-600">Cost Based On</label>
+                <select
+                  value={selectedProducerConfig?.id || 'none'}
+                  onChange={(e) => onProducerConfigChange(e.target.value)}
+                  className="text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="none">Gross only (no cost)</option>
+                  {producerConfigs.map(cfg => {
+                    const emp = cfg.employees;
+                    const name = emp?.preferred_name || `${emp?.first_name || ''} ${emp?.last_name || ''}`.trim() || 'Unknown';
+                    return (
+                      <option key={cfg.id} value={cfg.id}>
+                        {name}
+                      </option>
+                    );
+                  })}
+                  {producerConfigs.length > 1 && (
+                    <option value="average">Average of all producers</option>
+                  )}
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Outputs */}
@@ -234,7 +280,13 @@ export default function StaffingCapacity({
                 <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 uppercase">Producers</th>
                 <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Quotes/Mo</th>
                 <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Lead Capacity</th>
-                <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Max Monthly Rev</th>
+                <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Gross Revenue</th>
+                {selectedProducerConfig && (
+                  <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Producer Cost</th>
+                )}
+                {selectedProducerConfig && (
+                  <th className="text-right py-2 px-4 text-xs font-medium text-green-700 uppercase">Net Profit</th>
+                )}
                 <th className="text-left py-2 pl-4 text-xs font-medium text-gray-500 uppercase">Status</th>
               </tr>
             </thead>
@@ -254,8 +306,18 @@ export default function StaffingCapacity({
                   <td className="py-2 px-4 text-right text-gray-700">{s.qpm.toLocaleString()}</td>
                   <td className="py-2 px-4 text-right text-gray-700">{s.canHandle.toLocaleString()}</td>
                   <td className="py-2 px-4 text-right text-gray-700">
-                    ${s.monthlyRevenue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    ${Math.round(s.grossRevenue).toLocaleString()}
                   </td>
+                  {selectedProducerConfig && (
+                    <td className="py-2 px-4 text-right text-red-600">
+                      −${Math.round(s.producerCost).toLocaleString()}
+                    </td>
+                  )}
+                  {selectedProducerConfig && (
+                    <td className={`py-2 px-4 text-right font-semibold ${s.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {s.netProfit >= 0 ? '+' : ''}${Math.round(s.netProfit).toLocaleString()}
+                    </td>
+                  )}
                   <td className={`py-2 pl-4 font-medium ${s.statusColor}`}>{s.status}</td>
                 </tr>
               ))}

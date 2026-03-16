@@ -198,6 +198,32 @@ export function useSaveProductMix() {
   });
 }
 
+// ── Fetch all active producer comp configs for the agency ────────────────────
+// Used by staffing model to let the user select whose cost structure to model.
+
+export function useAllProducerConfigs(agencyId) {
+  return useQuery({
+    queryKey: ['producer_comp_configs_all', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('producer_comp_configs')
+        .select(`
+          id, employee_id, base_salary_annual, employer_burden_monthly,
+          vc_base_comp_pct, vc_commission_rate, non_vc_bonus_monthly,
+          tp_band1_threshold, tp_band1_addon, tp_band2_threshold, tp_band2_addon,
+          employees(id, first_name, last_name, preferred_name)
+        `)
+        .eq('agency_id', agencyId)
+        .eq('is_active', true)
+        .order('employees(last_name)');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 // ── Actuals: Fetch VC-eligible product keys from agency_products ─────────────
 
 export function useVcProductKeys(agencyId) {
