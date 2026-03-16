@@ -39,8 +39,18 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
   const handleLogout = async (e) => {
     e.stopPropagation();
     setShowDropdown(false);
-    await signOut();
-    navigate('/admin-access-8by2X');
+    try {
+      // Race signOut against a 3s timeout — prevents hanging if auth lock is held.
+      // Navigation happens in finally regardless of outcome.
+      await Promise.race([
+        signOut(),
+        new Promise(resolve => setTimeout(resolve, 3000)),
+      ]);
+    } catch (err) {
+      console.warn('[logout] signOut error (non-fatal):', err);
+    } finally {
+      navigate('/admin-access-8by2X');
+    }
   };
 
   if (!user) {

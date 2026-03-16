@@ -11,7 +11,7 @@ import VerificationBanner from './VerificationBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
 
-function Layout() {
+function Layout({ forcePlane = null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
@@ -26,7 +26,9 @@ function Layout() {
   // Platform users can toggle between platform and consumer views
   // Agency users see agency plane, everyone else sees consumer
   const [planeOverride, setPlaneOverride] = useState(null);
-  const activePlane = planeOverride || authPlane;
+  // forcePlane takes highest priority — used by admin routes to guarantee
+  // platform nav regardless of loading state or sessionStorage cache
+  const activePlane = forcePlane || planeOverride || authPlane;
 
   // Reset override when auth state changes
   useEffect(() => {

@@ -15,18 +15,15 @@ import PageSpinner from './components/PageSpinner';
 import { validateCacheVersion } from './utils/cacheVersion';
 import { persistUtmParams } from './lib/leadsApi';
 
-// Override React Query's focus detection to use visibilitychange instead of
-// window focus events. visibilitychange fires reliably when the user returns
-// to the browser from another app or window. The 1s delay lets Supabase
-// complete its internal token refresh before queries fire, preventing 400s.
-focusManager.setEventListener((handleFocus) => {
-  const onVisible = () => {
-    if (document.visibilityState === 'visible') {
-      setTimeout(handleFocus, 1000);
-    }
-  };
-  document.addEventListener('visibilitychange', onVisible);
-  return () => document.removeEventListener('visibilitychange', onVisible);
+// Disable focus-based refetching. Supabase auth uses a single internal lock
+// for all getSession() calls. React Query refetches each call getSession()
+// internally for auth headers — 9+ parallel refetches on tab restore exhaust
+// the lock and cause supabase.auth.signOut() and other auth ops to hang.
+// Data freshness is maintained by: staleTime expiry, explicit invalidateQueries
+// after mutations, and refetchOnReconnect for network restore.
+focusManager.setEventListener(() => {
+  // Intentional no-op — see comment above.
+  return () => {};
 });
 
 // Configure React Query with auth-aware error handling
@@ -35,7 +32,7 @@ export const queryClient = new QueryClient({
     queries: {
       staleTime: 2 * 60 * 1000, // 2 minutes
       cacheTime: 10 * 60 * 1000, // 10 minutes
-      refetchOnWindowFocus: true,  // back to true — focusManager delay prevents the race
+      refetchOnWindowFocus: false,  // disabled to prevent auth lock contention
       refetchOnReconnect: true,
       retry: (failureCount, error) => {
         // Never retry auth failures — the token is dead, retrying just cascades errors
@@ -68,11 +65,13 @@ const handleAuthError = (source) => {
   // because the refresh hasn't completed yet.
   setTimeout(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (!data?.session) {
-        console.warn(`[${source}] Auth error confirmed — no valid session, signing out`);
-        supabase.auth.signOut();
+      if (data?.session) {
+        console.warn(`[${source}] 401 was transient — session still valid`);
       } else {
-        console.warn(`[${source}] Auth error was transient (token refreshed) — skipping sign-out`);
+        // Log but do not sign out. A null here can mean lock contention
+        // rather than a dead session. The user will hit the login redirect
+        // naturally via ProtectedRoute if their session is truly expired.
+        console.warn(`[${source}] 401 with no session — may be lock contention, not signing out`);
       }
     }).finally(() => {
       authCheckInFlight = false;
@@ -167,6 +166,12 @@ const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompMo
 
 // Loading fallback component
 const PageLoader = () => <PageSpinner />;
+
+// Admin routes use a dedicated layout that forces the platform plane,
+// guaranteeing admin nav regardless of loading state or sessionStorage cache.
+function AdminLayout() {
+  return <Layout forcePlane="platform" />;
+}
 
 function App() {
   // Validate cache version on mount + persist UTM params
@@ -386,130 +391,6 @@ function App() {
               }
             />
 
-            {/* Admin - Agency Management */}
-            <Route
-              path="/admin/agencies"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <AdminAgenciesPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/agencies/:id"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <AdminAgencyDetailPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin - Employee Roster */}
-            <Route
-              path="/admin/agency/employees"
-              element={
-                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <EmployeeRosterPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin - Audit Log */}
-            <Route
-              path="/admin/audit"
-              element={
-                <ProtectedRoute requiredRole="admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <AdminAuditPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin - Time & Attendance (platform_admin+) */}
-            <Route
-              path="/admin/time-attendance"
-              element={
-                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <AdminTimeAttendancePage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin - CS Performance Dashboard (platform_admin+) */}
-            <Route
-              path="/admin/cs-performance"
-              element={
-                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <CSPerformancePage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin - Revenue Projections Dashboard (platform_admin+) */}
-            <Route
-              path="/admin/revenue-projections"
-              element={
-                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <RevenueProjectionsDashboard />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin - Producer Compensation Model (agency principals) */}
-            <Route
-              path="/admin/producers/:employeeId/comp-model"
-              element={
-                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <ProducerCompModelPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
-            {/* Admin - Book Health Dashboard (platform_admin+) */}
-            <Route
-              path="/admin/book-health"
-              element={
-                <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
-                  <ErrorBoundary fallback={<PageError />}>
-                    <Suspense fallback={<PageLoader />}>
-                      <BookHealthPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </ProtectedRoute>
-              }
-            />
-
             {/* Access denied pages */}
             <Route path="unauthorized" element={
               <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
@@ -551,6 +432,73 @@ function App() {
 
             {/* Catch-all – redirect bad URLs to home */}
             <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+
+          {/* Admin routes — dedicated layout forces platform nav */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="agencies" element={
+              <ProtectedRoute requiredRole="admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminAgenciesPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agencies/:id" element={
+              <ProtectedRoute requiredRole="admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminAgencyDetailPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/employees" element={
+              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><EmployeeRosterPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="audit" element={
+              <ProtectedRoute requiredRole="admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminAuditPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="time-attendance" element={
+              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminTimeAttendancePage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="cs-performance" element={
+              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><CSPerformancePage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="revenue-projections" element={
+              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RevenueProjectionsDashboard /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="producers/:employeeId/comp-model" element={
+              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><ProducerCompModelPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="book-health" element={
+              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
           </Route>
           </Routes>
           </AuthProvider>

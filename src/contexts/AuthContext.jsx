@@ -443,7 +443,10 @@ export const AuthProvider = ({ children }) => {
     setIsImpersonating(false);
     setImpersonationSession(null);
     setAuthError(null);
-    try { sessionStorage.removeItem('qs_active_plane'); } catch (_) {}
+    // NOTE: Do NOT clear qs_active_plane here. resetState() is called during
+    // normal init flows before auth resolves. Clearing here causes the nav to
+    // flash to consumer on every refresh. The useEffect below handles clearing
+    // qs_active_plane only after confirmed sign-out (!loading && !user).
   };
 
   // Initialize auth state on mount (self-healing boot)
