@@ -3,6 +3,7 @@
 // but scoped entirely to the current employee via RLS.
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
@@ -202,8 +203,8 @@ export default function MyQueuePage() {
         </div>
       )}
 
-      {/* Detail modals — re-use existing components */}
-      {selectedEvent && (
+      {/* Detail modals — portaled to body to escape fixed bottom tab bar z-index */}
+      {selectedEvent && createPortal(
         <EventDetailModal
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
@@ -211,9 +212,10 @@ export default function MyQueuePage() {
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={[]}
-        />
+        />,
+        document.body
       )}
-      {selectedRenewal && (
+      {selectedRenewal && createPortal(
         <RenewalDetailModal
           event={selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
@@ -221,7 +223,8 @@ export default function MyQueuePage() {
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={[]}
-        />
+        />,
+        document.body
       )}
     </div>
   );

@@ -11,7 +11,10 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 const LoginPage = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading, currentAgencyId, platformRole, currentAgencyRole, isPlatformUser } = useAuth();
+  // Only query for employee record if the user is not a platform user — avoids
+  // an unnecessary DB round trip on every platform admin login.
   const { data: employeeRecord, isLoading: empLoading } = useCurrentEmployee();
+  const empResolved = isPlatformUser || !empLoading;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,7 +28,7 @@ const LoginPage = () => {
   // Employees (non-platform users) go to /my/queue; platform/agency users
   // go to their role-based landing page.
   useEffect(() => {
-    if (!authLoading && !empLoading && user) {
+    if (!authLoading && empResolved && user) {
       // Employee (not platform admin) → send to their queue
       if (employeeRecord && !isPlatformUser) {
         navigate('/my/queue', { replace: true });
@@ -34,7 +37,7 @@ const LoginPage = () => {
         navigate(getDefaultLanding(platformRole, agencyRoleVal), { replace: true });
       }
     }
-  }, [authLoading, empLoading, user, employeeRecord, isPlatformUser, platformRole, currentAgencyRole, currentAgencyId, navigate]);
+  }, [authLoading, empResolved, user, employeeRecord, isPlatformUser, platformRole, currentAgencyRole, currentAgencyId, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
