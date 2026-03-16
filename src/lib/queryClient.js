@@ -56,7 +56,10 @@ const handleAuthError = (source) => {
   setTimeout(() => {
     supabase.auth.getSession().then(({ data }) => {
       if (data?.session) {
-        console.warn(`[${source}] 401 was transient — session still valid`);
+        console.warn(`[${source}] 401 was transient — session refreshed, retrying queries`);
+        // Token was refreshed — invalidate failed queries so they re-run
+        // with the new token instead of staying in error state.
+        queryClient.invalidateQueries();
       } else {
         // Log but do not sign out. A null here can mean lock contention
         // rather than a dead session. The user will hit the login redirect
