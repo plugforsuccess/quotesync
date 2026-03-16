@@ -373,6 +373,25 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
 
   return (
     <div>
+      {/* Upload Section */}
+      <div style={{ marginBottom: 24, borderBottom: '1px solid #252A3A', paddingBottom: 24 }}>
+        <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+          Upload Pending Cancellation Report
+        </div>
+        <UploadTab
+          uploadFile={uploadFile}
+          uploadError={uploadError}
+          uploadMsg={uploadMsg}
+          isParsing={isParsing}
+          isCommitting={isCommitting}
+          diffResult={diffResult}
+          fileInputRef={fileInputRef}
+          onFileSelect={onFileSelect}
+          onCommit={onCommit}
+          onCancel={onCancelUpload}
+        />
+      </div>
+
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap", rowGap: 8 }}>
         <div style={{ display: "flex", gap: 4 }}>
           {[
@@ -527,24 +546,6 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
         />
       )}
 
-      {/* Upload Section */}
-      <div style={{ marginTop: 32, borderTop: '1px solid #252A3A', paddingTop: 24 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-          Upload Pending Cancellation Report
-        </div>
-        <UploadTab
-          uploadFile={uploadFile}
-          uploadError={uploadError}
-          uploadMsg={uploadMsg}
-          isParsing={isParsing}
-          isCommitting={isCommitting}
-          diffResult={diffResult}
-          fileInputRef={fileInputRef}
-          onFileSelect={onFileSelect}
-          onCommit={onCommit}
-          onCancel={onCancelUpload}
-        />
-      </div>
     </div>
   );
 }
