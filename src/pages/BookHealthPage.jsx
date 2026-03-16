@@ -1193,8 +1193,8 @@ function RenewalTab({ agencyId, currentUserId }) {
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
-          first_seen_on: today,
           last_seen_on: today,
+          ...(isNew ? { first_seen_on: today } : {}),
           ...(isNew && assignToId ? { assigned_to_id: assignToId } : {}),
           ...r,
         };
