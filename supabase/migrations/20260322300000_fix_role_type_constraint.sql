@@ -1,0 +1,4 @@
+-- No-op migration: documents that the live constraint uses 'service' not 'cs_rep'
+-- The employees_role_type_check constraint already correctly uses:
+--   CHECK (role_type IN ('service', 'producer', 'admin'))
+-- This migration exists to align the codebase with the live DB state.
