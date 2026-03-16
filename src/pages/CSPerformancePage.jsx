@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   BarChart3, Users, RefreshCw, ShieldOff, AlertCircle, ChevronLeft, ChevronRight,
-  Filter, Target, Download, ArrowLeft, TrendingUp, Shield,
+  Filter, Target, Download, ArrowLeft, TrendingUp, Shield, DollarSign,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -24,12 +24,12 @@ import {
   useCallLogData, useInvalidateCallLog,
   useQueueData, useInvalidateQueueData,
 } from '../hooks/useCSPerformance';
-import { computeCallLogMetrics } from '../config/csPerformanceDefaults';
+import { computeCallLogMetrics, RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/csPerformanceDefaults';
 import CallLogUploadForm from './components/time-attendance/CallLogUploadForm';
 import QueueUploadForm from './components/time-attendance/QueueUploadForm';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import CSScorecard from './components/time-attendance/CSScorecard';
-import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
+import DiscrepancyAlerts, { BonusVerificationAlert } from './components/time-attendance/DiscrepancyAlerts';
 import CoverageAlerts from './components/time-attendance/CoverageAlerts';
 import QueueSummaryCard from './components/time-attendance/QueueSummaryCard';
 import TargetsModal from './components/time-attendance/TargetsModal';
@@ -47,6 +47,7 @@ import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
 import { useAllProducerConfigs } from '../hooks/useProducerCompModel';
 import { averageConfig } from '../utils/compModelCalculations';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
+import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
 import PageSpinner from '../components/PageSpinner';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
@@ -325,6 +326,21 @@ const CSPerformancePage = () => {
     selectedEmployeeRecord?.id,
     scoreType,
   );
+
+  // ── Monthly bonus verification (service_outbound) ───────────────────────────
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+
+  const { data: verificationData } = useRetentionCallVerification({
+    employeeId: selectedEmployeeRecord?.id,
+    agencyId: currentAgencyId,
+    month: selectedMonth,
+  });
+
+  const bonusSaves  = verificationData?.verified ?? 0;
+  const bonusAmount = Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD) * RETENTION_BONUS_PER_SAVE;
 
   function refetchAll() {
     refetchEntries();
@@ -963,6 +979,55 @@ const CSPerformancePage = () => {
                   metrics={retentionMetrics}
                   isLoading={retentionLoading}
                 />
+              </div>
+            )}
+
+            {/* Monthly Bonus Verification — service_outbound only */}
+            {selectedEmployeeRoles.includes('service_outbound') && selectedMonth && (
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Monthly Bonus Verification — {selectedMonth}
+                </h3>
+
+                <div className="mb-3">
+                  <input
+                    type="month"
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  />
+                </div>
+
+                <div className="bg-white rounded-lg border border-gray-200 p-5 mb-3">
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {bonusSaves}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">Verified saves</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD)} &times; $25
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        saves above {RETENTION_BONUS_THRESHOLD} threshold
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className={`text-2xl font-bold ${bonusAmount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                        ${bonusAmount.toLocaleString()}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">bonus earned</div>
+                    </div>
+                  </div>
+
+                  <BonusVerificationAlert
+                    verificationData={verificationData}
+                    month={selectedMonth}
+                  />
+                </div>
               </div>
             )}
           </div>

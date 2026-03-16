@@ -1,3 +1,8 @@
+// Retention bonus structure — Nathan earns $25/save above 30 saves/month
+// Verified against RingCentral call log (outbound connected call required)
+export const RETENTION_BONUS_THRESHOLD = 30;
+export const RETENTION_BONUS_PER_SAVE  = 25;
+
 // Default targets for CS Performance scoring.
 // Used as fallback when no per-employee cs_performance_targets row exists.
 
