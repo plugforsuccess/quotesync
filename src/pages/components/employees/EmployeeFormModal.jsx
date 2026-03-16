@@ -6,9 +6,10 @@ import { X } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 const ROLE_OPTIONS = [
-  { value: 'service', label: 'Service' },
-  { value: 'sales',   label: 'Sales'   },
-  { value: 'admin',   label: 'Admin'   },
+  { value: 'service_inbound',  label: 'Service — Inbound'  },
+  { value: 'service_outbound', label: 'Service — Outbound' },
+  { value: 'sales',            label: 'Sales'              },
+  { value: 'admin',            label: 'Admin'              },
 ];
 
 const EDUCATION_OPTIONS = [
@@ -38,7 +39,7 @@ const EMPTY_FORM = {
   city: '',
   state: '',
   zip_code: '',
-  roles: ['service'],
+  roles: ['service_inbound'],
   hire_date: '',
   allstate_id: '',
   rc_display_name: '',

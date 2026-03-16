@@ -651,6 +651,14 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         ...(attemptForm.result === "left_voicemail" ? { status: "left_voicemail" } : {}),
         ...(attemptForm.result === "reached" ? { contacted_at: event.contacted_at || new Date().toISOString() } : {}),
       }).eq("id", event.id);
+      // If this is the first attempt on the case, set opened_by_id
+      if (event.attempt_count === 0 || !event.opened_by_id) {
+        await supabase
+          .from('pending_cancel_events')
+          .update({ opened_by_id: currentEmployeeId })
+          .eq('id', event.id)
+          .is('opened_by_id', null);
+      }
       const { data } = await supabase
         .from("pending_cancel_attempts")
         .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
@@ -671,6 +679,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     }
     if (["saved","lost","requested_cancellation"].includes(form.status) && !event.resolution_date) {
       updates.resolution_date = new Date().toISOString().slice(0,10);
+    }
+    // Set closed_by_id when resolving a case
+    if (["saved","lost","requested_cancellation","cancelled"].includes(form.status)) {
+      updates.closed_by_id = currentEmployeeId;
     }
     // Sync assigned_to (legacy text) with assigned_to_id (employee FK)
     if (!updates.assigned_to_id) {
@@ -1127,6 +1139,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         last_attempt_result: attemptForm.result,
         ...statusUpdate,
       }).eq("id", event.id);
+      // If this is the first attempt on the case, set opened_by_id
+      if (event.attempt_count === 0 || !event.opened_by_id) {
+        await supabase
+          .from('renewal_events')
+          .update({ opened_by_id: currentEmployeeId })
+          .eq('id', event.id)
+          .is('opened_by_id', null);
+      }
 
       const { data } = await supabase
         .from("renewal_attempts")
@@ -1148,6 +1168,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     }
     if (["confirmed","lost"].includes(form.status) && !event.resolution_date) {
       updates.resolution_date = new Date().toISOString().slice(0,10);
+    }
+    // Set closed_by_id when resolving a case
+    if (["confirmed","lost","unreachable"].includes(form.status)) {
+      updates.closed_by_id = currentEmployeeId;
     }
     if (!updates.assigned_to_id) updates.assigned_to_id = null;
     if (form.status !== "shopping") updates.shopping_reason = null;
@@ -1404,7 +1428,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .contains("roles", ["service"])
+        .overlaps("roles", ["service_inbound", "service_outbound", "service"])
         .order("last_name");
       if (error) throw error;
       return data ?? [];
@@ -1572,7 +1596,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .contains("roles", ["service"])
+        .overlaps("roles", ["service_outbound"])
         .order("last_name");
 
       const activeReps = reps || [];
@@ -2834,7 +2858,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .contains('roles', ['service'])
+        .overlaps('roles', ['service_inbound', 'service_outbound', 'service'])
         .order('last_name');
       if (error) throw error;
       return data ?? [];
@@ -3264,7 +3288,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .contains('roles', ['service'])
+        .overlaps('roles', ['service_inbound', 'service_outbound', 'service'])
         .order('last_name');
       return data ?? [];
     },
@@ -3352,7 +3376,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .contains('roles', ['service'])
+        .overlaps('roles', ['service_outbound'])
         .order('last_name');
 
       const activeReps = reps || [];
@@ -3716,7 +3740,7 @@ export default function BookHealthPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .contains("roles", ["service"])
+        .overlaps("roles", ["service_inbound", "service_outbound", "service"])
         .order("last_name");
       if (error) throw error;
       return data ?? [];
@@ -3887,7 +3911,7 @@ export default function BookHealthPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .contains("roles", ["service"])
+        .overlaps("roles", ["service_outbound"])
         .order("last_name");
 
       const activeReps = reps || [];
@@ -4034,7 +4058,7 @@ export default function BookHealthPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .contains("roles", ["service"])
+        .overlaps("roles", ["service_outbound"])
         .order("last_name");
 
       const activeReps = reps || [];

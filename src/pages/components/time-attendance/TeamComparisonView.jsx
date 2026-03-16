@@ -12,17 +12,21 @@ const ROLE_LABELS = { service: 'Service', sales: 'Sales', admin: 'Admin' };
 
 // ── Column configurations per role filter ───────────────────────────────────
 
+const SERVICE_COLUMNS = [
+  { key: 'name', label: 'Employee', sortable: true },
+  { key: 'grade', label: 'Grade', sortable: true },
+  { key: 'outbound', label: 'Outbound', sortable: true },
+  { key: 'answerRate', label: 'Answer Rate', sortable: true, format: 'pct' },
+  { key: 'avgHandle', label: 'Avg Handle', sortable: true, format: 'time' },
+  { key: 'avgHold', label: 'Avg Hold', sortable: true, format: 'time' },
+  { key: 'missed', label: 'Missed', sortable: true },
+  { key: 'flags', label: 'Flags', sortable: true },
+];
+
 const TEAM_COLUMNS = {
-  service: [
-    { key: 'name', label: 'Employee', sortable: true },
-    { key: 'grade', label: 'Grade', sortable: true },
-    { key: 'outbound', label: 'Outbound', sortable: true },
-    { key: 'answerRate', label: 'Answer Rate', sortable: true, format: 'pct' },
-    { key: 'avgHandle', label: 'Avg Handle', sortable: true, format: 'time' },
-    { key: 'avgHold', label: 'Avg Hold', sortable: true, format: 'time' },
-    { key: 'missed', label: 'Missed', sortable: true },
-    { key: 'flags', label: 'Flags', sortable: true },
-  ],
+  service: SERVICE_COLUMNS,
+  service_inbound: SERVICE_COLUMNS,
+  service_outbound: SERVICE_COLUMNS,
   sales: [
     { key: 'name', label: 'Employee', sortable: true },
     { key: 'outbound', label: 'Outbound', sortable: true },
@@ -45,6 +49,8 @@ const TEAM_COLUMNS = {
 
 const DEFAULT_SORT = {
   service: { key: 'grade', dir: 'desc' },
+  service_inbound: { key: 'grade', dir: 'desc' },
+  service_outbound: { key: 'grade', dir: 'desc' },
   sales: { key: 'outbound', dir: 'desc' },
   all: { key: 'role', dir: 'asc' },
 };
@@ -139,7 +145,7 @@ function AvgCellValue({ col, teamAvg }) {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export default function TeamComparisonView({ teamData, roleFilter = 'service', onSelectEmployee }) {
+export default function TeamComparisonView({ teamData, roleFilter = 'service_inbound', onSelectEmployee }) {
   const defaultSort = DEFAULT_SORT[roleFilter] || DEFAULT_SORT.service;
   const [sortKey, setSortKey] = useState(defaultSort.key);
   const [sortDir, setSortDir] = useState(defaultSort.dir);
@@ -162,16 +168,19 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
     return teamData.rcData
       .map((rc) => {
         const emp = employeesMap[rc.employee_user_id];
-        const empRoleType = emp?.roles?.[0] || 'service';
+        const empRoles = emp?.roles || [];
+        const empRoleType = empRoles[0] || 'service';
 
-        // Filter by role
-        if (roleFilter !== 'all' && empRoleType !== roleFilter) return null;
+        // Filter by role — match new split service roles
+        if (roleFilter !== 'all') {
+          if (!empRoles.includes(roleFilter)) return null;
+        }
 
         const targets = teamData.targets?.[rc.employee_user_id] || DEFAULT_TARGETS;
         const metrics = computeMetrics(rc, 5);
 
-        // Grade only for services
-        const isServiceRep = empRoleType === 'service';
+        // Grade only for service reps (any service role)
+        const isServiceRep = empRoles.some(r => r === 'service_inbound' || r === 'service_outbound' || r === 'service');
         const grade = isServiceRep
           ? calculateGrade(rc.outbound_calls, metrics.answerRate, metrics.hasZeroCallDays, targets)
           : null;
@@ -266,7 +275,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
   }
 
   if (rows.length === 0) {
-    const filterLabel = roleFilter === 'service' ? 'service' : roleFilter === 'sales' ? 'sales' : '';
+    const filterLabel = roleFilter === 'service_inbound' ? 'inbound service' : roleFilter === 'service_outbound' ? 'outbound service' : roleFilter === 'sales' ? 'sales' : '';
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -280,7 +289,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
     );
   }
 
-  const countLabel = roleFilter === 'service' ? 'reps' : roleFilter === 'sales' ? 'sales reps' : 'employees';
+  const countLabel = roleFilter === 'service_inbound' || roleFilter === 'service_outbound' ? 'reps' : roleFilter === 'sales' ? 'sales reps' : 'employees';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

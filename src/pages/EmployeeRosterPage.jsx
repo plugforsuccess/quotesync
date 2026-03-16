@@ -20,9 +20,11 @@ import TerminateModal from './components/employees/TerminateModal';
 import VerifyInlineForm from './components/employees/VerifyInlineForm';
 
 const ROLE_LABELS = {
-  service: 'Service',
-  sales: 'Sales',
-  admin: 'Admin',
+  service_inbound:  'Service — Inbound',
+  service_outbound: 'Service — Outbound',
+  service:          'Service',  // legacy
+  sales:            'Sales',
+  admin:            'Admin',
 };
 
 const STATUS_FILTERS = [

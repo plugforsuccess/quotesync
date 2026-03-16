@@ -216,7 +216,7 @@ export function useActiveServiceReps(orgId) {
         .select('id, first_name, last_name, preferred_name, roles, auth_user_id')
         .eq('org_id', orgId)
         .eq('employment_status', 'active')
-        .contains('roles', ['service']);
+        .overlaps('roles', ['service_inbound', 'service_outbound', 'service']);
 
       if (error) throw error;
       return data || [];
