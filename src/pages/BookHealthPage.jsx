@@ -3311,12 +3311,12 @@ function ImportTab({
   agencyId, currentUserId, currentEmployeeId,
 }) {
   return (
-    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <div style={{ maxWidth: 996, margin: '0 auto' }}>
       <div style={{ fontSize: 13, color: '#64748B', marginBottom: 28, textAlign: 'center' }}>
         Upload Allstate reports to refresh the At Risk queue. Each report is processed independently.
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 128, alignItems: 'start' }}>
 
         {/* Left — Pending Cancellation */}
         <div style={{ background: '#161924', border: '1px solid #F59E0B33', borderRadius: 12, padding: 20 }}>
