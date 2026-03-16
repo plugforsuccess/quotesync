@@ -2772,6 +2772,10 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           aVal = a.cancel_effective_date || '9999';
           bVal = b.cancel_effective_date || '9999';
           return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        case 'renewal_date_actual':
+          aVal = a.renewal_date || '';
+          bVal = b.renewal_date || '';
+          return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         case 'renewal_date':
           aVal = a.renewal_date || '9999';
           bVal = b.renewal_date || '9999';
@@ -2856,8 +2860,20 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               <SortTh col="priority"           label="Priority"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="customer_name"      label="Customer"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th>Risk</th>
-              <SortTh col="cancel_date"        label="Cancel"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <SortTh col="renewal_date"       label="Renewal"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              {/* Cancel column — hide when filtering to renewal-only */}
+              {riskFilter !== 'renewal' && (
+                <SortTh col="cancel_date" label="Cancel" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              )}
+
+              {/* Date column — show actual renewal date, only when filtering to renewal */}
+              {riskFilter === 'renewal' && (
+                <SortTh col="renewal_date_actual" label="Date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              )}
+
+              {/* Renewal days-remaining column — hide when filtering to cancel-only */}
+              {riskFilter !== 'pending_cancel' && (
+                <SortTh col="renewal_date" label="Renewal" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              )}
               <SortTh col="premium_at_risk"    label="At Risk"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="premium_change_pct" label="Δ%"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="product"            label="Product"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
@@ -2902,23 +2918,34 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     </span>
                   </td>
 
-                  {/* Cancel date */}
-                  <td>
-                    {row.cancel_effective_date ? (
-                      <span style={{ color: urgencyColor(cancelDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                        {cancelDays <= 0 ? 'PAST DUE' : `${cancelDays}d`}
-                      </span>
-                    ) : <span style={{ color: '#334155' }}>—</span>}
-                  </td>
+                  {/* Cancel urgency cell */}
+                  {riskFilter !== 'renewal' && (
+                    <td>
+                      {row.cancel_effective_date ? (
+                        <span style={{ color: urgencyColor(cancelDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                          {cancelDays <= 0 ? 'PAST DUE' : `${cancelDays}d`}
+                        </span>
+                      ) : <span style={{ color: '#334155' }}>—</span>}
+                    </td>
+                  )}
 
-                  {/* Renewal date */}
-                  <td>
-                    {row.renewal_date ? (
-                      <span style={{ color: renewalUrgencyColor(renewalDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
-                        {renewalDays <= 0 ? 'PAST' : `${renewalDays}d`}
-                      </span>
-                    ) : <span style={{ color: '#334155' }}>—</span>}
-                  </td>
+                  {/* Renewal actual date cell — only in renewal filter */}
+                  {riskFilter === 'renewal' && (
+                    <td style={{ color: '#94A3B8', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                      {row.renewal_date || '—'}
+                    </td>
+                  )}
+
+                  {/* Renewal days-remaining cell */}
+                  {riskFilter !== 'pending_cancel' && (
+                    <td>
+                      {row.renewal_date ? (
+                        <span style={{ color: renewalUrgencyColor(renewalDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                          {renewalDays <= 0 ? 'PAST' : `${renewalDays}d`}
+                        </span>
+                      ) : <span style={{ color: '#334155' }}>—</span>}
+                    </td>
+                  )}
 
                   <td style={{ color: '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>
                     {row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—'}
