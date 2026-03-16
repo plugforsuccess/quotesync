@@ -1586,7 +1586,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
           .select("assigned_to_id")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
-          .not("status", "in", '("confirmed","lost","auto_resolved","unreachable")');
+          .not("status", "in", '(confirmed,lost,auto_resolved,unreachable)');
 
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
@@ -3900,7 +3900,7 @@ export default function BookHealthPage() {
           .select("assigned_to_id")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
-          .not("status", "in", '("saved","lost","auto_resolved","requested_cancellation")');
+          .not("status", "in", '(saved,lost,auto_resolved,requested_cancellation)');
 
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
@@ -4047,7 +4047,7 @@ export default function BookHealthPage() {
           .select("assigned_to_id")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
-          .not("status", "in", '("saved","lost","auto_resolved","requested_cancellation","cancelled")');
+          .not("status", "in", '(saved,lost,auto_resolved,requested_cancellation,cancelled)');
 
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
