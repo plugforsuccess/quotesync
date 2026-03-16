@@ -41,9 +41,10 @@ export default function StaffingCapacity({
   plannerInputs,
   ytdAvgPremium,       // from useYTDBlended — overrides planner default when set
   ytdCommissionRate,   // from useYTDBlended — overrides planner default when set
-  producerConfigs,        // array from useAllProducerConfigs
-  selectedProducerConfig, // the chosen config object (or null = no cost data)
-  onProducerConfigChange, // callback(configId: string | 'none')
+  producerConfigs,          // array from useAllProducerConfigs
+  selectedProducerConfig,   // the chosen config object (or null = no cost data)
+  selectedProducerConfigId, // 'none' | 'average' | uuid string
+  onProducerConfigChange,   // callback(configId: string | 'none')
 }) {
   const {
     activeProducers, avgQuoteTime, workingHours,
@@ -204,7 +205,7 @@ export default function StaffingCapacity({
               <div className="flex justify-between items-center py-2 border-b border-gray-100">
                 <label className="text-sm text-gray-600">Cost Based On</label>
                 <select
-                  value={selectedProducerConfig?.id || 'none'}
+                  value={selectedProducerConfigId || 'none'}
                   onChange={(e) => onProducerConfigChange(e.target.value)}
                   className="text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500"
                 >

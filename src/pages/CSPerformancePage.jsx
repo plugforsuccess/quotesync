@@ -663,6 +663,7 @@ const CSPerformancePage = () => {
               ytdCommissionRate={ytdBlended ? ytdBlended.blendedCommissionRate * 100 : undefined}
               producerConfigs={producerConfigs}
               selectedProducerConfig={selectedProducerConfig}
+              selectedProducerConfigId={selectedProducerConfigId}
               onProducerConfigChange={setSelectedProducerConfigId}
             />
           </div>
