@@ -589,9 +589,29 @@ export const AuthProvider = ({ children }) => {
         }
 
         if (event === 'SIGNED_OUT') {
-          resetState();
-          // Ensure loading is false so ProtectedRoute evaluates and redirects
-          setLoading(false);
+          // Supabase fires SIGNED_OUT spuriously when a background token refresh
+          // fails (network timeout, lock contention). Verify the session is truly
+          // gone before wiping React state — if the token is still in localStorage,
+          // this was a false alarm and React state should be re-hydrated, not cleared.
+          supabase.auth.getSession().then(({ data }) => {
+            if (!mounted) return;
+            if (data?.session) {
+              // Session still valid — spurious SIGNED_OUT, re-hydrate state
+              console.warn('[AUTH] spurious SIGNED_OUT — session still valid, re-hydrating');
+              fetchUserProfile(data.session.user).catch(e =>
+                console.error('[AUTH] re-hydration after spurious SIGNED_OUT failed:', e)
+              );
+            } else {
+              // Genuinely signed out — clear state
+              console.log('[AUTH] confirmed SIGNED_OUT — clearing state');
+              resetState();
+              setLoading(false);
+            }
+          }).catch(() => {
+            // getSession() itself failed — treat as genuine sign-out
+            resetState();
+            setLoading(false);
+          });
           return;
         }
       }
