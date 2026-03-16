@@ -430,5 +430,6 @@ export function useFunnelMetrics(agencyId, timeRange) {
     enabled: !!agencyId,
     staleTime: 2 * 60 * 1000,
     refetchInterval: 5 * 60 * 1000,
+    refetchIntervalInBackground: false, // prevent batched timer fires on tab restore
   });
 }
