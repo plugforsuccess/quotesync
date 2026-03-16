@@ -1688,8 +1688,8 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
+          first_seen_on: today,
           last_seen_on: today,
-          ...(isNew ? { first_seen_on: today } : {}),
           ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
           ...r,
         };
@@ -3196,8 +3196,8 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
+          first_seen_on: today,
           last_seen_on: today,
-          ...(isNew ? { first_seen_on: today } : {}),
           ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
           ...r,
         };
