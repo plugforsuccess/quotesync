@@ -3261,10 +3261,10 @@ export default function BookHealthPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["at_risk","triage","resolved","renewals","upload","trends","attrition","growth"].map(t => (
+        {["at_risk","triage","renewals","resolved","attrition","growth","trends","upload"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "at_risk" ? "⚡ At Risk" : t === "triage" ? "Triage" : t === "resolved" ? "Resolved" : t === "renewals" ? "Renewals" :
-             t === "upload" ? "Upload" : t === "trends" ? "Trends" : t === "attrition" ? "Attrition" : "Portfolio Growth"}
+            {t === "at_risk" ? "⚡ At Risk" : t === "triage" ? "Cancellations" : t === "renewals" ? "Renewal Queue" : t === "resolved" ? "Closed" :
+             t === "attrition" ? "Lapse History" : t === "growth" ? "Net Growth" : t === "trends" ? "Cancel Trends" : "Import"}
           </button>
         ))}
       </div>
