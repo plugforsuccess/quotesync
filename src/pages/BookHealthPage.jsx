@@ -2988,6 +2988,263 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
   );
 }
 
+// ─── Renewal Upload Zone (extracted from RenewalTab) ──────────────────────────
+
+function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
+  const queryClient = useQueryClient();
+  const [uploadFile, setUploadFile]       = useState(null);
+  const [parsedRows, setParsedRows]       = useState(null);
+  const [excludedCount, setExcludedCount] = useState(0);
+  const [uploadError, setUploadError]     = useState('');
+  const [uploadMsg, setUploadMsg]         = useState('');
+  const [isParsing, setIsParsing]         = useState(false);
+  const [isCommitting, setIsCommitting]   = useState(false);
+  const [assignToId, setAssignToId]       = useState('');
+  const fileInputRef = useRef(null);
+
+  const { data: producers = [] } = useQuery({
+    queryKey: ['producers', agencyId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, preferred_name')
+        .eq('org_id', agencyId)
+        .eq('employment_status', 'active')
+        .eq('role_type', 'cs_rep')
+        .order('last_name');
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  async function handleFileSelect(file) {
+    if (!file) return;
+    setUploadFile(file);
+    setUploadError("");
+    setUploadMsg("");
+    setParsedRows(null);
+    setExcludedCount(0);
+    setIsParsing(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const rows = parseRenewalXLSX(new Uint8Array(buf));
+      if (rows.length === 0) {
+        setUploadError("No valid rows found. Check that the file has Policy No and Renewal Date columns.");
+        return;
+      }
+      const hasStatusCol = rows.some(r => r.renewal_status);
+      if (hasStatusCol) {
+        const actionable = rows.filter(r => !r.renewal_status || r.renewal_status === "Renewal Not Taken");
+        const excluded = rows.length - actionable.length;
+        setExcludedCount(excluded);
+        if (actionable.length === 0) {
+          setUploadError(`All ${rows.length} rows are already renewed or not applicable. No actionable rows to import.`);
+          return;
+        }
+        setParsedRows(actionable);
+      } else {
+        setExcludedCount(0);
+        setParsedRows(rows);
+      }
+    } catch (err) {
+      console.error("[renewal parse error]", err.message);
+      setUploadError(friendlyUploadError(err.message));
+    } finally {
+      setIsParsing(false);
+    }
+  }
+
+  async function handleCommit() {
+    if (!parsedRows || !agencyId || isCommitting) return;
+    setIsCommitting(true);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+
+      const policyNos = parsedRows.map(r => r.policy_no);
+      const { data: existing } = await supabase
+        .from("renewal_events")
+        .select("policy_no, renewal_date")
+        .eq("agency_id", agencyId)
+        .in("policy_no", policyNos);
+      const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
+
+      const toAdd = [];
+      let updatedCount = 0;
+      for (const row of parsedRows) {
+        const key = `${row.policy_no}|${row.renewal_date}`;
+        if (existingKeys.has(key)) {
+          updatedCount++;
+        } else {
+          toAdd.push(row);
+        }
+      }
+
+      const { data: upload, error: upErr } = await supabase
+        .from("renewal_uploads")
+        .insert({
+          agency_id: agencyId,
+          uploaded_by: currentUserId,
+          filename: uploadFile?.name ?? "unknown",
+          rows_added: toAdd.length,
+          rows_updated: updatedCount,
+          committed: false,
+        })
+        .select("id")
+        .single();
+      if (upErr) throw new Error(upErr.message);
+
+      const records = parsedRows.map(r => {
+        const key = `${r.policy_no}|${r.renewal_date}`;
+        const isNew = !existingKeys.has(key);
+        return {
+          agency_id: agencyId,
+          upload_batch_id: upload.id,
+          last_seen_on: today,
+          ...(isNew ? { first_seen_on: today } : {}),
+          ...(isNew && assignToId ? { assigned_to_id: assignToId } : {}),
+          ...r,
+        };
+      });
+
+      const { error: evtErr } = await supabase
+        .from("renewal_events")
+        .upsert(records, { onConflict: "agency_id,policy_no,renewal_date" });
+      if (evtErr) throw new Error(evtErr.message);
+
+      await supabase.from("renewal_uploads").update({ committed: true }).eq("id", upload.id);
+
+      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated`);
+      setParsedRows(null);
+      setExcludedCount(0);
+      setUploadFile(null);
+      queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] });
+      queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
+    } catch (err) {
+      console.error("[renewal commit error]", err.message);
+      setUploadError(friendlyUploadError(err.message));
+    } finally {
+      setIsCommitting(false);
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 640 }}>
+      <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
+        Upload the Allstate <span style={{ fontFamily: "'DM Mono', monospace" }}>Renewal Review</span> report (XLSX).
+      </div>
+
+      <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
+        onDragOver={e => e.preventDefault()}
+        onDrop={e => { e.preventDefault(); handleFileSelect(e.dataTransfer.files[0]); }}>
+        <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }}
+          onChange={e => handleFileSelect(e.target.files[0])} />
+        <div style={{ fontSize: 32, marginBottom: 8 }}>{"\uD83D\uDCC4"}</div>
+        <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
+          {uploadFile ? uploadFile.name : "Drop renewal report here or click to browse"}
+        </div>
+        {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing{"\u2026"}</div>}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
+        <span style={{ fontSize: 12, color: "#64748B" }}>Assign all new renewals to:</span>
+        <select value={assignToId} onChange={e => setAssignToId(e.target.value)} style={{ fontSize: 13 }}>
+          <option value="">None</option>
+          {producers.map(p => (
+            <option key={p.id} value={p.id}>
+              {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {uploadError && (
+        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
+          {uploadError}
+        </div>
+      )}
+
+      {parsedRows && !uploadMsg && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>
+            Preview — {parsedRows.length} actionable rows
+            {excludedCount > 0 && (
+              <span style={{ fontWeight: 400, fontSize: 12, color: "#64748B", marginLeft: 8 }}>
+                ({excludedCount} already renewed excluded)
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
+              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+            </button>
+            <button className="btn-ghost" onClick={() => { setParsedRows(null); setExcludedCount(0); setUploadFile(null); }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {uploadMsg && (
+        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#10B981" }}>
+          {uploadMsg}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Import Tab (unified upload) ──────────────────────────────────────────────
+
+function ImportTab({
+  uploadFile, uploadError, uploadMsg, isParsing, isCommitting,
+  diffResult, fileInputRef, onFileSelect, onCommit, onCancelUpload,
+  agencyId, currentUserId, currentEmployeeId,
+}) {
+  return (
+    <div>
+      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>
+        Upload Allstate reports to refresh the At Risk queue. Each report is processed independently.
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+
+        {/* Left — Pending Cancellation */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            ⚠ Pending Cancellation Report
+          </div>
+          <UploadTab
+            uploadFile={uploadFile}
+            uploadError={uploadError}
+            uploadMsg={uploadMsg}
+            isParsing={isParsing}
+            isCommitting={isCommitting}
+            diffResult={diffResult}
+            fileInputRef={fileInputRef}
+            onFileSelect={onFileSelect}
+            onCommit={onCommit}
+            onCancel={onCancelUpload}
+          />
+        </div>
+
+        {/* Right — Renewal Audit */}
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            🔄 Renewal Audit Report
+          </div>
+          <RenewalUploadZone
+            agencyId={agencyId}
+            currentUserId={currentUserId}
+            currentEmployeeId={currentEmployeeId}
+          />
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function BookHealthPage() {
@@ -3016,7 +3273,7 @@ export default function BookHealthPage() {
         .from("pending_cancel_events")
         .select("*")
         .eq("agency_id", agencyId)
-        .order("lapse_date", { ascending: true });
+        .order("cancel_effective_date", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
@@ -3279,6 +3536,7 @@ export default function BookHealthPage() {
       setDiffResult(null);
       setUploadFile(null);
       await loadEvents();
+      queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
     } catch (err) {
       console.error("[triage commit error]", err.message);
       setUploadError(`❌ ${friendlyUploadError(err.message)}`);
@@ -3347,10 +3605,14 @@ export default function BookHealthPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["at_risk","triage","renewals","resolved","attrition","growth","trends"].map(t => (
+        {["at_risk","resolved","attrition","growth","trends","import"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "at_risk" ? "⚡ At Risk" : t === "triage" ? "Cancellations" : t === "renewals" ? "Renewal Queue" : t === "resolved" ? "Closed" :
-             t === "attrition" ? "Lapse History" : t === "growth" ? "Net Growth" : "Cancel Trends"}
+            {t === "at_risk"   ? "⚡ At Risk"       :
+             t === "resolved"  ? "Cancel Outcomes"  :
+             t === "attrition" ? "Terminations"     :
+             t === "growth"    ? "Net Growth"       :
+             t === "trends"    ? "Cancel Trends"    :
+                                 "Import"}
           </button>
         ))}
       </div>
@@ -3363,19 +3625,17 @@ export default function BookHealthPage() {
           currentEmployeeId={currentEmployee?.id}
         />
       )}
-      {activeTab === "triage" && (
-        <TriageTab
-          events={events}
-          filteredEvents={filteredEvents}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          sortCol={sortCol}
-          sortDir={sortDir}
-          onSort={handleSort}
-          setSelectedEvent={setSelectedEvent}
-          producers={producers}
-          bulkAssign={bulkAssign}
-          currentEmployee={currentEmployee}
+      {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
+      {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
+      {activeTab === "attrition" && (
+        <AttritionTab
+          agencyId={agencyId}
+          currentUserId={currentUserId}
+        />
+      )}
+      {activeTab === "growth" && <NetGrowthTab agencyId={agencyId} />}
+      {activeTab === "import" && (
+        <ImportTab
           uploadFile={uploadFile}
           uploadError={uploadError}
           uploadMsg={uploadMsg}
@@ -3385,21 +3645,12 @@ export default function BookHealthPage() {
           fileInputRef={fileInputRef}
           onFileSelect={handleFileSelect}
           onCommit={handleCommitUpload}
-          onCancelUpload={() => { setDiffResult(null); setUploadFile(null); }}
-        />
-      )}
-      {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
-      {activeTab === "renewals" && (
-        <RenewalTab agencyId={agencyId} currentUserId={currentUserId} currentEmployeeId={currentEmployee?.id ?? null} />
-      )}
-      {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
-      {activeTab === "attrition" && (
-        <AttritionTab
+          onCancelUpload={() => { setDiffResult(null); setUploadFile(null); setUploadError(''); }}
           agencyId={agencyId}
           currentUserId={currentUserId}
+          currentEmployeeId={currentEmployee?.id ?? null}
         />
       )}
-      {activeTab === "growth" && <NetGrowthTab agencyId={agencyId} />}
 
       {/* Detail Modal */}
       {selectedEvent && createPortal(
