@@ -27,7 +27,7 @@ function daysUntilRenewal(dateStr) {
   return Math.ceil((d - today) / 86400000);
 }
 
-function daysUntilCancel(dateStr) {
+export function daysUntilCancel(dateStr) {
   const d = new Date(dateStr);
   const today = new Date();
   today.setHours(0,0,0,0);
