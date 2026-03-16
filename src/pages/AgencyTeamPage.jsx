@@ -197,7 +197,7 @@ export default function AgencyTeamPage() {
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {emp.agency_role === 'agent' ? 'Agent' : emp.roles?.includes('admin') ? 'Admin' : emp.roles?.includes('sales') && emp.roles?.includes('service') ? 'Sales / Service' : emp.roles?.includes('sales') ? 'Sales' : emp.roles?.includes('service') ? 'Service' : 'Staff'}
+                          {emp.agency_role === 'agent' ? 'Agent' : emp.roles?.includes('admin') ? 'Admin' : emp.roles?.includes('sales') ? 'Sales' : emp.roles?.includes('service_inbound') && emp.roles?.includes('service_outbound') ? 'Service (Both)' : emp.roles?.includes('service_outbound') ? 'Service — Outbound' : emp.roles?.includes('service_inbound') ? 'Service — Inbound' : emp.roles?.includes('service') ? 'Service' : 'Staff'}
                         </span>
                       </td>
                       <td className="px-6 py-4">

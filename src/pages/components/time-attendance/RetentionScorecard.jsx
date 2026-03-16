@@ -24,7 +24,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
     );
   }
 
-  if (!metrics || (metrics.cancelTotal === 0 && metrics.renewalTotalAssigned === 0)) {
+  if (!metrics || (metrics.cancelTotal === 0 && metrics.renewalTotal === 0 && metrics.inboundClosures === 0)) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
         <Shield className="w-10 h-10 text-gray-300 mx-auto mb-2" />
@@ -55,18 +55,23 @@ export default function RetentionScorecard({ metrics, isLoading }) {
     : metrics.avgDaysBeforeRenewal >= 7  ? 'text-yellow-600'
     : 'text-red-600';
 
+  const isOutbound = metrics.scoreType === 'outbound' || metrics.scoreType === 'both';
+  const isInbound  = metrics.scoreType === 'inbound'  || metrics.scoreType === 'both';
+
   return (
     <div className="space-y-4">
 
-      {/* Pending Cancellations */}
-      {metrics.cancelTotal > 0 && (
+      {/* Outbound section — Pending Cancellations */}
+      {isOutbound && metrics.cancelTotal > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-1.5 bg-amber-50 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
             </div>
             <h4 className="text-sm font-semibold text-gray-900">Pending Cancellations</h4>
-            <span className="ml-auto text-xs text-gray-400">{metrics.cancelTotal} assigned</span>
+            <span className="ml-auto text-xs text-gray-400">
+              {metrics.cancelTotal} opened · {metrics.cancelWorkable} active
+            </span>
           </div>
 
           <MetricRow
@@ -106,11 +111,14 @@ export default function RetentionScorecard({ metrics, isLoading }) {
               warn={metrics.promiseFollowThrough !== null && metrics.promiseFollowThrough < 0.6}
             />
           )}
+          <p className="text-xs text-gray-400 mt-3">
+            Save rate based on cases you originated (opener credit model).
+          </p>
         </div>
       )}
 
-      {/* Renewals */}
-      {metrics.renewalTotal > 0 && (
+      {/* Outbound section — Renewals */}
+      {isOutbound && metrics.renewalTotal > 0 && (
         <div className="bg-white rounded-lg border border-gray-200 p-5">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-1.5 bg-blue-50 rounded-lg">
@@ -118,12 +126,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             </div>
             <h4 className="text-sm font-semibold text-gray-900">Renewals</h4>
             <div className="ml-auto text-right">
-              <span className="text-xs text-gray-400">{metrics.renewalTotal} workable</span>
-              {metrics.renewalAutoResolved > 0 && (
-                <span className="text-xs text-gray-300 ml-2">
-                  · {metrics.renewalAutoResolved} auto-resolved
-                </span>
-              )}
+              <span className="text-xs text-gray-400">{metrics.renewalWorkable} workable</span>
             </div>
           </div>
 
@@ -170,6 +173,35 @@ export default function RetentionScorecard({ metrics, isLoading }) {
           )}
         </div>
       )}
+
+      {/* Inbound section — Tracy's metrics */}
+      {isInbound && metrics.inboundClosures > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-1.5 bg-blue-50 rounded-lg">
+              <CheckCircle className="w-4 h-4 text-blue-600" />
+            </div>
+            <h4 className="text-sm font-semibold text-gray-900">Inbound Closures</h4>
+            <span className="ml-auto text-xs text-gray-400">cases originated by others</span>
+          </div>
+          <MetricRow
+            label="Callbacks Closed"
+            value={metrics.inboundClosures}
+            sub="cases opened by outbound rep, closed by you"
+            color="text-blue-600"
+          />
+          <MetricRow
+            label="Premium Closed"
+            value={fmt$(metrics.inboundPremiumClosed)}
+            color="text-green-600"
+          />
+          <p className="text-xs text-gray-400 mt-3">
+            These cases are credited to the outbound rep who originated them.
+            This section reflects your service volume only.
+          </p>
+        </div>
+      )}
+
     </div>
   );
 }

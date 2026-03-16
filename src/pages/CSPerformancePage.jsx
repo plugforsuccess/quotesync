@@ -85,9 +85,10 @@ function formatWeekLabel(weekStart) {
 // ── Role filter options ──────────────────────────────────────────────────────
 
 const ROLE_FILTER_OPTIONS = [
-  { key: 'service', label: 'Service' },
-  { key: 'sales', label: 'Sales' },
-  { key: 'all', label: 'All' },
+  { key: 'service_inbound',  label: 'Service (Inbound)'  },
+  { key: 'service_outbound', label: 'Service (Outbound)' },
+  { key: 'sales',            label: 'Sales'              },
+  { key: 'all',              label: 'All'                },
 ];
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
@@ -156,7 +157,7 @@ const CSPerformancePage = () => {
   );
   const [targetsModalOpen, setTargetsModalOpen] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
-  const [roleFilter, setRoleFilter] = useState('service');
+  const [roleFilter, setRoleFilter] = useState('service_inbound');
   // Track whether the individual view was entered from the team view for a specific role
   const [selectedEmployeeRole, setSelectedEmployeeRole] = useState(null);
 
@@ -313,8 +314,16 @@ const CSPerformancePage = () => {
     ) || null;
   }, [singleEmployee, rosterEmployees]);
 
+  const selectedEmployeeRoles = selectedEmployeeRecord?.roles || [];
+  const scoreType = selectedEmployeeRoles.includes('service_outbound') && selectedEmployeeRoles.includes('service_inbound')
+    ? 'both'
+    : selectedEmployeeRoles.includes('service_outbound')
+    ? 'outbound'
+    : 'inbound';
+
   const { data: retentionMetrics, isLoading: retentionLoading } = useRetentionMetrics(
-    selectedEmployeeRecord?.id
+    selectedEmployeeRecord?.id,
+    scoreType,
   );
 
   function refetchAll() {
@@ -574,7 +583,7 @@ const CSPerformancePage = () => {
                     roleFilter === opt.key
                       ? 'bg-primary-600 text-white'
                       : 'bg-white text-gray-700 hover:bg-gray-50'
-                  } ${opt.key !== 'service' ? 'border-l border-gray-300' : ''}`}
+                  } ${opt.key !== 'service_inbound' ? 'border-l border-gray-300' : ''}`}
                 >
                   {opt.label}
                 </button>
@@ -942,7 +951,9 @@ const CSPerformancePage = () => {
             )}
 
             {/* Retention Performance — only for service employees */}
-            {(resolvedEmployeeRole === 'service' || rosterEmployees.find(e => (e.auth_user_id || e.id) === singleEmployee)?.roles?.includes('service')) && (
+            {(selectedEmployeeRoles.includes('service_inbound') ||
+              selectedEmployeeRoles.includes('service_outbound') ||
+              selectedEmployeeRoles.includes('service')) && (
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Shield className="w-4 h-4" />
