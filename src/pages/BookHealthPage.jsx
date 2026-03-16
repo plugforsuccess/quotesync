@@ -965,13 +965,22 @@ function parseRenewalXLSX(data) {
   const iCustomer  = findRenewalCol(["customer name", "insured name", "insured", "name", "customer"]);
   const iFirstName = findRenewalCol(["insured first name", "first name"]);
   const iLastName  = findRenewalCol(["insured last name", "last name"]);
-  const iProduct   = findRenewalCol(["product name", "line code", "product code", "line of business", "lob", "product"]);
+  // Prefer "product name" (Col 13, readable text like "Homeowners") over "product code" (Col 12, numeric like "010")
+  const iProductName = findRenewalCol(["product name"]);
+  const iProductCode = findRenewalCol(["line code", "product code", "line of business", "lob"]);
+  const iProduct     = iProductName >= 0 ? iProductName : (iProductCode >= 0 ? iProductCode : findRenewalCol(["product"]));
   const iPremium   = findRenewalCol(["renewal premium", "premium new", "written premium", "annual premium", "premium"]);
   const iRenewDate = findRenewalCol(["renewal date", "renewal effective", "policy renewal", "expiration date", "exp date", "renewal"]);
   const iPhone     = findRenewalCol(["insured phone", "phone number", "phone", "mobile", "cell"]);
   const iEmail     = findRenewalCol(["insured email", "email address", "email"]);
   const iItems     = findRenewalCol(["no. of items", "item count", "items", "number of items"]);
   const iRenewalStatus = findRenewalCol(["renewal status"]);
+  const iPremiumOld       = findRenewalCol(["premium old($)", "premium old", "prior premium", "previous premium"]);
+  const iPremiumChange    = findRenewalCol(["premium change($)", "premium change(", "change($)", "prem change"]);
+  const iPremiumChangePct = findRenewalCol(["premium change(%)", "change(%)", "pct change", "% change"]);
+  const iOriginalYear     = findRenewalCol(["original year", "orig year", "policy year"]);
+  const iPriorYears       = findRenewalCol(["years prior insurance", "years prior", "prior years"]);
+  const iEasyPay          = findRenewalCol(["easy pay", "easypay", "autopay"]);
 
   return rows.filter(r => r.some(Boolean)).map(r => {
     const policyNo = iPolicy >= 0 ? r[iPolicy]?.toString().trim() : null;
@@ -1019,6 +1028,12 @@ function parseRenewalXLSX(data) {
       phone:        iPhone >= 0 ? r[iPhone]?.toString().trim() || null : null,
       email:        iEmail >= 0 ? r[iEmail]?.toString().trim() || null : null,
       renewal_status: iRenewalStatus >= 0 ? r[iRenewalStatus]?.toString().trim() || null : null,
+      premium_old:        iPremiumOld >= 0 ? parseFloat(String(r[iPremiumOld]).replace(/[^0-9.-]/g, "")) || null : null,
+      premium_change:     iPremiumChange >= 0 ? parseFloat(String(r[iPremiumChange]).replace(/[^0-9.-]/g, "")) || null : null,
+      premium_change_pct: iPremiumChangePct >= 0 ? parseFloat(String(r[iPremiumChangePct]).replace(/[^0-9.-]/g, "")) || null : null,
+      original_year:      iOriginalYear >= 0 ? parseInt(r[iOriginalYear]) || null : null,
+      years_prior:        iPriorYears >= 0 ? parseInt(r[iPriorYears]) || null : null,
+      easy_pay:           iEasyPay >= 0 ? (r[iEasyPay]?.toString().trim().toUpperCase() === "Y") : null,
     };
   }).filter(Boolean);
 }
@@ -1052,6 +1067,44 @@ function renewalUrgencyColor(days) {
   if (days < 7) return "#EF4444";
   if (days <= 21) return "#F59E0B";
   return "#10B981";
+}
+
+// ─── Priority Score ─────────────────────────────────────────────────────────
+
+const CURRENT_YEAR = new Date().getFullYear();
+
+function calcPriorityScore(event) {
+  const days = daysUntilRenewal(event.renewal_date);
+  const changePct = event.premium_change_pct || 0;
+  const tenure = event.original_year ? CURRENT_YEAR - event.original_year : 0;
+  const premium = event.premium || 0;
+
+  const timeFactor =
+    days <= 0  ? 100 :
+    days <= 7  ? 95 :
+    days <= 14 ? 70 :
+    days <= 21 ? 40 :
+    days <= 30 ? 20 : 5;
+
+  const shoppingFactor =
+    changePct >= 20 ? 100 :
+    changePct >= 15 ? 85 :
+    changePct >= 10 ? 65 :
+    changePct >= 5  ? 30 :
+    changePct > 0   ? 10 : 0;
+
+  const valueRaw = (tenure * premium) / 600;
+  const valueFactor = Math.min(valueRaw, 100);
+
+  const paymentModifier = event.easy_pay === true ? -15 : 0;
+
+  const score =
+    (timeFactor     * 0.40) +
+    (shoppingFactor * 0.35) +
+    (valueFactor    * 0.20) +
+    paymentModifier;
+
+  return Math.round(score);
 }
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
@@ -1156,18 +1209,44 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 20 }}>
+        {/* Contact Card */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8, marginBottom: 20 }}>
           {[
-            { label: "Renewal Date", value: event.renewal_date, color: renewalUrgencyColor(days) },
-            { label: "Days Until Renewal", value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
-            { label: "Premium", value: event.premium ? fmtFull$(event.premium) : "\u2014", color: "#E2E8F0" },
-            { label: "Attempts", value: event.attempt_count || 0, color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#94A3B8" },
+            { label: "Policy No",     value: event.policy_no },
+            { label: "Product",       value: event.product_raw || event.product?.toUpperCase() },
+            { label: "Renewal Date",  value: event.renewal_date, color: renewalUrgencyColor(days) },
+            { label: "Days Until",    value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
+            { label: "Premium",       value: event.premium ? fmtFull$(event.premium) : "\u2014" },
+            { label: "Prior Premium", value: event.premium_old ? fmtFull$(event.premium_old) : "\u2014" },
+            { label: "Premium \u0394",     value: event.premium_change != null
+                ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
+                : "\u2014",
+              color: !event.premium_change ? "#94A3B8"
+                : event.premium_change > 0 ? "#EF4444" : "#10B981" },
+            { label: "Easy Pay",      value: event.easy_pay === true ? "Yes" : event.easy_pay === false ? "No" : "\u2014" },
+            { label: "Tenure",        value: event.original_year ? `${CURRENT_YEAR - event.original_year} yrs (since ${event.original_year})` : "\u2014" },
+            { label: "Attempts",      value: event.attempt_count || 0, color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#94A3B8" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
               <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: color || "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>{value || "\u2014"}</div>
             </div>
           ))}
+        </div>
+
+        {/* Contact Info */}
+        <div style={{ background: "#1A1D27", borderRadius: 8, padding: "12px 14px", marginBottom: 16, border: "1px solid #252A3A" }}>
+          <div style={{ fontSize: 11, color: "#64748B", marginBottom: 8, fontWeight: 600, textTransform: "uppercase" }}>Contact Information</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 10, color: "#475569" }}>Phone</div>
+              <div style={{ fontSize: 13, color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>{event.phone || "\u2014"}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 10, color: "#475569" }}>Email</div>
+              <div style={{ fontSize: 13, color: "#E2E8F0" }}>{event.email || "\u2014"}</div>
+            </div>
+          </div>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1307,8 +1386,8 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
   const queryClient = useQueryClient();
   const [selectedRenewal, setSelectedRenewal] = useState(null);
   const [statusFilter, setStatusFilter] = useState("active");
-  const [sortCol, setSortCol] = useState("renewal_date");
-  const [sortDir, setSortDir] = useState("asc");
+  const [sortCol, setSortCol] = useState("priority");
+  const [sortDir, setSortDir] = useState("desc");
 
   // Upload state
   const [uploadFile, setUploadFile] = useState(null);
@@ -1406,21 +1485,30 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
       list = list.filter(e => ["lost","unreachable"].includes(e.status));
     }
 
-    return list.sort((a, b) => {
+    const withScores = list.map(e => ({ ...e, _priority: calcPriorityScore(e) }));
+
+    return withScores.sort((a, b) => {
       let av, bv;
       switch (sortCol) {
+        case "priority": av = a._priority; bv = b._priority; break;
         case "renewal_date": av = a.renewal_date; bv = b.renewal_date; break;
         case "customer_name": av = a.customer_name || ""; bv = b.customer_name || ""; break;
         case "premium": av = a.premium || 0; bv = b.premium || 0; break;
+        case "premium_change": av = a.premium_change || 0; bv = b.premium_change || 0; break;
+        case "premium_change_pct": av = a.premium_change_pct || 0; bv = b.premium_change_pct || 0; break;
         case "status": av = a.status; bv = b.status; break;
         case "days_until": av = daysUntilRenewal(a.renewal_date); bv = daysUntilRenewal(b.renewal_date); break;
-        default: av = a.renewal_date; bv = b.renewal_date;
+        case "product": av = a.product || ""; bv = b.product || ""; break;
+        case "attempt_count": av = a.attempt_count || 0; bv = b.attempt_count || 0; break;
+        case "assigned_to": av = employeeMap[a.assigned_to_id] || ""; bv = employeeMap[b.assigned_to_id] || ""; break;
+        case "contact_method": av = a.contact_method || ""; bv = b.contact_method || ""; break;
+        default: av = a._priority; bv = b._priority;
       }
       if (av < bv) return sortDir === "asc" ? -1 : 1;
       if (av > bv) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [renewalEvents, statusFilter, sortCol, sortDir]);
+  }, [renewalEvents, statusFilter, sortCol, sortDir, employeeMap]);
 
   function handleSort(col) {
     if (sortCol === col) {
@@ -1655,15 +1743,18 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
           <table style={{ minWidth: 800 }}>
             <thead>
               <tr>
+                <SortTh col="priority" label="Priority" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <th>Product</th>
+                <SortTh col="premium_change" label="Premium \u0394" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <SortTh col="premium_change_pct" label="\u0394%" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <SortTh col="product" label="Product" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="premium" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="renewal_date" label="Renewal Date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="days_until" label="Days Until" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <th>Attempts</th>
+                <SortTh col="attempt_count" label="Attempts" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-                <th>Assigned To</th>
-                <th>Contact</th>
+                <SortTh col="assigned_to" label="Assigned" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <SortTh col="contact_method" label="Contact" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               </tr>
             </thead>
             <tbody>
@@ -1672,8 +1763,40 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                 const sc = RENEWAL_STATUS_CONFIG[event.status] || RENEWAL_STATUS_CONFIG.pending;
                 return (
                   <tr key={event.id} className="triage-row" onClick={() => setSelectedRenewal(event)}>
+                    <td>
+                      <span style={{
+                        display: "inline-block", padding: "2px 8px", borderRadius: 10,
+                        fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
+                        background: event._priority >= 80 ? "#EF444422"
+                                  : event._priority >= 55 ? "#F59E0B22"
+                                  : event._priority >= 30 ? "#3B82F622"
+                                  : "#64748B22",
+                        color: event._priority >= 80 ? "#EF4444"
+                             : event._priority >= 55 ? "#F59E0B"
+                             : event._priority >= 30 ? "#3B82F6"
+                             : "#64748B",
+                      }}>
+                        {event._priority}
+                      </span>
+                    </td>
                     <td style={{ color: "#E2E8F0", fontWeight: 600, fontSize: 13 }}>
                       {maskCustomerName(event.customer_name)}
+                    </td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", fontSize: 12,
+                      color: !event.premium_change ? "#64748B"
+                        : event.premium_change > 0 ? "#EF4444"
+                        : "#10B981" }}>
+                      {event.premium_change != null
+                        ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
+                        : "\u2014"}
+                    </td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", fontSize: 11,
+                      color: !event.premium_change_pct ? "#64748B"
+                        : event.premium_change_pct > 0 ? "#EF4444"
+                        : "#10B981" }}>
+                      {event.premium_change_pct != null
+                        ? `${event.premium_change_pct > 0 ? "+" : ""}${event.premium_change_pct.toFixed(1)}%`
+                        : "\u2014"}
                     </td>
                     <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
                     <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
@@ -1699,7 +1822,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                 );
               })}
               {filteredRenewals.length === 0 && (
-                <tr><td colSpan={9} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+                <tr><td colSpan={12} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
                   No renewal events in this filter
                 </td></tr>
               )}
