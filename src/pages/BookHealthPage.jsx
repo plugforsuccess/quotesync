@@ -66,13 +66,16 @@ function calcLapsePoints(rows) {
 }
 
 const STATUS_CONFIG = {
-  pending:                { label: "Pending",           color: "#F59E0B", bg: "#F59E0B22" },
-  contacted:              { label: "Contacted",         color: "#3B82F6", bg: "#3B82F622" },
+  pending:                { label: "Pending",           color: "#94A3B8", bg: "#94A3B822" },
+  attempting:             { label: "Attempting",         color: "#F59E0B", bg: "#F59E0B22" },
+  left_voicemail:         { label: "Left Voicemail",    color: "#F59E0B", bg: "#F59E0B22" },
+  contacted:              { label: "Contacted",         color: "#3B82F6", bg: "#3B82F622" }, // legacy
+  payment_plan_requested: { label: "Payment Plan",      color: "#8B5CF6", bg: "#8B5CF622" },
   promise_to_pay:         { label: "Promise to Pay",    color: "#8B5CF6", bg: "#8B5CF622" },
-  saved:                  { label: "Saved",             color: "#10B981", bg: "#10B98122" },
+  saved:                  { label: "Saved \u2713",      color: "#10B981", bg: "#10B98122" },
   promise_broken:         { label: "Promise Broken",    color: "#EF4444", bg: "#EF444422" },
-  requested_cancellation: { label: "Termination",       color: "#64748B", bg: "#64748B22" },
-  lost:                   { label: "Lost",              color: "#EF4444", bg: "#EF444422" },
+  requested_cancellation: { label: "Wants to Cancel",   color: "#EF4444", bg: "#EF444422" },
+  lost:                   { label: "Lost",              color: "#64748B", bg: "#64748B22" },
   auto_resolved:          { label: "Auto-Resolved",     color: "#64748B", bg: "#47556922" },
 };
 
@@ -366,11 +369,17 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap", rowGap: 8 }}>
         <div style={{ display: "flex", gap: 4 }}>
-          {["active","all","saved","lost"].map(f => (
-            <button key={f} className={`btn-ghost ${statusFilter === f ? "active" : ""}`}
-              onClick={() => setStatusFilter(f)}
+          {[
+            { key: "active", label: "Active" },
+            { key: "attempting", label: "Attempting" },
+            { key: "reached", label: "Reached" },
+            { key: "all", label: "All" },
+            { key: "resolved", label: "Resolved" },
+          ].map(f => (
+            <button key={f.key} className={`btn-ghost ${statusFilter === f.key ? "active" : ""}`}
+              onClick={() => setStatusFilter(f.key)}
               style={{ padding: "5px 12px", fontSize: 12 }}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {f.label}
             </button>
           ))}
         </div>
@@ -404,6 +413,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                 <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <th>Product</th>
                 <SortTh col="premium_at_risk" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
+                <th>Attempts</th>
                 <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <SortTh col="assigned_to" label="Assigned" sortCol={sortCol} sortDir={sortDir} onSort={onSort} />
                 <th>Promise Date</th>
@@ -443,6 +453,9 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                   <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
                     {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
                   </td>
+                  <td style={{ color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#64748B", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
+                    {event.attempt_count || 0}
+                  </td>
                   <td>
                     <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                   </td>
@@ -454,7 +467,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
               );
             })}
             {filteredEvents.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+              <tr><td colSpan={9} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
                 No events in this filter
               </td></tr>
             )}
@@ -637,9 +650,12 @@ function TrendsTab({ trendsData }) {
 
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
-function EventDetailModal({ event, onClose, onUpdate }) {
+function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId }) {
   const days = daysUntilCancel(event.cancel_effective_date);
   const [saving, setSaving] = useState(false);
+  const [attempts, setAttempts] = useState([]);
+  const [loggingAttempt, setLoggingAttempt] = useState(false);
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
   const [form, setForm] = useState({
     status: event.status,
     assigned_to: event.assigned_to || "",
@@ -649,10 +665,50 @@ function EventDetailModal({ event, onClose, onUpdate }) {
     notes: event.notes || "",
   });
 
+  useEffect(() => {
+    supabase
+      .from("pending_cancel_attempts")
+      .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+      .eq("pending_cancel_event_id", event.id)
+      .order("attempted_at", { ascending: false })
+      .then(({ data }) => setAttempts(data || []));
+  }, [event.id]);
+
+  async function logAttempt() {
+    setLoggingAttempt(true);
+    const { error } = await supabase.from("pending_cancel_attempts").insert({
+      pending_cancel_event_id: event.id,
+      agency_id: agencyId,
+      employee_id: currentEmployeeId,
+      method: attemptForm.method,
+      result: attemptForm.result,
+      note: attemptForm.note || null,
+    });
+    if (!error) {
+      await supabase.from("pending_cancel_events").update({
+        attempt_count: (event.attempt_count || 0) + 1,
+        last_attempt_at: new Date().toISOString(),
+        last_attempt_result: attemptForm.result,
+        ...(event.status === "pending" ? { status: "attempting" } : {}),
+        ...(attemptForm.result === "left_voicemail" ? { status: "left_voicemail" } : {}),
+        ...(attemptForm.result === "reached" ? { contacted_at: event.contacted_at || new Date().toISOString() } : {}),
+      }).eq("id", event.id);
+      const { data } = await supabase
+        .from("pending_cancel_attempts")
+        .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+        .eq("pending_cancel_event_id", event.id)
+        .order("attempted_at", { ascending: false });
+      setAttempts(data || []);
+      setAttemptForm({ method: "phone", result: "no_answer", note: "" });
+      await onUpdate(event.id, {});
+    }
+    setLoggingAttempt(false);
+  }
+
   async function save() {
     setSaving(true);
     const updates = { ...form };
-    if (["contacted","promise_to_pay"].includes(form.status) && !event.contacted_at) {
+    if (["contacted","promise_to_pay","payment_plan_requested"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
     if (["saved","lost","requested_cancellation"].includes(form.status) && !event.resolution_date) {
@@ -662,6 +718,12 @@ function EventDetailModal({ event, onClose, onUpdate }) {
     setSaving(false);
     onClose();
   }
+
+  const ATTEMPT_RESULT_LABELS = {
+    no_answer: "No Answer", left_voicemail: "Left Voicemail",
+    reached: "Reached", wrong_number: "Wrong Number",
+    busy: "Busy", disconnected: "Disconnected",
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
@@ -682,7 +744,8 @@ function EventDetailModal({ event, onClose, onUpdate }) {
           {[
             { label: "Cancel Date", value: event.cancel_effective_date, color: urgencyColor(days) },
             { label: "Days Left", value: days <= 0 ? "PAST DUE" : `${days} days`, color: urgencyColor(days) },
-            { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—", color: "#E2E8F0" },
+            { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014", color: "#E2E8F0" },
+            { label: "Attempts", value: event.attempt_count || 0, color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#94A3B8" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
               <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
@@ -692,23 +755,91 @@ function EventDetailModal({ event, onClose, onUpdate }) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-            <div>
-              <label>Status</label>
-              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
-                {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
+          {/* Attempt Log */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", marginBottom: 8 }}>
+              Attempt Log ({attempts.length})
             </div>
-            <div>
-              <label>Contact Method</label>
-              <select value={form.contact_method} onChange={ev => setForm(p => ({ ...p, contact_method: ev.target.value }))}>
-                <option value="">—</option>
-                {CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
+            <div style={{ background: "#1A1D27", borderRadius: 8, padding: 12, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                <div>
+                  <label>Method</label>
+                  <select value={attemptForm.method} onChange={e => setAttemptForm(p => ({ ...p, method: e.target.value }))}>
+                    <option value="phone">Phone</option>
+                    <option value="text">Text</option>
+                    <option value="email">Email</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Result</label>
+                  <select value={attemptForm.result} onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}>
+                    <option value="no_answer">No Answer</option>
+                    <option value="left_voicemail">Left Voicemail</option>
+                    <option value="reached">Reached Customer</option>
+                    <option value="wrong_number">Wrong Number</option>
+                    <option value="busy">Busy</option>
+                    <option value="disconnected">Disconnected</option>
+                  </select>
+                </div>
+              </div>
+              <input
+                type="text"
+                placeholder="Quick note (optional)"
+                value={attemptForm.note}
+                onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
+                style={{ width: "100%", marginBottom: 8 }}
+              />
+              <button
+                className="btn-primary"
+                onClick={logAttempt}
+                disabled={loggingAttempt}
+                style={{ width: "100%" }}
+              >
+                {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
+              </button>
             </div>
+            {attempts.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {attempts.map(a => {
+                  const empName = a.employees
+                    ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
+                    : "Unknown";
+                  const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
+                  const resultColor = a.result === "reached" ? "#10B981" : "#94A3B8";
+                  return (
+                    <div key={a.id} style={{ background: "#1A1D27", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: resultColor }}>{resultLabel}</span>
+                        <span style={{ fontSize: 11, color: "#64748B", marginLeft: 8 }}>via {a.method}</span>
+                        {a.note && <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{a.note}</div>}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#475569", textAlign: "right" }}>
+                        <div>{empName}</div>
+                        <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
+          {/* Only show status picker when customer has been reached */}
+          {(event.status === "contacted" || attemptForm.result === "reached" ||
+            ["contacted","payment_plan_requested","promise_to_pay","promise_broken","requested_cancellation"].includes(event.status)) && (
+            <div>
+              <label>Outcome (reached customer)</label>
+              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
+                <option value="contacted">Contacted — no action yet</option>
+                <option value="payment_plan_requested">Wants Payment Plan</option>
+                <option value="promise_to_pay">Promised to Pay</option>
+                <option value="saved">Saved \u2713</option>
+                <option value="requested_cancellation">Wants to Cancel</option>
+                <option value="lost">Lost</option>
+              </select>
+            </div>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
             <div>
@@ -879,12 +1010,17 @@ function parseRenewalXLSX(data) {
 // ─── Renewal Status Config ──────────────────────────────────────────────────
 
 const RENEWAL_STATUS_CONFIG = {
-  pending:       { label: "Pending",       color: "#F59E0B", bg: "#FEF3C7" },
-  contacted:     { label: "Contacted",     color: "#3B82F6", bg: "#DBEAFE" },
-  confirmed:     { label: "Confirmed",     color: "#10B981", bg: "#D1FAE5" },
-  at_risk:       { label: "At Risk",       color: "#EF4444", bg: "#FEE2E2" },
-  lost:          { label: "Lost",          color: "#6B7280", bg: "#F3F4F6" },
-  auto_resolved: { label: "Auto Resolved", color: "#94A3B8", bg: "#F1F5F9" },
+  pending:          { label: "Pending",          color: "#94A3B8", bg: "#F1F5F9" },
+  attempting:       { label: "Attempting",       color: "#F59E0B", bg: "#FEF3C7" },
+  left_voicemail:   { label: "Left Voicemail",   color: "#F59E0B", bg: "#FEF3C7" },
+  review_requested: { label: "Review Requested", color: "#3B82F6", bg: "#DBEAFE" },
+  shopping:         { label: "Shopping",         color: "#EF4444", bg: "#FEE2E2" },
+  confirmed:        { label: "Confirmed \u2713", color: "#10B981", bg: "#D1FAE5" },
+  at_risk:          { label: "At Risk",          color: "#EF4444", bg: "#FEE2E2" },
+  escalated:        { label: "Escalated",        color: "#8B5CF6", bg: "#EDE9FE" },
+  lost:             { label: "Lost",             color: "#6B7280", bg: "#F3F4F6" },
+  unreachable:      { label: "Unreachable",      color: "#64748B", bg: "#F1F5F9" },
+  auto_resolved:    { label: "Auto-Resolved",    color: "#94A3B8", bg: "#F1F5F9" },
 };
 
 const RENEWAL_CONTACT_METHODS = ["phone", "text", "email", "other"];
@@ -904,30 +1040,90 @@ function renewalUrgencyColor(days) {
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
 
-function RenewalDetailModal({ event, onClose, onUpdate, producers }) {
+function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId }) {
   const days = daysUntilRenewal(event.renewal_date);
   const [saving, setSaving] = useState(false);
+  const [attempts, setAttempts] = useState([]);
+  const [loggingAttempt, setLoggingAttempt] = useState(false);
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
   const [form, setForm] = useState({
     status: event.status,
     assigned_to_id: event.assigned_to_id || "",
     contact_method: event.contact_method || "",
     notes: event.notes || "",
+    shopping_reason: event.shopping_reason || "",
   });
+
+  useEffect(() => {
+    supabase
+      .from("renewal_attempts")
+      .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+      .eq("renewal_event_id", event.id)
+      .order("attempted_at", { ascending: false })
+      .then(({ data }) => setAttempts(data || []));
+  }, [event.id]);
+
+  async function logAttempt() {
+    setLoggingAttempt(true);
+    const { error } = await supabase.from("renewal_attempts").insert({
+      renewal_event_id: event.id,
+      agency_id: agencyId,
+      employee_id: currentEmployeeId,
+      method: attemptForm.method,
+      result: attemptForm.result,
+      note: attemptForm.note || null,
+    });
+    if (!error) {
+      const newCount = (event.attempt_count || 0) + 1;
+      const statusUpdate = {};
+      if (event.status === "pending") statusUpdate.status = "attempting";
+      if (attemptForm.result === "left_voicemail") statusUpdate.status = "left_voicemail";
+      if (attemptForm.result === "reached") statusUpdate.contacted_at = event.contacted_at || new Date().toISOString();
+      // Suggest unreachable after 3+ non-reached attempts
+      if (newCount >= 3 && attemptForm.result !== "reached" && event.status === "attempting") {
+        // Don't auto-set, just leave as attempting — auto-unreachable handles at 5+
+      }
+
+      await supabase.from("renewal_events").update({
+        attempt_count: newCount,
+        last_attempt_at: new Date().toISOString(),
+        last_attempt_result: attemptForm.result,
+        ...statusUpdate,
+      }).eq("id", event.id);
+
+      const { data } = await supabase
+        .from("renewal_attempts")
+        .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+        .eq("renewal_event_id", event.id)
+        .order("attempted_at", { ascending: false });
+      setAttempts(data || []);
+      setAttemptForm({ method: "phone", result: "no_answer", note: "" });
+      await onUpdate(event.id, {});
+    }
+    setLoggingAttempt(false);
+  }
 
   async function save() {
     setSaving(true);
     const updates = { ...form };
-    if (["contacted","confirmed","at_risk"].includes(form.status) && !event.contacted_at) {
+    if (["review_requested","confirmed","at_risk","shopping","escalated"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
     if (["confirmed","lost"].includes(form.status) && !event.resolution_date) {
       updates.resolution_date = new Date().toISOString().slice(0,10);
     }
     if (!updates.assigned_to_id) updates.assigned_to_id = null;
+    if (form.status !== "shopping") updates.shopping_reason = null;
     await onUpdate(event.id, updates);
     setSaving(false);
     onClose();
   }
+
+  const ATTEMPT_RESULT_LABELS = {
+    no_answer: "No Answer", left_voicemail: "Left Voicemail",
+    reached: "Reached", wrong_number: "Wrong Number",
+    busy: "Busy", disconnected: "Disconnected",
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
@@ -949,6 +1145,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers }) {
             { label: "Renewal Date", value: event.renewal_date, color: renewalUrgencyColor(days) },
             { label: "Days Until Renewal", value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
             { label: "Premium", value: event.premium ? fmtFull$(event.premium) : "\u2014", color: "#E2E8F0" },
+            { label: "Attempts", value: event.attempt_count || 0, color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#94A3B8" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
               <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
@@ -958,23 +1155,105 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers }) {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-            <div>
-              <label>Status</label>
-              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
-                {Object.entries(RENEWAL_STATUS_CONFIG).map(([k, v]) => (
-                  <option key={k} value={k}>{v.label}</option>
-                ))}
-              </select>
+          {/* Attempt Log */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", marginBottom: 8 }}>
+              Attempt Log ({attempts.length})
             </div>
-            <div>
-              <label>Contact Method</label>
-              <select value={form.contact_method} onChange={ev => setForm(p => ({ ...p, contact_method: ev.target.value }))}>
-                <option value="">{"\u2014"}</option>
-                {RENEWAL_CONTACT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
+            <div style={{ background: "#1A1D27", borderRadius: 8, padding: 12, marginBottom: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
+                <div>
+                  <label>Method</label>
+                  <select value={attemptForm.method} onChange={e => setAttemptForm(p => ({ ...p, method: e.target.value }))}>
+                    <option value="phone">Phone</option>
+                    <option value="text">Text</option>
+                    <option value="email">Email</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label>Result</label>
+                  <select value={attemptForm.result} onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}>
+                    <option value="no_answer">No Answer</option>
+                    <option value="left_voicemail">Left Voicemail</option>
+                    <option value="reached">Reached Customer</option>
+                    <option value="wrong_number">Wrong Number</option>
+                    <option value="busy">Busy</option>
+                    <option value="disconnected">Disconnected</option>
+                  </select>
+                </div>
+              </div>
+              <input
+                type="text"
+                placeholder="Quick note (optional)"
+                value={attemptForm.note}
+                onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
+                style={{ width: "100%", marginBottom: 8 }}
+              />
+              <button
+                className="btn-primary"
+                onClick={logAttempt}
+                disabled={loggingAttempt}
+                style={{ width: "100%" }}
+              >
+                {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
+              </button>
             </div>
+            {attempts.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {attempts.map(a => {
+                  const empName = a.employees
+                    ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
+                    : "Unknown";
+                  const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
+                  const resultColor = a.result === "reached" ? "#10B981" : "#94A3B8";
+                  return (
+                    <div key={a.id} style={{ background: "#1A1D27", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div>
+                        <span style={{ fontSize: 12, fontWeight: 600, color: resultColor }}>{resultLabel}</span>
+                        <span style={{ fontSize: 11, color: "#64748B", marginLeft: 8 }}>via {a.method}</span>
+                        {a.note && <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{a.note}</div>}
+                      </div>
+                      <div style={{ fontSize: 11, color: "#475569", textAlign: "right" }}>
+                        <div>{empName}</div>
+                        <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
+          {/* Outcome picker — only when reached */}
+          {(attemptForm.result === "reached" ||
+            ["review_requested","shopping","at_risk","escalated","confirmed"].includes(event.status)) && (
+            <div>
+              <label>Outcome (reached customer)</label>
+              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
+                <option value="confirmed">Confirmed Renewal \u2713</option>
+                <option value="review_requested">Wants Policy Review</option>
+                <option value="shopping">Shopping Competitors</option>
+                <option value="at_risk">At Risk (payment/unhappy)</option>
+                <option value="escalated">Escalate to Agent</option>
+                <option value="lost">Lost — Won't Renew</option>
+              </select>
+            </div>
+          )}
+
+          {form.status === "shopping" && (
+            <div>
+              <label>Shopping Reason</label>
+              <select value={form.shopping_reason} onChange={ev => setForm(p => ({ ...p, shopping_reason: ev.target.value }))}>
+                <option value="">— Select —</option>
+                <option value="price">Price too high</option>
+                <option value="coverage">Coverage concerns</option>
+                <option value="service">Service experience</option>
+                <option value="life_event">Life event (moving, etc.)</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label>Assigned To</label>
@@ -1066,6 +1345,24 @@ function RenewalTab({ agencyId, currentUserId }) {
     }
   }, [producers, assignToId]);
 
+  // Auto-flag unreachable: 5+ attempts with no reached result, past renewal date
+  useEffect(() => {
+    const today = new Date().toISOString().slice(0, 10);
+    const toFlag = renewalEvents.filter(e =>
+      e.status === "attempting" &&
+      e.attempt_count >= 5 &&
+      e.renewal_date <= today
+    );
+    if (toFlag.length === 0) return;
+    Promise.all(
+      toFlag.map(e =>
+        supabase.from("renewal_events")
+          .update({ status: "unreachable" })
+          .eq("id", e.id)
+      )
+    ).then(() => queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] }));
+  }, [renewalEvents, agencyId, queryClient]);
+
   const employeeMap = useMemo(() => {
     const m = {};
     producers.forEach(p => { m[p.id] = p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim(); });
@@ -1076,11 +1373,17 @@ function RenewalTab({ agencyId, currentUserId }) {
   const filteredRenewals = useMemo(() => {
     let list = [...renewalEvents];
     if (statusFilter === "active") {
-      list = list.filter(e => ["pending","contacted","at_risk"].includes(e.status));
+      list = list.filter(e => !["confirmed","lost","auto_resolved","unreachable"].includes(e.status));
+    } else if (statusFilter === "attempting") {
+      list = list.filter(e => ["attempting","left_voicemail"].includes(e.status));
+    } else if (statusFilter === "reached") {
+      list = list.filter(e => ["review_requested","shopping","at_risk","escalated"].includes(e.status));
+    } else if (statusFilter === "shopping") {
+      list = list.filter(e => e.status === "shopping");
     } else if (statusFilter === "confirmed") {
       list = list.filter(e => e.status === "confirmed");
     } else if (statusFilter === "lost") {
-      list = list.filter(e => ["lost","auto_resolved"].includes(e.status));
+      list = list.filter(e => ["lost","unreachable"].includes(e.status));
     }
 
     return list.sort((a, b) => {
@@ -1283,11 +1586,19 @@ function RenewalTab({ agencyId, currentUserId }) {
       {/* Filter bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, flexWrap: "wrap", rowGap: 8 }}>
         <div style={{ display: "flex", gap: 4 }}>
-          {["active","all","confirmed","lost"].map(f => (
-            <button key={f} className={`btn-ghost ${statusFilter === f ? "active" : ""}`}
-              onClick={() => setStatusFilter(f)}
+          {[
+            { key: "active", label: "Active" },
+            { key: "attempting", label: "Attempting" },
+            { key: "reached", label: "Reached" },
+            { key: "shopping", label: "Shopping" },
+            { key: "all", label: "All" },
+            { key: "confirmed", label: "Confirmed" },
+            { key: "lost", label: "Lost" },
+          ].map(f => (
+            <button key={f.key} className={`btn-ghost ${statusFilter === f.key ? "active" : ""}`}
+              onClick={() => setStatusFilter(f.key)}
               style={{ padding: "5px 12px", fontSize: 12 }}>
-              {f.charAt(0).toUpperCase() + f.slice(1)}
+              {f.label}
             </button>
           ))}
         </div>
@@ -1306,6 +1617,7 @@ function RenewalTab({ agencyId, currentUserId }) {
                 <SortTh col="premium" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="renewal_date" label="Renewal Date" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="days_until" label="Days Until" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <th>Attempts</th>
                 <SortTh col="status" label="Status" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <th>Assigned To</th>
                 <th>Contact</th>
@@ -1332,6 +1644,9 @@ function RenewalTab({ agencyId, currentUserId }) {
                         {days <= 0 ? "PAST DUE" : `${days}d`}
                       </span>
                     </td>
+                    <td style={{ color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#64748B", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
+                      {event.attempt_count || 0}
+                    </td>
                     <td>
                       <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                     </td>
@@ -1341,7 +1656,7 @@ function RenewalTab({ agencyId, currentUserId }) {
                 );
               })}
               {filteredRenewals.length === 0 && (
-                <tr><td colSpan={8} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+                <tr><td colSpan={9} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
                   No renewal events in this filter
                 </td></tr>
               )}
@@ -1357,6 +1672,8 @@ function RenewalTab({ agencyId, currentUserId }) {
           onClose={() => setSelectedRenewal(null)}
           onUpdate={updateRenewalEvent}
           producers={producers}
+          agencyId={agencyId}
+          currentEmployeeId={currentUserId}
         />,
         document.body
       )}
@@ -2052,13 +2369,13 @@ export default function BookHealthPage() {
 
   const kpis = useMemo(() => {
     const active = events.filter(e =>
-      ["pending","contacted","promise_to_pay","promise_broken"].includes(e.status)
+      !["saved","lost","auto_resolved","requested_cancellation"].includes(e.status)
     );
     const saved = events.filter(e => e.status === "saved");
     const lost = events.filter(e => ["lost","promise_broken"].includes(e.status));
     const terminations = events.filter(e => e.status === "requested_cancellation");
     const contacted = events.filter(e =>
-      ["contacted","promise_to_pay","saved","promise_broken","requested_cancellation","lost"].includes(e.status)
+      ["contacted","payment_plan_requested","promise_to_pay","saved","promise_broken","requested_cancellation","lost"].includes(e.status)
     );
 
     const premiumAtRisk = active.reduce((s,e) => s + (e.premium_at_risk || 0), 0);
@@ -2091,11 +2408,13 @@ export default function BookHealthPage() {
     let list = [...events];
 
     if (statusFilter === "active") {
-      list = list.filter(e => ["pending","contacted","promise_to_pay","promise_broken"].includes(e.status));
-    } else if (statusFilter === "saved") {
-      list = list.filter(e => e.status === "saved");
-    } else if (statusFilter === "lost") {
-      list = list.filter(e => ["lost","promise_broken","requested_cancellation"].includes(e.status));
+      list = list.filter(e => !["saved","lost","auto_resolved","requested_cancellation"].includes(e.status));
+    } else if (statusFilter === "attempting") {
+      list = list.filter(e => ["attempting","left_voicemail"].includes(e.status));
+    } else if (statusFilter === "reached") {
+      list = list.filter(e => ["contacted","payment_plan_requested","promise_to_pay","promise_broken"].includes(e.status));
+    } else if (statusFilter === "resolved") {
+      list = list.filter(e => ["saved","lost","auto_resolved","requested_cancellation"].includes(e.status));
     }
 
     return list.sort((a, b) => {
@@ -2352,6 +2671,8 @@ export default function BookHealthPage() {
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
           onUpdate={updateEvent}
+          agencyId={agencyId}
+          currentEmployeeId={currentUserId}
         />,
         document.body
       )}
