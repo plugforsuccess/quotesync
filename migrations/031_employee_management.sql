@@ -29,8 +29,7 @@ CREATE TABLE IF NOT EXISTS public.employees (
   allstate_id text,
 
   -- Role & Employment
-  role_type text NOT NULL DEFAULT 'service'
-    CHECK (role_type IN ('service', 'producer', 'admin')),
+  roles TEXT[] NOT NULL DEFAULT ARRAY['service']::TEXT[],
   employment_status text NOT NULL DEFAULT 'active'
     CHECK (employment_status IN ('active', 'terminated', 'on_leave')),
   hire_date date,

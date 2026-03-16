@@ -193,11 +193,11 @@ export default function AgencyTeamPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          emp.role_type === 'admin' || emp.agency_role === 'agent'
+                          emp.roles?.includes('admin') || emp.agency_role === 'agent'
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-blue-100 text-blue-700'
                         }`}>
-                          {emp.agency_role === 'agent' ? 'Agent' : emp.role_type === 'producer' ? 'Producer' : emp.role_type === 'service' ? 'CS Rep' : emp.role_type || 'Staff'}
+                          {emp.agency_role === 'agent' ? 'Agent' : emp.roles?.includes('admin') ? 'Admin' : emp.roles?.includes('sales') && emp.roles?.includes('service') ? 'Sales / Service' : emp.roles?.includes('sales') ? 'Sales' : emp.roles?.includes('service') ? 'Service' : 'Staff'}
                         </span>
                       </td>
                       <td className="px-6 py-4">

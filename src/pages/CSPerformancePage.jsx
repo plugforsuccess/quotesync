@@ -86,7 +86,7 @@ function formatWeekLabel(weekStart) {
 
 const ROLE_FILTER_OPTIONS = [
   { key: 'service', label: 'Service' },
-  { key: 'producer', label: 'Producers' },
+  { key: 'sales', label: 'Sales' },
   { key: 'all', label: 'All' },
 ];
 
@@ -299,11 +299,11 @@ const CSPerformancePage = () => {
     const emp = rosterEmployees.find(
       (e) => (e.auth_user_id || e.id) === singleEmployee
     );
-    return emp?.role_type || 'service';
+    return emp?.roles?.[0] || 'service';
   }, [selectedEmployeeRole, singleEmployee, rosterEmployees]);
 
   // Is this employee a producer?
-  const isProducerView = resolvedEmployeeRole === 'producer';
+  const isProducerView = resolvedEmployeeRole === 'sales';
 
   // Map selected employee to employees.id for retention metrics
   const selectedEmployeeRecord = useMemo(() => {
@@ -721,7 +721,7 @@ const CSPerformancePage = () => {
                       timeEntries={empEntries}
                       rcData={rc}
                       weekStart={weekStart}
-                      roleType="producer"
+                      roleType="sales"
                     />
 
                     {/* Producer detail view */}
@@ -942,7 +942,7 @@ const CSPerformancePage = () => {
             )}
 
             {/* Retention Performance — only for service employees */}
-            {resolvedEmployeeRole === 'service' && (
+            {(resolvedEmployeeRole === 'service' || rosterEmployees.find(e => (e.auth_user_id || e.id) === singleEmployee)?.roles?.includes('service')) && (
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Shield className="w-4 h-4" />

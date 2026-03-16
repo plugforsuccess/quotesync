@@ -8,7 +8,7 @@ import { GRADE_CONFIG, calculateGrade, computeMetrics, DEFAULT_TARGETS } from '.
 
 // ── Role labels ─────────────────────────────────────────────────────────────
 
-const ROLE_LABELS = { service: 'Service', producer: 'Producer', admin: 'Admin' };
+const ROLE_LABELS = { service: 'Service', sales: 'Sales', admin: 'Admin' };
 
 // ── Column configurations per role filter ───────────────────────────────────
 
@@ -23,7 +23,7 @@ const TEAM_COLUMNS = {
     { key: 'missed', label: 'Missed', sortable: true },
     { key: 'flags', label: 'Flags', sortable: true },
   ],
-  producer: [
+  sales: [
     { key: 'name', label: 'Employee', sortable: true },
     { key: 'outbound', label: 'Outbound', sortable: true },
     { key: 'avgCallsDay', label: 'Avg Calls/Day', sortable: true, format: 'decimal' },
@@ -45,7 +45,7 @@ const TEAM_COLUMNS = {
 
 const DEFAULT_SORT = {
   service: { key: 'grade', dir: 'desc' },
-  producer: { key: 'outbound', dir: 'desc' },
+  sales: { key: 'outbound', dir: 'desc' },
   all: { key: 'role', dir: 'asc' },
 };
 
@@ -162,7 +162,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
     return teamData.rcData
       .map((rc) => {
         const emp = employeesMap[rc.employee_user_id];
-        const empRoleType = emp?.role_type || 'service';
+        const empRoleType = emp?.roles?.[0] || 'service';
 
         // Filter by role
         if (roleFilter !== 'all' && empRoleType !== roleFilter) return null;
@@ -266,7 +266,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
   }
 
   if (rows.length === 0) {
-    const filterLabel = roleFilter === 'service' ? 'service' : roleFilter === 'producer' ? 'producer' : '';
+    const filterLabel = roleFilter === 'service' ? 'service' : roleFilter === 'sales' ? 'sales' : '';
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
         <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -280,7 +280,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service', o
     );
   }
 
-  const countLabel = roleFilter === 'service' ? 'reps' : roleFilter === 'producer' ? 'producers' : 'employees';
+  const countLabel = roleFilter === 'service' ? 'reps' : roleFilter === 'sales' ? 'sales reps' : 'employees';
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

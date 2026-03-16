@@ -409,7 +409,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
           ))}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", flex: "1 1 auto", justifyContent: "flex-end" }}>
-          {currentEmployee?.role_type === 'service' && (
+          {currentEmployee?.roles?.includes('service') && (
             <button
               onClick={() => setMyCasesOnly(v => !v)}
               className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
@@ -1456,7 +1456,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .eq("role_type", "service")
+        .contains("roles", ["service"])
         .order("last_name");
       if (error) throw error;
       return data ?? [];
@@ -1623,7 +1623,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .eq("role_type", "service")
+        .contains("roles", ["service"])
         .order("last_name");
 
       const activeReps = reps || [];
@@ -2855,7 +2855,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .eq('role_type', 'service')
+        .contains('roles', ['service'])
         .order('last_name');
       if (error) throw error;
       return data ?? [];
@@ -3188,7 +3188,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .eq('role_type', 'service')
+        .contains('roles', ['service'])
         .order('last_name');
       return data ?? [];
     },
@@ -3257,7 +3257,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .eq('role_type', 'service')
+        .contains('roles', ['service'])
         .order('last_name');
 
       const activeReps = reps || [];
@@ -3541,7 +3541,7 @@ export default function BookHealthPage() {
       if (!agencyId || !currentUserId) return null;
       const { data } = await supabase
         .from("employees")
-        .select("id, first_name, last_name, role_type")
+        .select("id, first_name, last_name, roles")
         .eq("org_id", agencyId)
         .eq("auth_user_id", currentUserId)
         .maybeSingle();
@@ -3561,7 +3561,7 @@ export default function BookHealthPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .eq("role_type", "service")
+        .contains("roles", ["service"])
         .order("last_name");
       if (error) throw error;
       return data ?? [];

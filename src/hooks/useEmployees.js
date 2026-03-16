@@ -192,7 +192,7 @@ export function useActiveEmployees(orgId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, preferred_name, role_type, rc_display_name, auth_user_id, default_start_time, default_lunch_out, default_lunch_in, default_end_time')
+        .select('id, first_name, last_name, preferred_name, roles, rc_display_name, auth_user_id, default_start_time, default_lunch_out, default_lunch_in, default_end_time')
         .eq('org_id', orgId)
         .eq('employment_status', 'active')
         .order('last_name');
@@ -213,10 +213,10 @@ export function useActiveServiceReps(orgId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, preferred_name, role_type, auth_user_id')
+        .select('id, first_name, last_name, preferred_name, roles, auth_user_id')
         .eq('org_id', orgId)
         .eq('employment_status', 'active')
-        .eq('role_type', 'service');
+        .contains('roles', ['service']);
 
       if (error) throw error;
       return data || [];

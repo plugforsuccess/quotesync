@@ -149,7 +149,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
               </p>
             </div>
 
-            {(roleType === 'producer' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS).map((group) => (
+            {(roleType === 'sales' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS).map((group) => (
               <div key={group.title}>
                 <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">{group.title}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

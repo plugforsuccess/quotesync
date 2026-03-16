@@ -125,7 +125,7 @@ const FunnelDashboardPage = () => {
               const quotesPerProducerMonth = 141;
               const producersNeeded = Math.ceil(quotableLeads / quotesPerProducerMonth);
               const currentProducers = activeEmployees.filter(
-                e => e.role_type === 'producer'
+                e => e.roles?.includes('sales')
               ).length;
 
               return (

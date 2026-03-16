@@ -7,8 +7,8 @@ import { supabase } from '../../../lib/supabase';
 
 const ROLE_OPTIONS = [
   { value: 'service', label: 'Service' },
-  { value: 'producer', label: 'Producer' },
-  { value: 'admin', label: 'Admin' },
+  { value: 'sales',   label: 'Sales'   },
+  { value: 'admin',   label: 'Admin'   },
 ];
 
 const EDUCATION_OPTIONS = [
@@ -38,7 +38,7 @@ const EMPTY_FORM = {
   city: '',
   state: '',
   zip_code: '',
-  role_type: 'service',
+  roles: ['service'],
   hire_date: '',
   allstate_id: '',
   rc_display_name: '',
@@ -73,7 +73,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
         city: employee.city || '',
         state: employee.state || '',
         zip_code: employee.zip_code || '',
-        role_type: employee.role_type || 'service',
+        roles: employee.roles || ['service'],
         hire_date: employee.hire_date || '',
         allstate_id: employee.allstate_id || '',
         rc_display_name: employee.rc_display_name || '',
@@ -315,17 +315,27 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                 <legend className="text-sm font-semibold text-gray-700 mb-3">Employment</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Role *</label>
-                    <select
-                      required
-                      value={form.role_type}
-                      onChange={(e) => handleChange('role_type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    >
-                      {ROLE_OPTIONS.map((r) => (
-                        <option key={r.value} value={r.value}>{r.label}</option>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Roles *</label>
+                    <div style={{ display: 'flex', gap: 16, marginTop: 6 }}>
+                      {ROLE_OPTIONS.map(opt => (
+                        <label key={opt.value} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={form.roles?.includes(opt.value) || false}
+                            onChange={e => {
+                              const next = e.target.checked
+                                ? [...(form.roles || []), opt.value]
+                                : (form.roles || []).filter(r => r !== opt.value);
+                              if (next.length > 0) handleChange('roles', next);
+                            }}
+                          />
+                          {opt.label}
+                        </label>
                       ))}
-                    </select>
+                    </div>
+                    {(!form.roles || form.roles.length === 0) && (
+                      <div style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>At least one role required</div>
+                    )}
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Hire Date</label>

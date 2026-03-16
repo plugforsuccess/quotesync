@@ -21,7 +21,7 @@ function checkDiscrepancies(timeEntries, rcData, weekStart, roleType) {
   const regOrWfhDays = timeEntries.filter((e) => ['REG', 'WFH'].includes(e.code));
 
   // ── Producer-specific checks (outbound effort only) ───────────────────
-  if (roleType === 'producer') {
+  if (roleType === 'sales') {
     if (regOrWfhDays.length > 0 && (rcData.outbound_calls || 0) === 0) {
       alerts.push({
         severity: 'yellow',

@@ -21,7 +21,7 @@ import VerifyInlineForm from './components/employees/VerifyInlineForm';
 
 const ROLE_LABELS = {
   service: 'Service',
-  producer: 'Producer',
+  sales: 'Sales',
   admin: 'Admin',
 };
 
@@ -320,7 +320,7 @@ const EmployeeRosterPage = () => {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-gray-600">
-                          {ROLE_LABELS[emp.role_type] || emp.role_type}
+                          {emp.roles?.map(r => ROLE_LABELS[r] || r).join(', ') || '—'}
                         </td>
                         <td className="px-4 py-3">
                           {emp.employment_status === 'active' && (
@@ -374,7 +374,7 @@ const EmployeeRosterPage = () => {
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
-                                {emp.role_type === 'producer' && (
+                                {emp.roles?.includes('sales') && (
                                   <Link
                                     to={`/admin/producers/${emp.id}/comp-model`}
                                     className="text-gray-500 hover:text-primary-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
