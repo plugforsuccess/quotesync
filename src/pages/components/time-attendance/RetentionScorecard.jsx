@@ -24,7 +24,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
     );
   }
 
-  if (!metrics || (metrics.cancelTotal === 0 && metrics.renewalTotal === 0)) {
+  if (!metrics || (metrics.cancelTotal === 0 && metrics.renewalTotalAssigned === 0)) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 p-6 text-center">
         <Shield className="w-10 h-10 text-gray-300 mx-auto mb-2" />
@@ -117,7 +117,14 @@ export default function RetentionScorecard({ metrics, isLoading }) {
               <CheckCircle className="w-4 h-4 text-blue-600" />
             </div>
             <h4 className="text-sm font-semibold text-gray-900">Renewals</h4>
-            <span className="ml-auto text-xs text-gray-400">{metrics.renewalTotal} assigned</span>
+            <div className="ml-auto text-right">
+              <span className="text-xs text-gray-400">{metrics.renewalTotal} workable</span>
+              {metrics.renewalAutoResolved > 0 && (
+                <span className="text-xs text-gray-300 ml-2">
+                  · {metrics.renewalAutoResolved} auto-resolved
+                </span>
+              )}
+            </div>
           </div>
 
           <MetricRow

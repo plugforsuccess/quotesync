@@ -3348,20 +3348,10 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         setUploadError("No valid rows found. Check that the file has Policy No and Renewal Date columns.");
         return;
       }
-      const hasStatusCol = rows.some(r => r.renewal_status);
-      if (hasStatusCol) {
-        const actionable = rows.filter(r => !r.renewal_status || r.renewal_status === "Renewal Not Taken");
-        const excluded = rows.length - actionable.length;
-        setExcludedCount(excluded);
-        if (actionable.length === 0) {
-          setUploadError(`All ${rows.length} rows are already renewed or not applicable. No actionable rows to import.`);
-          return;
-        }
-        setParsedRows(actionable);
-      } else {
-        setExcludedCount(0);
-        setParsedRows(rows);
-      }
+      // Pass all rows through — handleCommit will auto-resolve existing rows
+      // whose renewal_status is "Renewal Taken" or "Not Applicable"
+      setExcludedCount(0);
+      setParsedRows(rows);
     } catch (err) {
       console.error("[renewal parse error]", err.message);
       setUploadError(friendlyUploadError(err.message));
@@ -3376,17 +3366,28 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
     try {
       const today = new Date().toISOString().slice(0, 10);
 
-      // 1. Find existing rows (for upsert dedup)
+      // 1. Find existing rows (for upsert dedup) — also fetch status for auto-resolve logic
       const policyNos = parsedRows.map(r => r.policy_no);
       const { data: existing } = await supabase
         .from('renewal_events')
-        .select('policy_no, renewal_date')
+        .select('policy_no, renewal_date, status')
         .eq('agency_id', agencyId)
         .in('policy_no', policyNos);
       const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
 
-      const toAdd = parsedRows.filter(r => !existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
-      const updatedCount = parsedRows.length - toAdd.length;
+      // Build map of current status per row
+      const existingStatus = {};
+      (existing ?? []).forEach(e => {
+        existingStatus[`${e.policy_no}|${e.renewal_date}`] = e.status;
+      });
+
+      // For new rows, exclude "Renewal Taken" / "Not Applicable" — no point adding already-resolved cases
+      const REPORT_RESOLVED_STATUSES = new Set(['Renewal Taken', 'Not Applicable']);
+      const toAdd = parsedRows.filter(r =>
+        !existingKeys.has(`${r.policy_no}|${r.renewal_date}`) &&
+        !REPORT_RESOLVED_STATUSES.has(r.renewal_status)
+      );
+      const updatedCount = parsedRows.filter(r => existingKeys.has(`${r.policy_no}|${r.renewal_date}`)).length;
 
       // 2. Load all active service reps
       const { data: reps } = await supabase
@@ -3408,7 +3409,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           .select('assigned_to_id')
           .eq('agency_id', agencyId)
           .not('assigned_to_id', 'is', null)
-          .not('status', 'in', '("confirmed","lost","auto_resolved","unreachable")');
+          .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)');
 
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
@@ -3459,13 +3460,30 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       });
 
       const existingRows = parsedRows.filter(r => existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
-      const updateRecords = existingRows.map(r => ({
-        agency_id: agencyId,
-        upload_batch_id: upload.id,
-        first_seen_on: today,
-        last_seen_on: today,
-        ...r,
-      }));
+
+      // Statuses that mean Tracy hasn't meaningfully worked the case yet
+      const UNWORKED_STATUSES = new Set(['pending', 'attempting', 'left_voicemail']);
+
+      const updateRecords = existingRows.map(r => {
+        const key = `${r.policy_no}|${r.renewal_date}`;
+        const currentStatus = existingStatus[key];
+        const reportStatus = r.renewal_status; // from parsed row
+
+        // Auto-resolve if: report says resolved AND Tracy hasn't worked it yet
+        const shouldAutoResolve =
+          REPORT_RESOLVED_STATUSES.has(reportStatus) &&
+          UNWORKED_STATUSES.has(currentStatus);
+
+        return {
+          agency_id: agencyId,
+          upload_batch_id: upload.id,
+          last_seen_on: today,
+          ...(shouldAutoResolve ? { status: 'auto_resolved' } : {}),
+          ...r,
+          // Preserve first_seen_on — don't overwrite with today for existing rows
+          first_seen_on: undefined,
+        };
+      });
 
       if (newRecords.length > 0) {
         const { error: insErr } = await supabase
@@ -3493,7 +3511,9 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         ? `All assigned to ${repNames[0]}`
         : `Distributed across ${repNames.join(', ')}`;
 
-      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated · ${assignmentSummary}`);
+      const autoResolved = updateRecords.filter(r => r.status === 'auto_resolved').length;
+      const autoResolvedMsg = autoResolved > 0 ? ` · ${autoResolved} auto-resolved` : '';
+      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated${autoResolvedMsg} · ${assignmentSummary}`);
       setParsedRows(null);
       setExcludedCount(0);
       setUploadFile(null);
