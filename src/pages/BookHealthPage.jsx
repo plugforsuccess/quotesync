@@ -1060,6 +1060,7 @@ function parseRenewalXLSX(data) {
   const iOriginalYear     = findRenewalCol(["original year", "orig year", "policy year"]);
   const iPriorYears       = findRenewalCol(["years prior insurance", "years prior", "prior years"]);
   const iEasyPay          = findRenewalCol(["easy pay", "easypay", "autopay"]);
+  const iMultiLine        = findRenewalCol(["multi-line indicator", "multi line indicator", "multiline indicator", "multi-line", "multi line"]);
 
   return rows.filter(r => r.some(Boolean)).map(r => {
     const policyNo = iPolicy >= 0 ? r[iPolicy]?.toString().trim() : null;
@@ -1113,6 +1114,7 @@ function parseRenewalXLSX(data) {
       original_year:      iOriginalYear >= 0 ? parseInt(r[iOriginalYear]) || null : null,
       years_prior:        iPriorYears >= 0 ? parseInt(r[iPriorYears]) || null : null,
       easy_pay:           iEasyPay >= 0 ? (r[iEasyPay]?.toString().trim().toUpperCase() === "Y") : null,
+      multi_line:         iMultiLine >= 0 ? (r[iMultiLine]?.toString().trim() || null) : null,
     };
   }).filter(Boolean);
 }
@@ -1268,6 +1270,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               color: event.premium_change == null ? "#94A3B8"
                 : event.premium_change > 0 ? "#EF4444" : "#10B981" },
             { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
+            { label: "Multi-Line",
+              value: event.multi_line === 'Yes' ? 'Yes — Bundled'
+                   : event.multi_line === 'No'  ? 'No — Monoline'
+                   : '—',
+              color: event.multi_line === 'Yes' ? '#10B981'
+                   : event.multi_line === 'No'  ? '#60A5FA'
+                   : '#64748B' },
             { label: "Tenure",        value: event.original_year
                 ? `${CURRENT_YEAR - event.original_year} yrs (${event.original_year})`
                 : "\u2014" },
@@ -1538,6 +1547,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         case "status": av = a.status; bv = b.status; break;
         case "days_until": av = daysUntilRenewal(a.renewal_date); bv = daysUntilRenewal(b.renewal_date); break;
         case "product": av = a.product || ""; bv = b.product || ""; break;
+        case "multi_line": av = a.multi_line || ""; bv = b.multi_line || ""; break;
         case "attempt_count": av = a.attempt_count || 0; bv = b.attempt_count || 0; break;
         case "assigned_to": av = employeeMap[a.assigned_to_id] || ""; bv = employeeMap[b.assigned_to_id] || ""; break;
         case "contact_method": av = a.contact_method || ""; bv = b.contact_method || ""; break;
@@ -1862,6 +1872,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                 <SortTh col="priority" label="Priority" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="customer_name" label="Customer" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="product" label="Product" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+                <SortTh col="multi_line" label="Multi" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="premium" label="Premium" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="premium_change" label="Prem \u0394" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
                 <SortTh col="premium_change_pct" label="\u0394%" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
@@ -1899,6 +1910,23 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                       {maskCustomerName(event.customer_name)}
                     </td>
                     <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
+                    <td>
+                      {event.multi_line === 'Yes' ? (
+                        <span style={{
+                          display: 'inline-block', padding: '2px 7px', borderRadius: 4,
+                          fontSize: 10, fontWeight: 700,
+                          background: '#10B98122', color: '#10B981',
+                        }}>ML</span>
+                      ) : event.multi_line === 'No' ? (
+                        <span style={{
+                          display: 'inline-block', padding: '2px 7px', borderRadius: 4,
+                          fontSize: 10, fontWeight: 700,
+                          background: '#3B82F622', color: '#60A5FA',
+                        }}>SL</span>
+                      ) : (
+                        <span style={{ color: '#334155', fontSize: 11 }}>{"\u2014"}</span>
+                      )}
+                    </td>
                     <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
                       {event.premium ? fmtFull$(event.premium) : "\u2014"}
                     </td>
@@ -2764,6 +2792,13 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                     : '—' },
                 { label: 'Easy Pay',
                   value: r.easy_pay === true ? 'Yes ✓' : r.easy_pay === false ? 'No' : '—' },
+                { label: 'Multi-Line',
+                  value: r.multi_line === 'Yes' ? 'Yes — Bundled'
+                       : r.multi_line === 'No'  ? 'No — Monoline'
+                       : '—',
+                  color: r.multi_line === 'Yes' ? '#10B981'
+                       : r.multi_line === 'No'  ? '#60A5FA'
+                       : '#64748B' },
                 { label: 'Items',
                   value: r.renewal_item_count || 1 },
                 { label: 'Points',
@@ -3036,6 +3071,12 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           value={rows.filter(r => r.risk_type === 'renewal').length}
           sub="shopping risk"
           color="#3B82F6"
+        />
+        <KpiCard
+          label="Multi-Line at Risk"
+          value={rows.filter(r => r.multi_line === 'Yes').length}
+          sub="bundled customers"
+          color="#10B981"
         />
         <KpiCard
           label="Items at Risk"
