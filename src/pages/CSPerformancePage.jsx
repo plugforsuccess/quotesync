@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   BarChart3, Users, RefreshCw, ShieldOff, AlertCircle, ChevronLeft, ChevronRight,
-  Filter, Target, Download, ArrowLeft, TrendingUp,
+  Filter, Target, Download, ArrowLeft, TrendingUp, Shield,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -46,6 +46,8 @@ import { useYTDBlended } from '../hooks/useYTDBlended';
 import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
 import { useAllProducerConfigs } from '../hooks/useProducerCompModel';
 import { averageConfig } from '../utils/compModelCalculations';
+import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
+import RetentionScorecard from './components/time-attendance/RetentionScorecard';
 import PageSpinner from '../components/PageSpinner';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
 
@@ -303,6 +305,18 @@ const CSPerformancePage = () => {
   // Is this employee a producer?
   const isProducerView = resolvedEmployeeRole === 'producer';
 
+  // Map selected employee to employees.id for retention metrics
+  const selectedEmployeeRecord = useMemo(() => {
+    if (!singleEmployee || !rosterEmployees?.length) return null;
+    return rosterEmployees.find(e =>
+      e.auth_user_id === singleEmployee || e.id === singleEmployee
+    ) || null;
+  }, [singleEmployee, rosterEmployees]);
+
+  const { data: retentionMetrics, isLoading: retentionLoading } = useRetentionMetrics(
+    selectedEmployeeRecord?.id
+  );
+
   function refetchAll() {
     refetchEntries();
     refetchRC();
@@ -421,6 +435,7 @@ const CSPerformancePage = () => {
           proactivity={empProactivity}
           alerts={[]}
           weekStart={weekStart}
+          retentionMetrics={retentionMetrics}
         />
       ).toBlob();
 
@@ -924,6 +939,20 @@ const CSPerformancePage = () => {
                   </div>
                 );
               })
+            )}
+
+            {/* Retention Performance — only for cs_rep employees */}
+            {resolvedEmployeeRole === 'cs_rep' && (
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  Retention Performance
+                </h3>
+                <RetentionScorecard
+                  metrics={retentionMetrics}
+                  isLoading={retentionLoading}
+                />
+              </div>
             )}
           </div>
         )}
