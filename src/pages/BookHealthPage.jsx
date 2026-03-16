@@ -2780,9 +2780,9 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           aVal = a.renewal_date || '9999';
           bVal = b.renewal_date || '9999';
           return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-        case 'premium_at_risk':
-          aVal = a.premium_at_risk || 0;
-          bVal = b.premium_at_risk || 0;
+        case 'premium':
+          aVal = a.risk_type === 'renewal' ? (a.renewal_premium || 0) : (a.premium_at_risk || 0);
+          bVal = b.risk_type === 'renewal' ? (b.renewal_premium || 0) : (b.premium_at_risk || 0);
           return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
         case 'premium_change_pct':
           aVal = a.premium_change_pct || 0;
@@ -2859,7 +2859,6 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
             <tr>
               <SortTh col="priority"           label="Priority"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="customer_name"      label="Customer"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
-              <th>Risk</th>
               {/* Cancel column — hide when filtering to renewal-only */}
               {riskFilter !== 'renewal' && (
                 <SortTh col="cancel_date" label="Cancel" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
@@ -2874,7 +2873,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               {riskFilter !== 'pending_cancel' && (
                 <SortTh col="renewal_date" label="Renewal" sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               )}
-              <SortTh col="premium_at_risk"    label="At Risk"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="premium"             label="Premium"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="premium_change_pct" label="Δ%"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="product"            label="Product"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th>Attempts</th>
@@ -2904,19 +2903,11 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                   {/* Customer name */}
                   <td style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 13 }}>
                     {maskCustomerName(row.customer_name)}
+                    {row.risk_type === 'dual_risk' && (
+                      <span style={{ marginLeft: 6, fontSize: 10, color: '#EF4444' }}>⚡</span>
+                    )}
                   </td>
 
-                  {/* Risk type badge */}
-                  <td>
-                    <span style={{
-                      display: 'inline-block', padding: '2px 8px', borderRadius: 4,
-                      fontSize: 10, fontWeight: 700,
-                      background: row.risk_type === 'dual_risk' ? '#EF444433' : row.risk_type === 'pending_cancel' ? '#F59E0B33' : '#3B82F633',
-                      color:      row.risk_type === 'dual_risk' ? '#EF4444'   : row.risk_type === 'pending_cancel' ? '#F59E0B'   : '#60A5FA',
-                    }}>
-                      {row.risk_type === 'dual_risk' ? '⚡ DUAL' : row.risk_type === 'pending_cancel' ? 'CANCEL' : 'RENEWAL'}
-                    </span>
-                  </td>
 
                   {/* Cancel urgency cell */}
                   {riskFilter !== 'renewal' && (
@@ -2947,8 +2938,10 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     </td>
                   )}
 
-                  <td style={{ color: '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>
-                    {row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—'}
+                  <td style={{ color: '#E2E8F0', fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
+                    {row.risk_type === 'renewal'
+                      ? (row.renewal_premium ? fmtFull$(row.renewal_premium) : '—')
+                      : (row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—')}
                   </td>
 
                   <td style={{
@@ -2982,7 +2975,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               );
             })}
             {filteredRows.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign: 'center', color: '#334155', padding: '32px 0' }}>
+              <tr><td colSpan={9} style={{ textAlign: 'center', color: '#334155', padding: '32px 0' }}>
                 No at-risk policies in this filter
               </td></tr>
             )}
