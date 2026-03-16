@@ -88,23 +88,29 @@ export function useRetentionMetrics(employeeId) {
 
       // ── Renewal Metrics ────────────────────────────────────────────────
 
-      const renewalsConfirmed = allRenewals.filter(e => e.status === 'confirmed');
-      const renewalsLost      = allRenewals.filter(e => ['lost','unreachable'].includes(e.status));
-      const renewalsShopping  = allRenewals.filter(e => e.status === 'shopping');
-      const renewalsEscalated = allRenewals.filter(e => e.status === 'escalated');
+      const renewalsConfirmed    = allRenewals.filter(e => e.status === 'confirmed');
+      const renewalsLost         = allRenewals.filter(e => ['lost','unreachable'].includes(e.status));
+      const renewalsShopping     = allRenewals.filter(e => e.status === 'shopping');
+      const renewalsEscalated    = allRenewals.filter(e => e.status === 'escalated');
+      const renewalsAutoResolved = allRenewals.filter(e => e.status === 'auto_resolved');
+
+      // Workable = all assigned renewals minus auto-resolved
+      // Auto-resolved cases never needed Tracy's involvement — excluding them
+      // from the denominator prevents unfair penalty on outreach and reach rates.
+      const renewalsWorkable = allRenewals.filter(e => e.status !== 'auto_resolved');
 
       // Contact rate from attempts
       const renewalCaseIdsWithAttempts = new Set(allRenewalAttempts.map(a => a.renewal_event_id));
-      const renewalContactRate = allRenewals.length > 0
-        ? renewalCaseIdsWithAttempts.size / allRenewals.length
+      const renewalContactRate = renewalsWorkable.length > 0
+        ? renewalCaseIdsWithAttempts.size / renewalsWorkable.length
         : null;
 
       // Cases actually reached
       const renewalCaseIdsReached = new Set(
         allRenewalAttempts.filter(a => a.result === 'reached').map(a => a.renewal_event_id)
       );
-      const renewalReachRate = allRenewals.length > 0
-        ? renewalCaseIdsReached.size / allRenewals.length
+      const renewalReachRate = renewalsWorkable.length > 0
+        ? renewalCaseIdsReached.size / renewalsWorkable.length
         : null;
 
       const renewalPremiumRetained = renewalsConfirmed.reduce((s, e) => s + (e.premium || 0), 0);
@@ -115,7 +121,7 @@ export function useRetentionMetrics(employeeId) {
 
       // Avg days before renewal date at FIRST contact attempt
       // Measures whether Tracy is reaching customers early enough
-      const daysBeforeRenewalList = allRenewals
+      const daysBeforeRenewalList = renewalsWorkable
         .filter(e => renewalCaseIdsWithAttempts.has(e.id) && e.renewal_date)
         .map(e => {
           const firstAttempt = allRenewalAttempts
@@ -151,7 +157,9 @@ export function useRetentionMetrics(employeeId) {
         promisesKept:         promisesKept.length,
 
         // Renewals
-        renewalTotal:          allRenewals.length,
+        renewalTotal:          renewalsWorkable.length,    // workable cases only
+        renewalTotalAssigned:  allRenewals.length,         // all assigned including auto-resolved
+        renewalAutoResolved:   renewalsAutoResolved.length, // resolved before Tracy called
         renewalsConfirmed:     renewalsConfirmed.length,
         renewalsLost:          renewalsLost.length,
         renewalsShopping:      renewalsShopping.length,

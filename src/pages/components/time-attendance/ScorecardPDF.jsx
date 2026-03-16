@@ -337,11 +337,14 @@ export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity,
         )}
 
         {/* Retention — Renewals */}
-        {retentionMetrics && retentionMetrics.renewalTotal > 0 && (
+        {retentionMetrics && retentionMetrics.renewalTotalAssigned > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionHeader}>Retention — Renewals</Text>
             <View style={styles.metricsGrid}>
-              <MetricBlock label="Assigned" value={String(retentionMetrics.renewalTotal)} />
+              <MetricBlock label="Workable" value={String(retentionMetrics.renewalTotal)} />
+              {retentionMetrics.renewalAutoResolved > 0 && (
+                <MetricBlock label="Auto-Resolved" value={String(retentionMetrics.renewalAutoResolved)} />
+              )}
               <MetricBlock label="Retain Rate" value={retentionMetrics.renewalRetainRate !== null ? `${Math.round(retentionMetrics.renewalRetainRate * 100)}%` : '—'} />
               <MetricBlock label="Outreach Rate" value={retentionMetrics.renewalContactRate !== null ? `${Math.round(retentionMetrics.renewalContactRate * 100)}%` : '—'} />
               <MetricBlock label="Prem Retained" value={`$${Math.round(retentionMetrics.renewalPremiumRetained).toLocaleString()}`} />
