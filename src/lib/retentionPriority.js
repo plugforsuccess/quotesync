@@ -1,6 +1,8 @@
 // ─── Retention Priority Scoring ─────────────────────────────────────────────
 // Shared scoring functions for renewal and pending cancel triage tables.
 
+import { LAPSE_PORTFOLIO_POINTS } from './lapseConstants';
+
 export const CURRENT_YEAR = new Date().getFullYear();
 
 // Tenure churn risk factor (0-100).
@@ -33,12 +35,13 @@ function daysUntilCancel(dateStr) {
 }
 
 export function calcRenewalPriority(event) {
-  const days = daysUntilRenewal(event.renewal_date);
-  const changePct = event.premium_change_pct || 0;
-  const tenure = event.original_year ? CURRENT_YEAR - event.original_year : 0;
-  const premium = event.premium || 0;
+  const days        = daysUntilRenewal(event.renewal_date);
+  const changePct   = event.premium_change_pct || 0;
+  const tenure      = event.original_year ? CURRENT_YEAR - event.original_year : 0;
+  const itemCount   = event.item_count || 1;
+  const product     = event.product || 'other';
 
-  // Time factor (0-100)
+  // Time factor (0-100) — deadline is the dominant signal
   const timeFactor =
     days <= 0  ? 100 :
     days <= 7  ? 95  :
@@ -46,7 +49,7 @@ export function calcRenewalPriority(event) {
     days <= 21 ? 40  :
     days <= 30 ? 20  : 5;
 
-  // Shopping propensity (0-100)
+  // Shopping propensity (0-100) — rate increase drives comparison shopping
   const shoppingFactor =
     changePct >= 20 ? 100 :
     changePct >= 15 ? 85  :
@@ -54,31 +57,42 @@ export function calcRenewalPriority(event) {
     changePct >= 5  ? 30  :
     changePct > 0   ? 10  : 0;
 
-  // Tenure churn risk (0-100): retention is lowest for 0-5yr customers.
-  // Counterintuitively, SHORT tenure = HIGHER priority for outreach —
-  // they haven't built loyalty inertia yet and are most likely to leave.
-  // Long-tenure customers have lower churn probability even with rate increases.
+  // Tenure churn risk (0-100) — short tenure = highest risk, long tenure = inertia
   const tenureFactor =
     tenure <= 1  ? 85 :  // 0-1 yr: highest churn risk
     tenure <= 2  ? 90 :  // 1-2 yr: peak churn window
     tenure <= 5  ? 75 :  // 2-5 yr: still elevated
     tenure <= 10 ? 50 :  // 5-10 yr: loyalty building
     tenure <= 20 ? 35 :  // 10-20 yr: established relationship
-                   20;   // 20+ yr: strong inertia, low churn risk
+                   20;   // 20+ yr: strong inertia
 
-  // Premium value factor (small weight — don't ignore low-premium new customers)
-  const valueFactor = Math.min((premium / 50), 100);
+  // Portfolio value factor (0-100) — based on points at risk, not raw premium.
+  // Points incorporate both product weight (HO=20, auto=10 per item) and item count.
+  // A 4-vehicle auto = 40 pts. A HO = 20 pts. A renters = 5 pts.
+  // Normalized: 50 pts = score of 100. Capped at 100.
+  const pts = (LAPSE_PORTFOLIO_POINTS[product] ?? 0) * itemCount;
+  const valueFactor = Math.min((pts / 0.5), 100); // 50 pts → 100
+
+  // Multi-line modifier: bundled customers have hidden exposure (property follows auto)
+  // Monoline customers are lower retention risk but cross-sell opportunity
+  const multiLineModifier =
+    event.multi_line === 'Yes' ? +10 :  // bundled — elevated, property at risk too
+    event.multi_line === 'No'  ? -5  :  // monoline — slightly lower priority
+    0;                                   // property lines or unknown — neutral
 
   // Easy Pay modifier: autopay = renewal inertia, deprioritize slightly
   const paymentModifier = event.easy_pay === true ? -15 : 0;
 
-  return Math.round(
+  // Weights: time 40%, shopping 25%, tenure 20%, value 10%, modifiers flat
+  // Weights sum to 0.95 — remaining 0.05 absorbed by modifiers (capped at 100)
+  return Math.min(100, Math.round(
     (timeFactor    * 0.40) +
-    (shoppingFactor * 0.30) +
+    (shoppingFactor * 0.25) +
     (tenureFactor  * 0.20) +
-    (valueFactor   * 0.05) +
+    (valueFactor   * 0.10) +
+    multiLineModifier +
     paymentModifier
-  );
+  ));
 }
 
 export function calcCancelPriority(event) {
