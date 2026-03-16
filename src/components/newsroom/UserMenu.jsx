@@ -1,11 +1,10 @@
 // src/components/newsroom/UserMenu.jsx
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { LogOut, User, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const UserMenu = ({ activePlane, onTogglePlane }) => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { user, role, profile, isPlatformUser, signOut } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
@@ -41,16 +40,18 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
     setShowDropdown(false);
     try {
       // Race signOut against a 3s timeout — prevents hanging if auth lock is held.
-      // Navigation happens in finally regardless of outcome.
       await Promise.race([
         signOut(),
         new Promise(resolve => setTimeout(resolve, 3000)),
       ]);
     } catch (err) {
       console.warn('[logout] signOut error (non-fatal):', err);
-    } finally {
-      navigate('/admin-access-8by2X');
     }
+    // Hard redirect to destroy all React state and force clean re-init.
+    // Using navigate() here caused a race: if signOut hadn't cleared the user
+    // state yet, LoginPage's useEffect would see the user still authenticated
+    // and immediately redirect back to the admin dashboard.
+    window.location.href = '/admin-access-8by2X';
   };
 
   if (!user) {
