@@ -2875,6 +2875,54 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
   const [sortCol, setSortCol] = useState('priority');
   const [sortDir, setSortDir] = useState('desc');
   const [selectedUnified, setSelectedUnified] = useState(null);
+  // Drilldown: { event, side: 'cancel'|'renewal' } — opens the full detail modal with logging
+  const [drilldown, setDrilldown] = useState(null);
+
+  async function openDrilldown(row, side) {
+    // For single-risk rows, auto-pick the side
+    if (!side) {
+      if (row.risk_type === 'pending_cancel') side = 'cancel';
+      else if (row.risk_type === 'renewal') side = 'renewal';
+      else {
+        // dual_risk — pick the more urgent side
+        const cd = row.cancel_effective_date ? daysUntilCancel(row.cancel_effective_date) : 999;
+        const rd = row.renewal_date ? daysUntilRenewal(row.renewal_date) : 999;
+        side = cd <= rd ? 'cancel' : 'renewal';
+      }
+    }
+    // Fetch full event record so the detail modal has all fields
+    const table = side === 'cancel' ? 'pending_cancel_events' : 'renewal_events';
+    const eventId = side === 'cancel' ? row.cancel_event_id : row.renewal_event_id;
+    if (!eventId) return;
+    const { data } = await supabase.from(table).select('*').eq('id', eventId).single();
+    if (data) {
+      // Carry over computed priority from unified row
+      data._priority = row._priority;
+      setDrilldown({ event: data, side, unifiedRow: row });
+    }
+  }
+
+  async function updateCancelEvent(id, updates) {
+    const { error } = await supabase
+      .from('pending_cancel_events')
+      .update(updates)
+      .eq('id', id);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+    }
+    return error;
+  }
+
+  async function updateRenewalEvent(id, updates) {
+    const { error } = await supabase
+      .from('renewal_events')
+      .update(updates)
+      .eq('id', id);
+    if (!error) {
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+    }
+    return error;
+  }
 
   function handleSort(col) {
     if (sortCol === col) {
@@ -3053,7 +3101,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               return (
                 <tr key={`${row.cancel_event_id || ''}-${row.renewal_event_id || ''}`}
                   className="triage-row"
-                  onClick={() => setSelectedUnified(row)}>
+                  onClick={() => openDrilldown(row)}>
 
                   {/* Priority */}
                   <td>
@@ -3148,20 +3196,47 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         </table>
       </div>
 
-      {/* Detail modal */}
-      {selectedUnified && (
-        <UnifiedDetailModal
-          row={selectedUnified}
-          onClose={() => setSelectedUnified(null)}
+      {/* Drilldown detail modal — opens the full cancel or renewal modal with logging */}
+      {drilldown && drilldown.side === 'cancel' && (
+        <EventDetailModal
+          event={drilldown.event}
+          onClose={() => setDrilldown(null)}
+          onUpdate={updateCancelEvent}
           agencyId={agencyId}
-          employeeMap={employeeMap}
-          producers={producers}
-          onReassign={(updatedRow) => {
-            // Update the row in local state so the triage table reflects the change immediately
-            queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
-            setSelectedUnified(updatedRow);
-          }}
+          currentEmployeeId={currentEmployeeId}
         />
+      )}
+      {drilldown && drilldown.side === 'renewal' && (
+        <RenewalDetailModal
+          event={drilldown.event}
+          onClose={() => setDrilldown(null)}
+          onUpdate={updateRenewalEvent}
+          producers={producers}
+          agencyId={agencyId}
+          currentEmployeeId={currentEmployeeId}
+        />
+      )}
+      {/* For dual_risk rows, show a switch button inside the modal overlay */}
+      {drilldown && drilldown.unifiedRow?.risk_type === 'dual_risk' && (
+        <div style={{
+          position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+          zIndex: 1010, display: 'flex', gap: 8,
+        }}>
+          <button
+            className={drilldown.side === 'cancel' ? 'btn-primary' : 'btn-ghost'}
+            style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8 }}
+            onClick={() => openDrilldown(drilldown.unifiedRow, 'cancel')}
+          >
+            Cancel Details
+          </button>
+          <button
+            className={drilldown.side === 'renewal' ? 'btn-primary' : 'btn-ghost'}
+            style={{ fontSize: 12, padding: '6px 14px', borderRadius: 8 }}
+            onClick={() => openDrilldown(drilldown.unifiedRow, 'renewal')}
+          >
+            Renewal Details
+          </button>
+        </div>
       )}
     </div>
   );
