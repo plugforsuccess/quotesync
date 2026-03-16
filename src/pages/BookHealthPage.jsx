@@ -17,8 +17,8 @@ function friendlyUploadError(raw = "") {
   if (msg.includes("row-level security") || msg.includes("rls") || msg.includes("using expression"))
     return "Permission error — your session may have expired. Please refresh the page and try again.";
 
-  if (msg.includes("unique or exclusion constraint"))
-    return "Database configuration error. Please contact your administrator.";
+  if (msg.includes("unique constraint") || msg.includes("unique or exclusion constraint") || msg.includes("duplicate key"))
+    return "Some rows already exist. Try re-uploading — the duplicate rows will be skipped automatically.";
 
   if (msg.includes("violates not-null constraint"))
     return "One or more required fields are missing. Check that the report has Policy Number and all required columns.";
@@ -3383,12 +3383,14 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       const today = new Date().toISOString().slice(0, 10);
 
       // 1. Find existing rows (for upsert dedup) — also fetch status for auto-resolve logic
-      const policyNos = parsedRows.map(r => r.policy_no);
-      const { data: existing } = await supabase
+      const policyNos = [...new Set(parsedRows.map(r => r.policy_no))];
+      const { data: existing, error: lookupErr } = await supabase
         .from('renewal_events')
         .select('policy_no, renewal_date, status')
         .eq('agency_id', agencyId)
-        .in('policy_no', policyNos);
+        .in('policy_no', policyNos)
+        .limit(10000);
+      if (lookupErr) throw new Error(lookupErr.message);
       const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
 
       // Build map of current status per row
@@ -3504,7 +3506,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       if (newRecords.length > 0) {
         const { error: insErr } = await supabase
           .from('renewal_events')
-          .insert(newRecords);
+          .upsert(newRecords, { onConflict: 'agency_id,policy_no,renewal_date', ignoreDuplicates: true });
         if (insErr) throw new Error(insErr.message);
       }
 
@@ -3533,6 +3535,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       setParsedRows(null);
       setExcludedCount(0);
       setUploadFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       queryClient.invalidateQueries({ queryKey: ['renewal_events', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
     } catch (err) {
@@ -3596,7 +3599,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
             <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
               {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
             </button>
-            <button className="btn-ghost" onClick={() => { setParsedRows(null); setExcludedCount(0); setUploadFile(null); }}>
+            <button className="btn-ghost" onClick={() => { setParsedRows(null); setExcludedCount(0); setUploadFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
               Cancel
             </button>
           </div>
