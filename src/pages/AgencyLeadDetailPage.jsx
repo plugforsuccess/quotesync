@@ -80,21 +80,52 @@ const AgencyLeadDetailPage = () => {
   const { data: auditLog } = useLeadAuditLog(leadId);
   const { data: messages = [], isLoading: messagesLoading } = useLeadMessages(leadId);
 
-  // Realtime subscription for new messages
+  // Realtime subscription for new messages with auto-reconnect.
+  // When the tab is backgrounded the WebSocket disconnects (CLOSED/CHANNEL_ERROR).
+  // On return we tear down the dead channel and re-subscribe after a short delay
+  // to avoid rapid reconnect loops.
   useEffect(() => {
     if (!leadId) return;
-    const channel = supabase
-      .channel(`lead-messages-${leadId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'lead_messages',
-        filter: `lead_id=eq.${leadId}`,
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ['lead_messages', leadId] });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+
+    let reconnectTimer = null;
+    let isReconnecting = false;
+    let currentChannel = null;
+
+    function subscribe() {
+      const channel = supabase
+        .channel(`lead-messages-${leadId}`)
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'lead_messages',
+          filter: `lead_id=eq.${leadId}`,
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['lead_messages', leadId] });
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            isReconnecting = false;
+          } else if ((status === 'CLOSED' || status === 'CHANNEL_ERROR') && !isReconnecting) {
+            isReconnecting = true;
+            reconnectTimer = setTimeout(() => {
+              supabase.removeChannel(channel);
+              currentChannel = null;
+              subscribe();
+            }, 5000);
+          }
+        });
+
+      currentChannel = channel;
+    }
+
+    subscribe();
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      if (currentChannel) {
+        supabase.removeChannel(currentChannel);
+      }
+    };
   }, [leadId, queryClient]);
 
   const updateStatus = useUpdateLeadStatus();
