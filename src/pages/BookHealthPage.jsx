@@ -1034,7 +1034,7 @@ function parseRenewalXLSX(data) {
   const iProductCode = findRenewalCol(["line code", "product code", "line of business", "lob"]);
   const iProduct     = iProductName >= 0 ? iProductName : (iProductCode >= 0 ? iProductCode : findRenewalCol(["product"]));
   const iPremium   = findRenewalCol(["renewal premium", "premium new", "written premium", "annual premium", "premium"]);
-  const iRenewDate = findRenewalCol(["renewal date", "renewal effective", "policy renewal", "expiration date", "exp date", "renewal"]);
+  const iRenewDate = findRenewalCol(["renewal anniversary date", "renewal anniversary", "anniversary date", "renewal date", "renewal effective", "policy renewal", "expiration date", "exp date"]);
   const iPhone     = findRenewalCol(["insured phone", "phone number", "phone", "mobile", "cell"]);
   const iEmail     = findRenewalCol(["insured email", "email address", "email"]);
   const iItems     = findRenewalCol(["no. of items", "item count", "items", "number of items"]);
