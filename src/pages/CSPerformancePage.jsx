@@ -44,6 +44,8 @@ import CapacityPlanner from './components/dashboard/CapacityPlanner';
 import StaffingCapacity from './components/dashboard/StaffingCapacity';
 import { useYTDBlended } from '../hooks/useYTDBlended';
 import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
+import { useAllProducerConfigs } from '../hooks/useProducerCompModel';
+import { averageConfig } from '../utils/compModelCalculations';
 import PageSpinner from '../components/PageSpinner';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
 
@@ -160,6 +162,14 @@ const CSPerformancePage = () => {
 
   const agencyRates = useAgencyCommissionRates(currentAgencyId);
   const { data: ytdBlended } = useYTDBlended(currentAgencyId);
+  const { data: producerConfigs = [] } = useAllProducerConfigs(currentAgencyId);
+  const [selectedProducerConfigId, setSelectedProducerConfigId] = useState('none');
+
+  const selectedProducerConfig = useMemo(() => {
+    if (selectedProducerConfigId === 'none' || !producerConfigs.length) return null;
+    if (selectedProducerConfigId === 'average') return averageConfig(producerConfigs);
+    return producerConfigs.find(c => c.id === selectedProducerConfigId) || null;
+  }, [selectedProducerConfigId, producerConfigs]);
 
   const [plannerInputs, setPlannerInputs] = useState(() => {
     try {
@@ -651,6 +661,10 @@ const CSPerformancePage = () => {
               plannerInputs={effectivePlanner}
               ytdAvgPremium={ytdBlended?.avgPremiumPerPolicy}
               ytdCommissionRate={ytdBlended ? ytdBlended.blendedCommissionRate * 100 : undefined}
+              producerConfigs={producerConfigs}
+              selectedProducerConfig={selectedProducerConfig}
+              selectedProducerConfigId={selectedProducerConfigId}
+              onProducerConfigChange={setSelectedProducerConfigId}
             />
           </div>
         ) : activeTab === 'team' ? (

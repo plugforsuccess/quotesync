@@ -110,6 +110,27 @@ export function calcMixPctTotal(productMix) {
   return productMix.reduce((sum, p) => sum + (Number(p.mix_pct) || 0), 0);
 }
 
+// ── Average config helper ───────────────────────────────────────────────────
+// Average numeric config fields across all producer configs — used by staffing
+// model when "Average of all producers" is selected.
+
+export function averageConfig(configs) {
+  if (!configs || configs.length === 0) return null;
+  const n = configs.length;
+  const avg = (key) => configs.reduce((s, c) => s + (Number(c[key]) || 0), 0) / n;
+  return {
+    base_salary_annual:      avg('base_salary_annual'),
+    employer_burden_monthly: avg('employer_burden_monthly'),
+    vc_base_comp_pct:        avg('vc_base_comp_pct'),
+    vc_commission_rate:      avg('vc_commission_rate'),
+    non_vc_bonus_monthly:    avg('non_vc_bonus_monthly'),
+    tp_band1_threshold:      Math.round(avg('tp_band1_threshold')),
+    tp_band1_addon:          avg('tp_band1_addon'),
+    tp_band2_threshold:      Math.round(avg('tp_band2_threshold')),
+    tp_band2_addon:          avg('tp_band2_addon'),
+  };
+}
+
 // ── VC Product Keys ─────────────────────────────────────────────────────────
 // Allstate NB VC-eligible product keys
 // Source: Allstate NB Variable Compensation eligibility rules (effective Jan 1, 2023)
