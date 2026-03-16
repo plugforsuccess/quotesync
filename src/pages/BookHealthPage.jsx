@@ -2443,13 +2443,411 @@ function NetGrowthTab({ agencyId }) {
   );
 }
 
+// ─── Unified Detail Modal ───────────────────────────────────────────────────
+
+function UnifiedDetailModal({ row, onClose, agencyId }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+      <div style={{ background: '#161924', borderRadius: 14, maxWidth: '98vw', width: '100%', maxHeight: '96vh', overflow: 'auto', padding: '24px 20px' }}>
+
+        {/* Header */}
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
+            {maskCustomerName(row.customer_name)}
+          </div>
+          <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+            Policy {row.policy_no} · {row.product?.toUpperCase()}
+            {row.risk_type === 'dual_risk' && (
+              <span style={{ marginLeft: 8, color: '#EF4444', fontWeight: 700 }}>⚡ DUAL RISK</span>
+            )}
+          </div>
+        </div>
+
+        {/* Contact info */}
+        {(row.phone || row.email) && (
+          <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 16, border: '1px solid #252A3A' }}>
+            <div style={{ fontSize: 11, color: '#64748B', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>Contact</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {row.phone && (
+                <div>
+                  <div style={{ fontSize: 10, color: '#475569' }}>Phone</div>
+                  <div style={{ fontSize: 13, color: '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{row.phone}</div>
+                </div>
+              )}
+              {row.email && (
+                <div>
+                  <div style={{ fontSize: 10, color: '#475569' }}>Email</div>
+                  <div style={{ fontSize: 13, color: '#94A3B8' }}>{row.email}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Pending cancel section */}
+        {row.cancel_event_id && (
+          <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #F59E0B44' }}>
+            <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
+              ⚠ Pending Cancellation
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+              {[
+                { label: 'Cancel Date', value: row.cancel_effective_date, color: urgencyColor(daysUntilCancel(row.cancel_effective_date)) },
+                { label: 'Premium at Risk', value: row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—' },
+                { label: 'Status', value: STATUS_CONFIG[row.cancel_status]?.label || row.cancel_status },
+                { label: 'Cycle', value: `#${row.cycle || 1}`, color: (row.cycle || 1) >= 3 ? '#EF4444' : '#94A3B8' },
+                { label: 'Attempts', value: row.cancel_attempts || 0 },
+                { label: 'Promise Date', value: row.promise_date || '—' },
+              ].map(({ label, value, color }) => (
+                <div key={label}>
+                  <div style={{ fontSize: 10, color: '#64748B' }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <a href={`/admin/book-health`} style={{ fontSize: 12, color: '#F59E0B' }}>
+                Open in Triage →
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Renewal section */}
+        {row.renewal_event_id && (
+          <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #3B82F644' }}>
+            <div style={{ fontSize: 11, color: '#3B82F6', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>
+              🔄 Renewal
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 8 }}>
+              {[
+                { label: 'Renewal Date', value: row.renewal_date, color: renewalUrgencyColor(daysUntilRenewal(row.renewal_date)) },
+                { label: 'Premium', value: row.renewal_premium ? fmtFull$(row.renewal_premium) : '—' },
+                { label: 'Premium Δ', value: row.premium_change != null ? `${row.premium_change > 0 ? '+' : ''}${fmtFull$(row.premium_change)}` : '—',
+                  color: row.premium_change > 0 ? '#EF4444' : '#10B981' },
+                { label: 'Δ%', value: row.premium_change_pct != null ? `${row.premium_change_pct > 0 ? '+' : ''}${row.premium_change_pct.toFixed(1)}%` : '—',
+                  color: row.premium_change_pct > 0 ? '#EF4444' : '#10B981' },
+                { label: 'Status', value: RENEWAL_STATUS_CONFIG[row.renewal_status]?.label || row.renewal_status },
+                { label: 'Easy Pay', value: row.easy_pay === true ? 'Yes ✓' : row.easy_pay === false ? 'No' : '—' },
+                { label: 'Tenure', value: row.original_year ? `${CURRENT_YEAR - row.original_year} yrs` : '—' },
+                { label: 'Attempts', value: row.renewal_attempts || 0 },
+              ].map(({ label, value, color }) => (
+                <div key={label}>
+                  <div style={{ fontSize: 10, color: '#64748B' }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: 8 }}>
+              <a href={`/admin/book-health`} style={{ fontSize: 12, color: '#3B82F6' }}>
+                Open in Renewals →
+              </a>
+            </div>
+          </div>
+        )}
+
+        <button className="btn-ghost" onClick={onClose} style={{ width: '100%', marginTop: 8 }}>Close</button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Unified At Risk Tab ────────────────────────────────────────────────────
+
+function calcUnifiedPriority(row) {
+  const cancelScore = row.cancel_event_id
+    ? calcCancelPriority({
+        cancel_effective_date: row.cancel_effective_date,
+        premium_at_risk:       row.premium_at_risk,
+        attempt_count:         row.cancel_attempts,
+        cycle:                 row.cycle,
+        status:                row.cancel_status,
+        promise_date:          row.promise_date,
+      })
+    : 0;
+
+  const renewalScore = row.renewal_event_id
+    ? calcRenewalPriority({
+        renewal_date:       row.renewal_date,
+        premium_change_pct: row.premium_change_pct,
+        original_year:      row.original_year,
+        premium:            row.renewal_premium,
+        easy_pay:           row.easy_pay,
+      })
+    : 0;
+
+  const base = Math.max(cancelScore, renewalScore);
+  // Dual risk adds 15 — one call needs to handle both cancel AND renewal
+  return row.risk_type === 'dual_risk' ? Math.min(base + 15, 100) : base;
+}
+
+function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
+  const queryClient = useQueryClient();
+
+  const { data: rows = [], isLoading } = useQuery({
+    queryKey: ['policy_retention_status', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('policy_retention_status')
+        .select('*')
+        .eq('agency_id', agencyId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const [riskFilter, setRiskFilter] = useState('all');
+  const [myCasesOnly, setMyCasesOnly] = useState(false);
+  const [sortCol, setSortCol] = useState('priority');
+  const [sortDir, setSortDir] = useState('desc');
+  const [selectedUnified, setSelectedUnified] = useState(null);
+
+  function handleSort(col) {
+    if (sortCol === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortCol(col);
+      setSortDir('asc');
+    }
+  }
+
+  const filteredRows = useMemo(() => {
+    let list = rows.map(r => ({ ...r, _priority: calcUnifiedPriority(r) }));
+
+    if (riskFilter !== 'all') {
+      list = list.filter(r => r.risk_type === riskFilter);
+    }
+
+    if (myCasesOnly && currentEmployeeId) {
+      list = list.filter(r =>
+        r.cancel_assigned_to_id === currentEmployeeId ||
+        r.renewal_assigned_to_id === currentEmployeeId
+      );
+    }
+
+    // Sort logic
+    if (sortCol === 'priority') {
+      return list.sort((a, b) =>
+        sortDir === 'asc' ? a._priority - b._priority : b._priority - a._priority
+      );
+    }
+
+    return list.sort((a, b) => {
+      let aVal, bVal;
+      switch (sortCol) {
+        case 'customer_name':
+          aVal = (a.customer_name || '').toLowerCase();
+          bVal = (b.customer_name || '').toLowerCase();
+          return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        case 'product':
+          aVal = (a.product || '').toLowerCase();
+          bVal = (b.product || '').toLowerCase();
+          return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        case 'cancel_date':
+          aVal = a.cancel_effective_date || '9999';
+          bVal = b.cancel_effective_date || '9999';
+          return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        case 'renewal_date':
+          aVal = a.renewal_date || '9999';
+          bVal = b.renewal_date || '9999';
+          return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        case 'premium_at_risk':
+          aVal = a.premium_at_risk || 0;
+          bVal = b.premium_at_risk || 0;
+          return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+        case 'premium_change_pct':
+          aVal = a.premium_change_pct || 0;
+          bVal = b.premium_change_pct || 0;
+          return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+        default:
+          return sortDir === 'asc' ? a._priority - b._priority : b._priority - a._priority;
+      }
+    });
+  }, [rows, riskFilter, myCasesOnly, currentEmployeeId, sortCol, sortDir]);
+
+  if (isLoading) {
+    return <div style={{ color: '#64748B', fontSize: 13 }}>Loading at-risk policies...</div>;
+  }
+
+  return (
+    <div>
+      {/* KPI strip */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+        <KpiCard
+          label="Dual Risk"
+          value={rows.filter(r => r.risk_type === 'dual_risk').length}
+          sub="cancel + renewal"
+          color="#EF4444"
+        />
+        <KpiCard
+          label="Pending Cancel"
+          value={rows.filter(r => r.risk_type === 'pending_cancel').length}
+          sub="payment risk"
+          color="#F59E0B"
+        />
+        <KpiCard
+          label="Renewals"
+          value={rows.filter(r => r.risk_type === 'renewal').length}
+          sub="shopping risk"
+          color="#3B82F6"
+        />
+        <KpiCard
+          label="Premium Exposed"
+          value={fmt$(rows.reduce((s, r) => s + (r.premium_at_risk || r.renewal_premium || 0), 0))}
+          sub="total at risk"
+          color="#8B5CF6"
+        />
+      </div>
+
+      {/* Filter bar */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {[
+          { key: 'all',            label: `All (${rows.length})` },
+          { key: 'dual_risk',      label: `🔴 Dual Risk (${rows.filter(r => r.risk_type === 'dual_risk').length})` },
+          { key: 'pending_cancel', label: 'Pending Cancel' },
+          { key: 'renewal',        label: 'Renewals' },
+        ].map(f => (
+          <button key={f.key} className={`btn-ghost ${riskFilter === f.key ? 'active' : ''}`}
+            onClick={() => setRiskFilter(f.key)}>
+            {f.label}
+          </button>
+        ))}
+
+        {/* My Cases toggle */}
+        <button
+          onClick={() => setMyCasesOnly(v => !v)}
+          className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
+          style={{ marginLeft: 'auto' }}
+        >
+          👤 My Cases
+        </button>
+      </div>
+
+      {/* Table */}
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{ minWidth: 1000 }}>
+          <thead>
+            <tr>
+              <SortTh col="priority"      label="Priority"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th>Risk</th>
+              <SortTh col="customer_name" label="Customer"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="product"       label="Product"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="cancel_date"   label="Cancel"     sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="renewal_date"  label="Renewal"    sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="premium_at_risk" label="At Risk"  sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <SortTh col="premium_change_pct" label="Δ%"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
+              <th>Attempts</th>
+              <th>Assigned</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredRows.map(row => {
+              const cancelDays = row.cancel_effective_date ? daysUntilCancel(row.cancel_effective_date) : null;
+              const renewalDays = row.renewal_date ? daysUntilRenewal(row.renewal_date) : null;
+
+              return (
+                <tr key={`${row.cancel_event_id || ''}-${row.renewal_event_id || ''}`}
+                  className="triage-row"
+                  onClick={() => setSelectedUnified(row)}>
+
+                  {/* Priority */}
+                  <td>
+                    <span style={{
+                      display: 'inline-block', padding: '2px 8px', borderRadius: 10,
+                      fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
+                      background: row._priority >= 80 ? '#EF444422' : row._priority >= 55 ? '#F59E0B22' : row._priority >= 30 ? '#3B82F622' : '#64748B22',
+                      color:      row._priority >= 80 ? '#EF4444'   : row._priority >= 55 ? '#F59E0B'   : row._priority >= 30 ? '#3B82F6'   : '#64748B',
+                    }}>{row._priority}</span>
+                  </td>
+
+                  {/* Risk type badge */}
+                  <td>
+                    <span style={{
+                      display: 'inline-block', padding: '2px 8px', borderRadius: 4,
+                      fontSize: 10, fontWeight: 700,
+                      background: row.risk_type === 'dual_risk' ? '#EF444422' : row.risk_type === 'pending_cancel' ? '#F59E0B22' : '#3B82F622',
+                      color:      row.risk_type === 'dual_risk' ? '#EF4444'   : row.risk_type === 'pending_cancel' ? '#F59E0B'   : '#3B82F6',
+                    }}>
+                      {row.risk_type === 'dual_risk' ? '⚡ DUAL' : row.risk_type === 'pending_cancel' ? 'CANCEL' : 'RENEWAL'}
+                    </span>
+                  </td>
+
+                  <td style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 13 }}>
+                    {maskCustomerName(row.customer_name)}
+                  </td>
+                  <td style={{ color: '#94A3B8', fontSize: 12 }}>
+                    {row.product?.toUpperCase() || '—'}
+                  </td>
+
+                  {/* Cancel date */}
+                  <td>
+                    {row.cancel_effective_date ? (
+                      <span style={{ color: urgencyColor(cancelDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                        {cancelDays <= 0 ? 'PAST DUE' : `${cancelDays}d`}
+                      </span>
+                    ) : <span style={{ color: '#334155' }}>—</span>}
+                  </td>
+
+                  {/* Renewal date */}
+                  <td>
+                    {row.renewal_date ? (
+                      <span style={{ color: renewalUrgencyColor(renewalDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                        {renewalDays <= 0 ? 'PAST' : `${renewalDays}d`}
+                      </span>
+                    ) : <span style={{ color: '#334155' }}>—</span>}
+                  </td>
+
+                  <td style={{ color: '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>
+                    {row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—'}
+                  </td>
+
+                  <td style={{
+                    fontFamily: "'DM Mono', monospace", fontSize: 12,
+                    color: row.premium_change_pct == null ? '#64748B' : row.premium_change_pct > 0 ? '#EF4444' : '#10B981'
+                  }}>
+                    {row.premium_change_pct != null ? `${row.premium_change_pct > 0 ? '+' : ''}${row.premium_change_pct.toFixed(1)}%` : '—'}
+                  </td>
+
+                  <td style={{ color: '#64748B', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
+                    {((row.cancel_attempts || 0) + (row.renewal_attempts || 0)) || 0}
+                  </td>
+
+                  <td style={{ color: '#64748B', fontSize: 12 }}>
+                    {row.cancel_assigned_to_id || row.renewal_assigned_to_id ? '✓' : '—'}
+                  </td>
+                </tr>
+              );
+            })}
+            {filteredRows.length === 0 && (
+              <tr><td colSpan={10} style={{ textAlign: 'center', color: '#334155', padding: '32px 0' }}>
+                No at-risk policies in this filter
+              </td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Detail modal */}
+      {selectedUnified && (
+        <UnifiedDetailModal
+          row={selectedUnified}
+          onClose={() => setSelectedUnified(null)}
+          agencyId={agencyId}
+        />
+      )}
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export default function BookHealthPage() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("triage");
+  const [activeTab, setActiveTab] = useState("at_risk");
   const [statusFilter, setStatusFilter] = useState("active");
   const [sortCol, setSortCol] = useState("priority");
   const [sortDir, setSortDir] = useState("desc");
@@ -2802,15 +3200,22 @@ export default function BookHealthPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["triage","resolved","renewals","upload","trends","attrition","growth"].map(t => (
+        {["at_risk","triage","resolved","renewals","upload","trends","attrition","growth"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "triage" ? "Triage" : t === "resolved" ? "Resolved" : t === "renewals" ? "Renewals" :
+            {t === "at_risk" ? "⚡ At Risk" : t === "triage" ? "Triage" : t === "resolved" ? "Resolved" : t === "renewals" ? "Renewals" :
              t === "upload" ? "Upload" : t === "trends" ? "Trends" : t === "attrition" ? "Attrition" : "Portfolio Growth"}
           </button>
         ))}
       </div>
 
       {/* Tab Content */}
+      {activeTab === "at_risk" && (
+        <UnifiedAtRiskTab
+          agencyId={agencyId}
+          currentUserId={currentUserId}
+          currentEmployeeId={currentEmployee?.id}
+        />
+      )}
       {activeTab === "triage" && (
         <TriageTab
           events={events}
