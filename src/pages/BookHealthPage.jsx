@@ -3210,16 +3210,16 @@ function ImportTab({
   agencyId, currentUserId, currentEmployeeId,
 }) {
   return (
-    <div>
-      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 24 }}>
+    <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 28, textAlign: 'center' }}>
         Upload Allstate reports to refresh the At Risk queue. Each report is processed independently.
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'start' }}>
 
         {/* Left — Pending Cancellation */}
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+        <div style={{ background: '#161924', border: '1px solid #F59E0B33', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
             ⚠ Pending Cancellation Report
           </div>
           <UploadTab
@@ -3237,8 +3237,8 @@ function ImportTab({
         </div>
 
         {/* Right — Renewal Audit */}
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+        <div style={{ background: '#161924', border: '1px solid #3B82F633', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
             🔄 Renewal Audit Report
           </div>
           <RenewalUploadZone
