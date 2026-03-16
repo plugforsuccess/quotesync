@@ -2711,8 +2711,8 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
               ))}
             </div>
 
-            {/* Row 2 — Financial + Context (6 fields) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 8, marginBottom: 10 }}>
+            {/* Row 2 — Financial + Context (8 fields) */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 8, marginBottom: 10 }}>
               {[
                 { label: 'Premium',
                   value: r.renewal_premium ? fmtFull$(r.renewal_premium) : '—' },
@@ -2734,6 +2734,11 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                     : '—' },
                 { label: 'Easy Pay',
                   value: r.easy_pay === true ? 'Yes ✓' : r.easy_pay === false ? 'No' : '—' },
+                { label: 'Items',
+                  value: r.renewal_item_count || 1 },
+                { label: 'Points',
+                  value: `${((LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.renewal_item_count || 1)).toLocaleString()} pts`,
+                  color: '#8B5CF6' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
                   <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
@@ -2774,6 +2779,19 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 }
 
 // ─── Unified At Risk Tab ────────────────────────────────────────────────────
+
+// Compute portfolio points at risk for a single row in policy_retention_status.
+// For dual risk: use renewal_item_count (more accurate — has actual vehicle count).
+// For pending cancel only: use cancel_item_count (always 1).
+// For renewal only: use renewal_item_count.
+function calcRowPoints(row) {
+  const product = row.product || 'other';
+  const pts = LAPSE_PORTFOLIO_POINTS[product] ?? 0;
+  const items = row.risk_type === 'pending_cancel'
+    ? (row.cancel_item_count || 1)
+    : (row.renewal_item_count || 1);
+  return pts * items;
+}
 
 function calcUnifiedPriority(row) {
   const cancelScore = row.cancel_event_id
@@ -2922,7 +2940,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
   return (
     <div>
       {/* KPI strip */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
         <KpiCard
           label="Dual Risk"
           value={rows.filter(r => r.risk_type === 'dual_risk').length}
@@ -2942,10 +2960,26 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           color="#3B82F6"
         />
         <KpiCard
+          label="Items at Risk"
+          value={rows.reduce((s, r) => s + (
+            r.risk_type === 'pending_cancel'
+              ? (r.cancel_item_count || 1)
+              : (r.renewal_item_count || 1)
+          ), 0).toLocaleString()}
+          sub="total policy items"
+          color="#06B6D4"
+        />
+        <KpiCard
+          label="Points at Risk"
+          value={rows.reduce((s, r) => s + calcRowPoints(r), 0).toLocaleString()}
+          sub="portfolio impact"
+          color="#8B5CF6"
+        />
+        <KpiCard
           label="Premium Exposed"
           value={fmt$(rows.reduce((s, r) => s + (r.premium_at_risk || 0) + (r.renewal_premium || 0), 0))}
           sub="total at risk"
-          color="#8B5CF6"
+          color="#EC4899"
         />
       </div>
 
