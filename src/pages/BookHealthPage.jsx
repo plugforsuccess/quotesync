@@ -362,9 +362,14 @@ function CustomerDrilldownModal({ event, onClose }) {
 
 // ─── Triage Tab ──────────────────────────────────────────────────────────────
 
-function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sortCol, sortDir, onSort, setSelectedEvent, producers, bulkAssign }) {
+function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sortCol, sortDir, onSort, setSelectedEvent, producers, bulkAssign, currentEmployee }) {
   const [drilldownEvent, setDrilldownEvent] = useState(null);
+  const [myCasesOnly, setMyCasesOnly] = useState(false);
   const brokenCount = events.filter(e => e.status === "promise_broken").length;
+
+  const displayEvents = myCasesOnly && currentEmployee
+    ? filteredEvents.filter(e => e.assigned_to_id === currentEmployee.id)
+    : filteredEvents;
 
   return (
     <div>
@@ -385,6 +390,16 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
           ))}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", flex: "1 1 auto", justifyContent: "flex-end" }}>
+          {currentEmployee?.role_type === 'cs_rep' && (
+            <button
+              onClick={() => setMyCasesOnly(v => !v)}
+              className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
+              style={{ fontSize: 12 }}
+            >
+              {"\uD83D\uDC64"} My Cases
+              {myCasesOnly && ` (${displayEvents.length})`}
+            </button>
+          )}
           <span style={{ fontSize: 12, color: "#64748B" }}>Bulk assign unassigned pending:</span>
           {producers.map(p => {
             const name = p.preferred_name || p.first_name;
@@ -423,7 +438,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
               </tr>
             </thead>
           <tbody>
-            {filteredEvents.map(event => {
+            {displayEvents.map(event => {
               const days = daysUntilCancel(event.cancel_effective_date);
               const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
               return (
@@ -495,7 +510,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
                 </tr>
               );
             })}
-            {filteredEvents.length === 0 && (
+            {displayEvents.length === 0 && (
               <tr><td colSpan={11} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
                 No events in this filter
               </td></tr>
@@ -1384,6 +1399,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
   const [statusFilter, setStatusFilter] = useState("active");
   const [sortCol, setSortCol] = useState("priority");
   const [sortDir, setSortDir] = useState("desc");
+  const [myCasesOnly, setMyCasesOnly] = useState(false);
 
   // Upload state
   const [uploadFile, setUploadFile] = useState(null);
@@ -1505,6 +1521,10 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
       return 0;
     });
   }, [renewalEvents, statusFilter, sortCol, sortDir, employeeMap]);
+
+  const displayRenewals = myCasesOnly && currentEmployeeId
+    ? filteredRenewals.filter(e => e.assigned_to_id === currentEmployeeId)
+    : filteredRenewals;
 
   function handleSort(col) {
     if (sortCol === col) {
@@ -1729,6 +1749,16 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
             </button>
           ))}
         </div>
+        {currentEmployeeId && (
+          <button
+            onClick={() => setMyCasesOnly(v => !v)}
+            className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
+            style={{ fontSize: 12, marginLeft: 'auto' }}
+          >
+            {"\uD83D\uDC64"} My Cases
+            {myCasesOnly && ` (${displayRenewals.length})`}
+          </button>
+        )}
       </div>
 
       {loading && <div style={{ color: "#64748B", fontSize: 13, marginBottom: 12 }}>Loading renewals{"\u2026"}</div>}
@@ -1754,7 +1784,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
               </tr>
             </thead>
             <tbody>
-              {filteredRenewals.map(event => {
+              {displayRenewals.map(event => {
                 const days = daysUntilRenewal(event.renewal_date);
                 const sc = RENEWAL_STATUS_CONFIG[event.status] || RENEWAL_STATUS_CONFIG.pending;
                 return (
@@ -1817,7 +1847,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                   </tr>
                 );
               })}
-              {filteredRenewals.length === 0 && (
+              {displayRenewals.length === 0 && (
                 <tr><td colSpan={12} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
                   No renewal events in this filter
                 </td></tr>
@@ -3259,6 +3289,7 @@ export default function BookHealthPage() {
           setSelectedEvent={setSelectedEvent}
           producers={producers}
           bulkAssign={bulkAssign}
+          currentEmployee={currentEmployee}
         />
       )}
       {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}

@@ -164,6 +164,21 @@ const styles = StyleSheet.create({
   good: { color: '#16a34a' },
   bad: { color: '#dc2626' },
   neutral: { color: '#6b7280' },
+  section: {
+    marginTop: 12,
+  },
+  sectionHeader: {
+    fontSize: 10,
+    fontFamily: 'Helvetica-Bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+    color: '#1d4ed8',
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
 });
 
 function getMetricStatus(target, actual, inverse) {
@@ -201,7 +216,16 @@ function MetricRowPDF({ label, target, actual, unit, inverse }) {
   );
 }
 
-export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity, alerts, weekStart }) {
+function MetricBlock({ label, value }) {
+  return (
+    <View style={{ width: '25%', marginBottom: 6 }}>
+      <Text style={{ fontSize: 7, color: '#6b7280', textTransform: 'uppercase' }}>{label}</Text>
+      <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold' }}>{value}</Text>
+    </View>
+  );
+}
+
+export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity, alerts, weekStart, retentionMetrics }) {
   const t = { ...DEFAULT_TARGETS, ...targets };
   const metrics = computeMetrics(rcData, daysWorked);
   const grade = calculateGrade(rcData.outbound_calls, metrics.answerRate, metrics.hasZeroCallDays, t);
@@ -298,6 +322,35 @@ export default function ScorecardPDF({ rcData, daysWorked, targets, proactivity,
             </Text>
           </View>
         </View>
+
+        {/* Retention — Pending Cancellations */}
+        {retentionMetrics && retentionMetrics.cancelTotal > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionHeader}>Retention — Pending Cancellations</Text>
+            <View style={styles.metricsGrid}>
+              <MetricBlock label="Assigned" value={String(retentionMetrics.cancelTotal)} />
+              <MetricBlock label="Save Rate" value={retentionMetrics.cancelSaveRate !== null ? `${Math.round(retentionMetrics.cancelSaveRate * 100)}%` : '—'} />
+              <MetricBlock label="Outreach Rate" value={retentionMetrics.cancelContactRate !== null ? `${Math.round(retentionMetrics.cancelContactRate * 100)}%` : '—'} />
+              <MetricBlock label="Premium Saved" value={`$${Math.round(retentionMetrics.premiumSaved).toLocaleString()}`} />
+            </View>
+          </View>
+        )}
+
+        {/* Retention — Renewals */}
+        {retentionMetrics && retentionMetrics.renewalTotal > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionHeader}>Retention — Renewals</Text>
+            <View style={styles.metricsGrid}>
+              <MetricBlock label="Assigned" value={String(retentionMetrics.renewalTotal)} />
+              <MetricBlock label="Retain Rate" value={retentionMetrics.renewalRetainRate !== null ? `${Math.round(retentionMetrics.renewalRetainRate * 100)}%` : '—'} />
+              <MetricBlock label="Outreach Rate" value={retentionMetrics.renewalContactRate !== null ? `${Math.round(retentionMetrics.renewalContactRate * 100)}%` : '—'} />
+              <MetricBlock label="Prem Retained" value={`$${Math.round(retentionMetrics.renewalPremiumRetained).toLocaleString()}`} />
+              {retentionMetrics.avgDaysBeforeRenewal !== null && (
+                <MetricBlock label="Avg Days Early" value={`${retentionMetrics.avgDaysBeforeRenewal}d`} />
+              )}
+            </View>
+          </View>
+        )}
 
         {/* Discrepancy Alerts */}
         {alerts && alerts.length > 0 && (
