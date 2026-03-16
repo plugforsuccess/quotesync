@@ -941,8 +941,8 @@ const CSPerformancePage = () => {
               })
             )}
 
-            {/* Retention Performance — only for cs_rep employees */}
-            {resolvedEmployeeRole === 'cs_rep' && (
+            {/* Retention Performance — only for service employees */}
+            {resolvedEmployeeRole === 'service' && (
               <div className="mt-6">
                 <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Shield className="w-4 h-4" />

@@ -13,7 +13,7 @@ INSERT INTO public.employees (
   highest_education, last_verified_at
 ) VALUES (
   '[YOUR_ORG_ID]',
-  'Tracy', 'Peacock', 'cs_rep', 'active',
+  'Tracy', 'Peacock', 'service', 'active',
   'sga93b0k', 'Tracy Peacock', 'tpeacock1936@gmail.com', '678-371-1936', '706-468-1243',
   '80 Chimney Ct', 'Covington', 'GA', '30014-5708',
   true, '2026-02-10', '2026-02-10',

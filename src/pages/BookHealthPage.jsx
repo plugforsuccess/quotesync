@@ -409,7 +409,7 @@ function TriageTab({ events, filteredEvents, statusFilter, setStatusFilter, sort
           ))}
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", flex: "1 1 auto", justifyContent: "flex-end" }}>
-          {currentEmployee?.role_type === 'cs_rep' && (
+          {currentEmployee?.role_type === 'service' && (
             <button
               onClick={() => setMyCasesOnly(v => !v)}
               className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
@@ -1448,7 +1448,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Load producers (cs_rep employees)
+  // Load producers (service employees)
   const { data: producers = [] } = useQuery({
     queryKey: ["producers", agencyId],
     queryFn: async () => {
@@ -1457,7 +1457,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .eq("role_type", "cs_rep")
+        .eq("role_type", "service")
         .order("last_name");
       if (error) throw error;
       return data ?? [];
@@ -2706,7 +2706,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .eq('role_type', 'cs_rep')
+        .eq('role_type', 'service')
         .order('last_name');
       if (error) throw error;
       return data ?? [];
@@ -3018,7 +3018,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .select('id, first_name, last_name, preferred_name')
         .eq('org_id', agencyId)
         .eq('employment_status', 'active')
-        .eq('role_type', 'cs_rep')
+        .eq('role_type', 'service')
         .order('last_name');
       return data ?? [];
     },
@@ -3324,7 +3324,7 @@ export default function BookHealthPage() {
         .select("id, first_name, last_name, preferred_name")
         .eq("org_id", agencyId)
         .eq("employment_status", "active")
-        .eq("role_type", "cs_rep")
+        .eq("role_type", "service")
         .order("last_name");
       if (error) throw error;
       return data ?? [];
