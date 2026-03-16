@@ -3723,7 +3723,7 @@ export default function BookHealthPage() {
   }
 
   async function handleCommitUpload() {
-    if (!diffResult || isCommitting) return;
+    if (!diffResult || !agencyId || isCommitting) return;
     setIsCommitting(true);
     try {
       // Create batch record with committed=false; flip to true only after all writes succeed
