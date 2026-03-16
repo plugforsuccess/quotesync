@@ -5,7 +5,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, authChannel } from '../lib/supabase';
-import { queryClient } from '../App';
+import { queryClient } from '../lib/queryClient';
 import { mapRow } from '../hooks/useRevenueEntries';
 import { LAPSE_PORTFOLIO_POINTS } from '../lib/lapseConstants';
 
