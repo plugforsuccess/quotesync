@@ -1429,7 +1429,6 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
   const [uploadMsg, setUploadMsg] = useState("");
   const [isParsing, setIsParsing] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
-  const [assignToId, setAssignToId] = useState("");
   const fileInputRef = useRef(null);
 
   // Load renewal events
@@ -1465,13 +1464,6 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
     enabled: !!agencyId,
     staleTime: 2 * 60 * 1000,
   });
-
-  // Default assign dropdown to first producer
-  useEffect(() => {
-    if (producers.length > 0 && !assignToId) {
-      setAssignToId(producers[0].id);
-    }
-  }, [producers, assignToId]);
 
   // Auto-flag unreachable: 5+ attempts with no reached result, past renewal date
   const hasFlaggedUnreachable = useRef(false);
@@ -1613,7 +1605,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
     try {
       const today = new Date().toISOString().slice(0, 10);
 
-      // Check existing
+      // 1. Find existing rows (for upsert dedup)
       const policyNos = parsedRows.map(r => r.policy_no);
       const { data: existing } = await supabase
         .from("renewal_events")
@@ -1622,18 +1614,59 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .in("policy_no", policyNos);
       const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
 
-      const toAdd = [];
-      let updatedCount = 0;
-      for (const row of parsedRows) {
-        const key = `${row.policy_no}|${row.renewal_date}`;
-        if (existingKeys.has(key)) {
-          updatedCount++;
-        } else {
-          toAdd.push(row);
-        }
+      const toAdd = parsedRows.filter(r => !existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
+      const updatedCount = parsedRows.length - toAdd.length;
+
+      // 2. Load all active service reps
+      const { data: reps } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, preferred_name")
+        .eq("org_id", agencyId)
+        .eq("employment_status", "active")
+        .eq("role_type", "service")
+        .order("last_name");
+
+      const activeReps = reps || [];
+
+      // 3. Load current open caseload per rep (active, unresolved renewal cases)
+      let assignmentQueue = [];
+
+      if (activeReps.length > 0) {
+        const { data: caseloads } = await supabase
+          .from("renewal_events")
+          .select("assigned_to_id")
+          .eq("agency_id", agencyId)
+          .not("assigned_to_id", "is", null)
+          .not("status", "in", '("confirmed","lost","auto_resolved","unreachable")');
+
+        const caseCount = {};
+        activeReps.forEach(r => { caseCount[r.id] = 0; });
+        (caseloads || []).forEach(c => {
+          if (caseCount[c.assigned_to_id] !== undefined) {
+            caseCount[c.assigned_to_id]++;
+          }
+        });
+
+        assignmentQueue = [...activeReps].sort(
+          (a, b) => (caseCount[a.id] || 0) - (caseCount[b.id] || 0)
+        );
       }
 
-      // Create upload record
+      // 4. Build assignment rotation — each new case goes to rep with fewest cases
+      const runningCount = {};
+      activeReps.forEach(r => { runningCount[r.id] = 0; });
+
+      function pickNextRep() {
+        if (assignmentQueue.length === 0) return null;
+        const sorted = [...assignmentQueue].sort(
+          (a, b) => (runningCount[a.id] || 0) - (runningCount[b.id] || 0)
+        );
+        const picked = sorted[0];
+        runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
+        return picked.id;
+      }
+
+      // 5. Create upload record
       const { data: upload, error: upErr } = await supabase
         .from("renewal_uploads")
         .insert({
@@ -1648,16 +1681,16 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .single();
       if (upErr) throw new Error(upErr.message);
 
-      // Upsert all rows (new ones get assigned_to_id)
+      // 6. Build upsert records
       const records = parsedRows.map(r => {
-        const key = `${r.policy_no}|${r.renewal_date}`;
-        const isNew = !existingKeys.has(key);
+        const isNew = !existingKeys.has(`${r.policy_no}|${r.renewal_date}`);
+        const assignedId = isNew ? pickNextRep() : undefined;
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
           last_seen_on: today,
           ...(isNew ? { first_seen_on: today } : {}),
-          ...(isNew && assignToId ? { assigned_to_id: assignToId } : {}),
+          ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
           ...r,
         };
       });
@@ -1667,14 +1700,24 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         .upsert(records, { onConflict: "agency_id,policy_no,renewal_date" });
       if (evtErr) throw new Error(evtErr.message);
 
-      // Mark upload committed
       await supabase.from("renewal_uploads").update({ committed: true }).eq("id", upload.id);
 
-      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated`);
+      // 7. Build summary message
+      const repNames = assignmentQueue.map(r =>
+        r.preferred_name || `${r.first_name || ""} ${r.last_name || ""}`.trim()
+      );
+      const assignmentSummary = activeReps.length === 0
+        ? "No service reps found — cases unassigned"
+        : activeReps.length === 1
+        ? `All assigned to ${repNames[0]}`
+        : `Distributed across ${repNames.join(", ")}`;
+
+      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated · ${assignmentSummary}`);
       setParsedRows(null);
       setExcludedCount(0);
       setUploadFile(null);
       queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] });
+      queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
     } catch (err) {
       console.error("[renewal commit error]", err.message);
       setUploadError(friendlyUploadError(err.message));
@@ -1703,18 +1746,20 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
           {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing{"\u2026"}</div>}
         </div>
 
-        {/* Assign dropdown */}
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
-          <span style={{ fontSize: 12, color: "#64748B" }}>Assign all new renewals to:</span>
-          <select value={assignToId} onChange={e => setAssignToId(e.target.value)} style={{ fontSize: 13 }}>
-            <option value="">None</option>
-            {producers.map(p => (
-              <option key={p.id} value={p.id}>
-                {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Assignment info — shown after parsing, before commit */}
+        {parsedRows && producers.length > 0 && (
+          <div style={{ fontSize: 12, color: "#64748B", marginTop: 12, marginBottom: 12 }}>
+            {producers.length === 1
+              ? `All new cases will be assigned to ${producers[0].preferred_name || producers[0].first_name}`
+              : `New cases will be distributed across ${producers.length} service reps (workload-balanced)`
+            }
+          </div>
+        )}
+        {parsedRows && producers.length === 0 && (
+          <div style={{ fontSize: 12, color: "#F59E0B", marginTop: 12, marginBottom: 12 }}>
+            {"\u26A0"} No active service reps found — cases will be unassigned
+          </div>
+        )}
 
         {uploadError && (
           <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
@@ -3007,7 +3052,6 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
   const [uploadMsg, setUploadMsg]         = useState('');
   const [isParsing, setIsParsing]         = useState(false);
   const [isCommitting, setIsCommitting]   = useState(false);
-  const [assignToId, setAssignToId]       = useState('');
   const fileInputRef = useRef(null);
 
   const { data: producers = [] } = useQuery({
@@ -3069,67 +3113,121 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
     try {
       const today = new Date().toISOString().slice(0, 10);
 
+      // 1. Find existing rows (for upsert dedup)
       const policyNos = parsedRows.map(r => r.policy_no);
       const { data: existing } = await supabase
-        .from("renewal_events")
-        .select("policy_no, renewal_date")
-        .eq("agency_id", agencyId)
-        .in("policy_no", policyNos);
+        .from('renewal_events')
+        .select('policy_no, renewal_date')
+        .eq('agency_id', agencyId)
+        .in('policy_no', policyNos);
       const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
 
-      const toAdd = [];
-      let updatedCount = 0;
-      for (const row of parsedRows) {
-        const key = `${row.policy_no}|${row.renewal_date}`;
-        if (existingKeys.has(key)) {
-          updatedCount++;
-        } else {
-          toAdd.push(row);
-        }
+      const toAdd = parsedRows.filter(r => !existingKeys.has(`${r.policy_no}|${r.renewal_date}`));
+      const updatedCount = parsedRows.length - toAdd.length;
+
+      // 2. Load all active service reps
+      const { data: reps } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, preferred_name')
+        .eq('org_id', agencyId)
+        .eq('employment_status', 'active')
+        .eq('role_type', 'service')
+        .order('last_name');
+
+      const activeReps = reps || [];
+
+      // 3. Load current open caseload per rep (active, unresolved renewal cases)
+      let assignmentQueue = [];
+
+      if (activeReps.length > 0) {
+        const { data: caseloads } = await supabase
+          .from('renewal_events')
+          .select('assigned_to_id')
+          .eq('agency_id', agencyId)
+          .not('assigned_to_id', 'is', null)
+          .not('status', 'in', '("confirmed","lost","auto_resolved","unreachable")');
+
+        const caseCount = {};
+        activeReps.forEach(r => { caseCount[r.id] = 0; });
+        (caseloads || []).forEach(c => {
+          if (caseCount[c.assigned_to_id] !== undefined) {
+            caseCount[c.assigned_to_id]++;
+          }
+        });
+
+        assignmentQueue = [...activeReps].sort(
+          (a, b) => (caseCount[a.id] || 0) - (caseCount[b.id] || 0)
+        );
       }
 
+      // 4. Build assignment rotation — each new case goes to rep with fewest cases
+      const runningCount = {};
+      activeReps.forEach(r => { runningCount[r.id] = 0; });
+
+      function pickNextRep() {
+        if (assignmentQueue.length === 0) return null;
+        const sorted = [...assignmentQueue].sort(
+          (a, b) => (runningCount[a.id] || 0) - (runningCount[b.id] || 0)
+        );
+        const picked = sorted[0];
+        runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
+        return picked.id;
+      }
+
+      // 5. Create upload record
       const { data: upload, error: upErr } = await supabase
-        .from("renewal_uploads")
+        .from('renewal_uploads')
         .insert({
           agency_id: agencyId,
           uploaded_by: currentUserId,
-          filename: uploadFile?.name ?? "unknown",
+          filename: uploadFile?.name ?? 'unknown',
           rows_added: toAdd.length,
           rows_updated: updatedCount,
           committed: false,
         })
-        .select("id")
+        .select('id')
         .single();
       if (upErr) throw new Error(upErr.message);
 
+      // 6. Build upsert records
       const records = parsedRows.map(r => {
-        const key = `${r.policy_no}|${r.renewal_date}`;
-        const isNew = !existingKeys.has(key);
+        const isNew = !existingKeys.has(`${r.policy_no}|${r.renewal_date}`);
+        const assignedId = isNew ? pickNextRep() : undefined;
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
           last_seen_on: today,
           ...(isNew ? { first_seen_on: today } : {}),
-          ...(isNew && assignToId ? { assigned_to_id: assignToId } : {}),
+          ...(isNew && assignedId ? { assigned_to_id: assignedId } : {}),
           ...r,
         };
       });
 
       const { error: evtErr } = await supabase
-        .from("renewal_events")
-        .upsert(records, { onConflict: "agency_id,policy_no,renewal_date" });
+        .from('renewal_events')
+        .upsert(records, { onConflict: 'agency_id,policy_no,renewal_date' });
       if (evtErr) throw new Error(evtErr.message);
 
-      await supabase.from("renewal_uploads").update({ committed: true }).eq("id", upload.id);
+      await supabase.from('renewal_uploads').update({ committed: true }).eq('id', upload.id);
 
-      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated`);
+      // 7. Build summary message
+      const repNames = assignmentQueue.map(r =>
+        r.preferred_name || `${r.first_name || ''} ${r.last_name || ''}`.trim()
+      );
+      const assignmentSummary = activeReps.length === 0
+        ? 'No service reps found — cases unassigned'
+        : activeReps.length === 1
+        ? `All assigned to ${repNames[0]}`
+        : `Distributed across ${repNames.join(', ')}`;
+
+      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated · ${assignmentSummary}`);
       setParsedRows(null);
       setExcludedCount(0);
       setUploadFile(null);
-      queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] });
-      queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['renewal_events', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
     } catch (err) {
-      console.error("[renewal commit error]", err.message);
+      console.error('[renewal commit error]', err.message);
       setUploadError(friendlyUploadError(err.message));
     } finally {
       setIsCommitting(false);
@@ -3154,17 +3252,20 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing{"\u2026"}</div>}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12 }}>
-        <span style={{ fontSize: 12, color: "#64748B" }}>Assign all new renewals to:</span>
-        <select value={assignToId} onChange={e => setAssignToId(e.target.value)} style={{ fontSize: 13 }}>
-          <option value="">None</option>
-          {producers.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Assignment info — shown after parsing, before commit */}
+      {parsedRows && producers.length > 0 && (
+        <div style={{ fontSize: 12, color: '#64748B', marginTop: 12, marginBottom: 12 }}>
+          {producers.length === 1
+            ? `All new cases will be assigned to ${producers[0].preferred_name || producers[0].first_name}`
+            : `New cases will be distributed across ${producers.length} service reps (workload-balanced)`
+          }
+        </div>
+      )}
+      {parsedRows && producers.length === 0 && (
+        <div style={{ fontSize: 12, color: '#F59E0B', marginTop: 12, marginBottom: 12 }}>
+          {"\u26A0"} No active service reps found — cases will be unassigned
+        </div>
+      )}
 
       {uploadError && (
         <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
