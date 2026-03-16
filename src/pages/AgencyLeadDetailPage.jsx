@@ -6,7 +6,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Clock, MapPin, FileText, Tag, Phone,
-  CheckCircle, AlertCircle, ExternalLink, RefreshCw, MessageSquare
+  CheckCircle, AlertCircle, ExternalLink, RefreshCw, MessageSquare,
+  XCircle
 } from 'lucide-react';
 import {
   useCurrentAgency,
@@ -15,8 +16,10 @@ import {
   useLeadMessages,
   useUpdateLeadStatus,
   useSetFirstContact,
-  useRecomputeLeadScore
+  useRecomputeLeadScore,
+  useDisposeLead
 } from '../hooks/useAgencyLeads';
+import DispositionModal from './components/DispositionModal';
 import { getScoreColor, formatScoreFactors, RISK_FLAG_CONFIG } from '../lib/leadScoring';
 import { supabase } from '../lib/supabase';
 import PageSpinner from '../components/PageSpinner';
@@ -97,6 +100,8 @@ const AgencyLeadDetailPage = () => {
   const updateStatus = useUpdateLeadStatus();
   const setFirstContact = useSetFirstContact();
   const recomputeScore = useRecomputeLeadScore();
+  const disposeLead = useDisposeLead();
+  const [showDisposition, setShowDisposition] = useState(false);
 
   const quoteData = lead?.lead_quotes?.[0];
   const quoteSummary = quoteData?.quote_summary || {};
@@ -204,6 +209,8 @@ const AgencyLeadDetailPage = () => {
                   ${lead.status === 'quoted' ? 'bg-purple-100 text-purple-700' : ''}
                   ${lead.status === 'advanced' ? 'bg-indigo-100 text-indigo-700' : ''}
                   ${lead.status === 'inactive' ? 'bg-gray-100 text-gray-700' : ''}
+                  ${lead.status === 'closed_won' ? 'bg-green-100 text-green-700' : ''}
+                  ${lead.status === 'closed_lost' ? 'bg-gray-100 text-gray-600' : ''}
                 `}>
                   {lead.status}
                 </span>
@@ -611,6 +618,51 @@ const AgencyLeadDetailPage = () => {
                   </button>
                 ))}
               </div>
+
+              {/* Dispose Lead button */}
+              {!['closed_won', 'closed_lost'].includes(lead.status) && (
+                <div className="pt-4 border-t border-gray-200 mt-4">
+                  <button
+                    onClick={() => setShowDisposition(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 text-gray-600 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    Close or Convert Lead
+                  </button>
+                </div>
+              )}
+
+              {/* Closed state display */}
+              {['closed_won', 'closed_lost'].includes(lead.status) && (
+                <div className={`rounded-lg p-4 mt-4 ${
+                  lead.status === 'closed_won'
+                    ? 'bg-green-50 border border-green-200'
+                    : 'bg-gray-50 border border-gray-200'
+                }`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    {lead.status === 'closed_won'
+                      ? <CheckCircle className="w-4 h-4 text-green-600" />
+                      : <XCircle className="w-4 h-4 text-gray-400" />
+                    }
+                    <span className={`text-sm font-semibold ${
+                      lead.status === 'closed_won' ? 'text-green-700' : 'text-gray-600'
+                    }`}>
+                      {lead.status === 'closed_won' ? 'Converted — Quoted in Lead Manager' : 'Closed'}
+                    </span>
+                  </div>
+                  {lead.disposition_reason && lead.disposition_reason !== 'quoted_in_lm' && (
+                    <p className="text-xs text-gray-500 capitalize">
+                      {lead.disposition_reason.replace(/_/g, ' ')}
+                    </p>
+                  )}
+                  {lead.disposition_note && (
+                    <p className="text-xs text-gray-500 mt-1 italic">{lead.disposition_note}</p>
+                  )}
+                  {lead.disposed_at && (
+                    <p className="text-xs text-gray-400 mt-1">{formatTimeAgo(lead.disposed_at)}</p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Attribution */}
@@ -640,6 +692,22 @@ const AgencyLeadDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Disposition Modal */}
+      {showDisposition && (
+        <DispositionModal
+          lead={lead}
+          agencyId={agencyId}
+          onClose={() => setShowDisposition(false)}
+          onConfirm={async ({ outcome, reason, note }) => {
+            await disposeLead.mutateAsync({
+              leadId: lead.id, agencyId, outcome, reason, note,
+            });
+            setShowDisposition(false);
+          }}
+          isPending={disposeLead.isPending}
+        />
+      )}
     </div>
   );
 };

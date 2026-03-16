@@ -18,8 +18,11 @@ const STATUS_OPTIONS = [
   { value: 'contacted', label: 'Contacted' },
   { value: 'quoted', label: 'Quoted' },
   { value: 'advanced', label: 'Advanced' },
+  { value: 'interested', label: 'Interested' },
   { value: 'inactive', label: 'Inactive' },
-  { value: 'unknown', label: 'Unknown' }
+  { value: 'unknown', label: 'Unknown' },
+  { value: 'closed_won', label: 'Converted (LM)' },
+  { value: 'closed_lost', label: 'Closed' },
 ];
 
 const SOURCE_OPTIONS = [
@@ -336,7 +339,9 @@ const AgencyLeadsPage = () => {
                     const scoreColor = getScoreColor(lead.lead_score || 0);
 
                     return (
-                      <tr key={lead.id} className="hover:bg-gray-50">
+                      <tr key={lead.id} className={`hover:bg-gray-50 ${
+                        ['closed_won', 'closed_lost'].includes(lead.status) ? 'opacity-50' : ''
+                      }`}>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                           {formatTimeAgo(lead.created_at)}
                         </td>
@@ -354,6 +359,8 @@ const AgencyLeadsPage = () => {
                             ${lead.status === 'inactive' ? 'bg-gray-100 text-gray-700' : ''}
                             ${lead.status === 'assigned' ? 'bg-yellow-100 text-yellow-700' : ''}
                             ${lead.status === 'unknown' ? 'bg-gray-100 text-gray-500' : ''}
+                            ${lead.status === 'closed_won' ? 'bg-green-100 text-green-700' : ''}
+                            ${lead.status === 'closed_lost' ? 'bg-gray-100 text-gray-600' : ''}
                           `}>
                             {lead.status}
                           </span>
