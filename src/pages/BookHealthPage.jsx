@@ -2438,11 +2438,11 @@ function NetGrowthTab({ agencyId }) {
               const [y, mo] = m.split("-");
               return `${MONTH_SHORT[parseInt(mo, 10) - 1]} '${y.slice(2)}`;
             }}
-            tick={{ fill: "#64748B", fontSize: 11 }}{/* Recharts SVG attribute — hex required */}
+            tick={{ fill: "#64748B", fontSize: 11 }} /* Recharts SVG attribute — hex required */
             axisLine={false}
             tickLine={false}
           />
-          <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />{/* Recharts SVG attribute — hex required */}
+          <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
           <Tooltip
             labelFormatter={fmtMonth}
             contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12 }}
@@ -2459,7 +2459,7 @@ function NetGrowthTab({ agencyId }) {
         <ResponsiveContainer width="100%" height={120}>
           <LineChart data={months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <XAxis dataKey="month" hide />
-            <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />{/* Recharts SVG attribute — hex required */}
+            <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
             <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />{/* Recharts SVG attribute — hex required */}
             <Tooltip
               labelFormatter={fmtMonth}
