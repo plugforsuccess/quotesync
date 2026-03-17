@@ -73,7 +73,7 @@ export const useAgencyLeads = (agencyId, filters = {}) => {
       if (filters.status && filters.status !== 'all') {
         query = query.eq('status', filters.status);
       } else if (!filters.status || filters.status === 'all') {
-        query = query.not('status', 'in', '("closed_won","closed_lost")');
+        query = query.not('status', 'in', '(closed_won,closed_lost)');
       }
       if (filters.zip) {
         query = query.ilike('zip', `${filters.zip}%`);
