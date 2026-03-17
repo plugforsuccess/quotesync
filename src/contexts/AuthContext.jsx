@@ -536,6 +536,33 @@ export const AuthProvider = ({ children }) => {
       try {
         setLoading(true);
 
+        // 0) Short-circuit if the stored token is already expired.
+        // Supabase holds its internal auth lock while attempting a refresh.
+        // If the user clicks Sign In during that window, signInWithPassword()
+        // queues behind it and appears to hang. Skipping getSession() entirely
+        // for a provably-dead token avoids the lock contention.
+        try {
+          const tokenKey = Object.keys(localStorage).find(
+            k => k.startsWith('sb-') && k.endsWith('-auth-token')
+          );
+          if (tokenKey) {
+            const raw = localStorage.getItem(tokenKey);
+            const parsed = raw ? JSON.parse(raw) : null;
+            const expiresAt = parsed?.expires_at; // Unix timestamp in seconds
+            if (expiresAt && (expiresAt * 1000) <= Date.now()) {
+              // Token is expired — skip the refresh attempt, go straight to
+              // signed-out state. resetState() clears the stale token.
+              if (mounted) {
+                resetState();
+                setLoading(false);
+              }
+              return;
+            }
+          }
+        } catch (_) {
+          // localStorage unavailable or parse failed — fall through to normal flow
+        }
+
         // 1) Rehydrate session (retry on Supabase lock abort)
         const { data, error } = await safeGetSession(2);
 
