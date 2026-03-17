@@ -45,10 +45,10 @@ export default function MyScorecardPage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#F1F5F9', marginBottom: 4 }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
           My Scorecard
         </div>
-        <div style={{ fontSize: 13, color: '#64748B' }}>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
           {employee?.preferred_name || employee?.first_name} &middot;{' '}
           {scoreType === 'outbound' ? 'Outbound Retention'
             : scoreType === 'inbound' ? 'Inbound Service'
@@ -65,28 +65,29 @@ export default function MyScorecardPage() {
       {/* Bonus verification — outbound only */}
       {isOutbound && (
         <div style={{ marginTop: 24 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: '#64748B',
+          <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-subtle)',
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span>Monthly Bonus</span>
             <input type="month" value={selectedMonth}
               onChange={e => setSelectedMonth(e.target.value)}
-              style={{ fontSize: 12, background: '#1A1D27', border: '1px solid #252A3A',
-                borderRadius: 6, padding: '4px 8px', color: '#E2E8F0' }} />
+              style={{ fontSize: 12, background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+                borderRadius: 6, padding: '4px 8px', color: 'var(--qs-text)' }} />
           </div>
 
           {/* Bonus summary */}
-          <div style={{ background: '#161924', border: '1px solid #252A3A',
+          <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
             borderRadius: 12, padding: 20, marginBottom: 12 }}>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+              {/* Bonus stat colors — used as inline style props */}
               {[
-                ['Verified Saves',   bonusSaves,    '#E2E8F0'],
-                [`Above ${RETENTION_BONUS_THRESHOLD} threshold`, `\u00D7$${RETENTION_BONUS_PER_SAVE}`, '#94A3B8'],
-                ['Bonus Earned',     `$${bonusAmount.toLocaleString()}`, bonusAmount > 0 ? '#10B981' : '#64748B'],
+                ['Verified Saves',   bonusSaves,    'var(--qs-text)'],
+                [`Above ${RETENTION_BONUS_THRESHOLD} threshold`, `\u00D7$${RETENTION_BONUS_PER_SAVE}`, 'var(--qs-dim)'],
+                ['Bonus Earned',     `$${bonusAmount.toLocaleString()}`, bonusAmount > 0 ? 'var(--qs-success)' : 'var(--qs-subtle)'],
               ].map(([label, value, color]) => (
-                <div key={label} style={{ background: '#1A1D27', borderRadius: 8,
-                  padding: '12px 14px', border: '1px solid #252A3A', textAlign: 'center' }}>
-                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 6,
+                <div key={label} style={{ background: 'var(--qs-elevated)', borderRadius: 8,
+                  padding: '12px 14px', border: '1px solid var(--qs-border)', textAlign: 'center' }}>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 6,
                     textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</div>
                   <div style={{ fontSize: 20, fontWeight: 700, color,
                     fontFamily: "'DM Mono', monospace" }}>{value}</div>

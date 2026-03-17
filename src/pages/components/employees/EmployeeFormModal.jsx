@@ -186,10 +186,10 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7" style={{ background: '#161924' }}>
+      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7 bg-qs-card">
           {/* Header */}
-          <div className="flex items-center justify-between" style={{ borderBottom: '1px solid #252A3A', paddingBottom: 16, marginBottom: 16 }}>
-            <h2 className="text-lg font-semibold" style={{ fontSize: 16, fontWeight: 600, color: '#F1F5F9' }}>
+          <div className="flex items-center justify-between border-b border-qs-border" style={{ paddingBottom: 16, marginBottom: 16 }}>
+            <h2 className="text-lg font-semibold text-qs-bright" style={{ fontSize: 16, fontWeight: 600 }}>
               {isEdit ? 'Edit Employee' : 'Add Employee'}
             </h2>
             <button onClick={onClose} className="text-qs-muted hover:text-qs-subtle min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
@@ -203,7 +203,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Identity */}
               <fieldset>
-                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Identity</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 12 }}>Identity</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="dark-label">First Name *</label>
@@ -261,7 +261,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Address */}
               <fieldset>
-                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Address</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 12 }}>Address</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
                     <label className="dark-label">Address Line 1</label>
@@ -313,7 +313,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Employment */}
               <fieldset>
-                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Employment</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 12 }}>Employment</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="dark-label">Roles *</label>
@@ -335,7 +335,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       ))}
                     </div>
                     {(!form.roles || form.roles.length === 0) && (
-                      <div style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>At least one role required</div>
+                      <div style={{ fontSize: 11, color: 'var(--qs-danger)', marginTop: 4 }}>At least one role required</div>
                     )}
                   </div>
                   <div>
@@ -397,7 +397,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Schedule */}
               <fieldset>
-                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Default Schedule</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 12 }}>Default Schedule</legend>
                 <p className="text-xs text-qs-subtle mb-3">Pre-fills the Attendance page for this employee each week.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -441,7 +441,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Licensing */}
               <fieldset>
-                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Licensing</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 12 }}>Licensing</legend>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <label className="relative inline-flex items-center cursor-pointer">

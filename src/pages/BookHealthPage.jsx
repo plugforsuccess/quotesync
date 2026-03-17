@@ -67,6 +67,7 @@ function calcLapsePoints(rows) {
   return rows.reduce((s, r) => s + (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1), 0);
 }
 
+// Status badge colors — used as style props
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "#94A3B8", bg: "#94A3B822" },
   attempting:             { label: "Attempting",         color: "#F59E0B", bg: "#F59E0B22" },
@@ -133,6 +134,7 @@ function daysUntilCancel(dateStr) {
   return Math.ceil((d - today) / 86400000);
 }
 
+// Dynamic color — used as style prop
 function urgencyColor(days) {
   if (days <= 3) return "#EF4444";
   if (days <= 7) return "#F59E0B";
@@ -307,25 +309,25 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount, clickable, onC
         position: 'relative',
         cursor: clickable ? 'pointer' : 'default',
         transition: 'border-color 0.15s',
-        border: clickable ? '1px solid #252A3A' : undefined,
+        border: clickable ? '1px solid var(--qs-border)' : undefined,
       }}
       onClick={onClick}
       onMouseEnter={e => { if (clickable) e.currentTarget.style.borderColor = color; }}
-      onMouseLeave={e => { if (clickable) e.currentTarget.style.borderColor = '#252A3A'; }}
+      onMouseLeave={e => { if (clickable) e.currentTarget.style.borderColor = 'var(--qs-border)'; }}
     >
       {urgent && (
-        <div style={{ position: 'absolute', top: 10, right: 10, background: '#EF444422',
-          color: '#EF4444', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
+        <div style={{ position: 'absolute', top: 10, right: 10, background: 'var(--qs-danger-subtle)',
+          color: 'var(--qs-danger)', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
           {urgentCount} URGENT
         </div>
       )}
       {clickable && (
         <div style={{ position: 'absolute', bottom: 8, right: 10,
-          fontSize: 9, color: '#334155', letterSpacing: '0.05em' }}>
+          fontSize: 9, color: 'var(--qs-muted)', letterSpacing: '0.05em' }}>
           FILTER ↓
         </div>
       )}
-      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600,
+      <div style={{ fontSize: 11, color: 'var(--qs-subtle)', fontWeight: 600,
         textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
         {label}
       </div>
@@ -333,7 +335,7 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount, clickable, onC
         fontFamily: "'DM Mono', monospace" }}>
         {value}
       </div>
-      {sub && <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{sub}</div>}
+      {sub && <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -351,22 +353,22 @@ function CustomerDrilldownModal({ event, onClose }) {
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
       onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
-      <div style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
+      <div style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
 
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--qs-bright)" }}>
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
-            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
               Policy #{event.policy_no || "\u2014"}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--qs-subtle)", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
 
-        {/* Detail grid */}
+        {/* Detail grid — color values used as inline style props */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
           {[
             { label: "Product",          value: event.product?.toUpperCase() || "\u2014",                              color: "#E2E8F0" },
@@ -384,8 +386,8 @@ function CustomerDrilldownModal({ event, onClose }) {
             { label: "Status",           value: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).label,     color: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).color },
             { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "#94A3B8" },
           ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
-              <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
+            <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
+              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
             </div>
           ))}
@@ -393,13 +395,13 @@ function CustomerDrilldownModal({ event, onClose }) {
 
         {/* Notes — full width, only if present */}
         {event.notes && (
-          <div style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A", marginTop: 10 }}>
-            <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Notes</div>
-            <div style={{ fontSize: 12, color: "#94A3B8", lineHeight: 1.5 }}>{event.notes}</div>
+          <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)", marginTop: 10 }}>
+            <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>Notes</div>
+            <div style={{ fontSize: 12, color: "var(--qs-dim)", lineHeight: 1.5 }}>{event.notes}</div>
           </div>
         )}
 
-        <div style={{ fontSize: 11, color: "#334155", marginTop: 16, textAlign: "center" }}>
+        <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 16, textAlign: "center" }}>
           Click the row to open the full edit modal
         </div>
       </div>
@@ -431,27 +433,27 @@ function ResolvedTab({ resolvedEvents }) {
               const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.pending;
               return (
                 <tr key={event.id}>
-                  <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                  <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                     {event.resolution_date || event.updated_at?.slice(0, 10) || "—"}
                   </td>
-                  <td style={{ color: "#E2E8F0", fontWeight: 500 }}>{maskCustomerName(event.customer_name)}</td>
-                  <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{event.policy_no}</td>
-                  <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "—"}</td>
-                  <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
+                  <td style={{ color: "var(--qs-text)", fontWeight: 500 }}>{maskCustomerName(event.customer_name)}</td>
+                  <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{event.policy_no}</td>
+                  <td style={{ color: "var(--qs-dim)", fontSize: 12 }}>{event.product?.toUpperCase() || "—"}</td>
+                  <td style={{ color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>
                     {event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "—"}
                   </td>
                   <td>
                     <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                   </td>
-                  <td style={{ color: "#64748B", fontSize: 12 }}>{event.assigned_to || "—"}</td>
-                  <td style={{ color: "#64748B", fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  <td style={{ color: "var(--qs-subtle)", fontSize: 12 }}>{event.assigned_to || "—"}</td>
+                  <td style={{ color: "var(--qs-subtle)", fontSize: 12, maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                     {event.notes || "—"}
                   </td>
                 </tr>
               );
             })}
             {resolvedEvents.length === 0 && (
-              <tr><td colSpan={8} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+              <tr><td colSpan={8} style={{ textAlign: "center", color: "var(--qs-muted)", padding: "32px 0" }}>
                 No resolved events yet
               </td></tr>
             )}
@@ -467,8 +469,8 @@ function ResolvedTab({ resolvedEvents }) {
 function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancel }) {
   return (
     <div style={{ maxWidth: 640 }}>
-      <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>
-        Upload the Allstate <span style={{ color: "#64748B", fontFamily: "'DM Mono', monospace" }}>Pending Cancellation</span> report (XLSX).
+      <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
+        Upload the Allstate <span style={{ color: "var(--qs-subtle)", fontFamily: "'DM Mono', monospace" }}>Pending Cancellation</span> report (XLSX).
         The system will diff against existing active events — new policies added, resolved policies auto-closed.
       </div>
 
@@ -478,30 +480,31 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
         <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }}
           onChange={e => onFileSelect(e.target.files[0])} />
         <div style={{ fontSize: 32, marginBottom: 8 }}>📋</div>
-        <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
+        <div style={{ fontSize: 14, color: "var(--qs-dim)", fontWeight: 500 }}>
           {uploadFile ? uploadFile.name : "Drop report here or click to browse"}
         </div>
-        {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing\u2026</div>}
+        {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}>Parsing\u2026</div>}
       </div>
 
       {uploadError && (
-        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
+        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
           {uploadError}
         </div>
       )}
 
       {diffResult && !uploadMsg && (
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Review before committing</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>Review before committing</div>
 
+          {/* Detail grid — color values used as inline style props */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 20 }}>
             {[
               { label: "New Policies", value: diffResult.toAdd.length, color: "#10B981" },
               { label: "Updated", value: diffResult.toUpdate.length, color: "#3B82F6" },
               { label: "Auto-Resolved", value: diffResult.toAutoResolve.length, color: "#F59E0B" },
             ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, padding: "12px 14px" }}>
-                <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
+              <div key={label} style={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, padding: "12px 14px" }}>
+                <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -509,15 +512,15 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
 
           {/* Stage breakdown — shown for Cancellation Audit uploads */}
           {diffResult && (diffResult.stage1Count != null || diffResult.stage2Count != null) && (
-            <div style={{ fontSize: 12, color: '#94A3B8', marginTop: 6, marginBottom: 10 }}>
-              <span style={{ color: '#F59E0B' }}>⚠ {diffResult.stage1Count ?? 0} pending (Cancel)</span>
+            <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 6, marginBottom: 10 }}>
+              <span style={{ color: 'var(--qs-warning)' }}>⚠ {diffResult.stage1Count ?? 0} pending (Cancel)</span>
               {' · '}
-              <span style={{ color: '#EF4444' }}>🚫 {diffResult.stage2Count ?? 0} lapsed (Cancelled)</span>
+              <span style={{ color: 'var(--qs-danger)' }}>🚫 {diffResult.stage2Count ?? 0} lapsed (Cancelled)</span>
             </div>
           )}
 
           {diffResult.toAutoResolve.length > 0 && (
-            <div style={{ fontSize: 12, color: "#F59E0B", marginBottom: 14, background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
+            <div style={{ fontSize: 12, color: "var(--qs-warning)", marginBottom: 14, background: "var(--qs-warning-subtle)", borderRadius: 6, padding: "8px 12px" }}>
               {diffResult.toAutoResolve.length} active policies not found in this report will be marked auto-resolved (they likely paid).
             </div>
           )}
@@ -534,7 +537,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
       )}
 
       {uploadMsg && (
-        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 16, fontSize: 13, color: "#10B981" }}>
+        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", marginTop: 16, fontSize: 13, color: "var(--qs-success)" }}>
           {uploadMsg}
         </div>
       )}
@@ -547,7 +550,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
 function TrendsTab({ trendsData }) {
   if (trendsData.length === 0) {
     return (
-      <div style={{ textAlign: "center", color: "#334155", padding: "48px 0" }}>
+      <div style={{ textAlign: "center", color: "var(--qs-muted)", padding: "48px 0" }}>
         No data yet. Upload reports to see trends.
       </div>
     );
@@ -555,22 +558,22 @@ function TrendsTab({ trendsData }) {
 
   return (
     <div>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 16 }}>Monthly Cancel Volume & Save Rate</div>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 16 }}>Monthly Cancel Volume & Save Rate</div>
       <div className="card" style={{ padding: "20px 12px" }}>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={trendsData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#252A3A" />
-            <XAxis dataKey="month" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />
-            <YAxis yAxisId="left" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />
-            <YAxis yAxisId="right" orientation="right" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} domain={[0, 100]} unit="%" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#252A3A" />{/* Recharts SVG attribute — hex required */}
+            <XAxis dataKey="month" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />{/* Recharts SVG attribute — hex required */}
+            <YAxis yAxisId="left" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />{/* Recharts SVG attribute — hex required */}
+            <YAxis yAxisId="right" orientation="right" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} domain={[0, 100]} unit="%" />{/* Recharts SVG attribute — hex required */}
             <Tooltip
-              contentStyle={{ background: "#1a1f2e", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }}
-              labelStyle={{ color: "#94A3B8" }}
-              itemStyle={{ color: "#E2E8F0" }}
+              contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12, color: "var(--qs-text)" }}
+              labelStyle={{ color: "var(--qs-dim)" }}
+              itemStyle={{ color: "var(--qs-text)" }}
             />
-            <Bar yAxisId="left" dataKey="cancels" name="Cancels" fill="#EF4444" radius={[4, 4, 0, 0]} opacity={0.7} />
-            <Bar yAxisId="left" dataKey="saves" name="Saves" fill="#10B981" radius={[4, 4, 0, 0]} />
-            <Line yAxisId="right" type="monotone" dataKey="saveRate" name="Save Rate %" stroke="#F59E0B" strokeWidth={2} dot={{ fill: "#F59E0B", r: 3 }} />
+            <Bar yAxisId="left" dataKey="cancels" name="Cancels" fill="#EF4444" radius={[4, 4, 0, 0]} opacity={0.7} />{/* Recharts SVG attribute — hex required */}
+            <Bar yAxisId="left" dataKey="saves" name="Saves" fill="#10B981" radius={[4, 4, 0, 0]} />{/* Recharts SVG attribute — hex required */}
+            <Line yAxisId="right" type="monotone" dataKey="saveRate" name="Save Rate %" stroke="#F59E0B" strokeWidth={2} dot={{ fill: "#F59E0B", r: 3 }} />{/* Recharts SVG attribute — hex required */}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -585,38 +588,38 @@ function OtherCasesWarning({ cases }) {
 
   return (
     <div style={{
-      background: '#F59E0B11',
-      border: '1px solid #F59E0B44',
+      background: 'var(--qs-warning-subtle)',
+      border: '1px solid var(--qs-warning-border)',
       borderRadius: 8,
       padding: '10px 14px',
       marginBottom: 12,
     }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B',
+      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-warning)',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
         ⚠ {cases.length} Other Active {cases.length === 1 ? 'Case' : 'Cases'} — Same Customer
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {cases.map(c => (
-          <div key={c.id} style={{ fontSize: 12, color: '#CBD5E1', display: 'flex', gap: 8 }}>
+          <div key={c.id} style={{ fontSize: 12, color: 'var(--qs-text)', display: 'flex', gap: 8 }}>
             <span style={{
               display: 'inline-block', padding: '1px 6px', borderRadius: 3,
               fontSize: 10, fontWeight: 700,
-              background: c.type === 'cancel' ? '#F59E0B22' : '#3B82F622',
-              color: c.type === 'cancel' ? '#F59E0B' : '#3B82F6',
+              background: c.type === 'cancel' ? 'var(--qs-warning-subtle)' : 'var(--qs-info-subtle)',
+              color: c.type === 'cancel' ? '#F59E0B' : '#3B82F6', // Component color prop — hex intentionally
             }}>
               {c.type === 'cancel'
                 ? (c.stage === 'cancelled' ? '🚫 Lapsed' : '⚠ Pending Cancel')
                 : '🔄 Renewal'}
             </span>
-            <span style={{ color: '#94A3B8' }}>{c.policy_no}</span>
+            <span style={{ color: 'var(--qs-dim)' }}>{c.policy_no}</span>
             <span>{c.product}</span>
-            <span style={{ color: '#64748B', marginLeft: 'auto' }}>
+            <span style={{ color: 'var(--qs-subtle)', marginLeft: 'auto' }}>
               {c.date}
             </span>
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 11, color: '#64748B', marginTop: 6 }}>
+      <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
         Address all active cases in one call when possible.
       </div>
     </div>
@@ -732,39 +735,40 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
       onClick={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
-      <div style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
+      <div style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
-            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--qs-bright)" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
+            <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--qs-subtle)", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
 
         <OtherCasesWarning cases={otherCases} />
 
         {event.stage === 'cancelled' && (
-          <div style={{ background: '#EF444411', border: '1px solid #EF444433',
+          <div style={{ background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)',
             borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#EF4444',
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-danger)',
               textTransform: 'uppercase', marginBottom: 6 }}>
               🚫 Coverage Lapsed — Reinstatement Required
             </div>
-            <div style={{ fontSize: 13, color: '#E2E8F0' }}>
+            <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
               Amount to Reinstate:{' '}
-              <strong style={{ color: '#F59E0B', fontFamily: "'DM Mono', monospace" }}>
+              <strong style={{ color: 'var(--qs-warning)', fontFamily: "'DM Mono', monospace" }}>
                 {event.amount_due ? `$${Number(event.amount_due).toLocaleString()}` : '—'}
               </strong>
             </div>
-            <div style={{ fontSize: 12, color: '#64748B', marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 4 }}>
               Customer must pay this amount to restore coverage before termination.
             </div>
           </div>
         )}
 
+        {/* Detail grid — color values used as inline style props */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 20 }}>
           {[
             { label: "Cancel Date", value: event.cancel_effective_date, color: urgencyColor(days) },
@@ -772,8 +776,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014", color: "#E2E8F0" },
             { label: "Attempts", value: event.attempt_count || 0, color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#94A3B8" },
           ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
-              <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
+            <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
+              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
               <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
             </div>
           ))}
@@ -782,10 +786,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {/* Attempt Log */}
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", marginBottom: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", marginBottom: 8 }}>
               Attempt Log ({attempts.length})
             </div>
-            <div style={{ background: "#1A1D27", borderRadius: 8, padding: 12, marginBottom: 10 }}>
+            <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: 12, marginBottom: 10 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                 <div>
                   <label>Method</label>
@@ -831,15 +835,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                     ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
                     : "Unknown";
                   const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
+                  // Dynamic color — used as style prop
                   const resultColor = a.result === "reached" ? "#10B981" : "#94A3B8";
                   return (
-                    <div key={a.id} style={{ background: "#1A1D27", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div key={a.id} style={{ background: "var(--qs-elevated)", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <span style={{ fontSize: 12, fontWeight: 600, color: resultColor }}>{resultLabel}</span>
-                        <span style={{ fontSize: 11, color: "#64748B", marginLeft: 8 }}>via {a.method}</span>
-                        {a.note && <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{a.note}</div>}
+                        <span style={{ fontSize: 11, color: "var(--qs-subtle)", marginLeft: 8 }}>via {a.method}</span>
+                        {a.note && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{a.note}</div>}
                       </div>
-                      <div style={{ fontSize: 11, color: "#475569", textAlign: "right" }}>
+                      <div style={{ fontSize: 11, color: "var(--qs-subtle)", textAlign: "right" }}>
                         <div>{empName}</div>
                         <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
                       </div>
@@ -901,7 +906,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             <textarea value={form.notes}
               onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
               rows={3}
-              style={{ width: "100%", background: "#1E2130", color: "#E2E8F0", border: "1px solid #2D3348", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
+              style={{ width: "100%", background: "var(--qs-elevated)", color: "var(--qs-text)", border: "1px solid var(--qs-border)", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
               placeholder="Call notes, customer response..." />
           </div>
 
@@ -1072,6 +1077,7 @@ function parseRenewalXLSX(data) {
 
 // ─── Renewal Status Config ──────────────────────────────────────────────────
 
+// Status badge colors — used as style props
 const RENEWAL_STATUS_CONFIG = {
   pending:          { label: "Pending",          color: "#94A3B8", bg: "#F1F5F9" },
   attempting:       { label: "Attempting",       color: "#F59E0B", bg: "#FEF3C7" },
@@ -1095,6 +1101,7 @@ function daysUntilRenewal(dateStr) {
   return Math.ceil((d - today) / 86400000);
 }
 
+// Dynamic color — used as style prop
 function renewalUrgencyColor(days) {
   if (days < 7) return "#EF4444";
   if (days <= 21) return "#F59E0B";
@@ -1213,21 +1220,21 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
       onClick={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
-      <div style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
+      <div style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
 
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
-            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--qs-bright)" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
+            <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }}>×</button>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--qs-subtle)", fontSize: 20, cursor: "pointer" }}>×</button>
         </div>
 
         <OtherCasesWarning cases={otherCases} />
 
-        {/* Stats row */}
+        {/* Detail grid — color values used as inline style props */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, marginBottom: 16 }}>
           {[
             { label: "Policy No",     value: event.policy_no },
@@ -1254,24 +1261,24 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 : "\u2014" },
             { label: "Priority",      value: String(event._priority ?? calcRenewalPriority(event)) },
           ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: "#1A1D27", borderRadius: 8, padding: "10px 12px", border: "1px solid #252A3A" }}>
-              <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: color || "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>{value || "\u2014"}</div>
+            <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
+              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: color || "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>{value || "\u2014"}</div>
             </div>
           ))}
         </div>
 
         {/* Contact info */}
-        <div style={{ background: "#1A1D27", borderRadius: 8, padding: "12px 14px", marginBottom: 16, border: "1px solid #252A3A" }}>
-          <div style={{ fontSize: 11, color: "#64748B", marginBottom: 8, fontWeight: 600, textTransform: "uppercase" }}>Contact</div>
+        <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "12px 14px", marginBottom: 16, border: "1px solid var(--qs-border)" }}>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 8, fontWeight: 600, textTransform: "uppercase" }}>Contact</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <div>
-              <div style={{ fontSize: 10, color: "#475569" }}>Phone</div>
-              <div style={{ fontSize: 13, color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>{event.phone || "\u2014"}</div>
+              <div style={{ fontSize: 10, color: "var(--qs-subtle)" }}>Phone</div>
+              <div style={{ fontSize: 13, color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>{event.phone || "\u2014"}</div>
             </div>
             <div>
-              <div style={{ fontSize: 10, color: "#475569" }}>Email</div>
-              <div style={{ fontSize: 13, color: "#94A3B8" }}>{event.email || "\u2014"}</div>
+              <div style={{ fontSize: 10, color: "var(--qs-subtle)" }}>Email</div>
+              <div style={{ fontSize: 13, color: "var(--qs-dim)" }}>{event.email || "\u2014"}</div>
             </div>
           </div>
         </div>
@@ -1279,10 +1286,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
           {/* Attempt Log */}
           <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", marginBottom: 8 }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", marginBottom: 8 }}>
               Attempt Log ({attempts.length})
             </div>
-            <div style={{ background: "#1A1D27", borderRadius: 8, padding: 12, marginBottom: 10 }}>
+            <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: 12, marginBottom: 10 }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
                 <div>
                   <label>Method</label>
@@ -1328,15 +1335,16 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
                     : "Unknown";
                   const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
+                  // Dynamic color — used as style prop
                   const resultColor = a.result === "reached" ? "#10B981" : "#94A3B8";
                   return (
-                    <div key={a.id} style={{ background: "#1A1D27", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <div key={a.id} style={{ background: "var(--qs-elevated)", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                       <div>
                         <span style={{ fontSize: 12, fontWeight: 600, color: resultColor }}>{resultLabel}</span>
-                        <span style={{ fontSize: 11, color: "#64748B", marginLeft: 8 }}>via {a.method}</span>
-                        {a.note && <div style={{ fontSize: 11, color: "#94A3B8", marginTop: 2 }}>{a.note}</div>}
+                        <span style={{ fontSize: 11, color: "var(--qs-subtle)", marginLeft: 8 }}>via {a.method}</span>
+                        {a.note && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{a.note}</div>}
                       </div>
-                      <div style={{ fontSize: 11, color: "#475569", textAlign: "right" }}>
+                      <div style={{ fontSize: 11, color: "var(--qs-subtle)", textAlign: "right" }}>
                         <div>{empName}</div>
                         <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
                       </div>
@@ -1394,7 +1402,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             <textarea value={form.notes}
               onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
               rows={3}
-              style={{ width: "100%", background: "#1E2130", color: "#E2E8F0", border: "1px solid #2D3348", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
+              style={{ width: "100%", background: "var(--qs-elevated)", color: "var(--qs-text)", border: "1px solid var(--qs-border)", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
               placeholder="Call notes, customer response..." />
           </div>
 
@@ -1737,7 +1745,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
     <div>
       {/* Upload Section */}
       <div style={{ maxWidth: 640, marginBottom: 24 }}>
-        <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
+        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 16 }}>
           Upload the Allstate <span style={{ fontFamily: "'DM Mono', monospace" }}>Renewal Review</span> report (XLSX).
         </div>
 
@@ -1747,15 +1755,15 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
           <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }}
             onChange={e => handleFileSelect(e.target.files[0])} />
           <div style={{ fontSize: 32, marginBottom: 8 }}>{"\uD83D\uDCC4"}</div>
-          <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
+          <div style={{ fontSize: 14, color: "var(--qs-dim)", fontWeight: 500 }}>
             {uploadFile ? uploadFile.name : "Drop renewal report here or click to browse"}
           </div>
-          {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing{"\u2026"}</div>}
+          {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}>Parsing{"\u2026"}</div>}
         </div>
 
         {/* Assignment info — shown after parsing, before commit */}
         {parsedRows && producers.length > 0 && (
-          <div style={{ fontSize: 12, color: "#64748B", marginTop: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 12, marginBottom: 12 }}>
             {producers.length === 1
               ? `All new cases will be assigned to ${producers[0].preferred_name || producers[0].first_name}`
               : `New cases will be distributed across ${producers.length} service reps (workload-balanced)`
@@ -1763,23 +1771,23 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
           </div>
         )}
         {parsedRows && producers.length === 0 && (
-          <div style={{ fontSize: 12, color: "#F59E0B", marginTop: 12, marginBottom: 12 }}>
+          <div style={{ fontSize: 12, color: "var(--qs-warning)", marginTop: 12, marginBottom: 12 }}>
             {"\u26A0"} No active service reps found — cases will be unassigned
           </div>
         )}
 
         {uploadError && (
-          <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
+          <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
             {uploadError}
           </div>
         )}
 
         {parsedRows && !uploadMsg && (
           <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>
               Preview — {parsedRows.length} actionable rows
               {excludedCount > 0 && (
-                <span style={{ fontWeight: 400, fontSize: 12, color: "#64748B", marginLeft: 8 }}>
+                <span style={{ fontWeight: 400, fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
                   ({excludedCount} already renewed excluded)
                 </span>
               )}
@@ -1796,7 +1804,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         )}
 
         {uploadMsg && (
-          <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#10B981" }}>
+          <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-success)" }}>
             {uploadMsg}
           </div>
         )}
@@ -1833,7 +1841,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         )}
       </div>
 
-      {loading && <div style={{ color: "#64748B", fontSize: 13, marginBottom: 12 }}>Loading renewals{"\u2026"}</div>}
+      {loading && <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}>Loading renewals{"\u2026"}</div>}
 
       {/* Triage Table */}
       <div className="scroll-hint-container">
@@ -1866,59 +1874,59 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                       <span style={{
                         display: "inline-block", padding: "2px 8px", borderRadius: 10,
                         fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
-                        background: event._priority >= 80 ? "#EF444422"
-                                  : event._priority >= 55 ? "#F59E0B22"
-                                  : event._priority >= 30 ? "#3B82F622"
-                                  : "#64748B22",
-                        color: event._priority >= 80 ? "#EF4444"
-                             : event._priority >= 55 ? "#F59E0B"
-                             : event._priority >= 30 ? "#3B82F6"
-                             : "#64748B",
+                        background: event._priority >= 80 ? "var(--qs-danger-subtle)"
+                                  : event._priority >= 55 ? "var(--qs-warning-subtle)"
+                                  : event._priority >= 30 ? "var(--qs-info-subtle)"
+                                  : "rgb(100 116 139 / 0.13)",
+                        color: event._priority >= 80 ? "var(--qs-danger)"
+                             : event._priority >= 55 ? "var(--qs-warning)"
+                             : event._priority >= 30 ? "var(--qs-info)"
+                             : "var(--qs-subtle)",
                       }}>
                         {event._priority}
                       </span>
                     </td>
-                    <td style={{ color: "#E2E8F0", fontWeight: 600, fontSize: 13 }}>
+                    <td style={{ color: "var(--qs-text)", fontWeight: 600, fontSize: 13 }}>
                       {maskCustomerName(event.customer_name)}
                     </td>
-                    <td style={{ color: "#94A3B8", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
+                    <td style={{ color: "var(--qs-dim)", fontSize: 12 }}>{event.product?.toUpperCase() || "\u2014"}</td>
                     <td>
                       {event.multi_line === 'Yes' ? (
                         <span style={{
                           display: 'inline-block', padding: '2px 7px', borderRadius: 4,
                           fontSize: 10, fontWeight: 700,
-                          background: '#10B98122', color: '#10B981',
+                          background: 'var(--qs-success-subtle)', color: 'var(--qs-success)',
                         }}>ML</span>
                       ) : event.multi_line === 'No' ? (
                         <span style={{
                           display: 'inline-block', padding: '2px 7px', borderRadius: 4,
                           fontSize: 10, fontWeight: 700,
-                          background: '#3B82F622', color: '#60A5FA',
+                          background: 'var(--qs-info-subtle)', color: 'var(--qs-info)',
                         }}>SL</span>
                       ) : (
-                        <span style={{ color: '#334155', fontSize: 11 }}>{"\u2014"}</span>
+                        <span style={{ color: 'var(--qs-muted)', fontSize: 11 }}>{"\u2014"}</span>
                       )}
                     </td>
-                    <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace" }}>
+                    <td style={{ color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>
                       {event.premium ? fmtFull$(event.premium) : "\u2014"}
                     </td>
                     <td style={{ fontFamily: "'DM Mono', monospace", fontSize: 12,
-                      color: event.premium_change == null ? "#64748B"
-                        : event.premium_change > 0 ? "#EF4444"
-                        : "#10B981" }}>
+                      color: event.premium_change == null ? "var(--qs-subtle)"
+                        : event.premium_change > 0 ? "var(--qs-danger)"
+                        : "var(--qs-success)" }}>
                       {event.premium_change != null
                         ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
                         : "\u2014"}
                     </td>
                     <td style={{ fontFamily: "'DM Mono', monospace", fontSize: 11,
-                      color: event.premium_change_pct == null ? "#64748B"
-                        : event.premium_change_pct > 0 ? "#EF4444"
-                        : "#10B981" }}>
+                      color: event.premium_change_pct == null ? "var(--qs-subtle)"
+                        : event.premium_change_pct > 0 ? "var(--qs-danger)"
+                        : "var(--qs-success)" }}>
                       {event.premium_change_pct != null
                         ? `${event.premium_change_pct > 0 ? "+" : ""}${event.premium_change_pct.toFixed(1)}%`
                         : "\u2014"}
                     </td>
-                    <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                    <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                       {event.renewal_date}
                     </td>
                     <td>
@@ -1926,19 +1934,20 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                         {days <= 0 ? "PAST DUE" : `${days}d`}
                       </span>
                     </td>
-                    <td style={{ color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "#64748B", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
+                    {/* Dynamic color — used as style prop */}
+                    <td style={{ color: (event.attempt_count || 0) >= 3 ? "var(--qs-danger)" : "var(--qs-subtle)", fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
                       {event.attempt_count || 0}
                     </td>
                     <td>
                       <span className="status-badge" style={{ background: sc.bg, color: sc.color }}>{sc.label}</span>
                     </td>
-                    <td style={{ color: "#64748B", fontSize: 12 }}>{employeeMap[event.assigned_to_id] || "\u2014"}</td>
-                    <td style={{ color: "#64748B", fontSize: 12 }}>{event.contact_method || "\u2014"}</td>
+                    <td style={{ color: "var(--qs-subtle)", fontSize: 12 }}>{employeeMap[event.assigned_to_id] || "\u2014"}</td>
+                    <td style={{ color: "var(--qs-subtle)", fontSize: 12 }}>{event.contact_method || "\u2014"}</td>
                   </tr>
                 );
               })}
               {displayRenewals.length === 0 && (
-                <tr><td colSpan={12} style={{ textAlign: "center", color: "#334155", padding: "32px 0" }}>
+                <tr><td colSpan={12} style={{ textAlign: "center", color: "var(--qs-muted)", padding: "32px 0" }}>
                   No renewal events in this filter
                 </td></tr>
               )}
@@ -2132,13 +2141,13 @@ function AttritionTab({ agencyId, currentUserId }) {
     <div>
       {/* Gap Alert Banner */}
       {gapAnalysis && (
-        <div style={{ background: gapAnalysis.pointsDelta > 0 ? "#EF444411" : "#10B98111", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "#EF444433" : "#10B98133"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "#EF4444" : "#10B981", marginBottom: 4 }}>
+        <div style={{ background: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-subtle)" : "var(--qs-success-subtle)", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-border)" : "var(--qs-success-border)"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger)" : "var(--qs-success)", marginBottom: 4 }}>
             {gapAnalysis.pointsDelta > 0
               ? `⚠ Attrition increased — ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost · New business must exceed this next month to grow`
               : `✓ Attrition decreased vs prior month`}
           </div>
-          <div style={{ fontSize: 12, color: "#64748B" }}>
+          <div style={{ fontSize: 12, color: "var(--qs-subtle)" }}>
             {gapAnalysis.priorMonth}: {gapAnalysis.priorItems} items · {gapAnalysis.priorPoints} pts lost &nbsp;→&nbsp;
             {gapAnalysis.currentMonth}: {gapAnalysis.currentItems} items · {gapAnalysis.currentPoints} pts lost
             &nbsp;({gapAnalysis.pointsDelta >= 0 ? "+" : ""}{gapAnalysis.pointsDelta} pts)
@@ -2148,9 +2157,9 @@ function AttritionTab({ agencyId, currentUserId }) {
       {gapAnalysis?.isPartialMonth && (
         <div style={{
           fontSize: 11,
-          color: "#F59E0B",
-          background: "#F59E0B11",
-          border: "1px solid #F59E0B33",
+          color: "var(--qs-warning)",
+          background: "var(--qs-warning-subtle)",
+          border: "1px solid var(--qs-warning-border)",
           borderRadius: 6,
           padding: "6px 12px",
           marginTop: -12,
@@ -2168,10 +2177,10 @@ function AttritionTab({ agencyId, currentUserId }) {
 
       {/* Monthly Summary Table */}
       {loading ? (
-        <div style={{ color: "#64748B", fontSize: 13, marginBottom: 20 }}>Loading attrition history\u2026</div>
+        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 20 }}>Loading attrition history\u2026</div>
       ) : monthlySummary.length > 0 ? (
         <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Attrition History</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Attrition History</div>
           <div style={{ overflowX: "auto" }}>
             <table style={{ minWidth: 500 }}>
               <thead>
@@ -2191,14 +2200,14 @@ function AttritionTab({ agencyId, currentUserId }) {
                   const pointsDelta = next ? row.points - next.points : null;
                   return (
                     <tr key={row.report_month}>
-                      <td style={{ color: "#E2E8F0", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{row.report_month.slice(0, 7)}</td>
-                      <td style={{ color: "#F1F5F9", fontWeight: 600 }}>{row.items}</td>
-                      <td style={{ color: "#F59E0B", fontWeight: 600 }}>{row.points}</td>
-                      <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>${Math.round(row.premium).toLocaleString()}</td>
-                      <td style={{ color: itemsDelta == null ? "#334155" : itemsDelta > 0 ? "#EF4444" : "#10B981", fontSize: 12 }}>
+                      <td style={{ color: "var(--qs-text)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{row.report_month.slice(0, 7)}</td>
+                      <td style={{ color: "var(--qs-bright)", fontWeight: 600 }}>{row.items}</td>
+                      <td style={{ color: "var(--qs-warning)", fontWeight: 600 }}>{row.points}</td>
+                      <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace" }}>${Math.round(row.premium).toLocaleString()}</td>
+                      <td style={{ color: itemsDelta == null ? "var(--qs-muted)" : itemsDelta > 0 ? "var(--qs-danger)" : "var(--qs-success)", fontSize: 12 }}>
                         {itemsDelta == null ? "—" : `${itemsDelta >= 0 ? "+" : ""}${itemsDelta}`}
                       </td>
-                      <td style={{ color: pointsDelta == null ? "#334155" : pointsDelta > 0 ? "#EF4444" : "#10B981", fontSize: 12 }}>
+                      <td style={{ color: pointsDelta == null ? "var(--qs-muted)" : pointsDelta > 0 ? "var(--qs-danger)" : "var(--qs-success)", fontSize: 12 }}>
                         {pointsDelta == null ? "—" : `${pointsDelta >= 0 ? "+" : ""}${pointsDelta}`}
                       </td>
                     </tr>
@@ -2209,15 +2218,15 @@ function AttritionTab({ agencyId, currentUserId }) {
           </div>
         </div>
       ) : (
-        <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>No attrition history yet. Upload your first report below.</div>
+        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>No attrition history yet. Upload your first report below.</div>
       )}
 
       {/* Upload Section */}
-      <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Upload Termination Report</div>
+      <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Upload Termination Report</div>
 
       <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
         <div>
-          <label style={{ fontSize: 12, color: "#64748B", display: "block", marginBottom: 4 }}>Report Month</label>
+          <label style={{ fontSize: 12, color: "var(--qs-subtle)", display: "block", marginBottom: 4 }}>Report Month</label>
           <input
             type="month"
             value={reportMonth.slice(0, 7)}
@@ -2234,7 +2243,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       </div>
 
       {parseError && (
-        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
+        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--qs-danger)" }}>
           {parseError}
         </div>
       )}
@@ -2242,23 +2251,24 @@ function AttritionTab({ agencyId, currentUserId }) {
       {/* Preview */}
       {preview && !commitMsg && (
         <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>Preview — {reportMonth.slice(0, 7)}</div>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>Preview — {reportMonth.slice(0, 7)}</div>
+          {/* Detail grid — color values used as inline style props */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 16 }}>
             {[
               { label: "Items Lost", value: preview.items, color: "#EF4444" },
               { label: "Points Lost", value: preview.points, color: "#F59E0B" },
               { label: "Premium Lost", value: `$${Math.round(preview.premium).toLocaleString()}`, color: "#94A3B8" },
             ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, padding: "12px 14px" }}>
-                <div style={{ fontSize: 10, color: "#64748B", marginBottom: 4 }}>{label}</div>
+              <div key={label} style={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, padding: "12px 14px" }}>
+                <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
           </div>
           {/* Product breakdown */}
-          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 16 }}>
+          <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginBottom: 16 }}>
             {Object.entries(preview.byProduct).map(([prod, count]) => (
-              <span key={prod} style={{ marginRight: 12 }}>{prod}: <strong style={{ color: "#94A3B8" }}>{count}</strong></span>
+              <span key={prod} style={{ marginRight: 12 }}>{prod}: <strong style={{ color: "var(--qs-dim)" }}>{count}</strong></span>
             ))}
           </div>
           <div style={{ display: "flex", gap: 10 }}>
@@ -2273,7 +2283,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       )}
 
       {commitMsg && (
-        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "#10B981" }}>
+        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--qs-success)" }}>
           {commitMsg}
         </div>
       )}
@@ -2283,7 +2293,7 @@ function AttritionTab({ agencyId, currentUserId }) {
 
 // ─── Global Styles ─────────────────────────────────────────────────────────────
 
-const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1D27; } ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; } input, select { background: #1E2130 !important; color: #E2E8F0 !important; border: 1px solid #2D3348 !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: #3B82F6 !important; } .card { background: #161924; border: 1px solid #252A3A; border-radius: 12px; padding: 20px; } .btn-primary { background: #3B82F6; color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; } .btn-ghost { background: transparent; color: #94A3B8; border: 1px solid #2D3348; border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: #1E2130; color: #E2E8F0; border-color: #3B82F6; } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: #64748B; transition: all 0.15s; } .tab.active { background: #1E2130; color: #E2E8F0; } .upload-zone { border: 2px dashed #2D3348; border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: #3B82F6; } label { font-size: 12px; color: #64748B; font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 14px; } th { text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #252A3A; } td { padding: 9px 12px; border-bottom: 1px solid #1A1D27; color: #CBD5E1; } .urgency-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; } .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; } .triage-row:hover td { background: #1A1D27; cursor: pointer; } .scroll-hint-container { position: relative; } .scroll-hint-container::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, #0f172a); pointer-events: none; opacity: 1; transition: opacity 0.2s; } @media (min-width: 840px) { .scroll-hint-container::after { opacity: 0; } }`;
+const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--qs-elevated); } ::-webkit-scrollbar-thumb { background: var(--qs-muted); border-radius: 3px; } input, select { background: var(--qs-elevated) !important; color: var(--qs-text) !important; border: 1px solid var(--qs-border) !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: var(--qs-info) !important; } .card { background: var(--qs-card); border: 1px solid var(--qs-border); border-radius: 12px; padding: 20px; } .btn-primary { background: var(--qs-info); color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; } .btn-ghost { background: transparent; color: var(--qs-dim); border: 1px solid var(--qs-border); border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: var(--qs-elevated); color: var(--qs-text); border-color: var(--qs-info); } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: var(--qs-subtle); transition: all 0.15s; } .tab.active { background: var(--qs-elevated); color: var(--qs-text); } .upload-zone { border: 2px dashed var(--qs-border); border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: var(--qs-info); } label { font-size: 12px; color: var(--qs-subtle); font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 14px; } th { text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--qs-subtle); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--qs-border); } td { padding: 9px 12px; border-bottom: 1px solid var(--qs-elevated); color: var(--qs-text); } .urgency-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; } .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; } .triage-row:hover td { background: var(--qs-elevated); cursor: pointer; } .scroll-hint-container { position: relative; } .scroll-hint-container::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, var(--qs-dark)); pointer-events: none; opacity: 1; transition: opacity 0.2s; } @media (min-width: 840px) { .scroll-hint-container::after { opacity: 0; } }`;
 
 // ─── Net Portfolio Growth Tab ──────────────────────────────────────────────────
 
@@ -2344,12 +2354,12 @@ function NetGrowthTab({ agencyId }) {
   });
 
   if (loading) {
-    return <div style={{ color: "#64748B", fontSize: 13, textAlign: "center", padding: "40px 0" }}>Loading…</div>;
+    return <div style={{ color: "var(--qs-subtle)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>Loading…</div>;
   }
 
   if (months.length === 0) {
     return (
-      <div style={{ color: "#64748B", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
+      <div style={{ color: "var(--qs-subtle)", fontSize: 13, textAlign: "center", padding: "40px 0" }}>
         No data yet — upload New Business and Termination reports to see portfolio growth.
       </div>
     );
@@ -2398,21 +2408,22 @@ function NetGrowthTab({ agencyId }) {
     <div className="card" style={{ padding: 24 }}>
       {/* Summary Strip */}
       <div style={{ display: "flex", gap: 16, marginBottom: 24 }}>
-        <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
-          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Gained</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#10B981" }}>
+        <div style={{ flex: 1, background: "var(--qs-elevated)", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Gained</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-success)" }}>
             {cur && cur.nb_points > 0 ? cur.nb_points.toLocaleString() : "—"}
           </div>
         </div>
-        <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
-          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Lost</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#EF4444" }}>
+        <div style={{ flex: 1, background: "var(--qs-elevated)", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Points Lost</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-danger)" }}>
             {cur && cur.lapse_points > 0 ? cur.lapse_points.toLocaleString() : "—"}
           </div>
         </div>
-        <div style={{ flex: 1, background: "#1A1D27", borderRadius: 10, padding: "16px 20px" }}>
-          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Net Points</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: cur ? (cur.net_points > 0 ? "#10B981" : cur.net_points < 0 ? "#EF4444" : "#64748B") : "#64748B" }}>
+        <div style={{ flex: 1, background: "var(--qs-elevated)", borderRadius: 10, padding: "16px 20px" }}>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", marginBottom: 4 }}>Net Points</div>
+          {/* Dynamic color — used as style prop */}
+          <div style={{ fontSize: 22, fontWeight: 700, color: cur ? (cur.net_points > 0 ? "var(--qs-success)" : cur.net_points < 0 ? "var(--qs-danger)" : "var(--qs-subtle)") : "var(--qs-subtle)" }}>
             {cur ? cur.net_points.toLocaleString() : "—"}
           </div>
         </div>
@@ -2427,19 +2438,19 @@ function NetGrowthTab({ agencyId }) {
               const [y, mo] = m.split("-");
               return `${MONTH_SHORT[parseInt(mo, 10) - 1]} '${y.slice(2)}`;
             }}
-            tick={{ fill: "#64748B", fontSize: 11 }}
+            tick={{ fill: "#64748B", fontSize: 11 }}{/* Recharts SVG attribute — hex required */}
             axisLine={false}
             tickLine={false}
           />
-          <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+          <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />{/* Recharts SVG attribute — hex required */}
           <Tooltip
             labelFormatter={fmtMonth}
-            contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }}
+            contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12 }}
             formatter={(value, name) => [value, name === "nb_points" ? "Points Gained" : name === "lapse_points" ? "Points Lost" : "Net"]}
           />
-          <ReferenceLine y={0} stroke="#334155" />
-          <Bar dataKey="nb_points" name="nb_points" fill="#10B981" radius={[3,3,0,0]} maxBarSize={28} />
-          <Bar dataKey="lapse_points" name="lapse_points" fill="#EF4444" radius={[3,3,0,0]} maxBarSize={28} />
+          <ReferenceLine y={0} stroke="#334155" />{/* Recharts SVG attribute — hex required */}
+          <Bar dataKey="nb_points" name="nb_points" fill="#10B981" radius={[3,3,0,0]} maxBarSize={28} />{/* Recharts SVG attribute — hex required */}
+          <Bar dataKey="lapse_points" name="lapse_points" fill="#EF4444" radius={[3,3,0,0]} maxBarSize={28} />{/* Recharts SVG attribute — hex required */}
         </BarChart>
       </ResponsiveContainer>
 
@@ -2448,21 +2459,21 @@ function NetGrowthTab({ agencyId }) {
         <ResponsiveContainer width="100%" height={120}>
           <LineChart data={months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <XAxis dataKey="month" hide />
-            <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
-            <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />
+            <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />{/* Recharts SVG attribute — hex required */}
+            <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />{/* Recharts SVG attribute — hex required */}
             <Tooltip
               labelFormatter={fmtMonth}
-              contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12 }}
               formatter={(value) => [value, "Net Points"]}
             />
             <Line
               type="monotone"
               dataKey="net_points"
-              stroke="#3B82F6"
+              stroke="#3B82F6" // Recharts SVG attribute — hex required
               strokeWidth={2}
               dot={({ cx, cy, payload }) => (
                 <circle key={payload.month} cx={cx} cy={cy} r={4}
-                  fill={payload.net_points >= 0 ? "#10B981" : "#EF4444"}
+                  fill={payload.net_points >= 0 ? "#10B981" : "#EF4444"} // Recharts SVG attribute — hex required
                   stroke="none"
                 />
               )}
@@ -2490,17 +2501,17 @@ function NetGrowthTab({ agencyId }) {
           </thead>
           <tbody>
             {newestFirst.map(m => (
-              <tr key={m.month} style={m.month === curMonth ? { borderLeft: "2px solid #3B82F6" } : undefined}>
-                <td style={{ fontWeight: 500, color: "#E2E8F0" }}>{fmtMonth(m.month)}</td>
-                <td style={{ textAlign: "right", color: "#10B981" }}>{m.nb_points.toLocaleString()}</td>
-                <td style={{ textAlign: "right", color: "#EF4444" }}>{m.lapse_points.toLocaleString()}</td>
-                <td style={{ textAlign: "right", color: m.net_points > 0 ? "#10B981" : m.net_points < 0 ? "#EF4444" : "#64748B" }}>
+              <tr key={m.month} style={m.month === curMonth ? { borderLeft: "2px solid var(--qs-info)" } : undefined}>
+                <td style={{ fontWeight: 500, color: "var(--qs-text)" }}>{fmtMonth(m.month)}</td>
+                <td style={{ textAlign: "right", color: "var(--qs-success)" }}>{m.nb_points.toLocaleString()}</td>
+                <td style={{ textAlign: "right", color: "var(--qs-danger)" }}>{m.lapse_points.toLocaleString()}</td>
+                <td style={{ textAlign: "right", color: m.net_points > 0 ? "var(--qs-success)" : m.net_points < 0 ? "var(--qs-danger)" : "var(--qs-subtle)" }}>
                   {m.net_points.toLocaleString()}
                 </td>
                 <td style={{
                   textAlign: "right",
                   fontFamily: "'DM Mono', monospace",
-                  color: m.net_items > 0 ? "#10B981" : m.net_items < 0 ? "#EF4444" : "#64748B",
+                  color: m.net_items > 0 ? "var(--qs-success)" : m.net_items < 0 ? "var(--qs-danger)" : "var(--qs-subtle)",
                   fontWeight: 600,
                 }}>
                   {m.net_items > 0 ? `+${m.net_items}` : String(m.net_items)}
@@ -2509,10 +2520,10 @@ function NetGrowthTab({ agencyId }) {
                   textAlign: "right",
                   fontFamily: "'DM Mono', monospace",
                   color: m.net_ytd === null
-                    ? "#334155"
-                    : m.net_ytd > 0 ? "#10B981"
-                    : m.net_ytd < 0 ? "#EF4444"
-                    : "#64748B",
+                    ? "var(--qs-muted)"
+                    : m.net_ytd > 0 ? "var(--qs-success)"
+                    : m.net_ytd < 0 ? "var(--qs-danger)"
+                    : "var(--qs-subtle)",
                   fontWeight: 600,
                 }}>
                   {m.net_ytd === null
@@ -2528,18 +2539,18 @@ function NetGrowthTab({ agencyId }) {
             ))}
           </tbody>
           <tfoot>
-            <tr style={{ borderTop: "2px solid #252A3A", fontWeight: 600 }}>
-              <td style={{ color: "#E2E8F0" }}>Total</td>
-              <td style={{ textAlign: "right", color: "#10B981" }}>{totals.nb_points.toLocaleString()}</td>
-              <td style={{ textAlign: "right", color: "#EF4444" }}>{totals.lapse_points.toLocaleString()}</td>
-              <td style={{ textAlign: "right", color: totals.net_points > 0 ? "#10B981" : totals.net_points < 0 ? "#EF4444" : "#64748B" }}>
+            <tr style={{ borderTop: "2px solid var(--qs-border)", fontWeight: 600 }}>
+              <td style={{ color: "var(--qs-text)" }}>Total</td>
+              <td style={{ textAlign: "right", color: "var(--qs-success)" }}>{totals.nb_points.toLocaleString()}</td>
+              <td style={{ textAlign: "right", color: "var(--qs-danger)" }}>{totals.lapse_points.toLocaleString()}</td>
+              <td style={{ textAlign: "right", color: totals.net_points > 0 ? "var(--qs-success)" : totals.net_points < 0 ? "var(--qs-danger)" : "var(--qs-subtle)" }}>
                 {totals.net_points.toLocaleString()}
               </td>
               <td style={{
                 textAlign: "right",
                 fontFamily: "'DM Mono', monospace",
                 fontWeight: 700,
-                color: totalNetItems > 0 ? "#10B981" : totalNetItems < 0 ? "#EF4444" : "#64748B",
+                color: totalNetItems > 0 ? "var(--qs-success)" : totalNetItems < 0 ? "var(--qs-danger)" : "var(--qs-subtle)",
               }}>
                 {totalNetItems > 0 ? `+${totalNetItems}` : String(totalNetItems)}
               </td>
@@ -2547,7 +2558,7 @@ function NetGrowthTab({ agencyId }) {
                 textAlign: "right",
                 fontFamily: "'DM Mono', monospace",
                 fontWeight: 700,
-                color: finalNetYTD === null ? "#334155" : finalNetYTD >= 0 ? "#10B981" : "#EF4444",
+                color: finalNetYTD === null ? "var(--qs-muted)" : finalNetYTD >= 0 ? "var(--qs-success)" : "var(--qs-danger)",
               }}>
                 {finalNetYTD === null ? "—" : finalNetYTD > 0 ? `+${finalNetYTD}` : String(finalNetYTD)}
               </td>
@@ -2607,36 +2618,36 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-      <div style={{ background: '#161924', borderRadius: 14, maxWidth: '98vw', width: '100%', maxHeight: '96vh', overflow: 'auto', padding: '24px 20px' }}>
+      <div style={{ background: 'var(--qs-card)', borderRadius: 14, maxWidth: '98vw', width: '100%', maxHeight: '96vh', overflow: 'auto', padding: '24px 20px' }}>
 
         {/* Header */}
         <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#F1F5F9' }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>
             {maskCustomerName(r.customer_name)}
           </div>
-          <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>
+          <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2 }}>
             Policy {r.policy_no} · {r.product?.toUpperCase()}
             {r.risk_type === 'dual_risk' && (
-              <span style={{ marginLeft: 8, color: '#EF4444', fontWeight: 700 }}>⚡ DUAL RISK</span>
+              <span style={{ marginLeft: 8, color: 'var(--qs-danger)', fontWeight: 700 }}>⚡ DUAL RISK</span>
             )}
           </div>
         </div>
 
         {/* Contact info */}
         {(r.phone || r.email) && (
-          <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 16, border: '1px solid #252A3A' }}>
-            <div style={{ fontSize: 11, color: '#64748B', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>Contact</div>
+          <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 16, border: '1px solid var(--qs-border)' }}>
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 8, fontWeight: 600, textTransform: 'uppercase' }}>Contact</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {r.phone && (
                 <div>
-                  <div style={{ fontSize: 10, color: '#475569' }}>Phone</div>
-                  <div style={{ fontSize: 13, color: '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{r.phone}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>Phone</div>
+                  <div style={{ fontSize: 13, color: 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{r.phone}</div>
                 </div>
               )}
               {r.email && (
                 <div>
-                  <div style={{ fontSize: 10, color: '#475569' }}>Email</div>
-                  <div style={{ fontSize: 13, color: '#94A3B8' }}>{r.email}</div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>Email</div>
+                  <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>{r.email}</div>
                 </div>
               )}
             </div>
@@ -2645,12 +2656,12 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 
         {/* Pending cancel section */}
         {r.cancel_event_id && (
-          <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #F59E0B44' }}>
-            <div style={{ fontSize: 11, color: '#F59E0B', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
+          <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-warning-border)' }}>
+            <div style={{ fontSize: 11, color: 'var(--qs-warning)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               ⚠ Pending Cancellation
             </div>
 
-            {/* Row 1 — Urgency + Status */}
+            {/* Detail grid — color values used as inline style props */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
               {[
                 { label: 'Cancel Date', value: r.cancel_effective_date,
@@ -2667,14 +2678,14 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                     return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : '#94A3B8';
                   })() },
               ].map(({ label, value, color }) => (
-                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
+                <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
             </div>
 
-            {/* Row 2 — Financial + Context */}
+            {/* Detail grid — color values used as inline style props */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 10 }}>
               {[
                 { label: 'Premium at Risk', value: r.premium_at_risk ? fmtFull$(r.premium_at_risk) : '—' },
@@ -2683,21 +2694,21 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                 { label: 'Attempts', value: r.cancel_attempts || 0,
                   color: (r.cancel_attempts || 0) >= 3 ? '#EF4444' : '#94A3B8' },
               ].map(({ label, value, color }) => (
-                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
+                <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
 
               {/* Assigned — inline dropdown */}
-              <div style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
-                <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>Assigned To</div>
+              <div style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>Assigned To</div>
                 <select
                   value={r.cancel_assigned_to_id || ''}
                   onChange={e => reassign('cancel', e.target.value || null)}
                   disabled={saving}
                   style={{
-                    background: 'transparent', color: '#E2E8F0', border: 'none',
+                    background: 'transparent', color: 'var(--qs-text)', border: 'none',
                     fontSize: 12, fontWeight: 600, fontFamily: "'DM Mono', monospace",
                     cursor: 'pointer', width: '100%', padding: 0, outline: 'none',
                   }}
@@ -2717,12 +2728,12 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 
         {/* Renewal section */}
         {r.renewal_event_id && (
-          <div style={{ background: '#1A1D27', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #3B82F644' }}>
-            <div style={{ fontSize: 11, color: '#3B82F6', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
+          <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-info-border)' }}>
+            <div style={{ fontSize: 11, color: 'var(--qs-info)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               🔄 Renewal
             </div>
 
-            {/* Row 1 — Urgency + Status (4 fields) */}
+            {/* Detail grid — color values used as inline style props */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 8 }}>
               {[
                 { label: 'Renewal Date', value: r.renewal_date,
@@ -2734,14 +2745,14 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                   value: RENEWAL_STATUS_CONFIG[r.renewal_status]?.label || r.renewal_status || '—' },
                 { label: 'Attempts', value: r.renewal_attempts || 0 },
               ].map(({ label, value, color }) => (
-                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
+                <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
             </div>
 
-            {/* Row 2 — Financial + Context (8 fields) */}
+            {/* Detail grid — color values used as inline style props */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: 8, marginBottom: 10 }}>
               {[
                 { label: 'Premium',
@@ -2777,21 +2788,21 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                   value: `${((LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.renewal_item_count || 1)).toLocaleString()} pts`,
                   color: '#8B5CF6' },
               ].map(({ label, value, color }) => (
-                <div key={label} style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: color || '#E2E8F0', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
+                <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: color || 'var(--qs-text)', fontFamily: "'DM Mono', monospace" }}>{value ?? '—'}</div>
                 </div>
               ))}
 
               {/* Assigned — inline dropdown */}
-              <div style={{ background: '#161924', borderRadius: 6, padding: '8px 10px' }}>
-                <div style={{ fontSize: 10, color: '#64748B', marginBottom: 3 }}>Assigned To</div>
+              <div style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>Assigned To</div>
                 <select
                   value={r.renewal_assigned_to_id || ''}
                   onChange={e => reassign('renewal', e.target.value || null)}
                   disabled={saving}
                   style={{
-                    background: 'transparent', color: '#E2E8F0', border: 'none',
+                    background: 'transparent', color: 'var(--qs-text)', border: 'none',
                     fontSize: 12, fontWeight: 600, fontFamily: "'DM Mono', monospace",
                     cursor: 'pointer', width: '100%', padding: 0, outline: 'none',
                   }}
@@ -3026,7 +3037,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
   }, [filteredRows, kpiFilter]);
 
   if (isLoading) {
-    return <div style={{ color: '#64748B', fontSize: 13 }}>Loading at-risk policies...</div>;
+    return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading at-risk policies...</div>;
   }
 
   return (
@@ -3047,6 +3058,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           const countPendingCancel = rows.filter(r => r.risk_type === 'pending_cancel').length;
           const countDualRisk      = rows.filter(r => r.risk_type === 'dual_risk').length;
 
+          // KpiCard color prop — hex intentionally
           const kpis = [
             {
               key:        'premium',
@@ -3146,8 +3158,8 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         {kpiFilter && (
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: '#3B82F622', border: '1px solid #3B82F644',
-            borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#3B82F6',
+            background: 'var(--qs-info-subtle)', border: '1px solid var(--qs-info-border)',
+            borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--qs-info)',
           }}>
             Filtered: {
               kpiFilter === 'renewal'        ? 'Renewals'        :
@@ -3157,7 +3169,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
             }
             <button
               onClick={() => setKpiFilter(null)}
-              style={{ background: 'none', border: 'none', color: '#3B82F6',
+              style={{ background: 'none', border: 'none', color: 'var(--qs-info)',
                 cursor: 'pointer', padding: '0 2px', fontSize: 14, lineHeight: 1 }}>
               ×
             </button>
@@ -3218,8 +3230,8 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     <span style={{
                       display: 'inline-block', padding: '2px 8px', borderRadius: 10,
                       fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
-                      background: row._priority >= 80 ? '#EF444422' : row._priority >= 55 ? '#F59E0B22' : row._priority >= 30 ? '#3B82F622' : '#64748B22',
-                      color:      row._priority >= 80 ? '#EF4444'   : row._priority >= 55 ? '#F59E0B'   : row._priority >= 30 ? '#3B82F6'   : '#64748B',
+                      background: row._priority >= 80 ? 'var(--qs-danger-subtle)' : row._priority >= 55 ? 'var(--qs-warning-subtle)' : row._priority >= 30 ? 'var(--qs-info-subtle)' : 'rgb(100 116 139 / 0.13)',
+                      color:      row._priority >= 80 ? 'var(--qs-danger)'   : row._priority >= 55 ? 'var(--qs-warning)'   : row._priority >= 30 ? 'var(--qs-info)'   : 'var(--qs-subtle)',
                     }}>{row._priority}</span>
                   </td>
 
@@ -3227,22 +3239,22 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                   <td>
                     {row.cancel_stage === 'cancelled' ? (
                       <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
-                        fontSize: 10, fontWeight: 700, background: '#EF444422', color: '#EF4444' }}>
+                        fontSize: 10, fontWeight: 700, background: 'var(--qs-danger-subtle)', color: 'var(--qs-danger)' }}>
                         🚫 Lapsed
                       </span>
                     ) : row.cancel_event_id ? (
                       <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
-                        fontSize: 10, fontWeight: 700, background: '#F59E0B22', color: '#F59E0B' }}>
+                        fontSize: 10, fontWeight: 700, background: 'var(--qs-warning-subtle)', color: 'var(--qs-warning)' }}>
                         ⚠ Pending
                       </span>
                     ) : null}
                   </td>
 
                   {/* Customer name */}
-                  <td style={{ color: '#E2E8F0', fontWeight: 600, fontSize: 13 }}>
+                  <td style={{ color: 'var(--qs-text)', fontWeight: 600, fontSize: 13 }}>
                     {maskCustomerName(row.customer_name)}
                     {row.risk_type === 'dual_risk' && (
-                      <span style={{ marginLeft: 6, fontSize: 10, color: '#EF4444' }}>⚡</span>
+                      <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--qs-danger)' }}>⚡</span>
                     )}
                   </td>
 
@@ -3253,13 +3265,13 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                         <span style={{ color: urgencyColor(cancelDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                           {cancelDays <= 0 ? 'PAST DUE' : `${cancelDays}d`}
                         </span>
-                      ) : <span style={{ color: '#334155' }}>—</span>}
+                      ) : <span style={{ color: 'var(--qs-muted)' }}>—</span>}
                     </td>
                   )}
 
                   {/* Renewal actual date cell — only in renewal filter */}
                   {riskFilter === 'renewal' && (
-                    <td style={{ color: '#94A3B8', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
+                    <td style={{ color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                       {row.renewal_date || '—'}
                     </td>
                   )}
@@ -3271,11 +3283,11 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                         <span style={{ color: renewalUrgencyColor(renewalDays), fontFamily: "'DM Mono', monospace", fontSize: 12 }}>
                           {renewalDays <= 0 ? 'PAST' : `${renewalDays}d`}
                         </span>
-                      ) : <span style={{ color: '#334155' }}>—</span>}
+                      ) : <span style={{ color: 'var(--qs-muted)' }}>—</span>}
                     </td>
                   )}
 
-                  <td style={{ color: '#E2E8F0', fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
+                  <td style={{ color: 'var(--qs-text)', fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>
                     {row.risk_type === 'renewal'
                       ? (row.renewal_premium ? fmtFull$(row.renewal_premium) : '—')
                       : (row.premium_at_risk ? fmtFull$(row.premium_at_risk) : '—')}
@@ -3283,21 +3295,21 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
 
                   <td style={{
                     fontFamily: "'DM Mono', monospace", fontSize: 12,
-                    color: row.premium_change_pct == null ? '#64748B' : row.premium_change_pct > 0 ? '#EF4444' : '#10B981'
+                    color: row.premium_change_pct == null ? 'var(--qs-subtle)' : row.premium_change_pct > 0 ? 'var(--qs-danger)' : 'var(--qs-success)'
                   }}>
                     {row.premium_change_pct != null ? `${row.premium_change_pct > 0 ? '+' : ''}${row.premium_change_pct.toFixed(1)}%` : '—'}
                   </td>
 
                   {/* Product */}
-                  <td style={{ color: '#94A3B8', fontSize: 12 }}>
+                  <td style={{ color: 'var(--qs-dim)', fontSize: 12 }}>
                     {row.product?.toUpperCase() || '—'}
                   </td>
 
-                  <td style={{ color: '#64748B', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
+                  <td style={{ color: 'var(--qs-subtle)', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
                     {((row.cancel_attempts || 0) + (row.renewal_attempts || 0)) || 0}
                   </td>
 
-                  <td style={{ color: '#64748B', fontSize: 12 }}>
+                  <td style={{ color: 'var(--qs-subtle)', fontSize: 12 }}>
                     {(() => {
                       const cId = row.cancel_assigned_to_id;
                       const rId = row.renewal_assigned_to_id;
@@ -3312,7 +3324,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               );
             })}
             {kpiFilteredRows.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign: 'center', color: '#334155', padding: '32px 0' }}>
+              <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--qs-muted)', padding: '32px 0' }}>
                 No at-risk policies in this filter
               </td></tr>
             )}
@@ -3611,7 +3623,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
   return (
     <div style={{ maxWidth: 640 }}>
-      <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
+      <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 16 }}>
         Upload the Allstate <span style={{ fontFamily: "'DM Mono', monospace" }}>Renewal Review</span> report (XLSX).
       </div>
 
@@ -3621,15 +3633,15 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         <input ref={fileInputRef} type="file" accept=".xlsx,.csv" style={{ display: "none" }}
           onChange={e => handleFileSelect(e.target.files[0])} />
         <div style={{ fontSize: 32, marginBottom: 8 }}>{"\uD83D\uDCC4"}</div>
-        <div style={{ fontSize: 14, color: "#94A3B8", fontWeight: 500 }}>
+        <div style={{ fontSize: 14, color: "var(--qs-dim)", fontWeight: 500 }}>
           {uploadFile ? uploadFile.name : "Drop renewal report here or click to browse"}
         </div>
-        {isParsing && <div style={{ fontSize: 12, color: "#64748B", marginTop: 8 }}>Parsing{"\u2026"}</div>}
+        {isParsing && <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 8 }}>Parsing{"\u2026"}</div>}
       </div>
 
       {/* Assignment info — shown after parsing, before commit */}
       {parsedRows && producers.length > 0 && (
-        <div style={{ fontSize: 12, color: '#64748B', marginTop: 12, marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 12, marginBottom: 12 }}>
           {producers.length === 1
             ? `All new cases will be assigned to ${producers[0].preferred_name || producers[0].first_name}`
             : `New cases will be distributed across ${producers.length} service reps (workload-balanced)`
@@ -3637,23 +3649,23 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         </div>
       )}
       {parsedRows && producers.length === 0 && (
-        <div style={{ fontSize: 12, color: '#F59E0B', marginTop: 12, marginBottom: 12 }}>
+        <div style={{ fontSize: 12, color: 'var(--qs-warning)', marginTop: 12, marginBottom: 12 }}>
           {"\u26A0"} No active service reps found — cases will be unassigned
         </div>
       )}
 
       {uploadError && (
-        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#EF4444" }}>
+        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
           {uploadError}
         </div>
       )}
 
       {parsedRows && !uploadMsg && (
         <div style={{ marginTop: 16 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "#F1F5F9", marginBottom: 12 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>
             Preview — {parsedRows.length} actionable rows
             {excludedCount > 0 && (
-              <span style={{ fontWeight: 400, fontSize: 12, color: "#64748B", marginLeft: 8 }}>
+              <span style={{ fontWeight: 400, fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
                 ({excludedCount} already renewed excluded)
               </span>
             )}
@@ -3670,7 +3682,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       )}
 
       {uploadMsg && (
-        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "#10B981" }}>
+        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-success)" }}>
           {uploadMsg}
         </div>
       )}
@@ -3690,15 +3702,15 @@ function ImportTab({
 }) {
   return (
     <div style={{ maxWidth: 996, margin: '0 auto' }}>
-      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 28, textAlign: 'center' }}>
+      <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 28, textAlign: 'center' }}>
         Upload Allstate reports to refresh the At Risk queue. Each report is processed independently.
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 128, alignItems: 'stretch' }}>
 
         {/* Left — Pending Cancellation */}
-        <div style={{ background: '#161924', border: '1px solid #F59E0B33', borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-warning-border)', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-warning)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
             ⚠ Pending Cancellation Report
           </div>
           <UploadTab
@@ -3716,8 +3728,8 @@ function ImportTab({
         </div>
 
         {/* Right — Renewal Audit */}
-        <div style={{ background: '#161924', border: '1px solid #3B82F633', borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#3B82F6', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid #3B82F633', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-info)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
             🔄 Renewal Audit Report
           </div>
           <RenewalUploadZone
@@ -3730,18 +3742,18 @@ function ImportTab({
       </div>
 
       {/* Cancellation Audit — full width below */}
-      <div style={{ marginTop: 16, background: '#161924', border: '1px solid #EF444433',
+      <div style={{ marginTop: 16, background: 'var(--qs-card)', border: '1px solid var(--qs-danger-border)',
         borderRadius: 12, padding: 20 }}>
-        <div style={{ fontSize: 12, fontWeight: 600, color: '#EF4444',
+        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-danger)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
           🚫 Cancellation Audit
         </div>
-        <div style={{ fontSize: 13, color: '#64748B', marginBottom: 16 }}>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
           Upload the Allstate{' '}
           <span style={{ fontFamily: "'DM Mono', monospace" }}>Cancellation Audit</span> report (XLSX).
           <br />
-          <span style={{ color: '#F59E0B' }}>Cancel</span> rows → Stage 1 (pending).{' '}
-          <span style={{ color: '#EF4444' }}>Cancelled</span> rows → Stage 2 (coverage lapsed).
+          <span style={{ color: 'var(--qs-warning)' }}>Cancel</span> rows → Stage 1 (pending).{' '}
+          <span style={{ color: 'var(--qs-danger)' }}>Cancelled</span> rows → Stage 2 (coverage lapsed).
         </div>
         <UploadTab
           uploadFile={cancelAuditFile}
@@ -4357,21 +4369,22 @@ export default function BookHealthPage() {
   // ─── Page Render ───────────────────────────────────────────────────────────
 
   return (
-    <div style={{ minHeight: "100vh", background: "#0f172a", color: "#E2E8F0", fontFamily: "'DM Sans', sans-serif", padding: "32px 24px" }}>
+    <div style={{ minHeight: "100vh", background: "var(--qs-dark)", color: "var(--qs-text)", fontFamily: "'DM Sans', sans-serif", padding: "32px 24px" }}>
       <style>{GLOBAL_STYLES}</style>
 
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", margin: 0 }}>Book Health</h1>
-        <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>Pending Cancellation · {currentAgency?.agencies?.name || 'Agency'}</div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", margin: 0 }}>Book Health</h1>
+        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginTop: 2 }}>Pending Cancellation · {currentAgency?.agencies?.name || 'Agency'}</div>
       </div>
 
       {loading && (
-        <div style={{ color: "#64748B", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
+        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
       )}
 
       {/* KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
+        {/* KpiCard color prop — hex intentionally */}
         <KpiCard label="At Risk" value={fmt$(kpis.premiumAtRisk)} sub={`${kpis.totalActive} policies`} color="#F59E0B" urgent={kpis.urgentCount > 0} urgentCount={kpis.urgentCount} />
         <KpiCard label="Save Rate" value={kpis.saveRate !== null ? `${Math.round(kpis.saveRate * 100)}%` : "—"} sub="saved / worked" color="#10B981" />
         <KpiCard label="Contact Rate" value={kpis.contactRate !== null ? `${Math.round(kpis.contactRate * 100)}%` : "—"} sub="of active queue" color="#3B82F6" />

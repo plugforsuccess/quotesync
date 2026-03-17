@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useFunnelAgency } from '../hooks/useFunnelAgency';
 
 const EDGE_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/punch`;
 
@@ -7,7 +8,7 @@ const ACTION_CONFIG = {
   clocked_in:       { next: "lunch_out", label: "Lunch Out",       color: "#F59E0B", icon: "☕", secondary: { next: "clock_out", label: "Clock Out", color: "#EF4444" } },
   on_lunch:         { next: "lunch_in",  label: "Back from Lunch", color: "#3B82F6", icon: "↩" },
   back_from_lunch:  { next: "clock_out", label: "Clock Out",       color: "#EF4444", icon: "■" },
-  clocked_out:      { label: "Done for today", color: "#475569", done: true },
+  clocked_out:      { label: "Done for today", color: "var(--qs-subtle)", done: true },
 };
 
 const STATUS_LABELS = {
@@ -30,6 +31,8 @@ export default function PunchPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const pinRefs = [useRef(), useRef(), useRef(), useRef()];
   const returnTimer = useRef(null);
+  const { data: funnelAgency } = useFunnelAgency();
+  const brandName = funnelAgency?.brand_name || 'Agency';
 
   // Auto-focus first PIN box on mount
   useEffect(() => { pinRefs[0].current?.focus(); }, []);
@@ -118,7 +121,7 @@ export default function PunchPage() {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#0f172a", display: "flex",
+      minHeight: "100vh", background: "var(--qs-dark)", display: "flex",
       flexDirection: "column", alignItems: "center", justifyContent: "center",
       padding: "24px 16px", fontFamily: "'DM Sans', sans-serif",
     }}>
@@ -129,14 +132,14 @@ export default function PunchPage() {
 
       {/* Logo / Brand */}
       <div style={{ marginBottom: 32, textAlign: "center" }}>
-        <div style={{ fontSize: 13, color: "#475569", fontWeight: 500 }}>insuredbycam</div>
+        <div style={{ fontSize: 13, color: "var(--qs-subtle)", fontWeight: 500 }}>{brandName}</div>
       </div>
 
       {/* PIN Screen */}
       {screen === "pin" && (
         <div style={{ width: "100%", maxWidth: 320, textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", marginBottom: 6 }}>Enter Your PIN</div>
-          <div style={{ fontSize: 13, color: "#475569", marginBottom: 28 }}>4-digit employee code</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 6 }}>Enter Your PIN</div>
+          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 28 }}>4-digit employee code</div>
 
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }}>
             {[0,1,2,3].map(i => (
@@ -151,8 +154,8 @@ export default function PunchPage() {
                 onKeyDown={e => handlePinKey(i, e)}
                 style={{
                   width: 56, height: 64, textAlign: "center", fontSize: 28, fontWeight: 700,
-                  background: pin[i] ? "#1E2130" : "#161924",
-                  color: "#F1F5F9", border: `2px solid ${pin[i] ? "#3B82F6" : "#252A3A"}`,
+                  background: pin[i] ? "var(--qs-elevated)" : "var(--qs-card)",
+                  color: "var(--qs-bright)", border: `2px solid ${pin[i] ? "var(--qs-info)" : "var(--qs-border)"}`,
                   borderRadius: 12, outline: "none", fontFamily: "'DM Mono', monospace",
                   transition: "border-color 0.15s",
                 }}
@@ -160,9 +163,9 @@ export default function PunchPage() {
             ))}
           </div>
 
-          {loading && <div style={{ fontSize: 13, color: "#475569" }}>Verifying…</div>}
+          {loading && <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>Verifying…</div>}
           {errorMsg && (
-            <div style={{ fontSize: 13, color: "#EF4444", background: "#EF444411", borderRadius: 8, padding: "8px 12px" }}>
+            <div style={{ fontSize: 13, color: "var(--qs-danger)", background: "var(--qs-danger-subtle)", borderRadius: 8, padding: "8px 12px" }}>
               {errorMsg}
             </div>
           )}
@@ -172,10 +175,10 @@ export default function PunchPage() {
       {/* Status Screen */}
       {screen === "status" && (
         <div style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: "#F1F5F9", marginBottom: 4 }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
             Hi, {employeeName}
           </div>
-          <div style={{ fontSize: 14, color: "#475569", marginBottom: 28 }}>
+          <div style={{ fontSize: 14, color: "var(--qs-subtle)", marginBottom: 28 }}>
             {STATUS_LABELS[currentStatus]}
           </div>
 
@@ -188,9 +191,9 @@ export default function PunchPage() {
                 { label: "Lunch In", val: entry.lunch_in },
                 { label: "Clock Out", val: entry.end_time },
               ].map(({ label, val }) => (
-                <div key={label} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 10, padding: "10px 12px" }}>
-                  <div style={{ fontSize: 10, color: "#475569", marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: val ? "#E2E8F0" : "#252A3A", fontFamily: "'DM Mono', monospace" }}>
+                <div key={label} style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 10, padding: "10px 12px" }}>
+                  <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 3 }}>{label}</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: val ? "var(--qs-text)" : "var(--qs-border)", fontFamily: "'DM Mono', monospace" }}>
                     {val || "\u2014"}
                   </div>
                 </div>
@@ -200,7 +203,7 @@ export default function PunchPage() {
 
           {/* Hours so far */}
           {entry?.hours_worked && (
-            <div style={{ fontSize: 13, color: "#475569", marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
               {entry.hours_worked}h logged today
             </div>
           )}
@@ -235,16 +238,16 @@ export default function PunchPage() {
               )}
             </div>
           ) : (
-            <div style={{ fontSize: 16, color: "#475569", fontWeight: 500 }}>You're all done for today</div>
+            <div style={{ fontSize: 16, color: "var(--qs-subtle)", fontWeight: 500 }}>You're all done for today</div>
           )}
 
           {errorMsg && (
-            <div style={{ fontSize: 13, color: "#EF4444", background: "#EF444411", borderRadius: 8, padding: "8px 12px", marginTop: 14 }}>
+            <div style={{ fontSize: 13, color: "var(--qs-danger)", background: "var(--qs-danger-subtle)", borderRadius: 8, padding: "8px 12px", marginTop: 14 }}>
               {errorMsg}
             </div>
           )}
 
-          <button onClick={() => { setPin(""); setScreen("pin"); }} style={{ marginTop: 20, background: "transparent", border: "none", color: "#334155", fontSize: 12, cursor: "pointer" }}>
+          <button onClick={() => { setPin(""); setScreen("pin"); }} style={{ marginTop: 20, background: "transparent", border: "none", color: "var(--qs-muted)", fontSize: 12, cursor: "pointer" }}>
             &larr; Different employee
           </button>
         </div>
@@ -254,16 +257,16 @@ export default function PunchPage() {
       {screen === "success" && (
         <div style={{ textAlign: "center", maxWidth: 320 }}>
           <div style={{ fontSize: 52, marginBottom: 12 }}>&#x2705;</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", marginBottom: 6 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 6 }}>
             {ACTION_LABELS[lastAction]}
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace", marginBottom: 8 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "var(--qs-success)", fontFamily: "'DM Mono', monospace", marginBottom: 8 }}>
             {lastTime}
           </div>
           {entry?.hours_worked && lastAction === "clock_out" && (
-            <div style={{ fontSize: 14, color: "#475569" }}>{entry.hours_worked}h total today</div>
+            <div style={{ fontSize: 14, color: "var(--qs-subtle)" }}>{entry.hours_worked}h total today</div>
           )}
-          <div style={{ fontSize: 12, color: "#334155", marginTop: 16 }}>Returning to PIN screen…</div>
+          <div style={{ fontSize: 12, color: "var(--qs-muted)", marginTop: 16 }}>Returning to PIN screen…</div>
         </div>
       )}
     </div>

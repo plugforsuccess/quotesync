@@ -78,6 +78,14 @@ export default {
           dim:      '#94A3B8',   // placeholder, secondary
           text:     '#E2E8F0',   // body text
           bright:   '#F1F5F9',   // headings, strong text
+          // Semantic accent tokens
+          danger:   '#EF4444',
+          success:  '#10B981',
+          warning:  '#F59E0B',
+          info:     '#3B82F6',
+          purple:   '#8B5CF6',
+          pink:     '#EC4899',
+          cyan:     '#06B6D4',
         },
         // SEMANTIC CATEGORY COLORS - For newsroom categories
         // These provide visual distinction while staying within brand palette

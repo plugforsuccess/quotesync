@@ -35,13 +35,13 @@ export default function EmployeeRoute({ children }) {
   if (!employee) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', background: '#0F1117', padding: 24 }}>
+        justifyContent: 'center', background: 'var(--qs-dark)', padding: 24 }}>
         <div style={{ maxWidth: 400, textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 16 }}>🔒</div>
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9', marginBottom: 8 }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>
             No employee record found
           </div>
-          <div style={{ fontSize: 14, color: '#64748B' }}>
+          <div style={{ fontSize: 14, color: 'var(--qs-subtle)' }}>
             Your account isn't linked to an employee profile yet.
             Contact your agency administrator.
           </div>
