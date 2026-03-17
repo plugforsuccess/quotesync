@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { X, Target, RotateCcw, Save } from 'lucide-react';
-import { DEFAULT_TARGETS } from '../../../config/csPerformanceDefaults';
+import { DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
 
 // Full field groups for service reps
 const SERVICE_FIELD_GROUPS = [

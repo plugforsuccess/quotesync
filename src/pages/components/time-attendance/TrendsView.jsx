@@ -6,7 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer,
 } from 'recharts';
-import { calculateGrade, computeMetrics, GRADE_CONFIG, DEFAULT_TARGETS } from '../../../config/csPerformanceDefaults';
+import { calculateGrade, computeMetrics, GRADE_CONFIG, DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
 
 function formatWeekLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');

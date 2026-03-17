@@ -1,4 +1,4 @@
-// src/config/nav.config.js
+// src/config/navConfig.js
 // Two-Plane RBAC Navigation Configuration
 // Primary nav = always-visible links; Secondary nav = hamburger menu items
 
@@ -22,7 +22,7 @@ const primaryItems = {
   funnel:         { to: '/agency/dashboard',      label: 'Dashboard',          icon: '📊' },
   leads:          { to: '/agency/leads',           label: 'Leads',              icon: '📋' },
   timeAttendance: { to: '/admin/time-attendance',  label: 'Attendance',         icon: '⏱️' },
-  csPerformance:  { to: '/admin/cs-performance',   label: 'Performance',        icon: '📈' },
+  staffPerformance: { to: '/admin/staff-performance', label: 'Performance',        icon: '📈' },
   planning:           { to: '/admin/planning',             label: 'Planning',       icon: '📊' },
   bookHealth:     { to: '/admin/book-health',        label: 'Book Health',        icon: '🛡️' },
   newsroom:       { to: '/news/dashboard',         label: 'Newsroom',           icon: '📰' },
@@ -47,7 +47,7 @@ export const platformNav = {
     primary: [
       primaryItems.funnel,
       primaryItems.timeAttendance,
-      primaryItems.csPerformance,
+      primaryItems.staffPerformance,
       primaryItems.planning,
       primaryItems.bookHealth,
     ],
@@ -63,7 +63,7 @@ export const platformNav = {
     primary: [
       primaryItems.funnel,
       primaryItems.timeAttendance,
-      primaryItems.csPerformance,
+      primaryItems.staffPerformance,
       primaryItems.planning,
       primaryItems.bookHealth,
     ],
@@ -109,7 +109,7 @@ export const agencyNav = {
       primaryItems.funnel,
       primaryItems.leads,
       primaryItems.timeAttendance,
-      primaryItems.csPerformance,
+      primaryItems.staffPerformance,
     ],
     secondary: [
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },

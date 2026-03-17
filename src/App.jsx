@@ -78,7 +78,7 @@ const AdminAgenciesPage = lazyWithRetry(() => import('./pages/AdminAgenciesPage'
 const AdminAgencyDetailPage = lazyWithRetry(() => import('./pages/AdminAgencyDetailPage'));
 const AdminAuditPage = lazyWithRetry(() => import('./pages/AdminAuditPage'));
 const AdminTimeAttendancePage = lazyWithRetry(() => import('./pages/AdminTimeAttendancePage'));
-const CSPerformancePage = lazyWithRetry(() => import('./pages/CSPerformancePage'));
+const StaffPerformancePage = lazyWithRetry(() => import('./pages/StaffPerformancePage'));
 const AgencyLeadsPage = lazyWithRetry(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
@@ -87,7 +87,7 @@ const AgencySetupPage = lazyWithRetry(() => import('./pages/AgencySetupPage'));
 const AgencyTeamPage = lazyWithRetry(() => import('./pages/AgencyTeamPage'));
 const EmployeeRosterPage = lazyWithRetry(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
-const PlanningHub = lazyWithRetry(() => import('./pages/PlanningHub'));
+const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
 const BookHealthPage = lazyWithRetry(() => import('./pages/BookHealthPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
 
@@ -413,17 +413,17 @@ function App() {
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
-            <Route path="cs-performance" element={
+            <Route path="staff-performance" element={
               <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                 <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><CSPerformancePage /></Suspense>
+                  <Suspense fallback={<PageLoader />}><StaffPerformancePage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="planning" element={
               <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                 <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><PlanningHub /></Suspense>
+                  <Suspense fallback={<PageLoader />}><PlanningHubPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />

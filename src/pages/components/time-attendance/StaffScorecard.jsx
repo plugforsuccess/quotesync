@@ -1,10 +1,10 @@
-// src/pages/components/time-attendance/CSScorecard.jsx
+// src/pages/components/time-attendance/StaffScorecard.jsx
 // CS Performance Dashboard — Sections A (Activity), B (Efficiency & Quality),
 // C (Queue Breakdown), D (Proactivity) + A-F weekly grade.
 // v3: Call log as primary data source, summary report as optional supplement.
 
 import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, CheckCircle, XCircle, Shield, Edit3, BarChart2, Info } from 'lucide-react';
-import { GRADE_CONFIG, DEFAULT_TARGETS, calculateGrade, computeMetrics } from '../../../config/csPerformanceDefaults';
+import { GRADE_CONFIG, DEFAULT_TARGETS, calculateGrade, computeMetrics } from '../../../config/staffPerformanceDefaults';
 
 // ── Metric Display Components ──────────────────────────────────────────────────
 
@@ -97,7 +97,7 @@ function PassFailRow({ label, passed, manual, onToggle }) {
 
 // ── Main Scorecard ─────────────────────────────────────────────────────────────
 
-export default function CSScorecard({
+export default function StaffScorecard({
   rcData,
   callLogMetrics,
   daysWorked,

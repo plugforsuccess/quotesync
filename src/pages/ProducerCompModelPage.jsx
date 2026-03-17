@@ -172,7 +172,7 @@ export default function ProducerCompModelPage() {
         <div className="text-center">
           <h2 className="text-xl font-semibold text-qs-bright mb-2">Producer not found</h2>
           <p className="text-qs-dim mb-4">The producer you're looking for doesn't exist or you don't have access.</p>
-          <Link to="/admin/cs-performance" className="text-primary-400 hover:text-primary-300 font-medium">
+          <Link to="/admin/staff-performance" className="text-primary-400 hover:text-primary-300 font-medium">
             Back to Performance
           </Link>
         </div>
@@ -190,7 +190,7 @@ export default function ProducerCompModelPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-6">
         <Link
-          to="/admin/cs-performance"
+          to="/admin/staff-performance"
           className="inline-flex items-center gap-1.5 text-sm text-qs-subtle hover:text-qs-text mb-6"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -233,7 +233,7 @@ export default function ProducerCompModelPage() {
     <div className="dark-page max-w-7xl mx-auto px-4 py-6">
       {/* Back link */}
       <Link
-        to="/admin/cs-performance"
+        to="/admin/staff-performance"
         className="inline-flex items-center gap-1.5 text-sm text-qs-subtle hover:text-qs-text mb-4"
       >
         <ArrowLeft className="w-4 h-4" />

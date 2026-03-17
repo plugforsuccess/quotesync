@@ -4,7 +4,7 @@
 import {
   Document, Page, Text, View, StyleSheet,
 } from '@react-pdf/renderer';
-import { DEFAULT_TARGETS, calculateGrade, computeMetrics, GRADE_CONFIG } from '../../../config/csPerformanceDefaults';
+import { DEFAULT_TARGETS, calculateGrade, computeMetrics, GRADE_CONFIG } from '../../../config/staffPerformanceDefaults';
 
 const gradeColors = {
   A: '#15803d',

@@ -1,5 +1,5 @@
-// src/hooks/useCSPerformance.js
-// React Query hooks for CS Performance Dashboard v2 features:
+// src/hooks/useStaffPerformance.js
+// React Query hooks for Staff Performance Dashboard v2 features:
 // - Per-employee targets
 // - Manual proactivity assessments
 // - Outbound call breakdown
