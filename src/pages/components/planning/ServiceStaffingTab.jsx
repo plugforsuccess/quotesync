@@ -2,6 +2,28 @@ import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 
+// Allstate renewal commission rates by product group and bundling tier.
+// Preferred bundled cannot be determined from reports — use bundled as ceiling.
+// motor_club and other are excluded (no renewal commission).
+const RENEWAL_COMMISSION_RATES = {
+  auto:           { bundled: 6, monoline: 4 },
+  specialty_auto: { bundled: 6, monoline: 4 },
+  ho:             { bundled: 9, monoline: 7 },
+  condo:          { bundled: 9, monoline: 7 },
+  renters:        { bundled: 9, monoline: 7 },
+  landlord:       { bundled: 9, monoline: 7 },
+  pup:            { bundled: 9, monoline: 7 },
+  manufactured:   { bundled: 9, monoline: 7 },
+  boat:           { bundled: 9, monoline: 7 },
+  // motor_club and other: excluded
+};
+
+const EXCLUDED_PRODUCTS = new Set(['motor_club', 'other']);
+
+// Property follow always earns property bundled rate since
+// multi-line customers with property are by definition bundled.
+const PROPERTY_BUNDLED_RATE = 0.09;
+
 // Employment type presets
 const EMPLOYMENT_TYPES = [
   { key: 'full_time',  label: 'Full Time',  hours: 160, salaryFactor: 1.0,  description: '~160 hrs/mo' },
@@ -51,7 +73,7 @@ export default function ServiceStaffingTab({ agencyId }) {
       const [{ data: renewals }, { data: cancels }] = await Promise.all([
         supabase
           .from('renewal_events')
-          .select('premium, renewal_date, multi_line')
+          .select('premium, renewal_date, multi_line, product')
           .eq('agency_id', agencyId)
           .not('status', 'in', '(confirmed,lost,auto_resolved)'),
         supabase
@@ -75,12 +97,32 @@ export default function ServiceStaffingTab({ agencyId }) {
       const bundled = renewals.filter(r => r.multi_line === 'Yes').length;
       const bundledPortion = Math.round((bundled / renewals.length) * 100);
 
+      // Compute premium-weighted blended commission rate from actual book mix
+      const eligibleRenewals = renewals.filter(r =>
+        r.product && !EXCLUDED_PRODUCTS.has(r.product) && r.premium > 0
+      );
+
+      let blendedRate = 6.5; // fallback if no eligible data
+      if (eligibleRenewals.length > 0) {
+        const totalWeightedCommission = eligibleRenewals.reduce((sum, r) => {
+          const rates = RENEWAL_COMMISSION_RATES[r.product];
+          if (!rates) return sum; // skip unknown products
+          const tier = r.multi_line === 'Yes' ? 'bundled' : 'monoline';
+          return sum + (r.premium * (rates[tier] / 100));
+        }, 0);
+        const totalEligiblePremium = eligibleRenewals.reduce((sum, r) => sum + r.premium, 0);
+        blendedRate = totalEligiblePremium > 0
+          ? Math.round((totalWeightedCommission / totalEligiblePremium) * 100 * 10) / 10
+          : 6.5;
+      }
+
       setMonthlyPolicies(renewalMonthly);
       setPendingCancelPerMonth(cancelMonthly);
       setAvgPremium(avgPrem);
       setBundledPct(bundledPortion);
+      setCommissionRate(blendedRate);
       setLiveData(true);
-      return { renewalMonthly, cancelMonthly, avgPrem, bundledPortion };
+      return { renewalMonthly, cancelMonthly, avgPrem, bundledPortion, blendedRate };
     },
     enabled: !!agencyId,
     staleTime: 5 * 60 * 1000,
@@ -133,7 +175,7 @@ export default function ServiceStaffingTab({ agencyId }) {
     // Multi-line hidden exposure (based on total queue)
     const bundledAtRisk = Math.round(totalQueue * (bundledPct / 100));
     const propertyAtRisk = Math.round(bundledAtRisk * (propertyFollowPct / 100));
-    const hiddenComm = propertyAtRisk * avgPremium * (commissionRate / 100);
+    const hiddenComm = propertyAtRisk * avgPremium * PROPERTY_BUNDLED_RATE;
     const trueCommAtRisk = (totalQueue * avgPremium * (commissionRate / 100)) + hiddenComm;
 
     // Scenarios — vary contact + save rate, hold all else fixed
@@ -233,7 +275,7 @@ export default function ServiceStaffingTab({ agencyId }) {
       {liveData && (
         <div style={{ fontSize: 12, color: '#10B981', marginBottom: 16,
           background: '#10B98111', borderRadius: 6, padding: '6px 12px', display: 'inline-block' }}>
-          ✓ Using live book data — {monthlyPolicies} renewals + {pendingCancelPerMonth} pending cancels/mo
+          ✓ Using live book data — {monthlyPolicies} renewals + {pendingCancelPerMonth} pending cancels/mo · {commissionRate}% blended commission
         </div>
       )}
 
@@ -284,7 +326,10 @@ export default function ServiceStaffingTab({ agencyId }) {
             Total queue: <span style={{ color: '#E2E8F0', fontWeight: 600 }}>{monthlyPolicies + pendingCancelPerMonth} cases/mo</span>
           </div>
           <Field label="Avg premium per policy"    value={avgPremium}      onChange={setAvgPremium}      prefix="$" min={100} max={10000} step={100} />
-          <Field label="Commission rate"           value={commissionRate}  onChange={setCommissionRate}  suffix="%" min={1} max={25} step={0.5} />
+          <Field label="Commission rate (blended)"   value={commissionRate}  onChange={setCommissionRate}  suffix="%" min={1} max={25} step={0.5} />
+          <div style={{ fontSize: 11, color: '#64748B', marginTop: -8, marginBottom: 14 }}>
+            Auto: ~4–6% · Property: ~7–9% · weighted by your book mix
+          </div>
 
           <div style={{ borderTop: '1px solid #252A3A', margin: '14px 0' }} />
           <div style={{ fontSize: 11, color: '#3B82F6', marginBottom: 10 }}>Rep Performance</div>
