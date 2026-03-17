@@ -82,49 +82,49 @@ const SmarterFasterSection = ({ isVisible }) => {
 const LogoRow = () => (
   <div className="flex gap-16 items-center min-w-max">
     <img
-      src="/logos/GEICO.png"
+      src="/logos/GEICO.webp"
       alt="GEICO"
       loading="lazy"
       className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
-      src="/logos/Progressive.png"
+      src="/logos/Progressive.webp"
       alt="Progressive"
       loading="lazy"
       className="h-12 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
-      src="/logos/State-Farm.png"
+      src="/logos/State-Farm.webp"
       alt="State Farm"
       loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
-      src="/logos/AutoOwners.png"
+      src="/logos/AutoOwners.webp"
       alt="AutoOwners"
       loading="lazy"
       className="h-6 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
-      src="/logos/Nationwide.png"
+      src="/logos/Nationwide.webp"
       alt="Nationwide"
       loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
-      src="/logos/USAA.png"
+      src="/logos/USAA.webp"
       alt="USAA"
       loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
-      src="/logos/Farmers.png"
+      src="/logos/Farmers.webp"
       alt="Farmers"
       loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"
     />
     <img
-      src="/logos/Liberty-Mutual.png"
+      src="/logos/Liberty-Mutual.webp"
       alt="Liberty Mutual"
       loading="lazy"
       className="h-11 w-auto hover:scale-110 transition-all duration-300 drop-shadow-lg grayscale hover:grayscale-0"

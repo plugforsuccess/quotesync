@@ -1,10 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import compression from 'vite-plugin-compression';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
-  
+  plugins: [
+    react(),
+    compression({ algorithm: 'brotliCompress', ext: '.br' }),
+    compression({ algorithm: 'gzip', ext: '.gz' }),
+  ],
+
   build: {
     // Code splitting for better caching
     rollupOptions: {
@@ -18,6 +23,14 @@ export default defineConfig({
           'pdf': ['@react-pdf/renderer'],
           'xlsx': ['xlsx'],
           'stripe': ['@stripe/stripe-js'],
+          // Large admin pages in isolated chunks
+          'book-health': ['./src/pages/BookHealthPage.jsx'],
+          'planning': [
+            './src/pages/PlanningHub.jsx',
+            './src/pages/components/planning/ServiceStaffingTab.jsx',
+            './src/pages/components/revenue/RevenueProjectionsDashboard.jsx',
+          ],
+          'cs-performance': ['./src/pages/CSPerformancePage.jsx'],
         }
       }
     },

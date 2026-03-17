@@ -51,22 +51,39 @@ function computeRiskFlag(
   return 'green'
 }
 
-// Rate limiting: simple in-memory store (resets on cold start)
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
+// Rate limiting: DB-backed to survive Edge Function cold starts
 const RATE_LIMIT = 10 // requests per minute
-const RATE_WINDOW = 60000 // 1 minute
+const RATE_WINDOW = 60_000 // 1 minute
 
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(ip)
+async function checkRateLimit(supabase: any, ip: string): Promise<boolean> {
+  const now = new Date()
+  const windowEnd = new Date(now.getTime() + RATE_WINDOW)
+  const key = `create_lead:${ip}`
 
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW })
+  // Try to read existing entry
+  const { data: existing } = await supabase
+    .from('rate_limits')
+    .select('count, reset_at')
+    .eq('key', key)
+    .single()
+
+  // If no entry or expired, upsert a fresh window
+  if (!existing || new Date(existing.reset_at) <= now) {
+    await supabase
+      .from('rate_limits')
+      .upsert({ key, count: 1, reset_at: windowEnd.toISOString() }, { onConflict: 'key' })
     return true
   }
 
-  if (entry.count >= RATE_LIMIT) return false
-  entry.count++
+  // Active window — check limit
+  if (existing.count >= RATE_LIMIT) return false
+
+  // Increment counter
+  await supabase
+    .from('rate_limits')
+    .update({ count: existing.count + 1 })
+    .eq('key', key)
+
   return true
 }
 
@@ -220,9 +237,12 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Rate limit check
+  // Rate limit check (needs Supabase client — init early)
   const clientIp = req.headers.get('x-forwarded-for') || 'unknown'
-  if (!checkRateLimit(clientIp)) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const supabase = createClient(supabaseUrl, supabaseKey)
+  if (!(await checkRateLimit(supabase, clientIp))) {
     return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
       status: 429,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -242,11 +262,6 @@ Deno.serve(async (req) => {
     if (!zip || !/^\d{5}/.test(zip)) throw new Error('zip must be valid 5-digit code')
 
     const sessionId = session_id || crypto.randomUUID()
-
-    // Initialize Supabase client with service role
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-    const supabase = createClient(supabaseUrl, supabaseKey)
 
     // F-02 fix: Deduplication — check pull_id (Canopy) or session_id (funnel)
     if (pull_id) {

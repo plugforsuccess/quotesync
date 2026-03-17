@@ -3459,13 +3459,18 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
       // 1. Find existing rows (for upsert dedup) — also fetch status for auto-resolve logic
       const policyNos = [...new Set(parsedRows.map(r => r.policy_no))];
-      const { data: existing, error: lookupErr } = await supabase
-        .from('renewal_events')
-        .select('policy_no, renewal_date, status')
-        .eq('agency_id', agencyId)
-        .in('policy_no', policyNos)
-        .limit(10000);
-      if (lookupErr) throw new Error(lookupErr.message);
+      const CHUNK_SIZE = 500;
+      const existing = [];
+      for (let i = 0; i < policyNos.length; i += CHUNK_SIZE) {
+        const chunk = policyNos.slice(i, i + CHUNK_SIZE);
+        const { data, error: lookupErr } = await supabase
+          .from('renewal_events')
+          .select('policy_no, renewal_date, status')
+          .eq('agency_id', agencyId)
+          .in('policy_no', chunk);
+        if (lookupErr) throw new Error(lookupErr.message);
+        if (data) existing.push(...data);
+      }
       const existingKeys = new Set((existing ?? []).map(e => `${e.policy_no}|${e.renewal_date}`));
 
       // Build map of current status per row
