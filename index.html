@@ -6,6 +6,10 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#033973">
     
+    <!-- NOTE: Meta tags are hardcoded to Wiley-Wilson Agency.
+         For multi-tenant support, these should be injected per-agency
+         via server-side rendering or a middleware rewrite. -->
+
     <!-- Primary Meta Tags -->
     <title>insuredbycam - Compare Auto Insurance Rates in Georgia | Get Your Quote in 60 Seconds</title>
     <meta name="title" content="insuredbycam - Compare Auto Insurance Rates in Georgia | Get Your Quote in 60 Seconds" />
@@ -200,39 +204,60 @@
     }
     </script>
 
+    <!-- Font Preloading — DM Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="style"
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap">
+    <link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap"
+      media="print" onload="this.media='all'">
+    <noscript>
+      <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap">
+    </noscript>
+
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="/favicon-new.ico" />
     <link rel="shortcut icon" href="/favicon-new.ico" />
 
     <!-- Google Analytics 4 -->
-    <!-- TODO: Replace G-XXXXXXXXXX with your actual GA4 Measurement ID from Google Analytics -->
-    <!-- TODO: Replace AW-XXXXXXXXXX with your actual Google Ads Conversion ID -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      // Standard pageview config
-      gtag('config', 'G-XXXXXXXXXX');
-      // Google Ads conversion tracking
-      gtag('config', 'AW-XXXXXXXXXX');
-      window.GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
-      window.GADS_CONVERSION_ID = 'AW-XXXXXXXXXX';
+      (function() {
+        var gaId = '%VITE_GA_MEASUREMENT_ID%';
+        var adsId = '%VITE_GADS_CONVERSION_ID%';
+        if (!gaId || gaId.indexOf('VITE_') !== -1) return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gaId;
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', gaId);
+        if (adsId && adsId.indexOf('VITE_') === -1) gtag('config', adsId);
+        window.GA_MEASUREMENT_ID = gaId;
+        window.GADS_CONVERSION_ID = adsId;
+      })();
     </script>
 
     <!-- Meta Pixel (Facebook Pixel) -->
-    <!-- TODO: Replace YOUR_PIXEL_ID with your actual Meta Pixel ID -->
     <script>
-      !function(f,b,e,v,n,t,s)
-      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-      n.queue=[];t=b.createElement(e);t.async=!0;
-      t.src=v;s=b.getElementsByTagName(e)[0];
-      s.parentNode.insertBefore(t,s)}(window, document,'script',
-      'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', 'YOUR_PIXEL_ID');
-      fbq('track', 'PageView');
+      (function() {
+        var pixelId = '%VITE_META_PIXEL_ID%';
+        if (!pixelId || pixelId.indexOf('VITE_') !== -1) return;
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', pixelId);
+        fbq('track', 'PageView');
+      })();
     </script>
 
     <!-- Google Places API loaded on-demand via @googlemaps/js-api-loader -->

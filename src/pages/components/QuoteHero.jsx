@@ -107,7 +107,7 @@ const QuoteHero = ({ isVisible }) => {
         <div className="relative">
           <div className="w-36 h-36 md:w-40 md:h-40 rounded-full overflow-hidden border-4 border-white shadow-2xl ring-4 ring-primary-500/20">
             <img
-              src="/logos/A64C36F2-FC89-49D4-8C28-83161625C91C.jpeg"
+              src="/logos/cameron-headshot.webp"
               alt="Cameron Wiley"
               className="w-full h-full object-cover"
               style={{ objectPosition: '50% 30%' }}

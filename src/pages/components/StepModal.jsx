@@ -96,7 +96,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
             <div className="bg-white rounded-2xl overflow-hidden flex items-center justify-center p-4 shadow-inner border border-gray-100">
               {step === 1 && (
                 <img
-                  src="/screenshots/canopy-step1-select-provider.png"
+                  src="/screenshots/canopy-step1-select-provider.webp"
                   alt="Step 1"
                   className="w-full max-w-xs h-auto object-cover rounded-lg shadow-md"
                 />
@@ -104,7 +104,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
 
               {step === 2 && (
                 <img
-                  src="/screenshots/canopy-step2-login.png"
+                  src="/screenshots/canopy-step2-login.webp"
                   alt="Step 2"
                   className="w-full max-w-xs h-auto object-cover rounded-lg shadow-md"
                 />
@@ -128,7 +128,7 @@ const StepModal = ({ step, onClose, stepDetails, setModalStep }) => {
 
               {step === 4 && (
                 <img
-                  src="/screenshots/canopy-step3-loading-policy.png"
+                  src="/screenshots/canopy-step3-loading-policy.webp"
                   alt="Step 4"
                   className="w-full max-w-xs h-auto object-cover rounded-lg shadow-md"
                 />
