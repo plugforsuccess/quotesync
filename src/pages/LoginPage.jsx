@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { getDefaultLanding } from '../config/nav.config';
+import { getDefaultLanding } from '../config/navConfig';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 
 const LoginPage = () => {

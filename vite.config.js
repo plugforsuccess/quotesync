@@ -26,11 +26,11 @@ export default defineConfig({
           // Large admin pages in isolated chunks
           'book-health': ['./src/pages/BookHealthPage.jsx'],
           'planning': [
-            './src/pages/PlanningHub.jsx',
+            './src/pages/PlanningHubPage.jsx',
             './src/pages/components/planning/ServiceStaffingTab.jsx',
             './src/pages/components/revenue/RevenueProjectionsDashboard.jsx',
           ],
-          'cs-performance': ['./src/pages/CSPerformancePage.jsx'],
+          'staff-performance': ['./src/pages/StaffPerformancePage.jsx'],
         }
       }
     },

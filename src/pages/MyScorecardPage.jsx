@@ -7,7 +7,7 @@ import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
 import { BonusVerificationAlert } from './components/time-attendance/DiscrepancyAlerts';
-import { RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/csPerformanceDefaults';
+import { RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/staffPerformanceDefaults';
 
 export default function MyScorecardPage() {
   const { data: employee } = useCurrentEmployee();

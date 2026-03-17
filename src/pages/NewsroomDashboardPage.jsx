@@ -7,7 +7,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Plus, Edit, Eye, CheckCircle, XCircle, Star, Archive, AlertCircle, RefreshCw } from 'lucide-react';
 import { supabase, getUserRole, hasPermission } from '../lib/supabase';
 import { useStories, useStoryStats } from '../hooks/useStories';
-import { useSessionValidation } from '../hooks/useSessionValidation.jsx';
+import { useSessionValidation } from '../hooks/useSessionValidation';
 import { useAuth } from '../contexts/AuthContext';
 import { getBuildString } from '../utils/cacheVersion';
 import { getCategoryLabel } from '../lib/categories';

@@ -46,6 +46,11 @@
       "has": [{ "type": "host", "value": "insuredbycam.com" }],
       "destination": "https://www.insuredbycam.com/$1",
       "permanent": true
+    },
+    {
+      "source": "/admin/cs-performance",
+      "destination": "/admin/staff-performance",
+      "permanent": true
     }
   ],
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]

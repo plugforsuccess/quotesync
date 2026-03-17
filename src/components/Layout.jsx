@@ -9,7 +9,7 @@ import HamburgerMenu from './HamburgerMenu';
 import BottomTabBar from './BottomTabBar';
 import VerificationBanner from './VerificationBanner';
 import { useAuth } from '../contexts/AuthContext';
-import { PLANES, getNavItems, roleDisplayNames } from '../config/nav.config';
+import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 
 function Layout({ forcePlane = null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -113,7 +113,7 @@ function Layout({ forcePlane = null }) {
   const bottomTabRoutes = [
     '/agency/dashboard',
     '/agency/leads',
-    '/admin/cs-performance',
+    '/admin/staff-performance',
     '/admin/revenue-projections',
   ];
 

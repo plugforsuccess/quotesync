@@ -40,7 +40,7 @@ const TABS = [
   { key: 'producers', label: '🏆 Producer Comp'     },
 ];
 
-export default function PlanningHub() {
+export default function PlanningHubPage() {
   const [activeTab, setActiveTab] = useState('revenue');
   const { currentAgencyId } = useAuth();
 

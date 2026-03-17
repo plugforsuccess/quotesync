@@ -4,7 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import { Users, ArrowUpDown, AlertTriangle } from 'lucide-react';
-import { GRADE_CONFIG, calculateGrade, computeMetrics, DEFAULT_TARGETS } from '../../../config/csPerformanceDefaults';
+import { GRADE_CONFIG, calculateGrade, computeMetrics, DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
 
 // ── Role labels ─────────────────────────────────────────────────────────────
 

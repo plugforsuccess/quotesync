@@ -11,7 +11,7 @@ import WhyQuotesDifferent from './components/WhyQuotesDifferent';
 import SmarterFasterSection from './components/SmarterFasterSection';
 import ZipValidator from '../components/ZipValidator';
 import StickyQuoteBar from '../components/StickyQuoteBar';
-import { useZipValidation } from '../hooks/ZipValidation';
+import { useZipValidation } from '../hooks/useZipValidation';
 import { useCanopyComplete } from '../hooks/useCanopyComplete';
 import { trackQuoteStarted } from '../lib/analytics';
 

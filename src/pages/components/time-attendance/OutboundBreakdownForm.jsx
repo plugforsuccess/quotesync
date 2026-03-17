@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { PhoneOutgoing, Save } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { OUTBOUND_CATEGORIES } from '../../../config/csPerformanceDefaults';
+import { OUTBOUND_CATEGORIES } from '../../../config/staffPerformanceDefaults';
 
 export default function OutboundBreakdownForm({
   breakdownData,

@@ -1,9 +1,9 @@
-// src/pages/CSPerformancePage.jsx
+// src/pages/StaffPerformancePage.jsx
 // Performance Dashboard — Individual scorecard, Team comparison, Trends,
 // Daily breakdown, Outbound breakdown, PDF export, per-employee goals.
 // Supports role-aware views: service reps (full scorecard) and producers (outbound effort).
 // v3: Call log as primary data source with summary report as optional supplement.
-// Route: /admin/cs-performance
+// Route: /admin/staff-performance
 // Access: platform_master_admin, platform_admin only
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -23,12 +23,12 @@ import {
   useTrendData, useTeamData,
   useCallLogData, useInvalidateCallLog,
   useQueueData, useInvalidateQueueData,
-} from '../hooks/useCSPerformance';
-import { computeCallLogMetrics, RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/csPerformanceDefaults';
+} from '../hooks/useStaffPerformance';
+import { computeCallLogMetrics, RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/staffPerformanceDefaults';
 import CallLogUploadForm from './components/time-attendance/CallLogUploadForm';
 import QueueUploadForm from './components/time-attendance/QueueUploadForm';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
-import CSScorecard from './components/time-attendance/CSScorecard';
+import StaffScorecard from './components/time-attendance/StaffScorecard';
 import DiscrepancyAlerts, { BonusVerificationAlert } from './components/time-attendance/DiscrepancyAlerts';
 import CoverageAlerts from './components/time-attendance/CoverageAlerts';
 import QueueSummaryCard from './components/time-attendance/QueueSummaryCard';
@@ -146,7 +146,7 @@ const TIER_OPTIONS = [
 
 // ── Page Component ─────────────────────────────────────────────────────────────
 
-const CSPerformancePage = () => {
+const StaffPerformancePage = () => {
   const { user, currentAgencyId } = useAuth();
   const { platform } = usePermissions();
 
@@ -846,7 +846,7 @@ const CSPerformancePage = () => {
                 })()}
 
                 {/* Scorecard with call log metrics as primary */}
-                <CSScorecard
+                <StaffScorecard
                   rcData={rcData.find((r) => r.employee_user_id === singleEmployee) || null}
                   callLogMetrics={callLogMetrics}
                   daysWorked={(() => {
@@ -929,7 +929,7 @@ const CSPerformancePage = () => {
                     />
 
                     {/* Scorecard with per-employee targets and manual proactivity */}
-                    <CSScorecard
+                    <StaffScorecard
                       rcData={rc}
                       daysWorked={daysWorked || 5}
                       targets={isSelectedEmployee ? employeeTargets : null}
@@ -1056,4 +1056,4 @@ const CSPerformancePage = () => {
   );
 };
 
-export default CSPerformancePage;
+export default StaffPerformancePage;

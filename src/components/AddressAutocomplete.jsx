@@ -3,7 +3,7 @@
 // web component. Race-condition safe, with Geocoder fallback for missing fields.
 // Enterprise hardened: geocoder cache, non-PII telemetry, graceful failure UI.
 import { useEffect, useMemo, useRef, useState } from "react";
-import { loadGoogleMaps } from "./googleMapsLoader";
+import { loadGoogleMaps } from "../lib/googleMapsLoader";
 import { parseAddressComponents } from "../utils/parseAddress";
 import { trackEvent } from "../lib/analytics";
 
