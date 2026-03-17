@@ -299,17 +299,41 @@ function SortTh({ col, label, sortCol, sortDir, onSort }) {
   );
 }
 
-function KpiCard({ label, value, sub, color, urgent, urgentCount }) {
+function KpiCard({ label, value, sub, color, urgent, urgentCount, clickable, onClick }) {
   return (
-    <div className="card" style={{ position: "relative" }}>
+    <div
+      className="card"
+      style={{
+        position: 'relative',
+        cursor: clickable ? 'pointer' : 'default',
+        transition: 'border-color 0.15s',
+        border: clickable ? '1px solid #252A3A' : undefined,
+      }}
+      onClick={onClick}
+      onMouseEnter={e => { if (clickable) e.currentTarget.style.borderColor = color; }}
+      onMouseLeave={e => { if (clickable) e.currentTarget.style.borderColor = '#252A3A'; }}
+    >
       {urgent && (
-        <div style={{ position: "absolute", top: 10, right: 10, background: "#EF444422", color: "#EF4444", fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 4 }}>
+        <div style={{ position: 'absolute', top: 10, right: 10, background: '#EF444422',
+          color: '#EF4444', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
           {urgentCount} URGENT
         </div>
       )}
-      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
-      {sub && <div style={{ fontSize: 11, color: "#64748B", marginTop: 2 }}>{sub}</div>}
+      {clickable && (
+        <div style={{ position: 'absolute', bottom: 8, right: 10,
+          fontSize: 9, color: '#334155', letterSpacing: '0.05em' }}>
+          FILTER ↓
+        </div>
+      )}
+      <div style={{ fontSize: 11, color: '#64748B', fontWeight: 600,
+        textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 6 }}>
+        {label}
+      </div>
+      <div style={{ fontSize: 26, fontWeight: 700, color,
+        fontFamily: "'DM Mono', monospace" }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }
@@ -2874,6 +2898,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
   }, [producers]);
 
   const [riskFilter, setRiskFilter] = useState('all');
+  const [kpiFilter, setKpiFilter] = useState(null);
   const [myCasesOnly, setMyCasesOnly] = useState(false);
   const [sortCol, setSortCol] = useState('priority');
   const [sortDir, setSortDir] = useState('desc');
@@ -2994,60 +3019,114 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
     });
   }, [rows, riskFilter, myCasesOnly, currentEmployeeId, sortCol, sortDir]);
 
+  const kpiFilteredRows = useMemo(() => {
+    if (kpiFilter === null) return filteredRows;
+    if (kpiFilter === 'multi_line') return filteredRows.filter(r => r.multi_line === 'Yes');
+    return filteredRows.filter(r => r.risk_type === kpiFilter);
+  }, [filteredRows, kpiFilter]);
+
   if (isLoading) {
     return <div style={{ color: '#64748B', fontSize: 13 }}>Loading at-risk policies...</div>;
   }
 
   return (
     <div>
-      {/* KPI strip */}
+      {/* KPI strip — sorted by value descending */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <KpiCard
-          label="Dual Risk"
-          value={rows.filter(r => r.risk_type === 'dual_risk').length}
-          sub="cancel + renewal"
-          color="#EF4444"
-        />
-        <KpiCard
-          label="Pending Cancel"
-          value={rows.filter(r => r.risk_type === 'pending_cancel').length}
-          sub="payment risk"
-          color="#F59E0B"
-        />
-        <KpiCard
-          label="Renewals"
-          value={rows.filter(r => r.risk_type === 'renewal').length}
-          sub="shopping risk"
-          color="#3B82F6"
-        />
-        <KpiCard
-          label="Multi-Line at Risk"
-          value={rows.filter(r => r.multi_line === 'Yes').length}
-          sub="bundled customers"
-          color="#10B981"
-        />
-        <KpiCard
-          label="Items at Risk"
-          value={rows.reduce((s, r) => s + (
+        {(() => {
+          const totalPremium = rows.reduce((s, r) =>
+            s + (r.premium_at_risk || 0) + (r.renewal_premium || 0), 0);
+          const totalPoints  = rows.reduce((s, r) => s + calcRowPoints(r), 0);
+          const totalItems   = rows.reduce((s, r) => s + (
             r.risk_type === 'pending_cancel'
               ? (r.cancel_item_count || 1)
               : (r.renewal_item_count || 1)
-          ), 0).toLocaleString()}
-          sub="total policy items"
-          color="#06B6D4"
-        />
-        <KpiCard
-          label="Points at Risk"
-          value={rows.reduce((s, r) => s + calcRowPoints(r), 0).toLocaleString()}
-          sub="portfolio impact"
-          color="#8B5CF6"
-        />
-        <KpiCard
-          label="Premium Exposed"
-          value={fmt$(rows.reduce((s, r) => s + (r.premium_at_risk || 0) + (r.renewal_premium || 0), 0))}
-          sub="total at risk"
-          color="#EC4899"
-        />
+          ), 0);
+          const countRenewals      = rows.filter(r => r.risk_type === 'renewal').length;
+          const countMultiLine     = rows.filter(r => r.multi_line === 'Yes').length;
+          const countPendingCancel = rows.filter(r => r.risk_type === 'pending_cancel').length;
+          const countDualRisk      = rows.filter(r => r.risk_type === 'dual_risk').length;
+
+          const kpis = [
+            {
+              key:        'premium',
+              label:      'Premium Exposed',
+              rawValue:   totalPremium,
+              display:    fmt$(totalPremium),
+              sub:        'total at risk',
+              color:      '#EC4899',
+              filterKey:  null,
+            },
+            {
+              key:        'points',
+              label:      'Points at Risk',
+              rawValue:   totalPoints,
+              display:    totalPoints.toLocaleString(),
+              sub:        'portfolio impact',
+              color:      '#8B5CF6',
+              filterKey:  null,
+            },
+            {
+              key:        'items',
+              label:      'Items at Risk',
+              rawValue:   totalItems,
+              display:    totalItems.toLocaleString(),
+              sub:        'total policy items',
+              color:      '#06B6D4',
+              filterKey:  null,
+            },
+            {
+              key:        'renewals',
+              label:      'Renewals',
+              rawValue:   countRenewals,
+              display:    countRenewals,
+              sub:        'shopping risk',
+              color:      '#3B82F6',
+              filterKey:  'renewal',
+            },
+            {
+              key:        'multi_line',
+              label:      'Multi-Line at Risk',
+              rawValue:   countMultiLine,
+              display:    countMultiLine,
+              sub:        'bundled customers',
+              color:      '#10B981',
+              filterKey:  'multi_line',
+            },
+            {
+              key:        'pending_cancel',
+              label:      'Pending Cancel',
+              rawValue:   countPendingCancel,
+              display:    countPendingCancel,
+              sub:        'payment risk',
+              color:      '#F59E0B',
+              filterKey:  'pending_cancel',
+            },
+            {
+              key:        'dual_risk',
+              label:      'Dual Risk',
+              rawValue:   countDualRisk,
+              display:    countDualRisk,
+              sub:        'cancel + renewal',
+              color:      '#EF4444',
+              filterKey:  'dual_risk',
+            },
+          ];
+
+          const sorted = [...kpis].sort((a, b) => b.rawValue - a.rawValue);
+
+          return sorted.map(kpi => (
+            <KpiCard
+              key={kpi.key}
+              label={kpi.label}
+              value={kpi.display}
+              sub={kpi.sub}
+              color={kpi.color}
+              clickable={!!kpi.filterKey}
+              onClick={kpi.filterKey ? () => setKpiFilter(kpi.filterKey) : undefined}
+            />
+          ));
+        })()}
       </div>
 
       {/* Filter bar */}
@@ -3059,10 +3138,31 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           { key: 'renewal',        label: 'Renewals' },
         ].map(f => (
           <button key={f.key} className={`btn-ghost ${riskFilter === f.key ? 'active' : ''}`}
-            onClick={() => setRiskFilter(f.key)}>
+            onClick={() => { setRiskFilter(f.key); setKpiFilter(null); }}>
             {f.label}
           </button>
         ))}
+
+        {kpiFilter && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: '#3B82F622', border: '1px solid #3B82F644',
+            borderRadius: 6, padding: '4px 10px', fontSize: 12, color: '#3B82F6',
+          }}>
+            Filtered: {
+              kpiFilter === 'renewal'        ? 'Renewals'        :
+              kpiFilter === 'pending_cancel' ? 'Pending Cancel'  :
+              kpiFilter === 'dual_risk'      ? 'Dual Risk'       :
+              kpiFilter === 'multi_line'     ? 'Multi-Line'      : kpiFilter
+            }
+            <button
+              onClick={() => setKpiFilter(null)}
+              style={{ background: 'none', border: 'none', color: '#3B82F6',
+                cursor: 'pointer', padding: '0 2px', fontSize: 14, lineHeight: 1 }}>
+              ×
+            </button>
+          </div>
+        )}
 
         {/* My Cases toggle */}
         <button
@@ -3104,7 +3204,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
             </tr>
           </thead>
           <tbody>
-            {filteredRows.map(row => {
+            {kpiFilteredRows.map(row => {
               const cancelDays = row.cancel_effective_date ? daysUntilCancel(row.cancel_effective_date) : null;
               const renewalDays = row.renewal_date ? daysUntilRenewal(row.renewal_date) : null;
 
@@ -3211,7 +3311,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                 </tr>
               );
             })}
-            {filteredRows.length === 0 && (
+            {kpiFilteredRows.length === 0 && (
               <tr><td colSpan={10} style={{ textAlign: 'center', color: '#334155', padding: '32px 0' }}>
                 No at-risk policies in this filter
               </td></tr>
