@@ -59,6 +59,40 @@ const AGENCY_ROLE_HIERARCHY = {
   // Future: viewer: 0, manager: 2 (insert between producer/agent)
 };
 
+// ── RBAC cache ──────────────────────────────────────────────────────────────
+// Keyed by access_token so cache is automatically invalidated on token refresh.
+// sessionStorage is cleared on tab close — no stale data across sessions.
+
+const RBAC_CACHE_KEY = 'qs_rbac_cache';
+
+function saveRBACCache(accessToken, data) {
+  try {
+    sessionStorage.setItem(RBAC_CACHE_KEY, JSON.stringify({
+      token: accessToken,
+      data,
+      cachedAt: Date.now(),
+    }));
+  } catch (_) {}
+}
+
+function loadRBACCache(accessToken) {
+  try {
+    const raw = sessionStorage.getItem(RBAC_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    // Cache is valid if token matches and is less than 30 minutes old
+    if (parsed.token !== accessToken) return null;
+    if (Date.now() - parsed.cachedAt > 30 * 60 * 1000) return null;
+    return parsed.data;
+  } catch (_) {
+    return null;
+  }
+}
+
+function clearRBACCache() {
+  try { sessionStorage.removeItem(RBAC_CACHE_KEY); } catch (_) {}
+}
+
 // --- Boot helpers ---
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -111,7 +145,7 @@ export const AuthProvider = ({ children }) => {
   const requestIdRef = useRef(0);
 
   // Fetch user profile and memberships
-  const fetchUserProfile = async (currentUser) => {
+  const fetchUserProfile = async (currentUser, accessToken = null) => {
     const requestId = ++requestIdRef.current;
 
     if (!currentUser) {
@@ -120,6 +154,45 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
+    // ── Cache check ────────────────────────────────────────────────────────
+    // If we have a valid cache for this token, restore instantly — no DB queries.
+    if (accessToken) {
+      const cached = loadRBACCache(accessToken);
+      if (cached) {
+        console.log('[AUTHZ] restored from cache, skipping DB queries');
+        if (requestId !== requestIdRef.current) return;
+        setAuthError(null);
+        setUser(currentUser);
+        setProfile(cached.profileData);
+        setRole(cached.profileData?.role || 'viewer');
+        setIsPlatformUser(cached.profileData?.is_platform_user || false);
+        setPlatformRole(cached.profileData?.platform_role || null);
+        setAgencyMemberships(cached.memberships || []);
+        setIsImpersonating(!!cached.activeImpersonation);
+        setImpersonationSession(cached.activeImpersonation);
+
+        // Restore agency selection
+        const storedAgencyId = localStorage.getItem('currentAgencyId');
+        const activeMemberships = (cached.memberships || []).filter(m =>
+          m.status === 'active' && m.agencies?.status === 'approved'
+        );
+        if (activeMemberships.length > 0) {
+          const preferred = activeMemberships.find(m => m.agency_id === storedAgencyId);
+          const current = preferred || activeMemberships[0];
+          setCurrentAgencyId(current.agency_id);
+          setCurrentAgencyRole(current.agency_role);
+        } else if (cached.activeImpersonation) {
+          setCurrentAgencyId(cached.activeImpersonation.target_agency_id);
+          setCurrentAgencyRole('viewer');
+        } else {
+          setCurrentAgencyId(null);
+          setCurrentAgencyRole(null);
+        }
+        return;
+      }
+    }
+
+    // ── Full DB resolution (cache miss or no token) ────────────────────────
     console.log('[AUTHZ] resolving for uid=', currentUser.id);
 
     try {
@@ -177,6 +250,11 @@ export const AuthProvider = ({ children }) => {
 
       if (requestId !== requestIdRef.current) {
         return;
+      }
+
+      // ── Save to cache ──────────────────────────────────────────────────────
+      if (accessToken) {
+        saveRBACCache(accessToken, { profileData, memberships, activeImpersonation });
       }
 
       setAuthError(null);
@@ -432,6 +510,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   const resetState = () => {
+    clearRBACCache();
     setUser(null);
     setProfile(null);
     setRole(null);
@@ -478,7 +557,7 @@ export const AuthProvider = ({ children }) => {
 
         // 2) If we have a session, resolve RBAC
         if (session?.user) {
-          await fetchUserProfile(session.user);
+          await fetchUserProfile(session.user, session.access_token);
           if (!mounted) return;
           setLoading(false);
           return;
@@ -501,7 +580,7 @@ export const AuthProvider = ({ children }) => {
           try {
             const { data } = await safeGetSession(1);
             if (data?.session?.user) {
-              await fetchUserProfile(data.session.user);
+              await fetchUserProfile(data.session.user, data.session.access_token);
             } else {
               resetState();
             }
@@ -551,7 +630,7 @@ export const AuthProvider = ({ children }) => {
           // and blocking the UI on every SIGNED_IN (including page-refresh replays)
           // causes flicker. initAuth already handles the initial loading state.
           try {
-            await fetchUserProfile(session.user);
+            await fetchUserProfile(session.user, session.access_token);
           } catch (e) {
             if (!isAbortError(e)) {
               console.error('[AUTHZ] fetchUserProfile failed on SIGNED_IN:', e);
@@ -581,7 +660,18 @@ export const AuthProvider = ({ children }) => {
           // without re-running RBAC queries.
           if (session?.user) {
             console.log('[AUTH] token refreshed, keeping existing RBAC state');
+            // Clear stale cache (old token) and re-save with new token
+            clearRBACCache();
             setUser(session.user);
+            // Re-save current RBAC state under the new token so page refreshes
+            // still hit cache instead of making DB queries.
+            if (session.access_token && profile) {
+              saveRBACCache(session.access_token, {
+                profileData: profile,
+                memberships: agencyMemberships,
+                activeImpersonation: impersonationSession,
+              });
+            }
             // Tell other tabs the token refreshed so they don't re-request
             authChannel?.postMessage({ type: 'TOKEN_REFRESHED', userId: session.user.id });
           }
@@ -598,7 +688,7 @@ export const AuthProvider = ({ children }) => {
             if (data?.session) {
               // Session still valid — spurious SIGNED_OUT, re-hydrate state
               console.warn('[AUTH] spurious SIGNED_OUT — session still valid, re-hydrating');
-              fetchUserProfile(data.session.user).catch(e =>
+              fetchUserProfile(data.session.user, data.session.access_token).catch(e =>
                 console.error('[AUTH] re-hydration after spurious SIGNED_OUT failed:', e)
               );
             } else {
@@ -708,7 +798,12 @@ export const AuthProvider = ({ children }) => {
   const refreshUser = async () => {
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     if (currentUser) {
-      await fetchUserProfile(currentUser);
+      // Bypass cache — refreshUser is called when we need fresh DB data
+      // (e.g. after impersonation changes). Clear cache so the fresh data
+      // is saved as the new cached state.
+      clearRBACCache();
+      const { data: sessionData } = await supabase.auth.getSession();
+      await fetchUserProfile(currentUser, sessionData?.session?.access_token);
     }
   };
 
