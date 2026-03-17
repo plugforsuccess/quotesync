@@ -539,35 +539,35 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
   }, [confirmModal, handleEscKey]);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-qs-card rounded-lg border border-qs-border p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Phone className="w-6 h-6 text-primary-600" />
+          <Phone className="w-6 h-6 text-primary-400" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Daily Call Log Upload</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-lg font-semibold text-qs-bright">Daily Call Log Upload</h3>
+            <p className="text-sm text-qs-subtle">
               Upload the RingCentral Call Log export (XLSX or CSV). Primary data source — upload daily at end of business.
             </p>
           </div>
         </div>
         <button
           onClick={() => setShowHelp(!showHelp)}
-          className="p-2 text-gray-400 hover:text-primary-600 rounded-lg transition-colors"
+          className="p-2 text-qs-muted hover:text-primary-400 rounded-lg transition-colors"
         >
           <HelpCircle className="w-5 h-5" />
         </button>
       </div>
 
       {showHelp && (
-        <div className="mb-4 p-4 bg-primary-50 rounded-lg text-sm text-primary-800">
+        <div className="mb-4 p-4 bg-primary-900/20 rounded-lg text-sm text-primary-300">
           <p className="font-medium mb-2">How to export the Call Log from RingCentral:</p>
-          <ol className="list-decimal list-inside space-y-1 text-primary-700 mb-3">
+          <ol className="list-decimal list-inside space-y-1 text-primary-300 mb-3">
             <li>Go to RingCentral Analytics &rarr; Performance Reports &rarr; Calls</li>
             <li>Set the date range to the target day or week</li>
             <li>Export as XLSX or CSV</li>
           </ol>
           <p className="font-medium mb-2">Expected columns (from the &ldquo;Calls&rdquo; sheet):</p>
-          <ul className="list-disc list-inside space-y-1 text-primary-700">
+          <ul className="list-disc list-inside space-y-1 text-primary-300">
             <li><strong>From Name</strong>, <strong>To Name</strong> &mdash; agent identification</li>
             <li><strong>Call Direction</strong> &mdash; Inbound or Outbound</li>
             <li><strong>Result</strong> &mdash; Connected, Not Connected, Answered, or VM/Missed</li>
@@ -578,7 +578,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       )}
 
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg cursor-pointer transition-colors">
+        <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
           Choose File
           <input
@@ -590,7 +590,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           />
         </label>
         {summary?.dateRange?.min && (
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-qs-subtle">
             Date range: {summary.dateRange.min} &mdash; {summary.dateRange.max}
           </span>
         )}
@@ -598,11 +598,11 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
 
       {/* Validation errors */}
       {validationErrors.length > 0 && (
-        <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm font-medium text-yellow-800 mb-1">
+        <div className="mt-3 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
+          <p className="text-sm font-medium text-amber-300 mb-1">
             {validationErrors.length} row{validationErrors.length > 1 ? 's' : ''} rejected (validation errors):
           </p>
-          <ul className="text-xs text-yellow-700 space-y-0.5 max-h-32 overflow-y-auto">
+          <ul className="text-xs text-amber-300 space-y-0.5 max-h-32 overflow-y-auto">
             {validationErrors.map((ve, i) => (
               <li key={i}>Row {ve.row}: {ve.error}</li>
             ))}
@@ -613,63 +613,63 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       {/* Preview */}
       {preview && preview.length > 0 && summary && (
         <div className="mt-4">
-          <div className="mb-3 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700">
+          <div className="mb-3 p-3 bg-qs-elevated rounded-lg">
+            <p className="text-sm font-medium text-qs-text">
               {preview.length} valid calls: {summary.outbound} outbound, {summary.inbound} inbound
               ({summary.answered} answered, {summary.missed} missed).
               {' '}{summary.matched} agent{summary.matched !== 1 ? 's' : ''} matched
               {summary.unmatched > 0 && (
-                <span className="text-yellow-600">, {summary.unmatched} unmatched</span>
+                <span className="text-amber-400">, {summary.unmatched} unmatched</span>
               )}
               .
             </p>
           </div>
 
-          <div className="overflow-x-auto border border-gray-200 rounded-lg max-h-96 overflow-y-auto">
+          <div className="overflow-x-auto border border-qs-border rounded-lg max-h-96 overflow-y-auto">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="bg-qs-elevated sticky top-0">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Agent</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Direction</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Result</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Duration</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Queue</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Time</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Agent</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Direction</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Result</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Duration</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Queue</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Time</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-qs-border">
                 {preview.slice(0, 100).map((row, i) => (
-                  <tr key={i} className={row._matched ? 'hover:bg-gray-50' : 'bg-yellow-50/50 hover:bg-yellow-50'}>
-                    <td className="px-3 py-2 text-gray-900">
+                  <tr key={i} className={row._matched ? 'hover:bg-qs-elevated' : 'bg-amber-900/10 hover:bg-amber-900/20'}>
+                    <td className="px-3 py-2 text-qs-bright">
                       {row.employee_name}
-                      {!row._matched && <span className="ml-1 text-xs text-yellow-600" title="No matching employee found">(?)</span>}
+                      {!row._matched && <span className="ml-1 text-xs text-amber-400" title="No matching employee found">(?)</span>}
                     </td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        row.call_direction === 'Outbound' ? 'bg-primary-100 text-primary-700' : 'bg-green-100 text-green-700'
+                        row.call_direction === 'Outbound' ? 'bg-primary-900/20 text-primary-300' : 'bg-emerald-900/20 text-emerald-300'
                       }`}>
                         {row.call_direction === 'Outbound' ? 'Out' : 'In'}
                       </span>
                     </td>
                     <td className="px-3 py-2">
                       <span className={`text-xs font-medium ${
-                        row.call_result === 'VM/Missed' ? 'text-red-600' :
-                        row.call_result === 'Not Connected' ? 'text-amber-600' :
-                        row.call_result === 'Connected' ? 'text-primary-600' : 'text-green-600'
+                        row.call_result === 'VM/Missed' ? 'text-red-400' :
+                        row.call_result === 'Not Connected' ? 'text-amber-400' :
+                        row.call_result === 'Connected' ? 'text-primary-400' : 'text-emerald-400'
                       }`}>
                         {row.call_result === 'VM/Missed' ? 'Missed' : row.call_result}
                       </span>
                     </td>
-                    <td className="px-3 py-2 text-right text-gray-600 font-mono">{row._duration}</td>
-                    <td className="px-3 py-2 text-gray-600">{row.queue || '—'}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row._time}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim font-mono">{row._duration}</td>
+                    <td className="px-3 py-2 text-qs-dim">{row.queue || '—'}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row._time}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           {preview.length > 100 && (
-            <p className="text-xs text-gray-500 mt-1">Showing first 100 of {preview.length} rows.</p>
+            <p className="text-xs text-qs-subtle mt-1">Showing first 100 of {preview.length} rows.</p>
           )}
 
           <div className="mt-3 flex items-center gap-3">
@@ -683,7 +683,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             </button>
             <button
               onClick={() => { setPreview(null); setValidationErrors([]); fileBufferRef.current = null; if (fileRef.current) fileRef.current.value = ''; }}
-              className="px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -693,28 +693,28 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
 
       {/* Upload result stats */}
       {uploadStats && (
-        <div className="mt-3 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+        <div className="mt-3 p-3 bg-qs-elevated rounded-lg text-xs text-qs-dim">
           <div className="flex items-center gap-4 flex-wrap">
             <span>Sent: <strong>{uploadStats.sent}</strong></span>
-            <span>Inserted: <strong className="text-green-700">{uploadStats.inserted}</strong></span>
+            <span>Inserted: <strong className="text-emerald-300">{uploadStats.inserted}</strong></span>
             {uploadStats.ignored > 0 && (
-              <span>Duplicates ignored: <strong className="text-gray-500">{uploadStats.ignored}</strong></span>
+              <span>Duplicates ignored: <strong className="text-qs-subtle">{uploadStats.ignored}</strong></span>
             )}
             {uploadStats.skipped > 0 && (
-              <span>Unmatched skipped: <strong className="text-yellow-600">{uploadStats.skipped}</strong></span>
+              <span>Unmatched skipped: <strong className="text-amber-400">{uploadStats.skipped}</strong></span>
             )}
             {uploadStats.invalid > 0 && (
-              <span>Invalid rejected: <strong className="text-red-600">{uploadStats.invalid}</strong></span>
+              <span>Invalid rejected: <strong className="text-red-400">{uploadStats.invalid}</strong></span>
             )}
           </div>
-          <p className="mt-1 text-gray-400">Batch: {uploadStats.batchId?.substring(0, 8)}</p>
+          <p className="mt-1 text-qs-muted">Batch: {uploadStats.batchId?.substring(0, 8)}</p>
         </div>
       )}
 
       {msg && (
         <div className={`mt-3 flex items-center gap-1.5 text-sm ${
-          msg.type === 'error' ? 'text-red-600' :
-          msg.type === 'warning' ? 'text-yellow-600' : 'text-green-600'
+          msg.type === 'error' ? 'text-red-400' :
+          msg.type === 'warning' ? 'text-amber-400' : 'text-emerald-400'
         }`}>
           {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> :
            msg.type === 'warning' ? <AlertCircle className="w-4 h-4" /> :
@@ -727,20 +727,20 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       {confirmModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            className="fixed inset-0 bg-black/70 transition-opacity"
             onClick={() => setConfirmModal(null)}
           />
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl">
-              <div className="border-b border-gray-200 px-6 py-4">
+            <div className="relative w-full max-w-md rounded-lg shadow-xl" style={{ background: '#161924' }}>
+              <div className="border-b border-qs-border px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <UserX className="w-5 h-5 text-yellow-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Unmatched Employees</h3>
+                    <UserX className="w-5 h-5 text-amber-400" />
+                    <h3 className="text-lg font-semibold text-qs-bright">Unmatched Employees</h3>
                   </div>
                   <button
                     onClick={() => setConfirmModal(null)}
-                    className="text-gray-400 hover:text-gray-500 transition"
+                    className="text-qs-muted hover:text-qs-subtle transition"
                     aria-label="Close"
                   >
                     <X className="w-5 h-5" />
@@ -748,26 +748,26 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                 </div>
               </div>
               <div className="px-6 py-4">
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-qs-dim mb-3">
                   {confirmModal.skippedCount} call{confirmModal.skippedCount > 1 ? 's' : ''} will be skipped
                   because {confirmModal.unmatchedNames.length > 1 ? 'these agents don\u2019t' : 'this agent doesn\u2019t'} match any known employee:
                 </p>
-                <ul className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
+                <ul className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
                   {confirmModal.unmatchedNames.map((name, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-yellow-800">
-                      <AlertCircle className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+                    <li key={i} className="flex items-center gap-2 text-sm text-amber-300">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                       {name}
                     </li>
                   ))}
                 </ul>
-                <p className="text-sm text-gray-700">
-                  <span className="font-medium text-gray-900">{confirmModal.matchedRows.length}</span> matched call{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
+                <p className="text-sm text-qs-text">
+                  <span className="font-medium text-qs-bright">{confirmModal.matchedRows.length}</span> matched call{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
                 </p>
               </div>
-              <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <div className="border-t border-qs-border px-6 py-4 flex justify-end gap-3">
                 <button
                   onClick={() => setConfirmModal(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
                 >
                   Cancel
                 </button>

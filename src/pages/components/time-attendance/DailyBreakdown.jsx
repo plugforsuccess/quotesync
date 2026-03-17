@@ -50,44 +50,44 @@ export default function DailyBreakdown({ rcData, callLogDaily }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors"
+        className="w-full px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2 hover:bg-qs-card transition-colors"
       >
-        <CalendarDays className="w-5 h-5 text-primary-600" />
-        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Daily Detail</h4>
+        <CalendarDays className="w-5 h-5 text-primary-400" />
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Daily Detail</h4>
         {useCallLog && (
           <span className="text-xs text-primary-500 font-normal ml-1">(from call log)</span>
         )}
         {expanded ? (
-          <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+          <ChevronDown className="w-4 h-4 text-qs-muted ml-auto" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />
+          <ChevronRight className="w-4 h-4 text-qs-muted ml-auto" />
         )}
       </button>
 
       {expanded && (
         <div className="overflow-x-auto">
           <table className="w-full min-w-[640px]">
-            <thead className="bg-gray-50/50">
+            <thead className="bg-qs-elevated/50">
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Day</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Out Attempts</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">In Answered</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">In Missed</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total</th>
-                <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Avg Handle</th>
+                <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Day</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Out Attempts</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">In Answered</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">In Missed</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Total</th>
+                <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Avg Handle</th>
                 {useCallLog && (
                   <>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">First Call</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Last Call</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">First Call</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Last Call</th>
                   </>
                 )}
-                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-2 text-center text-xs font-semibold text-qs-subtle uppercase">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="divide-y divide-qs-border">
               {daily.map((day, idx) => {
                 // Normalize field names between call-log and legacy formats
                 const outbound = useCallLog ? (day.outbound || 0) : (day.outbound_calls || 0);
@@ -105,51 +105,51 @@ export default function DailyBreakdown({ rcData, callLogDaily }) {
                 return (
                   <tr
                     key={idx}
-                    className={`hover:bg-gray-50 transition-colors ${isZeroOutbound ? 'bg-red-50/50' : isLow ? 'bg-yellow-50/50' : ''}`}
+                    className={`hover:bg-qs-elevated transition-colors ${isZeroOutbound ? 'bg-red-900/10' : isLow ? 'bg-amber-900/10' : ''}`}
                   >
-                    <td className="px-4 py-2.5 text-sm text-gray-900 font-medium">
+                    <td className="px-4 py-2.5 text-sm text-qs-bright font-medium">
                       {day.date ? formatDayLabel(day.date) : `Day ${idx + 1}`}
                     </td>
-                    <td className={`px-4 py-2.5 text-sm text-right font-semibold ${isZeroOutbound ? 'text-red-600' : isLow ? 'text-yellow-600' : 'text-gray-700'}`}>
+                    <td className={`px-4 py-2.5 text-sm text-right font-semibold ${isZeroOutbound ? 'text-red-400' : isLow ? 'text-amber-400' : 'text-qs-text'}`}>
                       {outbound}
                     </td>
-                    <td className="px-4 py-2.5 text-sm text-right text-gray-600">
+                    <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
                       {answered}
                     </td>
-                    <td className="px-4 py-2.5 text-sm text-right text-gray-600">
+                    <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
                       {missed}
                     </td>
-                    <td className="px-4 py-2.5 text-sm text-right text-gray-700 font-medium">
+                    <td className="px-4 py-2.5 text-sm text-right text-qs-text font-medium">
                       {total}
                     </td>
-                    <td className="px-4 py-2.5 text-sm text-right text-gray-600">
+                    <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
                       {avgHandle.toFixed(1)}m
                     </td>
                     {useCallLog && (
                       <>
-                        <td className="px-4 py-2.5 text-sm text-right text-gray-600">
+                        <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
                           {formatTime(day.first_call_time)}
                         </td>
-                        <td className="px-4 py-2.5 text-sm text-right text-gray-600">
+                        <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
                           {formatTime(day.last_call_time)}
                         </td>
                       </>
                     )}
                     <td className="px-4 py-2.5 text-center">
                       {isZero ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-red-400 font-medium">
                           <AlertTriangle className="w-3.5 h-3.5" /> Zero
                         </span>
                       ) : isZeroOutbound ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-red-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-red-400 font-medium">
                           <AlertTriangle className="w-3.5 h-3.5" /> No Out
                         </span>
                       ) : isLow ? (
-                        <span className="inline-flex items-center gap-1 text-xs text-yellow-600 font-medium">
+                        <span className="inline-flex items-center gap-1 text-xs text-amber-400 font-medium">
                           <AlertTriangle className="w-3.5 h-3.5" /> Low
                         </span>
                       ) : (
-                        <CheckCircle className="w-4 h-4 text-green-500 mx-auto" />
+                        <CheckCircle className="w-4 h-4 text-emerald-400 mx-auto" />
                       )}
                     </td>
                   </tr>

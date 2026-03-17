@@ -99,34 +99,34 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-qs-card rounded-lg border border-qs-border p-6">
       <div className="flex items-center gap-3 mb-6">
         <Clock className="w-6 h-6 text-primary-600" />
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Time Entry</h3>
-          <p className="text-sm text-gray-500">{employeeName} &middot; Week of {weekStart}</p>
+          <h3 className="text-lg font-semibold text-qs-bright">Time Entry</h3>
+          <p className="text-sm text-qs-subtle">{employeeName} &middot; Week of {weekStart}</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Work Date */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Work Date</label>
+          <label className="dark-label">Work Date</label>
           <input
             type="date"
             value={workDate}
             onChange={(e) => setWorkDate(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           />
         </div>
 
         {/* Location */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+          <label className="dark-label">Location</label>
           <select
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           >
             {LOCATIONS.map((loc) => (
               <option key={loc.value} value={loc.value}>{loc.label}</option>
@@ -136,11 +136,11 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
 
         {/* Code */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Entry Code</label>
+          <label className="dark-label">Entry Code</label>
           <select
             value={code}
             onChange={(e) => setCode(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           >
             {CODES.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -150,74 +150,74 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
 
         {/* Unpaid Break */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Unpaid Break (min)</label>
+          <label className="dark-label">Unpaid Break (min)</label>
           <input
             type="number"
             min={0}
             value={unpaidBreakMinutes}
             onChange={(e) => setUnpaidBreakMinutes(parseInt(e.target.value || '0', 10))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           />
         </div>
 
         {/* Start Time */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Start Time {timesRequired && <span className="text-red-500">*</span>}
+          <label className="dark-label">
+            Start Time {timesRequired && <span className="text-red-400">*</span>}
           </label>
           <input
             type="time"
             value={startTime}
             onChange={(e) => setStartTime(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           />
         </div>
 
         {/* End Time */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            End Time {timesRequired && <span className="text-red-500">*</span>}
+          <label className="dark-label">
+            End Time {timesRequired && <span className="text-red-400">*</span>}
           </label>
           <input
             type="time"
             value={endTime}
             onChange={(e) => setEndTime(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           />
         </div>
 
         {/* Lunch Out */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Lunch Out</label>
+          <label className="dark-label">Lunch Out</label>
           <input
             type="time"
             value={lunchOut}
             onChange={(e) => setLunchOut(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           />
         </div>
 
         {/* Lunch In */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Lunch In</label>
+          <label className="dark-label">Lunch In</label>
           <input
             type="time"
             value={lunchIn}
             onChange={(e) => setLunchIn(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            className="dark-input"
           />
         </div>
 
         {/* Notes */}
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Notes {notesRequired ? <span className="text-red-500">(required)</span> : '(optional)'}
+          <label className="dark-label">
+            Notes {notesRequired ? <span className="text-red-400">(required)</span> : '(optional)'}
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none"
+            className="dark-input resize-none"
             placeholder={notesRequired ? 'Please provide details for this entry...' : 'Optional notes...'}
           />
         </div>
@@ -234,7 +234,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           {saving ? 'Saving...' : 'Save Entry'}
         </button>
         {msg && (
-          <div className={`flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+          <div className={`flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
             {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
             {msg.text}
           </div>

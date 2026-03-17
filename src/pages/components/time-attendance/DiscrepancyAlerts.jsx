@@ -7,9 +7,9 @@
 import { AlertTriangle, AlertCircle, CheckCircle, Info } from 'lucide-react';
 
 const SEVERITY_CONFIG = {
-  red: { icon: AlertCircle, bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800', iconColor: 'text-red-600' },
-  yellow: { icon: AlertTriangle, bg: 'bg-yellow-50', border: 'border-yellow-200', text: 'text-yellow-800', iconColor: 'text-yellow-600' },
-  info: { icon: Info, bg: 'bg-primary-50', border: 'border-primary-200', text: 'text-primary-800', iconColor: 'text-primary-600' },
+  red: { icon: AlertCircle, bg: 'bg-red-900/20', border: 'border-red-700/40', text: 'text-red-300', iconColor: 'text-red-400' },
+  yellow: { icon: AlertTriangle, bg: 'bg-amber-900/20', border: 'border-amber-700/40', text: 'text-amber-300', iconColor: 'text-amber-400' },
+  info: { icon: Info, bg: 'bg-blue-900/20', border: 'border-blue-700/40', text: 'text-blue-300', iconColor: 'text-blue-400' },
 };
 
 function checkDiscrepancies(timeEntries, rcData, weekStart, roleType) {
@@ -111,11 +111,11 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, role
   // Show informational banner when time entries exist but no RC data is available
   if ((!rcData || Object.keys(rcData).length === 0) && timeEntries && timeEntries.length > 0) {
     return (
-      <div className="flex gap-3 p-4 rounded-lg border bg-gray-50 border-gray-200">
-        <Info className="w-5 h-5 mt-0.5 flex-shrink-0 text-gray-400" />
+      <div className="flex gap-3 p-4 rounded-lg border bg-qs-elevated border-qs-border">
+        <Info className="w-5 h-5 mt-0.5 flex-shrink-0 text-qs-muted" />
         <div>
-          <p className="text-sm font-medium text-gray-700">No RingCentral data for this week</p>
-          <p className="text-xs text-gray-500 mt-0.5">
+          <p className="text-sm font-medium text-qs-text">No RingCentral data for this week</p>
+          <p className="text-xs text-qs-subtle mt-0.5">
             Upload a RingCentral XLSX on the CS Performance tab to enable cross-check alerts.
           </p>
         </div>
@@ -131,8 +131,8 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, role
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide flex items-center gap-2">
-        <AlertTriangle className="w-4 h-4 text-yellow-600" />
+      <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide flex items-center gap-2">
+        <AlertTriangle className="w-4 h-4 text-amber-400" />
         Cross-Check Alerts ({alerts.length})
       </h4>
       {alerts.map((alert, i) => {
@@ -145,7 +145,7 @@ export default function DiscrepancyAlerts({ timeEntries, rcData, weekStart, role
             <div>
               <p className={`text-sm font-semibold ${config.text}`}>{alert.title}</p>
               <p className={`text-sm ${config.text} mt-0.5`}>{alert.detail}</p>
-              <p className="text-xs text-gray-600 mt-1">{alert.meaning}</p>
+              <p className="text-xs text-qs-dim mt-1">{alert.meaning}</p>
             </div>
           </div>
         );
@@ -159,13 +159,13 @@ export function BonusVerificationAlert({ verificationData, month }) {
   if (!verificationData) return null;
   if (verificationData.unverified === 0 && verificationData.noPhone === 0) {
     return (
-      <div className="flex gap-3 p-4 rounded-lg border bg-green-50 border-green-200">
-        <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-green-600" />
+      <div className="flex gap-3 p-4 rounded-lg border bg-emerald-900/20 border-emerald-700/40">
+        <CheckCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-emerald-400" />
         <div>
-          <p className="text-sm font-medium text-green-800">
+          <p className="text-sm font-medium text-emerald-300">
             All {verificationData.verified} reached attempts verified against RingCentral
           </p>
-          <p className="text-xs text-green-600 mt-0.5">
+          <p className="text-xs text-emerald-400 mt-0.5">
             {month} — full bonus eligibility confirmed
           </p>
         </div>
@@ -176,20 +176,20 @@ export function BonusVerificationAlert({ verificationData, month }) {
   return (
     <div className="space-y-2">
       {verificationData.unverified > 0 && (
-        <div className="flex gap-3 p-4 rounded-lg border bg-red-50 border-red-200">
-          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-600" />
+        <div className="flex gap-3 p-4 rounded-lg border bg-red-900/20 border-red-700/40">
+          <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-400" />
           <div>
-            <p className="text-sm font-medium text-red-800">
+            <p className="text-sm font-medium text-red-300">
               {verificationData.unverified} reached attempt{verificationData.unverified > 1 ? 's' : ''} not found in RingCentral
             </p>
-            <p className="text-xs text-red-600 mt-1">
+            <p className="text-xs text-red-400 mt-1">
               These saves are ineligible for bonus until a matching outbound connected call is found.
             </p>
             <div className="mt-2 space-y-1">
               {(verificationData.attempts || [])
                 .filter(a => !a.verified)
                 .map(a => (
-                  <div key={a.attemptId} className="text-xs text-red-700 flex gap-2">
+                  <div key={a.attemptId} className="text-xs text-red-300 flex gap-2">
                     <span className="font-mono">{a.policy_no}</span>
                     <span>{a.customer}</span>
                     <span className="text-red-400">{a.attemptDate}</span>
@@ -203,13 +203,13 @@ export function BonusVerificationAlert({ verificationData, month }) {
         </div>
       )}
       {verificationData.noPhone > 0 && (
-        <div className="flex gap-3 p-4 rounded-lg border bg-yellow-50 border-yellow-200">
-          <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0 text-yellow-600" />
+        <div className="flex gap-3 p-4 rounded-lg border bg-amber-900/20 border-amber-700/40">
+          <AlertTriangle className="w-5 h-5 mt-0.5 flex-shrink-0 text-amber-400" />
           <div>
-            <p className="text-sm font-medium text-yellow-800">
+            <p className="text-sm font-medium text-amber-300">
               {verificationData.noPhone} case{verificationData.noPhone > 1 ? 's' : ''} missing phone number — cannot verify
             </p>
-            <p className="text-xs text-yellow-600 mt-0.5">
+            <p className="text-xs text-amber-400 mt-0.5">
               Add phone numbers to these cases to enable RC verification.
             </p>
           </div>

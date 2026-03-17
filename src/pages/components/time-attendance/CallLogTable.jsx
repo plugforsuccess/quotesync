@@ -47,8 +47,8 @@ function formatDateLabel(dateStr) {
 function FilterPill({ label, options, value, onChange }) {
   return (
     <div className="flex items-center gap-1">
-      <span className="text-xs text-gray-500 font-medium">{label}:</span>
-      <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
+      <span className="text-xs text-qs-subtle font-medium">{label}:</span>
+      <div className="inline-flex rounded-md border border-qs-border overflow-hidden">
         {options.map((opt) => (
           <button
             key={opt.value}
@@ -56,8 +56,8 @@ function FilterPill({ label, options, value, onChange }) {
             className={`px-2.5 py-1 text-xs font-medium transition-colors ${
               value === opt.value
                 ? 'bg-primary-600 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
-            } ${opt.value !== options[0].value ? 'border-l border-gray-300' : ''}`}
+                : 'bg-qs-card text-qs-dim hover:bg-qs-elevated'
+            } ${opt.value !== options[0].value ? 'border-l border-qs-border' : ''}`}
           >
             {opt.label}
           </button>
@@ -110,27 +110,27 @@ export default function CallLogTable({ calls }) {
   }, [calls]);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="w-full px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors"
+        className="w-full px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2 hover:bg-qs-card transition-colors"
       >
-        <PhoneCall className="w-5 h-5 text-primary-600" />
-        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+        <PhoneCall className="w-5 h-5 text-primary-400" />
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">
           Call Log Detail
         </h4>
-        <span className="text-xs text-gray-500 ml-1">({calls.length} calls)</span>
+        <span className="text-xs text-qs-subtle ml-1">({calls.length} calls)</span>
         {expanded ? (
-          <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
+          <ChevronDown className="w-4 h-4 text-qs-muted ml-auto" />
         ) : (
-          <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />
+          <ChevronRight className="w-4 h-4 text-qs-muted ml-auto" />
         )}
       </button>
 
       {expanded && (
         <div>
           {/* Filters */}
-          <div className="px-4 py-2 bg-gray-50/50 border-b border-gray-200 flex items-center gap-4 flex-wrap">
+          <div className="px-4 py-2 bg-qs-elevated/50 border-b border-qs-border flex items-center gap-4 flex-wrap">
             <FilterPill
               label="Direction"
               options={[
@@ -165,11 +165,11 @@ export default function CallLogTable({ calls }) {
             />
             {dates.length > 1 && (
               <div className="flex items-center gap-1">
-                <span className="text-xs text-gray-500 font-medium">Date:</span>
+                <span className="text-xs text-qs-subtle font-medium">Date:</span>
                 <select
                   value={dateFilter}
                   onChange={(e) => setDateFilter(e.target.value)}
-                  className="text-xs border border-gray-300 rounded-md px-2 py-1 bg-white text-gray-700"
+                  className="text-xs border border-qs-border rounded-md px-2 py-1 bg-qs-card text-qs-text"
                 >
                   <option value="all">All</option>
                   {dates.map((d) => (
@@ -178,23 +178,23 @@ export default function CallLogTable({ calls }) {
                 </select>
               </div>
             )}
-            <span className="text-xs text-gray-400 ml-auto">{filtered.length} shown</span>
+            <span className="text-xs text-qs-muted ml-auto">{filtered.length} shown</span>
           </div>
 
           {/* Table */}
           <div className="overflow-x-auto max-h-96 overflow-y-auto">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-50 sticky top-0">
+              <thead className="bg-qs-elevated sticky top-0">
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-[100px]">Time</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-[80px]">Direction</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-[90px]">Result</th>
-                  <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 w-[70px]">Duration</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 w-[100px]">Queue</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500">Contact</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[100px]">Time</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[80px]">Direction</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[90px]">Result</th>
+                  <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle w-[70px]">Duration</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle w-[100px]">Queue</th>
+                  <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle">Contact</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-qs-border">
                 {filtered.map((call) => {
                   const isLong = call.call_length_seconds > 1800;
                   const isMissed = call.call_result === 'VM/Missed';
@@ -206,7 +206,7 @@ export default function CallLogTable({ calls }) {
                       ? 'border-l-4 border-l-amber-400'
                       : 'border-l-4 border-l-transparent';
 
-                  const bgClass = isFirstOutbound ? 'bg-primary-50/30' : '';
+                  const bgClass = isFirstOutbound ? 'bg-primary-900/20' : '';
 
                   // Contact: masked phone number of the other party (PII protection)
                   const contact = call.call_direction === 'Outbound'
@@ -214,8 +214,8 @@ export default function CallLogTable({ calls }) {
                     : maskPhone(call.from_number) || '—';
 
                   return (
-                    <tr key={call.id} className={`hover:bg-gray-50 transition-colors ${borderClass} ${bgClass}`}>
-                      <td className="px-4 py-2 text-gray-900 font-medium">
+                    <tr key={call.id} className={`hover:bg-qs-elevated transition-colors ${borderClass} ${bgClass}`}>
+                      <td className="px-4 py-2 text-qs-bright font-medium">
                         {formatTime(call.call_start_time)}
                       </td>
                       <td className="px-4 py-2">
@@ -227,20 +227,20 @@ export default function CallLogTable({ calls }) {
                       </td>
                       <td className="px-4 py-2">
                         <span className={`text-xs font-medium ${
-                          call.call_result === 'VM/Missed' ? 'text-red-600' :
-                          call.call_result === 'Not Connected' ? 'text-amber-600' :
-                          call.call_result === 'Connected' ? 'text-primary-600' : 'text-green-600'
+                          call.call_result === 'VM/Missed' ? 'text-red-400' :
+                          call.call_result === 'Not Connected' ? 'text-amber-400' :
+                          call.call_result === 'Connected' ? 'text-primary-400' : 'text-emerald-400'
                         }`}>
                           {call.call_result === 'VM/Missed' ? 'Missed' : call.call_result}
                         </span>
                       </td>
-                      <td className="px-4 py-2 text-right text-gray-600 font-mono">
+                      <td className="px-4 py-2 text-right text-qs-dim font-mono">
                         {formatDuration(call.call_length_seconds)}
                       </td>
-                      <td className="px-4 py-2 text-gray-600">
+                      <td className="px-4 py-2 text-qs-dim">
                         {call.queue_type === 'sales' ? 'Sales' : call.queue_type === 'service' ? 'Service' : '—'}
                       </td>
-                      <td className="px-4 py-2 text-gray-500 truncate max-w-[200px]">
+                      <td className="px-4 py-2 text-qs-subtle truncate max-w-[200px]">
                         {contact}
                       </td>
                     </tr>

@@ -139,9 +139,9 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
         onClick={() => setOpen(!open)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-primary-400 transition-colors min-w-[220px] justify-center"
+        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-qs-bright bg-qs-card border border-qs-border rounded-lg hover:bg-qs-elevated hover:border-primary-400 transition-colors min-w-[220px] justify-center"
       >
-        <Calendar className="w-4 h-4 text-primary-600" />
+        <Calendar className="w-4 h-4 text-primary-400" />
         {label}
       </button>
 
@@ -149,24 +149,25 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
         <div
           role="dialog"
           aria-label="Pick a week"
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 bg-white rounded-xl shadow-md border border-gray-200 p-4 w-[300px]"
+          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 rounded-xl shadow-md border border-qs-border p-4 w-[300px]"
+          style={{ background: '#161924' }}
         >
           {/* Month/Year header */}
           <div className="flex items-center justify-between mb-3">
             <button
               onClick={prevMonth}
               aria-label="Previous month"
-              className="p-1 rounded hover:bg-gray-100 text-gray-600"
+              className="p-1 rounded hover:bg-qs-card text-qs-dim"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm font-semibold text-gray-900" aria-live="polite">
+            <span className="text-sm font-semibold text-qs-bright" aria-live="polite">
               {MONTH_NAMES[viewMonth]} {viewYear}
             </span>
             <button
               onClick={nextMonth}
               aria-label="Next month"
-              className="p-1 rounded hover:bg-gray-100 text-gray-600"
+              className="p-1 rounded hover:bg-qs-card text-qs-dim"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -175,7 +176,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
           {/* Day-of-week headers */}
           <div className="grid grid-cols-7 mb-1" role="row">
             {DAY_HEADERS.map((d) => (
-              <div key={d} role="columnheader" className="text-center text-xs font-medium text-gray-400 py-1">
+              <div key={d} role="columnheader" className="text-center text-xs font-medium text-qs-muted py-1">
                 {d}
               </div>
             ))}
@@ -200,11 +201,11 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
                   tabIndex={open ? 0 : -1}
                   className={`
                     py-1.5 text-xs text-center transition-colors relative
-                    ${!currentMonth ? 'text-gray-300' : isWeekend ? 'text-gray-400' : 'text-gray-700'}
-                    ${inWeek ? 'bg-primary-100 text-primary-800 font-semibold' : 'hover:bg-gray-100'}
+                    ${!currentMonth ? 'text-qs-muted' : isWeekend ? 'text-qs-muted' : 'text-qs-text'}
+                    ${inWeek ? 'bg-primary-900/20 text-primary-300 font-semibold' : 'hover:bg-qs-card'}
                     ${isMonday ? 'rounded-l-lg' : ''}
                     ${isFriday ? 'rounded-r-lg' : ''}
-                    ${isToday && !inWeek ? 'font-bold text-primary-600' : ''}
+                    ${isToday && !inWeek ? 'font-bold text-primary-400' : ''}
                   `}
                 >
                   {date.getDate()}
@@ -217,21 +218,21 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
           </div>
 
           {/* Hint */}
-          <p className="mt-2 text-[10px] text-gray-400 text-center">
+          <p className="mt-2 text-[10px] text-qs-muted text-center">
             Click any day to jump to that week &middot; Arrow keys change month &middot; Esc to close
           </p>
 
           {/* Quick actions */}
-          <div className="mt-2 pt-3 border-t border-gray-100 flex justify-between">
+          <div className="mt-2 pt-3 border-t border-qs-border flex justify-between">
             <button
               onClick={() => { onChange(toMonday(new Date())); setOpen(false); }}
-              className="text-xs text-primary-600 hover:text-primary-700 font-medium"
+              className="text-xs text-primary-400 hover:text-primary-300 font-medium"
             >
               This Week
             </button>
             <button
               onClick={() => setOpen(false)}
-              className="text-xs text-gray-500 hover:text-gray-700 font-medium"
+              className="text-xs text-qs-subtle hover:text-qs-text font-medium"
             >
               Close
             </button>

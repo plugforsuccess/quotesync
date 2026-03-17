@@ -154,11 +154,11 @@ const EmployeeRosterPage = () => {
 
   if (!platform.isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
+      <div className="dark-page flex items-center justify-center">
         <div className="text-center">
           <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to view this page.</p>
+          <h2 className="text-2xl font-bold text-qs-bright mb-2">Access Denied</h2>
+          <p className="text-qs-dim">You do not have permission to view this page.</p>
         </div>
       </div>
     );
@@ -166,11 +166,11 @@ const EmployeeRosterPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
+      <div className="dark-page flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-qs-card rounded-lg p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
-          <p className="text-gray-600 mb-6">{error.message}</p>
+          <h2 className="text-2xl font-bold text-qs-bright mb-4">Failed to Load</h2>
+          <p className="text-qs-dim mb-6">{error.message}</p>
           <button
             onClick={() => refetch()}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
@@ -184,23 +184,23 @@ const EmployeeRosterPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dark-page">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="dark-header">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Users className="w-8 h-8 text-primary-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Employee Roster</h1>
-                <p className="text-gray-600 text-sm">Manage team members, roles, and verification</p>
+                <h1 className="dark-heading text-2xl font-bold">Employee Roster</h1>
+                <p className="dark-subheading">Manage team members, roles, and verification</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => refetch()}
                 disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                 title="Refresh"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -221,7 +221,7 @@ const EmployeeRosterPage = () => {
         {/* Feedback message */}
         {msg && (
           <div className={`flex items-center gap-2 text-sm px-4 py-3 rounded-lg ${
-            msg.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' : 'bg-green-50 text-green-700 border border-green-200'
+            msg.type === 'error' ? 'bg-red-900/20 text-red-300 border border-red-700/40' : 'bg-emerald-900/20 text-emerald-300 border border-emerald-700/40'
           }`}>
             {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
             {msg.text}
@@ -230,23 +230,23 @@ const EmployeeRosterPage = () => {
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <div className="bg-green-50 rounded-lg border border-green-100 p-4">
-            <div className="text-2xl font-bold text-green-700">{activeCount}</div>
-            <div className="text-sm text-green-600">Active Employees</div>
+          <div className="dark-card-elevated">
+            <div className="text-2xl font-bold" style={{ color: '#10B981' }}>{activeCount}</div>
+            <div className="text-sm text-emerald-400">Active Employees</div>
           </div>
-          <div className="bg-yellow-50 rounded-lg border border-yellow-100 p-4">
-            <div className="text-2xl font-bold text-yellow-700">{onLeaveCount}</div>
-            <div className="text-sm text-yellow-600">On Leave</div>
+          <div className="dark-card-elevated">
+            <div className="text-2xl font-bold" style={{ color: '#F59E0B' }}>{onLeaveCount}</div>
+            <div className="text-sm text-amber-400">On Leave</div>
           </div>
           <div className={`rounded-lg border p-4 ${
             verificationDueCount > 0
-              ? 'bg-red-50 border-red-100'
-              : 'bg-gray-50 border-gray-200'
+              ? 'bg-red-900/20 border-red-700/40'
+              : 'bg-qs-elevated border-qs-border'
           }`}>
-            <div className={`text-2xl font-bold ${verificationDueCount > 0 ? 'text-red-700' : 'text-gray-500'}`}>
+            <div className={`text-2xl font-bold ${verificationDueCount > 0 ? 'text-red-400' : 'text-qs-subtle'}`}>
               {verificationDueCount}
             </div>
-            <div className={`text-sm ${verificationDueCount > 0 ? 'text-red-600' : 'text-gray-500'}`}>
+            <div className={`text-sm ${verificationDueCount > 0 ? 'text-red-400' : 'text-qs-subtle'}`}>
               Verification Due
             </div>
           </div>
@@ -260,8 +260,8 @@ const EmployeeRosterPage = () => {
               onClick={() => setStatusFilter(f.value)}
               className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
                 statusFilter === f.value
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+                  ? 'bg-primary-900/30 text-primary-400'
+                  : 'bg-qs-elevated text-qs-dim border border-qs-border hover:bg-qs-card'
               }`}
             >
               {f.label}
@@ -271,36 +271,36 @@ const EmployeeRosterPage = () => {
 
         {/* Employee table */}
         {isLoading ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+          <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-3" />
-            <p className="text-gray-600 text-sm">Loading employees...</p>
+            <p className="text-qs-dim text-sm">Loading employees...</p>
           </div>
         ) : filteredEmployees.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No employees found</h2>
-            <p className="text-gray-600">
+          <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
+            <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-qs-bright mb-2">No employees found</h2>
+            <p className="text-qs-dim">
               {statusFilter === 'all'
                 ? 'Add your first employee to get started.'
                 : `No employees with status "${statusFilter}".`}
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full min-w-[700px] text-sm">
-                <thead className="bg-gray-50 border-b border-gray-200">
+                <thead className="bg-qs-elevated border-b border-qs-border">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Role</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Allstate Bind ID</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Hired</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Last Verified</th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Name</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Role</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Allstate Bind ID</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Hired</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider">Last Verified</th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-qs-subtle uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-qs-border">
                   {filteredEmployees.map((emp) => {
                     const isTerminated = emp.employment_status === 'terminated';
                     const displayName = emp.preferred_name || emp.first_name;
@@ -312,50 +312,50 @@ const EmployeeRosterPage = () => {
                         key={emp.id}
                         className={
                           isTerminated
-                            ? 'bg-gray-50 text-gray-400'
-                            : 'hover:bg-gray-50'
+                            ? 'bg-qs-elevated text-qs-muted'
+                            : 'hover:bg-qs-elevated'
                         }
                       >
                         <td className="px-4 py-3">
-                          <span className={isTerminated ? 'line-through' : 'font-medium text-gray-900'}>
+                          <span className={isTerminated ? 'line-through' : 'font-medium text-qs-bright'}>
                             {displayName} {emp.last_name}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-gray-600">
+                        <td className="px-4 py-3 text-qs-dim">
                           {emp.roles?.map(r => ROLE_LABELS[r] || r).join(', ') || '—'}
                         </td>
                         <td className="px-4 py-3">
                           {emp.employment_status === 'active' && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-900/20 text-emerald-400">
                               Active
                             </span>
                           )}
                           {emp.employment_status === 'on_leave' && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-900/20 text-amber-400">
                               On Leave
                             </span>
                           )}
                           {emp.employment_status === 'terminated' && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-qs-elevated text-qs-subtle">
                               Terminated
                             </span>
                           )}
                         </td>
-                        <td className="px-4 py-3 text-gray-600 font-mono text-xs">
+                        <td className="px-4 py-3 text-qs-dim font-mono text-xs">
                           {emp.allstate_id || '-'}
                         </td>
-                        <td className="px-4 py-3 text-gray-600">
+                        <td className="px-4 py-3 text-qs-dim">
                           {formatDate(emp.hire_date)}
                         </td>
                         <td className="px-4 py-3">
                           {emp.last_verified_at ? (
-                            <span className={isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}>
+                            <span className={isOverdue ? 'text-red-400 font-medium' : 'text-qs-dim'}>
                               {isOverdue
                                 ? `${verificationDays}d ago`
                                 : formatDate(emp.last_verified_at)}
                             </span>
                           ) : (
-                            <span className="text-red-600 font-medium">Never</span>
+                            <span className="text-red-400 font-medium">Never</span>
                           )}
                           {/* Inline verify form */}
                           {verifyingId === emp.id && (
@@ -371,7 +371,7 @@ const EmployeeRosterPage = () => {
                               <>
                                 <button
                                   onClick={() => handleEditOpen(emp)}
-                                  className="text-gray-500 hover:text-primary-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                                  className="text-qs-subtle hover:text-primary-400 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                   title="Edit"
                                 >
                                   <Edit2 className="w-4 h-4" />
@@ -379,7 +379,7 @@ const EmployeeRosterPage = () => {
                                 {emp.roles?.includes('sales') && (
                                   <Link
                                     to={`/admin/producers/${emp.id}/comp-model`}
-                                    className="text-gray-500 hover:text-primary-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                                    className="text-qs-subtle hover:text-primary-400 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                     title="Comp Model"
                                   >
                                     <BarChart3 className="w-4 h-4" />
@@ -393,8 +393,8 @@ const EmployeeRosterPage = () => {
                                   }
                                   className={`transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center ${
                                     isOverdue
-                                      ? 'text-red-500 hover:text-red-700'
-                                      : 'text-gray-500 hover:text-green-600'
+                                      ? 'text-red-400 hover:text-red-300'
+                                      : 'text-qs-subtle hover:text-emerald-400'
                                   }`}
                                   title="Verify"
                                 >
@@ -402,7 +402,7 @@ const EmployeeRosterPage = () => {
                                 </button>
                                 <button
                                   onClick={() => setTerminateTarget(emp)}
-                                  className="text-gray-400 hover:text-red-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                                  className="text-qs-muted hover:text-red-400 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                   title="Terminate"
                                 >
                                   <UserX className="w-4 h-4" />
@@ -412,7 +412,7 @@ const EmployeeRosterPage = () => {
                             {isTerminated && (
                               <button
                                 onClick={() => handleEditOpen(emp)}
-                                className="text-gray-400 hover:text-gray-600 transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+                                className="text-qs-muted hover:text-qs-dim transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
                                 title="View details"
                               >
                                 <Edit2 className="w-4 h-4" />

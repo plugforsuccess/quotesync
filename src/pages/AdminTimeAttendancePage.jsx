@@ -85,11 +85,11 @@ const PUNCH_STATUS_LABELS = {
 };
 
 const PUNCH_STATUS_COLORS = {
-  not_clocked_in: { color: '#EF4444', bg: '#FEF2F2', border: '#FECACA' },
-  clocked_in:     { color: '#16A34A', bg: '#F0FDF4', border: '#BBF7D0' },
-  on_lunch:       { color: '#D97706', bg: '#FFFBEB', border: '#FDE68A' },
-  back_from_lunch:{ color: '#2563EB', bg: '#EFF6FF', border: '#BFDBFE' },
-  clocked_out:    { color: '#6B7280', bg: '#F9FAFB', border: '#E5E7EB' },
+  not_clocked_in: { color: '#EF4444', bg: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.25)' },
+  clocked_in:     { color: '#10B981', bg: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.25)' },
+  on_lunch:       { color: '#F59E0B', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.25)' },
+  back_from_lunch:{ color: '#60A5FA', bg: 'rgba(96,165,250,0.1)', border: 'rgba(96,165,250,0.25)' },
+  clocked_out:    { color: '#64748B', bg: 'rgba(100,116,139,0.1)', border: 'rgba(100,116,139,0.25)' },
 };
 
 // Minutes past midnight ET before flagging not_clocked_in as late
@@ -530,11 +530,11 @@ const AdminTimeAttendancePage = () => {
 
   if (!platform.isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
+      <div className="dark-page flex items-center justify-center">
         <div className="text-center">
           <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to view this page.</p>
+          <h2 className="text-2xl font-bold text-qs-bright mb-2">Access Denied</h2>
+          <p className="text-qs-dim">You do not have permission to view this page.</p>
         </div>
       </div>
     );
@@ -544,11 +544,11 @@ const AdminTimeAttendancePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
+      <div className="dark-page flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-qs-card rounded-lg p-8 text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
-          <p className="text-gray-600 mb-6">{error.message}</p>
+          <h2 className="text-2xl font-bold text-qs-bright mb-4">Failed to Load</h2>
+          <p className="text-qs-dim mb-6">{error.message}</p>
           <button
             onClick={refetchAll}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
@@ -562,23 +562,23 @@ const AdminTimeAttendancePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dark-page">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="dark-header">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Clock className="w-8 h-8 text-primary-600" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Time &amp; Attendance</h1>
-                <p className="text-gray-600 text-sm">Weekly time entry for all employees</p>
+                <h1 className="text-2xl font-bold dark-heading">Time &amp; Attendance</h1>
+                <p className="dark-subheading">Weekly time entry for all employees</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={refetchAll}
                 disabled={isLoading}
-                className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
+                className="p-2 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                 title="Refresh"
               >
                 <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -587,7 +587,7 @@ const AdminTimeAttendancePage = () => {
                 <button
                   onClick={handleExportClick}
                   disabled={pendingExport && ytdLoading}
-                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors disabled:opacity-50"
                   title="Export XLSX with Weekly Detail, Summary, Monthly, YTD, and Attendance Flags"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
@@ -600,15 +600,15 @@ const AdminTimeAttendancePage = () => {
       </div>
 
       {/* Controls bar: Employee selector + Week navigator */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-qs-card border-b border-qs-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap overflow-x-auto pb-2">
           {/* Employee selector */}
           <div className="flex items-center gap-2">
-            <Users className="w-4 h-4 text-gray-500" />
+            <Users className="w-4 h-4 text-qs-subtle" />
             <select
               value={selectedEmployee}
               onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-primary-500 min-w-[200px]"
+              className="dark-select min-w-[200px]"
             >
               <option value="">Select Employee...</option>
               {dropdownEmployees.map((emp) => (
@@ -625,7 +625,7 @@ const AdminTimeAttendancePage = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, -1))}
-              className="p-1.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+              className="p-1.5 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -636,7 +636,7 @@ const AdminTimeAttendancePage = () => {
             />
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
-              className="p-1.5 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors"
+              className="p-1.5 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded transition-colors"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -656,7 +656,7 @@ const AdminTimeAttendancePage = () => {
 
             return (
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#6B7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                   Today's Status
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -682,20 +682,20 @@ const AdminTimeAttendancePage = () => {
                           minWidth: 110,
                         }}
                       >
-                        <div style={{ fontSize: 11, color: '#6B7280', marginBottom: 2, fontWeight: 500 }}>
+                        <div style={{ fontSize: 11, color: '#64748B', marginBottom: 2, fontWeight: 500 }}>
                           {displayName}
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: styles.color }}>
                           {isLate ? '⚠ Not In' : PUNCH_STATUS_LABELS[status]}
                         </div>
                         {punch?.start_time && (
-                          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 2, fontFamily: 'monospace' }}>
+                          <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2, fontFamily: 'monospace' }}>
                             in {punch.start_time}
                             {punch.end_time ? ` · out ${punch.end_time}` : ''}
                           </div>
                         )}
                         {punch?.hours_worked && status === 'clocked_out' && (
-                          <div style={{ fontSize: 10, color: '#9CA3AF', marginTop: 1 }}>
+                          <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 1 }}>
                             {punch.hours_worked}h
                           </div>
                         )}
@@ -703,7 +703,7 @@ const AdminTimeAttendancePage = () => {
                     );
                   })}
                   {rosterEmployees.length === 0 && (
-                    <div style={{ fontSize: 12, color: '#9CA3AF' }}>No active employees found.</div>
+                    <div style={{ fontSize: 12, color: '#94A3B8' }}>No active employees found.</div>
                   )}
                 </div>
               </div>
@@ -712,38 +712,38 @@ const AdminTimeAttendancePage = () => {
 
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <div className="text-2xl font-bold text-gray-900">{totalEntries}</div>
-              <div className="text-sm text-gray-600">Total Entries</div>
+            <div className="dark-card-elevated">
+              <div className="text-2xl font-bold text-qs-bright">{totalEntries}</div>
+              <div className="text-sm text-qs-dim">Total Entries</div>
             </div>
-            <div className="bg-primary-50 rounded-lg border border-primary-100 p-4">
-              <div className="text-2xl font-bold text-primary-700">
+            <div className="dark-card-elevated">
+              <div className="text-2xl font-bold text-primary-400">
                 {totalHours.toFixed(1)}h
               </div>
-              <div className="text-sm text-primary-600">Total Hours</div>
+              <div className="text-sm text-primary-400">Total Hours</div>
             </div>
-            <div className="bg-green-50 rounded-lg border border-green-100 p-4">
-              <div className="text-2xl font-bold text-green-700">
+            <div className="dark-card-elevated">
+              <div className="text-2xl font-bold text-emerald-400">
                 {employeesWithEntries} / {rosterEmployees.length}
               </div>
-              <div className="text-sm text-green-600">Employees Entered</div>
+              <div className="text-sm text-emerald-400">Employees Entered</div>
             </div>
           </div>
 
           {/* Editable weekly table for selected employee */}
           {!selectedEmployee ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">Select an employee</h2>
-              <p className="text-gray-600">Choose an employee from the dropdown above to enter their weekly time.</p>
+            <div className="dark-card p-12 text-center">
+              <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-qs-bright mb-2">Select an employee</h2>
+              <p className="text-qs-dim">Choose an employee from the dropdown above to enter their weekly time.</p>
             </div>
           ) : (
             <>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-gray-400" />
+                <h3 className="text-lg font-semibold text-qs-bright mb-3 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-qs-muted" />
                   {getEmployeeName(selectedEmployee)}
-                  <span className="text-sm font-normal text-gray-500">
+                  <span className="text-sm font-normal text-qs-subtle">
                     &middot; Week of {formatWeekLabel(weekStart)}
                   </span>
                 </h3>
@@ -760,9 +760,9 @@ const AdminTimeAttendancePage = () => {
                 )}
 
                 {isLoading ? (
-                  <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                  <div className="dark-card p-8 text-center">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-3" />
-                    <p className="text-gray-600 text-sm">Loading entries...</p>
+                    <p className="text-qs-dim text-sm">Loading entries...</p>
                   </div>
                 ) : (
                   <WeeklyTimeTable

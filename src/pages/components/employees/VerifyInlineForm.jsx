@@ -19,7 +19,7 @@ export default function VerifyInlineForm({ onVerify, saving }) {
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
         placeholder="Notes (optional)..."
-        className="flex-1 px-2 py-1.5 text-xs text-gray-900 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        className="flex-1 px-2 py-1.5 text-xs text-qs-text bg-qs-elevated border border-qs-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
       />
       <button
         type="submit"

@@ -56,15 +56,15 @@ function formatDateShort(dateStr) {
 // ── Abandon Rate Styling ────────────────────────────────────────────────────────
 
 function abandonRateColor(rate, inbound) {
-  if (inbound === 0) return 'text-gray-400';
-  if (rate >= 25) return 'text-red-600';
-  if (rate >= 10) return 'text-amber-600';
-  return 'text-green-600';
+  if (inbound === 0) return 'text-qs-muted';
+  if (rate >= 25) return 'text-red-400';
+  if (rate >= 10) return 'text-amber-400';
+  return 'text-emerald-400';
 }
 
 function abandonRateIndicator(rate, inbound) {
   if (inbound === 0) return null;
-  if (rate >= 25) return <span className="text-red-500 ml-1" title="Critical abandon rate">&#x1F534;</span>;
+  if (rate >= 25) return <span className="text-red-400 ml-1" title="Critical abandon rate">&#x1F534;</span>;
   return null;
 }
 
@@ -217,35 +217,35 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-qs-card rounded-lg border border-qs-border p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <BarChart3 className="w-6 h-6 text-indigo-600" />
+          <BarChart3 className="w-6 h-6 text-indigo-400" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Daily Queue Report Upload</h3>
-            <p className="text-sm text-gray-500">
+            <h3 className="text-lg font-semibold text-qs-bright">Daily Queue Report Upload</h3>
+            <p className="text-sm text-qs-subtle">
               Upload the RingCentral Queues report (XLSX). Captures abandoned calls that the Call Log can't see.
             </p>
           </div>
         </div>
         <button
           onClick={() => setShowHelp(!showHelp)}
-          className="p-2 text-gray-400 hover:text-primary-600 rounded-lg transition-colors"
+          className="p-2 text-qs-muted hover:text-primary-400 rounded-lg transition-colors"
         >
           <HelpCircle className="w-5 h-5" />
         </button>
       </div>
 
       {showHelp && (
-        <div className="mb-4 p-4 bg-primary-50 rounded-lg text-sm text-primary-800">
+        <div className="mb-4 p-4 bg-primary-900/20 rounded-lg text-sm text-primary-300">
           <p className="font-medium mb-2">How to export the Queues report from RingCentral:</p>
-          <ol className="list-decimal list-inside space-y-1 text-primary-700 mb-3">
+          <ol className="list-decimal list-inside space-y-1 text-primary-300 mb-3">
             <li>Go to RingCentral Analytics &rarr; Performance Reports &rarr; Queues</li>
             <li>Set the date range to the target day</li>
             <li>Export as XLSX</li>
           </ol>
           <p className="font-medium mb-2">Expected sheets:</p>
-          <ul className="list-disc list-inside space-y-1 text-primary-700">
+          <ul className="list-disc list-inside space-y-1 text-primary-300">
             <li><strong>Filters</strong> &mdash; date range auto-detection</li>
             <li><strong>Queues</strong> &mdash; per-queue breakdown (Name, # Inbound, # Answered, # Abandoned, etc.)</li>
           </ul>
@@ -253,7 +253,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
       )}
 
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg cursor-pointer transition-colors">
+        <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
           Choose XLSX
           <input
@@ -265,7 +265,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
           />
         </label>
         {detectedDate && (
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-qs-subtle">
             Detected date: {formatDateShort(detectedDate)}
           </span>
         )}
@@ -274,24 +274,24 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
       {/* Preview */}
       {preview && preview.length > 0 && (
         <div className="mt-4">
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <div className="overflow-x-auto border border-qs-border rounded-lg">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-qs-elevated">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Queue</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">In</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Ans</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Abn</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Abn%</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-subtle">Queue</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">In</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Ans</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Abn</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Abn%</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-qs-border">
                 {preview.map((row, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-gray-900">{cleanQueueName(row.queue_name)}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.inbound}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.answered}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.abandoned}</td>
+                  <tr key={i} className="hover:bg-qs-elevated">
+                    <td className="px-3 py-2 text-qs-bright">{cleanQueueName(row.queue_name)}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.inbound}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.answered}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.abandoned}</td>
                     <td className={`px-3 py-2 text-right font-medium ${abandonRateColor(row.abandon_rate, row.inbound)}`}>
                       {row.inbound > 0 ? `${row.abandon_rate.toFixed(0)}%` : '\u2014'}
                       {abandonRateIndicator(row.abandon_rate, row.inbound)}
@@ -299,11 +299,11 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
                   </tr>
                 ))}
                 {/* Totals row */}
-                <tr className="bg-gray-50 font-medium">
-                  <td className="px-3 py-2 text-gray-900">Total</td>
-                  <td className="px-3 py-2 text-right text-gray-700">{totals.inbound}</td>
-                  <td className="px-3 py-2 text-right text-gray-700">{totals.answered}</td>
-                  <td className="px-3 py-2 text-right text-gray-700">{totals.abandoned}</td>
+                <tr className="bg-qs-elevated font-medium">
+                  <td className="px-3 py-2 text-qs-bright">Total</td>
+                  <td className="px-3 py-2 text-right text-qs-text">{totals.inbound}</td>
+                  <td className="px-3 py-2 text-right text-qs-text">{totals.answered}</td>
+                  <td className="px-3 py-2 text-right text-qs-text">{totals.abandoned}</td>
                   <td className={`px-3 py-2 text-right font-medium ${abandonRateColor(totalAbandonRate, totals.inbound)}`}>
                     {totals.inbound > 0 ? `${totalAbandonRate.toFixed(0)}%` : '\u2014'}
                   </td>
@@ -314,7 +314,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
 
           {/* High abandon rate warning */}
           {highAbandonWarning && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="mt-3 flex items-center gap-2 text-sm text-amber-300 bg-amber-900/20 border border-amber-700/40 rounded-lg p-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               {totalAbandonRate >= 100
                 ? '100% abandon rate \u2014 no calls answered'
@@ -324,7 +324,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
 
           {/* Date warning */}
           {!detectedDate && (
-            <div className="mt-3 flex items-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <div className="mt-3 flex items-center gap-2 text-sm text-amber-300 bg-amber-900/20 border border-amber-700/40 rounded-lg p-3">
               <AlertCircle className="w-4 h-4 flex-shrink-0" />
               Could not auto-detect report date from Filters sheet. Please verify the file is correct.
             </div>
@@ -341,7 +341,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
             </button>
             <button
               onClick={() => { setPreview(null); setDetectedDate(null); if (fileRef.current) fileRef.current.value = ''; }}
-              className="px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -350,7 +350,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
       )}
 
       {msg && (
-        <div className={`mt-3 flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+        <div className={`mt-3 flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
           {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
           {msg.text}
         </div>

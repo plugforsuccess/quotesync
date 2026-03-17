@@ -186,13 +186,13 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto bg-white p-5 sm:p-7">
+      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7" style={{ background: '#161924' }}>
           {/* Header */}
-          <div className="border-b border-gray-200 pb-4 mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900">
+          <div className="flex items-center justify-between" style={{ borderBottom: '1px solid #252A3A', paddingBottom: 16, marginBottom: 16 }}>
+            <h2 className="text-lg font-semibold" style={{ fontSize: 16, fontWeight: 600, color: '#F1F5F9' }}>
               {isEdit ? 'Edit Employee' : 'Add Employee'}
             </h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-500 min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
+            <button onClick={onClose} className="text-qs-muted hover:text-qs-subtle min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -203,57 +203,57 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Identity */}
               <fieldset>
-                <legend className="text-sm font-semibold text-gray-700 mb-3">Identity</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Identity</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">First Name *</label>
+                    <label className="dark-label">First Name *</label>
                     <input
                       required
                       value={form.first_name}
                       onChange={(e) => handleChange('first_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Last Name *</label>
+                    <label className="dark-label">Last Name *</label>
                     <input
                       required
                       value={form.last_name}
                       onChange={(e) => handleChange('last_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Name</label>
+                    <label className="dark-label">Preferred Name</label>
                     <input
                       value={form.preferred_name}
                       onChange={(e) => handleChange('preferred_name', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Personal Email</label>
+                    <label className="dark-label">Personal Email</label>
                     <input
                       type="email"
                       value={form.personal_email}
                       onChange={(e) => handleChange('personal_email', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Cell Phone</label>
+                    <label className="dark-label">Cell Phone</label>
                     <input
                       value={form.cell_phone}
                       onChange={(e) => handleChange('cell_phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Home Phone</label>
+                    <label className="dark-label">Home Phone</label>
                     <input
                       value={form.home_phone}
                       onChange={(e) => handleChange('home_phone', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                 </div>
@@ -261,38 +261,38 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Address */}
               <fieldset>
-                <legend className="text-sm font-semibold text-gray-700 mb-3">Address</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Address</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1</label>
+                    <label className="dark-label">Address Line 1</label>
                     <input
                       value={form.address_line1}
                       onChange={(e) => handleChange('address_line1', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                    <label className="dark-label">Address Line 2</label>
                     <input
                       value={form.address_line2}
                       onChange={(e) => handleChange('address_line2', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                    <label className="dark-label">City</label>
                     <input
                       value={form.city}
                       onChange={(e) => handleChange('city', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                    <label className="dark-label">State</label>
                     <select
                       value={form.state}
                       onChange={(e) => handleChange('state', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     >
                       <option value="">Select...</option>
                       {US_STATES.map((s) => (
@@ -301,11 +301,11 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+                    <label className="dark-label">Zip Code</label>
                     <input
                       value={form.zip_code}
                       onChange={(e) => handleChange('zip_code', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                 </div>
@@ -313,13 +313,13 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Employment */}
               <fieldset>
-                <legend className="text-sm font-semibold text-gray-700 mb-3">Employment</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Employment</legend>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Roles *</label>
+                    <label className="dark-label">Roles *</label>
                     <div style={{ display: 'flex', gap: 16, marginTop: 6 }}>
                       {ROLE_OPTIONS.map(opt => (
-                        <label key={opt.value} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                        <label key={opt.value} className="flex items-center gap-1.5 text-sm text-qs-text cursor-pointer">
                           <input
                             type="checkbox"
                             checked={form.roles?.includes(opt.value) || false}
@@ -339,40 +339,40 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     )}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Hire Date</label>
+                    <label className="dark-label">Hire Date</label>
                     <input
                       type="date"
                       value={form.hire_date}
                       onChange={(e) => handleChange('hire_date', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Allstate Bind ID</label>
+                    <label className="dark-label">Allstate Bind ID</label>
                     <input
                       type="text"
                       value={form.allstate_bind_id || ''}
                       onChange={(e) => handleChange('allstate_bind_id', e.target.value.trim().toUpperCase())}
                       placeholder="e.g. A0C2667"
                       maxLength={20}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-qs-subtle mt-1">
                       Found in the "Bind ID" column of the Allstate New Business Details report.
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">RingCentral Display Name *</label>
+                    <label className="dark-label">RingCentral Display Name *</label>
                     <input
                       required
                       value={form.rc_display_name}
                       onChange={(e) => handleChange('rc_display_name', e.target.value)}
                       placeholder="e.g. Tracy Peacock"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="dark-label">
                       Punch PIN <span className="font-normal text-gray-400">(4 digits, optional)</span>
                     </label>
                     <input
@@ -386,7 +386,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                         handleChange('punch_pin', val || '');
                       }}
                       pattern="\d{4}"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                     <span className="text-xs text-gray-500 mt-1 block">
                       Employees use this PIN at /punch to clock in and out
@@ -397,43 +397,43 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Schedule */}
               <fieldset>
-                <legend className="text-sm font-semibold text-gray-700 mb-3">Default Schedule</legend>
-                <p className="text-xs text-gray-500 mb-3">Pre-fills the Attendance page for this employee each week.</p>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Default Schedule</legend>
+                <p className="text-xs text-qs-subtle mb-3">Pre-fills the Attendance page for this employee each week.</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                    <label className="dark-label">Start Time</label>
                     <input
                       type="time"
                       value={form.default_start_time}
                       onChange={(e) => handleChange('default_start_time', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Lunch Out</label>
+                    <label className="dark-label">Lunch Out</label>
                     <input
                       type="time"
                       value={form.default_lunch_out}
                       onChange={(e) => handleChange('default_lunch_out', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Lunch In</label>
+                    <label className="dark-label">Lunch In</label>
                     <input
                       type="time"
                       value={form.default_lunch_in}
                       onChange={(e) => handleChange('default_lunch_in', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                    <label className="dark-label">End Time</label>
                     <input
                       type="time"
                       value={form.default_end_time}
                       onChange={(e) => handleChange('default_end_time', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input"
                     />
                   </div>
                 </div>
@@ -441,7 +441,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
               {/* Licensing */}
               <fieldset>
-                <legend className="text-sm font-semibold text-gray-700 mb-3">Licensing</legend>
+                <legend style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8', marginBottom: 12 }}>Licensing</legend>
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
                     <label className="relative inline-flex items-center cursor-pointer">
@@ -451,33 +451,33 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                         onChange={(e) => handleChange('is_licensed', e.target.checked)}
                         className="sr-only peer"
                       />
-                      <div className="w-9 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
+                      <div className="w-9 h-5 bg-qs-elevated peer-focus:ring-2 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary-600"></div>
                     </label>
-                    <span className="text-sm font-medium text-gray-700">Licensed</span>
+                    <span className="text-sm font-medium text-qs-text">Licensed</span>
                   </div>
 
                   {form.is_licensed && (
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">License Verified Date</label>
+                      <label className="dark-label">License Verified Date</label>
                       <input
                         type="date"
                         value={form.license_verified_date}
                         onChange={(e) => handleChange('license_verified_date', e.target.value)}
-                        className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        className="dark-input max-w-xs"
                       />
                     </div>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Professional Designations</label>
+                    <label className="dark-label">Professional Designations</label>
                     <div className="flex flex-wrap gap-2">
                       {DESIGNATION_OPTIONS.map((d) => (
                         <label
                           key={d}
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer border transition-colors ${
                             (form.professional_designations || []).includes(d)
-                              ? 'bg-primary-100 text-primary-800 border-primary-300'
-                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
+                              ? 'bg-primary-900/20 text-primary-300 border-primary-700/40'
+                              : 'bg-qs-elevated text-qs-dim border-qs-border hover:bg-qs-card'
                           }`}
                         >
                           <input
@@ -494,11 +494,11 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Years Insurance Experience</label>
+                      <label className="dark-label">Years Insurance Experience</label>
                       <select
                         value={form.years_insurance_experience}
                         onChange={(e) => handleChange('years_insurance_experience', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        className="dark-input"
                       >
                         <option value="">Select...</option>
                         {yearOptions.map((y) => (
@@ -507,11 +507,11 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Years Commercial Experience</label>
+                      <label className="dark-label">Years Commercial Experience</label>
                       <select
                         value={form.years_commercial_experience}
                         onChange={(e) => handleChange('years_commercial_experience', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        className="dark-input"
                       >
                         <option value="">Select...</option>
                         {yearOptions.map((y) => (
@@ -522,11 +522,11 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Highest Education</label>
+                    <label className="dark-label">Highest Education</label>
                     <select
                       value={form.highest_education}
                       onChange={(e) => handleChange('highest_education', e.target.value)}
-                      className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      className="dark-input max-w-xs"
                     >
                       {EDUCATION_OPTIONS.map((ed) => (
                         <option key={ed} value={ed}>{ed || 'Select...'}</option>
@@ -538,11 +538,11 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
             </div>
 
             {/* Footer */}
-            <div className="border-t border-gray-200 pt-4 mt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
+            <div className="border-t border-qs-border pt-4 mt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
               >
                 Cancel
               </button>

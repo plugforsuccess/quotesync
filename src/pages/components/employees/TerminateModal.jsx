@@ -46,52 +46,52 @@ export default function TerminateModal({ open, onClose, onConfirm, saving, emplo
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto bg-white p-5 sm:p-7">
-          <div className="border-b border-gray-200 pb-4 mb-4 flex items-center justify-between">
+      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7" style={{ background: '#161924' }}>
+          <div className="border-b border-qs-border pb-4 mb-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="w-5 h-5 text-red-600" />
-              <h3 className="text-lg font-semibold text-gray-900">Terminate Employee</h3>
+              <h3 className="text-lg font-semibold text-qs-bright">Terminate Employee</h3>
             </div>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-500 min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
+            <button onClick={onClose} className="text-qs-muted hover:text-qs-subtle min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
               <X className="w-5 h-5" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="space-y-4">
-              <p className="text-sm text-gray-600">
-                You are about to terminate <span className="font-semibold text-gray-900">{displayName} {employee.last_name}</span>.
+              <p className="text-sm text-qs-dim">
+                You are about to terminate <span className="font-semibold text-qs-bright">{displayName} {employee.last_name}</span>.
                 This will mark them as terminated but preserve all historical data.
               </p>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Termination Date</label>
+                <label className="dark-label">Termination Date</label>
                 <input
                   type="date"
                   required
                   value={terminationDate}
                   onChange={(e) => setTerminationDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 bg-qs-elevated border border-qs-border rounded-lg text-sm text-qs-text focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Reason (optional)</label>
+                <label className="dark-label">Reason (optional)</label>
                 <textarea
                   value={terminationReason}
                   onChange={(e) => setTerminationReason(e.target.value)}
                   rows={3}
                   placeholder="Optional notes on departure..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  className="w-full px-3 py-2 bg-qs-elevated border border-qs-border rounded-lg text-sm text-qs-text focus:ring-2 focus:ring-red-500 focus:border-red-500 focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="border-t border-gray-200 pt-4 mt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
+            <div className="border-t border-qs-border pt-4 mt-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
               >
                 Cancel
               </button>

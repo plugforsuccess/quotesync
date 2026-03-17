@@ -499,11 +499,11 @@ const CSPerformancePage = () => {
 
   if (!platform.isAdmin) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
+      <div className="dark-page flex items-center justify-center">
         <div className="text-center">
-          <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to view this page.</p>
+          <ShieldOff className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-qs-bright mb-2">Access Denied</h2>
+          <p className="text-qs-dim">You do not have permission to view this page.</p>
         </div>
       </div>
     );
@@ -517,11 +517,11 @@ const CSPerformancePage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
-          <p className="text-gray-600 mb-6">{error.message}</p>
+      <div className="dark-page flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-qs-card rounded-lg p-8 text-center">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-qs-bright mb-4">Failed to Load</h2>
+          <p className="text-qs-dim mb-6">{error.message}</p>
           <button
             onClick={refetchAll}
             className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
@@ -535,22 +535,22 @@ const CSPerformancePage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dark-page">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="dark-header">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <BarChart3 className="w-8 h-8 text-primary-600" />
+              <BarChart3 className="w-8 h-8 text-primary-400" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Performance Dashboard</h1>
-                <p className="text-gray-600 text-sm">RingCentral metrics, scorecards, trends, and team comparison</p>
+                <h1 className="dark-heading">Performance Dashboard</h1>
+                <p className="dark-subheading">RingCentral metrics, scorecards, trends, and team comparison</p>
               </div>
             </div>
             <button
               onClick={refetchAll}
               disabled={isLoading}
-              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50 min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="p-2 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50 min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
               title="Refresh"
             >
               <RefreshCw className={`w-5 h-5 ${isLoading ? 'animate-spin' : ''}`} />
@@ -560,7 +560,7 @@ const CSPerformancePage = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-qs-card border-b border-qs-border">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex gap-1">
             {TABS.map((tab) => {
@@ -572,8 +572,8 @@ const CSPerformancePage = () => {
                   onClick={() => setActiveTab(tab.key)}
                   className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                     active
-                      ? 'border-primary-600 text-primary-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      ? 'border-primary-400 text-primary-400'
+                      : 'border-transparent text-qs-subtle hover:text-qs-text hover:border-qs-muted'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -586,11 +586,11 @@ const CSPerformancePage = () => {
       </div>
 
       {/* Filters bar */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-qs-card border-b border-qs-border">
         <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap overflow-x-auto pb-2">
           {/* Role filter — only in team view */}
           {activeTab === 'team' && (
-            <div className="inline-flex rounded-lg border border-gray-300 overflow-hidden">
+            <div className="inline-flex rounded-lg border border-qs-border overflow-hidden">
               {ROLE_FILTER_OPTIONS.map((opt) => (
                 <button
                   key={opt.key}
@@ -598,8 +598,8 @@ const CSPerformancePage = () => {
                   className={`px-3 py-1.5 text-sm font-medium transition-colors ${
                     roleFilter === opt.key
                       ? 'bg-primary-600 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  } ${opt.key !== 'service_inbound' ? 'border-l border-gray-300' : ''}`}
+                      : 'bg-qs-elevated text-qs-text hover:bg-qs-card'
+                  } ${opt.key !== 'service_inbound' ? 'border-l border-qs-border' : ''}`}
                 >
                   {opt.label}
                 </button>
@@ -611,7 +611,7 @@ const CSPerformancePage = () => {
           {activeTab === 'individual' && selectedEmployeeRole && (
             <button
               onClick={handleBackToTeam}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-qs-text hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Team
@@ -622,16 +622,16 @@ const CSPerformancePage = () => {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, -1))}
-              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="p-2 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm font-medium text-gray-900 min-w-[200px] text-center">
+            <span className="text-sm font-medium text-qs-bright min-w-[200px] text-center">
               {formatWeekLabel(weekStart)}
             </span>
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
-              className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              className="p-2 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -640,11 +640,11 @@ const CSPerformancePage = () => {
           {/* Employee filter (only in individual view, not when viewing from team drill-down) */}
           {activeTab === 'individual' && !selectedEmployeeRole && (
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-gray-500" />
+              <Filter className="w-4 h-4 text-qs-subtle" />
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 border-0 focus:ring-2 focus:ring-primary-500"
+                className="px-3 py-2 rounded-lg text-sm font-medium bg-qs-elevated text-qs-text border-0 focus:ring-2 focus:ring-primary-500"
               >
                 <option value="all">All Employees</option>
                 {employeeOptions.map((emp) => (
@@ -662,7 +662,7 @@ const CSPerformancePage = () => {
           {activeTab === 'individual' && singleEmployee && (
             <button
               onClick={() => setTargetsModalOpen(true)}
-              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-qs-text hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors"
               title="Edit performance goals"
             >
               <Target className="w-4 h-4" />
@@ -673,7 +673,7 @@ const CSPerformancePage = () => {
           {/* Quick jump to current week */}
           <button
             onClick={() => setWeekStart(toMonday(new Date()))}
-            className="text-sm text-primary-600 hover:text-primary-700 font-medium ml-auto"
+            className="text-sm text-primary-400 hover:text-primary-300 font-medium ml-auto"
           >
             This Week
           </button>
@@ -713,7 +713,7 @@ const CSPerformancePage = () => {
             {teamLoading ? (
               <div className="text-center py-12">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mb-4" />
-                <p className="text-gray-600">Loading team data...</p>
+                <p className="text-qs-dim">Loading team data...</p>
               </div>
             ) : (
               <TeamComparisonView
@@ -727,10 +727,10 @@ const CSPerformancePage = () => {
           /* ── Producer Individual View ─────────────────────────────────── */
           <div className="space-y-6">
             {rcData.length === 0 ? (
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">No performance data</h2>
-                <p className="text-gray-600">Upload RingCentral data for this week to see producer metrics.</p>
+              <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
+                <BarChart3 className="w-16 h-16 text-qs-muted mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-qs-bright mb-2">No performance data</h2>
+                <p className="text-qs-dim">Upload RingCentral data for this week to see producer metrics.</p>
               </div>
             ) : (
               rcData.map((rc) => {
@@ -796,25 +796,25 @@ const CSPerformancePage = () => {
 
             {/* Scorecards */}
             {rcData.length === 0 && !callLogMetrics ? (
-              <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-                <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">No performance data</h2>
-                <p className="text-gray-600">Upload a call log or RingCentral XLSX to see the scorecard.</p>
+              <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
+                <BarChart3 className="w-16 h-16 text-qs-muted mx-auto mb-4" />
+                <h2 className="text-xl font-semibold text-qs-bright mb-2">No performance data</h2>
+                <p className="text-qs-dim">Upload a call log or RingCentral XLSX to see the scorecard.</p>
               </div>
             ) : callLogMetrics && singleEmployee ? (
               /* Call log available for single employee — show unified scorecard */
               <div className="space-y-4">
                 {/* Employee header with PDF download */}
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-gray-400" />
+                  <h3 className="text-lg font-semibold text-qs-bright flex items-center gap-2">
+                    <Users className="w-5 h-5 text-qs-muted" />
                     {getEmployeeName(singleEmployee)}
                   </h3>
                   {rcData.length > 0 && (
                     <button
                       onClick={() => handleDownloadPDF(rcData.find((r) => r.employee_user_id === singleEmployee) || rcData[0])}
                       disabled={pdfGenerating}
-                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-qs-text hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                       title="Download PDF scorecard"
                     >
                       <Download className="w-4 h-4" />
@@ -905,14 +905,14 @@ const CSPerformancePage = () => {
                   <div key={rc.id} className="space-y-4">
                     {/* Employee header with PDF download */}
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                        <Users className="w-5 h-5 text-gray-400" />
+                      <h3 className="text-lg font-semibold text-qs-bright flex items-center gap-2">
+                        <Users className="w-5 h-5 text-qs-muted" />
                         {rc.employee_name || getEmployeeName(rc.employee_user_id)}
                       </h3>
                       <button
                         onClick={() => handleDownloadPDF(rc)}
                         disabled={pdfGenerating}
-                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-700 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-qs-text hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                         title="Download PDF scorecard"
                       >
                         <Download className="w-4 h-4" />
@@ -971,7 +971,7 @@ const CSPerformancePage = () => {
               selectedEmployeeRoles.includes('service_outbound') ||
               selectedEmployeeRoles.includes('service')) && (
               <div className="mt-6">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-qs-subtle uppercase tracking-wider mb-3 flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   Retention Performance
                 </h3>
@@ -985,7 +985,7 @@ const CSPerformancePage = () => {
             {/* Monthly Bonus Verification — service_outbound only */}
             {selectedEmployeeRoles.includes('service_outbound') && selectedMonth && (
               <div className="mt-6">
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-qs-subtle uppercase tracking-wider mb-3 flex items-center gap-2">
                   <DollarSign className="w-4 h-4" />
                   Monthly Bonus Verification — {selectedMonth}
                 </h3>
@@ -995,31 +995,31 @@ const CSPerformancePage = () => {
                     type="month"
                     value={selectedMonth}
                     onChange={(e) => setSelectedMonth(e.target.value)}
-                    className="text-sm border border-gray-300 rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="text-sm border border-qs-border rounded-md px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary-500 bg-qs-elevated text-qs-text"
                   />
                 </div>
 
-                <div className="bg-white rounded-lg border border-gray-200 p-5 mb-3">
+                <div className="bg-qs-card rounded-lg border border-qs-border p-5 mb-3">
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">
+                      <div className="text-2xl font-bold text-qs-bright">
                         {bonusSaves}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">Verified saves</div>
+                      <div className="text-xs text-qs-subtle mt-1">Verified saves</div>
                     </div>
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">
+                      <div className="text-2xl font-bold text-emerald-400">
                         {Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD)} &times; $25
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">
+                      <div className="text-xs text-qs-subtle mt-1">
                         saves above {RETENTION_BONUS_THRESHOLD} threshold
                       </div>
                     </div>
                     <div className="text-center">
-                      <div className={`text-2xl font-bold ${bonusAmount > 0 ? 'text-green-600' : 'text-gray-400'}`}>
+                      <div className={`text-2xl font-bold ${bonusAmount > 0 ? 'text-emerald-400' : 'text-qs-muted'}`}>
                         ${bonusAmount.toLocaleString()}
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">bonus earned</div>
+                      <div className="text-xs text-qs-subtle mt-1">bonus earned</div>
                     </div>
                   </div>
 

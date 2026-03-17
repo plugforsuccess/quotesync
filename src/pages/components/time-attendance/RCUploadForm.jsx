@@ -302,33 +302,33 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
   }, [confirmModal, handleEscKey]);
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-qs-card rounded-lg border border-qs-border p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <FileSpreadsheet className="w-6 h-6 text-gray-500" />
+          <FileSpreadsheet className="w-6 h-6 text-qs-subtle" />
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Weekly Summary (Optional)</h3>
-            <p className="text-sm text-gray-500">Upload the User Performance summary for Speed of Answer and Hold Time metrics. All other metrics are derived from the daily call log.</p>
+            <h3 className="text-lg font-semibold text-qs-bright">Weekly Summary (Optional)</h3>
+            <p className="text-sm text-qs-subtle">Upload the User Performance summary for Speed of Answer and Hold Time metrics. All other metrics are derived from the daily call log.</p>
           </div>
         </div>
         <button
           onClick={() => setShowHelp(!showHelp)}
-          className="p-2 text-gray-400 hover:text-primary-600 rounded-lg transition-colors"
+          className="p-2 text-qs-muted hover:text-primary-400 rounded-lg transition-colors"
         >
           <HelpCircle className="w-5 h-5" />
         </button>
       </div>
 
       {showHelp && (
-        <div className="mb-4 p-4 bg-primary-50 rounded-lg text-sm text-primary-800">
+        <div className="mb-4 p-4 bg-primary-900/20 rounded-lg text-sm text-primary-300">
           <p className="font-medium mb-2">How to export from RingCentral:</p>
-          <ol className="list-decimal list-inside space-y-1 text-primary-700 mb-3">
+          <ol className="list-decimal list-inside space-y-1 text-primary-300 mb-3">
             <li>Go to RingCentral Analytics &rarr; User Performance</li>
             <li>Set date range to the target week (Mon&ndash;Fri)</li>
             <li>Export as XLSX</li>
           </ol>
           <p className="font-medium mb-2">Expected columns from the "Users" sheet:</p>
-          <ul className="list-disc list-inside space-y-1 text-primary-700">
+          <ul className="list-disc list-inside space-y-1 text-primary-300">
             <li><strong>Name</strong> &mdash; employee matching</li>
             <li><strong>Total Calls</strong>, <strong># Inbound</strong>, <strong># Outbound</strong>, <strong># Answered</strong></li>
             <li><strong># Missed (w/VM)</strong>, <strong># Transfers</strong>, <strong># Holds</strong></li>
@@ -340,7 +340,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       )}
 
       <div className="flex items-center gap-3">
-        <label className="flex items-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg cursor-pointer transition-colors">
+        <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
           Choose XLSX
           <input
@@ -351,59 +351,59 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
             className="hidden"
           />
         </label>
-        <span className="text-sm text-gray-500">Week: {weekStart}</span>
+        <span className="text-sm text-qs-subtle">Week: {weekStart}</span>
       </div>
 
       {/* Warnings */}
       {warnings.length > 0 && (
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm font-semibold text-yellow-800 mb-1">
+        <div className="mt-4 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
+          <p className="text-sm font-semibold text-amber-300 mb-1">
             <AlertCircle className="w-4 h-4 inline mr-1" />
             {warnings.length} unmatched employee{warnings.length > 1 ? 's' : ''}
           </p>
-          <ul className="text-xs text-yellow-700 space-y-0.5 max-h-32 overflow-y-auto">
+          <ul className="text-xs text-amber-300 space-y-0.5 max-h-32 overflow-y-auto">
             {warnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
-          <p className="text-xs text-yellow-600 mt-1">Unmatched rows will be skipped during upload.</p>
+          <p className="text-xs text-amber-400 mt-1">Unmatched rows will be skipped during upload.</p>
         </div>
       )}
 
       {/* Preview */}
       {preview && preview.length > 0 && (
         <div className="mt-4">
-          <p className="text-sm font-medium text-gray-700 mb-2">Preview ({preview.length} rows):</p>
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <p className="text-sm font-medium text-qs-text mb-2">Preview ({preview.length} rows):</p>
+          <div className="overflow-x-auto border border-qs-border rounded-lg">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-qs-elevated">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Name</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Total</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">In</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Out</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Answered</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Missed</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">AHT</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">ASA</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Hold</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Xfer %</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-subtle">Name</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Total</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">In</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Out</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Answered</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Missed</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">AHT</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">ASA</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Hold</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-subtle">Xfer %</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-qs-border">
                 {preview.map((row, i) => (
-                  <tr key={i} className={row.matched ? 'hover:bg-gray-50' : 'bg-yellow-50/50 hover:bg-yellow-50'}>
-                    <td className="px-3 py-2 text-gray-900">
+                  <tr key={i} className={row.matched ? 'hover:bg-qs-elevated' : 'bg-amber-900/10 hover:bg-amber-900/20'}>
+                    <td className="px-3 py-2 text-qs-bright">
                       {row.employee_name}
-                      {!row.matched && <span className="ml-1 text-xs text-yellow-600" title="No matching employee found">(?)</span>}
+                      {!row.matched && <span className="ml-1 text-xs text-amber-400" title="No matching employee found">(?)</span>}
                     </td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.total_calls}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.inbound_calls}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.outbound_calls}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.answered_calls}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.missed_calls}</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_handle_time_minutes.toFixed(1)}m</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_speed_of_answer_seconds.toFixed(0)}s</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.avg_hold_time_minutes.toFixed(1)}m</td>
-                    <td className="px-3 py-2 text-right text-gray-600">{row.transfer_pct.toFixed(1)}%</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.total_calls}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.inbound_calls}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.outbound_calls}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.answered_calls}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.missed_calls}</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.avg_handle_time_minutes.toFixed(1)}m</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.avg_speed_of_answer_seconds.toFixed(0)}s</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.avg_hold_time_minutes.toFixed(1)}m</td>
+                    <td className="px-3 py-2 text-right text-qs-dim">{row.transfer_pct.toFixed(1)}%</td>
                   </tr>
                 ))}
               </tbody>
@@ -421,7 +421,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
             </button>
             <button
               onClick={() => { setPreview(null); if (fileRef.current) fileRef.current.value = ''; }}
-              className="px-4 py-2.5 text-gray-700 font-medium hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -430,7 +430,7 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       )}
 
       {msg && (
-        <div className={`mt-3 flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+        <div className={`mt-3 flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
           {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
           {msg.text}
         </div>
@@ -440,20 +440,20 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
       {confirmModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            className="fixed inset-0 bg-black/70 transition-opacity"
             onClick={() => setConfirmModal(null)}
           />
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative w-full max-w-md bg-white rounded-lg shadow-xl">
-              <div className="border-b border-gray-200 px-6 py-4">
+            <div className="relative w-full max-w-md rounded-lg shadow-xl" style={{ background: '#161924' }}>
+              <div className="border-b border-qs-border px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <UserX className="w-5 h-5 text-yellow-600" />
-                    <h3 className="text-lg font-semibold text-gray-900">Unmatched Employees</h3>
+                    <UserX className="w-5 h-5 text-amber-400" />
+                    <h3 className="text-lg font-semibold text-qs-bright">Unmatched Employees</h3>
                   </div>
                   <button
                     onClick={() => setConfirmModal(null)}
-                    className="text-gray-400 hover:text-gray-500 transition"
+                    className="text-qs-muted hover:text-qs-subtle transition"
                     aria-label="Close"
                   >
                     <X className="w-5 h-5" />
@@ -461,25 +461,25 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
                 </div>
               </div>
               <div className="px-6 py-4">
-                <p className="text-sm text-gray-600 mb-3">
+                <p className="text-sm text-qs-dim mb-3">
                   {confirmModal.skippedCount} row{confirmModal.skippedCount > 1 ? 's' : ''} will be skipped because {confirmModal.skippedCount > 1 ? 'these employees don\u2019t' : 'this employee doesn\u2019t'} match any known employee:
                 </p>
-                <ul className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
+                <ul className="bg-amber-900/20 border border-amber-700/40 rounded-lg p-3 space-y-1 max-h-40 overflow-y-auto mb-4">
                   {confirmModal.unmatchedNames.map((name, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-yellow-800">
-                      <AlertCircle className="w-3.5 h-3.5 text-yellow-500 shrink-0" />
+                    <li key={i} className="flex items-center gap-2 text-sm text-amber-300">
+                      <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                       {name}
                     </li>
                   ))}
                 </ul>
-                <p className="text-sm text-gray-700">
-                  <span className="font-medium text-gray-900">{confirmModal.matchedRows.length}</span> matched row{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
+                <p className="text-sm text-qs-text">
+                  <span className="font-medium text-qs-bright">{confirmModal.matchedRows.length}</span> matched row{confirmModal.matchedRows.length !== 1 ? 's' : ''} will be uploaded.
                 </p>
               </div>
-              <div className="border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+              <div className="border-t border-qs-border px-6 py-4 flex justify-end gap-3">
                 <button
                   onClick={() => setConfirmModal(null)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
                 >
                   Cancel
                 </button>
