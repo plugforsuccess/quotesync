@@ -297,11 +297,11 @@ const CSPerformancePage = () => {
   // Resolve the role of the currently selected employee
   const resolvedEmployeeRole = useMemo(() => {
     if (selectedEmployeeRole) return selectedEmployeeRole;
-    if (!singleEmployee || !rosterEmployees.length) return 'service';
+    if (!singleEmployee || !rosterEmployees.length) return 'service_inbound';
     const emp = rosterEmployees.find(
       (e) => (e.auth_user_id || e.id) === singleEmployee
     );
-    return emp?.roles?.[0] || 'service';
+    return emp?.roles?.[0] || 'service_inbound';
   }, [selectedEmployeeRole, singleEmployee, rosterEmployees]);
 
   // Is this employee a producer?
@@ -840,7 +840,7 @@ const CSPerformancePage = () => {
                       timeEntries={empEntries}
                       rcData={rc}
                       weekStart={weekStart}
-                      roleType="service"
+                      roleType={resolvedEmployeeRole}
                     />
                   );
                 })()}
@@ -925,7 +925,7 @@ const CSPerformancePage = () => {
                       timeEntries={empEntries}
                       rcData={rc}
                       weekStart={weekStart}
-                      roleType="service"
+                      roleType={resolvedEmployeeRole}
                     />
 
                     {/* Scorecard with per-employee targets and manual proactivity */}

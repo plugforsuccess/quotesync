@@ -57,7 +57,7 @@ export default function ServiceStaffingTab({ agencyId }) {
 
   // ── New Hire Cost ────────────────────────────────────────────────────────
   const [baseSalary,        setBaseSalary]         = useState(42000); // full-time equivalent
-  const [benefitsLoad,      setBenefitsLoad]       = useState(20);
+  const [benefitsLoad,      setBenefitsLoad]       = useState(10);
 
   // ── Multi-Line Exposure ──────────────────────────────────────────────────
   const [bundledPct,        setBundledPct]         = useState(43);

@@ -74,7 +74,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
         city: employee.city || '',
         state: employee.state || '',
         zip_code: employee.zip_code || '',
-        roles: employee.roles || ['service'],
+        roles: employee.roles || ['service_inbound'],
         hire_date: employee.hire_date || '',
         allstate_id: employee.allstate_id || '',
         rc_display_name: employee.rc_display_name || '',
