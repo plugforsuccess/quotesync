@@ -316,7 +316,7 @@ function KpiCard({ label, value, sub, color, urgent, urgentCount, clickable, onC
       onMouseLeave={e => { if (clickable) e.currentTarget.style.borderColor = 'var(--qs-border)'; }}
     >
       {urgent && (
-        <div style={{ position: 'absolute', top: 10, right: 10, background: '#EF444422',
+        <div style={{ position: 'absolute', top: 10, right: 10, background: 'var(--qs-danger-subtle)',
           color: 'var(--qs-danger)', fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4 }}>
           {urgentCount} URGENT
         </div>
@@ -487,7 +487,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
       </div>
 
       {uploadError && (
-        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
+        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
           {uploadError}
         </div>
       )}
@@ -520,7 +520,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           )}
 
           {diffResult.toAutoResolve.length > 0 && (
-            <div style={{ fontSize: 12, color: "var(--qs-warning)", marginBottom: 14, background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
+            <div style={{ fontSize: 12, color: "var(--qs-warning)", marginBottom: 14, background: "var(--qs-warning-subtle)", borderRadius: 6, padding: "8px 12px" }}>
               {diffResult.toAutoResolve.length} active policies not found in this report will be marked auto-resolved (they likely paid).
             </div>
           )}
@@ -537,7 +537,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
       )}
 
       {uploadMsg && (
-        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 16, fontSize: 13, color: "var(--qs-success)" }}>
+        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", marginTop: 16, fontSize: 13, color: "var(--qs-success)" }}>
           {uploadMsg}
         </div>
       )}
@@ -588,8 +588,8 @@ function OtherCasesWarning({ cases }) {
 
   return (
     <div style={{
-      background: '#F59E0B11',
-      border: '1px solid #F59E0B44',
+      background: 'var(--qs-warning-subtle)',
+      border: '1px solid var(--qs-warning-border)',
       borderRadius: 8,
       padding: '10px 14px',
       marginBottom: 12,
@@ -604,7 +604,7 @@ function OtherCasesWarning({ cases }) {
             <span style={{
               display: 'inline-block', padding: '1px 6px', borderRadius: 3,
               fontSize: 10, fontWeight: 700,
-              background: c.type === 'cancel' ? '#F59E0B22' : '#3B82F622',
+              background: c.type === 'cancel' ? 'var(--qs-warning-subtle)' : 'var(--qs-info-subtle)',
               color: c.type === 'cancel' ? '#F59E0B' : '#3B82F6', // Component color prop — hex intentionally
             }}>
               {c.type === 'cancel'
@@ -750,7 +750,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         <OtherCasesWarning cases={otherCases} />
 
         {event.stage === 'cancelled' && (
-          <div style={{ background: '#EF444411', border: '1px solid #EF444433',
+          <div style={{ background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)',
             borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-danger)',
               textTransform: 'uppercase', marginBottom: 6 }}>
@@ -1777,7 +1777,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         )}
 
         {uploadError && (
-          <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
+          <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
             {uploadError}
           </div>
         )}
@@ -1804,7 +1804,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
         )}
 
         {uploadMsg && (
-          <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-success)" }}>
+          <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-success)" }}>
             {uploadMsg}
           </div>
         )}
@@ -1874,10 +1874,10 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                       <span style={{
                         display: "inline-block", padding: "2px 8px", borderRadius: 10,
                         fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
-                        background: event._priority >= 80 ? "#EF444422"
-                                  : event._priority >= 55 ? "#F59E0B22"
-                                  : event._priority >= 30 ? "#3B82F622"
-                                  : "#64748B22",
+                        background: event._priority >= 80 ? "var(--qs-danger-subtle)"
+                                  : event._priority >= 55 ? "var(--qs-warning-subtle)"
+                                  : event._priority >= 30 ? "var(--qs-info-subtle)"
+                                  : "rgb(100 116 139 / 0.13)",
                         color: event._priority >= 80 ? "var(--qs-danger)"
                              : event._priority >= 55 ? "var(--qs-warning)"
                              : event._priority >= 30 ? "var(--qs-info)"
@@ -1895,13 +1895,13 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
                         <span style={{
                           display: 'inline-block', padding: '2px 7px', borderRadius: 4,
                           fontSize: 10, fontWeight: 700,
-                          background: '#10B98122', color: 'var(--qs-success)',
+                          background: 'var(--qs-success-subtle)', color: 'var(--qs-success)',
                         }}>ML</span>
                       ) : event.multi_line === 'No' ? (
                         <span style={{
                           display: 'inline-block', padding: '2px 7px', borderRadius: 4,
                           fontSize: 10, fontWeight: 700,
-                          background: '#3B82F622', color: '#60A5FA',
+                          background: 'var(--qs-info-subtle)', color: 'var(--qs-info)',
                         }}>SL</span>
                       ) : (
                         <span style={{ color: 'var(--qs-muted)', fontSize: 11 }}>{"\u2014"}</span>
@@ -2141,7 +2141,7 @@ function AttritionTab({ agencyId, currentUserId }) {
     <div>
       {/* Gap Alert Banner */}
       {gapAnalysis && (
-        <div style={{ background: gapAnalysis.pointsDelta > 0 ? "#EF444411" : "#10B98111", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "#EF444433" : "#10B98133"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
+        <div style={{ background: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-subtle)" : "var(--qs-success-subtle)", border: `1px solid ${gapAnalysis.pointsDelta > 0 ? "var(--qs-danger-border)" : "var(--qs-success-border)"}`, borderRadius: 8, padding: "12px 16px", marginBottom: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: gapAnalysis.pointsDelta > 0 ? "var(--qs-danger)" : "var(--qs-success)", marginBottom: 4 }}>
             {gapAnalysis.pointsDelta > 0
               ? `⚠ Attrition increased — ${gapAnalysis.currentMonth}: ${gapAnalysis.currentPoints} pts lost · New business must exceed this next month to grow`
@@ -2158,8 +2158,8 @@ function AttritionTab({ agencyId, currentUserId }) {
         <div style={{
           fontSize: 11,
           color: "var(--qs-warning)",
-          background: "#F59E0B11",
-          border: "1px solid #F59E0B33",
+          background: "var(--qs-warning-subtle)",
+          border: "1px solid var(--qs-warning-border)",
           borderRadius: 6,
           padding: "6px 12px",
           marginTop: -12,
@@ -2243,7 +2243,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       </div>
 
       {parseError && (
-        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--qs-danger)" }}>
+        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--qs-danger)" }}>
           {parseError}
         </div>
       )}
@@ -2283,7 +2283,7 @@ function AttritionTab({ agencyId, currentUserId }) {
       )}
 
       {commitMsg && (
-        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--qs-success)" }}>
+        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--qs-success)" }}>
           {commitMsg}
         </div>
       )}
@@ -2656,7 +2656,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 
         {/* Pending cancel section */}
         {r.cancel_event_id && (
-          <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #F59E0B44' }}>
+          <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-warning-border)' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-warning)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               ⚠ Pending Cancellation
             </div>
@@ -2728,7 +2728,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 
         {/* Renewal section */}
         {r.renewal_event_id && (
-          <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid #3B82F644' }}>
+          <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-info-border)' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-info)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               🔄 Renewal
             </div>
@@ -3158,7 +3158,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         {kpiFilter && (
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
-            background: '#3B82F622', border: '1px solid #3B82F644',
+            background: 'var(--qs-info-subtle)', border: '1px solid var(--qs-info-border)',
             borderRadius: 6, padding: '4px 10px', fontSize: 12, color: 'var(--qs-info)',
           }}>
             Filtered: {
@@ -3230,7 +3230,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                     <span style={{
                       display: 'inline-block', padding: '2px 8px', borderRadius: 10,
                       fontSize: 11, fontWeight: 700, fontFamily: "'DM Mono', monospace",
-                      background: row._priority >= 80 ? '#EF444422' : row._priority >= 55 ? '#F59E0B22' : row._priority >= 30 ? '#3B82F622' : '#64748B22',
+                      background: row._priority >= 80 ? 'var(--qs-danger-subtle)' : row._priority >= 55 ? 'var(--qs-warning-subtle)' : row._priority >= 30 ? 'var(--qs-info-subtle)' : 'rgb(100 116 139 / 0.13)',
                       color:      row._priority >= 80 ? 'var(--qs-danger)'   : row._priority >= 55 ? 'var(--qs-warning)'   : row._priority >= 30 ? 'var(--qs-info)'   : 'var(--qs-subtle)',
                     }}>{row._priority}</span>
                   </td>
@@ -3239,12 +3239,12 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
                   <td>
                     {row.cancel_stage === 'cancelled' ? (
                       <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
-                        fontSize: 10, fontWeight: 700, background: '#EF444422', color: 'var(--qs-danger)' }}>
+                        fontSize: 10, fontWeight: 700, background: 'var(--qs-danger-subtle)', color: 'var(--qs-danger)' }}>
                         🚫 Lapsed
                       </span>
                     ) : row.cancel_event_id ? (
                       <span style={{ display: 'inline-block', padding: '2px 7px', borderRadius: 4,
-                        fontSize: 10, fontWeight: 700, background: '#F59E0B22', color: 'var(--qs-warning)' }}>
+                        fontSize: 10, fontWeight: 700, background: 'var(--qs-warning-subtle)', color: 'var(--qs-warning)' }}>
                         ⚠ Pending
                       </span>
                     ) : null}
@@ -3655,7 +3655,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       )}
 
       {uploadError && (
-        <div style={{ background: "#EF444411", border: "1px solid #EF444433", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
+        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-danger)" }}>
           {uploadError}
         </div>
       )}
@@ -3682,7 +3682,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       )}
 
       {uploadMsg && (
-        <div style={{ background: "#10B98111", border: "1px solid #10B98133", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-success)" }}>
+        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", marginTop: 12, fontSize: 13, color: "var(--qs-success)" }}>
           {uploadMsg}
         </div>
       )}
@@ -3709,7 +3709,7 @@ function ImportTab({
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 128, alignItems: 'stretch' }}>
 
         {/* Left — Pending Cancellation */}
-        <div style={{ background: 'var(--qs-card)', border: '1px solid #F59E0B33', borderRadius: 12, padding: 20 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-warning-border)', borderRadius: 12, padding: 20 }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-warning)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
             ⚠ Pending Cancellation Report
           </div>
@@ -3742,7 +3742,7 @@ function ImportTab({
       </div>
 
       {/* Cancellation Audit — full width below */}
-      <div style={{ marginTop: 16, background: 'var(--qs-card)', border: '1px solid #EF444433',
+      <div style={{ marginTop: 16, background: 'var(--qs-card)', border: '1px solid var(--qs-danger-border)',
         borderRadius: 12, padding: 20 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-danger)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>

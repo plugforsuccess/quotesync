@@ -236,7 +236,7 @@ export default function ServiceStaffingTab({ agencyId }) {
   // ── Helpers ─────────────────────────────────────────────────────────────
   const fmt$ = n => `$${Math.round(n).toLocaleString()}`;
   const fmtK = n => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : fmt$(n);
-  // ROI color — used as style prop and border template
+  // Component API color values — passed as style props to Stat component
   const roiColor = calc.netROI > 500 ? '#10B981'
     : calc.netROI > -500 ? '#F59E0B' : '#EF4444';
 
@@ -260,7 +260,7 @@ export default function ServiceStaffingTab({ agencyId }) {
   }
 
   // Stat color prop — hex intentionally (rendered via style={{ color }})
-  function Stat({ label, value, sub, color = 'var(--qs-text)', large = false }) {
+  function Stat({ label, value, sub, color = '#E2E8F0', large = false }) {
     return (
       <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', border: '1px solid var(--qs-border)' }}>
         <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4,
@@ -275,7 +275,7 @@ export default function ServiceStaffingTab({ agencyId }) {
   return (
     <div>
       {liveData && (
-        <div style={{ fontSize: 12, color: 'var(--qs-success)', marginBottom: 16,
+        <div style={{ fontSize: 12, color: '#10B981', marginBottom: 16,
           background: 'rgb(16 185 129 / 0.07)', borderRadius: 6, padding: '6px 12px', display: 'inline-block' }}>
           ✓ Using live book data — {monthlyPolicies} renewals + {pendingCancelPerMonth} pending cancels/mo · {commissionRate}% blended commission
         </div>
@@ -315,7 +315,7 @@ export default function ServiceStaffingTab({ agencyId }) {
             <div style={{ color: 'var(--qs-subtle)', marginBottom: 2 }}>
               {Math.round(hoursRatio * 100)}% of full-time · {hireHours} hrs/mo
             </div>
-            <div style={{ color: 'var(--qs-text)', fontWeight: 600 }}>
+            <div style={{ color: '#E2E8F0', fontWeight: 600 }}>
               Est. monthly cost: {fmtK(monthlyCost)}
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function ServiceStaffingTab({ agencyId }) {
           <Field label="Renewal queue/mo"          value={monthlyPolicies}      onChange={setMonthlyPolicies}      min={1} max={2000} />
           <Field label="Pending cancel queue/mo"   value={pendingCancelPerMonth} onChange={setPendingCancelPerMonth} min={0} max={200} />
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: -8, marginBottom: 14 }}>
-            Total queue: <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>{monthlyPolicies + pendingCancelPerMonth} cases/mo</span>
+            Total queue: <span style={{ color: '#E2E8F0', fontWeight: 600 }}>{monthlyPolicies + pendingCancelPerMonth} cases/mo</span>
           </div>
           <Field label="Avg premium per policy"    value={avgPremium}      onChange={setAvgPremium}      prefix="$" min={100} max={10000} step={100} />
           <Field label="Commission rate (blended)"   value={commissionRate}  onChange={setCommissionRate}  suffix="%" min={1} max={25} step={0.5} />
@@ -348,7 +348,7 @@ export default function ServiceStaffingTab({ agencyId }) {
             suffix="%" min={1} max={100}
           />
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: -8, marginBottom: 14 }}>
-            New hire outbound: <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>
+            New hire outbound: <span style={{ color: '#E2E8F0', fontWeight: 600 }}>
               {calc.hireOutboundHours.toFixed(0)} hrs/mo → {calc.hireWorkableCases} cases workable
             </span>
           </div>
@@ -356,7 +356,7 @@ export default function ServiceStaffingTab({ agencyId }) {
             onChange={setTracyHoursOutbound} suffix="hrs" min={0} max={80}
           />
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: -8, marginBottom: 14 }}>
-            Tracy's contribution: <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>
+            Tracy's contribution: <span style={{ color: '#E2E8F0', fontWeight: 600 }}>
               {calc.tracyWorkableCases} cases workable
             </span>
           </div>
@@ -396,7 +396,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                 color={calc.paybackMonths <= 12 ? '#10B981' : '#F59E0B'} />
             </div>
             <div style={{ marginTop: 14, background: 'var(--qs-elevated)', borderRadius: 8,
-              padding: '10px 14px', fontSize: 13, color: 'var(--qs-dim)' }}>
+              padding: '10px 14px', fontSize: 13, color: '#94A3B8' }}>
               New hire needs to save{' '}
               <span style={{ color: 'var(--qs-bright)', fontWeight: 700 }}>
                 {calc.breakevenSaves} policies/month
@@ -432,7 +432,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                       <span style={{ fontSize: 12, fontWeight: 600,
                         color: label === 'Net ROI/mo'
                           ? (calc.ftVsPt.ptNetROI > 0 ? '#10B981' : '#EF4444')
-                          : 'var(--qs-text)' }}>{val}</span>
+                          : '#E2E8F0' }}>{val}</span>
                     </div>
                   ))}
                 </div>
@@ -459,7 +459,7 @@ export default function ServiceStaffingTab({ agencyId }) {
                       <span style={{ fontSize: 12, fontWeight: 600,
                         color: label === 'Net ROI/mo'
                           ? (calc.ftVsPt.ftNetROI > 0 ? '#10B981' : '#EF4444')
-                          : 'var(--qs-text)' }}>{val}</span>
+                          : '#E2E8F0' }}>{val}</span>
                     </div>
                   ))}
                 </div>
@@ -504,7 +504,7 @@ export default function ServiceStaffingTab({ agencyId }) {
 
           {/* Multi-line hidden exposure */}
           <div style={{ background: 'var(--qs-card)', border: '1px solid rgb(245 158 11 / 0.2)', borderRadius: 12, padding: 20 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-warning)',
+            <div style={{ fontSize: 12, fontWeight: 600, color: '#F59E0B',
               textTransform: 'uppercase', marginBottom: 12 }}>⚡ Multi-Line Hidden Exposure</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
               <Stat label="Bundled at risk/mo"        value={calc.bundledAtRisk} />

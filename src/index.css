@@ -20,6 +20,16 @@
   --qs-purple:   #8B5CF6;
   --qs-pink:     #EC4899;
   --qs-cyan:     #06B6D4;
+
+  /* Alpha semantic backgrounds for alert banners */
+  --qs-danger-subtle:  rgb(239 68 68 / 0.07);
+  --qs-danger-border:  rgb(239 68 68 / 0.20);
+  --qs-warning-subtle: rgb(245 158 11 / 0.07);
+  --qs-warning-border: rgb(245 158 11 / 0.20);
+  --qs-success-subtle: rgb(16 185 129 / 0.07);
+  --qs-success-border: rgb(16 185 129 / 0.20);
+  --qs-info-subtle:    rgb(59 130 246 / 0.07);
+  --qs-info-border:    rgb(59 130 246 / 0.20);
 }
 
 /* ── Semantic alpha backgrounds (status banners, badges) ─── */
