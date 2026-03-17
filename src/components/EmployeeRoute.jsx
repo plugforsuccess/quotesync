@@ -14,8 +14,22 @@ export default function EmployeeRoute({ children }) {
 
   if (authLoading || empLoading) return <PageSpinner />;
 
-  // Not logged in → login page
-  if (!user) return <Navigate to="/admin-access-8by2X" replace />;
+  // Not logged in → login page (only show spinner if token is still valid)
+  if (!user) {
+    try {
+      const tokenKey = Object.keys(localStorage).find(
+        k => k.startsWith('sb-') && k.endsWith('-auth-token')
+      );
+      if (tokenKey) {
+        const raw = localStorage.getItem(tokenKey);
+        const parsed = raw ? JSON.parse(raw) : null;
+        const expiresAt = parsed?.expires_at;
+        const isStillValid = expiresAt && (expiresAt * 1000) > Date.now();
+        if (isStillValid) return <PageSpinner />;
+      }
+    } catch (_) {}
+    return <Navigate to="/admin-access-8by2X" replace />;
+  }
 
   // Employee record not found → show an informative error
   if (!employee) {
