@@ -69,14 +69,23 @@ const ProtectedRoute = ({
     // (spurious SIGNED_OUT) and AuthContext will re-hydrate shortly.
     // Show a spinner instead of booting the user to the login page.
     try {
-      const hasToken = Object.keys(localStorage).some(
+      const tokenKey = Object.keys(localStorage).find(
         k => k.startsWith('sb-') && k.endsWith('-auth-token')
       );
-      if (hasToken) {
-        return <PageSpinner />;
+      if (tokenKey) {
+        const raw = localStorage.getItem(tokenKey);
+        const parsed = raw ? JSON.parse(raw) : null;
+        const expiresAt = parsed?.expires_at; // Unix timestamp in seconds
+        const isStillValid = expiresAt && (expiresAt * 1000) > Date.now();
+        if (isStillValid) {
+          // Token exists and hasn't expired — React state is temporarily wrong,
+          // AuthContext will re-hydrate shortly. Show spinner.
+          return <PageSpinner />;
+        }
+        // Token exists but is expired — fall through to login redirect.
       }
     } catch (_) {
-      // localStorage unavailable — fall through to redirect
+      // localStorage unavailable or JSON parse failed — fall through to redirect
     }
     return <Navigate to={redirectTo} replace />;
   }
