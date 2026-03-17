@@ -11,7 +11,7 @@ import { supabase } from '../lib/supabase';
 
 // ── Query key factories ─────────────────────────────────────────────────────
 
-export const csPerformanceKeys = {
+export const staffPerformanceKeys = {
   targets: (employeeId) => ['cs-targets', employeeId],
   proactivity: (employeeId, weekStart) => ['cs-proactivity', employeeId, weekStart],
   outboundBreakdown: (employeeId, weekStart) => ['cs-outbound-breakdown', employeeId, weekStart],
@@ -41,7 +41,7 @@ async function fetchTargets(employeeId, weekStart) {
 
 export function useEmployeeTargets(employeeId, weekStart) {
   return useQuery({
-    queryKey: csPerformanceKeys.targets(employeeId),
+    queryKey: staffPerformanceKeys.targets(employeeId),
     queryFn: () => fetchTargets(employeeId, weekStart),
     enabled: !!employeeId && employeeId !== 'all',
     staleTime: 5 * 60 * 1000,
@@ -63,7 +63,7 @@ export function useSaveTargets() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: csPerformanceKeys.targets(data.employee_user_id),
+        queryKey: staffPerformanceKeys.targets(data.employee_user_id),
       });
     },
   });
@@ -87,7 +87,7 @@ async function fetchProactivity(employeeId, weekStart) {
 
 export function useProactivityManual(employeeId, weekStart) {
   return useQuery({
-    queryKey: csPerformanceKeys.proactivity(employeeId, weekStart),
+    queryKey: staffPerformanceKeys.proactivity(employeeId, weekStart),
     queryFn: () => fetchProactivity(employeeId, weekStart),
     enabled: !!employeeId && employeeId !== 'all',
   });
@@ -108,7 +108,7 @@ export function useSaveProactivity() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: csPerformanceKeys.proactivity(data.employee_user_id, data.week_start),
+        queryKey: staffPerformanceKeys.proactivity(data.employee_user_id, data.week_start),
       });
     },
   });
@@ -132,7 +132,7 @@ async function fetchOutboundBreakdown(employeeId, weekStart) {
 
 export function useOutboundBreakdown(employeeId, weekStart) {
   return useQuery({
-    queryKey: csPerformanceKeys.outboundBreakdown(employeeId, weekStart),
+    queryKey: staffPerformanceKeys.outboundBreakdown(employeeId, weekStart),
     queryFn: () => fetchOutboundBreakdown(employeeId, weekStart),
     enabled: !!employeeId && employeeId !== 'all',
   });
@@ -153,7 +153,7 @@ export function useSaveOutboundBreakdown() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({
-        queryKey: csPerformanceKeys.outboundBreakdown(data.employee_user_id, data.week_start),
+        queryKey: staffPerformanceKeys.outboundBreakdown(data.employee_user_id, data.week_start),
       });
     },
   });
@@ -187,7 +187,7 @@ async function fetchTrendData(employeeId, weekStart) {
 
 export function useTrendData(employeeId, weekStart) {
   return useQuery({
-    queryKey: csPerformanceKeys.trendData(employeeId, weekStart),
+    queryKey: staffPerformanceKeys.trendData(employeeId, weekStart),
     queryFn: () => fetchTrendData(employeeId, weekStart),
     enabled: !!employeeId && employeeId !== 'all',
     staleTime: 2 * 60 * 1000,
@@ -246,7 +246,7 @@ async function fetchTeamData(weekStart) {
 
 export function useTeamData(weekStart) {
   return useQuery({
-    queryKey: csPerformanceKeys.teamData(weekStart),
+    queryKey: staffPerformanceKeys.teamData(weekStart),
     queryFn: () => fetchTeamData(weekStart),
     staleTime: 2 * 60 * 1000,
   });
@@ -292,7 +292,7 @@ async function fetchCallLogData(employeeId, weekStart) {
 
 export function useCallLogData(employeeId, weekStart) {
   return useQuery({
-    queryKey: csPerformanceKeys.callLog(employeeId, weekStart),
+    queryKey: staffPerformanceKeys.callLog(employeeId, weekStart),
     queryFn: () => fetchCallLogData(employeeId, weekStart),
     enabled: !!employeeId && employeeId !== 'all',
     staleTime: 2 * 60 * 1000,
@@ -304,7 +304,7 @@ export function useInvalidateCallLog() {
   return {
     invalidateCallLog: (employeeId, weekStart) => {
       queryClient.invalidateQueries({
-        queryKey: csPerformanceKeys.callLog(employeeId, weekStart),
+        queryKey: staffPerformanceKeys.callLog(employeeId, weekStart),
       });
     },
     invalidateAllCallLogs: () => {
@@ -332,7 +332,7 @@ async function fetchQueueData(orgId, weekStart) {
 
 export function useQueueData(orgId, weekStart) {
   return useQuery({
-    queryKey: csPerformanceKeys.queueData(orgId, weekStart),
+    queryKey: staffPerformanceKeys.queueData(orgId, weekStart),
     queryFn: () => fetchQueueData(orgId, weekStart),
     enabled: !!orgId && !!weekStart,
     staleTime: 2 * 60 * 1000,
@@ -344,7 +344,7 @@ export function useInvalidateQueueData() {
   return {
     invalidateQueueData: (orgId, weekStart) => {
       queryClient.invalidateQueries({
-        queryKey: csPerformanceKeys.queueData(orgId, weekStart),
+        queryKey: staffPerformanceKeys.queueData(orgId, weekStart),
       });
     },
     invalidateAllQueueData: () => {
