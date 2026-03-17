@@ -116,18 +116,18 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto bg-white p-5 sm:p-7">
+      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7" style={{ background: '#161924' }}>
           {/* Header */}
-          <div className="sticky top-0 bg-white border-b border-gray-200 pb-4 mb-4 z-10">
+          <div className="sticky top-0 border-b border-qs-border pb-4 mb-4 z-10" style={{ background: '#161924' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-primary-600" />
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Performance Goals</h3>
-                  <p className="text-sm text-gray-500">{employeeName}</p>
+                  <h3 className="text-lg font-semibold text-qs-bright">Performance Goals</h3>
+                  <p className="text-sm text-qs-subtle">{employeeName}</p>
                 </div>
               </div>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
+              <button onClick={onClose} className="text-qs-muted hover:text-qs-subtle transition min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -137,31 +137,31 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
           <div className="space-y-6">
             {/* Effective Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Effective Date</label>
+              <label className="dark-label">Effective Date</label>
               <input
                 type="date"
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="dark-input"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-qs-subtle mt-1">
                 Targets apply from this date forward. Historical weeks before this date keep their original targets.
               </p>
             </div>
 
             {(roleType === 'sales' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS).map((group) => (
               <div key={group.title}>
-                <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3">{group.title}</h4>
+                <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide mb-3">{group.title}</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {group.fields.map((field) => (
                     <div key={field.key}>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">{field.label}</label>
+                      <label className="block text-xs font-medium text-qs-dim mb-1">{field.label}</label>
                       <input
                         type="number"
                         step={field.type === 'float' ? '0.1' : '1'}
                         value={form[field.key]}
                         onChange={(e) => handleChange(field.key, e.target.value, field.type)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                        className="dark-input"
                       />
                     </div>
                   ))}
@@ -171,10 +171,10 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-4 mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+          <div className="sticky bottom-0 border-t border-qs-border pt-4 mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between" style={{ background: '#161924' }}>
             <button
               onClick={handleReset}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
               Reset to Defaults
@@ -182,7 +182,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
               >
                 Cancel
               </button>

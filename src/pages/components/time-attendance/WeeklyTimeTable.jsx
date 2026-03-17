@@ -216,37 +216,37 @@ export default function WeeklyTimeTable({
   const isNoTime = (code) => NO_TIME_CODES.includes(code);
 
   const inputCls =
-    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white';
+    'w-full px-2 py-1.5 text-sm border border-qs-border rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-qs-card';
   const selectCls =
-    'w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white';
+    'w-full px-2 py-1.5 text-sm border border-qs-border rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-qs-card';
   const disabledInputCls =
-    'w-full px-2 py-1.5 text-sm border border-gray-200 rounded bg-gray-100 text-gray-400 cursor-not-allowed';
+    'w-full px-2 py-1.5 text-sm border border-qs-border rounded bg-qs-elevated text-qs-muted cursor-not-allowed';
 
   return (
     <>
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[950px]">
-          <thead className="bg-gray-50 border-b border-gray-200">
+          <thead className="bg-qs-elevated border-b border-qs-border">
             <tr>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Day</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[120px]">Code</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[100px]">Location</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Start</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Lunch Out</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">Lunch In</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase w-[90px]">End</th>
-              <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase flex-1">Notes</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Day</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[120px]">Code</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[100px]">Location</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Start</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Lunch Out</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">Lunch In</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase w-[90px]">End</th>
+              <th className="px-3 py-3 text-left text-xs font-semibold text-qs-subtle uppercase flex-1">Notes</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-qs-border">
             {rows.map((row, idx) => {
               const noTime = isNoTime(row.code);
               const needsNotes = NOTES_REQUIRED_CODES.includes(row.code);
 
               return (
-                <tr key={row.date} className="hover:bg-gray-50/50">
-                  <td className="px-3 py-2 text-sm font-medium text-gray-900 whitespace-nowrap">
+                <tr key={row.date} className="hover:bg-qs-elevated/50">
+                  <td className="px-3 py-2 text-sm font-medium text-qs-bright whitespace-nowrap">
                     {formatDayLabel(row.date)}
                   </td>
                   <td className="px-3 py-2">
@@ -313,7 +313,7 @@ export default function WeeklyTimeTable({
                       value={row.notes}
                       onChange={(e) => updateRow(idx, 'notes', e.target.value)}
                       placeholder={needsNotes ? 'Required...' : ''}
-                      className={`${inputCls} ${needsNotes && !row.notes.trim() ? 'border-red-300 focus:ring-red-500 focus:border-red-500' : ''}`}
+                      className={`${inputCls} ${needsNotes && !row.notes.trim() ? 'border-red-700/40 focus:ring-red-500 focus:border-red-500' : ''}`}
                     />
                   </td>
                 </tr>
@@ -325,8 +325,8 @@ export default function WeeklyTimeTable({
 
       {/* Validation errors */}
       {validationErrors.length > 0 && (
-        <div className="px-4 py-3 bg-red-50 border-t border-red-200">
-          <ul className="text-sm text-red-700 space-y-1">
+        <div className="px-4 py-3 bg-red-900/20 border-t border-red-700/40">
+          <ul className="text-sm text-red-300 space-y-1">
             {validationErrors.map((err, i) => (
               <li key={i} className="flex items-center gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
@@ -338,7 +338,7 @@ export default function WeeklyTimeTable({
       )}
 
       {/* Save bar */}
-      <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex items-center gap-3">
+      <div className="px-4 py-3 bg-qs-elevated border-t border-qs-border flex items-center gap-3">
         <button
           disabled={!canSave}
           onClick={saveWeek}
@@ -352,7 +352,7 @@ export default function WeeklyTimeTable({
           {saving ? 'Saving...' : 'Save Week'}
         </button>
         {msg && (
-          <div className={`flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-600' : 'text-green-600'}`}>
+          <div className={`flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
             {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
             {msg.text}
           </div>
@@ -361,20 +361,20 @@ export default function WeeklyTimeTable({
     </div>
 
     {/* Code legend */}
-    <div className="flex flex-wrap gap-2 text-xs text-gray-500 mt-3">
-      <span><strong className="text-gray-700">REG</strong> Regular</span>
-      <span className="text-gray-300">|</span>
-      <span><strong className="text-gray-700">WFH</strong> Work from Home</span>
-      <span className="text-gray-300">|</span>
-      <span><strong className="text-gray-700">SICK</strong> Sick (Full Day)</span>
-      <span className="text-gray-300">|</span>
-      <span><strong className="text-gray-700">SICK_PART</strong> Sick (Partial)</span>
-      <span className="text-gray-300">|</span>
-      <span><strong className="text-gray-700">PTO</strong> Paid Time Off</span>
-      <span className="text-gray-300">|</span>
-      <span><strong className="text-gray-700">APPT</strong> Appointment</span>
-      <span className="text-gray-300">|</span>
-      <span><strong className="text-gray-700">EARLY</strong> Left Early</span>
+    <div className="flex flex-wrap gap-2 text-xs text-qs-subtle mt-3">
+      <span><strong className="text-qs-text">REG</strong> Regular</span>
+      <span className="text-qs-muted">|</span>
+      <span><strong className="text-qs-text">WFH</strong> Work from Home</span>
+      <span className="text-qs-muted">|</span>
+      <span><strong className="text-qs-text">SICK</strong> Sick (Full Day)</span>
+      <span className="text-qs-muted">|</span>
+      <span><strong className="text-qs-text">SICK_PART</strong> Sick (Partial)</span>
+      <span className="text-qs-muted">|</span>
+      <span><strong className="text-qs-text">PTO</strong> Paid Time Off</span>
+      <span className="text-qs-muted">|</span>
+      <span><strong className="text-qs-text">APPT</strong> Appointment</span>
+      <span className="text-qs-muted">|</span>
+      <span><strong className="text-qs-text">EARLY</strong> Left Early</span>
     </div>
     </>
   );

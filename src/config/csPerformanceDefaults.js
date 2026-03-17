@@ -33,11 +33,11 @@ export const DEFAULT_TARGETS = {
 };
 
 export const GRADE_CONFIG = {
-  A: { color: 'text-green-700', bg: 'bg-green-100', border: 'border-green-300', desc: 'Elite performance', numeric: 5 },
-  B: { color: 'text-primary-700', bg: 'bg-primary-100', border: 'border-primary-300', desc: 'Solid — meets all expectations', numeric: 4 },
-  C: { color: 'text-yellow-700', bg: 'bg-yellow-100', border: 'border-yellow-300', desc: 'Minimum acceptable — needs improvement', numeric: 3 },
-  D: { color: 'text-orange-700', bg: 'bg-orange-100', border: 'border-orange-300', desc: 'Underperforming — coaching required', numeric: 2 },
-  F: { color: 'text-red-700', bg: 'bg-red-100', border: 'border-red-300', desc: 'Intervention required', numeric: 1 },
+  A: { color: 'text-emerald-400', bg: 'bg-emerald-900/20', border: 'border-emerald-700/40', desc: 'Elite performance', numeric: 5 },
+  B: { color: 'text-blue-400', bg: 'bg-blue-900/20', border: 'border-blue-700/40', desc: 'Solid — meets all expectations', numeric: 4 },
+  C: { color: 'text-amber-400', bg: 'bg-amber-900/20', border: 'border-amber-700/40', desc: 'Minimum acceptable — needs improvement', numeric: 3 },
+  D: { color: 'text-orange-400', bg: 'bg-orange-900/20', border: 'border-orange-700/40', desc: 'Underperforming — coaching required', numeric: 2 },
+  F: { color: 'text-red-400', bg: 'bg-red-900/20', border: 'border-red-700/40', desc: 'Intervention required', numeric: 1 },
 };
 
 export const OUTBOUND_CATEGORIES = [

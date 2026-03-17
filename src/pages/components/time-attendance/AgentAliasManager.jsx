@@ -137,12 +137,12 @@ export default function AgentAliasManager({ orgId, employees }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-qs-card rounded-lg border border-qs-border p-6">
       <div className="flex items-center gap-3 mb-4">
-        <UserX className="w-6 h-6 text-yellow-600" />
+        <UserX className="w-6 h-6 text-amber-400" />
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Agent Name Mapping</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="text-lg font-semibold text-qs-bright">Agent Name Mapping</h3>
+          <p className="text-sm text-qs-subtle">
             Resolve unmatched agent names from call log uploads. Aliases persist across future uploads.
           </p>
         </div>
@@ -150,8 +150,8 @@ export default function AgentAliasManager({ orgId, employees }) {
 
       {feedback && (
         <div className={`mb-4 flex items-center gap-1.5 text-sm ${
-          feedback.type === 'error' ? 'text-red-600' :
-          feedback.type === 'warning' ? 'text-yellow-600' : 'text-green-600'
+          feedback.type === 'error' ? 'text-red-400' :
+          feedback.type === 'warning' ? 'text-amber-400' : 'text-emerald-400'
         }`}>
           {feedback.type === 'error' ? <AlertCircle className="w-4 h-4" /> :
            feedback.type === 'warning' ? <AlertCircle className="w-4 h-4" /> :
@@ -163,23 +163,23 @@ export default function AgentAliasManager({ orgId, employees }) {
       {/* Unmatched agents section */}
       {hasUnmatched && (
         <div className="mb-6">
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">
+          <h4 className="text-sm font-semibold text-qs-text mb-2">
             Unmatched Agents ({unmatchedAgents.length})
           </h4>
           <div className="space-y-2">
             {unmatchedAgents.map(({ name, nameKey, count }) => (
               <div
                 key={nameKey || name}
-                className="flex items-center gap-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg"
+                className="flex items-center gap-3 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg"
               >
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{name}</p>
-                  <p className="text-xs text-gray-500">{count} call{count !== 1 ? 's' : ''}</p>
+                  <p className="text-sm font-medium text-qs-bright truncate">{name}</p>
+                  <p className="text-xs text-qs-subtle">{count} call{count !== 1 ? 's' : ''}</p>
                 </div>
                 <select
                   value={selectedMapping[name] || ''}
                   onChange={(e) => setSelectedMapping((prev) => ({ ...prev, [name]: e.target.value }))}
-                  className="px-2 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-primary-500 max-w-[200px]"
+                  className="dark-input max-w-[200px]"
                 >
                   <option value="">Select employee...</option>
                   {mappableEmployees.map((emp) => (
@@ -188,12 +188,12 @@ export default function AgentAliasManager({ orgId, employees }) {
                     </option>
                   ))}
                 </select>
-                <label className="flex items-center gap-1.5 text-xs text-gray-600 whitespace-nowrap">
+                <label className="dark-label flex items-center gap-1.5 text-xs text-qs-dim whitespace-nowrap">
                   <input
                     type="checkbox"
                     checked={backfillChecked[name] || false}
                     onChange={(e) => setBackfillChecked((prev) => ({ ...prev, [name]: e.target.checked }))}
-                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    className="rounded border-qs-border text-primary-400 focus:ring-primary-500"
                   />
                   Backfill
                 </label>
@@ -214,29 +214,29 @@ export default function AgentAliasManager({ orgId, employees }) {
       {/* Existing aliases section */}
       {hasAliases && (
         <div>
-          <h4 className="text-sm font-semibold text-gray-700 mb-2">
+          <h4 className="text-sm font-semibold text-qs-text mb-2">
             Active Aliases ({aliases.length})
           </h4>
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
+          <div className="overflow-x-auto border border-qs-border rounded-lg">
             <table className="w-full text-sm">
-              <thead className="bg-gray-50">
+              <thead className="bg-qs-elevated">
                 <tr>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Alias</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Mapped To</th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Source</th>
-                  <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Actions</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Alias</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Mapped To</th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Source</th>
+                  <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-qs-border">
                 {aliases.map((alias) => (
-                  <tr key={alias.id} className="hover:bg-gray-50">
-                    <td className="px-3 py-2 text-gray-900 font-medium">{alias.alias_display}</td>
-                    <td className="px-3 py-2 text-gray-700">{getEmployeeNameById(alias.employee_user_id)}</td>
+                  <tr key={alias.id} className="hover:bg-qs-elevated">
+                    <td className="px-3 py-2 text-qs-bright font-medium">{alias.alias_display}</td>
+                    <td className="px-3 py-2 text-qs-text">{getEmployeeNameById(alias.employee_user_id)}</td>
                     <td className="px-3 py-2">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                        alias.source === 'manual' ? 'bg-primary-100 text-primary-700' :
-                        alias.source === 'auto' ? 'bg-green-100 text-green-700' :
-                        'bg-gray-100 text-gray-700'
+                        alias.source === 'manual' ? 'bg-primary-900/20 text-primary-300' :
+                        alias.source === 'auto' ? 'bg-emerald-900/20 text-emerald-300' :
+                        'bg-qs-elevated text-qs-text'
                       }`}>
                         {alias.source}
                       </span>
@@ -245,7 +245,7 @@ export default function AgentAliasManager({ orgId, employees }) {
                       <button
                         onClick={() => handleDeleteAlias(alias)}
                         disabled={deleting}
-                        className="p-1 text-gray-400 hover:text-red-600 rounded transition-colors disabled:opacity-50"
+                        className="p-1 text-qs-muted hover:text-red-400 rounded transition-colors disabled:opacity-50"
                         title="Remove alias"
                       >
                         <Trash2 className="w-4 h-4" />

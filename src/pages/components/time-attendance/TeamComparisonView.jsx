@@ -59,7 +59,7 @@ const DEFAULT_SORT = {
 
 function GradeBadge({ grade }) {
   if (!grade || grade === '—') {
-    return <span className="text-gray-400">—</span>;
+    return <span className="text-qs-muted">—</span>;
   }
   const config = GRADE_CONFIG[grade] || GRADE_CONFIG.C;
   return (
@@ -76,13 +76,13 @@ function CellValue({ col, row }) {
 
   // Role-specific columns show dash for non-matching roles
   if (col.roleSpecific && row.roleType !== col.roleSpecific) {
-    return <span className="text-gray-400">—</span>;
+    return <span className="text-qs-muted">—</span>;
   }
 
   if (col.key === 'grade') return <GradeBadge grade={val} />;
 
   if (col.key === 'role') {
-    return <span className="text-sm text-gray-700">{ROLE_LABELS[val] || val}</span>;
+    return <span className="text-sm text-qs-text">{ROLE_LABELS[val] || val}</span>;
   }
 
   if (col.key === 'flags') {
@@ -92,25 +92,25 @@ function CellValue({ col, row }) {
         {val}
       </span>
     ) : (
-      <span className="text-gray-400">—</span>
+      <span className="text-qs-muted">—</span>
     );
   }
 
   if (col.format === 'pct') {
-    return <span className="text-sm text-gray-700">{isFinite(val) ? `${val.toFixed(1)}%` : '—'}</span>;
+    return <span className="text-sm text-qs-text">{isFinite(val) ? `${val.toFixed(1)}%` : '—'}</span>;
   }
   if (col.format === 'time') {
-    return <span className="text-sm text-gray-700">{(val || 0).toFixed(1)} min</span>;
+    return <span className="text-sm text-qs-text">{(val || 0).toFixed(1)} min</span>;
   }
   if (col.format === 'decimal') {
-    return <span className="text-sm text-gray-700">{(val || 0).toFixed(1)}</span>;
+    return <span className="text-sm text-qs-text">{(val || 0).toFixed(1)}</span>;
   }
 
   if (col.key === 'name') {
-    return <span className="text-sm font-medium text-gray-900">{val}</span>;
+    return <span className="text-sm font-medium text-qs-bright">{val}</span>;
   }
 
-  return <span className="text-sm text-gray-700">{val ?? '—'}</span>;
+  return <span className="text-sm text-qs-text">{val ?? '—'}</span>;
 }
 
 // ── Average cell renderer ───────────────────────────────────────────────────
@@ -119,28 +119,28 @@ function AvgCellValue({ col, teamAvg }) {
   const val = teamAvg[col.key];
 
   if (col.key === 'name') {
-    return <span className="text-sm font-semibold text-gray-700">Team Average</span>;
+    return <span className="text-sm font-semibold text-qs-text">Team Average</span>;
   }
   if (col.key === 'role') {
-    return <span className="text-sm text-gray-400">—</span>;
+    return <span className="text-sm text-qs-muted">—</span>;
   }
   if (col.key === 'grade') {
-    return val ? <GradeBadge grade={val} /> : <span className="text-gray-400">—</span>;
+    return val ? <GradeBadge grade={val} /> : <span className="text-qs-muted">—</span>;
   }
   if (col.key === 'flags') {
-    return <span className="text-sm text-gray-400">—</span>;
+    return <span className="text-sm text-qs-muted">—</span>;
   }
   if (col.format === 'pct') {
-    return <span className="text-sm font-semibold text-gray-700">{isFinite(val) ? `${val.toFixed(1)}%` : '—'}</span>;
+    return <span className="text-sm font-semibold text-qs-text">{isFinite(val) ? `${val.toFixed(1)}%` : '—'}</span>;
   }
   if (col.format === 'time') {
-    return <span className="text-sm font-semibold text-gray-700">{(val || 0).toFixed(1)} min</span>;
+    return <span className="text-sm font-semibold text-qs-text">{(val || 0).toFixed(1)} min</span>;
   }
   if (col.format === 'decimal') {
-    return <span className="text-sm font-semibold text-gray-700">{(val || 0).toFixed(1)}</span>;
+    return <span className="text-sm font-semibold text-qs-text">{(val || 0).toFixed(1)}</span>;
   }
 
-  return <span className="text-sm font-semibold text-gray-700">{typeof val === 'number' ? val.toFixed(0) : (val ?? '—')}</span>;
+  return <span className="text-sm font-semibold text-qs-text">{typeof val === 'number' ? val.toFixed(0) : (val ?? '—')}</span>;
 }
 
 // ── Main component ──────────────────────────────────────────────────────────
@@ -279,10 +279,10 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
   if (rows.length === 0) {
     const filterLabel = roleFilter === 'service_inbound' ? 'inbound service' : roleFilter === 'service_outbound' ? 'outbound service' : roleFilter === 'sales' ? 'sales' : '';
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">No team data</h2>
-        <p className="text-gray-600">
+      <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
+        <Users className="w-16 h-16 text-qs-muted mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-qs-bright mb-2">No team data</h2>
+        <p className="text-qs-dim">
           {filterLabel
             ? `No ${filterLabel} data for this week. Upload RingCentral data to see team comparison.`
             : 'Upload RingCentral data for this week to see team comparison.'}
@@ -294,39 +294,39 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
   const countLabel = roleFilter === 'service_inbound' || roleFilter === 'service_outbound' ? 'reps' : roleFilter === 'sales' ? 'sales reps' : 'employees';
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-        <Users className="w-5 h-5 text-primary-600" />
-        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Team Comparison</h4>
-        <span className="text-xs text-gray-500 ml-auto">{rows.length} {countLabel}</span>
+    <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
+      <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
+        <Users className="w-5 h-5 text-primary-400" />
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Team Comparison</h4>
+        <span className="text-xs text-qs-subtle ml-auto">{rows.length} {countLabel}</span>
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px]">
-          <thead className="bg-gray-50/50">
+          <thead className="bg-qs-elevated/50">
             <tr>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => col.sortable && toggleSort(col.key)}
-                  className={`px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase select-none ${col.sortable ? 'cursor-pointer hover:text-gray-700' : ''}`}
+                  className={`px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase select-none ${col.sortable ? 'cursor-pointer hover:text-qs-text' : ''}`}
                 >
                   <span className="inline-flex items-center gap-1">
                     {col.label}
                     {col.sortable && (
-                      <ArrowUpDown className={`w-3 h-3 ${sortKey === col.key ? 'text-primary-600' : 'text-gray-300'}`} />
+                      <ArrowUpDown className={`w-3 h-3 ${sortKey === col.key ? 'text-primary-400' : 'text-qs-muted'}`} />
                     )}
                   </span>
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-qs-border">
             {sorted.map((row) => (
               <tr
                 key={row.employeeId}
                 onClick={() => onSelectEmployee?.(row.employeeId, row.roleType)}
-                className="hover:bg-primary-50/50 cursor-pointer transition-colors"
+                className="hover:bg-primary-900/20 cursor-pointer transition-colors"
               >
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">
@@ -338,7 +338,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
           </tbody>
           {/* Team Averages */}
           {teamAvg && (
-            <tfoot className="bg-gray-50 border-t-2 border-gray-200">
+            <tfoot className="bg-qs-elevated border-t-2 border-qs-border">
               <tr>
                 {columns.map((col) => (
                   <td key={col.key} className="px-4 py-3">

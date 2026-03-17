@@ -84,16 +84,16 @@ export default function OutboundBreakdownForm({
   const hasData = formTotal > 0;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-      <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-        <PhoneOutgoing className="w-5 h-5 text-primary-600" />
-        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">
+    <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
+      <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
+        <PhoneOutgoing className="w-5 h-5 text-primary-400" />
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">
           Outbound Call Breakdown
         </h4>
         {!editing && (
           <button
             onClick={() => setEditing(true)}
-            className="ml-auto text-xs text-primary-600 hover:text-primary-700 font-medium"
+            className="ml-auto text-xs text-primary-400 hover:text-primary-300 font-medium"
           >
             Edit
           </button>
@@ -106,7 +106,7 @@ export default function OutboundBreakdownForm({
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {OUTBOUND_CATEGORIES.map((cat) => (
                 <div key={cat.key}>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">
+                  <label className="block text-xs font-medium text-qs-dim mb-1">
                     <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: cat.color }} />
                     {cat.label}
                   </label>
@@ -115,21 +115,21 @@ export default function OutboundBreakdownForm({
                     min="0"
                     value={form[cat.key]}
                     onChange={(e) => handleChange(cat.key, e.target.value)}
-                    className="w-full px-3 py-1.5 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-1.5 border border-qs-border rounded text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-              <p className={`text-sm ${formTotal !== totalOutbound ? 'text-yellow-600' : 'text-gray-600'}`}>
+            <div className="flex items-center justify-between pt-2 border-t border-qs-border">
+              <p className={`text-sm ${formTotal !== totalOutbound ? 'text-amber-400' : 'text-qs-dim'}`}>
                 Sum: {formTotal} / {totalOutbound || '?'} total outbound
                 {formTotal !== totalOutbound && totalOutbound > 0 && ' (mismatch)'}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => setEditing(false)}
-                  className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded transition-colors"
+                  className="px-3 py-1.5 text-xs font-medium text-qs-dim hover:bg-qs-card rounded transition-colors"
                 >
                   Cancel
                 </button>
@@ -167,7 +167,7 @@ export default function OutboundBreakdownForm({
             <div className="flex flex-wrap gap-3 text-xs">
               {OUTBOUND_CATEGORIES.map((cat) => (
                 form[cat.key] > 0 && (
-                  <span key={cat.key} className="inline-flex items-center gap-1 text-gray-600">
+                  <span key={cat.key} className="inline-flex items-center gap-1 text-qs-dim">
                     <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
                     {cat.label}: {form[cat.key]}
                   </span>
@@ -176,13 +176,13 @@ export default function OutboundBreakdownForm({
             </div>
 
             {topCategory && (
-              <p className="text-sm text-gray-600">
-                Top category: <span className="font-medium text-gray-900">{topCategory.label}</span> ({topCategory.pct}%)
+              <p className="text-sm text-qs-dim">
+                Top category: <span className="font-medium text-qs-bright">{topCategory.label}</span> ({topCategory.pct}%)
               </p>
             )}
           </div>
         ) : (
-          <p className="text-sm text-gray-500 text-center py-4">
+          <p className="text-sm text-qs-subtle text-center py-4">
             No outbound breakdown recorded. Click "Edit" to categorize outbound calls.
           </p>
         )}

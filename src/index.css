@@ -42,14 +42,99 @@
            focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
            transition-colors;
   }
+
+  /* ── Dark theme base ─────────────────────────────────────── */
+  .dark-page {
+    @apply min-h-screen bg-qs-dark text-qs-text;
+  }
+
+  .dark-header {
+    @apply bg-qs-card border-b border-qs-border px-4 py-5;
+  }
+
+  .dark-card {
+    @apply bg-qs-card border border-qs-border rounded-xl p-5;
+  }
+
+  .dark-card-elevated {
+    @apply bg-qs-elevated border border-qs-border rounded-lg p-4;
+  }
+
+  .dark-section-label {
+    @apply text-xs font-semibold text-qs-subtle uppercase tracking-wider;
+  }
+
+  .dark-heading {
+    @apply text-xl font-bold text-qs-bright;
+  }
+
+  .dark-subheading {
+    @apply text-sm text-qs-dim;
+  }
+
+  .dark-input {
+    @apply w-full px-3 py-2 bg-qs-elevated border border-qs-border rounded-lg
+           text-sm text-qs-text placeholder-qs-muted
+           focus:ring-2 focus:ring-primary-500 focus:border-primary-500
+           focus:outline-none;
+  }
+
+  .dark-select {
+    @apply w-full px-3 py-2 bg-qs-elevated border border-qs-border rounded-lg
+           text-sm text-qs-text
+           focus:ring-2 focus:ring-primary-500 focus:outline-none;
+  }
+
+  .dark-label {
+    @apply block text-sm font-medium text-qs-dim mb-1;
+  }
+
+  .dark-table {
+    @apply w-full;
+  }
+
+  .dark-table thead {
+    @apply bg-qs-elevated border-b border-qs-border;
+  }
+
+  .dark-table th {
+    @apply px-4 py-3 text-left text-xs font-semibold text-qs-subtle uppercase tracking-wider;
+  }
+
+  .dark-table td {
+    @apply px-4 py-3 text-sm text-qs-text border-b border-qs-border;
+  }
+
+  .dark-table tbody tr:hover {
+    @apply bg-qs-elevated;
+  }
+
+  .dark-table tbody tr:last-child td {
+    @apply border-b-0;
+  }
+
+  /* Severity alert variants */
+  .dark-alert-red {
+    @apply flex gap-3 p-4 rounded-lg border bg-red-900/20 border-red-700/40 text-red-300;
+  }
+  .dark-alert-yellow {
+    @apply flex gap-3 p-4 rounded-lg border bg-amber-900/20 border-amber-700/40 text-amber-300;
+  }
+  .dark-alert-green {
+    @apply flex gap-3 p-4 rounded-lg border bg-emerald-900/20 border-emerald-700/40 text-emerald-300;
+  }
+  .dark-alert-blue {
+    @apply flex gap-3 p-4 rounded-lg border bg-blue-900/20 border-blue-700/40 text-blue-300;
+  }
 }
 
 /* Force dark text on all form controls so inputs remain readable
-   regardless of inherited color (e.g. white text from nav header). */
+   regardless of inherited color (e.g. white text from nav header).
+   Scoped to exclude dark-page contexts where inputs use dark-input class. */
 @layer base {
-  input,
-  select,
-  textarea {
+  :not(.dark-page) input,
+  :not(.dark-page) select,
+  :not(.dark-page) textarea {
     color: #111827;           /* gray-900 */
     background-color: #fff;
   }

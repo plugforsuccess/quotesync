@@ -159,24 +159,24 @@ export function generateAlerts(queueData, callLogData, weekStart, employeeId) {
 const SEVERITY_CONFIG = {
   critical: {
     icon: AlertCircle,
-    bg: 'bg-red-50',
+    bg: 'bg-red-900/20',
     border: 'border-l-4 border-red-500',
-    text: 'text-red-800',
-    iconColor: 'text-red-600',
+    text: 'text-red-300',
+    iconColor: 'text-red-400',
   },
   warning: {
     icon: AlertTriangle,
-    bg: 'bg-amber-50',
+    bg: 'bg-amber-900/20',
     border: 'border-l-4 border-amber-500',
-    text: 'text-amber-800',
-    iconColor: 'text-amber-600',
+    text: 'text-amber-300',
+    iconColor: 'text-amber-400',
   },
   info: {
     icon: Info,
-    bg: 'bg-primary-50',
+    bg: 'bg-primary-900/20',
     border: 'border-l-4 border-primary-500',
-    text: 'text-primary-800',
-    iconColor: 'text-primary-600',
+    text: 'text-primary-300',
+    iconColor: 'text-primary-400',
   },
 };
 

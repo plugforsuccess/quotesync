@@ -36,10 +36,10 @@ function formatWeekOfLabel(weekStart) {
 }
 
 function abandonRateColor(rate, inbound) {
-  if (inbound === 0) return 'text-gray-400';
-  if (rate >= 25) return 'text-red-600';
-  if (rate >= 10) return 'text-amber-600';
-  return 'text-green-600';
+  if (inbound === 0) return 'text-qs-muted';
+  if (rate >= 25) return 'text-red-400';
+  if (rate >= 10) return 'text-amber-400';
+  return 'text-emerald-400';
 }
 
 // ── Component ───────────────────────────────────────────────────────────────────
@@ -77,34 +77,34 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
   const missingDates = workdays.filter((d) => !datesWithData.has(d));
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="bg-qs-card rounded-lg border border-qs-border p-6">
       <div className="flex items-center gap-3 mb-4">
-        <BarChart3 className="w-5 h-5 text-indigo-600" />
-        <h3 className="text-base font-semibold text-gray-900">
+        <BarChart3 className="w-5 h-5 text-indigo-400" />
+        <h3 className="text-base font-semibold text-qs-bright">
           Queue Coverage &mdash; Week of {formatWeekOfLabel(weekStart)}
         </h3>
       </div>
 
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
+      <div className="overflow-x-auto border border-qs-border rounded-lg">
         <table className="w-full text-sm">
-          <thead className="bg-gray-50">
+          <thead className="bg-qs-elevated">
             <tr>
-              <th className="px-3 py-2 text-left text-xs font-semibold text-gray-600">Queue</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">In</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Ans</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Abn</th>
-              <th className="px-3 py-2 text-right text-xs font-semibold text-gray-600">Abn Rate</th>
+              <th className="px-3 py-2 text-left text-xs font-semibold text-qs-dim">Queue</th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">In</th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Ans</th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Abn</th>
+              <th className="px-3 py-2 text-right text-xs font-semibold text-qs-dim">Abn Rate</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-qs-border">
             {queues.map((q, i) => {
               const rate = q.inbound > 0 ? (q.abandoned / q.inbound) * 100 : 0;
               return (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 text-gray-900">{cleanQueueName(q.queue_name)}</td>
-                  <td className="px-3 py-2 text-right text-gray-600">{q.inbound}</td>
-                  <td className="px-3 py-2 text-right text-gray-600">{q.answered}</td>
-                  <td className="px-3 py-2 text-right text-gray-600">{q.abandoned}</td>
+                <tr key={i} className="hover:bg-qs-elevated">
+                  <td className="px-3 py-2 text-qs-bright">{cleanQueueName(q.queue_name)}</td>
+                  <td className="px-3 py-2 text-right text-qs-dim">{q.inbound}</td>
+                  <td className="px-3 py-2 text-right text-qs-dim">{q.answered}</td>
+                  <td className="px-3 py-2 text-right text-qs-dim">{q.abandoned}</td>
                   <td className={`px-3 py-2 text-right font-medium ${abandonRateColor(rate, q.inbound)}`}>
                     {q.inbound > 0 ? `${rate.toFixed(0)}%` : '\u2014'}
                     {q.inbound > 0 && rate >= 25 && <span className="text-red-500 ml-1">&#x1F534;</span>}
@@ -113,11 +113,11 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
               );
             })}
             {/* Totals row */}
-            <tr className="bg-gray-50 font-medium">
-              <td className="px-3 py-2 text-gray-900">Total</td>
-              <td className="px-3 py-2 text-right text-gray-700">{totals.inbound}</td>
-              <td className="px-3 py-2 text-right text-gray-700">{totals.answered}</td>
-              <td className="px-3 py-2 text-right text-gray-700">{totals.abandoned}</td>
+            <tr className="bg-qs-elevated font-medium">
+              <td className="px-3 py-2 text-qs-bright">Total</td>
+              <td className="px-3 py-2 text-right text-qs-text">{totals.inbound}</td>
+              <td className="px-3 py-2 text-right text-qs-text">{totals.answered}</td>
+              <td className="px-3 py-2 text-right text-qs-text">{totals.abandoned}</td>
               <td className={`px-3 py-2 text-right font-medium ${abandonRateColor(totalAbandonRate, totals.inbound)}`}>
                 {totals.inbound > 0 ? `${totalAbandonRate.toFixed(0)}%` : '\u2014'}
               </td>
@@ -127,14 +127,14 @@ export default function QueueSummaryCard({ queueData = [], weekStart }) {
       </div>
 
       {/* Date coverage note */}
-      <div className="mt-3 text-xs text-gray-500">
+      <div className="mt-3 text-xs text-qs-subtle">
         {missingDates.length === 0 ? (
           <span>Data for: {presentDates.map(formatDateShort).join(', ')}</span>
         ) : (
           <span>
             Data for: {presentDates.map(formatDateShort).join(', ') || 'none'}
             {missingDates.length > 0 && (
-              <span className="text-amber-600 ml-1">
+              <span className="text-amber-400 ml-1">
                 ({missingDates.map(formatDateShort).join(', ')} missing)
               </span>
             )}

@@ -15,8 +15,8 @@ function formatWeekLabel(dateStr) {
 
 function TrendChart({ title, data, dataKey, targetValue, targetLabel, unit, domain, band }) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <h5 className="text-sm font-semibold text-gray-900 mb-3">{title}</h5>
+    <div className="bg-qs-card rounded-lg border border-qs-border p-4">
+      <h5 className="text-sm font-semibold text-qs-bright mb-3">{title}</h5>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -51,10 +51,10 @@ function TrendChart({ title, data, dataKey, targetValue, targetLabel, unit, doma
 export default function TrendsView({ trendData, targets }) {
   if (!trendData || trendData.length < 2) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-        <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-500 font-medium">Trend data requires at least 2 weeks of uploaded RingCentral reports.</p>
-        <p className="text-sm text-gray-400 mt-1">Keep uploading weekly and trends will appear here.</p>
+      <div className="bg-qs-card rounded-lg border border-qs-border p-8 text-center">
+        <TrendingUp className="w-12 h-12 text-qs-muted mx-auto mb-3" />
+        <p className="text-qs-subtle font-medium">Trend data requires at least 2 weeks of uploaded RingCentral reports.</p>
+        <p className="text-sm text-qs-muted mt-1">Keep uploading weekly and trends will appear here.</p>
       </div>
     );
   }
@@ -80,8 +80,8 @@ export default function TrendsView({ trendData, targets }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <TrendingUp className="w-5 h-5 text-primary-600" />
-        <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">8-Week Trends</h4>
+        <TrendingUp className="w-5 h-5 text-primary-400" />
+        <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">8-Week Trends</h4>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

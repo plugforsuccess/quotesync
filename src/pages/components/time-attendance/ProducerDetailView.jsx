@@ -51,14 +51,14 @@ function StatCard({ label, value, target, unit }) {
   const met = hasTarget && value >= target;
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4">
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
-      <p className="text-3xl font-bold text-gray-900 mt-1">
+    <div className="bg-qs-card rounded-lg border border-qs-border p-4">
+      <p className="text-xs font-medium text-qs-subtle uppercase tracking-wide">{label}</p>
+      <p className="text-3xl font-bold text-qs-bright mt-1">
         {typeof value === 'number' ? (Number.isInteger(value) ? value : value.toFixed(1)) : value}
-        {unit && <span className="text-lg font-normal text-gray-500 ml-1">{unit}</span>}
+        {unit && <span className="text-lg font-normal text-qs-subtle ml-1">{unit}</span>}
       </p>
       {hasTarget && (
-        <p className={`text-xs mt-1 ${met ? 'text-green-600' : 'text-orange-600'}`}>
+        <p className={`text-xs mt-1 ${met ? 'text-emerald-400' : 'text-orange-600'}`}>
           Target: {target}{unit ? ` ${unit}` : ''} {met ? '(met)' : '(below)'}
         </p>
       )}
@@ -73,10 +73,10 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
 
   if (!rcData) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-        <Phone className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">No performance data</h2>
-        <p className="text-gray-600">Upload RingCentral data for this week to see producer metrics.</p>
+      <div className="bg-qs-card rounded-lg border border-qs-border p-12 text-center">
+        <Phone className="w-16 h-16 text-qs-muted mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-qs-bright mb-2">No performance data</h2>
+        <p className="text-qs-dim">Upload RingCentral data for this week to see producer metrics.</p>
       </div>
     );
   }
@@ -101,14 +101,14 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="bg-qs-card rounded-lg border border-qs-border p-6">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-3 mb-1">
-              <Phone className="w-6 h-6 text-primary-600" />
-              <h2 className="text-xl font-bold text-gray-900">{employeeName}</h2>
+              <Phone className="w-6 h-6 text-primary-400" />
+              <h2 className="text-xl font-bold text-qs-bright">{employeeName}</h2>
             </div>
-            <div className="flex items-center gap-4 text-sm text-gray-500">
+            <div className="flex items-center gap-4 text-sm text-qs-subtle">
               <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-xs font-medium">
                 Producer
               </span>
@@ -118,7 +118,7 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
           {producerId && (
             <Link
               to={`/admin/producers/${producerId}/comp-model`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-300 bg-emerald-900/20 hover:bg-qs-card border border-emerald-700/40 rounded-lg transition-colors"
             >
               <DollarSign className="w-3.5 h-3.5" />
               Comp Model
@@ -137,10 +137,10 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
 
       {/* 8-Week Trend */}
       {chartData.length >= 2 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="bg-qs-card rounded-lg border border-qs-border p-4">
           <div className="flex items-center gap-2 mb-4">
-            <TrendingUp className="w-5 h-5 text-primary-600" />
-            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">8-Week Outbound Trend</h4>
+            <TrendingUp className="w-5 h-5 text-primary-400" />
+            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">8-Week Outbound Trend</h4>
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
@@ -171,40 +171,40 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <TrendingUp className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">Trend data requires at least 2 weeks of uploaded RingCentral reports.</p>
-          <p className="text-sm text-gray-400 mt-1">Keep uploading weekly and trends will appear here.</p>
+        <div className="bg-qs-card rounded-lg border border-qs-border p-8 text-center">
+          <TrendingUp className="w-12 h-12 text-qs-muted mx-auto mb-3" />
+          <p className="text-qs-subtle font-medium">Trend data requires at least 2 weeks of uploaded RingCentral reports.</p>
+          <p className="text-sm text-qs-muted mt-1">Keep uploading weekly and trends will appear here.</p>
         </div>
       )}
 
       {/* Daily Breakdown */}
       {daily.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
           <button
             onClick={() => setDailyExpanded(!dailyExpanded)}
-            className="w-full px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2 hover:bg-gray-100 transition-colors"
+            className="w-full px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2 hover:bg-qs-card transition-colors"
           >
-            <CalendarDays className="w-5 h-5 text-primary-600" />
-            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Daily Detail</h4>
+            <CalendarDays className="w-5 h-5 text-primary-400" />
+            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Daily Detail</h4>
             {dailyExpanded
-              ? <ChevronDown className="w-4 h-4 text-gray-400 ml-auto" />
-              : <ChevronRight className="w-4 h-4 text-gray-400 ml-auto" />}
+              ? <ChevronDown className="w-4 h-4 text-qs-muted ml-auto" />
+              : <ChevronRight className="w-4 h-4 text-qs-muted ml-auto" />}
           </button>
 
           {dailyExpanded && (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50/50">
+                <thead className="bg-qs-elevated">
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Day</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Outbound</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Total Calls</th>
-                    <th className="px-4 py-2 text-right text-xs font-semibold text-gray-500 uppercase">Avg Handle (Out)</th>
-                    <th className="px-4 py-2 text-center text-xs font-semibold text-gray-500 uppercase">Status</th>
+                    <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Day</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Outbound</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Total Calls</th>
+                    <th className="px-4 py-2 text-right text-xs font-semibold text-qs-subtle uppercase">Avg Handle (Out)</th>
+                    <th className="px-4 py-2 text-center text-xs font-semibold text-qs-subtle uppercase">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-qs-border">
                   {daily.map((day, idx) => {
                     const ob = day.outbound_calls || 0;
                     const isZeroOutbound = ob === 0;
@@ -212,18 +212,18 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
                     return (
                       <tr
                         key={idx}
-                        className={`hover:bg-gray-50 transition-colors ${isZeroOutbound ? 'bg-yellow-50/50' : ''}`}
+                        className={`hover:bg-qs-elevated transition-colors ${isZeroOutbound ? 'bg-amber-900/20' : ''}`}
                       >
-                        <td className="px-4 py-2.5 text-sm text-gray-900 font-medium">
+                        <td className="px-4 py-2.5 text-sm text-qs-bright font-medium">
                           {day.date ? formatDayLabel(day.date) : `Day ${idx + 1}`}
                         </td>
-                        <td className={`px-4 py-2.5 text-sm text-right font-semibold ${isZeroOutbound ? 'text-red-600' : 'text-gray-700'}`}>
+                        <td className={`px-4 py-2.5 text-sm text-right font-semibold ${isZeroOutbound ? 'text-red-400' : 'text-qs-text'}`}>
                           {ob}
                         </td>
-                        <td className="px-4 py-2.5 text-sm text-right text-gray-600">
+                        <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
                           {day.total_calls || 0}
                         </td>
-                        <td className="px-4 py-2.5 text-sm text-right text-gray-600">
+                        <td className="px-4 py-2.5 text-sm text-right text-qs-dim">
                           {(day.avg_handle_time_out_minutes || day.avg_handle_time_minutes || 0).toFixed(1)} min
                         </td>
                         <td className="px-4 py-2.5 text-center">

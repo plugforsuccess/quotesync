@@ -33,22 +33,22 @@ function MetricRow({ label, target, actual, unit, inverse, source }) {
   }
 
   const statusColors = {
-    good: 'text-green-600',
-    bad: 'text-red-600',
-    neutral: 'text-gray-600',
+    good: 'text-emerald-400',
+    bad: 'text-red-400',
+    neutral: 'text-qs-dim',
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+    <tr className="hover:bg-qs-elevated transition-colors">
+      <td className="px-4 py-3 text-sm text-qs-bright font-medium">
         {label}
         {source && (
-          <span className="ml-1.5 text-xs text-gray-400" title={`Source: ${source}`}>
+          <span className="ml-1.5 text-xs text-qs-muted" title={`Source: ${source}`}>
             ({source})
           </span>
         )}
       </td>
-      <td className="px-4 py-3 text-sm text-gray-500">{target || '-'}</td>
+      <td className="px-4 py-3 text-sm text-qs-subtle">{target || '-'}</td>
       <td className={`px-4 py-3 text-sm font-semibold ${statusColors[status]}`}>
         {actual != null && actual !== '—' ? `${actual}${unit || ''}` : '—'}
       </td>
@@ -62,10 +62,10 @@ function MetricRow({ label, target, actual, unit, inverse, source }) {
 
 function PassFailRow({ label, passed, manual, onToggle }) {
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
-      <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+    <tr className="hover:bg-qs-elevated transition-colors">
+      <td className="px-4 py-3 text-sm text-qs-bright font-medium">
         {label}
-        {manual && <span className="ml-1.5 text-xs text-gray-400">(manual)</span>}
+        {manual && <span className="ml-1.5 text-xs text-qs-muted">(manual)</span>}
       </td>
       <td className="px-4 py-3">
         {manual && onToggle ? (
@@ -73,20 +73,20 @@ function PassFailRow({ label, passed, manual, onToggle }) {
             onClick={onToggle}
             className={`inline-flex items-center gap-1 text-sm font-medium px-2 py-1 rounded transition-colors ${
               passed
-                ? 'text-green-600 bg-green-50 hover:bg-green-100'
-                : 'text-red-600 bg-red-50 hover:bg-red-100'
+                ? 'text-emerald-400 bg-emerald-900/20 hover:bg-emerald-900/30'
+                : 'text-red-400 bg-red-900/20 hover:bg-red-900/30'
             }`}
           >
             {passed ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
             {passed ? 'Pass' : 'Fail'}
-            <Edit3 className="w-3 h-3 ml-1 text-gray-400" />
+            <Edit3 className="w-3 h-3 ml-1 text-qs-muted" />
           </button>
         ) : passed ? (
-          <span className="inline-flex items-center gap-1 text-sm text-green-600 font-medium">
+          <span className="inline-flex items-center gap-1 text-sm text-emerald-400 font-medium">
             <CheckCircle className="w-4 h-4" /> Pass
           </span>
         ) : (
-          <span className="inline-flex items-center gap-1 text-sm text-red-600 font-medium">
+          <span className="inline-flex items-center gap-1 text-sm text-red-400 font-medium">
             <XCircle className="w-4 h-4" /> Fail
           </span>
         )}
@@ -111,10 +111,10 @@ export default function CSScorecard({
 
   if (!hasCallLog && !hasRCData) {
     return (
-      <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-        <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-        <p className="text-gray-500">No performance data available for this week.</p>
-        <p className="text-sm text-gray-400 mt-1">Upload a call log or RingCentral XLSX to see the scorecard.</p>
+      <div className="bg-qs-card rounded-lg border border-qs-border p-8 text-center">
+        <Activity className="w-12 h-12 text-qs-muted mx-auto mb-3" />
+        <p className="text-qs-subtle">No performance data available for this week.</p>
+        <p className="text-sm text-qs-muted mt-1">Upload a call log or RingCentral XLSX to see the scorecard.</p>
       </div>
     );
   }
@@ -157,9 +157,9 @@ export default function CSScorecard({
       {/* Grade Banner */}
       <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${gradeConfig.bg} ${gradeConfig.border}`}>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Weekly Performance Grade</h3>
+          <h3 className="text-lg font-semibold text-qs-bright">Weekly Performance Grade</h3>
           <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
-          {employeeName && <p className="text-xs text-gray-500 mt-1">{employeeName}</p>}
+          {employeeName && <p className="text-xs text-qs-subtle mt-1">{employeeName}</p>}
           {hasCallLog && (
             <p className="text-xs text-primary-500 mt-0.5">Based on call log data</p>
           )}
@@ -171,21 +171,21 @@ export default function CSScorecard({
       </div>
 
       {/* Section A: Activity Metrics */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-          <Phone className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section A — Activity</h4>
+      <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
+        <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
+          <Phone className="w-5 h-5 text-primary-400" />
+          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section A — Activity</h4>
         </div>
         <table className="w-full">
-          <thead className="bg-gray-50/50">
+          <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Metric</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Target</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Actual</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Metric</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Target</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Actual</th>
               <th className="px-4 py-2 w-10" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-qs-border">
             <MetricRow label="Total Calls" target="Track only" actual={totalCalls} />
             <MetricRow label="Outbound Attempts" target={`≥ ${t.outbound_calls_weekly}`} actual={outboundAttempts} />
             {outboundConnected != null && (
@@ -201,21 +201,21 @@ export default function CSScorecard({
       </div>
 
       {/* Section B: Efficiency & Quality */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section B — Efficiency & Quality</h4>
+      <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
+        <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
+          <Shield className="w-5 h-5 text-primary-400" />
+          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section B — Efficiency & Quality</h4>
         </div>
         <table className="w-full">
-          <thead className="bg-gray-50/50">
+          <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Metric</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Target</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Actual</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Metric</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Target</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Actual</th>
               <th className="px-4 py-2 w-10" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-qs-border">
             <MetricRow
               label="Inbound Answer Rate"
               target={`≥ ${t.answer_rate_pct}`}
@@ -253,12 +253,12 @@ export default function CSScorecard({
               source="summary"
             />
             {hasLongCall && longestCall && (
-              <tr className="hover:bg-gray-50 transition-colors bg-amber-50/50">
-                <td className="px-4 py-3 text-sm text-amber-700 font-medium">
+              <tr className="hover:bg-qs-elevated transition-colors bg-amber-900/10">
+                <td className="px-4 py-3 text-sm text-amber-300 font-medium">
                   Longest Call Flag
-                  <span className="ml-1.5 text-xs text-amber-500">(30+ min)</span>
+                  <span className="ml-1.5 text-xs text-amber-400">(30+ min)</span>
                 </td>
-                <td className="px-4 py-3 text-sm text-amber-600">
+                <td className="px-4 py-3 text-sm text-amber-400">
                   {Math.floor(longestCall.call_length_seconds / 60)}:{String(longestCall.call_length_seconds % 60).padStart(2, '0')} min
                 </td>
                 <td colSpan={2} />
@@ -270,11 +270,11 @@ export default function CSScorecard({
 
       {/* Section C: Queue Breakdown (new — from call log) */}
       {hasCallLog && (clm.salesCalls > 0 || clm.serviceCalls > 0) && (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-            <BarChart2 className="w-5 h-5 text-primary-600" />
-            <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section C — Queue Breakdown</h4>
-            <span className="text-xs text-gray-400 ml-auto flex items-center gap-1">
+        <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
+          <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
+            <BarChart2 className="w-5 h-5 text-primary-400" />
+            <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section C — Queue Breakdown</h4>
+            <span className="text-xs text-qs-muted ml-auto flex items-center gap-1">
               <Info className="w-3 h-3" /> Baseline tracking — no grade impact
             </span>
           </div>
@@ -282,10 +282,10 @@ export default function CSScorecard({
             <div className="flex items-center gap-6">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Sales</span>
-                  <span className="text-sm text-gray-600">{clm.salesCalls} ({clm.salesPct.toFixed(0)}%)</span>
+                  <span className="text-sm font-medium text-qs-text">Sales</span>
+                  <span className="text-sm text-qs-dim">{clm.salesCalls} ({clm.salesPct.toFixed(0)}%)</span>
                 </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-qs-elevated rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary-500 rounded-full transition-all"
                     style={{ width: `${clm.salesPct}%` }}
@@ -294,10 +294,10 @@ export default function CSScorecard({
               </div>
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Service</span>
-                  <span className="text-sm text-gray-600">{clm.serviceCalls} ({clm.servicePct.toFixed(0)}%)</span>
+                  <span className="text-sm font-medium text-qs-text">Service</span>
+                  <span className="text-sm text-qs-dim">{clm.serviceCalls} ({clm.servicePct.toFixed(0)}%)</span>
                 </div>
-                <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-3 bg-qs-elevated rounded-full overflow-hidden">
                   <div
                     className="h-full bg-green-500 rounded-full transition-all"
                     style={{ width: `${clm.servicePct}%` }}
@@ -310,19 +310,19 @@ export default function CSScorecard({
       )}
 
       {/* Section D: Proactivity Score */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center gap-2">
-          <Activity className="w-5 h-5 text-primary-600" />
-          <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Section D — Proactivity</h4>
+      <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
+        <div className="px-4 py-3 bg-qs-elevated border-b border-qs-border flex items-center gap-2">
+          <Activity className="w-5 h-5 text-primary-400" />
+          <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">Section D — Proactivity</h4>
         </div>
         <table className="w-full">
-          <thead className="bg-gray-50/50">
+          <thead className="bg-qs-elevated/50">
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Category</th>
-              <th className="px-4 py-2 text-left text-xs font-semibold text-gray-500 uppercase">Status</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Category</th>
+              <th className="px-4 py-2 text-left text-xs font-semibold text-qs-subtle uppercase">Status</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-qs-border">
             <PassFailRow label="Outbound Every Day" passed={outboundEveryDay} />
             <PassFailRow label="No 0-Call Days" passed={!hasZeroCallDays} />
             <PassFailRow
@@ -346,18 +346,18 @@ export default function CSScorecard({
       </div>
 
       {/* Outbound Call Expectations */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h4 className="text-sm font-semibold text-gray-900 mb-3">Outbound Call Expectations</h4>
+      <div className="bg-qs-card rounded-lg border border-qs-border p-4">
+        <h4 className="text-sm font-semibold text-qs-bright mb-3">Outbound Call Expectations</h4>
         <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-500 uppercase font-medium">Current Target</p>
-            <p className="text-lg font-bold text-gray-900 mt-1">
+          <div className="p-3 bg-qs-elevated rounded-lg">
+            <p className="text-xs text-qs-subtle uppercase font-medium">Current Target</p>
+            <p className="text-lg font-bold text-qs-bright mt-1">
               {Math.round(t.outbound_calls_weekly / 5)}/day &middot; {t.outbound_calls_weekly}/week
             </p>
           </div>
-          <div className="p-3 bg-primary-50 rounded-lg">
+          <div className="p-3 bg-primary-900/20 rounded-lg">
             <p className="text-xs text-primary-500 uppercase font-medium">Grade A Threshold</p>
-            <p className="text-lg font-bold text-primary-900 mt-1">
+            <p className="text-lg font-bold text-primary-300 mt-1">
               {Math.round(t.grade_a_outbound / 5)}/day &middot; {t.grade_a_outbound}/week
             </p>
           </div>

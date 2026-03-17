@@ -67,6 +67,18 @@ export default {
           900: '#064e3b',
           950: '#022c22',
         },
+        // DARK THEME - Internal admin pages
+        qs: {
+          dark:     '#0F1117',   // page background
+          card:     '#161924',   // card/panel background
+          elevated: '#1A1D27',   // elevated surface (nested card, input bg)
+          border:   '#252A3A',   // border color
+          muted:    '#334155',   // muted text, disabled
+          subtle:   '#64748B',   // label, caption
+          dim:      '#94A3B8',   // placeholder, secondary
+          text:     '#E2E8F0',   // body text
+          bright:   '#F1F5F9',   // headings, strong text
+        },
         // SEMANTIC CATEGORY COLORS - For newsroom categories
         // These provide visual distinction while staying within brand palette
         category: {
