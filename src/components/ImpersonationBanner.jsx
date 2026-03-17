@@ -37,7 +37,7 @@ export function ImpersonationBanner() {
         left: 0,
         right: 0,
         zIndex: 9999,
-        backgroundColor: '#dc2626',
+        backgroundColor: 'rgb(220 38 38)', /* red-600 */
         color: 'white',
         padding: '8px 16px',
         display: 'flex',
@@ -92,7 +92,7 @@ export function ImpersonationBanner() {
         onClick={handleEndImpersonation}
         style={{
           backgroundColor: 'white',
-          color: '#dc2626',
+          color: 'rgb(220 38 38)', /* red-600 */
           border: 'none',
           padding: '4px 12px',
           borderRadius: '4px',

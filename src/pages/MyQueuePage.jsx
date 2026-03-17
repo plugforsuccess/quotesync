@@ -86,10 +86,10 @@ export default function MyQueuePage() {
     <div>
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: '#F1F5F9', marginBottom: 4 }}>
+        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
           My Queue
         </div>
-        <div style={{ fontSize: 13, color: '#64748B' }}>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
           {cancelCases.length} pending cancel &middot; {renewalCases.length} renewals
         </div>
       </div>
@@ -105,8 +105,8 @@ export default function MyQueuePage() {
             style={{
               padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 600,
-              background: activeTab === t.key ? '#3B82F6' : '#1A1D27',
-              color: activeTab === t.key ? '#FFFFFF' : '#64748B',
+              background: activeTab === t.key ? 'var(--qs-info)' : 'var(--qs-elevated)',
+              color: activeTab === t.key ? '#FFFFFF' : 'var(--qs-subtle)',
             }}>
             {t.label}
           </button>
@@ -116,9 +116,9 @@ export default function MyQueuePage() {
       {/* Pending Cancel cases */}
       {activeTab === 'cancel' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {cancelLoading && <div style={{ color: '#64748B', fontSize: 13 }}>Loading...</div>}
+          {cancelLoading && <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading...</div>}
           {!cancelLoading && cancelCases.length === 0 && (
-            <div style={{ color: '#64748B', fontSize: 13, padding: '32px 0', textAlign: 'center' }}>
+            <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: '32px 0', textAlign: 'center' }}>
               No active pending cancel cases assigned to you.
             </div>
           )}
@@ -128,32 +128,33 @@ export default function MyQueuePage() {
             return (
               <div key={event.id}
                 onClick={() => setSelectedEvent(event)}
-                style={{ background: '#161924', border: `1px solid ${urgent ? '#EF444433' : '#252A3A'}`,
+                style={{ background: 'var(--qs-card)', border: `1px solid ${urgent ? '#EF444433' : 'var(--qs-border)'}`,
                   borderRadius: 10, padding: '14px 16px', cursor: 'pointer',
                   display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9',
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
                     marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {event.customer_name}
                   </div>
-                  <div style={{ fontSize: 12, color: '#64748B' }}>
+                  <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
                     {event.policy_no} &middot; {event.product}
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  {/* Urgency color — dynamic style prop */}
                   <div style={{ fontSize: 13, fontWeight: 700,
-                    color: urgent ? '#EF4444' : days <= 7 ? '#F59E0B' : '#94A3B8' }}>
+                    color: urgent ? 'var(--qs-danger)' : days <= 7 ? 'var(--qs-warning)' : 'var(--qs-dim)' }}>
                     {days === null ? '\u2014' : days === 0 ? 'Today' : `${days}d`}
                   </div>
-                  <div style={{ fontSize: 11, color: '#64748B' }}>
+                  <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>
                     {fmt$(event.premium_at_risk)}
                     {event.stage === 'cancelled' && (
-                      <span style={{ color: '#EF4444', marginLeft: 4 }}>Lapsed</span>
+                      <span style={{ color: 'var(--qs-danger)', marginLeft: 4 }}>Lapsed</span>
                     )}
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: '#64748B',
-                  background: '#1A1D27', borderRadius: 4, padding: '2px 6px' }}>
+                <div style={{ fontSize: 12, color: 'var(--qs-subtle)',
+                  background: 'var(--qs-elevated)', borderRadius: 4, padding: '2px 6px' }}>
                   {event.attempt_count || 0} attempts
                 </div>
               </div>
@@ -165,37 +166,37 @@ export default function MyQueuePage() {
       {/* Renewal cases */}
       {activeTab === 'renewal' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {renewalLoading && <div style={{ color: '#64748B', fontSize: 13 }}>Loading...</div>}
+          {renewalLoading && <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading...</div>}
           {!renewalLoading && renewalCases.length === 0 && (
-            <div style={{ color: '#64748B', fontSize: 13, padding: '32px 0', textAlign: 'center' }}>
+            <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: '32px 0', textAlign: 'center' }}>
               No active renewal cases assigned to you.
             </div>
           )}
           {renewalCases.map(event => (
             <div key={event.id}
               onClick={() => setSelectedRenewal(event)}
-              style={{ background: '#161924', border: '1px solid #252A3A',
+              style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                 borderRadius: 10, padding: '14px 16px', cursor: 'pointer',
                 display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9',
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
                   marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {event.customer_name}
                 </div>
-                <div style={{ fontSize: 12, color: '#64748B' }}>
+                <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
                   {event.policy_no} &middot; {event.product}
                 </div>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#94A3B8' }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)' }}>
                   {event.renewal_date}
                 </div>
-                <div style={{ fontSize: 11, color: '#64748B' }}>
+                <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>
                   {fmt$(event.premium)}
                 </div>
               </div>
-              <div style={{ fontSize: 12, color: '#64748B',
-                background: '#1A1D27', borderRadius: 4, padding: '2px 6px' }}>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)',
+                background: 'var(--qs-elevated)', borderRadius: 4, padding: '2px 6px' }}>
                 {event.attempt_count || 0} attempts
               </div>
             </div>

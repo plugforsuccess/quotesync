@@ -135,7 +135,7 @@ export default function PunchPage() {
       {/* PIN Screen */}
       {screen === "pin" && (
         <div style={{ width: "100%", maxWidth: 320, textAlign: "center" }}>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", marginBottom: 6 }}>Enter Your PIN</div>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 6 }}>Enter Your PIN</div>
           <div style={{ fontSize: 13, color: "#475569", marginBottom: 28 }}>4-digit employee code</div>
 
           <div style={{ display: "flex", gap: 12, justifyContent: "center", marginBottom: 20 }}>
@@ -151,8 +151,8 @@ export default function PunchPage() {
                 onKeyDown={e => handlePinKey(i, e)}
                 style={{
                   width: 56, height: 64, textAlign: "center", fontSize: 28, fontWeight: 700,
-                  background: pin[i] ? "#1E2130" : "#161924",
-                  color: "#F1F5F9", border: `2px solid ${pin[i] ? "#3B82F6" : "#252A3A"}`,
+                  background: pin[i] ? "#1E2130" : "var(--qs-card)",
+                  color: "var(--qs-bright)", border: `2px solid ${pin[i] ? "var(--qs-info)" : "var(--qs-border)"}`,
                   borderRadius: 12, outline: "none", fontFamily: "'DM Mono', monospace",
                   transition: "border-color 0.15s",
                 }}
@@ -162,7 +162,7 @@ export default function PunchPage() {
 
           {loading && <div style={{ fontSize: 13, color: "#475569" }}>Verifying…</div>}
           {errorMsg && (
-            <div style={{ fontSize: 13, color: "#EF4444", background: "#EF444411", borderRadius: 8, padding: "8px 12px" }}>
+            <div style={{ fontSize: 13, color: "var(--qs-danger)", background: "#EF444411", borderRadius: 8, padding: "8px 12px" }}>
               {errorMsg}
             </div>
           )}
@@ -172,7 +172,7 @@ export default function PunchPage() {
       {/* Status Screen */}
       {screen === "status" && (
         <div style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
-          <div style={{ fontSize: 24, fontWeight: 700, color: "#F1F5F9", marginBottom: 4 }}>
+          <div style={{ fontSize: 24, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
             Hi, {employeeName}
           </div>
           <div style={{ fontSize: 14, color: "#475569", marginBottom: 28 }}>
@@ -188,9 +188,9 @@ export default function PunchPage() {
                 { label: "Lunch In", val: entry.lunch_in },
                 { label: "Clock Out", val: entry.end_time },
               ].map(({ label, val }) => (
-                <div key={label} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: 10, padding: "10px 12px" }}>
+                <div key={label} style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 10, padding: "10px 12px" }}>
                   <div style={{ fontSize: 10, color: "#475569", marginBottom: 3 }}>{label}</div>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: val ? "#E2E8F0" : "#252A3A", fontFamily: "'DM Mono', monospace" }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: val ? "var(--qs-text)" : "var(--qs-border)", fontFamily: "'DM Mono', monospace" }}>
                     {val || "\u2014"}
                   </div>
                 </div>
@@ -239,12 +239,12 @@ export default function PunchPage() {
           )}
 
           {errorMsg && (
-            <div style={{ fontSize: 13, color: "#EF4444", background: "#EF444411", borderRadius: 8, padding: "8px 12px", marginTop: 14 }}>
+            <div style={{ fontSize: 13, color: "var(--qs-danger)", background: "#EF444411", borderRadius: 8, padding: "8px 12px", marginTop: 14 }}>
               {errorMsg}
             </div>
           )}
 
-          <button onClick={() => { setPin(""); setScreen("pin"); }} style={{ marginTop: 20, background: "transparent", border: "none", color: "#334155", fontSize: 12, cursor: "pointer" }}>
+          <button onClick={() => { setPin(""); setScreen("pin"); }} style={{ marginTop: 20, background: "transparent", border: "none", color: "var(--qs-muted)", fontSize: 12, cursor: "pointer" }}>
             &larr; Different employee
           </button>
         </div>
@@ -254,16 +254,16 @@ export default function PunchPage() {
       {screen === "success" && (
         <div style={{ textAlign: "center", maxWidth: 320 }}>
           <div style={{ fontSize: 52, marginBottom: 12 }}>&#x2705;</div>
-          <div style={{ fontSize: 22, fontWeight: 700, color: "#F1F5F9", marginBottom: 6 }}>
+          <div style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 6 }}>
             {ACTION_LABELS[lastAction]}
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace", marginBottom: 8 }}>
+          <div style={{ fontSize: 28, fontWeight: 700, color: "var(--qs-success)", fontFamily: "'DM Mono', monospace", marginBottom: 8 }}>
             {lastTime}
           </div>
           {entry?.hours_worked && lastAction === "clock_out" && (
             <div style={{ fontSize: 14, color: "#475569" }}>{entry.hours_worked}h total today</div>
           )}
-          <div style={{ fontSize: 12, color: "#334155", marginTop: 16 }}>Returning to PIN screen…</div>
+          <div style={{ fontSize: 12, color: "var(--qs-muted)", marginTop: 16 }}>Returning to PIN screen…</div>
         </div>
       )}
     </div>

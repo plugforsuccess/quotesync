@@ -656,7 +656,7 @@ const AdminTimeAttendancePage = () => {
 
             return (
               <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
                   Today's Status
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -682,20 +682,20 @@ const AdminTimeAttendancePage = () => {
                           minWidth: 110,
                         }}
                       >
-                        <div style={{ fontSize: 11, color: '#64748B', marginBottom: 2, fontWeight: 500 }}>
+                        <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 2, fontWeight: 500 }}>
                           {displayName}
                         </div>
                         <div style={{ fontSize: 12, fontWeight: 700, color: styles.color }}>
                           {isLate ? '⚠ Not In' : PUNCH_STATUS_LABELS[status]}
                         </div>
                         {punch?.start_time && (
-                          <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 2, fontFamily: 'monospace' }}>
+                          <div style={{ fontSize: 10, color: 'var(--qs-dim)', marginTop: 2, fontFamily: 'monospace' }}>
                             in {punch.start_time}
                             {punch.end_time ? ` · out ${punch.end_time}` : ''}
                           </div>
                         )}
                         {punch?.hours_worked && status === 'clocked_out' && (
-                          <div style={{ fontSize: 10, color: '#94A3B8', marginTop: 1 }}>
+                          <div style={{ fontSize: 10, color: 'var(--qs-dim)', marginTop: 1 }}>
                             {punch.hours_worked}h
                           </div>
                         )}
@@ -703,7 +703,7 @@ const AdminTimeAttendancePage = () => {
                     );
                   })}
                   {rosterEmployees.length === 0 && (
-                    <div style={{ fontSize: 12, color: '#94A3B8' }}>No active employees found.</div>
+                    <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>No active employees found.</div>
                   )}
                 </div>
               </div>

@@ -15,23 +15,23 @@ export default function EmployeeLayout() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0F1117', paddingBottom: 64 }}>
+    <div style={{ minHeight: '100vh', background: 'var(--qs-dark)', paddingBottom: 64 }}>
       {/* Top bar */}
-      <div style={{ background: '#161924', borderBottom: '1px solid #252A3A',
+      <div style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)',
         padding: '12px 16px', display: 'flex', alignItems: 'center',
         justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <img src="/allstate-badge.svg" alt="Allstate" style={{ height: 28 }} />
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9' }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
             Wiley-Wilson Agency
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#64748B' }}>
+          <span style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
             {employee?.preferred_name || employee?.first_name}
           </span>
           <button onClick={handleSignOut}
-            style={{ fontSize: 12, color: '#64748B', background: 'none',
+            style={{ fontSize: 12, color: 'var(--qs-subtle)', background: 'none',
               border: 'none', cursor: 'pointer' }}>
             Sign out
           </button>
@@ -45,7 +45,7 @@ export default function EmployeeLayout() {
 
       {/* Bottom tab bar */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0,
-        background: '#161924', borderTop: '1px solid #252A3A',
+        background: 'var(--qs-card)', borderTop: '1px solid var(--qs-border)',
         display: 'flex', height: 56 }}>
         {[
           { to: '/my/queue',     icon: '\u26A1', label: 'Queue'     },

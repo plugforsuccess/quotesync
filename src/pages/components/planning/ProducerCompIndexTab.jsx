@@ -19,10 +19,10 @@ export default function ProducerCompIndexTab({ agencyId }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  if (isLoading) return <div style={{ color: '#64748B', padding: 24 }}>Loading...</div>;
+  if (isLoading) return <div style={{ color: 'var(--qs-subtle)', padding: 24 }}>Loading...</div>;
 
   if (producers.length === 0) return (
-    <div style={{ color: '#64748B', padding: 24, textAlign: 'center' }}>
+    <div style={{ color: 'var(--qs-subtle)', padding: 24, textAlign: 'center' }}>
       No active sales producers found.
       <div style={{ fontSize: 12, marginTop: 8 }}>
         Add producers with the 'sales' role in Employee Management.
@@ -32,7 +32,7 @@ export default function ProducerCompIndexTab({ agencyId }) {
 
   return (
     <div style={{ maxWidth: 600 }}>
-      <div style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
+      <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 20 }}>
         Select a producer to configure or view their compensation model.
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -44,19 +44,19 @@ export default function ProducerCompIndexTab({ agencyId }) {
             <Link key={p.id}
               to={`/admin/producers/${p.id}/comp-model`}
               style={{ textDecoration: 'none' }}>
-              <div style={{ background: '#161924', border: '1px solid #252A3A',
+              <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                 borderRadius: 10, padding: '14px 18px', display: 'flex',
                 justifyContent: 'space-between', alignItems: 'center',
                 cursor: 'pointer', transition: 'border-color 0.15s' }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = '#3B82F6'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = '#252A3A'}>
+                onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--qs-info)'}
+                onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--qs-border)'}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#F1F5F9' }}>{name}</div>
-                  <div style={{ fontSize: 11, color: '#64748B', marginTop: 2 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>{name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>
                     {p.roles?.join(', ')} · Hired {p.hire_date || '—'}
                   </div>
                 </div>
-                <span style={{ color: '#3B82F6', fontSize: 18 }}>→</span>
+                <span style={{ color: 'var(--qs-info)', fontSize: 18 }}>→</span>
               </div>
             </Link>
           );

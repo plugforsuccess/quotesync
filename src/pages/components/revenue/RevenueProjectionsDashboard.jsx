@@ -239,7 +239,7 @@ function SortTh({ col, label, sortCol, sortDir, onSort }) {
     >
       <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
         {label}
-        <span style={{ fontSize: 9, color: active ? "#E2E8F0" : "#334155", lineHeight: 1 }}>
+        <span style={{ fontSize: 9, color: active ? "var(--qs-text)" : "var(--qs-muted)", lineHeight: 1 }}>
           {active ? (sortDir === "asc" ? "▲" : "▼") : "⇅"}
         </span>
       </span>
@@ -256,10 +256,10 @@ function DrillDownModal({ title, onClose, children }) {
   }, [onClose]);
   return createPortal(
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "flex-end", justifyContent: "center", padding: 8 }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: "#161924", border: "1px solid #252A3A", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "98vw", height: "96vh", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px 16px", borderBottom: "1px solid #252A3A", flexShrink: 0 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, color: "#F1F5F9" }}>{title}</div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer", minWidth: 44, minHeight: 44 }}>×</button>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: "16px 16px 0 0", width: "100%", maxWidth: "98vw", height: "96vh", overflow: "hidden", padding: 0, display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "20px 28px 16px", borderBottom: "1px solid var(--qs-border)", flexShrink: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 700, color: "var(--qs-bright)" }}>{title}</div>
+          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--qs-subtle)", fontSize: 20, cursor: "pointer", minWidth: 44, minHeight: 44 }}>×</button>
         </div>
         <div style={{ flex: 1, overflow: "auto", padding: "20px 28px", minHeight: 0, display: "flex", flexDirection: "column" }}>
           {children}
@@ -278,7 +278,7 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "#334155", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", paddingRight: 4 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 10, color: "var(--qs-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", paddingRight: 4 }}>
         <span>Product</span>
         <span style={{ display: "flex", gap: 16 }}>
           <span style={{ width: 72, textAlign: "right" }}>Premium</span>
@@ -297,30 +297,30 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
               <span style={{ display: "flex", alignItems: "center", gap: 7 }}>
                 <span style={{ width: 9, height: 9, borderRadius: "50%", background: PRODUCT_COLORS[key], display: "inline-block", flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: "#94A3B8", fontWeight: 500 }}>{COMMISSION[key].label}</span>
+                <span style={{ fontSize: 12, color: "var(--qs-dim)", fontWeight: 500 }}>{COMMISSION[key].label}</span>
               </span>
               <span style={{ display: "flex", gap: 16, fontSize: 12, fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
-                <span style={{ width: 72, textAlign: "right", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</span>
-                <span style={{ width: 44, textAlign: "right", color: "#94A3B8", fontWeight: 600 }}>{(premiumPct * 100).toFixed(1)}%</span>
-                <span style={{ width: 72, textAlign: "right", color: "#10B981" }}>{fmtFull$(val.commission)}</span>
-                <span style={{ width: 52, textAlign: "right", color: "#64748B" }}>{fmtPct(effRate)}</span>
-                <span style={{ width: 44, textAlign: "right", color: "#64748B" }}>{val.count}</span>
+                <span style={{ width: 72, textAlign: "right", color: "var(--qs-text)" }}>{fmtFull$(val.premium)}</span>
+                <span style={{ width: 44, textAlign: "right", color: "var(--qs-dim)", fontWeight: 600 }}>{(premiumPct * 100).toFixed(1)}%</span>
+                <span style={{ width: 72, textAlign: "right", color: "var(--qs-success)" }}>{fmtFull$(val.commission)}</span>
+                <span style={{ width: 52, textAlign: "right", color: "var(--qs-subtle)" }}>{fmtPct(effRate)}</span>
+                <span style={{ width: 44, textAlign: "right", color: "var(--qs-subtle)" }}>{val.count}</span>
               </span>
             </div>
-            <div style={{ height: 7, background: "#252A3A", borderRadius: 4, overflow: "hidden", position: "relative" }}>
+            <div style={{ height: 7, background: "var(--qs-border)", borderRadius: 4, overflow: "hidden", position: "relative" }}>
               <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${premiumPct * 100}%`, background: `${PRODUCT_COLORS[key]}33`, borderRadius: 4 }} />
               <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${commPct * 100}%`, background: PRODUCT_COLORS[key], borderRadius: 4 }} />
             </div>
           </div>
         );
       })}
-      <div style={{ display: "flex", gap: 16, fontSize: 10, color: "#334155", marginTop: 2 }}>
+      <div style={{ display: "flex", gap: 16, fontSize: 10, color: "var(--qs-muted)", marginTop: 2 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
           <span style={{ width: 20, height: 3, background: "#3B82F633", borderRadius: 2, display: "inline-block" }} />
           Premium share
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ width: 20, height: 3, background: "#3B82F6", borderRadius: 2, display: "inline-block" }} />
+          <span style={{ width: 20, height: 3, background: "var(--qs-info)", borderRadius: 2, display: "inline-block" }} />
           Commission share
         </span>
       </div>
@@ -642,16 +642,16 @@ export default function RevenueProjectionsDashboard() {
       pct: commissionGoalPct,
       earned: totals.totalCommission,
       goal: COMMISSION_GOAL,
-      barColor: commissionGoalPct >= 1 ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)",
-      valueColor: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B",
+      barColor: commissionGoalPct >= 1 ? "var(--qs-success)" : "linear-gradient(90deg, var(--qs-success), var(--qs-info))",
+      valueColor: commissionGoalPct >= 1 ? "var(--qs-success)" : "var(--qs-warning)",
     },
     premium: {
       label: "PREMIUM GOAL",
       pct: Math.min(totals.totalPremium / PREMIUM_GOAL, 1),
       earned: totals.totalPremium,
       goal: PREMIUM_GOAL,
-      barColor: "linear-gradient(90deg, #3B82F6, #8B5CF6)",
-      valueColor: "#3B82F6",
+      barColor: "linear-gradient(90deg, var(--qs-info), var(--qs-purple))",
+      valueColor: "var(--qs-info)",
     },
   };
   const activeGoal = goalModes[goalMode];
@@ -896,24 +896,24 @@ export default function RevenueProjectionsDashboard() {
   // ─── UI ───────────────────────────────────────────────────────────────────
   return (
     <>
-    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: "#E2E8F0" }}>
+    <div style={{ fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: "var(--qs-text)" }}>
 
 
       {error && (
-        <div style={{ background: "#2D1A1A", border: "1px solid #EF4444", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "#EF4444" }}>
+        <div style={{ background: "#2D1A1A", border: "1px solid var(--qs-danger)", borderRadius: 8, padding: "10px 16px", marginBottom: 16, fontSize: 13, color: "var(--qs-danger)" }}>
           {error}
         </div>
       )}
       {loading && (
-        <div style={{ color: "#64748B", fontSize: 13, marginBottom: 12 }}>Loading entries...</div>
+        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}>Loading entries...</div>
       )}
 
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 24 }}>
         <div>
-          <div style={{ fontSize: 11, fontWeight: 600, color: "#3B82F6", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>insuredbycam.com</div>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "#F1F5F9" }}>Revenue Projections</h1>
-          <div style={{ fontSize: 13, color: "#64748B", marginTop: 2 }}>New Business · Commission Goal: {fmtFull$(COMMISSION_GOAL)}/mo</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: "var(--qs-info)", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 4 }}>insuredbycam.com</div>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "var(--qs-bright)" }}>Revenue Projections</h1>
+          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginTop: 2 }}>New Business · Commission Goal: {fmtFull$(COMMISSION_GOAL)}/mo</div>
         </div>
         {/* View selector */}
         <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
@@ -942,19 +942,19 @@ export default function RevenueProjectionsDashboard() {
                 max={customEnd || undefined}
                 onChange={e => setCustomStart(e.target.value)}
                 style={{
-                  background: "#1E293B", border: "1px solid #334155", borderRadius: 6,
-                  color: "#F1F5F9", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                  background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
+                  color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
                 }}
               />
-              <span style={{ color: "#64748B", fontSize: 12 }}>to</span>
+              <span style={{ color: "var(--qs-subtle)", fontSize: 12 }}>to</span>
               <input
                 type="date"
                 value={customEnd}
                 min={customStart || undefined}
                 onChange={e => setCustomEnd(e.target.value)}
                 style={{
-                  background: "#1E293B", border: "1px solid #334155", borderRadius: 6,
-                  color: "#F1F5F9", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                  background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
+                  color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
                 }}
               />
             </div>
@@ -966,20 +966,20 @@ export default function RevenueProjectionsDashboard() {
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
         {/* Written Premium */}
         <div className="card clickable" onClick={() => setModal("kpi-written")}>
-          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Written Premium</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalPremium)}</div>
-          <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{rangeLabel}</div>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Written Premium</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "var(--qs-bright)", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalPremium)}</div>
+          <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>{rangeLabel}</div>
         </div>
         {/* Commission Earned */}
         <div className="card clickable" onClick={() => setModal("kpi-commission")}>
-          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalCommission)}</div>
-          <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>Commission Earned</div>
+          <div style={{ fontSize: 26, fontWeight: 700, color: "var(--qs-success)", fontFamily: "'DM Mono', monospace" }}>{fmt$(totals.totalCommission)}</div>
+          <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"}</div>
           {view === "month" && lastMonthCommission > 0 && (() => {
             const delta = totals.totalCommission - lastMonthCommission;
             const pct   = Math.abs(delta / lastMonthCommission * 100).toFixed(1);
             return (
-              <div style={{ fontSize: 12, color: delta >= 0 ? "#10B981" : "#EF4444", marginTop: 4 }}>
+              <div style={{ fontSize: 12, color: delta >= 0 ? "var(--qs-success)" : "var(--qs-danger)", marginTop: 4 }}>
                 {delta >= 0 ? "▲" : "▼"} {fmtFull$(Math.abs(delta))} ({pct}%) vs last mo
               </div>
             );
@@ -996,7 +996,7 @@ export default function RevenueProjectionsDashboard() {
               label: "POLICIES WRITTEN",
               value: String(totalPolicies),
               sub: `Avg premium: ${totalPolicies > 0 ? fmt$(totals.totalPremium / totalPolicies) : "—"}`,
-              subColor: "#64748B",
+              subColor: "var(--qs-subtle)",
             },
             ...(view !== "ytd" ? {
               items: {
@@ -1005,14 +1005,14 @@ export default function RevenueProjectionsDashboard() {
                 sub: vcOnTrack
                   ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (Auto + HO + Condo)`
                   : `${vcBaselineCount} / ${VC_BASELINE_TARGET} · ${vcShortfall} needed`,
-                subColor: vcOnTrack ? "#10B981" : "#F59E0B",
+                subColor: vcOnTrack ? "var(--qs-success)" : "var(--qs-warning)",
               },
             } : {
               items: {
                 label: "ITEMS WRITTEN",
                 value: String(filtered.reduce((s, e) => s + (e.itemCount ?? 1), 0)),
                 sub: "Total items YTD",
-                subColor: "#64748B",
+                subColor: "var(--qs-subtle)",
               },
             }),
             points: {
@@ -1022,8 +1022,8 @@ export default function RevenueProjectionsDashboard() {
                 ? (pointsDelta >= 0 ? `+${pointsDelta} vs last month` : `${pointsDelta} vs last month`)
                 : "Portfolio points YTD",
               subColor: view !== "ytd"
-                ? (pointsDelta >= 0 ? "#10B981" : "#EF4444")
-                : "#64748B",
+                ? (pointsDelta >= 0 ? "var(--qs-success)" : "var(--qs-danger)")
+                : "var(--qs-subtle)",
             },
           };
 
@@ -1036,10 +1036,10 @@ export default function RevenueProjectionsDashboard() {
               title="Click to cycle · Double-click to expand"
               style={{ position: "relative" }}
             >
-              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+              <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
                 {active.label}
               </div>
-              <div style={{ fontSize: 26, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace" }}>
+              <div style={{ fontSize: 26, fontWeight: 700, color: "var(--qs-bright)", fontFamily: "'DM Mono', monospace" }}>
                 {active.value}
               </div>
               <div style={{ fontSize: 12, color: active.subColor, marginTop: 2 }}>
@@ -1048,7 +1048,7 @@ export default function RevenueProjectionsDashboard() {
               {/* Mode indicator dots */}
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                 {["count", "items", "points"].map(m => (
-                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: policiesMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: policiesMode === m ? "var(--qs-text)" : "var(--qs-muted)", transition: "background 0.2s" }} />
                 ))}
               </div>
             </div>
@@ -1056,28 +1056,28 @@ export default function RevenueProjectionsDashboard() {
         })()}
         {/* Commission Goal / YTD Commission */}
         <div className="card clickable" style={{ position: "relative", overflow: "hidden" }} onClick={handleGoalClick} title="Click to switch · Double-click to expand">
-          <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
+          <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
             {view !== "ytd" ? activeGoal.label : "YTD COMMISSION"}
           </div>
-          <div style={{ fontSize: 26, fontWeight: 700, color: view === "ytd" ? "#10B981" : activeGoal.valueColor, fontFamily: "'DM Mono', monospace" }}>
+          <div style={{ fontSize: 26, fontWeight: 700, color: view === "ytd" ? "var(--qs-success)" : activeGoal.valueColor, fontFamily: "'DM Mono', monospace" }}>
             {view !== "ytd" ? fmtFull$(activeGoal.earned) : fmtFull$(totals.totalCommission)}
           </div>
           {view !== "ytd" ? (
             <>
-              <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+              <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
                 {Math.round(activeGoal.pct * 100)}% of {fmtFull$(activeGoal.goal)} goal
               </div>
-              <div style={{ height: 3, background: "#252A3A", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
+              <div style={{ height: 3, background: "var(--qs-border)", borderRadius: 2, marginTop: 8, overflow: "hidden" }}>
                 <div style={{ height: "100%", width: `${Math.min(activeGoal.pct * 100, 100)}%`, background: activeGoal.barColor, borderRadius: 2, transition: "width 0.4s" }} />
               </div>
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                 {["commission", "premium"].map(m => (
-                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: goalMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: goalMode === m ? "var(--qs-text)" : "var(--qs-muted)", transition: "background 0.2s" }} />
                 ))}
               </div>
             </>
           ) : (
-            <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
               {rangeLabel} · {fmtFull$(COMMISSION_GOAL)}/mo goal
             </div>
           )}
@@ -1089,25 +1089,25 @@ export default function RevenueProjectionsDashboard() {
               label: "PROJECTED COMMISSION",
               value: fmt$(pace.projectedCommission),
               subLabel: "projected by month-end",
-              color: pace.onPace ? "#10B981" : pace.projectedCommission < COMMISSION_GOAL * 0.5 ? "#EF4444" : "#F59E0B",
+              color: pace.onPace ? "var(--qs-success)" : pace.projectedCommission < COMMISSION_GOAL * 0.5 ? "var(--qs-danger)" : "var(--qs-warning)",
             },
             premium: {
               label: "PROJECTED PREMIUM",
               value: fmt$(pace.projectedPremium),
               subLabel: "projected by month-end",
-              color: "#3B82F6",
+              color: "var(--qs-info)",
             },
           };
           const activePace = paceModeConfig[paceMode];
           return (
             <div className="card clickable" onClick={handlePaceClick} title="Click to switch · Double-click to expand">
-              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activePace.label}</div>
+              <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activePace.label}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: activePace.color, fontFamily: "'DM Mono', monospace" }}>{activePace.value}</div>
               <div style={{ fontSize: 12, color: activePace.color, marginTop: 2 }}>{pace.onPace ? "↑ On pace" : "↓ Behind pace"} · {dailyTarget.remaining} business days left</div>
-              <div style={{ fontSize: 10, color: "#334155", marginTop: 4 }}>{activePace.subLabel}</div>
+              <div style={{ fontSize: 10, color: "var(--qs-muted)", marginTop: 4 }}>{activePace.subLabel}</div>
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                 {["commission", "premium"].map(m => (
-                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: paceMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: paceMode === m ? "var(--qs-text)" : "var(--qs-muted)", transition: "background 0.2s" }} />
                 ))}
               </div>
             </div>
@@ -1115,21 +1115,21 @@ export default function RevenueProjectionsDashboard() {
         })()}
         {dailyTarget && (() => {
           const dailyModes = {
-            commission: { label: "DAILY TARGET",         value: fmtFull$(dailyTarget.dailyCommissionNeeded),            unit: "commission / day", color: "#F59E0B" },
-            premium:    { label: "DAILY PREMIUM TARGET", value: fmtFull$(dailyTarget.dailyPremiumNeeded),               unit: "premium / day",    color: "#3B82F6" },
-            policies:   { label: "POLICIES / DAY",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—",   unit: "policies needed",  color: "#10B981" },
+            commission: { label: "DAILY TARGET",         value: fmtFull$(dailyTarget.dailyCommissionNeeded),            unit: "commission / day", color: "var(--qs-warning)" },
+            premium:    { label: "DAILY PREMIUM TARGET", value: fmtFull$(dailyTarget.dailyPremiumNeeded),               unit: "premium / day",    color: "var(--qs-info)" },
+            policies:   { label: "POLICIES / DAY",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—",   unit: "policies needed",  color: "var(--qs-success)" },
           };
           const activeDaily = dailyModes[dailyTargetMode];
           return (
             <div className="card clickable" onClick={handleDailyClick} title="Click to switch · Double-click to expand">
-              <div style={{ fontSize: 11, color: "#64748B", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activeDaily.label}</div>
+              <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{activeDaily.label}</div>
               <div style={{ fontSize: 26, fontWeight: 700, color: activeDaily.color, fontFamily: "'DM Mono', monospace" }}>{activeDaily.value}</div>
-              <div style={{ fontSize: 12, color: "#64748B", marginTop: 2 }}>{activeDaily.unit} · {dailyTarget.remaining} business days left</div>
-              <div style={{ borderTop: "1px solid #252A3A", marginTop: 10, paddingTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
+              <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>{activeDaily.unit} · {dailyTarget.remaining} business days left</div>
+              <div style={{ borderTop: "1px solid var(--qs-border)", marginTop: 10, paddingTop: 8, display: "flex", flexDirection: "column", gap: 3 }}>
                 {Object.entries(dailyModes)
                   .filter(([key]) => key !== dailyTargetMode)
                   .map(([key, m]) => (
-                    <div key={key} style={{ fontSize: 11, color: "#64748B" }}>
+                    <div key={key} style={{ fontSize: 11, color: "var(--qs-subtle)" }}>
                       <span style={{ color: m.color, fontFamily: "'DM Mono', monospace", fontWeight: 600 }}>{m.value}</span>
                       {" "}{m.unit}
                     </div>
@@ -1137,13 +1137,13 @@ export default function RevenueProjectionsDashboard() {
                 }
               </div>
               {dailyTarget.avgCommissionPerPolicy && (
-                <div style={{ fontSize: 10, color: "#334155", marginTop: 6 }}>
+                <div style={{ fontSize: 10, color: "var(--qs-muted)", marginTop: 6 }}>
                   Avg {fmtFull$(dailyTarget.avgCommissionPerPolicy)} commission · {fmtFull$(dailyTarget.avgPremiumPerPolicy)} premium per policy
                 </div>
               )}
               <div style={{ display: "flex", gap: 4, marginTop: 8 }}>
                 {["commission", "premium", "policies"].map(m => (
-                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: dailyTargetMode === m ? "#E2E8F0" : "#334155", transition: "background 0.2s" }} />
+                  <div key={m} style={{ width: 5, height: 5, borderRadius: "50%", background: dailyTargetMode === m ? "var(--qs-text)" : "var(--qs-muted)", transition: "background 0.2s" }} />
                 ))}
               </div>
             </div>
@@ -1156,16 +1156,16 @@ export default function RevenueProjectionsDashboard() {
         {/* Commission Goal — primary */}
         <div style={{ marginBottom: 16, cursor: "pointer" }} onClick={() => setModal("commission")}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12 }}>
-            <span style={{ color: "#94A3B8", fontWeight: 600 }}>Commission Revenue Goal</span>
-            <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>
+            <span style={{ color: "var(--qs-dim)", fontWeight: 600 }}>Commission Revenue Goal</span>
+            <span style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace" }}>
               {fmtFull$(totals.totalCommission)} / {fmtFull$(COMMISSION_GOAL)}
             </span>
           </div>
-          <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden" }}>
+          <div style={{ height: 10, background: "var(--qs-border)", borderRadius: 5, overflow: "hidden" }}>
             <div style={{
               height: "100%",
               width: `${Math.min(totals.totalCommission / COMMISSION_GOAL * 100, 100)}%`,
-              background: totals.totalCommission >= COMMISSION_GOAL ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)",
+              background: totals.totalCommission >= COMMISSION_GOAL ? "var(--qs-success)" : "linear-gradient(90deg, var(--qs-success), var(--qs-info))",
               borderRadius: 5,
               transition: "width 0.5s",
             }} />
@@ -1174,27 +1174,27 @@ export default function RevenueProjectionsDashboard() {
         {/* Written Premium Volume — secondary */}
         <div style={{ cursor: "pointer" }} onClick={() => setModal("premium")}>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 12 }}>
-            <span style={{ color: "#94A3B8", fontWeight: 600 }}>Written Premium Volume</span>
-            <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>
+            <span style={{ color: "var(--qs-dim)", fontWeight: 600 }}>Written Premium Volume</span>
+            <span style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace" }}>
               {fmtFull$(totals.totalPremium)} / {fmtFull$(PREMIUM_GOAL)}
             </span>
           </div>
-          <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden" }}>
+          <div style={{ height: 10, background: "var(--qs-border)", borderRadius: 5, overflow: "hidden" }}>
             <div style={{
               height: "100%",
               width: `${Math.min(totals.totalPremium / PREMIUM_GOAL * 100, 100)}%`,
-              background: "linear-gradient(90deg, #3B82F6, #8B5CF6)",
+              background: "linear-gradient(90deg, var(--qs-info), var(--qs-purple))",
               borderRadius: 5,
               transition: "width 0.5s",
             }} />
           </div>
           {/* Product breakdown dots */}
-          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", color: "#94A3B8" }}>
+          <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap", color: "var(--qs-dim)" }}>
             {Object.entries(totals.byProduct).map(([key, val]) => val.premium > 0 && (
               <div key={key} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11 }}>
                 <div style={{ width: 8, height: 8, borderRadius: "50%", background: PRODUCT_COLORS[key] }} />
-                <span style={{ color: "#64748B" }}>{COMMISSION[key].label}</span>
-                <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>{fmt$(val.premium)}</span>
+                <span style={{ color: "var(--qs-subtle)" }}>{COMMISSION[key].label}</span>
+                <span style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace" }}>{fmt$(val.premium)}</span>
               </div>
             ))}
           </div>
@@ -1213,7 +1213,7 @@ export default function RevenueProjectionsDashboard() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {/* Monthly Trend */}
           <div className="card clickable" style={{ gridColumn: "1 / -1" }} onClick={() => setModal("trend")}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Monthly Commission Earned vs $40K Goal</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)", marginBottom: 16 }}>Monthly Commission Earned vs $40K Goal</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={trendData} barSize={20}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
@@ -1232,9 +1232,9 @@ export default function RevenueProjectionsDashboard() {
 
           {/* Revenue by Product Line */}
           <div className="card clickable" style={{ gridColumn: "1 / -1" }} onClick={() => { setModal("products"); setProductStatsMode("all"); }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 16 }}>Revenue by Product Line</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)", marginBottom: 16 }}>Revenue by Product Line</div>
             {totals.totalPremium === 0 ? (
-              <div style={{ color: "#334155", textAlign: "center", padding: "30px 0", fontSize: 13 }}>No data in range</div>
+              <div style={{ color: "var(--qs-muted)", textAlign: "center", padding: "30px 0", fontSize: 13 }}>No data in range</div>
             ) : (
               <ProductBreakdownRows
                 byProduct={totals.byProduct}
@@ -1249,7 +1249,7 @@ export default function RevenueProjectionsDashboard() {
             <div className="card" style={{ gridColumn: "1 / -1" }}>
               {/* Card header row */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: producerCustomOpen ? 12 : 16 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8" }}>Producer Breakdown</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)" }}>Producer Breakdown</div>
 
                 <select
                   value={producerRange}
@@ -1263,8 +1263,8 @@ export default function RevenueProjectionsDashboard() {
                     }
                   }}
                   style={{
-                    background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 6,
-                    color: "#94A3B8", fontSize: 12, padding: "4px 10px", cursor: "pointer",
+                    background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 6,
+                    color: "var(--qs-dim)", fontSize: 12, padding: "4px 10px", cursor: "pointer",
                   }}
                 >
                   <option value="main">Current Month</option>
@@ -1276,22 +1276,22 @@ export default function RevenueProjectionsDashboard() {
               {/* Custom date range inputs — shown only when "Custom Range…" is selected */}
               {producerCustomOpen && (
                 <div style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 12, color: "#64748B" }}>From</span>
+                  <span style={{ fontSize: 12, color: "var(--qs-subtle)" }}>From</span>
                   <input
                     type="date"
                     value={producerCustomStart}
                     onChange={e => setProducerCustomStart(e.target.value)}
-                    style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 6, color: "#E2E8F0", fontSize: 12, padding: "4px 8px" }}
+                    style={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 6, color: "var(--qs-text)", fontSize: 12, padding: "4px 8px" }}
                   />
-                  <span style={{ fontSize: 12, color: "#64748B" }}>to</span>
+                  <span style={{ fontSize: 12, color: "var(--qs-subtle)" }}>to</span>
                   <input
                     type="date"
                     value={producerCustomEnd}
                     onChange={e => setProducerCustomEnd(e.target.value)}
-                    style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 6, color: "#E2E8F0", fontSize: 12, padding: "4px 8px" }}
+                    style={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 6, color: "var(--qs-text)", fontSize: 12, padding: "4px 8px" }}
                   />
                   {producerCustomStart && producerCustomEnd && (
-                    <span style={{ fontSize: 11, color: "#64748B" }}>
+                    <span style={{ fontSize: 11, color: "var(--qs-subtle)" }}>
                       {producerCustomStart} → {producerCustomEnd}
                     </span>
                   )}
@@ -1322,14 +1322,14 @@ export default function RevenueProjectionsDashboard() {
                               onClick={() => setProducerModal(p.name)}
                               style={{
                                 background: "none", border: "none", cursor: "pointer",
-                                color: isMuted ? "#64748B" : "#F1F5F9",
+                                color: isMuted ? "var(--qs-subtle)" : "var(--qs-bright)",
                                 fontWeight: 600, fontSize: 13, padding: 0,
                                 fontFamily: "inherit", display: "block", textAlign: "left",
                                 textDecoration: "underline", textDecorationColor: "transparent",
                                 transition: "text-decoration-color 0.15s",
                                 marginBottom: 5,
                               }}
-                              onMouseEnter={e => e.target.style.textDecorationColor = "#3B82F6"}
+                              onMouseEnter={e => e.target.style.textDecorationColor = "var(--qs-info)"}
                               onMouseLeave={e => e.target.style.textDecorationColor = "transparent"}
                             >
                               {p.name}
@@ -1340,22 +1340,22 @@ export default function RevenueProjectionsDashboard() {
                                 height: "100%",
                                 borderRadius: 2,
                                 width: `${(p.share * 100).toFixed(1)}%`,
-                                background: isMuted ? "#334155" : "linear-gradient(90deg, #10B981, #3B82F6)",
+                                background: isMuted ? "var(--qs-muted)" : "linear-gradient(90deg, var(--qs-success), var(--qs-info))",
                                 transition: "width 0.4s ease",
                               }} />
                             </div>
                           </td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{p.policies}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{p.items}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{fmtFull$(p.premium)}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#10B981" }}>{fmtFull$(p.commission)}</td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#94A3B8", fontSize: 12 }}>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "var(--qs-subtle)" : "var(--qs-text)" }}>{p.policies}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "var(--qs-subtle)" : "var(--qs-text)" }}>{p.items}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "var(--qs-subtle)" : "var(--qs-text)" }}>{fmtFull$(p.premium)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "var(--qs-subtle)" : "var(--qs-success)" }}>{fmtFull$(p.commission)}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "var(--qs-subtle)" : "var(--qs-dim)", fontSize: 12 }}>
                             {p.premium > 0 ? fmtPct(p.blendedRate) : "—"}
                           </td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#64748B", fontSize: 12 }}>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "var(--qs-subtle)" : "var(--qs-subtle)", fontSize: 12 }}>
                             {(p.share * 100).toFixed(1)}%
                           </td>
-                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "#64748B" : "#E2E8F0" }}>{p.points}</td>
+                          <td style={{ fontFamily: "'DM Mono', monospace", color: isMuted ? "var(--qs-subtle)" : "var(--qs-text)" }}>{p.points}</td>
                         </tr>
                       );
                     })}
@@ -1371,9 +1371,9 @@ export default function RevenueProjectionsDashboard() {
       {activeTab === "entries" && (
         <div className="card">
           {/* Add Manual Entry */}
-          <div style={{ marginBottom: 20, padding: 16, background: "#1A1D27", borderRadius: 10, border: "1px solid #252A3A" }}>
+          <div style={{ marginBottom: 20, padding: 16, background: "var(--qs-elevated)", borderRadius: 10, border: "1px solid var(--qs-border)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8" }}>Add Manual Entry</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)" }}>Add Manual Entry</div>
               {filtered.length > 0 && (
                 <div style={{ display: "flex", gap: 6 }}>
                   <button className="btn-ghost" onClick={exportCSV}>Export CSV</button>
@@ -1432,7 +1432,7 @@ export default function RevenueProjectionsDashboard() {
                 const isItemLocked = ["ho", "renters", "landlord", "pup", "manufactured"].includes(newEntry.product);
                 return (
                   <div>
-                    <label style={{ fontSize: 11, color: "#64748B" }}>Items</label>
+                    <label style={{ fontSize: 11, color: "var(--qs-subtle)" }}>Items</label>
                     <input
                       type="number"
                       min={1}
@@ -1452,7 +1452,7 @@ export default function RevenueProjectionsDashboard() {
               <button className="btn-primary" type="button" onClick={handleAddEntry} disabled={addingEntry}>{addingEntry ? "Adding…" : "Add"}</button>
             </div>
             {addEntryMsg && (
-              <div style={{ marginTop: 10, fontSize: 12, color: addEntryMsg.startsWith("Unable") || addEntryMsg.startsWith("Enter") ? "#EF4444" : "#10B981" }}>
+              <div style={{ marginTop: 10, fontSize: 12, color: addEntryMsg.startsWith("Unable") || addEntryMsg.startsWith("Enter") ? "var(--qs-danger)" : "var(--qs-success)" }}>
                 {addEntryMsg}
               </div>
             )}
@@ -1462,7 +1462,7 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ marginBottom: 14 }}>
             <button
               onClick={() => setRatesOpen(!ratesOpen)}
-              style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "#94A3B8", cursor: "pointer", background: "none", border: "none", padding: "4px 0", width: "100%", textAlign: "left" }}
+              style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600, color: "var(--qs-dim)", cursor: "pointer", background: "none", border: "none", padding: "4px 0", width: "100%", textAlign: "left" }}
             >
               <ChevronRight style={{ width: 14, height: 14, transition: "transform 0.2s", transform: ratesOpen ? "rotate(90deg)" : "rotate(0deg)" }} />
               Commission Rates Reference
@@ -1470,7 +1470,7 @@ export default function RevenueProjectionsDashboard() {
             {ratesOpen && (
               <div style={{ display: "flex", gap: 8, marginTop: 6, flexWrap: "wrap" }}>
                 {Object.entries(COMMISSION).map(([key, val]) => (
-                  <div key={key} style={{ background: "#1A1D27", border: `1px solid ${PRODUCT_COLORS[key]}33`, borderRadius: 6, padding: "6px 12px", fontSize: 11 }}>
+                  <div key={key} style={{ background: "var(--qs-elevated)", border: `1px solid ${PRODUCT_COLORS[key]}33`, borderRadius: 6, padding: "6px 12px", fontSize: 11 }}>
                     <span style={{ color: PRODUCT_COLORS[key], fontWeight: 600, marginRight: 6 }}>{val.label}</span>
                     {Object.entries(TIER_LABELS).map(([tk, tl]) => (
                       <span key={tk} style={{ color: TIER_COLORS[tk], marginRight: 5 }}>{tl}: {fmtPct(val[tk])}</span>
@@ -1483,7 +1483,7 @@ export default function RevenueProjectionsDashboard() {
 
           {/* Table */}
           {filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "#334155", fontSize: 13 }}>No entries in this range. Add manually or upload an Allstate report.</div>
+            <div style={{ textAlign: "center", padding: "40px 0", color: "var(--qs-muted)", fontSize: 13 }}>No entries in this range. Add manually or upload an Allstate report.</div>
           ) : (
             <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
             <table style={{ minWidth: 640 }}>
@@ -1505,14 +1505,14 @@ export default function RevenueProjectionsDashboard() {
                   const tier = e.tier ?? "monoline";
                   return (
                     <tr key={e.id}>
-                      <td style={{ color: "#64748B", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
-                      <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.issuedDate}</td>
+                      <td style={{ color: "var(--qs-subtle)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
+                      <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.issuedDate}</td>
                       <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{PRODUCT_LABELS[e.product] ?? e.product}</span></td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
                       <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
-                      <td style={{ color: "#10B981", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier))}</td>
-                      <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "#94A3B8" }}>{e.source}</span></td>
-                      <td style={{ color: "#64748B", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
+                      <td style={{ color: "var(--qs-success)", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier))}</td>
+                      <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "var(--qs-dim)" }}>{e.source}</span></td>
+                      <td style={{ color: "var(--qs-subtle)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
                       <td><button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button></td>
                     </tr>
                   );
@@ -1520,9 +1520,9 @@ export default function RevenueProjectionsDashboard() {
               </tbody>
               <tfoot>
                 <tr>
-                  <td colSpan={4} style={{ color: "#64748B", fontWeight: 600, paddingTop: 12 }}>Total</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#F1F5F9", paddingTop: 12 }}>{fmtFull$(totals.totalPremium)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "#10B981", paddingTop: 12 }}>{fmtFull$(totals.totalCommission)}</td>
+                  <td colSpan={4} style={{ color: "var(--qs-subtle)", fontWeight: 600, paddingTop: 12 }}>Total</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "var(--qs-bright)", paddingTop: 12 }}>{fmtFull$(totals.totalPremium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", fontWeight: 700, color: "var(--qs-success)", paddingTop: 12 }}>{fmtFull$(totals.totalCommission)}</td>
                   <td colSpan={3} />
                 </tr>
               </tfoot>
@@ -1535,21 +1535,21 @@ export default function RevenueProjectionsDashboard() {
       {/* ── UPLOAD TAB ── */}
       {activeTab === "upload" && (
         <div className="card">
-          <div style={{ fontSize: 13, fontWeight: 600, color: "#94A3B8", marginBottom: 4 }}>Upload Allstate Export</div>
-          <div style={{ fontSize: 12, color: "#64748B", marginBottom: 20 }}>
-            Accepts XLSX or CSV. Expects columns: <span style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>Effective Date, Written Premium, Line of Business, Bundle Tier</span> (or similar Allstate report headers). <span style={{ color: "#64748B" }}>Bundle Tier column is optional — rows without it default to Monoline.</span>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)", marginBottom: 4 }}>Upload Allstate Export</div>
+          <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginBottom: 20 }}>
+            Accepts XLSX or CSV. Expects columns: <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>Effective Date, Written Premium, Line of Business, Bundle Tier</span> (or similar Allstate report headers). <span style={{ color: "var(--qs-subtle)" }}>Bundle Tier column is optional — rows without it default to Monoline.</span>
           </div>
           <div className="upload-zone" onClick={() => fileRef.current?.click()}>
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleFile} />
             <div style={{ fontSize: 32, marginBottom: 10 }}>📤</div>
-            <div style={{ fontSize: 14, fontWeight: 600, color: "#64748B" }}>{uploading ? "Processing…" : "Click to upload or drag & drop"}</div>
-            <div style={{ fontSize: 12, color: "#334155", marginTop: 4 }}>XLSX, XLS, or CSV</div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-subtle)" }}>{uploading ? "Processing…" : "Click to upload or drag & drop"}</div>
+            <div style={{ fontSize: 12, color: "var(--qs-muted)", marginTop: 4 }}>XLSX, XLS, or CSV</div>
           </div>
           {uploadMsg && (
-            <div style={{ marginTop: 14, padding: "10px 16px", background: "#1A1D27", borderRadius: 8, fontSize: 13, color: "#94A3B8" }}>{uploadMsg}</div>
+            <div style={{ marginTop: 14, padding: "10px 16px", background: "var(--qs-elevated)", borderRadius: 8, fontSize: 13, color: "var(--qs-dim)" }}>{uploadMsg}</div>
           )}
-          <div style={{ marginTop: 24, padding: 16, background: "#1A1D27", borderRadius: 10, border: "1px solid #252A3A" }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "#64748B", marginBottom: 8 }}>Commission Reference — New Business Rates by Tier</div>
+          <div style={{ marginTop: 24, padding: 16, background: "var(--qs-elevated)", borderRadius: 10, border: "1px solid var(--qs-border)" }}>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", marginBottom: 8 }}>Commission Reference — New Business Rates by Tier</div>
             <table>
               <thead>
                 <tr>
@@ -1582,11 +1582,11 @@ export default function RevenueProjectionsDashboard() {
         <DrillDownModal title="Commission Revenue Goal" onClose={closeModal}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-              <span style={{ color: "#94A3B8" }}>Commission Revenue Goal</span>
-              <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(totals.totalCommission)} / {fmtFull$(COMMISSION_GOAL)}</span>
+              <span style={{ color: "var(--qs-dim)" }}>Commission Revenue Goal</span>
+              <span style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(totals.totalCommission)} / {fmtFull$(COMMISSION_GOAL)}</span>
             </div>
-            <div style={{ height: 14, background: "#252A3A", borderRadius: 7, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${Math.min(totals.totalCommission / COMMISSION_GOAL * 100, 100)}%`, background: totals.totalCommission >= COMMISSION_GOAL ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)", borderRadius: 7, transition: "width 0.5s" }} />
+            <div style={{ height: 14, background: "var(--qs-border)", borderRadius: 7, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.min(totals.totalCommission / COMMISSION_GOAL * 100, 100)}%`, background: totals.totalCommission >= COMMISSION_GOAL ? "var(--qs-success)" : "linear-gradient(90deg, var(--qs-success), var(--qs-info))", borderRadius: 7, transition: "width 0.5s" }} />
             </div>
           </div>
           <table>
@@ -1594,9 +1594,9 @@ export default function RevenueProjectionsDashboard() {
             <tbody>
               {trendData.map(d => (
                 <tr key={d.name}>
-                  <td style={{ color: "#94A3B8" }}>{d.name}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#F1F5F9" }}>{fmtFull$(d.commission)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#EF4444" }}>{d.commission > 0 ? fmtPct(d.commission / COMMISSION_GOAL) : "—"}</td>
+                  <td style={{ color: "var(--qs-dim)" }}>{d.name}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "var(--qs-success)" : "var(--qs-bright)" }}>{fmtFull$(d.commission)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "var(--qs-success)" : "var(--qs-danger)" }}>{d.commission > 0 ? fmtPct(d.commission / COMMISSION_GOAL) : "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -1609,11 +1609,11 @@ export default function RevenueProjectionsDashboard() {
         <DrillDownModal title="Written Premium Volume" onClose={closeModal}>
           <div style={{ marginBottom: 20 }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8, fontSize: 13 }}>
-              <span style={{ color: "#94A3B8" }}>Written Premium Volume</span>
-              <span style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(totals.totalPremium)} / {fmtFull$(PREMIUM_GOAL)}</span>
+              <span style={{ color: "var(--qs-dim)" }}>Written Premium Volume</span>
+              <span style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(totals.totalPremium)} / {fmtFull$(PREMIUM_GOAL)}</span>
             </div>
-            <div style={{ height: 14, background: "#252A3A", borderRadius: 7, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${Math.min(totals.totalPremium / PREMIUM_GOAL * 100, 100)}%`, background: "linear-gradient(90deg, #3B82F6, #8B5CF6)", borderRadius: 7, transition: "width 0.5s" }} />
+            <div style={{ height: 14, background: "var(--qs-border)", borderRadius: 7, overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${Math.min(totals.totalPremium / PREMIUM_GOAL * 100, 100)}%`, background: "linear-gradient(90deg, var(--qs-info), var(--qs-purple))", borderRadius: 7, transition: "width 0.5s" }} />
             </div>
           </div>
           <table>
@@ -1621,9 +1621,9 @@ export default function RevenueProjectionsDashboard() {
             <tbody>
               {trendData.map(d => (
                 <tr key={d.name}>
-                  <td style={{ color: "#94A3B8" }}>{d.name}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9" }}>{fmtFull$(d.premium)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.premium >= PREMIUM_GOAL ? "#10B981" : "#64748B" }}>{d.premium > 0 ? fmtPct(d.premium / PREMIUM_GOAL) : "—"}</td>
+                  <td style={{ color: "var(--qs-dim)" }}>{d.name}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-bright)" }}>{fmtFull$(d.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: d.premium >= PREMIUM_GOAL ? "var(--qs-success)" : "var(--qs-subtle)" }}>{d.premium > 0 ? fmtPct(d.premium / PREMIUM_GOAL) : "—"}</td>
                 </tr>
               ))}
             </tbody>
@@ -1634,16 +1634,16 @@ export default function RevenueProjectionsDashboard() {
       {/* KPI — Written Premium */}
       {modal === "kpi-written" && (
         <DrillDownModal title="Written Premium" onClose={closeModal}>
-          <div style={{ fontSize: 42, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(totals.totalPremium)}</div>
-          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>Total written premium · {rangeLabel}</div>
+          <div style={{ fontSize: 42, fontWeight: 700, color: "var(--qs-bright)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(totals.totalPremium)}</div>
+          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 24 }}>Total written premium · {rangeLabel}</div>
           <table>
             <thead><tr><th>Month</th><th>Premium</th><th>Commission</th></tr></thead>
             <tbody>
               {trendData.slice(-6).map(d => (
                 <tr key={d.name}>
-                  <td style={{ color: "#94A3B8" }}>{d.name}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(d.premium)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(d.commission)}</td>
+                  <td style={{ color: "var(--qs-dim)" }}>{d.name}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{fmtFull$(d.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>{fmtFull$(d.commission)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1654,17 +1654,17 @@ export default function RevenueProjectionsDashboard() {
       {/* KPI — Commission Earned */}
       {modal === "kpi-commission" && (
         <DrillDownModal title="Commission Earned" onClose={closeModal}>
-          <div style={{ fontSize: 42, fontWeight: 700, color: "#10B981", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(totals.totalCommission)}</div>
-          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"} · {rangeLabel}</div>
+          <div style={{ fontSize: 42, fontWeight: 700, color: "var(--qs-success)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{fmtFull$(totals.totalCommission)}</div>
+          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 24 }}>Blended rate: {totals.totalPremium > 0 ? fmtPct(totals.totalCommission / totals.totalPremium) : "—"} · {rangeLabel}</div>
           <table>
             <thead><tr><th>Product</th><th>Premium</th><th>Commission</th><th>Eff. Rate</th></tr></thead>
             <tbody>
               {Object.entries(totals.byProduct).filter(([,v]) => v.premium > 0).map(([key, val]) => (
                 <tr key={key}>
                   <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{fmtPct(val.commission / val.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{fmtFull$(val.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>{fmtFull$(val.commission)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>{fmtPct(val.commission / val.premium)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1675,17 +1675,17 @@ export default function RevenueProjectionsDashboard() {
       {/* KPI — Policies */}
       {modal === "kpi-policies" && (
         <DrillDownModal title="Policies Written" onClose={closeModal}>
-          <div style={{ fontSize: 42, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{filtered.reduce((s,e) => s + e.policyCount, 0)}</div>
-          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 24 }}>Total policies · {rangeLabel} · Avg premium: {filtered.length > 0 ? fmtFull$(totals.totalPremium / filtered.reduce((s,e) => s + e.policyCount, 0)) : "—"}</div>
+          <div style={{ fontSize: 42, fontWeight: 700, color: "var(--qs-bright)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>{filtered.reduce((s,e) => s + e.policyCount, 0)}</div>
+          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 24 }}>Total policies · {rangeLabel} · Avg premium: {filtered.length > 0 ? fmtFull$(totals.totalPremium / filtered.reduce((s,e) => s + e.policyCount, 0)) : "—"}</div>
           <table>
             <thead><tr><th>Product</th><th>Policies</th><th>Premium</th><th>Commission</th></tr></thead>
             <tbody>
               {Object.entries(totals.byProduct).filter(([,v]) => v.count > 0).map(([key, val]) => (
                 <tr key={key}>
                   <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{val.count}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{val.count}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{fmtFull$(val.premium)}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>{fmtFull$(val.commission)}</td>
                 </tr>
               ))}
             </tbody>
@@ -1704,14 +1704,14 @@ export default function RevenueProjectionsDashboard() {
         return (
           <DrillDownModal title="VC Baseline" onClose={closeModal}>
             {/* Total + progress bar */}
-            <div style={{ fontSize: 42, fontWeight: 700, color: onTrack ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
-              {vcBaselineCount} <span style={{ fontSize: 20, color: "#64748B" }}>/ {VC_BASELINE_TARGET}</span>
+            <div style={{ fontSize: 42, fontWeight: 700, color: onTrack ? "var(--qs-success)" : "var(--qs-warning)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+              {vcBaselineCount} <span style={{ fontSize: 20, color: "var(--qs-subtle)" }}>/ {VC_BASELINE_TARGET}</span>
             </div>
-            <div style={{ fontSize: 13, color: "#64748B", marginBottom: 12 }}>
+            <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 12 }}>
               Auto + HO items · {rangeLabel}
             </div>
-            <div style={{ height: 8, background: "#252A3A", borderRadius: 4, overflow: "hidden", marginBottom: 24 }}>
-              <div style={{ height: "100%", width: `${pct * 100}%`, background: onTrack ? "#10B981" : "#F59E0B", borderRadius: 4, transition: "width 0.4s" }} />
+            <div style={{ height: 8, background: "var(--qs-border)", borderRadius: 4, overflow: "hidden", marginBottom: 24 }}>
+              <div style={{ height: "100%", width: `${pct * 100}%`, background: onTrack ? "var(--qs-success)" : "var(--qs-warning)", borderRadius: 4, transition: "width 0.4s" }} />
             </div>
 
             {/* Auto vs HO breakdown */}
@@ -1726,20 +1726,20 @@ export default function RevenueProjectionsDashboard() {
               </thead>
               <tbody>
                 <tr>
-                  <td><span style={{ background: "#3B82F622", color: "#3B82F6", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>Auto</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>
+                  <td><span style={{ background: "#3B82F622", color: "var(--qs-info)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>Auto</span></td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>
                     {filtered.filter(e => e.product === "auto").length}
                   </td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0", fontWeight: 700 }}>{autoItems}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>✓</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)", fontWeight: 700 }}>{autoItems}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>✓</td>
                 </tr>
                 <tr>
-                  <td><span style={{ background: "#10B98122", color: "#10B981", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>HO / Condo</span></td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>
+                  <td><span style={{ background: "#10B98122", color: "var(--qs-success)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>HO / Condo</span></td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>
                     {filtered.filter(e => e.product === "ho").length}
                   </td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0", fontWeight: 700 }}>{hoItems}</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>✓</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)", fontWeight: 700 }}>{hoItems}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>✓</td>
                 </tr>
                 {/* Non-VC products for reference */}
                 {["renters","landlord","specialty_auto","pup","manufactured","other"].map(key => {
@@ -1752,10 +1752,10 @@ export default function RevenueProjectionsDashboard() {
                   }[key];
                   return (
                     <tr key={key} style={{ opacity: 0.5 }}>
-                      <td><span style={{ background: "#33415522", color: "#64748B", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{label}</span></td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{policies.length}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{items}</td>
-                      <td style={{ color: "#334155" }}>—</td>
+                      <td><span style={{ background: "#33415522", color: "var(--qs-subtle)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>{label}</span></td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>{policies.length}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>{items}</td>
+                      <td style={{ color: "var(--qs-muted)" }}>—</td>
                     </tr>
                   );
                 })}
@@ -1763,7 +1763,7 @@ export default function RevenueProjectionsDashboard() {
             </table>
 
             {!onTrack && (
-              <div style={{ marginTop: 16, fontSize: 12, color: "#F59E0B", background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
+              <div style={{ marginTop: 16, fontSize: 12, color: "var(--qs-warning)", background: "#F59E0B11", borderRadius: 6, padding: "8px 12px" }}>
                 {VC_BASELINE_TARGET - vcBaselineCount} more Auto/HO items needed to hit baseline
               </div>
             )}
@@ -1792,10 +1792,10 @@ export default function RevenueProjectionsDashboard() {
         return (
           <DrillDownModal title="Portfolio Points" onClose={closeModal}>
             {/* Total points + MoM */}
-            <div style={{ fontSize: 42, fontWeight: 700, color: "#F1F5F9", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+            <div style={{ fontSize: 42, fontWeight: 700, color: "var(--qs-bright)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
               {totalPoints}
             </div>
-            <div style={{ fontSize: 13, color: pointsDelta >= 0 ? "#10B981" : "#EF4444", marginBottom: 24 }}>
+            <div style={{ fontSize: 13, color: pointsDelta >= 0 ? "var(--qs-success)" : "var(--qs-danger)", marginBottom: 24 }}>
               {pointsDelta >= 0 ? `+${pointsDelta}` : pointsDelta} pts vs prior month · {rangeLabel}
             </div>
 
@@ -1814,37 +1814,37 @@ export default function RevenueProjectionsDashboard() {
                 {rows.map(([key, val]) => (
                   <tr key={key}>
                     <td>
-                      <span style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] ?? "#64748B", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
+                      <span style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] ?? "var(--qs-subtle)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>
                         {PRODUCT_LABELS[key] ?? key}
                       </span>
                     </td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>{val.policies}</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{val.items}</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{PORTFOLIO_POINTS[key] ?? 0}</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9", fontWeight: 700 }}>{val.points}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-dim)" }}>{val.policies}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{val.items}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>{PORTFOLIO_POINTS[key] ?? 0}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-bright)", fontWeight: 700 }}>{val.points}</td>
                   </tr>
                 ))}
                 {/* Totals row */}
-                <tr style={{ borderTop: "1px solid #252A3A" }}>
-                  <td style={{ color: "#F1F5F9", fontWeight: 600 }}>Total</td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>
+                <tr style={{ borderTop: "1px solid var(--qs-border)" }}>
+                  <td style={{ color: "var(--qs-bright)", fontWeight: 600 }}>Total</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-dim)" }}>
                     {rows.reduce((s, [, v]) => s + v.policies, 0)}
                   </td>
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>
                     {rows.reduce((s, [, v]) => s + v.items, 0)}
                   </td>
                   <td />
-                  <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981", fontWeight: 700 }}>{totalPoints}</td>
+                  <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)", fontWeight: 700 }}>{totalPoints}</td>
                 </tr>
               </tbody>
             </table>
 
             {/* Prior month comparison */}
             {priorPoints > 0 && (
-              <div style={{ marginTop: 16, fontSize: 12, color: "#64748B", borderTop: "1px solid #1A1D27", paddingTop: 12 }}>
-                Prior month: <span style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>{priorPoints} pts</span>
+              <div style={{ marginTop: 16, fontSize: 12, color: "var(--qs-subtle)", borderTop: "1px solid var(--qs-elevated)", paddingTop: 12 }}>
+                Prior month: <span style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-dim)" }}>{priorPoints} pts</span>
                 &nbsp;·&nbsp;
-                Net: <span style={{ fontFamily: "'DM Mono', monospace", color: pointsDelta >= 0 ? "#10B981" : "#EF4444" }}>
+                Net: <span style={{ fontFamily: "'DM Mono', monospace", color: pointsDelta >= 0 ? "var(--qs-success)" : "var(--qs-danger)" }}>
                   {pointsDelta >= 0 ? `+${pointsDelta}` : pointsDelta}
                 </span>
               </div>
@@ -1858,23 +1858,23 @@ export default function RevenueProjectionsDashboard() {
         <DrillDownModal title={modalMode === "premium" ? "Written Premium Goal" : "Commission Revenue Goal"} onClose={closeModal}>
           {modalMode === "premium" ? (
             <>
-              <div style={{ fontSize: 42, fontWeight: 700, color: "#3B82F6", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+              <div style={{ fontSize: 42, fontWeight: 700, color: "var(--qs-info)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
                 {Math.round((totals.totalPremium / PREMIUM_GOAL) * 100)}%
               </div>
-              <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
+              <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 16 }}>
                 {fmtFull$(totals.totalPremium)} written of {fmtFull$(PREMIUM_GOAL)} goal · {rangeLabel}
               </div>
-              <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
-                <div style={{ height: "100%", width: `${Math.min(totals.totalPremium / PREMIUM_GOAL * 100, 100)}%`, background: "linear-gradient(90deg, #3B82F6, #8B5CF6)", borderRadius: 5 }} />
+              <div style={{ height: 10, background: "var(--qs-border)", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
+                <div style={{ height: "100%", width: `${Math.min(totals.totalPremium / PREMIUM_GOAL * 100, 100)}%`, background: "linear-gradient(90deg, var(--qs-info), var(--qs-purple))", borderRadius: 5 }} />
               </div>
               <table>
                 <thead><tr><th>Month</th><th>Premium</th><th>Goal %</th></tr></thead>
                 <tbody>
                   {trendData.slice(-6).map(d => (
                     <tr key={d.name}>
-                      <td style={{ color: "#94A3B8" }}>{d.name}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(d.premium)}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.premium >= PREMIUM_GOAL ? "#10B981" : "#64748B" }}>
+                      <td style={{ color: "var(--qs-dim)" }}>{d.name}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{fmtFull$(d.premium)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.premium >= PREMIUM_GOAL ? "var(--qs-success)" : "var(--qs-subtle)" }}>
                         {d.premium > 0 ? fmtPct(d.premium / PREMIUM_GOAL) : "—"}
                       </td>
                     </tr>
@@ -1884,23 +1884,23 @@ export default function RevenueProjectionsDashboard() {
             </>
           ) : (
             <>
-              <div style={{ fontSize: 42, fontWeight: 700, color: commissionGoalPct >= 1 ? "#10B981" : "#F59E0B", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+              <div style={{ fontSize: 42, fontWeight: 700, color: commissionGoalPct >= 1 ? "var(--qs-success)" : "var(--qs-warning)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
                 {Math.round(commissionGoalPct * 100)}%
               </div>
-              <div style={{ fontSize: 13, color: "#64748B", marginBottom: 16 }}>
+              <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 16 }}>
                 {fmtFull$(totals.totalCommission)} earned of {fmtFull$(COMMISSION_GOAL)} goal · {rangeLabel}
               </div>
-              <div style={{ height: 10, background: "#252A3A", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
-                <div style={{ height: "100%", width: `${Math.min(commissionGoalPct * 100, 100)}%`, background: commissionGoalPct >= 1 ? "#10B981" : "linear-gradient(90deg, #10B981, #3B82F6)", borderRadius: 5 }} />
+              <div style={{ height: 10, background: "var(--qs-border)", borderRadius: 5, overflow: "hidden", marginBottom: 24 }}>
+                <div style={{ height: "100%", width: `${Math.min(commissionGoalPct * 100, 100)}%`, background: commissionGoalPct >= 1 ? "var(--qs-success)" : "linear-gradient(90deg, var(--qs-success), var(--qs-info))", borderRadius: 5 }} />
               </div>
               <table>
                 <thead><tr><th>Month</th><th>Commission</th><th>Goal %</th></tr></thead>
                 <tbody>
                   {trendData.slice(-6).map(d => (
                     <tr key={d.name}>
-                      <td style={{ color: "#94A3B8" }}>{d.name}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#E2E8F0" }}>{fmtFull$(d.commission)}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "#10B981" : "#EF4444" }}>
+                      <td style={{ color: "var(--qs-dim)" }}>{d.name}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "var(--qs-success)" : "var(--qs-text)" }}>{fmtFull$(d.commission)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: d.commission >= COMMISSION_GOAL ? "var(--qs-success)" : "var(--qs-danger)" }}>
                         {d.commission > 0 ? fmtPct(d.commission / COMMISSION_GOAL) : "—"}
                       </td>
                     </tr>
@@ -1918,21 +1918,21 @@ export default function RevenueProjectionsDashboard() {
           title={modalMode === "commission" ? "Projected Commission" : "Projected Premium"}
           onClose={closeModal}
         >
-          <div style={{ fontSize: 40, fontWeight: 700, color: modalMode === "commission" ? (pace.onPace ? "#10B981" : "#F59E0B") : "#3B82F6", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
+          <div style={{ fontSize: 40, fontWeight: 700, color: modalMode === "commission" ? (pace.onPace ? "var(--qs-success)" : "var(--qs-warning)") : "var(--qs-info)", fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
             {modalMode === "commission" ? fmtFull$(pace.projectedCommission) : fmtFull$(pace.projectedPremium)}
           </div>
-          <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>
+          <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
             {pace.onPace ? "↑ On pace" : "↓ Behind pace"} · Biz day {pace.elapsed}/{pace.totalDays} · projected by month-end
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {[
-              { label: "Commission Earned",    value: fmtFull$(totals.totalCommission),   color: "#10B981" },
-              { label: "Projected Commission", value: fmtFull$(pace.projectedCommission), color: pace.onPace ? "#10B981" : "#F59E0B" },
-              { label: "Premium Written",      value: fmtFull$(totals.totalPremium),      color: "#E2E8F0" },
-              { label: "Projected Premium",    value: fmtFull$(pace.projectedPremium),    color: "#3B82F6" },
+              { label: "Commission Earned",    value: fmtFull$(totals.totalCommission),   color: "var(--qs-success)" },
+              { label: "Projected Commission", value: fmtFull$(pace.projectedCommission), color: pace.onPace ? "var(--qs-success)" : "var(--qs-warning)" },
+              { label: "Premium Written",      value: fmtFull$(totals.totalPremium),      color: "var(--qs-text)" },
+              { label: "Projected Premium",    value: fmtFull$(pace.projectedPremium),    color: "var(--qs-info)" },
             ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: "#1A1D27", borderRadius: 10, padding: "14px 16px", border: "1px solid #252A3A" }}>
-                <div style={{ fontSize: 11, color: "#64748B", marginBottom: 6 }}>{label}</div>
+              <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--qs-border)" }}>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 6 }}>{label}</div>
                 <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -1943,9 +1943,9 @@ export default function RevenueProjectionsDashboard() {
       {/* Daily Target drill-down */}
       {modal === "daily" && dailyTarget && (() => {
         const dailyModes = {
-          commission: { label: "DAILY TARGET",         value: fmtFull$(dailyTarget.dailyCommissionNeeded),          unit: "commission / day", color: "#F59E0B" },
-          premium:    { label: "DAILY PREMIUM TARGET", value: fmtFull$(dailyTarget.dailyPremiumNeeded),             unit: "premium / day",    color: "#3B82F6" },
-          policies:   { label: "POLICIES / DAY",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", unit: "policies needed",  color: "#10B981" },
+          commission: { label: "DAILY TARGET",         value: fmtFull$(dailyTarget.dailyCommissionNeeded),          unit: "commission / day", color: "var(--qs-warning)" },
+          premium:    { label: "DAILY PREMIUM TARGET", value: fmtFull$(dailyTarget.dailyPremiumNeeded),             unit: "premium / day",    color: "var(--qs-info)" },
+          policies:   { label: "POLICIES / DAY",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", unit: "policies needed",  color: "var(--qs-success)" },
         };
         const active = dailyModes[modalMode] ?? dailyModes.commission;
         return (
@@ -1960,24 +1960,24 @@ export default function RevenueProjectionsDashboard() {
             <div style={{ fontSize: 40, fontWeight: 700, color: active.color, fontFamily: "'DM Mono', monospace", marginBottom: 4 }}>
               {active.value}
             </div>
-            <div style={{ fontSize: 13, color: "#64748B", marginBottom: 20 }}>
+            <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
               {active.unit} · {dailyTarget.remaining} business days left
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[
-                { label: "Commission Remaining", value: fmtFull$(dailyTarget.commissionRemaining), color: "#F59E0B" },
-                { label: "Premium Remaining",    value: fmtFull$(dailyTarget.premiumRemaining),    color: "#3B82F6" },
-                { label: "Daily Premium Needed", value: fmtFull$(dailyTarget.dailyPremiumNeeded),  color: "#E2E8F0" },
-                { label: "Policies / Day",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", color: "#10B981" },
+                { label: "Commission Remaining", value: fmtFull$(dailyTarget.commissionRemaining), color: "var(--qs-warning)" },
+                { label: "Premium Remaining",    value: fmtFull$(dailyTarget.premiumRemaining),    color: "var(--qs-info)" },
+                { label: "Daily Premium Needed", value: fmtFull$(dailyTarget.dailyPremiumNeeded),  color: "var(--qs-text)" },
+                { label: "Policies / Day",       value: dailyTarget.policiesPerDayNeeded?.toFixed(1) ?? "—", color: "var(--qs-success)" },
               ].map(({ label, value, color }) => (
-                <div key={label} style={{ background: "#1A1D27", borderRadius: 10, padding: "14px 16px", border: "1px solid #252A3A" }}>
-                  <div style={{ fontSize: 11, color: "#64748B", marginBottom: 6 }}>{label}</div>
+                <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 10, padding: "14px 16px", border: "1px solid var(--qs-border)" }}>
+                  <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 6 }}>{label}</div>
                   <div style={{ fontSize: 20, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
                 </div>
               ))}
             </div>
             {dailyTarget.avgCommissionPerPolicy && (
-              <div style={{ fontSize: 12, color: "#334155", marginTop: 16 }}>
+              <div style={{ fontSize: 12, color: "var(--qs-muted)", marginTop: 16 }}>
                 Based on {dailyTarget.totalPolicies} policies · avg {fmtFull$(dailyTarget.avgCommissionPerPolicy)} commission · {fmtFull$(dailyTarget.avgPremiumPerPolicy)} premium per policy
               </div>
             )}
@@ -2063,34 +2063,34 @@ export default function RevenueProjectionsDashboard() {
                 label: "BLENDED RATE",
                 value: statsBlendedRate != null ? fmtPct(statsBlendedRate) : "—",
                 sub: `${statsPolicyCount} policies · ${statsItemCount} items`,
-                color: "#10B981",
+                color: "var(--qs-success)",
               },
               {
                 label: "TOTAL ITEMS",
                 value: String(statsItemCount),
                 sub: `${statsPolicyCount} policies`,
-                color: "#3B82F6",
+                color: "var(--qs-info)",
               },
               {
                 label: "AVG COMMISSION / POLICY",
                 value: statsPolicyCount > 0 ? fmtFull$(statsCommission / statsPolicyCount) : "—",
                 sub: "commission ÷ policies",
-                color: "#3B82F6",
+                color: "var(--qs-info)",
               },
               {
                 label: "PREMIUM",
                 value: fmtFull$(statsPremium),
                 sub: statsPremiumShare != null ? `${(statsPremiumShare * 100).toFixed(1)}% of total` : "—",
-                color: "#F59E0B",
+                color: "var(--qs-warning)",
               },
               {
                 label: "COMMISSION",
                 value: fmtFull$(statsCommission),
                 sub: statsCommissionShare != null ? `${(statsCommissionShare * 100).toFixed(1)}% of total` : "—",
-                color: "#10B981",
+                color: "var(--qs-success)",
               },
             ].map(({ label, value, sub, color }) => (
-              <div key={label} style={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 10, padding: "14px 18px", flex: "1 1 130px", minWidth: 120 }}>
+              <div key={label} style={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 10, padding: "14px 18px", flex: "1 1 130px", minWidth: 120 }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: "#475569", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>{label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
                 <div style={{ fontSize: 11, color: "#475569", marginTop: 3 }}>{sub}</div>
@@ -2132,14 +2132,14 @@ export default function RevenueProjectionsDashboard() {
                   return (
                     <tr key={key}>
                       <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(val.premium)}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8", fontWeight: 600 }}>{pct}%</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(val.commission)}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{fmtPct(val.commission / val.premium)}</td>
-                      <td style={{ color: "#E2E8F0" }}>{val.count}</td>
-                      <td style={{ color: "#64748B" }}>{val.itemCount ?? val.count}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#64748B" }}>{avgPrem}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", color: "#94A3B8" }}>{val.itemCount > 0 ? fmtFull$(Math.round(val.premium / val.itemCount)) : "—"}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{fmtFull$(val.premium)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-dim)", fontWeight: 600 }}>{pct}%</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>{fmtFull$(val.commission)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>{fmtPct(val.commission / val.premium)}</td>
+                      <td style={{ color: "var(--qs-text)" }}>{val.count}</td>
+                      <td style={{ color: "var(--qs-subtle)" }}>{val.itemCount ?? val.count}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>{avgPrem}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-dim)" }}>{val.itemCount > 0 ? fmtFull$(Math.round(val.premium / val.itemCount)) : "—"}</td>
                     </tr>
                   );
                 })}
@@ -2181,19 +2181,19 @@ export default function RevenueProjectionsDashboard() {
                 { label: "Policies",        value: producerTotals.policies },
                 { label: "Items",           value: producerTotals.items },
                 { label: "Premium",         value: fmtFull$(producerTotals.premium) },
-                { label: "Est. Commission", value: fmtFull$(producerTotals.commission), color: "#10B981" },
+                { label: "Est. Commission", value: fmtFull$(producerTotals.commission), color: "var(--qs-success)" },
                 { label: "Points",          value: producerTotals.points },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  <span style={{ fontSize: 11, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
-                  <span style={{ fontSize: 20, fontWeight: 700, color: color ?? "#F1F5F9" }}>{value}</span>
+                  <span style={{ fontSize: 11, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</span>
+                  <span style={{ fontSize: 20, fontWeight: 700, color: color ?? "var(--qs-bright)" }}>{value}</span>
                 </div>
               ))}
             </div>
 
             {/* CCC context note */}
             {producerModal === "CCC" && (
-              <p style={{ fontSize: 12, color: "#64748B", fontStyle: "italic", marginBottom: 16 }}>
+              <p style={{ fontSize: 12, color: "var(--qs-subtle)", fontStyle: "italic", marginBottom: 16 }}>
                 Policies bound via Allstate Call Center — not attributed to an agency producer.
               </p>
             )}
@@ -2223,7 +2223,7 @@ export default function RevenueProjectionsDashboard() {
                       <tr key={entry.id}>
                         <td>
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: PRODUCT_COLORS[entry.product] ?? "#64748B", flexShrink: 0 }} />
+                            <span style={{ width: 8, height: 8, borderRadius: "50%", background: PRODUCT_COLORS[entry.product] ?? "var(--qs-subtle)", flexShrink: 0 }} />
                             {PRODUCT_LABELS[entry.product] ?? entry.product}
                           </span>
                         </td>
@@ -2236,27 +2236,27 @@ export default function RevenueProjectionsDashboard() {
                             {TIER_LABELS[entry.tier] ?? entry.tier ?? "—"}
                           </span>
                         </td>
-                        <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{entry.policyNo || "—"}</td>
-                        <td style={{ color: "#94A3B8", fontSize: 12 }}>{maskCustomerName(entry.customerName)}</td>
-                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{entry.itemCount ?? 1}</td>
-                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{fmtFull$(entry.premium)}</td>
-                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(comm)}</td>
-                        <td style={{ fontFamily: "'DM Mono', monospace", color: "#E2E8F0" }}>{pts}</td>
-                        <td style={{ color: "#94A3B8", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{issuedFmt}</td>
+                        <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{entry.policyNo || "—"}</td>
+                        <td style={{ color: "var(--qs-dim)", fontSize: 12 }}>{maskCustomerName(entry.customerName)}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{entry.itemCount ?? 1}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{fmtFull$(entry.premium)}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>{fmtFull$(comm)}</td>
+                        <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>{pts}</td>
+                        <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{issuedFmt}</td>
                       </tr>
                     );
                   })}
                 </tbody>
                 <tfoot>
                   <tr style={{ fontWeight: 700 }}>
-                    <td style={{ color: "#F1F5F9" }}>Total</td>
+                    <td style={{ color: "var(--qs-bright)" }}>Total</td>
                     <td>—</td>
                     <td>—</td>
                     <td>—</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9" }}>{producerTotals.items}</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9" }}>{fmtFull$(producerTotals.premium)}</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#10B981" }}>{fmtFull$(producerTotals.commission)}</td>
-                    <td style={{ fontFamily: "'DM Mono', monospace", color: "#F1F5F9" }}>{producerTotals.points}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-bright)" }}>{producerTotals.items}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-bright)" }}>{fmtFull$(producerTotals.premium)}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>{fmtFull$(producerTotals.commission)}</td>
+                    <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-bright)" }}>{producerTotals.points}</td>
                     <td>—</td>
                   </tr>
                 </tfoot>
