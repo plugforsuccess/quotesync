@@ -20,6 +20,10 @@ const RENEWAL_COMMISSION_RATES = {
 
 const EXCLUDED_PRODUCTS = new Set(['motor_club', 'other']);
 
+// Property follow always earns property bundled rate since
+// multi-line customers with property are by definition bundled.
+const PROPERTY_BUNDLED_RATE = 0.09;
+
 // Employment type presets
 const EMPLOYMENT_TYPES = [
   { key: 'full_time',  label: 'Full Time',  hours: 160, salaryFactor: 1.0,  description: '~160 hrs/mo' },
@@ -171,9 +175,6 @@ export default function ServiceStaffingTab({ agencyId }) {
     // Multi-line hidden exposure (based on total queue)
     const bundledAtRisk = Math.round(totalQueue * (bundledPct / 100));
     const propertyAtRisk = Math.round(bundledAtRisk * (propertyFollowPct / 100));
-    // Property follow always earns property bundled rate (9%) since
-    // multi-line customers with property are by definition bundled
-    const PROPERTY_BUNDLED_RATE = 0.09;
     const hiddenComm = propertyAtRisk * avgPremium * PROPERTY_BUNDLED_RATE;
     const trueCommAtRisk = (totalQueue * avgPremium * (commissionRate / 100)) + hiddenComm;
 
