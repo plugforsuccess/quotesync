@@ -9,6 +9,8 @@ import { useCanopyLauncher } from '../../../hooks/useCanopyLauncher';
 import { SESSION_KEYS } from '../../../hooks/useWizard';
 import { trackEvent } from '../../../lib/analytics';
 import AddressAutocomplete from '../../../components/AddressAutocomplete';
+import { TOP_VEHICLE_MAKES, ALL_VEHICLE_MAKES } from '../../../data/vehicleMakes';
+import { getModelsForMake } from '../../../data/vehicleModels';
 
 // ─── Shared UI Primitives ──────────────────────────────────────────
 
@@ -205,9 +207,55 @@ export function ZipStep({ value, onChange, onAutoAdvance, isTargetZip: isTargetZ
   );
 }
 
-// ─── Step 2: Own or Rent ───────────────────────────────────────────
+// ─── Step 2: Discount Qualifier (replaces OwnsHome + MaritalStatus + VehicleCount) ──
 
-export function OwnsHomeStep({ value, onChange, onAutoAdvance }) {
+export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers, multipleVehicles, onOwnsHomeChange, onMaritalStatusChange, onMultipleDriversChange, onMultipleVehiclesChange }) {
+  return (
+    <div>
+      <h2 className="font-black text-gray-900 text-2xl sm:text-3xl mb-6 text-center leading-tight">
+        Let&apos;s find you potential discounts.
+      </h2>
+      <div className="space-y-5 max-w-sm mx-auto">
+        {/* Own home */}
+        <div>
+          <p className="font-semibold text-gray-800 mb-2">Do you own your home?</p>
+          <div className="grid grid-cols-2 gap-3">
+            <ChoiceButton selected={ownsHome === true} onClick={() => onOwnsHomeChange(true)} className="w-full">YES</ChoiceButton>
+            <ChoiceButton selected={ownsHome === false} onClick={() => onOwnsHomeChange(false)} className="w-full">NO</ChoiceButton>
+          </div>
+        </div>
+        {/* Married */}
+        <div>
+          <p className="font-semibold text-gray-800 mb-2">Are you married?</p>
+          <div className="grid grid-cols-2 gap-3">
+            <ChoiceButton selected={maritalStatus === 'married'} onClick={() => onMaritalStatusChange('married')} className="w-full">YES</ChoiceButton>
+            <ChoiceButton selected={maritalStatus === 'single'} onClick={() => onMaritalStatusChange('single')} className="w-full">NO</ChoiceButton>
+          </div>
+        </div>
+        {/* Multiple drivers */}
+        <div>
+          <p className="font-semibold text-gray-800 mb-2">Multiple drivers in your household?</p>
+          <div className="grid grid-cols-2 gap-3">
+            <ChoiceButton selected={multipleDrivers === true} onClick={() => onMultipleDriversChange(true)} className="w-full">YES</ChoiceButton>
+            <ChoiceButton selected={multipleDrivers === false} onClick={() => onMultipleDriversChange(false)} className="w-full">NO</ChoiceButton>
+          </div>
+        </div>
+        {/* Multiple vehicles */}
+        <div>
+          <p className="font-semibold text-gray-800 mb-2">Multiple vehicles in your household?</p>
+          <div className="grid grid-cols-2 gap-3">
+            <ChoiceButton selected={multipleVehicles === true} onClick={() => onMultipleVehiclesChange(true)} className="w-full">YES</ChoiceButton>
+            <ChoiceButton selected={multipleVehicles === false} onClick={() => onMultipleVehiclesChange(false)} className="w-full">NO</ChoiceButton>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 2b: Veteran Status ───────────────────────────────────────
+
+export function VeteranStatusStep({ value, onChange, onAutoAdvance }) {
   const handleSelect = (val) => {
     onChange(val);
     setTimeout(() => onAutoAdvance?.(), 300);
@@ -215,18 +263,11 @@ export function OwnsHomeStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Do you own or rent your home?</StepHeading>
-      <StepDescription>Homeowners often qualify for bundled savings.</StepDescription>
-      <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
-        <ChoiceButton selected={value === true} onClick={() => handleSelect(true)}>
-          I Own
-        </ChoiceButton>
-        <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}>
-          I Rent
-        </ChoiceButton>
-        <ChoiceButton selected={value === 'other'} onClick={() => handleSelect('other')}>
-          Other
-        </ChoiceButton>
+      <StepHeading>Are you or anyone in your household an active military member or veteran?</StepHeading>
+      <StepDescription>This may qualify you for additional discounts.</StepDescription>
+      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+        <ChoiceButton selected={value === 'yes'} onClick={() => handleSelect('yes')}>Yes</ChoiceButton>
+        <ChoiceButton selected={value === 'no'} onClick={() => handleSelect('no')}>No</ChoiceButton>
       </div>
     </div>
   );
@@ -306,21 +347,270 @@ export function EarlyPhoneStep({ value, onChange, onSkip }) {
   );
 }
 
-// ─── Step 5a: Current Auto Carrier ─────────────────────────────────
+// ─── Carrier Data ──────────────────────────────────────────────────
 
-const AUTO_CARRIERS = [
-  { label: 'State Farm', value: 'state_farm' },
-  { label: 'GEICO', value: 'geico' },
-  { label: 'Progressive', value: 'progressive' },
-  { label: 'Allstate', value: 'allstate' },
-  { label: 'Farmers', value: 'farmers' },
-  { label: 'GA Farm Bureau', value: 'farm_bureau' },
-  { label: 'USAA', value: 'usaa' },
-  { label: 'Other', value: 'other' },
-  { label: 'None', value: 'none' },
+export const AUTO_TOP_CARRIERS = [
+  { value: 'state_farm',  label: 'State Farm',     logo: '/logos/state-farm.svg' },
+  { value: 'geico',       label: 'GEICO',          logo: '/logos/geico.svg' },
+  { value: 'progressive', label: 'Progressive',    logo: '/logos/progressive.svg' },
+  { value: 'allstate',    label: 'Allstate',       logo: '/logos/allstate.svg' },
+  { value: 'farmers',     label: 'Farmers',        logo: '/logos/farmers.svg' },
+  { value: 'usaa',        label: 'USAA',           logo: '/logos/usaa.svg' },
+  { value: 'liberty',     label: 'Liberty Mutual', logo: '/logos/liberty.svg' },
+  { value: 'nationwide',  label: 'Nationwide',     logo: '/logos/nationwide.svg' },
+  { value: 'farm_bureau', label: 'GA Farm Bureau', logo: '/logos/farm-bureau.svg' },
+  { value: 'travelers',   label: 'Travelers',      logo: '/logos/travelers.svg' },
 ];
 
-export function CurrentAutoCarrierStep({ value, onChange, onAutoAdvance }) {
+export const AUTO_SECOND_TIER = [
+  'AAA', 'Bristol West', 'Dairyland', 'Elephant', 'Esurance',
+  'Gainsco', 'Infinity', 'Kemper', 'Mercury', 'MetLife',
+  'National General', 'Safeco', 'Safe Auto', 'The General',
+  '21st Century', 'Affirmative', 'Clearcover', 'Lemonade Auto', 'Root', 'Mile Auto',
+];
+
+export const HOME_TOP_CARRIERS = [
+  { value: 'state_farm',  label: 'State Farm',     logo: '/logos/state-farm.svg' },
+  { value: 'allstate',    label: 'Allstate',       logo: '/logos/allstate.svg' },
+  { value: 'liberty',     label: 'Liberty Mutual', logo: '/logos/liberty.svg' },
+  { value: 'farmers',     label: 'Farmers',        logo: '/logos/farmers.svg' },
+  { value: 'usaa',        label: 'USAA',           logo: '/logos/usaa.svg' },
+  { value: 'nationwide',  label: 'Nationwide',     logo: '/logos/nationwide.svg' },
+  { value: 'travelers',   label: 'Travelers',      logo: '/logos/travelers.svg' },
+  { value: 'farm_bureau', label: 'GA Farm Bureau', logo: '/logos/farm-bureau.svg' },
+];
+
+export const HOME_SECOND_TIER = [
+  'Amica', 'ASI', 'Chubb', 'Cincinnati', 'CSAA', 'Encompass',
+  'Kin', 'Openly', 'Hippo', 'Lemonade Home', 'Universal Property', 'Heritage',
+];
+
+export const RENTERS_TOP_CARRIERS = [
+  { value: 'state_farm',  label: 'State Farm',     logo: '/logos/state-farm.svg' },
+  { value: 'allstate',    label: 'Allstate',       logo: '/logos/allstate.svg' },
+  { value: 'progressive', label: 'Progressive',    logo: '/logos/progressive.svg' },
+  { value: 'geico',       label: 'GEICO',          logo: '/logos/geico.svg' },
+  { value: 'liberty',     label: 'Liberty Mutual', logo: '/logos/liberty.svg' },
+  { value: 'lemonade',    label: 'Lemonade',       logo: '/logos/lemonade.svg' },
+  { value: 'nationwide',  label: 'Nationwide',     logo: '/logos/nationwide.svg' },
+];
+
+export const RENTERS_SECOND_TIER = ['CSAA', 'Hippo', 'Jetty', 'Assurant', 'Toggle', 'Other'];
+
+// ─── Carrier Selection Step (logo cards + dropdown) ────────────────
+
+function CarrierLogoCard({ carrier, selected, onClick }) {
+  const [imgFailed, setImgFailed] = useState(false);
+  const isAllstate = carrier.value === 'allstate';
+  const borderColor = selected
+    ? isAllstate ? 'border-purple-500 bg-purple-50' : 'border-primary-500 bg-primary-50'
+    : 'border-gray-200 hover:border-gray-300';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 bg-white transition-all duration-200 cursor-pointer ${borderColor}`}
+    >
+      <div className="h-10 flex items-center justify-center mb-1.5">
+        {!imgFailed ? (
+          <img
+            src={carrier.logo}
+            alt={carrier.label}
+            className="max-h-10 max-w-full object-contain"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <span className={`text-xs font-bold px-2 py-1 rounded ${
+            isAllstate && selected ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+          }`}>
+            {carrier.label}
+          </span>
+        )}
+      </div>
+      <span className={`text-xs font-semibold uppercase tracking-wide ${
+        selected
+          ? isAllstate ? 'text-purple-700' : 'text-primary-700'
+          : 'text-gray-600'
+      }`}>
+        {carrier.label}
+      </span>
+    </button>
+  );
+}
+
+export function CarrierSelectionStep({ heading, topCarriers, secondTierLabels, value, onChange, onAutoAdvance }) {
+  const handleCardSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  const handleDropdownChange = (e) => {
+    const val = e.target.value;
+    if (val) {
+      onChange(val);
+      setTimeout(() => onAutoAdvance?.(), 300);
+    }
+  };
+
+  // Build dropdown value: if current value is a top carrier, show it; otherwise show the second-tier value
+  const isTopCarrier = topCarriers.some(c => c.value === value);
+  const dropdownValue = isTopCarrier ? '' : (value || '');
+
+  // All second tier + None
+  const dropdownOptions = [
+    ...secondTierLabels.map(label => ({ value: label.toLowerCase().replace(/\s+/g, '_'), label })),
+    { value: 'none', label: 'None' },
+  ];
+
+  return (
+    <div>
+      <StepHeading>{heading}</StepHeading>
+      <StepDescription>This helps us compare apples to apples.</StepDescription>
+
+      {/* Logo card grid */}
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
+        {topCarriers.map((carrier) => (
+          <CarrierLogoCard
+            key={carrier.value}
+            carrier={carrier}
+            selected={value === carrier.value}
+            onClick={() => handleCardSelect(carrier.value)}
+          />
+        ))}
+      </div>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-px bg-gray-200"></div>
+        <span className="text-xs text-gray-400 font-medium">or select a carrier below</span>
+        <div className="flex-1 h-px bg-gray-200"></div>
+      </div>
+
+      {/* Dropdown */}
+      <select
+        value={dropdownValue}
+        onChange={handleDropdownChange}
+        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-900 bg-white transition-colors focus:outline-none focus:ring-0 focus:border-primary-500 cursor-pointer"
+      >
+        <option value="">Other carrier...</option>
+        {dropdownOptions.map((opt) => (
+          <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ─── Premium Steps ─────────────────────────────────────────────────
+
+export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
+  const [display, setDisplay] = useState(() => value != null ? value.toLocaleString() : '');
+  const [hint, setHint] = useState(null);
+
+  const handleChange = (e) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    const num = raw ? parseInt(raw, 10) : null;
+    if (num !== null && num > 99999) {
+      setHint('Please enter your annual premium.');
+      return;
+    }
+    setHint(null);
+    setDisplay(num != null ? num.toLocaleString() : '');
+    onChange(num);
+  };
+
+  return (
+    <div>
+      <StepHeading>What are you currently paying for auto insurance?</StepHeading>
+      <StepDescription>Per year is fine — your best estimate works.</StepDescription>
+      <div className="max-w-[240px] mx-auto">
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">$</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={display}
+            onChange={handleChange}
+            placeholder="1,200"
+            autoFocus
+            className="w-full pl-10 pr-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500"
+          />
+        </div>
+        {hint && <p className="mt-2 text-sm text-amber-600 text-center">{hint}</p>}
+      </div>
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors bg-transparent border-0 cursor-pointer px-4 py-2 rounded-lg hover:bg-gray-100"
+        >
+          Not sure
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function CurrentHomePremiumStep({ value, onChange, onSkip }) {
+  const [display, setDisplay] = useState(() => value != null ? value.toLocaleString() : '');
+  const [hint, setHint] = useState(null);
+
+  const handleChange = (e) => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    const num = raw ? parseInt(raw, 10) : null;
+    if (num !== null && num > 99999) {
+      setHint('Please enter your annual premium.');
+      return;
+    }
+    setHint(null);
+    setDisplay(num != null ? num.toLocaleString() : '');
+    onChange(num);
+  };
+
+  return (
+    <div>
+      <StepHeading>What are you currently paying for home insurance?</StepHeading>
+      <StepDescription>Annual premium — check your dec page if you&apos;re not sure.</StepDescription>
+      <div className="max-w-[240px] mx-auto">
+        <div className="relative">
+          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400">$</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            value={display}
+            onChange={handleChange}
+            placeholder="1,200"
+            autoFocus
+            className="w-full pl-10 pr-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500"
+          />
+        </div>
+        {hint && <p className="mt-2 text-sm text-amber-600 text-center">{hint}</p>}
+      </div>
+      <div className="mt-4 text-center">
+        <button
+          type="button"
+          onClick={onSkip}
+          className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors bg-transparent border-0 cursor-pointer px-4 py-2 rounded-lg hover:bg-gray-100"
+        >
+          Not sure
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Coverage Lapse Step ───────────────────────────────────────────
+
+const COVERAGE_LAPSE_OPTIONS = [
+  { value: 'no_lapse', label: 'No lapse — currently insured' },
+  { value: 'under_30', label: 'Less than 30 days' },
+  { value: '30_to_90', label: '30 – 90 days' },
+  { value: 'over_90', label: 'Over 90 days' },
+  { value: 'never_insured', label: 'Never been insured' },
+];
+
+export function CoverageLapseStep({ value, onChange, onAutoAdvance }) {
   const handleSelect = (val) => {
     onChange(val);
     setTimeout(() => onAutoAdvance?.(), 300);
@@ -328,16 +618,14 @@ export function CurrentAutoCarrierStep({ value, onChange, onAutoAdvance }) {
 
   return (
     <div>
-      <StepHeading>Who is your current auto insurance carrier?</StepHeading>
-      <StepDescription>This helps us compare apples to apples.</StepDescription>
-      <div className="grid grid-cols-3 gap-3">
-        {AUTO_CARRIERS.map((opt) => (
+      <StepHeading>How long has it been since you were last insured?</StepHeading>
+      <StepDescription>Continuous coverage often qualifies for better rates.</StepDescription>
+      <div className="flex flex-col gap-3 max-w-sm mx-auto">
+        {COVERAGE_LAPSE_OPTIONS.map((opt) => (
           <ChoiceButton
             key={opt.value}
             selected={value === opt.value}
-            variant={value === opt.value && opt.value === 'allstate' ? 'purple' : 'default'}
             onClick={() => handleSelect(opt.value)}
-            className="text-sm"
           >
             {opt.label}
           </ChoiceButton>
@@ -347,96 +635,255 @@ export function CurrentAutoCarrierStep({ value, onChange, onAutoAdvance }) {
   );
 }
 
-// ─── Step 4b: Current Home Carrier ─────────────────────────────────
+// ─── Vehicle Year Step ─────────────────────────────────────────────
 
-const HOME_CARRIERS = [
-  { label: 'State Farm', value: 'state_farm' },
-  { label: 'Allstate', value: 'allstate' },
-  { label: 'Liberty Mutual', value: 'liberty_mutual' },
-  { label: 'Farmers', value: 'farmers' },
-  { label: 'GA Farm Bureau', value: 'farm_bureau' },
-  { label: 'Nationwide', value: 'nationwide' },
-  { label: 'USAA', value: 'usaa' },
-  { label: 'Other', value: 'other' },
-  { label: 'None', value: 'none' },
-];
+export function VehicleYearStep({ value, onChange, onAutoAdvance }) {
+  const currentYear = new Date().getFullYear();
+  const gridYears = Array.from({ length: currentYear + 2 - 1998 }, (_, i) => currentYear + 1 - i);
+  const [showOlderDropdown, setShowOlderDropdown] = useState(false);
+  const olderYears = Array.from({ length: 1997 - 1960 + 1 }, (_, i) => 1997 - i);
 
-export function CurrentHomeCarrierStep({ value, onChange, onAutoAdvance }) {
-  const handleSelect = (val) => {
-    onChange(val);
+  const handleSelect = (year) => {
+    onChange(year);
     setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  const handleDropdownChange = (e) => {
+    const year = parseInt(e.target.value, 10);
+    if (year) {
+      handleSelect(year);
+    }
   };
 
   return (
     <div>
-      <StepHeading>Who is your current home insurance carrier?</StepHeading>
-      <StepDescription>Knowing your current carrier helps us find real savings.</StepDescription>
-      <div className="grid grid-cols-3 gap-3">
-        {HOME_CARRIERS.map((opt) => (
-          <ChoiceButton
-            key={opt.value}
-            selected={value === opt.value}
-            variant={value === opt.value && opt.value === 'allstate' ? 'purple' : 'default'}
-            onClick={() => handleSelect(opt.value)}
-            className="text-sm"
+      <StepHeading>Choose your vehicle year</StepHeading>
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-4">
+        {gridYears.map((year) => (
+          <button
+            key={year}
+            type="button"
+            onClick={() => handleSelect(year)}
+            className={`py-2.5 px-2 rounded-xl border-2 font-semibold text-sm transition-all duration-200 text-center cursor-pointer ${
+              value === year
+                ? 'border-primary-500 bg-primary-50 text-primary-700 shadow-md'
+                : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50 bg-white shadow-sm'
+            }`}
           >
-            {opt.label}
-          </ChoiceButton>
+            {year}
+          </button>
         ))}
       </div>
-    </div>
-  );
-}
-
-// ─── Step 4c: Current Renters Carrier ──────────────────────────────
-
-const RENTERS_CARRIERS = [
-  { label: 'State Farm', value: 'state_farm' },
-  { label: 'Allstate', value: 'allstate' },
-  { label: 'GEICO', value: 'geico' },
-  { label: 'Progressive', value: 'progressive' },
-  { label: 'Lemonade', value: 'lemonade' },
-  { label: 'Other', value: 'other' },
-  { label: 'None', value: 'none' },
-];
-
-// UX-5: "None" centered in its own row below the main grid
-export function CurrentRentersCarrierStep({ value, onChange, onAutoAdvance }) {
-  const handleSelect = (val) => {
-    onChange(val);
-    setTimeout(() => onAutoAdvance?.(), 300);
-  };
-
-  const carriers = RENTERS_CARRIERS.filter(c => c.value !== 'none');
-
-  return (
-    <div>
-      <StepHeading>Who is your current renters insurance carrier?</StepHeading>
-      <StepDescription>This helps us compare apples to apples.</StepDescription>
-      <div className="max-w-sm mx-auto">
-        <div className="grid grid-cols-3 gap-3">
-          {carriers.map((opt) => (
-            <ChoiceButton
-              key={opt.value}
-              selected={value === opt.value}
-              variant={value === opt.value && opt.value === 'allstate' ? 'purple' : 'default'}
-              onClick={() => handleSelect(opt.value)}
-              className="text-sm"
-            >
-              {opt.label}
-            </ChoiceButton>
+      {!showOlderDropdown ? (
+        <button
+          type="button"
+          onClick={() => setShowOlderDropdown(true)}
+          className="w-full text-sm text-primary-600 hover:text-primary-700 font-medium py-2"
+        >
+          Enter other year
+        </button>
+      ) : (
+        <select
+          value={value && value < 1998 ? value : ''}
+          onChange={handleDropdownChange}
+          className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-900 bg-white transition-colors focus:outline-none focus:ring-0 focus:border-primary-500 cursor-pointer"
+        >
+          <option value="">Select year...</option>
+          {olderYears.map((y) => (
+            <option key={y} value={y}>{y}</option>
           ))}
-        </div>
-        {/* "None" centered below the grid */}
-        <div className="flex justify-center mt-3">
+        </select>
+      )}
+    </div>
+  );
+}
+
+// ─── Vehicle Make Step ─────────────────────────────────────────────
+
+function VehicleMakeLogoCard({ make, selected, onClick }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 bg-white transition-all duration-200 cursor-pointer ${
+        selected
+          ? 'border-primary-500 bg-primary-50'
+          : 'border-gray-200 hover:border-gray-300'
+      }`}
+    >
+      <div className="h-10 flex items-center justify-center mb-1.5">
+        {!imgFailed ? (
+          <img
+            src={make.logo}
+            alt={make.label}
+            className="max-h-10 max-w-full object-contain"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <span className="text-xs font-bold px-2 py-1 rounded bg-gray-100 text-gray-700">
+            {make.label}
+          </span>
+        )}
+      </div>
+      <span className={`text-xs font-semibold uppercase tracking-wide ${
+        selected ? 'text-primary-700' : 'text-gray-600'
+      }`}>
+        {make.label}
+      </span>
+    </button>
+  );
+}
+
+export function VehicleMakeStep({ value, onChange, onAutoAdvance }) {
+  const handleCardSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  const handleDropdownChange = (e) => {
+    const val = e.target.value;
+    if (val) {
+      onChange(val);
+      setTimeout(() => onAutoAdvance?.(), 300);
+    }
+  };
+
+  // Map top makes to their value for dropdown matching
+  const topMakeValues = TOP_VEHICLE_MAKES.map(m => m.value);
+  const isTopMake = topMakeValues.includes(value);
+  const dropdownValue = isTopMake ? '' : (value || '');
+
+  return (
+    <div>
+      <StepHeading>Choose your vehicle make</StepHeading>
+      <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-4">
+        {TOP_VEHICLE_MAKES.map((make) => (
+          <VehicleMakeLogoCard
+            key={make.value}
+            make={make}
+            selected={value === make.value}
+            onClick={() => handleCardSelect(make.value)}
+          />
+        ))}
+      </div>
+
+      <div className="flex items-center gap-3 mb-4">
+        <div className="flex-1 h-px bg-gray-200"></div>
+        <span className="text-xs text-gray-400 font-medium">or select below</span>
+        <div className="flex-1 h-px bg-gray-200"></div>
+      </div>
+
+      <select
+        value={dropdownValue}
+        onChange={handleDropdownChange}
+        className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-900 bg-white transition-colors focus:outline-none focus:ring-0 focus:border-primary-500 cursor-pointer"
+      >
+        <option value="">Other make...</option>
+        {ALL_VEHICLE_MAKES.map((name) => (
+          <option key={name} value={name.toLowerCase().replace(/[\s-]+/g, '_')}>{name}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+// ─── Vehicle Model Step ────────────────────────────────────────────
+
+export function VehicleModelStep({ make, value, onChange, onAutoAdvance }) {
+  const models = getModelsForMake(make);
+
+  const handleSelect = (model) => {
+    onChange(model);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>Choose your vehicle model</StepHeading>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-md mx-auto">
+        {models.map((model) => (
           <ChoiceButton
-            selected={value === 'none'}
-            onClick={() => handleSelect('none')}
-            className="text-sm px-8"
+            key={model}
+            selected={value === model}
+            onClick={() => handleSelect(model)}
+            className="text-sm"
           >
-            None
+            {model.toUpperCase()}
           </ChoiceButton>
-        </div>
+        ))}
+        <ChoiceButton
+          selected={value === 'Other'}
+          onClick={() => handleSelect('Other')}
+          className="text-sm"
+        >
+          OTHER
+        </ChoiceButton>
+      </div>
+    </div>
+  );
+}
+
+// ─── Vehicle Use Step ──────────────────────────────────────────────
+
+const VEHICLE_USE_OPTIONS = [
+  { value: 'commuting',  label: 'COMMUTING',           description: 'Driving yourself or a family member to work or school daily.' },
+  { value: 'pleasure',   label: 'PLEASURE',             description: 'Personal driving not related to work or business activities.' },
+  { value: 'business',   label: 'BUSINESS',             description: 'Driving related to job duties, excluding commercial use.' },
+  { value: 'commercial', label: 'COMMERCIAL',           description: 'Transporting goods, passengers, equipment, or visiting job sites.' },
+  { value: 'farming',    label: 'FARMING',              description: 'Vehicle used in agricultural operations on or around farm property.' },
+  { value: 'rideshare',  label: 'RIDESHARE & DELIVERY', description: 'App-based transportation like Uber/Lyft, DoorDash, Amazon Delivery.' },
+];
+
+export function VehicleUseStep({ vehicleLabel, value, onChange }) {
+  const toggleUse = (use) => {
+    const current = value || [];
+    if (current.includes(use)) {
+      onChange(current.filter(u => u !== use));
+    } else {
+      onChange([...current, use]);
+    }
+  };
+
+  return (
+    <div>
+      <StepHeading>What do you use your {vehicleLabel || 'vehicle'} for?</StepHeading>
+      <StepDescription>Select all that apply</StepDescription>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
+        {VEHICLE_USE_OPTIONS.map((opt) => {
+          const isSelected = value?.includes(opt.value);
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => toggleUse(opt.value)}
+              className={`relative text-left p-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
+                isSelected
+                  ? 'border-primary-500 bg-primary-50'
+                  : 'border-gray-200 hover:border-gray-300 bg-white'
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <div className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded border-2 flex items-center justify-center ${
+                  isSelected ? 'border-primary-500 bg-primary-500' : 'border-gray-300'
+                }`}>
+                  {isSelected && (
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <p className={`font-bold text-sm ${isSelected ? 'text-primary-700' : 'text-gray-800'}`}>
+                    {opt.label}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{opt.description}</p>
+                </div>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -505,64 +952,7 @@ export function HomeClaimsHistoryStep({ value, onChange, onAutoAdvance }) {
   );
 }
 
-// ─── Step 6: Vehicle Count ─────────────────────────────────────────
-
-export function VehicleCountStep({ value, onChange, onAutoAdvance }) {
-  const handleSelect = (val) => {
-    onChange(val);
-    setTimeout(() => onAutoAdvance?.(), 300);
-  };
-
-  return (
-    <div>
-      <StepHeading>How many vehicles do you insure?</StepHeading>
-      <StepDescription>Include all cars, trucks, and SUVs in your household.</StepDescription>
-      <div className="grid grid-cols-4 gap-3 max-w-sm mx-auto">
-        {[1, 2, 3, 4].map((count) => (
-          <ChoiceButton
-            key={count}
-            selected={value === count}
-            onClick={() => handleSelect(count)}
-          >
-            {count === 4 ? '4+' : count}
-          </ChoiceButton>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// ─── Step 7: Marital Status (NEW-1) ───────────────────────────────
-
-export function MaritalStatusStep({ value, onChange, onAutoAdvance }) {
-  const handleSelect = (val) => {
-    onChange(val);
-    setTimeout(() => onAutoAdvance?.(), 300);
-  };
-
-  return (
-    <div>
-      <StepHeading>What is your marital status?</StepHeading>
-      <StepDescription>Married drivers often qualify for lower rates.</StepDescription>
-      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-        {[
-          { label: 'Single', value: 'single' },
-          { label: 'Married', value: 'married' },
-          { label: 'Divorced', value: 'divorced' },
-          { label: 'Widowed', value: 'widowed' },
-        ].map((opt) => (
-          <ChoiceButton
-            key={opt.value}
-            selected={value === opt.value}
-            onClick={() => handleSelect(opt.value)}
-          >
-            {opt.label}
-          </ChoiceButton>
-        ))}
-      </div>
-    </div>
-  );
-}
+// VehicleCountStep and MaritalStatusStep removed — replaced by DiscountQualifierStep
 
 // ─── Step 8: Date of Birth ─────────────────────────────────────────
 

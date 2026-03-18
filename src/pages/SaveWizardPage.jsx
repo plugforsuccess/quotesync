@@ -10,16 +10,23 @@ import { buildZipValidator, getStateFromZip } from '../config/targetZips';
 import { useFunnelAgency } from '../hooks/useFunnelAgency';
 import {
   ZipStep,
-  OwnsHomeStep,
+  DiscountQualifierStep,
+  VeteranStatusStep,
   ProductIntentStep,
   EarlyPhoneStep,
-  CurrentAutoCarrierStep,
-  CurrentHomeCarrierStep,
-  CurrentRentersCarrierStep,
+  CarrierSelectionStep,
+  AUTO_TOP_CARRIERS, AUTO_SECOND_TIER,
+  HOME_TOP_CARRIERS, HOME_SECOND_TIER,
+  RENTERS_TOP_CARRIERS, RENTERS_SECOND_TIER,
+  CurrentAutoPremiumStep,
+  CurrentHomePremiumStep,
+  CoverageLapseStep,
+  VehicleYearStep,
+  VehicleMakeStep,
+  VehicleModelStep,
+  VehicleUseStep,
   AutoDrivingRecordStep,
   HomeClaimsHistoryStep,
-  VehicleCountStep,
-  MaritalStatusStep,
   DobStep,
   AddressStep,
   ContactStep,
@@ -73,6 +80,24 @@ function computeLeadScore(answers, utmParams) {
   else if (answers.maritalStatus === 'widowed') score += 5;
   else if (answers.maritalStatus === 'divorced') score += 3;
 
+  // Coverage lapse
+  if (answers.coverageLapse === 'no_lapse') score += 15;
+  else if (answers.coverageLapse === 'under_30') score += 5;
+  else if (answers.coverageLapse === '30_to_90') score -= 10;
+  else if (answers.coverageLapse === 'over_90') score -= 20;
+  else if (answers.coverageLapse === 'never_insured') score -= 25;
+
+  // Multiple drivers (positive signal — more products)
+  if (answers.multipleDrivers === true) score += 10;
+
+  // Vehicle use risk signals
+  if (answers.vehicleUse?.includes('rideshare')) score -= 10;
+  if (answers.vehicleUse?.includes('commercial')) score -= 15;
+
+  // Premium provided (engagement signal — lead knows their numbers)
+  if (answers.currentAutoPremium > 0) score += 5;
+  if (answers.currentHomePremium > 0) score += 5;
+
   const hour = new Date().getHours();
   if (hour >= 9 && hour <= 17) score += 10;
   if (utmParams?.utm_campaign) score += 5;
@@ -83,16 +108,22 @@ function computeLeadScore(answers, utmParams) {
 function hasValueForCurrentStep(stepId, answers) {
   switch (stepId) {
     case 'zip': return answers.zip?.length === 5;
-    case 'ownsHome': return answers.ownsHome != null;
+    case 'discountQualifier': return answers.ownsHome != null && answers.maritalStatus != null && answers.multipleDrivers != null && answers.vehicleCount != null;
+    case 'veteranStatus': return answers.veteranStatus != null;
     case 'productIntent': return answers.productIntent != null;
     case 'earlyPhone': return isValidPhone(answers.earlyPhone || '');
     case 'currentAutoCarrier': return answers.currentAutoCarrier != null;
     case 'currentHomeCarrier': return answers.currentHomeCarrier != null;
     case 'currentRentersCarrier': return answers.currentRentersCarrier != null;
+    case 'currentAutoPremium': return true;  // "Not sure" always allows advance
+    case 'currentHomePremium': return true;  // same
+    case 'coverageLapse': return answers.coverageLapse != null;
+    case 'vehicleYear': return answers.vehicleYear != null;
+    case 'vehicleMake': return answers.vehicleMake != null;
+    case 'vehicleModel': return answers.vehicleModel != null;
+    case 'vehicleUse': return answers.vehicleUse?.length > 0;
     case 'autoDrivingRecord': return answers.autoDrivingRecord != null;
     case 'homeClaimsHistory': return answers.homeClaimsHistory != null;
-    case 'vehicleCount': return answers.vehicleCount != null;
-    case 'maritalStatus': return answers.maritalStatus != null;
     case 'dob': return answers.dob?.length === 10;
     case 'address': return answers.street?.trim()?.length > 0 && answers.city?.trim()?.length > 0;
     case 'contact': return true;
@@ -138,7 +169,7 @@ export default function SaveWizardPage() {
     if (prefilledZip?.length === 5 && isTargetZip(prefilledZip) && !answers.zip) {
       setAnswer('zip', prefilledZip);
       insertPartialLead(prefilledZip);
-      setCurrentIndex(1); // Skip to step 2 (Own / Rent / Other)
+      setCurrentIndex(1); // Skip to step 2 (Discount Qualifier)
     }
   }, [funnelAgency]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -246,6 +277,15 @@ export default function SaveWizardPage() {
           city: answers.city?.trim() || null,
           marital_status: answers.maritalStatus || null,
           address_source: answers.addressSource || 'manual_entry',
+          vehicle_year: answers.vehicleYear,
+          vehicle_make: answers.vehicleMake,
+          vehicle_model: answers.vehicleModel,
+          vehicle_use: answers.vehicleUse,
+          coverage_lapse: answers.coverageLapse,
+          multiple_drivers: answers.multipleDrivers,
+          veteran_status: answers.veteranStatus,
+          current_auto_premium: answers.currentAutoPremium ?? null,
+          current_home_premium: answers.currentHomePremium ?? null,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('quotesync_session_id'),
@@ -317,9 +357,16 @@ export default function SaveWizardPage() {
     }
 
     // Progressive updates at key steps
-    if (stepId === 'ownsHome') {
-      const housingSituation = answers.ownsHome === true ? 'own' : answers.ownsHome === 'other' ? 'other' : 'rent';
-      updatePartialLead({ owns_home: answers.ownsHome === true, housing_situation: housingSituation });
+    if (stepId === 'discountQualifier') {
+      updatePartialLead({
+        owns_home: answers.ownsHome === true,
+        housing_situation: answers.ownsHome === true ? 'own' : answers.ownsHome === false ? 'rent' : 'other',
+        marital_status: answers.maritalStatus,
+        multiple_drivers: answers.multipleDrivers,
+        vehicle_count: answers.vehicleCount,
+      });
+    } else if (stepId === 'veteranStatus') {
+      updatePartialLead({ veteran_status: answers.veteranStatus });
     } else if (stepId === 'productIntent') {
       updatePartialLead({ product_intent: answers.productIntent });
     } else if (stepId === 'earlyPhone' && answers.earlyPhone && isValidPhone(answers.earlyPhone)) {
@@ -338,10 +385,20 @@ export default function SaveWizardPage() {
         auto_driving_record: answers.autoDrivingRecord,
         home_claims_history: answers.homeClaimsHistory,
       });
-    } else if (stepId === 'vehicleCount') {
-      updatePartialLead({ vehicle_count: answers.vehicleCount });
-    } else if (stepId === 'maritalStatus') {
-      updatePartialLead({ marital_status: answers.maritalStatus });
+    } else if (stepId === 'currentAutoPremium') {
+      updatePartialLead({ current_auto_premium: answers.currentAutoPremium ?? null });
+    } else if (stepId === 'currentHomePremium') {
+      updatePartialLead({ current_home_premium: answers.currentHomePremium ?? null });
+    } else if (stepId === 'coverageLapse') {
+      updatePartialLead({ coverage_lapse: answers.coverageLapse });
+    } else if (stepId === 'vehicleYear') {
+      updatePartialLead({ vehicle_year: answers.vehicleYear });
+    } else if (stepId === 'vehicleMake') {
+      updatePartialLead({ vehicle_make: answers.vehicleMake });
+    } else if (stepId === 'vehicleModel') {
+      updatePartialLead({ vehicle_model: answers.vehicleModel });
+    } else if (stepId === 'vehicleUse') {
+      updatePartialLead({ vehicle_use: answers.vehicleUse });
     } else if (stepId === 'address') {
       updatePartialLead({
         street_address: answers.street?.trim() || null,
@@ -418,11 +475,24 @@ export default function SaveWizardPage() {
             licensedStatesLabel={funnelAgency?.licensed_states?.join(', ') || 'Georgia'}
           />
         );
-      case 'ownsHome':
+      case 'discountQualifier':
         return (
-          <OwnsHomeStep
-            value={answers.ownsHome}
-            onChange={(v) => setAnswer('ownsHome', v)}
+          <DiscountQualifierStep
+            ownsHome={answers.ownsHome}
+            maritalStatus={answers.maritalStatus}
+            multipleDrivers={answers.multipleDrivers}
+            multipleVehicles={answers.vehicleCount >= 2}
+            onOwnsHomeChange={(v) => setAnswer('ownsHome', v)}
+            onMaritalStatusChange={(v) => setAnswer('maritalStatus', v)}
+            onMultipleDriversChange={(v) => setAnswer('multipleDrivers', v)}
+            onMultipleVehiclesChange={(v) => setAnswer('vehicleCount', v ? 2 : 1)}
+          />
+        );
+      case 'veteranStatus':
+        return (
+          <VeteranStatusStep
+            value={answers.veteranStatus}
+            onChange={(v) => setAnswer('veteranStatus', v)}
             onAutoAdvance={handleAutoAdvance}
           />
         );
@@ -446,7 +516,10 @@ export default function SaveWizardPage() {
         );
       case 'currentAutoCarrier':
         return (
-          <CurrentAutoCarrierStep
+          <CarrierSelectionStep
+            heading="Who is your current auto insurance carrier?"
+            topCarriers={AUTO_TOP_CARRIERS}
+            secondTierLabels={AUTO_SECOND_TIER}
             value={answers.currentAutoCarrier}
             onChange={(v) => setAnswer('currentAutoCarrier', v)}
             onAutoAdvance={handleAutoAdvance}
@@ -454,7 +527,10 @@ export default function SaveWizardPage() {
         );
       case 'currentHomeCarrier':
         return (
-          <CurrentHomeCarrierStep
+          <CarrierSelectionStep
+            heading="Who is your current home insurance carrier?"
+            topCarriers={HOME_TOP_CARRIERS}
+            secondTierLabels={HOME_SECOND_TIER}
             value={answers.currentHomeCarrier}
             onChange={(v) => setAnswer('currentHomeCarrier', v)}
             onAutoAdvance={handleAutoAdvance}
@@ -462,7 +538,10 @@ export default function SaveWizardPage() {
         );
       case 'currentRentersCarrier':
         return (
-          <CurrentRentersCarrierStep
+          <CarrierSelectionStep
+            heading="Who is your current renters insurance carrier?"
+            topCarriers={RENTERS_TOP_CARRIERS}
+            secondTierLabels={RENTERS_SECOND_TIER}
             value={answers.currentRentersCarrier}
             onChange={(v) => setAnswer('currentRentersCarrier', v)}
             onAutoAdvance={handleAutoAdvance}
@@ -484,20 +563,62 @@ export default function SaveWizardPage() {
             onAutoAdvance={handleAutoAdvance}
           />
         );
-      case 'vehicleCount':
+      case 'currentAutoPremium':
         return (
-          <VehicleCountStep
-            value={answers.vehicleCount}
-            onChange={(v) => setAnswer('vehicleCount', v)}
+          <CurrentAutoPremiumStep
+            value={answers.currentAutoPremium}
+            onChange={(v) => setAnswer('currentAutoPremium', v)}
+            onSkip={() => { setAnswer('currentAutoPremium', null); handleAutoAdvance(); }}
+          />
+        );
+      case 'currentHomePremium':
+        return (
+          <CurrentHomePremiumStep
+            value={answers.currentHomePremium}
+            onChange={(v) => setAnswer('currentHomePremium', v)}
+            onSkip={() => { setAnswer('currentHomePremium', null); handleAutoAdvance(); }}
+          />
+        );
+      case 'coverageLapse':
+        return (
+          <CoverageLapseStep
+            value={answers.coverageLapse}
+            onChange={(v) => setAnswer('coverageLapse', v)}
             onAutoAdvance={handleAutoAdvance}
           />
         );
-      case 'maritalStatus':
+      case 'vehicleYear':
         return (
-          <MaritalStatusStep
-            value={answers.maritalStatus}
-            onChange={(v) => setAnswer('maritalStatus', v)}
+          <VehicleYearStep
+            value={answers.vehicleYear}
+            onChange={(v) => setAnswer('vehicleYear', v)}
             onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'vehicleMake':
+        return (
+          <VehicleMakeStep
+            value={answers.vehicleMake}
+            onChange={(v) => { setAnswer('vehicleMake', v); setAnswer('vehicleModel', null); }}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'vehicleModel':
+        return (
+          <VehicleModelStep
+            make={answers.vehicleMake}
+            year={answers.vehicleYear}
+            value={answers.vehicleModel}
+            onChange={(v) => setAnswer('vehicleModel', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'vehicleUse':
+        return (
+          <VehicleUseStep
+            vehicleLabel={[answers.vehicleYear, answers.vehicleMake, answers.vehicleModel].filter(Boolean).join(' ')}
+            value={answers.vehicleUse}
+            onChange={(v) => setAnswer('vehicleUse', v)}
           />
         );
       case 'dob':

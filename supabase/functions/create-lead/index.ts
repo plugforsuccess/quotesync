@@ -420,6 +420,20 @@ Deno.serve(async (req) => {
           current_renters_carrier: body.current_renters_carrier || null,
           marital_status: body.marital_status || null,
           address_source: body.address_source || 'manual_entry',
+          // Enrichment fields
+          vehicle_year: body.vehicle_year ?? null,
+          vehicle_make: body.vehicle_make ?? null,
+          vehicle_model: body.vehicle_model ?? null,
+          vehicle_use: body.vehicle_use ?? null,
+          coverage_lapse: body.coverage_lapse ?? null,
+          multiple_drivers: body.multiple_drivers ?? null,
+          veteran_status: body.veteran_status ?? null,
+          current_auto_premium: body.current_auto_premium != null
+            ? parseInt(body.current_auto_premium, 10) || null
+            : null,
+          current_home_premium: body.current_home_premium != null
+            ? parseInt(body.current_home_premium, 10) || null
+            : null,
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -468,6 +482,20 @@ Deno.serve(async (req) => {
         current_renters_carrier: body.current_renters_carrier || null,
         marital_status: body.marital_status || null,
         address_source: body.address_source || 'manual_entry',
+        // Enrichment fields
+        vehicle_year: body.vehicle_year ?? null,
+        vehicle_make: body.vehicle_make ?? null,
+        vehicle_model: body.vehicle_model ?? null,
+        vehicle_use: body.vehicle_use ?? null,
+        coverage_lapse: body.coverage_lapse ?? null,
+        multiple_drivers: body.multiple_drivers ?? null,
+        veteran_status: body.veteran_status ?? null,
+        current_auto_premium: body.current_auto_premium != null
+          ? parseInt(body.current_auto_premium, 10) || null
+          : null,
+        current_home_premium: body.current_home_premium != null
+          ? parseInt(body.current_home_premium, 10) || null
+          : null,
       }
 
       const { data: newLead, error: leadError } = await supabase

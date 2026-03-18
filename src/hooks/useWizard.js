@@ -26,6 +26,15 @@ export const SESSION_KEYS = {
   EARLY_PHONE: 'qs_funnel_early_phone',
   PHONE_SKIPPED: 'qs_funnel_phone_skipped',
   CURRENT_STEP: 'qs_funnel_current_step',
+  VEHICLE_YEAR: 'qs_funnel_vehicle_year',
+  VEHICLE_MAKE: 'qs_funnel_vehicle_make',
+  VEHICLE_MODEL: 'qs_funnel_vehicle_model',
+  VEHICLE_USE: 'qs_funnel_vehicle_use',
+  COVERAGE_LAPSE: 'qs_funnel_coverage_lapse',
+  MULTIPLE_DRIVERS: 'qs_funnel_multiple_drivers',
+  VETERAN_STATUS: 'qs_funnel_veteran_status',
+  CURRENT_AUTO_PREMIUM: 'qs_funnel_current_auto_premium',
+  CURRENT_HOME_PREMIUM: 'qs_funnel_current_home_premium',
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -58,6 +67,15 @@ function restore() {
     addressSource: sessionStorage.getItem(SESSION_KEYS.ADDRESS_SOURCE) || null,
     earlyPhone: sessionStorage.getItem(SESSION_KEYS.EARLY_PHONE) || '',
     phoneSkipped: jp(sessionStorage.getItem(SESSION_KEYS.PHONE_SKIPPED), false),
+    vehicleYear: jp(sessionStorage.getItem(SESSION_KEYS.VEHICLE_YEAR), null),
+    vehicleMake: sessionStorage.getItem(SESSION_KEYS.VEHICLE_MAKE) || null,
+    vehicleModel: sessionStorage.getItem(SESSION_KEYS.VEHICLE_MODEL) || null,
+    vehicleUse: jp(sessionStorage.getItem(SESSION_KEYS.VEHICLE_USE), []),
+    coverageLapse: sessionStorage.getItem(SESSION_KEYS.COVERAGE_LAPSE) || null,
+    multipleDrivers: jp(sessionStorage.getItem(SESSION_KEYS.MULTIPLE_DRIVERS), null),
+    veteranStatus: sessionStorage.getItem(SESSION_KEYS.VETERAN_STATUS) || null,
+    currentAutoPremium: jp(sessionStorage.getItem(SESSION_KEYS.CURRENT_AUTO_PREMIUM), null),
+    currentHomePremium: jp(sessionStorage.getItem(SESSION_KEYS.CURRENT_HOME_PREMIUM), null),
   };
 }
 
@@ -85,6 +103,15 @@ function persistToSession(a) {
     [SESSION_KEYS.ADDRESS_SOURCE, a.addressSource],
     [SESSION_KEYS.EARLY_PHONE, a.earlyPhone],
     [SESSION_KEYS.PHONE_SKIPPED, a.phoneSkipped ? 'true' : null],
+    [SESSION_KEYS.VEHICLE_YEAR, a.vehicleYear !== null ? String(a.vehicleYear) : null],
+    [SESSION_KEYS.VEHICLE_MAKE, a.vehicleMake],
+    [SESSION_KEYS.VEHICLE_MODEL, a.vehicleModel],
+    [SESSION_KEYS.VEHICLE_USE, a.vehicleUse?.length ? JSON.stringify(a.vehicleUse) : null],
+    [SESSION_KEYS.COVERAGE_LAPSE, a.coverageLapse],
+    [SESSION_KEYS.MULTIPLE_DRIVERS, a.multipleDrivers !== null ? JSON.stringify(a.multipleDrivers) : null],
+    [SESSION_KEYS.VETERAN_STATUS, a.veteranStatus],
+    [SESSION_KEYS.CURRENT_AUTO_PREMIUM, a.currentAutoPremium !== null ? String(a.currentAutoPremium) : null],
+    [SESSION_KEYS.CURRENT_HOME_PREMIUM, a.currentHomePremium !== null ? String(a.currentHomePremium) : null],
   ];
   pairs.forEach(([k, v]) => {
     if (v != null && v !== '') {
@@ -99,58 +126,44 @@ function persistToSession(a) {
 
 /**
  * Compute the dynamic step sequence based on current answers.
- *
- * Step 1: zip
- * Step 2: ownsHome
- * Step 3: productIntent (options differ for owner vs renter)
- * Step 4: carrier(s) — conditional, skipped for "unsure"
- * Step 5: risk — conditional, skipped for renters / unsure
- * Step 6: vehicleCount — skipped for home-only
- * Step 7: maritalStatus
- * Step 8: dob
- * Step 9: address
- * Step 10: contact
- * Step 11: confirmation
+ * Enrichment v2: discountQualifier replaces ownsHome + maritalStatus + vehicleCount steps.
+ * New steps: veteranStatus, premium capture, coverage lapse, vehicle details.
  */
 export function computeStepSequence(answers) {
-  const steps = ['zip', 'ownsHome', 'productIntent', 'earlyPhone'];
+  const steps = ['zip', 'discountQualifier', 'veteranStatus', 'productIntent', 'earlyPhone'];
 
   const intent = answers.productIntent;
   const isOwner = answers.ownsHome === true;
 
-  // Step 4: Carriers
   if (intent === 'auto') {
-    steps.push('currentAutoCarrier');
+    steps.push(
+      'currentAutoCarrier', 'currentAutoPremium',
+      'coverageLapse',
+      'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
+      'autoDrivingRecord'
+    );
   } else if (intent === 'home' && isOwner) {
-    steps.push('currentHomeCarrier');
+    steps.push('currentHomeCarrier', 'currentHomePremium', 'homeClaimsHistory');
   } else if (intent === 'auto_renters') {
-    steps.push('currentAutoCarrier', 'currentRentersCarrier');
+    steps.push(
+      'currentAutoCarrier', 'currentAutoPremium',
+      'currentRentersCarrier',
+      'coverageLapse',
+      'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
+      'autoDrivingRecord'
+    );
   } else if (intent === 'bundle' && isOwner) {
-    steps.push('currentAutoCarrier', 'currentHomeCarrier');
+    steps.push(
+      'currentAutoCarrier', 'currentAutoPremium',
+      'currentHomeCarrier', 'currentHomePremium',
+      'coverageLapse',
+      'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
+      'autoDrivingRecord', 'homeClaimsHistory'
+    );
   }
-  // 'unsure' → skip carriers entirely
+  // 'unsure' or null → no carrier, no premium, no vehicle steps
 
-  // Step 5: Risk screening
-  if (intent === 'auto' || intent === 'auto_renters') {
-    steps.push('autoDrivingRecord');
-  } else if (intent === 'home' && isOwner) {
-    steps.push('homeClaimsHistory');
-  } else if (intent === 'bundle' && isOwner) {
-    steps.push('autoDrivingRecord', 'homeClaimsHistory');
-  }
-  // 'unsure' → skip risk
-
-  // Step 6: Vehicle count — skip if home-only
-  if (intent !== 'home') {
-    steps.push('vehicleCount');
-  }
-
-  // Step 7: Marital status (NEW-1)
-  steps.push('maritalStatus');
-
-  // Steps 8-11
   steps.push('dob', 'address', 'contact', 'confirmation');
-
   return steps;
 }
 
@@ -207,17 +220,21 @@ export function useWizard() {
       if (field === 'productIntent') {
         if (value !== 'auto' && value !== 'bundle' && value !== 'auto_renters') {
           next.currentAutoCarrier = null;
+          next.currentAutoPremium = null;
           next.autoDrivingRecord = null;
+          next.coverageLapse = null;
+          next.vehicleYear = null;
+          next.vehicleMake = null;
+          next.vehicleModel = null;
+          next.vehicleUse = [];
         }
         if (value !== 'home' && value !== 'bundle') {
           next.currentHomeCarrier = null;
+          next.currentHomePremium = null;
           next.homeClaimsHistory = null;
         }
         if (value !== 'auto_renters') {
           next.currentRentersCarrier = null;
-        }
-        if (value === 'home') {
-          next.vehicleCount = null;
         }
       }
 
