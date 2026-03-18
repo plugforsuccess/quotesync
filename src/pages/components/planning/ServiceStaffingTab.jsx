@@ -64,41 +64,99 @@ export default function ServiceStaffingTab({ agencyId }) {
   const [propertyFollowPct, setPropertyFollowPct]  = useState(60);
 
   const [liveData, setLiveData] = useState(false);
+  const [dualRiskMonthly, setDualRiskMonthly] = useState(0);
+
+  // ── Principal time scenario inputs ─────────────────────────────────────
+  const [principalHoursPerWeek, setPrincipalHoursPerWeek] = useState(5);  // hrs/week on retention
+  const [principalContactRate,  setPrincipalContactRate]  = useState(65); // Cameron contacts more reliably
+  const [principalSaveRate,     setPrincipalSaveRate]     = useState(60); // Cameron saves at higher rate
 
   // ── Live data pull ───────────────────────────────────────────────────────
   useQuery({
     queryKey: ['service_staffing_defaults', agencyId],
     queryFn: async () => {
-      // Pull both queues in parallel
-      const [{ data: renewals }, { data: cancels }] = await Promise.all([
+      // Pull both queues + terminated cancels in parallel
+      const [{ data: renewals }, { data: cancels }, { data: terminatedCancels }] = await Promise.all([
         supabase
           .from('renewal_events')
-          .select('premium, renewal_date, multi_line, product')
+          .select('policy_no, premium, renewal_date, multi_line, product')
           .eq('agency_id', agencyId)
           .not('status', 'in', '(confirmed,lost,auto_resolved)'),
         supabase
           .from('pending_cancel_events')
-          .select('cancel_effective_date')
+          .select('policy_no, cancel_effective_date')
           .eq('agency_id', agencyId)
           .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)'),
+        // Third query: fetch terminated policies so their stale renewal records can be suppressed.
+        // Only lost and cancelled are truly terminal — cancelled = past termination date, reinstatement prohibited.
+        // saved/auto_resolved are positive outcomes — their renewals should remain visible in the queue.
+        supabase
+          .from('pending_cancel_events')
+          .select('policy_no')
+          .eq('agency_id', agencyId)
+          .in('status', ['lost', 'cancelled']),
       ]);
 
       if (!renewals || renewals.length === 0) return null;
 
-      const dates = renewals.map(r => new Date(r.renewal_date)).filter(Boolean);
+      // Layer 1: Active dual-risk — policy has both an open cancel and an open renewal.
+      // Pending cancel takes priority (harder deadline); remove from renewal count.
+      const activeCancelPolicyNos = new Set(
+        (cancels || []).map(c => c.policy_no).filter(Boolean)
+      );
+
+      // Layer 2: Terminated policies — cancel is lost or cancelled (past termination date).
+      // The associated renewal record is stale — the policy no longer exists.
+      // Allstate prohibits reinstatement after the cancellation effective date for non-payment,
+      // so cancelled = dead policy regardless of what the renewal table shows.
+      const terminatedPolicyNos = new Set(
+        (terminatedCancels || []).map(c => c.policy_no).filter(Boolean)
+      );
+
+      // Apply both layers: remove active dual-risk and terminated renewals
+      const renewalsOnly = renewals.filter(r =>
+        !activeCancelPolicyNos.has(r.policy_no) &&
+        !terminatedPolicyNos.has(r.policy_no)
+      );
+      const dualRiskCount = renewals.length - renewalsOnly.length;
+
+      // ── Renewal lifecycle note — no additional state management required ──────────
+      // When a pending cancel is saved, its record moves to `saved` status and drops
+      // out of the active cancel query. On the next execution of this queryFn, the
+      // associated renewal record naturally reappears in renewalsOnly because it is
+      // no longer in activeCancelPolicyNos. No explicit "re-show renewal" logic needed.
+      //
+      // Lifecycle by cancel outcome:
+      //   saved          → cancel leaves active set → renewal resurfaces next fetch ✓
+      //   auto_resolved  → cancel leaves active set → renewal resurfaces next fetch ✓
+      //   lost           → added to terminatedPolicyNos → renewal permanently suppressed ✓
+      //   cancelled      → added to terminatedPolicyNos → renewal permanently suppressed ✓
+      //                    (reinstatement prohibited past termination date)
+      //
+      // The renewal record's lifecycle is driven entirely by upload cycles, not by
+      // cancel outcomes. Saving a pending cancel has zero effect on the renewal row —
+      // they are independent DB records joined only by policy_no. This queryFn reads
+      // a point-in-time snapshot of both tables; state is self-consistent on each run.
+      // ─────────────────────────────────────────────────────────────────────────────
+
+      // Use deduplicated renewal list for all metrics
+      // (pending cancel count is already independent — no dedup needed there)
+      const dedupedRenewals = renewalsOnly;
+
+      const dates = dedupedRenewals.map(r => new Date(r.renewal_date)).filter(Boolean);
       const minDate = new Date(Math.min(...dates));
       const maxDate = new Date(Math.max(...dates));
       const months = Math.max(1, (maxDate - minDate) / (1000 * 60 * 60 * 24 * 30.44));
 
-      const totalPremium = renewals.reduce((s, r) => s + (r.premium || 0), 0);
-      const avgPrem = Math.round(totalPremium / renewals.length);
-      const renewalMonthly = Math.round(renewals.length / months);
+      const totalPremium = dedupedRenewals.reduce((s, r) => s + (r.premium || 0), 0);
+      const avgPrem = Math.round(totalPremium / dedupedRenewals.length);
+      const renewalMonthly = Math.round(dedupedRenewals.length / months);
       const cancelMonthly = cancels ? Math.round(cancels.length / months) : 20;
-      const bundled = renewals.filter(r => r.multi_line === 'Yes').length;
-      const bundledPortion = Math.round((bundled / renewals.length) * 100);
+      const bundled = dedupedRenewals.filter(r => r.multi_line === 'Yes').length;
+      const bundledPortion = Math.round((bundled / dedupedRenewals.length) * 100);
 
       // Compute premium-weighted blended commission rate from actual book mix
-      const eligibleRenewals = renewals.filter(r =>
+      const eligibleRenewals = dedupedRenewals.filter(r =>
         r.product && !EXCLUDED_PRODUCTS.has(r.product) && r.premium > 0
       );
 
@@ -121,8 +179,9 @@ export default function ServiceStaffingTab({ agencyId }) {
       setAvgPremium(avgPrem);
       setBundledPct(bundledPortion);
       setCommissionRate(blendedRate);
+      setDualRiskMonthly(Math.round(dualRiskCount / months));
       setLiveData(true);
-      return { renewalMonthly, cancelMonthly, avgPrem, bundledPortion, blendedRate };
+      return { renewalMonthly, cancelMonthly, avgPrem, bundledPortion, blendedRate, dualRiskMonthly: Math.round(dualRiskCount / months) };
     },
     enabled: !!agencyId,
     staleTime: 5 * 60 * 1000,
@@ -196,6 +255,27 @@ export default function ServiceStaffingTab({ agencyId }) {
       };
     });
 
+    // Principal time scenario — Cameron's outbound retention value at $0 marginal cost
+    // Hours are per week × 4.33 = monthly; no salary cost (opportunity cost model)
+    const principalMonthlyHours = principalHoursPerWeek * 4.33;
+    const principalWorkable = Math.floor((principalMonthlyHours * 60) / handleTime);
+    const principalContacted = Math.round(principalWorkable * (principalContactRate / 100));
+    const principalSaved = Math.round(principalContacted * (principalSaveRate / 100));
+    const principalCommission = principalSaved * avgPremium * (commissionRate / 100);
+    // No cost — $0 marginal. ROI is the full commission saved.
+    const principalNetROI = principalCommission; // cost = 0
+
+    const principalScenario = {
+      label:      'Principal',
+      contact:    principalContactRate,
+      save:       principalSaveRate,
+      saved:      principalSaved,
+      commission: principalCommission,
+      netROI:     principalNetROI,
+      payback:    0, // immediate — no cost to recoup
+      isPrincipal: true,
+    };
+
     // Part-time vs full-time comparison (always compute both for the comparison card)
     const ftHours = 160;
     const ftWorkable = Math.floor((ftHours * (outboundPct / 100) * 60) / handleTime) + tracyWorkableCases;
@@ -224,6 +304,8 @@ export default function ServiceStaffingTab({ agencyId }) {
       breakevenSaveRate,
       bundledAtRisk, propertyAtRisk, hiddenComm, trueCommAtRisk,
       scenarios,
+      principalScenario,
+      principalMonthlyHours,
       ftVsPt: { ftNetROI, ftMonthlyCost, ftCommSaved, ptNetROI, ptMonthlyCost, ptCommSaved },
     };
   }, [
@@ -231,6 +313,7 @@ export default function ServiceStaffingTab({ agencyId }) {
     monthlyPolicies, pendingCancelPerMonth, avgPremium, commissionRate,
     contactRate, saveRate, monthlyCost, baseSalary, benefitsLoad,
     bundledPct, propertyFollowPct,
+    principalHoursPerWeek, principalContactRate, principalSaveRate,
   ]);
 
   // ── Helpers ─────────────────────────────────────────────────────────────
@@ -277,7 +360,7 @@ export default function ServiceStaffingTab({ agencyId }) {
       {liveData && (
         <div style={{ fontSize: 12, color: '#10B981', marginBottom: 16,
           background: 'rgb(16 185 129 / 0.07)', borderRadius: 6, padding: '6px 12px', display: 'inline-block' }}>
-          ✓ Using live book data — {monthlyPolicies} renewals + {pendingCancelPerMonth} pending cancels/mo · {commissionRate}% blended commission
+          ✓ Using live book data — {monthlyPolicies} renewals + {pendingCancelPerMonth} pending cancels/mo · {commissionRate}% blended commission{dualRiskMonthly > 0 && ` · ${dualRiskMonthly} dual-risk deduped`}
         </div>
       )}
 
@@ -372,6 +455,35 @@ export default function ServiceStaffingTab({ agencyId }) {
           <div style={{ fontSize: 11, color: 'var(--qs-info)', marginBottom: 10 }}>Multi-Line Exposure</div>
           <Field label="Bundled customers %"  value={bundledPct}        onChange={setBundledPct}        suffix="%" min={0} max={100} />
           <Field label="Property follow rate" value={propertyFollowPct} onChange={setPropertyFollowPct} suffix="%" min={0} max={100} />
+
+          {/* Principal time inputs */}
+          <div style={{ borderTop: '1px solid var(--qs-border)', paddingTop: 16, marginTop: 16 }}>
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', fontWeight: 600,
+              textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+              Your Outbound Time
+            </div>
+            <Field
+              label="Your retention hrs/week"
+              value={principalHoursPerWeek}
+              onChange={setPrincipalHoursPerWeek}
+              suffix="hrs"
+              min={0} max={40} step={0.5}
+            />
+            <Field
+              label="Your contact rate"
+              value={principalContactRate}
+              onChange={setPrincipalContactRate}
+              suffix="%"
+              min={0} max={100}
+            />
+            <Field
+              label="Your save rate"
+              value={principalSaveRate}
+              onChange={setPrincipalSaveRate}
+              suffix="%"
+              min={0} max={100}
+            />
+          </div>
         </div>
 
         {/* ── RIGHT: Outputs ── */}
@@ -520,29 +632,53 @@ export default function ServiceStaffingTab({ agencyId }) {
           <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 12, padding: 20 }}>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)',
               textTransform: 'uppercase', marginBottom: 16 }}>Scenario Comparison</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
-              {calc.scenarios.map(s => (
-                <div key={s.label} style={{ background: 'var(--qs-elevated)', borderRadius: 8,
-                  padding: '14px 16px', border: '1px solid var(--qs-border)' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 10 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+              {[...calc.scenarios, calc.principalScenario].map(s => (
+                <div key={s.label} style={{
+                  background: s.isPrincipal ? 'var(--qs-info-subtle)' : 'var(--qs-elevated)',
+                  borderRadius: 8,
+                  padding: '14px 16px',
+                  border: s.isPrincipal
+                    ? '1px solid var(--qs-info-border)'
+                    : '1px solid var(--qs-border)',
+                }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 6 }}>
                     {s.label}
                   </div>
-                  <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 8 }}>
-                    Contact {s.contact}% · Save {s.save}%
-                  </div>
+                  {s.isPrincipal ? (
+                    <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 8 }}>
+                      {calc.principalMonthlyHours.toFixed(0)} hrs/mo · $0 cost
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 8 }}>
+                      Contact {s.contact}% · Save {s.save}%
+                    </div>
+                  )}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {/* Array color values rendered via style={{ color }} — hex intentionally */}
-                    {[
-                      ['Saved/mo',   s.saved,                        '#E2E8F0'],
-                      ['Commission', `${fmtK(s.commission)}/mo`,     '#10B981'],
-                      ['Net ROI',    `${fmt$(s.netROI)}/mo`,         s.netROI > 0 ? '#10B981' : s.netROI > -500 ? '#F59E0B' : '#EF4444'],
-                      ['Payback',    s.payback === Infinity ? '∞' : `${s.payback.toFixed(1)} mo`, '#94A3B8'],
-                    ].map(([label, val, color]) => (
-                      <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
-                        <span style={{ fontSize: 12, fontWeight: 600, color }}>{val}</span>
-                      </div>
-                    ))}
+                    {s.isPrincipal
+                      ? [
+                          ['Saves/mo',          s.saved,                          '#E2E8F0'],
+                          ['Commission saved',  `${fmtK(s.commission)}/mo`,       '#10B981'],
+                          ['Marginal cost',     '$0',                              '#94A3B8'],
+                          ['Net value',         `${fmt$(s.netROI)}/mo`,           '#10B981'],
+                        ].map(([label, val, color]) => (
+                          <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color }}>{val}</span>
+                          </div>
+                        ))
+                      : [
+                          ['Saved/mo',    s.saved,                        '#E2E8F0'],
+                          ['Commission',  `${fmtK(s.commission)}/mo`,     '#10B981'],
+                          ['Net ROI',     `${fmt$(s.netROI)}/mo`,         s.netROI > 0 ? '#10B981' : s.netROI > -500 ? '#F59E0B' : '#EF4444'],
+                          ['Payback',     s.payback === Infinity ? '∞' : `${s.payback.toFixed(1)} mo`, '#94A3B8'],
+                        ].map(([label, val, color]) => (
+                          <div key={label} style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{label}</span>
+                            <span style={{ fontSize: 12, fontWeight: 600, color }}>{val}</span>
+                          </div>
+                        ))
+                    }
                   </div>
                 </div>
               ))}
