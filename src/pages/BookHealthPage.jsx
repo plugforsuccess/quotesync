@@ -596,7 +596,7 @@ function OtherCasesWarning({ cases }) {
     }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-warning)',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-        ⚠ {cases.length} Other Active {cases.length === 1 ? 'Case' : 'Cases'} — Same Customer
+        ⚠ {cases.length} Active {cases.length === 1 ? 'Case' : 'Cases'} — Same Customer
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {cases.map(c => (
