@@ -129,9 +129,43 @@ function Layout({ forcePlane = null }) {
   // Show bottom tab bar only for agency/platform planes (not consumer)
   const showBottomTabs = activePlane === PLANES.AGENCY || activePlane === PLANES.PLATFORM;
 
+  // Minimal funnel nav on /save routes
+  const isFunnelRoute = location.pathname === '/save' || location.pathname.startsWith('/save/');
+
   return (
     <div className="min-h-screen bg-[#0f172a] text-white flex flex-col">
-      {/* Advanced Header with Glassmorphism */}
+      {isFunnelRoute ? (
+        /* ── Minimal funnel nav ── */
+        <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200" style={{ overflow: 'visible' }}>
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+            {/* Logo */}
+            <NavLink to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="font-black text-lg text-gray-900 tracking-tight">
+                insuredbycam
+              </span>
+            </NavLink>
+
+            {/* Phone CTA — only if env var set */}
+            {import.meta.env.VITE_BLAND_INBOUND_NUMBER && (
+              <a
+                href={`tel:${import.meta.env.VITE_BLAND_INBOUND_NUMBER_E164 || import.meta.env.VITE_BLAND_INBOUND_NUMBER}`}
+                className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+              >
+                <span className="hidden sm:inline text-gray-500 font-normal">Call an agent now:</span>
+                <span className="font-black text-gray-900">
+                  {import.meta.env.VITE_BLAND_INBOUND_NUMBER}
+                </span>
+              </a>
+            )}
+          </div>
+        </header>
+      ) : (
+      /* ── Full QuoteSync nav ── */
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
           scrolled
@@ -214,9 +248,10 @@ function Layout({ forcePlane = null }) {
           </div>
         </div>
       </header>
+      )}
 
       {/* Mobile Menu with Advanced Overlay — kept for consumer plane (non-tab-bar planes) */}
-      {mobileMenuOpen && !showBottomTabs && (
+      {mobileMenuOpen && !showBottomTabs && !isFunnelRoute && (
         <div className="fixed inset-0 z-40 md:hidden">
           {/* Backdrop with blur */}
           <div
@@ -272,7 +307,7 @@ function Layout({ forcePlane = null }) {
       )}
 
       {/* Mobile "More" Drawer — slide-over from right, triggered by bottom tab bar */}
-      {drawerOpen && (activePlane === PLANES.AGENCY || activePlane === PLANES.PLATFORM) && (
+      {drawerOpen && !isFunnelRoute && (activePlane === PLANES.AGENCY || activePlane === PLANES.PLATFORM) && (
         <div className="fixed inset-0 z-40 md:hidden">
           {/* Backdrop */}
           <div
@@ -362,20 +397,20 @@ function Layout({ forcePlane = null }) {
       )}
 
       {/* Spacer for fixed header */}
-      <div className="h-[73px] sm:h-[81px]"></div>
+      <div className={isFunnelRoute ? 'h-14' : 'h-[73px] sm:h-[81px]'}></div>
 
       {/* Verification overdue banner — admin only */}
-      <VerificationBanner />
+      {!isFunnelRoute && <VerificationBanner />}
 
       {/* Main content — add bottom padding on mobile for tab bar clearance */}
-      <main className={`flex-1 ${showBottomTabs ? 'pb-20 md:pb-0' : ''}`}>
+      <main className={`flex-1 ${showBottomTabs && !isFunnelRoute ? 'pb-20 md:pb-0' : ''}`}>
         <Outlet />
       </main>
 
-      <Footer />
+      {!isFunnelRoute && <Footer />}
 
       {/* Bottom Tab Bar — mobile only, agency/platform planes */}
-      {showBottomTabs && (
+      {showBottomTabs && !isFunnelRoute && (
         <BottomTabBar
           onMorePress={() => setDrawerOpen(prev => !prev)}
           moreActive={drawerOpen || isDrawerRouteActive}
