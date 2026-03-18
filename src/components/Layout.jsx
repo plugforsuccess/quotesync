@@ -175,7 +175,7 @@ function Layout({ forcePlane = null }) {
                 <div className="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent group-hover:from-emerald-400 group-hover:via-teal-400 group-hover:to-cyan-400 transition-all duration-300">
                   insuredbycam
                 </div>
-                <div className="text-xs sm:text-sm text-gray-400">
+                <div className="hidden sm:block text-xs sm:text-sm text-gray-400">
                   Insurance shopping, simplified
                 </div>
               </div>
@@ -227,7 +227,7 @@ function Layout({ forcePlane = null }) {
                 <div className="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent group-hover:from-emerald-400 group-hover:via-teal-400 group-hover:to-cyan-400 transition-all duration-300">
                   insuredbycam
                 </div>
-                <div className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                <div className="hidden sm:block text-xs sm:text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
                   {agencyBrandName || 'Insurance shopping, simplified'}
                 </div>
               </div>

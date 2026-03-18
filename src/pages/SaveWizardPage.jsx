@@ -145,28 +145,67 @@ const MANUAL_ADVANCE_STEPS = new Set([
 // ─── Progress Wheel ────────────────────────────────────────────────
 
 function ProgressWheel({ pct, hidden }) {
-  const size = 120;
-  const stroke = 8;
+  const stroke = 7;
+  const gradientId = 'progress-wheel-gradient';
+
+  // Two size variants — computed for both, CSS handles which renders
+  const mobileSize = 80;
+  const desktopSize = 120;
+
+  // Use a ref to read actual rendered size — fallback to mobile
+  const [size, setSize] = useState(
+    typeof window !== 'undefined' && window.innerWidth >= 640 ? desktopSize : mobileSize
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setSize(window.innerWidth >= 640 ? desktopSize : mobileSize);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
-  const gradientId = 'progress-wheel-gradient';
+  const isDesktop = size === desktopSize;
 
   return (
     <div
       style={{
-        position: 'fixed',
-        top: '16px',
-        left: '50%',
-        transform: hidden ? 'translateX(-50%) translateY(-20px)' : 'translateX(-50%)',
-        opacity: hidden ? 0 : 1,
-        transition: 'transform 300ms ease, opacity 300ms ease',
+        position: 'sticky',
+        top: isDesktop ? '13px' : '8px',
+        display: 'flex',
+        justifyContent: 'center',
         zIndex: 60,
         pointerEvents: 'none',
+        marginTop: isDesktop ? `-${desktopSize / 2}px` : '8px',
+        marginBottom: '24px',
+        transition: 'transform 300ms ease, opacity 300ms ease',
+        transform: hidden ? 'translateY(-20px)' : 'translateY(0)',
+        opacity: hidden ? 0 : 1,
       }}
     >
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90" style={{ display: 'block' }}>
+
+        {/* Frosted glass center */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            inset: stroke,
+            background: 'rgba(0, 0, 0, 0.55)',
+            backdropFilter: 'blur(8px)',
+            WebkitBackdropFilter: 'blur(8px)',
+          }}
+        />
+
+        {/* Arc SVG */}
+        <svg
+          width={size}
+          height={size}
+          className="-rotate-90"
+          style={{ display: 'block', position: 'relative', zIndex: 1 }}
+        >
           <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
               <stop offset="0%" stopColor="#34d399" />
@@ -177,8 +216,8 @@ function ProgressWheel({ pct, hidden }) {
           {/* Track */}
           <circle
             cx={size / 2} cy={size / 2} r={r}
-            fill="#0f172a"
-            stroke="rgba(255,255,255,0.15)"
+            fill="transparent"
+            stroke="rgba(52,211,153,0.15)"
             strokeWidth={stroke}
           />
 
@@ -196,9 +235,20 @@ function ProgressWheel({ pct, hidden }) {
         </svg>
 
         {/* Center label */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black text-white leading-none">{pct}%</span>
-          <span className="text-xs font-semibold text-white/60 mt-0.5">Complete</span>
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center"
+          style={{ zIndex: 2 }}
+        >
+          <span
+            className={`font-black text-white leading-none ${isDesktop ? 'text-2xl' : 'text-lg'}`}
+          >
+            {pct}%
+          </span>
+          <span
+            className={`font-semibold text-white/60 mt-0.5 ${isDesktop ? 'text-xs' : 'text-[10px]'}`}
+          >
+            Complete
+          </span>
         </div>
       </div>
     </div>
