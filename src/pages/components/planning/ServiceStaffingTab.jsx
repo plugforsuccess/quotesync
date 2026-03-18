@@ -65,6 +65,7 @@ export default function ServiceStaffingTab({ agencyId }) {
 
   const [liveData, setLiveData] = useState(false);
   const [dualRiskMonthly, setDualRiskMonthly] = useState(0);
+  const [staleSuppressedMonthly, setStaleSuppressedMonthly] = useState(0);
 
   // ── Principal time scenario inputs ─────────────────────────────────────
   const [principalHoursPerWeek, setPrincipalHoursPerWeek] = useState(5);  // hrs/week on retention
@@ -118,7 +119,8 @@ export default function ServiceStaffingTab({ agencyId }) {
         !activeCancelPolicyNos.has(r.policy_no) &&
         !terminatedPolicyNos.has(r.policy_no)
       );
-      const dualRiskCount = renewals.length - renewalsOnly.length;
+      const dualRiskActive = renewals.filter(r => activeCancelPolicyNos.has(r.policy_no)).length;
+      const staleTerminated = renewals.filter(r => terminatedPolicyNos.has(r.policy_no)).length;
 
       // ── Renewal lifecycle note — no additional state management required ──────────
       // When a pending cancel is saved, its record moves to `saved` status and drops
@@ -179,9 +181,10 @@ export default function ServiceStaffingTab({ agencyId }) {
       setAvgPremium(avgPrem);
       setBundledPct(bundledPortion);
       setCommissionRate(blendedRate);
-      setDualRiskMonthly(Math.round(dualRiskCount / months));
+      setDualRiskMonthly(Math.round(dualRiskActive / months));
+      setStaleSuppressedMonthly(Math.round(staleTerminated / months));
       setLiveData(true);
-      return { renewalMonthly, cancelMonthly, avgPrem, bundledPortion, blendedRate, dualRiskMonthly: Math.round(dualRiskCount / months) };
+      return { renewalMonthly, cancelMonthly, avgPrem, bundledPortion, blendedRate };
     },
     enabled: !!agencyId,
     staleTime: 5 * 60 * 1000,
@@ -360,7 +363,7 @@ export default function ServiceStaffingTab({ agencyId }) {
       {liveData && (
         <div style={{ fontSize: 12, color: '#10B981', marginBottom: 16,
           background: 'rgb(16 185 129 / 0.07)', borderRadius: 6, padding: '6px 12px', display: 'inline-block' }}>
-          ✓ Using live book data — {monthlyPolicies} renewals + {pendingCancelPerMonth} pending cancels/mo · {commissionRate}% blended commission{dualRiskMonthly > 0 && ` · ${dualRiskMonthly} dual-risk deduped`}
+          ✓ Using live book data — {monthlyPolicies} renewals + {pendingCancelPerMonth} pending cancels/mo · {commissionRate}% blended commission{dualRiskMonthly > 0 && ` · ${dualRiskMonthly} dual-risk`}{staleSuppressedMonthly > 0 && ` · ${staleSuppressedMonthly} stale suppressed`}
         </div>
       )}
 
