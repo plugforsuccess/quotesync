@@ -5,7 +5,7 @@
 -- ── Table 1: renewal_upload_batches ─────────────────────────────────────────
 -- Tracks each upload for auditability.
 
-CREATE TABLE renewal_upload_batches (
+CREATE TABLE IF NOT EXISTS renewal_upload_batches (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
   uploaded_by uuid REFERENCES employees(id),
@@ -26,7 +26,7 @@ CREATE TABLE renewal_upload_batches (
 -- ── Table 2: customer_renewal_groups ────────────────────────────────────────
 -- Groups multi-policy households by phone number for dedup and routing.
 
-CREATE TABLE customer_renewal_groups (
+CREATE TABLE IF NOT EXISTS customer_renewal_groups (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
 
@@ -64,7 +64,7 @@ CREATE TABLE customer_renewal_groups (
 -- ── Table 3: renewal_policies ───────────────────────────────────────────────
 -- Stores each policy renewal record uploaded from Allstate reports.
 
-CREATE TABLE renewal_policies (
+CREATE TABLE IF NOT EXISTS renewal_policies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
 
@@ -193,7 +193,7 @@ CREATE TABLE renewal_policies (
 -- ── Table 4: customer_consent ───────────────────────────────────────────────
 -- Tracks auto-dial consent and DNC status per customer per agency.
 
-CREATE TABLE customer_consent (
+CREATE TABLE IF NOT EXISTS customer_consent (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
 
