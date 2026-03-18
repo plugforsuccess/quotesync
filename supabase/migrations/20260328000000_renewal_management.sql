@@ -289,22 +289,22 @@ ALTER TABLE renewal_policies ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Agency members can read their renewals"
   ON renewal_policies FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() LIMIT 1
+    SELECT org_id FROM employees
+    WHERE auth_user_id = auth.uid() LIMIT 1
   ));
 
 CREATE POLICY "Agent role can insert renewals"
   ON renewal_policies FOR INSERT
-  WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() AND role IN ('agent') LIMIT 1
+  WITH CHECK (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
 CREATE POLICY "Agent role can update renewals"
   ON renewal_policies FOR UPDATE
-  USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() AND role IN ('agent') LIMIT 1
+  USING (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
 -- customer_renewal_groups
@@ -313,22 +313,22 @@ ALTER TABLE customer_renewal_groups ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Agency members can read their groups"
   ON customer_renewal_groups FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() LIMIT 1
+    SELECT org_id FROM employees
+    WHERE auth_user_id = auth.uid() LIMIT 1
   ));
 
 CREATE POLICY "Agent role can insert groups"
   ON customer_renewal_groups FOR INSERT
-  WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() AND role IN ('agent') LIMIT 1
+  WITH CHECK (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
 CREATE POLICY "Agent role can update groups"
   ON customer_renewal_groups FOR UPDATE
-  USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() AND role IN ('agent') LIMIT 1
+  USING (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
 -- customer_consent
@@ -337,22 +337,22 @@ ALTER TABLE customer_consent ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Agency members can read consent records"
   ON customer_consent FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() LIMIT 1
+    SELECT org_id FROM employees
+    WHERE auth_user_id = auth.uid() LIMIT 1
   ));
 
 CREATE POLICY "Agency members can insert consent"
   ON customer_consent FOR INSERT
   WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() LIMIT 1
+    SELECT org_id FROM employees
+    WHERE auth_user_id = auth.uid() LIMIT 1
   ));
 
 CREATE POLICY "Agency members can update consent"
   ON customer_consent FOR UPDATE
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() LIMIT 1
+    SELECT org_id FROM employees
+    WHERE auth_user_id = auth.uid() LIMIT 1
   ));
 
 -- renewal_upload_batches
@@ -361,13 +361,13 @@ ALTER TABLE renewal_upload_batches ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Agent can read upload batches"
   ON renewal_upload_batches FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() LIMIT 1
+    SELECT org_id FROM employees
+    WHERE auth_user_id = auth.uid() LIMIT 1
   ));
 
 CREATE POLICY "Agent can insert upload batches"
   ON renewal_upload_batches FOR INSERT
-  WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE user_id = auth.uid() AND role IN ('agent') LIMIT 1
+  WITH CHECK (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
