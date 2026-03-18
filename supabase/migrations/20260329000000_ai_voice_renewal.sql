@@ -58,7 +58,7 @@ CREATE INDEX IF NOT EXISTS idx_ai_call_log_called_at ON ai_call_log(called_at);
 ALTER TABLE ai_call_log ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Agent reads call log" ON ai_call_log FOR SELECT
-  USING (agency_id = (SELECT org_id FROM employees WHERE auth_user_id = auth.uid() LIMIT 1));
+  USING (agency_id = (SELECT am.agency_id FROM agency_memberships am WHERE am.user_id = auth.uid() LIMIT 1));
 
 CREATE POLICY "Service role inserts call log" ON ai_call_log FOR INSERT
   WITH CHECK (true);
