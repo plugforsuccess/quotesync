@@ -1,5 +1,5 @@
 // src/hooks/useWizard.js — Wizard state + conditional branching for /save funnel v2
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 
 export const SESSION_KEYS = {
   LEAD_ID: 'qs_funnel_lead_id',
@@ -171,9 +171,16 @@ export function computeStepSequence(answers) {
 
 export function useWizard() {
   const [answers, setAnswers] = useState(restore);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(() => {
+    // If a valid ?zip= param is present, start at step 1 (skip ZIP step)
+    const params = new URLSearchParams(window.location.search);
+    const zip = params.get('zip');
+    if (zip?.length === 5) return 1;
+    // Otherwise restore from session or default to 0
+    const saved = parseInt(sessionStorage.getItem(SESSION_KEYS.CURRENT_STEP) || '0', 10);
+    return saved > 0 ? saved : 0;
+  });
   const [direction, setDirection] = useState('forward');
-  const hasRestoredStep = useRef(false);
   const stepEnteredAt = useRef(Date.now());
 
   const stepSequence = useMemo(() => computeStepSequence(answers), [answers]);
@@ -183,17 +190,7 @@ export function useWizard() {
   const isFirstStep = currentIndex === 0;
   const isLastStep = currentIndex >= stepSequence.length - 1;
 
-  // C-3: Restore step index on page refresh (one-time on mount)
-  useEffect(() => {
-    if (!hasRestoredStep.current) {
-      hasRestoredStep.current = true;
-      const saved = parseInt(sessionStorage.getItem(SESSION_KEYS.CURRENT_STEP) || '0', 10);
-      if (saved > 0 && saved < stepSequence.length) {
-        setCurrentIndex(saved);
-      }
-      stepEnteredAt.current = Date.now();
-    }
-  }, [stepSequence.length]);
+
 
   const setAnswer = useCallback((field, value) => {
     setAnswers(prev => {
