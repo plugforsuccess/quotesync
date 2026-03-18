@@ -21,6 +21,8 @@ const COLUMN_MAP = {
   'premium new': 'renewal_premium',
   'premium current($)': 'current_premium',
   'premium current': 'current_premium',
+  'premium old($)': 'current_premium',
+  'premium old': 'current_premium',
   'renewal effective date': 'renewal_date',
   'effective date': 'renewal_date',
   'eff date': 'renewal_date',

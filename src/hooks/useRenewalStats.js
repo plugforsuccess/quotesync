@@ -45,8 +45,9 @@ export function getTriageBucket(policy) {
     return 'not_yet_due';
   }
 
-  // Automation Cleared
+  // Automation Cleared — must be at least 15 days out for AI call to be useful
   if (
+    daysUntil >= 15 &&
     policy.consent?.autodial_consent === true &&
     !policy.consent?.dnc &&
     ['pending', 'contacted'].includes(policy.renewal_status) &&

@@ -460,17 +460,17 @@ function App() {
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
-            <Route path="renewals/:policyId" element={
-              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><RenewalDetailPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
             <Route path="renewals/consent" element={
               <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><ConsentManagementPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="renewals/:policyId" element={
+              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RenewalDetailPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
