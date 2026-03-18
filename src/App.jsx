@@ -299,7 +299,7 @@ function App() {
             <Route
               path="agency/settings"
               element={
-                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ProtectedRoute requiredAgencyRole="agent">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencySettingsPage />
@@ -313,7 +313,7 @@ function App() {
             <Route
               path="agency/setup"
               element={
-                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ProtectedRoute requiredAgencyRole="agent">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencySetupPage />
@@ -327,7 +327,7 @@ function App() {
             <Route
               path="agency/team"
               element={
-                <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ProtectedRoute requiredAgencyRole="agent">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencyTeamPage />
@@ -411,7 +411,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="time-attendance" element={
-              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><AdminTimeAttendancePage /></Suspense>
                 </ErrorBoundary>
@@ -433,7 +433,7 @@ function App() {
             } />
             <Route path="revenue-projections" element={<Navigate to="/admin/planning" replace />} />
             <Route path="producers/:employeeId/comp-model" element={
-              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><ProducerCompModelPage /></Suspense>
                 </ErrorBoundary>
@@ -447,14 +447,14 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="renewals" element={
-              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RenewalsPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="renewals/upload" element={
-              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RenewalUploadPage /></Suspense>
                 </ErrorBoundary>
@@ -468,7 +468,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="renewals/:policyId" element={
-              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RenewalDetailPage /></Suspense>
                 </ErrorBoundary>
