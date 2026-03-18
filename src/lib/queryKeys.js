@@ -75,6 +75,16 @@ export const queryKeys = {
     metrics: (agencyId, timeRange) => ['funnel_metrics', agencyId, timeRange],
   },
 
+  // ── Renewals ───────────────────────────────────────────────────────────────
+  renewals: {
+    all: () => ['renewal_policies'],
+    list: (agencyId, filters) => ['renewal_policies', agencyId, filters],
+    detail: (policyId) => ['renewal_policies', 'detail', policyId],
+    consent: (agencyId) => ['customer_consent', agencyId],
+    consentMap: (agencyId) => ['customer_consent', 'map', agencyId],
+    batches: (agencyId) => ['renewal_upload_batches', agencyId],
+  },
+
   // ── Compensation Model ─────────────────────────────────────────────────────
   compModel: {
     all: () => ['comp-model'],

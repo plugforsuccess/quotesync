@@ -90,6 +90,10 @@ const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/componen
 const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
 const BookHealthPage = lazyWithRetry(() => import('./pages/BookHealthPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
+const RenewalsPage = lazyWithRetry(() => import('./pages/RenewalsPage'));
+const RenewalUploadPage = lazyWithRetry(() => import('./pages/RenewalUploadPage'));
+const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
+const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
 
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
@@ -439,6 +443,34 @@ function App() {
               <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="renewals" element={
+              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RenewalsPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="renewals/upload" element={
+              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RenewalUploadPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="renewals/:policyId" element={
+              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RenewalDetailPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="renewals/consent" element={
+              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><ConsentManagementPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
