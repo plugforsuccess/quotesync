@@ -56,35 +56,34 @@ function Layout({ forcePlane = null }) {
   // Minimal funnel nav on /save routes
   const isFunnelRoute = location.pathname === '/save' || location.pathname.startsWith('/save/');
 
-  // Handle scroll for nav blur effect with throttling
+  // Throttled handler — blur effect only (non-funnel nav)
   const handleScroll = useCallback(() => {
     if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
     scrollTimeoutRef.current = setTimeout(() => {
-      const currentY = window.scrollY;
+      setScrolled(window.scrollY > 10);
+    }, 100);
+  }, []);
 
-      // Existing scrolled state (used by full nav blur effect)
-      setScrolled(currentY > 10);
-
-      // Funnel-only: hide on scroll down, show on scroll up
-      if (isFunnelRoute) {
-        const scrollingDown = currentY > lastScrollY.current;
-        const pastThreshold = currentY > 80;
-        setHideNav(scrollingDown && pastThreshold);
-      }
-
-      lastScrollY.current = currentY;
-    }, 50);
+  // Unthrottled handler — funnel hide/show (runs every scroll frame)
+  const handleFunnelScroll = useCallback(() => {
+    if (!isFunnelRoute) return;
+    const currentY = window.scrollY;
+    const scrollingDown = currentY > lastScrollY.current;
+    setHideNav(scrollingDown && currentY > 80);
+    lastScrollY.current = currentY;
   }, [isFunnelRoute]);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener('scroll', handleFunnelScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleFunnelScroll);
       if (scrollTimeoutRef.current) {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, [handleScroll]);
+  }, [handleScroll, handleFunnelScroll]);
 
   // Close mobile menu on route change
   useEffect(() => {
