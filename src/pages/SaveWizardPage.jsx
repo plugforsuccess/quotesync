@@ -155,8 +155,14 @@ function ProgressWheel({ pct }) {
 
   return (
     <div
-      className="flex justify-center"
-      style={{ marginTop: `-${size / 2}px`, marginBottom: '24px', position: 'relative', zIndex: 60 }}
+      style={{
+        position: 'fixed',
+        top: '16px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 60,
+        pointerEvents: 'none',
+      }}
     >
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" style={{ display: 'block' }}>
@@ -234,10 +240,9 @@ export default function SaveWizardPage() {
     const prefilledZip = params.get('zip');
 
     if (prefilledZip?.length === 5 && isTargetZip(prefilledZip)) {
-      // Always honor a valid ?zip= param — skip ZIP step regardless of session state
       setAnswer('zip', prefilledZip);
-      if (currentIndex === 0) setCurrentIndex(1);
-      if (!answers.zip) insertPartialLead(prefilledZip); // Only insert partial lead once
+      if (!answers.zip) insertPartialLead(prefilledZip);
+      // No setCurrentIndex needed — useWizard initializes to 1 when ?zip= is present
     }
   }, [funnelAgency]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -754,19 +759,13 @@ export default function SaveWizardPage() {
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '700ms' }}></div>
 
       {/* Progress Wheel — OUTSIDE the padded container */}
-      {!isConfirmation && (
-        <div className="relative z-20">
-          <ProgressWheel
-            pct={Math.min(
-              Math.round(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100),
-              99
-            )}
-          />
-        </div>
-      )}
+      {!isConfirmation && <ProgressWheel pct={Math.min(
+        Math.round(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100),
+        99
+      )} />}
 
       {/* Content container — top padding removed, bottom padding kept */}
-      <div className="container mx-auto px-4 pb-12 sm:pb-16 relative z-10">
+      <div className="container mx-auto px-4 pt-20 pb-12 sm:pb-16 relative z-10">
         <div className="max-w-lg mx-auto">
 
           {/* Header — only on qualification steps */}
