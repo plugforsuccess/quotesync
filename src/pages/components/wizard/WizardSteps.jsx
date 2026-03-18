@@ -225,7 +225,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
       <div className="space-y-5 max-w-sm mx-auto">
         {/* Own home */}
         <div>
-          <p className="font-semibold text-gray-800 mb-2 text-center">Do you own your home?</p>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Do you own your home?</h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={ownsHome === true} onClick={() => { onOwnsHomeChange(true); checkAutoAdvance(true, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full">YES</ChoiceButton>
             <ChoiceButton selected={ownsHome === false} onClick={() => { onOwnsHomeChange(false); checkAutoAdvance(false, maritalStatus, multipleDrivers, multipleVehicles); }} className="w-full">NO</ChoiceButton>
@@ -233,7 +233,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
         </div>
         {/* Married */}
         <div>
-          <p className="font-semibold text-gray-800 mb-2 text-center">Are you married?</p>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Are you married?</h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={maritalStatus === 'married'} onClick={() => { onMaritalStatusChange('married'); checkAutoAdvance(ownsHome, 'married', multipleDrivers, multipleVehicles); }} className="w-full">YES</ChoiceButton>
             <ChoiceButton selected={maritalStatus === 'single'} onClick={() => { onMaritalStatusChange('single'); checkAutoAdvance(ownsHome, 'single', multipleDrivers, multipleVehicles); }} className="w-full">NO</ChoiceButton>
@@ -241,7 +241,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
         </div>
         {/* Multiple drivers */}
         <div>
-          <p className="font-semibold text-gray-800 mb-2 text-center">Multiple drivers in your household?</p>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Multiple drivers in your household?</h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={multipleDrivers === true} onClick={() => { onMultipleDriversChange(true); checkAutoAdvance(ownsHome, maritalStatus, true, multipleVehicles); }} className="w-full">YES</ChoiceButton>
             <ChoiceButton selected={multipleDrivers === false} onClick={() => { onMultipleDriversChange(false); checkAutoAdvance(ownsHome, maritalStatus, false, multipleVehicles); }} className="w-full">NO</ChoiceButton>
@@ -249,7 +249,7 @@ export function DiscountQualifierStep({ ownsHome, maritalStatus, multipleDrivers
         </div>
         {/* Multiple vehicles */}
         <div>
-          <p className="font-semibold text-gray-800 mb-2 text-center">Multiple vehicles in your household?</p>
+          <h5 className="font-bold text-gray-800 text-lg mb-2 text-center">Multiple vehicles in your household?</h5>
           <div className="grid grid-cols-2 gap-3">
             <ChoiceButton selected={multipleVehicles === true} onClick={() => { onMultipleVehiclesChange(true); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, true); }} className="w-full">YES</ChoiceButton>
             <ChoiceButton selected={multipleVehicles === false} onClick={() => { onMultipleVehiclesChange(false); checkAutoAdvance(ownsHome, maritalStatus, multipleDrivers, false); }} className="w-full">NO</ChoiceButton>
