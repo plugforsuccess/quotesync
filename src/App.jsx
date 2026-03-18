@@ -418,14 +418,14 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="staff-performance" element={
-              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><StaffPerformancePage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="planning" element={
-              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><PlanningHubPage /></Suspense>
                 </ErrorBoundary>
@@ -440,7 +440,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="book-health" element={
-              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
                 </ErrorBoundary>
