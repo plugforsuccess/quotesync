@@ -1,7 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import RevenueProjectionsDashboard from './components/revenue/RevenueProjectionsDashboard';
 import ServiceStaffingTab from './components/planning/ServiceStaffingTab';
 import ProducerCompIndexTab from './components/planning/ProducerCompIndexTab';
+import CapacityPlanner from './components/dashboard/CapacityPlanner';
+import StaffingCapacity from './components/dashboard/StaffingCapacity';
+import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
+import { useYTDBlended } from '../hooks/useYTDBlended';
+import { useAllProducerConfigs } from '../hooks/useProducerCompModel';
+import { averageConfig } from '../utils/compModelCalculations';
+import DailyEarningsTab from './components/revenue/DailyEarningsTab';
 import { useAuth } from '../contexts/AuthContext';
 
 const PLANNING_STYLES = `
@@ -35,14 +42,123 @@ const PLANNING_STYLES = `
 `;
 
 const TABS = [
-  { key: 'revenue',   label: '💰 Revenue'          },
-  { key: 'staffing',  label: '👥 Service Staffing'  },
-  { key: 'producers', label: '🏆 Producer Comp'     },
+  { key: 'revenue',         label: '💰 Revenue'          },
+  { key: 'daily_earnings',  label: '📈 Daily Earnings'   },
+  { key: 'capacity',        label: '📊 Sales Capacity'   },
+  { key: 'staffing',        label: '👥 Service Staffing' },
+  { key: 'producers',       label: '🏆 Producer Comp'    },
+];
+
+// ── Sales Capacity tab constants ────────────────────────────────────────────────
+const CS_STORAGE_KEY = 'quotesync_capacity_inputs';
+
+const DEFAULT_PLANNER = {
+  targetSubmissions: 700,
+  avgCPC: 7.0,
+  landingPageConvRate: 20,
+  closeRate: 18,
+};
+
+const DEFAULT_STAFFING = {
+  activeProducers: 1,
+  avgQuoteTime: 45,
+  workingHours: 8,
+  quotingAllocation: 60,
+  qualificationRate: 65,
+  workingDays: 22,
+};
+
+const RENEWAL_INFO = {
+  'Standard Auto': { cycleMonths: 6, renewalRates: null, renewalBase: 9 },
+  'Homeowners / Condo': { cycleMonths: 12, renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 }, renewalBase: 7 },
+  'Other Personal Lines': { cycleMonths: 12, renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 }, renewalBase: 7 },
+};
+
+const TIER_OPTIONS = [
+  { key: 'preferredBundled', label: 'Preferred Bundled' },
+  { key: 'bundled',          label: 'Bundled' },
+  { key: 'monoline',         label: 'Monoline' },
 ];
 
 export default function PlanningHubPage() {
   const [activeTab, setActiveTab] = useState('revenue');
   const { currentAgencyId } = useAuth();
+
+  // ── Sales Capacity tab state ────────────────────────────────────────────────
+  const agencyRates = useAgencyCommissionRates(currentAgencyId);
+  const { data: ytdBlended } = useYTDBlended(currentAgencyId);
+  const { data: producerConfigs = [] } = useAllProducerConfigs(currentAgencyId);
+  const [selectedProducerConfigId, setSelectedProducerConfigId] = useState('none');
+
+  const selectedProducerConfig = useMemo(() => {
+    if (selectedProducerConfigId === 'none' || !producerConfigs.length) return null;
+    if (selectedProducerConfigId === 'average') return averageConfig(producerConfigs);
+    return producerConfigs.find(c => c.id === selectedProducerConfigId) || null;
+  }, [selectedProducerConfigId, producerConfigs]);
+
+  const [plannerInputs, setPlannerInputs] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CS_STORAGE_KEY) || '{}');
+      return saved?.planner || DEFAULT_PLANNER;
+    } catch { return DEFAULT_PLANNER; }
+  });
+
+  const [staffingInputs, setStaffingInputs] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(CS_STORAGE_KEY) || '{}');
+      return saved?.staffing || DEFAULT_STAFFING;
+    } catch { return DEFAULT_STAFFING; }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CS_STORAGE_KEY, JSON.stringify({
+        planner: plannerInputs,
+        staffing: staffingInputs,
+      }));
+    } catch {}
+  }, [plannerInputs, staffingInputs]);
+
+  const handlePlannerChange = useCallback((key, value) => {
+    setPlannerInputs(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const handleMixChange = useCallback((index, field, value) => {
+    setPlannerInputs(prev => {
+      const updated = [...prev.policyMix];
+      updated[index] = { ...updated[index], [field]: value };
+      return { ...prev, policyMix: updated };
+    });
+  }, []);
+
+  const handleMixAdd = useCallback(() => {
+    setPlannerInputs(prev => ({
+      ...prev,
+      policyMix: [...prev.policyMix, {
+        productLine: 'Standard Auto', tier: 'monoline', avgPremium: 1500, mixPct: 0,
+      }],
+    }));
+  }, []);
+
+  const handleMixRemove = useCallback((index) => {
+    setPlannerInputs(prev => {
+      if (prev.policyMix.length <= 1) return prev;
+      return { ...prev, policyMix: prev.policyMix.filter((_, i) => i !== index) };
+    });
+  }, []);
+
+  const handleStaffingChange = useCallback((key, value) => {
+    setStaffingInputs(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const effectivePlanner = useMemo(() => ({
+    ...plannerInputs,
+    policyMix: plannerInputs.policyMix?.length
+      ? plannerInputs.policyMix
+      : agencyRates.policyMix,
+    commissionMatrix: agencyRates.commissionMatrix,
+    baseCommission: agencyRates.baseCommission,
+  }), [plannerInputs, agencyRates]);
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--qs-dark)', color: 'var(--qs-text)',
@@ -66,7 +182,51 @@ export default function PlanningHubPage() {
         ))}
       </div>
 
-      {activeTab === 'revenue'   && <RevenueProjectionsDashboard />}
+      {activeTab === 'revenue'        && <RevenueProjectionsDashboard />}
+      {activeTab === 'daily_earnings' && <DailyEarningsTab agencyId={currentAgencyId} />}
+      {activeTab === 'capacity'       && (
+        <div style={{ marginTop: 8 }}>
+          {/* Light-surface wrapper — capacity components are light-themed */}
+          <div style={{
+            background: '#f8fafc',
+            border: '1px solid var(--qs-border)',
+            borderRadius: 12,
+            padding: 24,
+          }}>
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>
+                Sales Capacity Model
+              </div>
+              <div style={{ fontSize: 13, color: '#64748b' }}>
+                Model producer capacity, quoting throughput, and new hire ROI
+              </div>
+            </div>
+            <div className="space-y-6 mt-6">
+              <CapacityPlanner
+                plannerInputs={effectivePlanner}
+                onInputChange={handlePlannerChange}
+                onMixChange={handleMixChange}
+                onMixAdd={handleMixAdd}
+                onMixRemove={handleMixRemove}
+                tierOptions={TIER_OPTIONS}
+                productLines={Object.keys(agencyRates.commissionMatrix)}
+                renewalInfo={RENEWAL_INFO}
+              />
+              <StaffingCapacity
+                staffingInputs={staffingInputs}
+                onStaffingChange={handleStaffingChange}
+                plannerInputs={effectivePlanner}
+                ytdAvgPremium={ytdBlended?.avgPremiumPerPolicy}
+                ytdCommissionRate={ytdBlended ? ytdBlended.blendedCommissionRate * 100 : undefined}
+                producerConfigs={producerConfigs}
+                selectedProducerConfig={selectedProducerConfig}
+                selectedProducerConfigId={selectedProducerConfigId}
+                onProducerConfigChange={setSelectedProducerConfigId}
+              />
+            </div>
+          </div>
+        </div>
+      )}
       {activeTab === 'staffing'  && <ServiceStaffingTab agencyId={currentAgencyId} />}
       {activeTab === 'producers' && <ProducerCompIndexTab agencyId={currentAgencyId} />}
     </div>

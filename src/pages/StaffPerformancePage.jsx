@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   BarChart3, Users, RefreshCw, ShieldOff, AlertCircle, ChevronLeft, ChevronRight,
-  Filter, Target, Download, ArrowLeft, TrendingUp, Shield, DollarSign,
+  Filter, Target, Download, ArrowLeft, Shield, DollarSign,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -40,12 +40,6 @@ import OutboundBreakdownForm from './components/time-attendance/OutboundBreakdow
 import ProducerDetailView from './components/time-attendance/ProducerDetailView';
 import CallLogTable from './components/time-attendance/CallLogTable';
 import AgentAliasManager from './components/time-attendance/AgentAliasManager';
-import CapacityPlanner from './components/dashboard/CapacityPlanner';
-import StaffingCapacity from './components/dashboard/StaffingCapacity';
-import { useYTDBlended } from '../hooks/useYTDBlended';
-import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
-import { useAllProducerConfigs } from '../hooks/useProducerCompModel';
-import { averageConfig } from '../utils/compModelCalculations';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
@@ -97,51 +91,6 @@ const ROLE_FILTER_OPTIONS = [
 const TABS = [
   { key: 'individual', label: 'Individual', icon: BarChart3 },
   { key: 'team', label: 'Team', icon: Users },
-  { key: 'capacity', label: 'Capacity', icon: TrendingUp },
-];
-
-// ── Capacity tab constants ────────────────────────────────────────────────────
-
-const CS_STORAGE_KEY = 'quotesync_capacity_inputs';
-
-const DEFAULT_PLANNER = {
-  targetSubmissions: 700,
-  avgCPC: 7.0,
-  landingPageConvRate: 20,
-  closeRate: 18,
-};
-
-const DEFAULT_STAFFING = {
-  activeProducers: 1,
-  avgQuoteTime: 45,
-  workingHours: 8,
-  quotingAllocation: 60,
-  qualificationRate: 65,
-  workingDays: 22,
-};
-
-const RENEWAL_INFO = {
-  'Standard Auto': {
-    cycleMonths: 6,
-    renewalRates: null,
-    renewalBase: 9,
-  },
-  'Homeowners / Condo': {
-    cycleMonths: 12,
-    renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 },
-    renewalBase: 7,
-  },
-  'Other Personal Lines': {
-    cycleMonths: 12,
-    renewalRates: { preferredBundled: 10, bundled: 9, monoline: 7 },
-    renewalBase: 7,
-  },
-};
-
-const TIER_OPTIONS = [
-  { key: 'preferredBundled', label: 'Preferred Bundled' },
-  { key: 'bundled',          label: 'Bundled' },
-  { key: 'monoline',         label: 'Monoline' },
 ];
 
 // ── Page Component ─────────────────────────────────────────────────────────────
@@ -161,83 +110,6 @@ const StaffPerformancePage = () => {
   const [roleFilter, setRoleFilter] = useState('service_inbound');
   // Track whether the individual view was entered from the team view for a specific role
   const [selectedEmployeeRole, setSelectedEmployeeRole] = useState(null);
-
-  // ── Capacity tab state ──────────────────────────────────────────────────────
-
-  const agencyRates = useAgencyCommissionRates(currentAgencyId);
-  const { data: ytdBlended } = useYTDBlended(currentAgencyId);
-  const { data: producerConfigs = [] } = useAllProducerConfigs(currentAgencyId);
-  const [selectedProducerConfigId, setSelectedProducerConfigId] = useState('none');
-
-  const selectedProducerConfig = useMemo(() => {
-    if (selectedProducerConfigId === 'none' || !producerConfigs.length) return null;
-    if (selectedProducerConfigId === 'average') return averageConfig(producerConfigs);
-    return producerConfigs.find(c => c.id === selectedProducerConfigId) || null;
-  }, [selectedProducerConfigId, producerConfigs]);
-
-  const [plannerInputs, setPlannerInputs] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(CS_STORAGE_KEY) || '{}');
-      return saved?.planner || DEFAULT_PLANNER;
-    } catch { return DEFAULT_PLANNER; }
-  });
-
-  const [staffingInputs, setStaffingInputs] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(CS_STORAGE_KEY) || '{}');
-      return saved?.staffing || DEFAULT_STAFFING;
-    } catch { return DEFAULT_STAFFING; }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(CS_STORAGE_KEY, JSON.stringify({
-        planner: plannerInputs,
-        staffing: staffingInputs,
-      }));
-    } catch {}
-  }, [plannerInputs, staffingInputs]);
-
-  const handlePlannerChange = useCallback((key, value) => {
-    setPlannerInputs(prev => ({ ...prev, [key]: value }));
-  }, []);
-
-  const handleMixChange = useCallback((index, field, value) => {
-    setPlannerInputs(prev => {
-      const updated = [...prev.policyMix];
-      updated[index] = { ...updated[index], [field]: value };
-      return { ...prev, policyMix: updated };
-    });
-  }, []);
-
-  const handleMixAdd = useCallback(() => {
-    setPlannerInputs(prev => ({
-      ...prev,
-      policyMix: [...prev.policyMix, {
-        productLine: 'Standard Auto', tier: 'monoline', avgPremium: 1500, mixPct: 0,
-      }],
-    }));
-  }, []);
-
-  const handleMixRemove = useCallback((index) => {
-    setPlannerInputs(prev => {
-      if (prev.policyMix.length <= 1) return prev;
-      return { ...prev, policyMix: prev.policyMix.filter((_, i) => i !== index) };
-    });
-  }, []);
-
-  const handleStaffingChange = useCallback((key, value) => {
-    setStaffingInputs(prev => ({ ...prev, [key]: value }));
-  }, []);
-
-  const effectivePlanner = useMemo(() => ({
-    ...plannerInputs,
-    policyMix: plannerInputs.policyMix?.length
-      ? plannerInputs.policyMix
-      : agencyRates.policyMix,
-    commissionMatrix: agencyRates.commissionMatrix,
-    baseCommission: agencyRates.baseCommission,
-  }), [plannerInputs, agencyRates]);
 
   // ── React Query hooks ─────────────────────────────────────────────────────
 
@@ -682,32 +554,7 @@ const StaffPerformancePage = () => {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
-        {activeTab === 'capacity' ? (
-          /* ── Capacity Tab ──────────────────────────────────────────────── */
-          <div className="space-y-6 mt-6">
-            <CapacityPlanner
-              plannerInputs={effectivePlanner}
-              onInputChange={handlePlannerChange}
-              onMixChange={handleMixChange}
-              onMixAdd={handleMixAdd}
-              onMixRemove={handleMixRemove}
-              tierOptions={TIER_OPTIONS}
-              productLines={Object.keys(agencyRates.commissionMatrix)}
-              renewalInfo={RENEWAL_INFO}
-            />
-            <StaffingCapacity
-              staffingInputs={staffingInputs}
-              onStaffingChange={handleStaffingChange}
-              plannerInputs={effectivePlanner}
-              ytdAvgPremium={ytdBlended?.avgPremiumPerPolicy}
-              ytdCommissionRate={ytdBlended ? ytdBlended.blendedCommissionRate * 100 : undefined}
-              producerConfigs={producerConfigs}
-              selectedProducerConfig={selectedProducerConfig}
-              selectedProducerConfigId={selectedProducerConfigId}
-              onProducerConfigChange={setSelectedProducerConfigId}
-            />
-          </div>
-        ) : activeTab === 'team' ? (
+        {activeTab === 'team' ? (
           /* ── Team Comparison View ───────────────────────────────────────── */
           <div className="space-y-6">
             {teamLoading ? (
