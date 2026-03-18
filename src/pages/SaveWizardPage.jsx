@@ -233,10 +233,11 @@ export default function SaveWizardPage() {
     const params = new URLSearchParams(window.location.search);
     const prefilledZip = params.get('zip');
 
-    if (prefilledZip?.length === 5 && isTargetZip(prefilledZip) && !answers.zip) {
+    if (prefilledZip?.length === 5 && isTargetZip(prefilledZip)) {
+      // Always honor a valid ?zip= param — skip ZIP step regardless of session state
       setAnswer('zip', prefilledZip);
-      insertPartialLead(prefilledZip);
-      setCurrentIndex(1); // Skip to step 2 (Discount Qualifier)
+      if (currentIndex === 0) setCurrentIndex(1);
+      if (!answers.zip) insertPartialLead(prefilledZip); // Only insert partial lead once
     }
   }, [funnelAgency]); // eslint-disable-line react-hooks/exhaustive-deps
 
