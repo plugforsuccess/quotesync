@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowLeft, Search, Plus, X, CheckCircle, XCircle,
-  Download, Edit2, Shield,
+  Download, Edit2, Shield, PhoneOff,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCustomerConsent } from '../hooks/useCustomerConsent';
@@ -45,7 +45,7 @@ function getEmployeeName(employees, id) {
 
 export default function ConsentManagementPage() {
   const { currentAgencyId } = useAuth();
-  const { data: consents, isLoading, upsertConsent, isUpserting, deleteConsent } = useCustomerConsent(currentAgencyId);
+  const { data: consents, isLoading, upsertConsent, isUpserting } = useCustomerConsent(currentAgencyId);
   const { data: employees = [] } = useActiveEmployees(currentAgencyId);
 
   const [search, setSearch] = useState('');
@@ -142,6 +142,7 @@ export default function ConsentManagementPage() {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Auto-dial</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DNC</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Source</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Collected By</th>
@@ -150,7 +151,7 @@ export default function ConsentManagementPage() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filtered.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50">
+                <tr key={c.id} className={c.dnc ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50'}>
                   <td className="px-4 py-3 font-medium text-gray-900">{c.customer_name || '—'}</td>
                   <td className="px-4 py-3 text-gray-600 font-mono">{c.customer_phone}</td>
                   <td className="px-4 py-3">
@@ -158,6 +159,13 @@ export default function ConsentManagementPage() {
                       <span className="inline-flex items-center gap-1 text-green-700"><CheckCircle className="w-4 h-4" /> Yes</span>
                     ) : (
                       <span className="inline-flex items-center gap-1 text-gray-400"><XCircle className="w-4 h-4" /> No</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3">
+                    {c.dnc ? (
+                      <span className="inline-flex items-center gap-1 text-red-700 font-medium"><PhoneOff className="w-4 h-4" /> DNC</span>
+                    ) : (
+                      <span className="text-gray-400">—</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-gray-600">{formatDate(c.autodial_consent_date)}</td>
@@ -209,6 +217,10 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
   const [source, setSource] = useState(record?.autodial_consent_source || '');
   const [optOutChannel, setOptOutChannel] = useState(record?.autodial_opt_out_channel || '');
   const [collectedBy, setCollectedBy] = useState(record?.consent_collected_by || '');
+  const [dnc, setDnc] = useState(record?.dnc ?? false);
+  const [dncSource, setDncSource] = useState(record?.dnc_source || '');
+  const [dncNotes, setDncNotes] = useState(record?.dnc_notes || '');
+  const [showDncConfirm, setShowDncConfirm] = useState(false);
   const [notes, setNotes] = useState(record?.consent_notes || '');
   const [error, setError] = useState(null);
 
@@ -233,6 +245,9 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
         autodial_consent: autodialConsent,
         autodial_consent_source: autodialConsent ? source || null : null,
         autodial_opt_out_channel: !autodialConsent ? optOutChannel || null : null,
+        dnc,
+        dnc_source: dnc ? dncSource || null : null,
+        dnc_notes: dnc ? dncNotes || null : null,
         consent_collected_by: collectedBy || null,
         consent_notes: notes || null,
       });
@@ -326,6 +341,54 @@ function ConsentModal({ record, agencyId, employees, onSave, isSaving, onClose }
               </select>
             </div>
           )}
+
+          {/* DNC Toggle */}
+          <div className="p-3 bg-red-50 rounded-lg border border-red-200 space-y-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={dnc}
+                onChange={(e) => {
+                  if (e.target.checked && !record?.dnc) {
+                    setShowDncConfirm(true);
+                  } else {
+                    setDnc(e.target.checked);
+                    if (!e.target.checked) setShowDncConfirm(false);
+                  }
+                }}
+                className="rounded border-red-300 text-red-600 focus:ring-red-500"
+              />
+              <span className="text-sm font-medium text-red-800">Do Not Call (DNC)</span>
+            </label>
+            {showDncConfirm && !dnc && (
+              <div className="p-2 bg-white rounded border border-red-300 text-sm">
+                <p className="text-red-700 font-medium mb-2">Are you sure? This will block all AI and auto-dial outreach.</p>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => { setDnc(true); setShowDncConfirm(false); }} className="px-3 py-1 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded">Confirm DNC</button>
+                  <button type="button" onClick={() => setShowDncConfirm(false)} className="px-3 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                </div>
+              </div>
+            )}
+            {dnc && (
+              <>
+                <div>
+                  <label className="block text-xs font-medium text-red-700 mb-1">DNC Source</label>
+                  <select value={dncSource} onChange={(e) => setDncSource(e.target.value)} className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm">
+                    <option value="">Select source...</option>
+                    <option value="verbal">Verbal</option>
+                    <option value="email">Email</option>
+                    <option value="manual">Manual</option>
+                    <option value="call_request">Call Request</option>
+                    <option value="national_registry">National Registry</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-red-700 mb-1">DNC Notes</label>
+                  <input type="text" value={dncNotes} onChange={(e) => setDncNotes(e.target.value)} className="w-full border border-red-300 rounded-lg px-3 py-2 text-sm" placeholder="Reason for DNC..." />
+                </div>
+              </>
+            )}
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Collected By</label>

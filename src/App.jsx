@@ -468,7 +468,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="renewals/consent" element={
-              <ProtectedRoute requiredRole="editor" requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="agent">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><ConsentManagementPage /></Suspense>
                 </ErrorBoundary>

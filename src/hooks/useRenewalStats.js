@@ -18,6 +18,11 @@ function getDaysUntilRenewal(renewalDate) {
 export function getTriageBucket(policy) {
   const daysUntil = getDaysUntilRenewal(policy.renewal_date);
 
+  // Human Only — DNC, claim activity, stale upload, premium sanity, etc.
+  if (policy.human_only) {
+    return 'human_only';
+  }
+
   // Escalated — Human Must Act Today
   if (
     policy.priority_tier === 'critical' ||
@@ -25,6 +30,14 @@ export function getTriageBucket(policy) {
     (policy.human_followup_required && !policy.followup_completed_at)
   ) {
     return 'escalated';
+  }
+
+  // Contact attempt cap — >=3 no-answer or voicemail attempts → needs human call
+  if (
+    policy.contact_attempts >= 3 &&
+    ['no_answer', 'left_voicemail'].includes(policy.last_contact_outcome)
+  ) {
+    return 'needs_human_call';
   }
 
   // Not Yet Due — more than 60 days out
@@ -35,6 +48,7 @@ export function getTriageBucket(policy) {
   // Automation Cleared
   if (
     policy.consent?.autodial_consent === true &&
+    !policy.consent?.dnc &&
     ['pending', 'contacted'].includes(policy.renewal_status) &&
     policy.priority_tier !== 'critical' &&
     policy.last_contact_outcome !== 'shopping' &&
@@ -44,10 +58,6 @@ export function getTriageBucket(policy) {
   }
 
   // Needs Human Call — no consent or consent denied, within 60 days
-  if (daysUntil <= 60) {
-    return 'needs_human_call';
-  }
-
   return 'needs_human_call';
 }
 
@@ -59,6 +69,7 @@ export function useRenewalStats(policies) {
       return {
         totalDue60Days: 0,
         escalated: 0,
+        humanOnly: 0,
         needsHumanCall: 0,
         automationCleared: 0,
       };
@@ -66,6 +77,7 @@ export function useRenewalStats(policies) {
 
     let totalDue60Days = 0;
     let escalated = 0;
+    let humanOnly = 0;
     let needsHumanCall = 0;
     let automationCleared = 0;
 
@@ -75,11 +87,12 @@ export function useRenewalStats(policies) {
 
       const bucket = getTriageBucket(p);
       if (bucket === 'escalated') escalated++;
+      else if (bucket === 'human_only') humanOnly++;
       else if (bucket === 'needs_human_call') needsHumanCall++;
       else if (bucket === 'automation_cleared') automationCleared++;
     });
 
-    return { totalDue60Days, escalated, needsHumanCall, automationCleared };
+    return { totalDue60Days, escalated, humanOnly, needsHumanCall, automationCleared };
   }, [policies]);
 }
 

@@ -51,7 +51,7 @@ async function fetchRenewalPolicies(agencyId, filters = {}) {
 async function fetchConsentMap(agencyId) {
   const { data, error } = await supabase
     .from('customer_consent')
-    .select('customer_phone, autodial_consent, autodial_consent_date')
+    .select('customer_phone, autodial_consent, autodial_consent_date, dnc')
     .eq('agency_id', agencyId);
 
   if (error) throw error;
@@ -63,6 +63,7 @@ async function fetchConsentMap(agencyId) {
         map[c.customer_phone] = {
           autodial_consent: c.autodial_consent,
           autodial_consent_date: c.autodial_consent_date,
+          dnc: c.dnc,
         };
       }
     });
@@ -72,7 +73,7 @@ async function fetchConsentMap(agencyId) {
 
 // ── Priority sort helper ────────────────────────────────────────────────────
 
-const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, standard: 3 };
+const PRIORITY_ORDER = { critical: 0, high: 1, medium: 2, standard: 3, opportunity: 4 };
 
 function sortByPriorityThenDate(policies) {
   return [...policies].sort((a, b) => {
@@ -174,6 +175,10 @@ export function useLogContact() {
       }
       if (outcome === 'confirmed') {
         updates.renewal_status = 'confirmed';
+      }
+      if (outcome === 'wrong_number') {
+        updates.human_followup_required = true;
+        updates.followup_reason = 'wrong_number';
       }
 
       const { data, error } = await supabase

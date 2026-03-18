@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Phone, Mail, Bot, Clock, User, CheckCircle,
-  XCircle, AlertTriangle, Shield, MapPin,
+  XCircle, AlertTriangle, Shield, MapPin, Users, Flag,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRenewalDetail, useUpdateRenewalStatus, useAssignFollowup } from '../hooks/useRenewalPolicies';
@@ -52,14 +52,19 @@ const CHANNEL_LABELS = { ai_voice: 'AI Voice', human_call: 'Human Call', email: 
 
 const OUTCOME_LABELS = {
   no_answer: 'No Answer', confirmed: 'Confirmed', hesitant: 'Hesitant',
-  shopping: 'Shopping', escalated: 'Escalated', left_voicemail: 'Voicemail', wrong_number: 'Wrong #',
+  shopping: 'Shopping', escalated: 'Escalated', left_voicemail: 'Voicemail',
+  wrong_number: 'Wrong #', third_party_answer: '3rd Party Answer',
 };
 
 const FOLLOWUP_LABELS = {
   rate_shock: 'Rate Shock', shopping: 'Shopping', no_response: 'No Response',
-  eft_lapse: 'EFT Lapse', single_policy: 'Single Policy', prior_claim: 'Prior Claim',
-  hesitant: 'Hesitant', manual: 'Manual',
+  eft_lapse: 'EFT Lapse', multi_policy: 'Multi-Policy', hesitant: 'Hesitant',
+  address_discrepancy: 'Address Discrepancy', amount_due: 'Amount Due',
+  wrong_number: 'Wrong Number', manual: 'Manual',
 };
+
+const CLAIM_FLAG_LABELS = { none: 'None', open: 'Open Claim', recent: 'Recent Claim' };
+const CLAIM_FLAG_COLORS = { none: 'text-gray-500', open: 'text-red-700', recent: 'text-amber-700' };
 
 // ── Page ────────────────────────────────────────────────────────────────────
 
@@ -195,7 +200,37 @@ export default function RenewalDetailPage() {
           )}
           <div><span className="text-gray-500">EFT on File:</span> {policy.eft_on_file ? 'Yes' : policy.eft_on_file === false ? 'No' : '—'}</div>
           <div><span className="text-gray-500">Multi-Policy:</span> {policy.multi_policy ? 'Yes' : 'No'}</div>
+          {policy.customer_tenure_years != null && (
+            <div><span className="text-gray-500">Tenure:</span> <span className="font-medium">{policy.customer_tenure_years} year{policy.customer_tenure_years !== 1 ? 's' : ''}</span></div>
+          )}
+          {policy.amount_due != null && (
+            <div><span className="text-gray-500">Amount Due:</span> <span className="font-medium">{formatCurrency(policy.amount_due)}</span></div>
+          )}
         </div>
+
+        {/* Claim Flag */}
+        {policy.claim_flag && policy.claim_flag !== 'none' && (
+          <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-200 text-sm">
+            <Flag className="w-4 h-4 text-red-500" />
+            <span className={`font-medium ${CLAIM_FLAG_COLORS[policy.claim_flag] || ''}`}>
+              {CLAIM_FLAG_LABELS[policy.claim_flag] || policy.claim_flag}
+            </span>
+            {policy.claim_flag_set_at && (
+              <span className="text-gray-500">— flagged {formatDate(policy.claim_flag_set_at)}</span>
+            )}
+          </div>
+        )}
+
+        {/* Human Only flag */}
+        {policy.human_only && (
+          <div className="flex items-center gap-2 p-3 bg-orange-50 rounded-lg border border-orange-200 text-sm">
+            <AlertTriangle className="w-4 h-4 text-orange-500" />
+            <span className="font-medium text-orange-800">Human Only</span>
+            {policy.human_only_reason && (
+              <span className="text-orange-600">— {policy.human_only_reason.replace(/_/g, ' ')}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Section 2: Consent Status */}
@@ -205,20 +240,30 @@ export default function RenewalDetailPage() {
           Consent Status
         </h2>
         {consent ? (
-          <div className="flex items-center gap-4 text-sm">
-            <span className={`flex items-center gap-1 font-medium ${consent.autodial_consent ? 'text-green-700' : 'text-red-600'}`}>
-              {consent.autodial_consent ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-              Auto-dial: {consent.autodial_consent ? 'Consented' : 'Not Consented'}
-            </span>
-            {consent.autodial_consent_date && (
-              <span className="text-gray-500">as of {formatDate(consent.autodial_consent_date)}</span>
+          <div className="space-y-2">
+            <div className="flex items-center gap-4 text-sm">
+              <span className={`flex items-center gap-1 font-medium ${consent.autodial_consent ? 'text-green-700' : 'text-red-600'}`}>
+                {consent.autodial_consent ? <CheckCircle className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+                Auto-dial: {consent.autodial_consent ? 'Consented' : 'Not Consented'}
+              </span>
+              {consent.autodial_consent_date && (
+                <span className="text-gray-500">as of {formatDate(consent.autodial_consent_date)}</span>
+              )}
+              <Link
+                to="/admin/renewals/consent"
+                className="text-primary-600 hover:text-primary-700 font-medium"
+              >
+                Update
+              </Link>
+            </div>
+            {consent.dnc && (
+              <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg text-sm">
+                <XCircle className="w-4 h-4 text-red-600" />
+                <span className="font-medium text-red-700">DNC — Do Not Call</span>
+                {consent.dnc_date && <span className="text-red-500">since {formatDate(consent.dnc_date)}</span>}
+                {consent.dnc_source && <span className="text-red-400">({consent.dnc_source.replace(/_/g, ' ')})</span>}
+              </div>
             )}
-            <Link
-              to="/admin/renewals/consent"
-              className="text-primary-600 hover:text-primary-700 font-medium"
-            >
-              Update
-            </Link>
           </div>
         ) : (
           <div className="text-sm text-gray-500">
@@ -229,6 +274,20 @@ export default function RenewalDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Section 2b: Household Group */}
+      {policy.customer_group_id && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <h2 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <Users className="w-5 h-5 text-gray-600" />
+            Household Group
+          </h2>
+          <p className="text-sm text-gray-600">
+            This policy is part of a multi-policy household group.
+            Group ID: <span className="font-mono text-xs">{policy.customer_group_id}</span>
+          </p>
+        </div>
+      )}
 
       {/* Section 3: Contact Log */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">

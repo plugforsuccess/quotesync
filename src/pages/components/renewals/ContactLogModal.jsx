@@ -22,6 +22,7 @@ const OUTCOMES = [
   { value: 'escalated', label: 'Escalated' },
   { value: 'left_voicemail', label: 'Left Voicemail' },
   { value: 'wrong_number', label: 'Wrong Number' },
+  { value: 'third_party_answer', label: 'Third Party Answer' },
 ];
 
 const FOLLOWUP_REASONS = [
@@ -29,9 +30,11 @@ const FOLLOWUP_REASONS = [
   { value: 'shopping', label: 'Shopping' },
   { value: 'no_response', label: 'No Response' },
   { value: 'eft_lapse', label: 'EFT Lapse' },
-  { value: 'single_policy', label: 'Single Policy' },
-  { value: 'prior_claim', label: 'Prior Claim' },
+  { value: 'multi_policy', label: 'Multi-Policy' },
   { value: 'hesitant', label: 'Hesitant' },
+  { value: 'address_discrepancy', label: 'Address Discrepancy' },
+  { value: 'amount_due', label: 'Amount Due' },
+  { value: 'wrong_number', label: 'Wrong Number' },
   { value: 'manual', label: 'Manual' },
 ];
 

@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   RefreshCw, Upload, Shield, ChevronDown, ChevronRight,
-  Search, Phone, CheckCircle, AlertTriangle, Clock,
+  Search, Phone, CheckCircle, AlertTriangle, Clock, ShieldAlert,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useRenewalPolicies } from '../hooks/useRenewalPolicies';
@@ -44,6 +44,7 @@ const OUTCOME_LABELS = {
   escalated: 'Escalated',
   left_voicemail: 'Voicemail',
   wrong_number: 'Wrong #',
+  third_party_answer: '3rd Party',
 };
 
 const FOLLOWUP_LABELS = {
@@ -51,9 +52,23 @@ const FOLLOWUP_LABELS = {
   shopping: 'Shopping',
   no_response: 'No Response',
   eft_lapse: 'EFT Lapse',
-  single_policy: 'Single Policy',
-  prior_claim: 'Prior Claim',
+  multi_policy: 'Multi-Policy',
   hesitant: 'Hesitant',
+  address_discrepancy: 'Address Discrepancy',
+  amount_due: 'Amount Due',
+  wrong_number: 'Wrong Number',
+  manual: 'Manual',
+};
+
+const HUMAN_ONLY_REASON_LABELS = {
+  dnc: 'Do Not Call',
+  claim_activity: 'Claim Activity',
+  multi_date_conflict: 'Multi-Date Conflict',
+  premium_sanity: 'Premium Sanity',
+  stale_upload: 'Stale Upload',
+  amount_due: 'Amount Due',
+  no_consent: 'No Consent',
+  attempt_cap: 'Attempt Cap',
   manual: 'Manual',
 };
 
@@ -147,10 +162,24 @@ function RenewalCard({ policy, onLogContact }) {
             {policy.consent?.autodial_consent ? 'Consented' : 'No consent'}
           </span>
 
+          {/* Human only reason chip */}
+          {policy.human_only && policy.human_only_reason && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+              {HUMAN_ONLY_REASON_LABELS[policy.human_only_reason] || policy.human_only_reason}
+            </span>
+          )}
+
           {/* Followup reason chip */}
           {policy.human_followup_required && policy.followup_reason && (
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
               {FOLLOWUP_LABELS[policy.followup_reason] || policy.followup_reason}
+            </span>
+          )}
+
+          {/* Tenure hint for escalated/human_only */}
+          {policy.customer_tenure_years != null && policy.customer_tenure_years > 0 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700" title="Customer tenure — use in talk track">
+              {policy.customer_tenure_years}yr tenure
             </span>
           )}
 
@@ -177,7 +206,7 @@ function RenewalCard({ policy, onLogContact }) {
 
 function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen = true, onLogContact }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const borderColor = { red: 'border-l-red-500', yellow: 'border-l-yellow-500', green: 'border-l-green-500' }[color] || 'border-l-gray-300';
+  const borderColor = { red: 'border-l-red-500', orange: 'border-l-orange-500', yellow: 'border-l-yellow-500', green: 'border-l-green-500' }[color] || 'border-l-gray-300';
 
   return (
     <div className={`border rounded-lg ${borderColor} border-l-4`}>
@@ -190,6 +219,7 @@ function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen 
           <h3 className="text-base font-semibold text-gray-900">{title}</h3>
           <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
             color === 'red' ? 'bg-red-100 text-red-700' :
+            color === 'orange' ? 'bg-orange-100 text-orange-700' :
             color === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
             'bg-green-100 text-green-700'
           }`}>
@@ -233,6 +263,7 @@ export default function RenewalsPage() {
 
   // Bucket filtered lists
   const escalatedPolicies = useMemo(() => filterByBucket(policies, 'escalated'), [policies]);
+  const humanOnlyPolicies = useMemo(() => filterByBucket(policies, 'human_only'), [policies]);
   const needsHumanPolicies = useMemo(() => filterByBucket(policies, 'needs_human_call'), [policies]);
   const automationPolicies = useMemo(() => filterByBucket(policies, 'automation_cleared'), [policies]);
 
@@ -299,9 +330,10 @@ export default function RenewalsPage() {
       ) : (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <StatCard label="Due in 60 Days" value={stats.totalDue60Days} color="blue" />
             <StatCard label="Escalated" value={stats.escalated} color="red" />
+            <StatCard label="Human Only" value={stats.humanOnly} color="orange" />
             <StatCard label="Needs Human Call" value={stats.needsHumanCall} color="yellow" />
             <StatCard label="Automation Cleared" value={stats.automationCleared} color="green" />
           </div>
@@ -353,6 +385,15 @@ export default function RenewalsPage() {
               onLogContact={setContactPolicy}
             />
             <TriageSection
+              title="Human Only"
+              icon={ShieldAlert}
+              color="orange"
+              count={humanOnlyPolicies.length}
+              policies={humanOnlyPolicies}
+              defaultOpen={true}
+              onLogContact={setContactPolicy}
+            />
+            <TriageSection
               title="Needs Human Call"
               icon={Phone}
               color="yellow"
@@ -390,6 +431,7 @@ function StatCard({ label, value, color }) {
   const colorMap = {
     blue: 'bg-blue-50 text-blue-700 border-blue-200',
     red: 'bg-red-50 text-red-700 border-red-200',
+    orange: 'bg-orange-50 text-orange-700 border-orange-200',
     yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200',
     green: 'bg-green-50 text-green-700 border-green-200',
   };

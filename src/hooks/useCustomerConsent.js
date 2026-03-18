@@ -59,6 +59,10 @@ export function useCustomerConsent(agencyId) {
               ? consent.autodial_opt_out_date || new Date().toISOString()
               : null,
             autodial_opt_out_channel: consent.autodial_opt_out_channel || null,
+            dnc: consent.dnc ?? false,
+            dnc_date: consent.dnc ? consent.dnc_date || new Date().toISOString() : null,
+            dnc_source: consent.dnc ? consent.dnc_source || null : null,
+            dnc_notes: consent.dnc_notes || null,
             consent_collected_by: consent.consent_collected_by || null,
             consent_notes: consent.consent_notes || null,
           },
@@ -76,27 +80,11 @@ export function useCustomerConsent(agencyId) {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: async (consentId) => {
-      const { error } = await supabase
-        .from('customer_consent')
-        .delete()
-        .eq('id', consentId);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.renewals.consent(agencyId) });
-      queryClient.invalidateQueries({ queryKey: queryKeys.renewals.consentMap(agencyId) });
-    },
-  });
-
   return {
     data: query.data || [],
     isLoading: query.isLoading,
     error: query.error,
     upsertConsent: upsertMutation.mutateAsync,
     isUpserting: upsertMutation.isPending,
-    deleteConsent: deleteMutation.mutateAsync,
-    isDeleting: deleteMutation.isPending,
   };
 }
