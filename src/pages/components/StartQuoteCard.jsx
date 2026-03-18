@@ -51,7 +51,11 @@ const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
                 <div className="max-w-xl mx-auto">
                   {/* PRIMARY CTA: Check My Savings → /save */}
                   <button
-                    onClick={() => navigate('/save')}
+                    onClick={() => {
+                      const stored = localStorage.getItem('qs_validated_zip');
+                      const zip = stored ? JSON.parse(stored)?.zip : null;
+                      navigate(zip ? `/save?zip=${zip}` : '/save');
+                    }}
                     className="group relative inline-flex items-center justify-center gap-3 w-full overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border-0"
                   >
                     {/* Animated Gradient Border */}
