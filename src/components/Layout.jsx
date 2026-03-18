@@ -135,33 +135,49 @@ function Layout({ forcePlane = null }) {
   return (
     <div className="min-h-screen bg-[#0f172a] text-white flex flex-col">
       {isFunnelRoute ? (
-        /* ── Minimal funnel nav ── */
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200" style={{ overflow: 'visible' }}>
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-            {/* Logo */}
-            <NavLink to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-sm">
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
+        /* ── Minimal funnel nav — dark glass, logo + phone only ── */
+        <header
+          className="fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/80 backdrop-blur-2xl border-b border-white/10"
+          style={{ overflow: 'visible' }}
+        >
+          {/* Animated gradient line — identical to full nav */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x"></div>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 flex items-center justify-between">
+
+            {/* Logo — pixel-for-pixel copy of full nav logo */}
+            <NavLink to="/" className="flex items-center gap-2 sm:gap-3 group">
+              <div className="relative">
+                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg opacity-75 group-hover:opacity-100 blur transition duration-300 animate-pulse"></div>
+                <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
               </div>
-              <span className="font-black text-lg text-gray-900 tracking-tight">
-                insuredbycam
-              </span>
+              <div>
+                <div className="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent group-hover:from-emerald-400 group-hover:via-teal-400 group-hover:to-cyan-400 transition-all duration-300">
+                  insuredbycam
+                </div>
+                <div className="text-xs sm:text-sm text-gray-400">
+                  Insurance shopping, simplified
+                </div>
+              </div>
             </NavLink>
 
-            {/* Phone CTA — only if env var set */}
+            {/* Phone CTA — only rendered if env var is set */}
             {import.meta.env.VITE_BLAND_INBOUND_NUMBER && (
               <a
                 href={`tel:${import.meta.env.VITE_BLAND_INBOUND_NUMBER_E164 || import.meta.env.VITE_BLAND_INBOUND_NUMBER}`}
-                className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900 transition-colors"
+                className="flex items-center gap-2 text-sm text-gray-300 hover:text-white transition-colors"
               >
-                <span className="hidden sm:inline text-gray-500 font-normal">Call an agent now:</span>
-                <span className="font-black text-gray-900">
+                <span className="hidden sm:inline text-gray-400 font-normal">Call an agent now:</span>
+                <span className="font-black text-white">
                   {import.meta.env.VITE_BLAND_INBOUND_NUMBER}
                 </span>
               </a>
             )}
+
           </div>
         </header>
       ) : (
@@ -397,7 +413,7 @@ function Layout({ forcePlane = null }) {
       )}
 
       {/* Spacer for fixed header */}
-      <div className={isFunnelRoute ? 'h-14' : 'h-[73px] sm:h-[81px]'}></div>
+      <div className="h-[73px] sm:h-[81px]"></div>
 
       {/* Verification overdue banner — admin only */}
       {!isFunnelRoute && <VerificationBanner />}
