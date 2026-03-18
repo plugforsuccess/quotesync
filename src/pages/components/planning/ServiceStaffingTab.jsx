@@ -52,8 +52,8 @@ export default function ServiceStaffingTab({ agencyId }) {
   const [customHours,       setCustomHours]        = useState(65);
   const [outboundPct,       setOutboundPct]        = useState(100); // new hire is 100% outbound
 
-  // ── Tracy's Contribution ─────────────────────────────────────────────────
-  const [tracyHoursOutbound, setTracyHoursOutbound] = useState(0); // currently near zero
+  // ── Existing Rep Contribution ────────────────────────────────────────────
+  const [existingRepHours, setExistingRepHours] = useState(0); // currently near zero
 
   // ── New Hire Cost ────────────────────────────────────────────────────────
   const [baseSalary,        setBaseSalary]         = useState(42000); // full-time equivalent
@@ -206,11 +206,11 @@ export default function ServiceStaffingTab({ agencyId }) {
     const hireOutboundHours = hireHours * (outboundPct / 100);
     const hireWorkableCases = Math.floor((hireOutboundHours * 60) / handleTime);
 
-    // Tracy's outbound contribution (additive)
-    const tracyWorkableCases = Math.floor((tracyHoursOutbound * 60) / handleTime);
+    // Existing rep outbound contribution (additive — cost is sunk)
+    const existingRepCases = Math.floor((existingRepHours * 60) / handleTime);
 
     // Total team capacity
-    const totalWorkableCases = hireWorkableCases + tracyWorkableCases;
+    const totalWorkableCases = hireWorkableCases + existingRepCases;
     const utilization = totalQueue > 0
       ? (totalQueue / totalWorkableCases) * 100
       : 0;
@@ -221,7 +221,7 @@ export default function ServiceStaffingTab({ agencyId }) {
     const premiumRetained = saved * avgPremium;
     const commSaved = premiumRetained * (commissionRate / 100);
 
-    // ROI is measured against new hire cost only (Tracy's cost is sunk)
+    // ROI is measured against new hire cost only (existing rep cost is sunk)
     const netROI = commSaved - monthlyCost;
     const annualNetROI = netROI * 12;
     const paybackMonths = commSaved > 0 ? monthlyCost / commSaved : Infinity;
@@ -278,7 +278,7 @@ export default function ServiceStaffingTab({ agencyId }) {
 
     // Part-time vs full-time comparison (always compute both for the comparison card)
     const ftHours = 160;
-    const ftWorkable = Math.floor((ftHours * (outboundPct / 100) * 60) / handleTime) + tracyWorkableCases;
+    const ftWorkable = Math.floor((ftHours * (outboundPct / 100) * 60) / handleTime) + existingRepCases;
     const ftContacted = Math.round(ftWorkable * (contactRate / 100));
     const ftSaved = Math.round(ftContacted * (saveRate / 100));
     const ftCommSaved = ftSaved * avgPremium * (commissionRate / 100);
@@ -286,7 +286,7 @@ export default function ServiceStaffingTab({ agencyId }) {
     const ftNetROI = ftCommSaved - ftMonthlyCost;
 
     const ptHours = 65;
-    const ptWorkable = Math.floor((ptHours * (outboundPct / 100) * 60) / handleTime) + tracyWorkableCases;
+    const ptWorkable = Math.floor((ptHours * (outboundPct / 100) * 60) / handleTime) + existingRepCases;
     const ptContacted = Math.round(ptWorkable * (contactRate / 100));
     const ptSaved = Math.round(ptContacted * (saveRate / 100));
     const ptCommSaved = ptSaved * avgPremium * (commissionRate / 100);
@@ -295,7 +295,7 @@ export default function ServiceStaffingTab({ agencyId }) {
 
     return {
       hireOutboundHours, hireWorkableCases,
-      tracyWorkableCases, totalWorkableCases,
+      existingRepCases, totalWorkableCases,
       totalQueue,
       utilization, contacted, saved,
       premiumRetained, commSaved,
@@ -309,7 +309,7 @@ export default function ServiceStaffingTab({ agencyId }) {
       ftVsPt: { ftNetROI, ftMonthlyCost, ftCommSaved, ptNetROI, ptMonthlyCost, ptCommSaved },
     };
   }, [
-    hireHours, outboundPct, tracyHoursOutbound, handleTime,
+    hireHours, outboundPct, existingRepHours, handleTime,
     monthlyPolicies, pendingCancelPerMonth, avgPremium, commissionRate,
     contactRate, saveRate, monthlyCost, baseSalary, benefitsLoad,
     bundledPct, propertyFollowPct,
@@ -435,12 +435,12 @@ export default function ServiceStaffingTab({ agencyId }) {
               {calc.hireOutboundHours.toFixed(0)} hrs/mo → {calc.hireWorkableCases} cases workable
             </span>
           </div>
-          <Field label="Tracy outbound hrs/mo" value={tracyHoursOutbound}
-            onChange={setTracyHoursOutbound} suffix="hrs" min={0} max={80}
+          <Field label="Existing rep outbound hrs/mo" value={existingRepHours}
+            onChange={setExistingRepHours} suffix="hrs" min={0} max={80}
           />
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: -8, marginBottom: 14 }}>
-            Tracy's contribution: <span style={{ color: '#E2E8F0', fontWeight: 600 }}>
-              {calc.tracyWorkableCases} cases workable
+            Existing rep contribution: <span style={{ color: '#E2E8F0', fontWeight: 600 }}>
+              {calc.existingRepCases} cases workable
             </span>
           </div>
 
@@ -587,8 +587,8 @@ export default function ServiceStaffingTab({ agencyId }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <Stat label="New hire outbound hrs"  value={`${calc.hireOutboundHours.toFixed(0)} hrs`} />
                 <Stat label="New hire cases/mo"      value={calc.hireWorkableCases} />
-                <Stat label="Tracy outbound cases"   value={calc.tracyWorkableCases}
-                  sub={tracyHoursOutbound === 0 ? 'Currently 0 — set above to model' : undefined} />
+                <Stat label="Existing rep cases"   value={calc.existingRepCases}
+                  sub={existingRepHours === 0 ? 'Currently 0 — set above to model' : undefined} />
                 {/* Stat color prop — hex intentionally */}
                 <Stat label="Total team cases/mo"    value={calc.totalWorkableCases} color="#3B82F6" />
                 <Stat label="Renewal queue/mo"     value={monthlyPolicies} />
