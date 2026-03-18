@@ -154,7 +154,7 @@ function ProgressWheel({ pct }) {
   const gradientId = 'progress-wheel-gradient';
 
   return (
-    <div className="flex justify-center" style={{ marginTop: `-${size / 2}px`, marginBottom: '24px', position: 'relative', zIndex: 10 }}>
+    <div className="flex justify-center" style={{ marginTop: `-${size / 2}px`, marginBottom: '24px', position: 'relative', zIndex: 20 }}>
       <div className="relative" style={{ width: size, height: size }}>
         <svg
           width={size}
@@ -758,17 +758,21 @@ export default function SaveWizardPage() {
       <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '700ms' }}></div>
 
-      <div className="container mx-auto px-4 py-12 sm:py-16 relative z-10">
+      {/* Progress Wheel — OUTSIDE the padded container */}
+      {!isConfirmation && (
+        <div className="relative z-20">
+          <ProgressWheel
+            pct={Math.min(
+              Math.round(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100),
+              99
+            )}
+          />
+        </div>
+      )}
+
+      {/* Content container — top padding removed, bottom padding kept */}
+      <div className="container mx-auto px-4 pb-12 sm:pb-16 relative z-10">
         <div className="max-w-lg mx-auto">
-          {/* Progress Wheel */}
-          {!isConfirmation && (
-            <ProgressWheel
-              pct={Math.min(
-                Math.round(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100),
-                99
-              )}
-            />
-          )}
 
           {/* Header — only on qualification steps */}
           {currentIndex === 0 && !isConfirmation && (
