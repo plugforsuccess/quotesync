@@ -133,7 +133,6 @@ function hasValueForCurrentStep(stepId, answers) {
 
 // Steps that require a manual Continue button (all others auto-advance)
 const MANUAL_ADVANCE_STEPS = new Set([
-  'discountQualifier',
   'earlyPhone',
   'currentAutoPremium',
   'currentHomePremium',
@@ -578,6 +577,7 @@ export default function SaveWizardPage() {
             onMaritalStatusChange={(v) => setAnswer('maritalStatus', v)}
             onMultipleDriversChange={(v) => setAnswer('multipleDrivers', v)}
             onMultipleVehiclesChange={(v) => setAnswer('vehicleCount', v ? 2 : 1)}
+            onAutoAdvance={handleAutoAdvance}
           />
         );
       case 'veteranStatus':
