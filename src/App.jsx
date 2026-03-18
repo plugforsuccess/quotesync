@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ShieldOff, Home, Building2 as Building2Icon } from 'lucide-react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -105,7 +105,15 @@ const PageLoader = () => <PageSpinner />;
 // Admin routes use a dedicated layout that forces the platform plane,
 // guaranteeing admin nav regardless of loading state or sessionStorage cache.
 function AdminLayout() {
-  return <Layout forcePlane="platform" />;
+  // Force platform plane for platform users, but respect agency plane
+  // for agency users (like the agency principal) who access /admin routes
+  const { isPlatformUser, agencyMemberships } = useAuth();
+  const hasAgencyMembership = agencyMemberships?.some(m => m.status === 'active');
+
+  if (isPlatformUser && !hasAgencyMembership) {
+    return <Layout forcePlane="platform" />;
+  }
+  return <Layout />;
 }
 
 function App() {
