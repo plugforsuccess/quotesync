@@ -9,8 +9,14 @@ export function zipStepValidate(value) {
   return null;
 }
 
-export function ownsHomeStepValidate(value) {
-  if (value === null || value === undefined) return 'Please select one.';
+export function discountQualifierStepValidate(answers) {
+  if (answers.ownsHome == null || answers.maritalStatus == null || answers.multipleDrivers == null)
+    return 'Please answer all questions.';
+  return null;
+}
+
+export function veteranStatusStepValidate(value) {
+  if (!value) return 'Please select one.';
   return null;
 }
 
@@ -44,8 +50,36 @@ export function homeClaimsHistoryStepValidate(value) {
   return null;
 }
 
-export function vehicleCountStepValidate(value) {
-  if (value === null || value === undefined) return 'Please select one.';
+export function currentAutoPremiumStepValidate() {
+  return null; // always valid — "Not sure" is a valid action
+}
+
+export function currentHomePremiumStepValidate() {
+  return null; // always valid
+}
+
+export function coverageLapseStepValidate(value) {
+  if (!value) return 'Please select one.';
+  return null;
+}
+
+export function vehicleYearStepValidate(value) {
+  if (!value) return 'Please select your vehicle year.';
+  return null;
+}
+
+export function vehicleMakeStepValidate(value) {
+  if (!value) return 'Please select your vehicle make.';
+  return null;
+}
+
+export function vehicleModelStepValidate(value) {
+  if (!value) return 'Please select your vehicle model.';
+  return null;
+}
+
+export function vehicleUseStepValidate(value) {
+  if (!value?.length) return 'Please select at least one.';
   return null;
 }
 
@@ -111,16 +145,22 @@ export function contactStepValidate(firstName, lastName, phone, email) {
 export function validateStep(stepId, answers) {
   switch (stepId) {
     case 'zip': return zipStepValidate(answers.zip);
-    case 'ownsHome': return ownsHomeStepValidate(answers.ownsHome);
+    case 'discountQualifier': return discountQualifierStepValidate(answers);
+    case 'veteranStatus': return veteranStatusStepValidate(answers.veteranStatus);
     case 'productIntent': return productIntentStepValidate(answers.productIntent);
     case 'earlyPhone': return earlyPhoneStepValidate(answers.earlyPhone);
     case 'currentAutoCarrier': return currentAutoCarrierStepValidate(answers.currentAutoCarrier);
     case 'currentHomeCarrier': return currentHomeCarrierStepValidate(answers.currentHomeCarrier);
     case 'currentRentersCarrier': return currentRentersCarrierStepValidate(answers.currentRentersCarrier);
+    case 'currentAutoPremium': return currentAutoPremiumStepValidate();
+    case 'currentHomePremium': return currentHomePremiumStepValidate();
+    case 'coverageLapse': return coverageLapseStepValidate(answers.coverageLapse);
+    case 'vehicleYear': return vehicleYearStepValidate(answers.vehicleYear);
+    case 'vehicleMake': return vehicleMakeStepValidate(answers.vehicleMake);
+    case 'vehicleModel': return vehicleModelStepValidate(answers.vehicleModel);
+    case 'vehicleUse': return vehicleUseStepValidate(answers.vehicleUse);
     case 'autoDrivingRecord': return autoDrivingRecordStepValidate(answers.autoDrivingRecord);
     case 'homeClaimsHistory': return homeClaimsHistoryStepValidate(answers.homeClaimsHistory);
-    case 'vehicleCount': return vehicleCountStepValidate(answers.vehicleCount);
-    case 'maritalStatus': return maritalStatusStepValidate(answers.maritalStatus);
     case 'dob': return dobStepValidate(answers.dob);
     case 'address': return addressStepValidate(answers.street, answers.city);
     case 'contact': return contactStepValidate(answers.firstName, answers.lastName, answers.phone, answers.email);
