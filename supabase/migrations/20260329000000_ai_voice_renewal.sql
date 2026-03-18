@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS ai_call_log (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
   policy_id uuid NOT NULL REFERENCES renewal_policies(id),
-  bland_call_id text NOT NULL,
+  bland_call_id text NOT NULL UNIQUE,
   call_outcome text,
   call_length_seconds integer,
   estimated_cost_usd numeric(6,4),
@@ -62,6 +62,12 @@ CREATE POLICY "Agent reads call log" ON ai_call_log FOR SELECT
 
 CREATE POLICY "Service role inserts call log" ON ai_call_log FOR INSERT
   WITH CHECK (true);
+
+-- Webhook retries use upsert (INSERT ... ON CONFLICT UPDATE), which requires
+-- both INSERT and UPDATE policies. Service role bypasses RLS, but add UPDATE
+-- policy for defense-in-depth in case service role is ever removed.
+CREATE POLICY "Service role updates call log" ON ai_call_log FOR UPDATE
+  USING (true);
 
 -- ── Migration 4: autodial_consent_source enum update ────────────────────────
 -- Add 'ai_voice' as a valid consent source for AI call consent capture

@@ -209,8 +209,9 @@ Deno.serve(async (req) => {
       .eq('agency_id', agency_id)
     if (updateError) throw updateError
 
-    // 2. Write ai_call_log (non-fatal)
-    await supabase.from('ai_call_log').insert({
+    // 2. Write ai_call_log (non-fatal, idempotent via bland_call_id UNIQUE)
+    // Bland.ai may retry the webhook up to 3 times — upsert prevents duplicate rows.
+    await supabase.from('ai_call_log').upsert({
       agency_id,
       policy_id,
       bland_call_id: body.call_id,
@@ -224,7 +225,7 @@ Deno.serve(async (req) => {
       assigned_to: assignedTo,
       followup_reason: followupReason,
       called_at: nowISO,
-    }).then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] ai_call_log insert error:', error) })
+    }, { onConflict: 'bland_call_id' }).then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] ai_call_log upsert error:', error) })
 
     // 3. Opt-out → DNC (CRITICAL — legal compliance)
     if (optOut && current.customer_phone) {

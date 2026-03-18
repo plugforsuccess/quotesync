@@ -365,7 +365,7 @@ export default function RenewalsPage() {
     setShowSuppressionOverride(false);
     clearResult();
     fireQueue(
-      { agencyId: currentAgencyId, overrideSuppression: override },
+      { overrideSuppression: override },
       {
         onSuccess: (data) => {
           if (data?.suppressed && !override) {

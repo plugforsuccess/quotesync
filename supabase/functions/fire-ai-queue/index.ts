@@ -9,7 +9,9 @@ import { corsHeaders } from '../_shared/cors.ts'
 import { checkRequiredEnvVars } from '../_shared/twilio.ts'
 
 const BATCH_LIMIT = 30
-const CALL_DELAY_MS = 30_000
+// 4-second delay keeps a full 30-call batch under the 150-second Supabase edge
+// function timeout while still spacing submissions enough to avoid Bland.ai 429s.
+const CALL_DELAY_MS = 4_000
 const BLAND_API_URL = 'https://api.bland.ai/v1/calls'
 
 function formatE164(phone: string | null): string | null {
@@ -140,9 +142,9 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Auth check
+  // Auth: validate JWT and enforce agent role
   const authHeader = req.headers.get('Authorization')
-  if (!authHeader) {
+  if (!authHeader?.startsWith('Bearer ')) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -156,13 +158,42 @@ Deno.serve(async (req) => {
     status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
   })
 
-  let body: { agency_id: string; override_suppression?: boolean } = { agency_id: '' }
+  // Verify JWT by creating a user-scoped client and checking the session
+  const userSupabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY') || Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    { global: { headers: { Authorization: authHeader } } }
+  )
+  const { data: { user }, error: authError } = await userSupabase.auth.getUser()
+  if (authError || !user) {
+    return new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+      status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Look up the caller's employee record + agency membership to verify agent role
+  const serviceSupabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  const { data: membership, error: membershipError } = await serviceSupabase
+    .from('agency_memberships')
+    .select('agency_id, agency_role')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .eq('agency_role', 'agent')
+    .limit(1)
+    .maybeSingle()
+
+  if (membershipError || !membership) {
+    return new Response(JSON.stringify({ error: 'Forbidden — agent role required' }), {
+      status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
+  }
+
+  let body: { override_suppression?: boolean } = {}
   try { body = await req.json() } catch { /* use defaults */ }
 
-  const { agency_id, override_suppression = false } = body
-  if (!agency_id) return new Response(JSON.stringify({ error: 'agency_id required' }), {
-    status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
+  // Use the agency_id from the authenticated membership — never trust client-supplied value
+  const agency_id = membership.agency_id
+  const { override_suppression = false } = body
 
   // Day suppression check
   const suppression = isSuppressedDay()
@@ -183,7 +214,7 @@ Deno.serve(async (req) => {
     }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
   }
 
-  const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
+  const supabase = serviceSupabase
   const BLAND_API_KEY = Deno.env.get('BLAND_AI_API_KEY')!
   const TWILIO_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
   const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -332,19 +363,9 @@ Deno.serve(async (req) => {
         continue
       }
 
-      const blandResponse = await response.json()
-
-      // Log to ai_queue_log
-      await supabase.from('ai_call_log').insert({
-        agency_id,
-        policy_id: record.id,
-        bland_call_id: blandResponse.call_id || 'pending',
-        call_outcome: 'queued',
-        called_at: new Date().toISOString(),
-      }).then(({ error }) => {
-        if (error) console.error('[FIRE_AI_QUEUE] ai_call_log insert error:', error)
-      })
-
+      // ai_call_log is written by the webhook on call_ended — not here.
+      // Writing here would create duplicate rows (one queued, one from webhook)
+      // and inflate every metric. The webhook is the single source of truth.
       queued.push(record.id)
 
       // 30-second delay between submissions (last call doesn't need delay)
