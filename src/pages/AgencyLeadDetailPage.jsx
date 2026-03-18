@@ -25,6 +25,26 @@ import { supabase } from '../lib/supabase';
 import PageSpinner from '../components/PageSpinner';
 import LeadMessageThread from './components/LeadMessageThread';
 
+const CARRIER_LABELS = {
+  state_farm: 'State Farm',
+  geico: 'GEICO',
+  progressive: 'Progressive',
+  allstate: 'Allstate',
+  liberty: 'Liberty Mutual',
+  liberty_mutual: 'Liberty Mutual',
+  farmers: 'Farmers',
+  farm_bureau: 'GA Farm Bureau',
+  usaa: 'USAA',
+  nationwide: 'Nationwide',
+  travelers: 'Travelers',
+  lemonade: 'Lemonade',
+  none: 'No current policy',
+};
+
+function formatCarrier(value) {
+  return CARRIER_LABELS[value] ?? value ?? '\u2014';
+}
+
 const STATUS_ACTIONS = [
   { value: 'contacted', label: 'Contacted', color: 'green' },
   { value: 'quoted', label: 'Quoted', color: 'purple' },
@@ -348,17 +368,16 @@ const AgencyLeadDetailPage = () => {
                     <dd className={`font-medium ${
                       lead.current_auto_carrier === 'allstate' ? 'text-purple-600' : 'text-gray-900'
                     }`}>
-                      {lead.current_auto_carrier === 'state_farm' ? 'State Farm' :
-                       lead.current_auto_carrier === 'geico' ? 'GEICO' :
-                       lead.current_auto_carrier === 'progressive' ? 'Progressive' :
-                       lead.current_auto_carrier === 'allstate' ? 'Allstate' :
-                       lead.current_auto_carrier === 'liberty_mutual' ? 'Liberty Mutual' :
-                       lead.current_auto_carrier === 'farmers' ? 'Farmers' :
-                       lead.current_auto_carrier === 'farm_bureau' ? 'GA Farm Bureau' :
-                       lead.current_auto_carrier === 'usaa' ? 'USAA' :
-                       lead.current_auto_carrier === 'nationwide' ? 'Nationwide' :
-                       lead.current_auto_carrier === 'none' ? 'No current policy' :
-                       'Other'}
+                      {formatCarrier(lead.current_auto_carrier)}
+                    </dd>
+                  </div>
+                )}
+                {lead.current_auto_premium != null && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Current Auto Premium</dt>
+                    <dd className="font-semibold text-gray-900">
+                      ${lead.current_auto_premium.toLocaleString()}
+                      <span className="text-xs text-gray-400 font-normal ml-1">/yr</span>
                     </dd>
                   </div>
                 )}
@@ -368,17 +387,16 @@ const AgencyLeadDetailPage = () => {
                     <dd className={`font-medium ${
                       lead.current_home_carrier === 'allstate' ? 'text-purple-600' : 'text-gray-900'
                     }`}>
-                      {lead.current_home_carrier === 'state_farm' ? 'State Farm' :
-                       lead.current_home_carrier === 'geico' ? 'GEICO' :
-                       lead.current_home_carrier === 'progressive' ? 'Progressive' :
-                       lead.current_home_carrier === 'allstate' ? 'Allstate' :
-                       lead.current_home_carrier === 'liberty_mutual' ? 'Liberty Mutual' :
-                       lead.current_home_carrier === 'farmers' ? 'Farmers' :
-                       lead.current_home_carrier === 'farm_bureau' ? 'GA Farm Bureau' :
-                       lead.current_home_carrier === 'usaa' ? 'USAA' :
-                       lead.current_home_carrier === 'nationwide' ? 'Nationwide' :
-                       lead.current_home_carrier === 'none' ? 'No current policy' :
-                       'Other'}
+                      {formatCarrier(lead.current_home_carrier)}
+                    </dd>
+                  </div>
+                )}
+                {lead.current_home_premium != null && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Current Home Premium</dt>
+                    <dd className="font-semibold text-gray-900">
+                      ${lead.current_home_premium.toLocaleString()}
+                      <span className="text-xs text-gray-400 font-normal ml-1">/yr</span>
                     </dd>
                   </div>
                 )}
@@ -410,6 +428,61 @@ const AgencyLeadDetailPage = () => {
                     }`}>
                       {lead.home_claims_history === '0-1' ? '0\u20131 claims' : '2+ claims'}
                     </dd>
+                  </div>
+                )}
+                {lead.coverage_lapse && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Coverage Lapse</dt>
+                    <dd className={`font-medium ${
+                      lead.coverage_lapse === 'no_lapse'      ? 'text-green-600' :
+                      lead.coverage_lapse === 'under_30'      ? 'text-amber-500' :
+                      lead.coverage_lapse === 'never_insured' ? 'text-red-600'   :
+                      'text-red-500'
+                    }`}>
+                      {{
+                        no_lapse:       'No lapse \u2014 currently insured',
+                        under_30:       'Less than 30 days',
+                        '30_to_90':     '30\u201390 days',
+                        over_90:        'Over 90 days',
+                        never_insured:  'Never insured',
+                      }[lead.coverage_lapse] ?? lead.coverage_lapse}
+                    </dd>
+                  </div>
+                )}
+                {lead.multiple_drivers != null && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Multiple Drivers</dt>
+                    <dd className="font-medium text-gray-900">
+                      {lead.multiple_drivers ? 'Yes' : 'No'}
+                    </dd>
+                  </div>
+                )}
+                {lead.veteran_status && (
+                  <div>
+                    <dt className="text-gray-500 text-sm">Military / Veteran</dt>
+                    <dd className={`font-medium ${
+                      lead.veteran_status === 'yes' ? 'text-blue-600' : 'text-gray-900'
+                    }`}>
+                      {lead.veteran_status === 'yes' ? '\u2713 Yes \u2014 discount eligible' : 'No'}
+                    </dd>
+                  </div>
+                )}
+                {(lead.vehicle_year || lead.vehicle_make || lead.vehicle_model) && (
+                  <div className="col-span-2">
+                    <dt className="text-gray-500 text-sm mb-1">Vehicle</dt>
+                    <dd className="font-medium text-gray-900 text-base">
+                      {[lead.vehicle_year, lead.vehicle_make, lead.vehicle_model]
+                        .filter(Boolean).join(' ')}
+                    </dd>
+                    {lead.vehicle_use?.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-1.5">
+                        {lead.vehicle_use.map(use => (
+                          <span key={use} className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 text-xs font-medium capitalize">
+                            {use.replace(/_/g, ' ')}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
                 {lead.risk_flag && lead.risk_flag !== 'green' && (

@@ -131,6 +131,64 @@ function hasValueForCurrentStep(stepId, answers) {
   }
 }
 
+// Steps that require a manual Continue button (all others auto-advance)
+const MANUAL_ADVANCE_STEPS = new Set([
+  'discountQualifier',
+  'earlyPhone',
+  'currentAutoPremium',
+  'currentHomePremium',
+  'vehicleUse',
+  'dob',
+  'address',
+  'contact',
+]);
+
+// ─── Progress Wheel ────────────────────────────────────────────────
+
+function ProgressWheel({ pct }) {
+  const size = 80;
+  const stroke = 6;
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+
+  return (
+    <div className="flex justify-center mb-8">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90" style={{ display: 'block' }}>
+          {/* Track */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth={stroke}
+          />
+          {/* Arc */}
+          <circle
+            cx={size / 2}
+            cy={size / 2}
+            r={r}
+            fill="none"
+            stroke="#3B82F6"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={circ}
+            strokeDashoffset={offset}
+            style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+          />
+        </svg>
+        {/* Label */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-lg font-black text-gray-900 leading-none">{pct}%</span>
+          <span className="text-xs text-gray-500 font-medium mt-0.5">Complete</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ─────────────────────────────────────────────────────
 
 export default function SaveWizardPage() {
@@ -668,8 +726,8 @@ export default function SaveWizardPage() {
 
   const isConfirmation = currentStepId === 'confirmation';
   const isContactStep = currentStepId === 'contact';
-  // UX-6: Show Continue button on ALL steps (including auto-advance) once a value is selected
-  const showNextButton = !isConfirmation && hasValueForCurrentStep(currentStepId, answers);
+  const requiresManualAdvance = MANUAL_ADVANCE_STEPS.has(currentStepId);
+  const showNextButton = !isConfirmation && requiresManualAdvance && hasValueForCurrentStep(currentStepId, answers);
   const showBackButton = !isFirstStep && !isConfirmation;
 
   // Animation class based on direction
@@ -687,34 +745,14 @@ export default function SaveWizardPage() {
 
       <div className="container mx-auto px-4 py-12 sm:py-16 relative z-10">
         <div className="max-w-lg mx-auto">
-          {/* UX-1: Back button navigates between wizard steps only */}
-          {showBackButton && (
-            <button
-              type="button"
-              onClick={handleBack}
-              disabled={isSubmitting}
-              className="mb-6 inline-flex items-center gap-2 text-sm font-semibold text-white/80 transition-colors hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Back</span>
-            </button>
-          )}
-
-          {/* Progress Bar */}
+          {/* Progress Wheel */}
           {!isConfirmation && (
-            <div className="mb-8">
-              <div className="flex items-center justify-between text-sm text-white/70 mb-2">
-                <span className="font-semibold">
-                  Step {currentIndex + 1} of {wizard.totalSteps - 1}
-                </span>
-              </div>
-              <div className="h-2 bg-white/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-accent-400 to-accent-500 rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${Math.min(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100, 100)}%` }}
-                />
-              </div>
-            </div>
+            <ProgressWheel
+              pct={Math.min(
+                Math.round(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100),
+                99
+              )}
+            />
           )}
 
           {/* Header — only on qualification steps */}
@@ -760,7 +798,7 @@ export default function SaveWizardPage() {
               {/* Validation error for non-object errors (single string) */}
               {typeof error === 'string' && <ErrorMessage>{error}</ErrorMessage>}
 
-              {/* Navigation Buttons — UX-6: visible on all steps after selection */}
+              {/* Navigation Buttons — only on manual-advance steps */}
               {showNextButton && (
                 <div className="mt-6 animate-fadeInUp">
                   <button
@@ -784,6 +822,21 @@ export default function SaveWizardPage() {
                         <ArrowRight className="relative z-10 w-5 h-5 text-white transition-transform duration-300 group-hover:trangray-x-1" />
                       )}
                     </div>
+                  </button>
+                </div>
+              )}
+
+              {/* Back button — inside card, below everything else */}
+              {showBackButton && (
+                <div className="mt-4 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={handleBack}
+                    disabled={isSubmitting}
+                    className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors bg-transparent border-0 cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" />
+                    <span>Back</span>
                   </button>
                 </div>
               )}
