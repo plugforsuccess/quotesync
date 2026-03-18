@@ -139,6 +139,48 @@ export function contactStepValidate(firstName, lastName, phone, email) {
   return Object.keys(errors).length > 0 ? errors : null;
 }
 
+// New step validations for auto wizard redesign
+
+export function currentlyInsuredStepValidate(value) {
+  if (value === null || value === undefined) return 'Please select one.';
+  return null;
+}
+
+export function continuousInsuredStepValidate(value) {
+  if (!value) return 'Please select one.';
+  return null;
+}
+
+export function incidentFreeStepValidate(value) {
+  if (value === null || value === undefined) return 'Please select one.';
+  return null;
+}
+
+export function bundleOfferStepValidate(value) {
+  if (value === null || value === undefined) return 'Please select one.';
+  return null;
+}
+
+export function genderStepValidate(value) {
+  if (!value) return 'Please select one.';
+  return null;
+}
+
+export function ownOrLeaseStepValidate(value) {
+  if (!value) return 'Please select one.';
+  return null;
+}
+
+export function bodilyInjuryLimitsStepValidate(value) {
+  if (!value) return 'Please select your coverage limits.';
+  return null;
+}
+
+export function canopyMidFunnelStepValidate(value) {
+  if (value === null || value === undefined) return 'Please make a selection.';
+  return null;
+}
+
 /**
  * Validate the current step. Returns error string/object or null.
  */
@@ -165,6 +207,15 @@ export function validateStep(stepId, answers) {
     case 'address': return addressStepValidate(answers.street, answers.city);
     case 'contact': return contactStepValidate(answers.firstName, answers.lastName, answers.phone, answers.email);
     case 'confirmation': return null;
+    // New auto wizard redesign steps
+    case 'currentlyInsured': return currentlyInsuredStepValidate(answers.currentlyInsured);
+    case 'canopyMidFunnel': return canopyMidFunnelStepValidate(answers.canopyMidFunnelAccepted);
+    case 'continuousInsured': return continuousInsuredStepValidate(answers.continuousInsuredDuration);
+    case 'incidentFree': return incidentFreeStepValidate(answers.incidentFree);
+    case 'bundleOffer': return bundleOfferStepValidate(answers.bundleInterest);
+    case 'gender': return genderStepValidate(answers.gender);
+    case 'ownOrLease': return ownOrLeaseStepValidate(answers.ownOrLease);
+    case 'bodilyInjuryLimits': return bodilyInjuryLimitsStepValidate(answers.bodilyInjuryLimits);
     default: return null;
   }
 }

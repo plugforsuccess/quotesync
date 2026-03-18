@@ -35,6 +35,17 @@ export const SESSION_KEYS = {
   VETERAN_STATUS: 'qs_funnel_veteran_status',
   CURRENT_AUTO_PREMIUM: 'qs_funnel_current_auto_premium',
   CURRENT_HOME_PREMIUM: 'qs_funnel_current_home_premium',
+  // Auto wizard redesign keys
+  CURRENTLY_INSURED: 'qs_funnel_currently_insured',
+  CANOPY_MID_FUNNEL_ACCEPTED: 'qs_funnel_canopy_mid_funnel_accepted',
+  CONTINUOUS_INSURED_DURATION: 'qs_funnel_continuous_insured_duration',
+  INCIDENT_FREE: 'qs_funnel_incident_free',
+  BUNDLE_INTEREST: 'qs_funnel_bundle_interest',
+  GENDER: 'qs_funnel_gender',
+  OWN_OR_LEASE: 'qs_funnel_own_or_lease',
+  BODILY_INJURY_LIMITS: 'qs_funnel_bodily_injury_limits',
+  ADDRESS_CITY: 'qs_funnel_address_city',
+  ADDRESS_STATE: 'qs_funnel_address_state',
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -76,6 +87,17 @@ function restore() {
     veteranStatus: sessionStorage.getItem(SESSION_KEYS.VETERAN_STATUS) || null,
     currentAutoPremium: jp(sessionStorage.getItem(SESSION_KEYS.CURRENT_AUTO_PREMIUM), null),
     currentHomePremium: jp(sessionStorage.getItem(SESSION_KEYS.CURRENT_HOME_PREMIUM), null),
+    // Auto wizard redesign fields
+    currentlyInsured: jp(sessionStorage.getItem(SESSION_KEYS.CURRENTLY_INSURED), null),
+    canopyMidFunnelAccepted: jp(sessionStorage.getItem(SESSION_KEYS.CANOPY_MID_FUNNEL_ACCEPTED), null),
+    continuousInsuredDuration: sessionStorage.getItem(SESSION_KEYS.CONTINUOUS_INSURED_DURATION) || null,
+    incidentFree: jp(sessionStorage.getItem(SESSION_KEYS.INCIDENT_FREE), null),
+    bundleInterest: jp(sessionStorage.getItem(SESSION_KEYS.BUNDLE_INTEREST), null),
+    gender: sessionStorage.getItem(SESSION_KEYS.GENDER) || null,
+    ownOrLease: sessionStorage.getItem(SESSION_KEYS.OWN_OR_LEASE) || null,
+    bodilyInjuryLimits: sessionStorage.getItem(SESSION_KEYS.BODILY_INJURY_LIMITS) || null,
+    addressCity: sessionStorage.getItem(SESSION_KEYS.ADDRESS_CITY) || '',
+    addressState: sessionStorage.getItem(SESSION_KEYS.ADDRESS_STATE) || '',
   };
 }
 
@@ -112,6 +134,17 @@ function persistToSession(a) {
     [SESSION_KEYS.VETERAN_STATUS, a.veteranStatus],
     [SESSION_KEYS.CURRENT_AUTO_PREMIUM, a.currentAutoPremium !== null ? String(a.currentAutoPremium) : null],
     [SESSION_KEYS.CURRENT_HOME_PREMIUM, a.currentHomePremium !== null ? String(a.currentHomePremium) : null],
+    // Auto wizard redesign fields
+    [SESSION_KEYS.CURRENTLY_INSURED, a.currentlyInsured !== null ? JSON.stringify(a.currentlyInsured) : null],
+    [SESSION_KEYS.CANOPY_MID_FUNNEL_ACCEPTED, a.canopyMidFunnelAccepted !== null ? JSON.stringify(a.canopyMidFunnelAccepted) : null],
+    [SESSION_KEYS.CONTINUOUS_INSURED_DURATION, a.continuousInsuredDuration],
+    [SESSION_KEYS.INCIDENT_FREE, a.incidentFree !== null ? JSON.stringify(a.incidentFree) : null],
+    [SESSION_KEYS.BUNDLE_INTEREST, a.bundleInterest !== null ? JSON.stringify(a.bundleInterest) : null],
+    [SESSION_KEYS.GENDER, a.gender],
+    [SESSION_KEYS.OWN_OR_LEASE, a.ownOrLease],
+    [SESSION_KEYS.BODILY_INJURY_LIMITS, a.bodilyInjuryLimits],
+    [SESSION_KEYS.ADDRESS_CITY, a.addressCity],
+    [SESSION_KEYS.ADDRESS_STATE, a.addressState],
   ];
   pairs.forEach(([k, v]) => {
     if (v != null && v !== '') {
@@ -125,52 +158,62 @@ function persistToSession(a) {
 // ─── Conditional Step Sequence ─────────────────────────────────────
 
 /**
- * Compute the dynamic step sequence based on current answers.
- * Enrichment v2: discountQualifier replaces ownsHome + maritalStatus + vehicleCount steps.
- * New steps: veteranStatus, premium capture, coverage lapse, vehicle details.
+ * Compute the dynamic step sequence for the auto insurance wizard.
+ * Redesigned: auto-only flow with conditional skipping.
  */
 export function computeStepSequence(answers) {
-  const steps = ['zip', 'discountQualifier', 'veteranStatus', 'productIntent', 'earlyPhone'];
+  const steps = [
+    'zip',
+    'currentlyInsured',
+    'currentAutoCarrier',
+  ];
 
-  const intent = answers.productIntent;
-  const isOwner = answers.ownsHome === true;
-
-  if (intent === 'auto') {
-    steps.push(
-      'currentAutoCarrier', 'currentAutoPremium',
-      'coverageLapse',
-      'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
-      'autoDrivingRecord'
-    );
-  } else if (intent === 'home' && isOwner) {
-    steps.push('currentHomeCarrier', 'currentHomePremium', 'homeClaimsHistory');
-  } else if (intent === 'auto_renters') {
-    steps.push(
-      'currentAutoCarrier', 'currentAutoPremium',
-      'currentRentersCarrier',
-      'coverageLapse',
-      'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
-      'autoDrivingRecord'
-    );
-  } else if (intent === 'bundle' && isOwner) {
-    steps.push(
-      'currentAutoCarrier', 'currentAutoPremium',
-      'currentHomeCarrier', 'currentHomePremium',
-      'coverageLapse',
-      'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
-      'autoDrivingRecord', 'homeClaimsHistory'
-    );
+  // Canopy mid-funnel: show only if insured, has a carrier, and not yet answered
+  const hasPolicy = answers.currentlyInsured !== false &&
+                    answers.currentAutoCarrier &&
+                    answers.currentAutoCarrier !== 'none';
+  const canopyNotYetShown = answers.canopyMidFunnelAccepted === null ||
+                            answers.canopyMidFunnelAccepted === undefined;
+  if (hasPolicy && canopyNotYetShown) {
+    steps.push('canopyMidFunnel');
   }
-  // 'unsure' or null → no carrier, no premium, no vehicle steps
 
-  steps.push('dob', 'address', 'contact', 'confirmation');
+  // Skip duration + incident-free if not currently insured
+  if (answers.currentlyInsured !== false) {
+    steps.push('continuousInsured', 'incidentFree');
+  }
+
+  steps.push(
+    'discountQualifier',
+    'bundleOffer',
+    'currentAutoPremium',
+    'dob',
+    'gender',
+    'vehicleYear',
+    'vehicleMake',
+    'vehicleModel',
+    'vehicleUse',
+    'ownOrLease',
+    'bodilyInjuryLimits',
+    'contact',
+    'confirmation',
+  );
+
   return steps;
 }
 
 // ─── Hook ──────────────────────────────────────────────────────────
 
 export function useWizard() {
-  const [answers, setAnswers] = useState(restore);
+  const [answers, setAnswers] = useState(() => {
+    // Session cleanup on new ZIP — clear all wizard keys when ?zip= param is present
+    const params = new URLSearchParams(window.location.search);
+    const zipParam = params.get('zip');
+    if (zipParam?.length === 5) {
+      Object.values(SESSION_KEYS).forEach((key) => sessionStorage.removeItem(key));
+    }
+    return restore();
+  });
   const [currentIndex, setCurrentIndex] = useState(() => {
     // If a valid ?zip= param is present, start at step 1 (skip ZIP step)
     const params = new URLSearchParams(window.location.search);
@@ -195,6 +238,12 @@ export function useWizard() {
   const setAnswer = useCallback((field, value) => {
     setAnswers(prev => {
       const next = { ...prev, [field]: value };
+
+      // Currently insured = false → set continuousInsuredDuration to 'never' and clear incidentFree
+      if (field === 'currentlyInsured' && value === false) {
+        next.continuousInsuredDuration = 'never';
+        next.incidentFree = null;
+      }
 
       // Renter or Other → clear home-specific data, reset invalid product intent
       if (field === 'ownsHome' && (value === false || value === 'other')) {

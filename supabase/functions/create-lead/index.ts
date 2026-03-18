@@ -434,6 +434,18 @@ Deno.serve(async (req) => {
           current_home_premium: body.current_home_premium != null
             ? parseInt(body.current_home_premium, 10) || null
             : null,
+          // Auto wizard redesign fields
+          currently_insured: body.currently_insured ?? null,
+          canopy_mid_funnel_offered: body.canopy_mid_funnel_offered ?? false,
+          canopy_mid_funnel_accepted: body.canopy_mid_funnel_accepted ?? null,
+          continuous_insured_duration: body.continuous_insured_duration ?? null,
+          incident_free: body.incident_free ?? null,
+          bundle_interest: body.bundle_interest ?? null,
+          gender: body.gender ?? null,
+          own_or_lease: body.own_or_lease ?? null,
+          bodily_injury_limits: body.bodily_injury_limits ?? null,
+          address_city: body.address_city ?? null,
+          address_state: body.address_state ?? null,
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -496,6 +508,18 @@ Deno.serve(async (req) => {
         current_home_premium: body.current_home_premium != null
           ? parseInt(body.current_home_premium, 10) || null
           : null,
+        // Auto wizard redesign fields
+        currently_insured: body.currently_insured ?? null,
+        canopy_mid_funnel_offered: body.canopy_mid_funnel_offered ?? false,
+        canopy_mid_funnel_accepted: body.canopy_mid_funnel_accepted ?? null,
+        continuous_insured_duration: body.continuous_insured_duration ?? null,
+        incident_free: body.incident_free ?? null,
+        bundle_interest: body.bundle_interest ?? null,
+        gender: body.gender ?? null,
+        own_or_lease: body.own_or_lease ?? null,
+        bodily_injury_limits: body.bodily_injury_limits ?? null,
+        address_city: body.address_city ?? null,
+        address_state: body.address_state ?? null,
       }
 
       const { data: newLead, error: leadError } = await supabase

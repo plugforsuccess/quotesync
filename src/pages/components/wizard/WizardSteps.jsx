@@ -511,7 +511,7 @@ export function CarrierSelectionStep({ heading, topCarriers, secondTierLabels, v
 
 // ─── Premium Steps ─────────────────────────────────────────────────
 
-export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
+export function CurrentAutoPremiumStep({ value, onChange, onSkip, onAutoAdvance }) {
   const [display, setDisplay] = useState(() => value != null ? value.toLocaleString() : '');
   const [hint, setHint] = useState(null);
 
@@ -527,6 +527,12 @@ export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
     onChange(num);
   };
 
+  const handleBlur = () => {
+    if (value > 0) {
+      setTimeout(() => onAutoAdvance?.(), 300);
+    }
+  };
+
   return (
     <div>
       <StepHeading>What are you currently paying for auto insurance?</StepHeading>
@@ -539,6 +545,7 @@ export function CurrentAutoPremiumStep({ value, onChange, onSkip }) {
             inputMode="numeric"
             value={display}
             onChange={handleChange}
+            onBlur={handleBlur}
             placeholder="1,200"
             autoFocus
             className="w-full pl-10 pr-4 py-4 rounded-xl border-2 text-xl font-bold text-center text-gray-900 placeholder:text-gray-300 bg-white transition-colors focus:outline-none focus:ring-0 border-gray-200 focus:border-primary-500"
@@ -843,7 +850,7 @@ const VEHICLE_USE_OPTIONS = [
   { value: 'rideshare',  label: 'RIDESHARE & DELIVERY', description: 'App-based transportation like Uber/Lyft, DoorDash, Amazon Delivery.' },
 ];
 
-export function VehicleUseStep({ vehicleLabel, value, onChange }) {
+export function VehicleUseStep({ vehicleLabel, value, onChange, onAutoAdvance }) {
   const toggleUse = (use) => {
     const current = value || [];
     if (current.includes(use)) {
@@ -892,6 +899,17 @@ export function VehicleUseStep({ vehicleLabel, value, onChange }) {
           );
         })}
       </div>
+      {value?.length > 0 && (
+        <div className="flex justify-end mt-3">
+          <button
+            type="button"
+            onClick={() => onAutoAdvance?.()}
+            className="text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors bg-transparent border-0 cursor-pointer"
+          >
+            Done
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -995,8 +1013,8 @@ function isoToDobDisplay(iso) {
   return `${mm}/${dd}/${yyyy}`;
 }
 
-// H-3: DOB does NOT auto-advance — requires "Continue" button
-export function DobStep({ value, onChange }) {
+// DOB auto-advances when valid complete date is entered (age >= 18)
+export function DobStep({ value, onChange, onAutoAdvance }) {
   // value is stored as ISO (YYYY-MM-DD), display as MM/DD/YYYY
   const [display, setDisplay] = useState(() => isoToDobDisplay(value));
 
@@ -1008,6 +1026,14 @@ export function DobStep({ value, onChange }) {
     if (digits.length === 8) {
       const iso = dobDisplayToIso(formatted);
       onChange(iso);
+      // Auto-advance if valid age
+      const dob = new Date(iso + 'T00:00:00');
+      if (!isNaN(dob.getTime())) {
+        const age = (Date.now() - dob.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+        if (age >= 18 && age <= 120) {
+          setTimeout(() => onAutoAdvance?.(), 300);
+        }
+      }
     } else {
       onChange('');
     }
@@ -1015,7 +1041,7 @@ export function DobStep({ value, onChange }) {
 
   return (
     <div>
-      <StepHeading>What is your date of birth?</StepHeading>
+      <StepHeading>When is your birthday?</StepHeading>
       <StepDescription>Required to generate an accurate quote.</StepDescription>
       <div className="max-w-[200px] mx-auto">
         <input
@@ -1170,18 +1196,331 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
   );
 }
 
-// ─── Step 10: Contact Information ───────────────────────────────────
+// ─── New Auto Wizard Redesign Steps ──────────────────────────────
 
-export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, errors, agentName, brandName }) {
-  const handlePhoneChange = (e) => {
-    onPhoneChange(formatPhoneInput(e.target.value));
+export function CurrentlyInsuredStep({ value, onChange, onAutoAdvance }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
   };
 
   return (
     <div>
-      <StepHeading>Where should we send your personalized quote?</StepHeading>
-      <StepDescription>{agentName || 'Your agent'} will personally review your info within minutes.</StepDescription>
+      <StepHeading>Are you currently insured?</StepHeading>
+      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+        <ChoiceButton selected={value === true} onClick={() => handleSelect(true)}>Yes</ChoiceButton>
+        <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}>No</ChoiceButton>
+      </div>
+    </div>
+  );
+}
+
+export function CanopyMidFunnelStep({ carrierValue, carrierLabel, carrierLogo, onAccept, onDecline, agentName }) {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  return (
+    <div className="text-center">
+      {/* Carrier logo */}
+      <div className="flex justify-center mb-4">
+        {carrierLogo && !imgFailed ? (
+          <img
+            src={carrierLogo}
+            alt={carrierLabel || 'Current carrier'}
+            className="h-12 object-contain"
+            onError={() => setImgFailed(true)}
+          />
+        ) : (
+          <span className="text-lg font-bold text-gray-700 px-4 py-2 rounded-lg bg-gray-100">
+            {carrierLabel || 'Your Carrier'}
+          </span>
+        )}
+      </div>
+
+      <StepHeading>
+        Want us to pull your {carrierLabel || 'current'} policy automatically?
+      </StepHeading>
+      <StepDescription>
+        It takes 30 seconds and means {agentName || 'your agent'} won&apos;t have to ask you
+        for your declarations page — we&apos;ll have everything ready before your call.
+      </StepDescription>
+
+      <div className="max-w-sm mx-auto">
+        <button
+          type="button"
+          onClick={onAccept}
+          className="group relative w-full inline-flex items-center justify-center gap-3 overflow-hidden rounded-xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] mb-3"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600"></div>
+          <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-4 rounded-xl">
+            <span className="relative z-10 text-white font-black text-lg">
+              Yes, pull my policy
+            </span>
+            <ArrowRight className="relative z-10 w-5 h-5 text-white" />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={onDecline}
+          className="text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors bg-transparent border-0 cursor-pointer"
+        >
+          No thanks, I&apos;ll enter manually
+        </button>
+      </div>
+    </div>
+  );
+}
+
+const CONTINUOUS_INSURED_OPTIONS = [
+  { value: 'less_than_6mo', label: 'Less than 6 months' },
+  { value: '6mo_to_1yr',    label: '6 months \u2013 1 year' },
+  { value: '1yr_to_3yr',    label: '1 \u2013 3 years' },
+  { value: '3yr_to_5yr',    label: '3 \u2013 5 years' },
+  { value: '5yr_plus',      label: '5+ years' },
+];
+
+export function ContinuousInsuredStep({ value, onChange, onAutoAdvance }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>How long have you been continuously insured?</StepHeading>
+      <div className="flex flex-col gap-3 max-w-sm mx-auto">
+        {CONTINUOUS_INSURED_OPTIONS.map((opt) => (
+          <ChoiceButton
+            key={opt.value}
+            selected={value === opt.value}
+            onClick={() => handleSelect(opt.value)}
+          >
+            {opt.label}
+          </ChoiceButton>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function IncidentFreeStep({ value, onChange, onAutoAdvance }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>Have you gone incident-free?</StepHeading>
+      <StepDescription>Within the last 3 years</StepDescription>
+      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+        <ChoiceButton selected={value === true} onClick={() => handleSelect(true)}>Yes</ChoiceButton>
+        <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}>No</ChoiceButton>
+      </div>
+    </div>
+  );
+}
+
+export function BundleOfferStep({ value, onChange, onAutoAdvance }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>Would you like to bundle your auto and home insurance policies?</StepHeading>
+      <StepDescription>Drivers who bundle their policies save an average of 20%!</StepDescription>
+      <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
+        <ChoiceButton selected={value === true} onClick={() => handleSelect(true)}>Yes</ChoiceButton>
+        <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}>No</ChoiceButton>
+      </div>
+    </div>
+  );
+}
+
+const GENDER_OPTIONS = [
+  { value: 'male',              label: 'Male' },
+  { value: 'female',            label: 'Female' },
+  { value: 'nonbinary',         label: 'Non-binary' },
+  { value: 'prefer_not_to_say', label: 'Prefer not to say' },
+];
+
+export function GenderStep({ value, onChange, onAutoAdvance }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>What is your gender?</StepHeading>
+      <div className="grid grid-cols-2 gap-3 max-w-sm mx-auto">
+        {GENDER_OPTIONS.map((opt) => (
+          <ChoiceButton
+            key={opt.value}
+            selected={value === opt.value}
+            onClick={() => handleSelect(opt.value)}
+          >
+            {opt.label}
+          </ChoiceButton>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const OWN_OR_LEASE_OPTIONS = [
+  { value: 'own',       label: 'Own' },
+  { value: 'lease',     label: 'Lease' },
+  { value: 'financing', label: 'Financing' },
+];
+
+export function OwnOrLeaseStep({ value, onChange, onAutoAdvance, vehicleYear, vehicleMake, vehicleModel }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  const vehicleLabel = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(' ');
+
+  return (
+    <div>
+      <StepHeading>Do you own or lease your {vehicleLabel || 'vehicle'}?</StepHeading>
+      <div className="grid grid-cols-3 gap-3 max-w-sm mx-auto">
+        {OWN_OR_LEASE_OPTIONS.map((opt) => (
+          <ChoiceButton
+            key={opt.value}
+            selected={value === opt.value}
+            onClick={() => handleSelect(opt.value)}
+          >
+            {opt.label}
+          </ChoiceButton>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const BODILY_INJURY_LIMITS = [
+  { value: 'state_min',   label: 'State Minimum' },
+  { value: '25/50',       label: '$25,000 / $50,000' },
+  { value: '50/100',      label: '$50,000 / $100,000' },
+  { value: '100/300',     label: '$100,000 / $300,000' },
+  { value: '250/500',     label: '$250,000 / $500,000' },
+  { value: '500/500',     label: '$500,000 / $500,000' },
+  { value: 'not_sure',    label: 'Not sure' },
+];
+
+export function BodilyInjuryLimitsStep({ value, onChange, onAutoAdvance }) {
+  const handleChange = (e) => {
+    const val = e.target.value;
+    if (val) {
+      onChange(val);
+      setTimeout(() => onAutoAdvance?.(), 300);
+    }
+  };
+
+  return (
+    <div>
+      <StepHeading>Which bodily injury limits are closest to your current coverage?</StepHeading>
+      <StepDescription>Per-person / Per-accident</StepDescription>
+      <div className="max-w-sm mx-auto">
+        <select
+          value={value || ''}
+          onChange={handleChange}
+          className="w-full px-4 py-4 rounded-xl border-2 border-gray-200 text-base font-semibold text-gray-900 bg-white transition-colors focus:outline-none focus:ring-0 focus:border-primary-500 cursor-pointer appearance-none"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8.825a.5.5 0 0 1-.354-.146l-4-4a.5.5 0 0 1 .708-.708L6 7.617l3.646-3.646a.5.5 0 0 1 .708.708l-4 4A.5.5 0 0 1 6 8.825z'/%3E%3C/svg%3E")`,
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'right 16px center',
+            backgroundSize: '12px',
+            paddingRight: '40px',
+          }}
+        >
+          <option value="">Select your coverage limits...</option>
+          {BODILY_INJURY_LIMITS.map((opt) => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 10: Contact Information — Full Redesign ───────────────────
+
+const EMAIL_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'aol.com'];
+
+export function ContactStep({ firstName, lastName, phone, email, street, city, zip, stateCode, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, onStreetChange, onCityChange, errors, agentName, brandName }) {
+  const [emailUser, setEmailUser] = useState(() => {
+    if (email && email.includes('@')) return email.split('@')[0];
+    return '';
+  });
+  const [emailDomain, setEmailDomain] = useState(() => {
+    if (email && email.includes('@')) {
+      const domain = email.split('@')[1];
+      if (EMAIL_DOMAINS.includes(domain)) return domain;
+    }
+    return 'gmail.com';
+  });
+  const [customDomain, setCustomDomain] = useState(() => {
+    if (email && email.includes('@')) {
+      const domain = email.split('@')[1];
+      if (!EMAIL_DOMAINS.includes(domain)) return domain;
+    }
+    return '';
+  });
+  const [showCustom, setShowCustom] = useState(() => {
+    if (email && email.includes('@')) {
+      return !EMAIL_DOMAINS.includes(email.split('@')[1]);
+    }
+    return false;
+  });
+  const [editAddress, setEditAddress] = useState(!city && !stateCode);
+
+  // Assemble full email from parts
+  useEffect(() => {
+    if (!emailUser) {
+      onEmailChange('');
+      return;
+    }
+    const fullEmail = showCustom
+      ? `${emailUser}@${customDomain}`
+      : `${emailUser}@${emailDomain}`;
+    onEmailChange(fullEmail);
+  }, [emailUser, emailDomain, customDomain, showCustom]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handlePhoneChange = (e) => {
+    onPhoneChange(formatPhoneInput(e.target.value));
+  };
+
+  const handleDomainChange = (e) => {
+    const val = e.target.value;
+    if (val === '__other__') {
+      setShowCustom(true);
+      setCustomDomain('');
+    } else {
+      setShowCustom(false);
+      setEmailDomain(val);
+    }
+  };
+
+  // Try geolocation for city pre-fill on mount
+  useEffect(() => {
+    if (!city && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => { /* Fallback: just show empty city field */ },
+        () => { /* geo denied — show empty city field */ }
+      );
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div>
+      <StepHeading>Contact Information</StepHeading>
       <div className="space-y-4 max-w-sm mx-auto">
+        {/* Name fields */}
         <div className="grid grid-cols-2 gap-3">
           <InputField
             id="firstName"
@@ -1201,6 +1540,124 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
             error={errors?.lastName}
           />
         </div>
+
+        {/* Email with domain dropdown */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Email</label>
+          {showCustom ? (
+            <div>
+              <input
+                type="email"
+                value={emailUser ? `${emailUser}@${customDomain}` : ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val.includes('@')) {
+                    setEmailUser(val.split('@')[0]);
+                    setCustomDomain(val.split('@')[1] || '');
+                  } else {
+                    setEmailUser(val);
+                    setCustomDomain('');
+                  }
+                }}
+                placeholder="you@example.com"
+                className={`w-full px-4 py-3 rounded-xl border-2 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 ${
+                  errors?.email ? 'border-red-400 focus:border-red-500' : 'border-gray-200 focus:border-primary-500'
+                }`}
+              />
+              <button
+                type="button"
+                onClick={() => { setShowCustom(false); setEmailDomain('gmail.com'); }}
+                className="text-xs text-primary-600 hover:text-primary-700 mt-1 bg-transparent border-0 cursor-pointer"
+              >
+                Use common domain instead
+              </button>
+            </div>
+          ) : (
+            <div className={`flex rounded-xl border-2 overflow-hidden ${
+              errors?.email ? 'border-red-400' : 'border-gray-200 focus-within:border-primary-500'
+            } transition-colors`}>
+              <input
+                type="text"
+                value={emailUser}
+                onChange={(e) => setEmailUser(e.target.value.replace(/[@\s]/g, ''))}
+                placeholder="john.smith"
+                className="flex-1 px-4 py-3 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white focus:outline-none border-0"
+              />
+              <select
+                value={emailDomain}
+                onChange={handleDomainChange}
+                className="px-3 py-3 text-sm font-medium text-gray-700 bg-gray-50 border-0 border-l-2 border-gray-200 focus:outline-none cursor-pointer appearance-none"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 8.825a.5.5 0 0 1-.354-.146l-4-4a.5.5 0 0 1 .708-.708L6 7.617l3.646-3.646a.5.5 0 0 1 .708.708l-4 4A.5.5 0 0 1 6 8.825z'/%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 8px center',
+                  backgroundSize: '10px',
+                  paddingRight: '24px',
+                }}
+              >
+                {EMAIL_DOMAINS.map((d) => (
+                  <option key={d} value={d}>@{d}</option>
+                ))}
+                <option value="__other__">Other...</option>
+              </select>
+            </div>
+          )}
+          {errors?.email && <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>}
+        </div>
+
+        {/* Personalized heading after first name */}
+        {firstName.trim().length > 1 && (
+          <p className="text-base font-semibold text-gray-900 text-center mb-3">
+            {firstName.trim()}, finish up your profile to see quotes
+          </p>
+        )}
+
+        {/* Address block */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1.5">Address</label>
+          {!editAddress && (city || stateCode) ? (
+            <div className="flex items-center justify-between px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50">
+              <span className="text-base font-medium text-gray-700">
+                {[city, stateCode, zip].filter(Boolean).join(', ')}
+              </span>
+              <button
+                type="button"
+                onClick={() => setEditAddress(true)}
+                className="text-sm text-primary-600 hover:text-primary-700 font-medium bg-transparent border-0 cursor-pointer"
+              >
+                Edit
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <input
+                type="text"
+                value={street || ''}
+                onChange={(e) => onStreetChange(e.target.value)}
+                placeholder="Street address"
+                className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 focus:border-primary-500"
+              />
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={city || ''}
+                  onChange={(e) => onCityChange(e.target.value)}
+                  placeholder="City"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-900 placeholder:text-gray-400 bg-white transition-colors focus:outline-none focus:ring-0 focus:border-primary-500"
+                />
+                <div className="px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-500 bg-gray-50">
+                  {stateCode || 'GA'}
+                </div>
+                <div className="px-4 py-3 rounded-xl border-2 border-gray-200 text-base font-medium text-gray-500 bg-gray-50">
+                  {zip}
+                </div>
+              </div>
+            </div>
+          )}
+          {errors?.street && <p className="mt-1.5 text-sm text-red-600">{errors.street}</p>}
+        </div>
+
+        {/* Phone */}
         <InputField
           id="phone"
           label="Phone"
@@ -1211,19 +1668,10 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
           error={errors?.phone}
           maxLength={14}
         />
-        <InputField
-          id="email"
-          label="Email"
-          type="email"
-          value={email}
-          onChange={(e) => onEmailChange(e.target.value)}
-          placeholder="you@example.com"
-          error={errors?.email}
-        />
+
+        {/* TCPA consent block — exact wording */}
         <p className="text-xs text-gray-500 leading-relaxed">
-          By clicking &apos;Get My Free Quote&apos;, you agree to be contacted by {brandName || 'our agency'} regarding insurance quotes via phone, SMS, and email at the number provided,
-          including through automated technology. Consent is not a condition of purchase. Msg
-          &amp; data rates may apply. Reply STOP to opt out at any time.
+          By clicking Get My Quotes below, I expressly provide my E-Sign signature and consent to receive marketing calls and texts/SMS regarding auto and home insurance, from or on behalf of Wiley-Wilson Insurance and up to five insurance providers at the phone number I provided, including via automatic telephone dialing system or artificial or prerecorded voice message, even if my number is on a federal, state, or company Do-Not-Call List. I understand that my consent is not a condition of purchasing any goods or services and that my consent may be revoked at any time, such as by replying &quot;STOP&quot; to opt-out of SMS. Message and data rates may apply. I affirm that I have read and agree to the Privacy Notice, Terms of Use (including its arbitration provision) and E-Sign Consent.
         </p>
       </div>
     </div>

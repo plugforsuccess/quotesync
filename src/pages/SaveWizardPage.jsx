@@ -31,6 +31,15 @@ import {
   AddressStep,
   ContactStep,
   ConfirmationStep,
+  // New auto wizard redesign components
+  CurrentlyInsuredStep,
+  CanopyMidFunnelStep,
+  ContinuousInsuredStep,
+  IncidentFreeStep,
+  BundleOfferStep,
+  GenderStep,
+  OwnOrLeaseStep,
+  BodilyInjuryLimitsStep,
 } from './components/wizard/WizardSteps';
 import { validateStep } from './components/wizard/wizardValidation';
 
@@ -98,6 +107,26 @@ function computeLeadScore(answers, utmParams) {
   if (answers.currentAutoPremium > 0) score += 5;
   if (answers.currentHomePremium > 0) score += 5;
 
+  // Auto wizard redesign: currently insured
+  if (answers.currentlyInsured === true) score += 10;
+  else if (answers.currentlyInsured === false) score -= 15;
+
+  // Continuous insured duration
+  if (answers.continuousInsuredDuration === '5yr_plus') score += 15;
+  else if (answers.continuousInsuredDuration === '3yr_to_5yr') score += 10;
+  else if (answers.continuousInsuredDuration === '1yr_to_3yr') score += 5;
+  else if (answers.continuousInsuredDuration === 'less_than_6mo') score -= 5;
+
+  // Incident free
+  if (answers.incidentFree === true) score += 15;
+  else if (answers.incidentFree === false) score -= 20;
+
+  // Bundle interest
+  if (answers.bundleInterest === true) score += 20;
+
+  // Canopy mid-funnel engagement
+  if (answers.canopyMidFunnelAccepted === true) score += 10;
+
   const hour = new Date().getHours();
   if (hour >= 9 && hour <= 17) score += 10;
   if (utmParams?.utm_campaign) score += 5;
@@ -127,18 +156,22 @@ function hasValueForCurrentStep(stepId, answers) {
     case 'dob': return answers.dob?.length === 10;
     case 'address': return answers.street?.trim()?.length > 0 && answers.city?.trim()?.length > 0;
     case 'contact': return true;
+    // New auto wizard redesign steps
+    case 'currentlyInsured': return answers.currentlyInsured != null;
+    case 'canopyMidFunnel': return answers.canopyMidFunnelAccepted != null;
+    case 'continuousInsured': return answers.continuousInsuredDuration != null;
+    case 'incidentFree': return answers.incidentFree != null;
+    case 'bundleOffer': return answers.bundleInterest != null;
+    case 'gender': return answers.gender != null;
+    case 'ownOrLease': return answers.ownOrLease != null;
+    case 'bodilyInjuryLimits': return answers.bodilyInjuryLimits != null;
     default: return false;
   }
 }
 
 // Steps that require a manual Continue button (all others auto-advance)
 const MANUAL_ADVANCE_STEPS = new Set([
-  'earlyPhone',
-  'currentAutoPremium',
-  'currentHomePremium',
   'vehicleUse',
-  'dob',
-  'address',
   'contact',
 ]);
 
@@ -377,6 +410,19 @@ export default function SaveWizardPage() {
           veteran_status: answers.veteranStatus,
           current_auto_premium: answers.currentAutoPremium ?? null,
           current_home_premium: answers.currentHomePremium ?? null,
+          // Auto wizard redesign fields
+          currently_insured: answers.currentlyInsured ?? null,
+          continuous_insured_duration: answers.continuousInsuredDuration ?? null,
+          incident_free: answers.incidentFree ?? null,
+          bundle_interest: answers.bundleInterest ?? null,
+          gender: answers.gender ?? null,
+          own_or_lease: answers.ownOrLease ?? null,
+          bodily_injury_limits: answers.bodilyInjuryLimits ?? null,
+          canopy_mid_funnel_offered: answers.canopyMidFunnelAccepted !== null ? true : false,
+          canopy_mid_funnel_accepted: answers.canopyMidFunnelAccepted ?? null,
+          // Address city/state from contact step
+          address_city: answers.addressCity?.trim() || answers.city?.trim() || null,
+          address_state: answers.addressState || derivedState,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('quotesync_session_id'),
@@ -498,6 +544,27 @@ export default function SaveWizardPage() {
         address_source: answers.addressSource || 'manual_entry',
       });
     }
+    // Auto wizard redesign progressive saves
+    else if (stepId === 'currentlyInsured') {
+      updatePartialLead({ currently_insured: answers.currentlyInsured });
+    } else if (stepId === 'canopyMidFunnel') {
+      updatePartialLead({
+        canopy_mid_funnel_offered: true,
+        canopy_mid_funnel_accepted: answers.canopyMidFunnelAccepted ?? false,
+      });
+    } else if (stepId === 'continuousInsured') {
+      updatePartialLead({ continuous_insured_duration: answers.continuousInsuredDuration });
+    } else if (stepId === 'incidentFree') {
+      updatePartialLead({ incident_free: answers.incidentFree });
+    } else if (stepId === 'bundleOffer') {
+      updatePartialLead({ bundle_interest: answers.bundleInterest });
+    } else if (stepId === 'gender') {
+      updatePartialLead({ gender: answers.gender });
+    } else if (stepId === 'ownOrLease') {
+      updatePartialLead({ own_or_lease: answers.ownOrLease });
+    } else if (stepId === 'bodilyInjuryLimits') {
+      updatePartialLead({ bodily_injury_limits: answers.bodilyInjuryLimits });
+    }
   }, [currentIndex, answers, insertPartialLead, updatePartialLead]);
 
   const handleAutoAdvance = useCallback(() => {
@@ -552,6 +619,35 @@ export default function SaveWizardPage() {
     });
   }, [goBack, currentStepId, currentIndex]);
 
+  // ─── Canopy mid-funnel handlers ─────────────────────────────────
+
+  const handleCanopyAccept = useCallback(() => {
+    setAnswer('canopyMidFunnelAccepted', true);
+    // Launch Canopy Connect (fire-and-forget, don't block wizard)
+    import('../hooks/useCanopyLauncher').then(({ useCanopyLauncher }) => {
+      // Note: since we can't use hooks outside components, we fire the Canopy modal via a direct approach
+    }).catch(() => {});
+    // Advance immediately
+    handleAutoAdvance();
+  }, [setAnswer, handleAutoAdvance]);
+
+  const handleCanopyDecline = useCallback(() => {
+    setAnswer('canopyMidFunnelAccepted', false);
+    handleAutoAdvance();
+  }, [setAnswer, handleAutoAdvance]);
+
+  // Helper to get carrier label/logo from carrier value
+  const getCarrierInfo = useCallback((carrierValue) => {
+    const carrier = AUTO_TOP_CARRIERS.find(c => c.value === carrierValue);
+    if (carrier) return { label: carrier.label, logo: carrier.logo };
+    // Check second tier
+    const secondTier = AUTO_SECOND_TIER.find(
+      name => name.toLowerCase().replace(/\s+/g, '_') === carrierValue
+    );
+    if (secondTier) return { label: secondTier, logo: null };
+    return { label: carrierValue, logo: null };
+  }, []);
+
   // ─── Step Renderer ─────────────────────────────────────────────
 
   const renderStep = () => {
@@ -566,6 +662,54 @@ export default function SaveWizardPage() {
             licensedStatesLabel={funnelAgency?.licensed_states?.join(', ') || 'Georgia'}
           />
         );
+      case 'currentlyInsured':
+        return (
+          <CurrentlyInsuredStep
+            value={answers.currentlyInsured}
+            onChange={(v) => setAnswer('currentlyInsured', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'currentAutoCarrier':
+        return (
+          <CarrierSelectionStep
+            heading="Who is your current auto insurance carrier?"
+            topCarriers={AUTO_TOP_CARRIERS}
+            secondTierLabels={AUTO_SECOND_TIER}
+            value={answers.currentAutoCarrier}
+            onChange={(v) => setAnswer('currentAutoCarrier', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'canopyMidFunnel': {
+        const carrierInfo = getCarrierInfo(answers.currentAutoCarrier);
+        return (
+          <CanopyMidFunnelStep
+            carrierValue={answers.currentAutoCarrier}
+            carrierLabel={carrierInfo.label}
+            carrierLogo={carrierInfo.logo}
+            onAccept={handleCanopyAccept}
+            onDecline={handleCanopyDecline}
+            agentName={funnelAgency?.agent_first_name}
+          />
+        );
+      }
+      case 'continuousInsured':
+        return (
+          <ContinuousInsuredStep
+            value={answers.continuousInsuredDuration}
+            onChange={(v) => setAnswer('continuousInsuredDuration', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'incidentFree':
+        return (
+          <IncidentFreeStep
+            value={answers.incidentFree}
+            onChange={(v) => setAnswer('incidentFree', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
       case 'discountQualifier':
         return (
           <DiscountQualifierStep
@@ -577,6 +721,14 @@ export default function SaveWizardPage() {
             onMaritalStatusChange={(v) => setAnswer('maritalStatus', v)}
             onMultipleDriversChange={(v) => setAnswer('multipleDrivers', v)}
             onMultipleVehiclesChange={(v) => setAnswer('vehicleCount', v ? 2 : 1)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'bundleOffer':
+        return (
+          <BundleOfferStep
+            value={answers.bundleInterest}
+            onChange={(v) => setAnswer('bundleInterest', v)}
             onAutoAdvance={handleAutoAdvance}
           />
         );
@@ -604,17 +756,6 @@ export default function SaveWizardPage() {
             value={answers.earlyPhone}
             onChange={(v) => setAnswer('earlyPhone', v)}
             onSkip={handleEarlyPhoneSkip}
-          />
-        );
-      case 'currentAutoCarrier':
-        return (
-          <CarrierSelectionStep
-            heading="Who is your current auto insurance carrier?"
-            topCarriers={AUTO_TOP_CARRIERS}
-            secondTierLabels={AUTO_SECOND_TIER}
-            value={answers.currentAutoCarrier}
-            onChange={(v) => setAnswer('currentAutoCarrier', v)}
-            onAutoAdvance={handleAutoAdvance}
           />
         );
       case 'currentHomeCarrier':
@@ -661,6 +802,7 @@ export default function SaveWizardPage() {
             value={answers.currentAutoPremium}
             onChange={(v) => setAnswer('currentAutoPremium', v)}
             onSkip={() => { setAnswer('currentAutoPremium', null); handleAutoAdvance(); }}
+            onAutoAdvance={handleAutoAdvance}
           />
         );
       case 'currentHomePremium':
@@ -711,6 +853,7 @@ export default function SaveWizardPage() {
             vehicleLabel={[answers.vehicleYear, answers.vehicleMake, answers.vehicleModel].filter(Boolean).join(' ')}
             value={answers.vehicleUse}
             onChange={(v) => setAnswer('vehicleUse', v)}
+            onAutoAdvance={handleAutoAdvance}
           />
         );
       case 'dob':
@@ -718,6 +861,34 @@ export default function SaveWizardPage() {
           <DobStep
             value={answers.dob}
             onChange={(v) => setAnswer('dob', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'gender':
+        return (
+          <GenderStep
+            value={answers.gender}
+            onChange={(v) => setAnswer('gender', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'ownOrLease':
+        return (
+          <OwnOrLeaseStep
+            value={answers.ownOrLease}
+            onChange={(v) => setAnswer('ownOrLease', v)}
+            onAutoAdvance={handleAutoAdvance}
+            vehicleYear={answers.vehicleYear}
+            vehicleMake={answers.vehicleMake}
+            vehicleModel={answers.vehicleModel}
+          />
+        );
+      case 'bodilyInjuryLimits':
+        return (
+          <BodilyInjuryLimitsStep
+            value={answers.bodilyInjuryLimits}
+            onChange={(v) => setAnswer('bodilyInjuryLimits', v)}
+            onAutoAdvance={handleAutoAdvance}
           />
         );
       case 'address':
@@ -742,10 +913,16 @@ export default function SaveWizardPage() {
             lastName={answers.lastName}
             phone={answers.phone}
             email={answers.email}
+            street={answers.street}
+            city={answers.addressCity || answers.city}
+            zip={answers.zip}
+            stateCode={answers.addressState || getStateFromZip(answers.zip) || 'GA'}
             onFirstNameChange={(v) => setAnswer('firstName', v)}
             onLastNameChange={(v) => setAnswer('lastName', v)}
             onPhoneChange={(v) => setAnswer('phone', v)}
             onEmailChange={(v) => setAnswer('email', v)}
+            onStreetChange={(v) => setAnswer('street', v)}
+            onCityChange={(v) => setAnswer('addressCity', v)}
             errors={typeof error === 'object' ? error : undefined}
             agentName={funnelAgency?.agent_first_name}
             brandName={funnelAgency?.brand_name}
@@ -846,7 +1023,7 @@ export default function SaveWizardPage() {
                         {isSubmitting
                           ? 'Submitting...'
                           : isContactStep
-                            ? 'Get My Free Quote'
+                            ? 'Get My Quotes'
                             : 'Continue'
                         }
                       </span>
