@@ -154,36 +154,30 @@ function ProgressWheel({ pct }) {
   const gradientId = 'progress-wheel-gradient';
 
   return (
-    <div className="flex justify-center" style={{ marginTop: `-${size / 2}px`, marginBottom: '24px', position: 'relative', zIndex: 20 }}>
+    <div
+      className="flex justify-center"
+      style={{ marginTop: `-${size / 2}px`, marginBottom: '24px', position: 'relative', zIndex: 60 }}
+    >
       <div className="relative" style={{ width: size, height: size }}>
-        <svg
-          width={size}
-          height={size}
-          className="-rotate-90"
-          style={{ display: 'block' }}
-        >
+        <svg width={size} height={size} className="-rotate-90" style={{ display: 'block' }}>
           <defs>
             <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#3B82F6" />
-              <stop offset="100%" stopColor="#06B6D4" />
+              <stop offset="0%" stopColor="#34d399" />
+              <stop offset="100%" stopColor="#14b8a6" />
             </linearGradient>
           </defs>
 
-          {/* Track — subtle white ring, transparent center */}
+          {/* Track */}
           <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
-            fill="transparent"
-            stroke="rgba(255,255,255,0.2)"
+            cx={size / 2} cy={size / 2} r={r}
+            fill="#0f172a"
+            stroke="rgba(255,255,255,0.15)"
             strokeWidth={stroke}
           />
 
           {/* Arc */}
           <circle
-            cx={size / 2}
-            cy={size / 2}
-            r={r}
+            cx={size / 2} cy={size / 2} r={r}
             fill="transparent"
             stroke={`url(#${gradientId})`}
             strokeWidth={stroke}
@@ -196,8 +190,8 @@ function ProgressWheel({ pct }) {
 
         {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black text-gray-900 leading-none" style={{ textShadow: '0 0 8px rgba(255,255,255,0.8)' }}>{pct}%</span>
-          <span className="text-xs font-semibold text-gray-600 mt-0.5" style={{ textShadow: '0 0 6px rgba(255,255,255,0.8)' }}>Complete</span>
+          <span className="text-2xl font-black text-white leading-none">{pct}%</span>
+          <span className="text-xs font-semibold text-white/60 mt-0.5">Complete</span>
         </div>
       </div>
     </div>
