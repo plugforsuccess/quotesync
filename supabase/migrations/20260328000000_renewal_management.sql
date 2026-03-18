@@ -297,14 +297,14 @@ CREATE POLICY "Agent role can insert renewals"
   ON renewal_policies FOR INSERT
   WITH CHECK (agency_id = (
     SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND role IN ('agent') LIMIT 1
+    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
   ));
 
 CREATE POLICY "Agent role can update renewals"
   ON renewal_policies FOR UPDATE
   USING (agency_id = (
     SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND role IN ('agent') LIMIT 1
+    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
   ));
 
 -- customer_renewal_groups
@@ -321,14 +321,14 @@ CREATE POLICY "Agent role can insert groups"
   ON customer_renewal_groups FOR INSERT
   WITH CHECK (agency_id = (
     SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND role IN ('agent') LIMIT 1
+    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
   ));
 
 CREATE POLICY "Agent role can update groups"
   ON customer_renewal_groups FOR UPDATE
   USING (agency_id = (
     SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND role IN ('agent') LIMIT 1
+    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
   ));
 
 -- customer_consent
@@ -369,5 +369,5 @@ CREATE POLICY "Agent can insert upload batches"
   ON renewal_upload_batches FOR INSERT
   WITH CHECK (agency_id = (
     SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND role IN ('agent') LIMIT 1
+    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
   ));
