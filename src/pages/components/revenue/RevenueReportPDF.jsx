@@ -258,7 +258,7 @@ function calcCommission(premium, product, tier = "monoline") {
 }
 
 // ── Main PDF document ─────────────────────────────────────────────────────────
-export default function RevenueReportPDF({ entries, totals, rangeLabel, view, goalPct }) {
+export default function RevenueReportPDF({ entries, totals, rangeLabel, view, goalPct, pace = null, policiesStats = null, dailyCumulative = [], yesterdayEarned = 0, byProducer = [], lastMonthCommission = 0, advisoryBrief = "" }) {
   const generated = new Date().toLocaleDateString("en-US", {
     month: "long", day: "numeric", year: "numeric",
   });
@@ -368,6 +368,96 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
           </>
         )}
 
+        {/* ── Gap to Goal ── */}
+        <Text style={styles.sectionTitle}>Goal Progress & Gap Analysis</Text>
+        <View style={styles.kpiRow}>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Commission Earned</Text>
+            <Text style={[styles.kpiValue, { color: "#059669" }]}>{fmt$(totals.totalCommission)}</Text>
+            <Text style={styles.kpiSub}>of {fmt$(GOAL)} goal</Text>
+          </View>
+          <View style={styles.kpiCard}>
+            <Text style={styles.kpiLabel}>Gap to $40k Goal</Text>
+            <Text style={[styles.kpiValue, {
+              color: totals.totalCommission >= GOAL ? "#059669" : "#d97706"
+            }]}>
+              {totals.totalCommission >= GOAL
+                ? `+${fmt$(totals.totalCommission - GOAL)}`
+                : `-${fmt$(GOAL - totals.totalCommission)}`
+              }
+            </Text>
+            <Text style={styles.kpiSub}>
+              {totals.totalCommission >= GOAL ? "Goal exceeded" : "Remaining to hit goal"}
+            </Text>
+          </View>
+          {pace && (
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>Projected Month-End</Text>
+              <Text style={[styles.kpiValue, {
+                color: pace.projectedCommission >= GOAL ? "#059669" : "#d97706"
+              }]}>
+                {fmt$(pace.projectedCommission)}
+              </Text>
+              <Text style={styles.kpiSub}>
+                {pace.onPace ? "On pace for goal" : `${fmt$(GOAL - pace.projectedCommission)} short`}
+              </Text>
+            </View>
+          )}
+          {pace && (
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>Daily Target Needed</Text>
+              <Text style={styles.kpiValue}>{fmt$(pace.dailyCommissionNeeded)}</Text>
+              <Text style={styles.kpiSub}>{pace.remaining} business days left</Text>
+            </View>
+          )}
+        </View>
+
+        {/* ── VC Baseline & Portfolio Points ── */}
+        {policiesStats && (
+          <>
+            <Text style={styles.sectionTitle}>Production KPIs</Text>
+            <View style={styles.kpiRow}>
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiLabel}>VC Baseline Items</Text>
+                <Text style={styles.kpiValue}>{policiesStats.vcBaselineCount}</Text>
+                <Text style={styles.kpiSub}>Target: 53/mo</Text>
+              </View>
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiLabel}>VC Baseline Pct</Text>
+                <Text style={[styles.kpiValue, {
+                  color: policiesStats.vcBaselineCount >= 53 ? "#059669" : "#d97706"
+                }]}>
+                  {Math.round((policiesStats.vcBaselineCount / 53) * 100)}%
+                </Text>
+                <Text style={styles.kpiSub}>{53 - policiesStats.vcBaselineCount > 0
+                  ? `${53 - policiesStats.vcBaselineCount} items to baseline`
+                  : "Baseline achieved"
+                }</Text>
+              </View>
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiLabel}>Portfolio Points</Text>
+                <Text style={styles.kpiValue}>{policiesStats.totalPoints.toLocaleString()}</Text>
+                <Text style={styles.kpiSub}>
+                  {policiesStats.pointsDelta >= 0
+                    ? `+${policiesStats.pointsDelta} vs prior month`
+                    : `${policiesStats.pointsDelta} vs prior month`
+                  }
+                </Text>
+              </View>
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiLabel}>MoM Commission</Text>
+                <Text style={[styles.kpiValue, {
+                  color: totals.totalCommission >= lastMonthCommission ? "#059669" : "#d97706"
+                }]}>
+                  {totals.totalCommission >= lastMonthCommission ? "+" : ""}
+                  {fmt$(totals.totalCommission - lastMonthCommission)}
+                </Text>
+                <Text style={styles.kpiSub}>vs last month ({fmt$(lastMonthCommission)})</Text>
+              </View>
+            </View>
+          </>
+        )}
+
         {/* ── Entries table ── */}
         {entries.length > 0 && (
           <>
@@ -415,6 +505,88 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
         </View>
 
       </Page>
+
+      {/* ── Advisory Brief page (only if brief exists) ── */}
+      {advisoryBrief && (
+        <Page size="LETTER" style={styles.page}>
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.brand}>insuredbycam.com</Text>
+              <Text style={styles.title}>Advisory Brief</Text>
+              <Text style={styles.subtitle}>{rangeLabel} · AI-Generated Analysis</Text>
+            </View>
+            <View>
+              <Text style={styles.meta}>Generated {generated}</Text>
+              <Text style={styles.meta}>Powered by Claude AI</Text>
+            </View>
+          </View>
+
+          <Text style={styles.sectionTitle}>Performance Summary & Recommendations</Text>
+          <View style={{
+            backgroundColor: "#f9fafb",
+            borderRadius: 6,
+            borderWidth: 1,
+            borderColor: "#e5e7eb",
+            borderLeftWidth: 3,
+            borderLeftColor: "#3b82f6",
+            padding: 14,
+            marginTop: 4,
+          }}>
+            <Text style={{ fontSize: 10, lineHeight: 1.6, color: "#1f2937" }}>
+              {advisoryBrief}
+            </Text>
+          </View>
+
+          {/* Quick KPI recap on the brief page */}
+          <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Key Metrics at a Glance</Text>
+          <View style={styles.kpiRow}>
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>Commission vs Goal</Text>
+              <Text style={[styles.kpiValue, { color: goalPct >= 1 ? "#059669" : "#d97706" }]}>
+                {Math.round(goalPct * 100)}%
+              </Text>
+              <Text style={styles.kpiSub}>{fmt$(totals.totalCommission)} earned</Text>
+            </View>
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>Gap to $40k</Text>
+              <Text style={[styles.kpiValue, { color: totals.totalCommission >= GOAL ? "#059669" : "#d97706" }]}>
+                {totals.totalCommission >= GOAL ? "Achieved" : fmt$(GOAL - totals.totalCommission)}
+              </Text>
+              <Text style={styles.kpiSub}>{totals.totalCommission >= GOAL ? "Goal exceeded" : "remaining"}</Text>
+            </View>
+            {pace && (
+              <View style={styles.kpiCard}>
+                <Text style={styles.kpiLabel}>On Pace</Text>
+                <Text style={[styles.kpiValue, { color: pace.onPace ? "#059669" : "#d97706" }]}>
+                  {pace.onPace ? "Yes" : "No"}
+                </Text>
+                <Text style={styles.kpiSub}>{fmt$(pace.projectedCommission)} projected</Text>
+              </View>
+            )}
+            <View style={styles.kpiCard}>
+              <Text style={styles.kpiLabel}>VC Baseline</Text>
+              <Text style={[styles.kpiValue, {
+                color: (policiesStats?.vcBaselineCount ?? 0) >= 53 ? "#059669" : "#d97706"
+              }]}>
+                {policiesStats?.vcBaselineCount ?? 0}/53
+              </Text>
+              <Text style={styles.kpiSub}>
+                {(policiesStats?.vcBaselineCount ?? 0) >= 53 ? "Baseline hit" : `${53 - (policiesStats?.vcBaselineCount ?? 0)} to go`}
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.footer, { position: "absolute", bottom: 24, left: 32, right: 32 }]} fixed>
+            <Text style={styles.footerText}>
+              insuredbycam.com · Advisory Brief · {rangeLabel} · This analysis is AI-generated and for informational purposes only.
+            </Text>
+            <Text style={styles.footerText} render={({ pageNumber, totalPages }) =>
+              `Page ${pageNumber} of ${totalPages}`
+            } />
+          </View>
+        </Page>
+      )}
+
     </Document>
   );
 }

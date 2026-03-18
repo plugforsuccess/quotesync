@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
+import { BarChart, Bar, LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
@@ -666,6 +666,49 @@ export default function RevenueProjectionsDashboard() {
       .reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline"), 0);
   }, [entries]);
 
+  // ─── Daily cumulative commission (month view only) ──────────────────────
+  const dailyCumulative = useMemo(() => {
+    if (view !== "month") return [];
+
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = today.getMonth();
+    const todayDay = today.getDate();
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+    // Group entries by day
+    const byDay = {};
+    entries.forEach(e => {
+      const d = new Date(e.date);
+      if (d.getFullYear() === y && d.getMonth() === m) {
+        const day = d.getDate();
+        if (!byDay[day]) byDay[day] = 0;
+        byDay[day] += calcCommission(e.premium, e.product, e.tier ?? "monoline");
+      }
+    });
+
+    // Build cumulative array up to today
+    let running = 0;
+    return Array.from({ length: todayDay }, (_, i) => {
+      const day = i + 1;
+      running += byDay[day] ?? 0;
+      const idealPace = (COMMISSION_GOAL / daysInMonth) * day;
+      return {
+        day,
+        cumulative: running,
+        idealPace,
+        isYesterday: day === todayDay - 1,
+        isToday: day === todayDay,
+        dailyEarned: byDay[day] ?? 0,
+      };
+    });
+  }, [view, entries]);
+
+  const yesterdayEarned = dailyCumulative.find(d => d.isYesterday)?.dailyEarned ?? 0;
+  const mtdCommission = totals.totalCommission;
+  const mtdGap = COMMISSION_GOAL - mtdCommission;
+  const mtdAhead = mtdCommission > (dailyCumulative.at(-1)?.idealPace ?? 0);
+
   // ─── Daily target (month view only) ───────────────────────────────────────
   const dailyTarget = useMemo(() => {
     if (view !== "month") return null;
@@ -772,6 +815,54 @@ export default function RevenueProjectionsDashboard() {
   const exportPDF = async () => {
     setPdfGenerating(true);
     try {
+      // Generate AI brief first
+      let advisoryBrief = "";
+      try {
+        const briefPayload = {
+          totalCommission: totals.totalCommission,
+          goal: COMMISSION_GOAL,
+          goalPct: commissionGoalPct,
+          projectedCommission: pace?.projectedCommission ?? null,
+          onPace: pace?.onPace ?? null,
+          dailyNeeded: dailyTarget?.dailyCommissionNeeded ?? null,
+          daysRemaining: dailyTarget?.remaining ?? null,
+          vcBaseline: policiesStats.vcBaselineCount,
+          vcBaselineTarget: 53,
+          totalPolicies: policiesStats.totalPolicies,
+          blendedRate: totals.totalPremium > 0 ? totals.totalCommission / totals.totalPremium : 0,
+          momDelta: totals.totalCommission - lastMonthCommission,
+          yesterdayEarned,
+          rangeLabel,
+        };
+
+        const response = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 400,
+            system: `You are a business intelligence advisor for an Allstate insurance agency in Georgia. Write a concise 3-5 sentence advisory brief for the agency principal based on their revenue KPIs. Be direct and actionable. Use dollar amounts and percentages from the data. Do not use bullet points — write in prose. Flag risks if behind pace. Celebrate wins if ahead. End with one specific recommended action for the next 3 business days.`,
+            messages: [{
+              role: "user",
+              content: `Generate an advisory brief for this period: ${briefPayload.rangeLabel}\n\nKPIs:\n- Commission earned: $${Math.round(briefPayload.totalCommission).toLocaleString()} of $40,000 goal (${Math.round(briefPayload.goalPct * 100)}%)\n- Projected month-end: $${briefPayload.projectedCommission ? Math.round(briefPayload.projectedCommission).toLocaleString() : "N/A"}\n- On pace: ${briefPayload.onPace ? "Yes" : "No"}\n- Daily commission needed: $${briefPayload.dailyNeeded ? Math.round(briefPayload.dailyNeeded).toLocaleString() : "N/A"} with ${briefPayload.daysRemaining ?? "N/A"} business days remaining\n- VC Baseline items: ${briefPayload.vcBaseline} of 53 target\n- Total policies: ${briefPayload.totalPolicies}\n- Blended commission rate: ${(briefPayload.blendedRate * 100).toFixed(1)}%\n- Month-over-month change: $${Math.round(Math.abs(briefPayload.momDelta)).toLocaleString()} ${briefPayload.momDelta >= 0 ? "increase" : "decrease"}\n- Yesterday's commission: $${Math.round(briefPayload.yesterdayEarned).toLocaleString()}`
+            }]
+          })
+        });
+
+        const data = await response.json();
+        advisoryBrief = data.content?.[0]?.text ?? "";
+      } catch (briefErr) {
+        console.warn("Advisory brief generation failed:", briefErr);
+        advisoryBrief = ""; // PDF generates without brief if API fails
+      }
+
+      // Build pace object with daily target fields for PDF
+      const paceForPdf = pace ? {
+        ...pace,
+        dailyCommissionNeeded: dailyTarget?.dailyCommissionNeeded ?? 0,
+        remaining: dailyTarget?.remaining ?? 0,
+      } : null;
+
       const [{ pdf }, { default: RevenueReportPDF }] = await Promise.all([
         import("@react-pdf/renderer"),
         import("./RevenueReportPDF"),
@@ -783,6 +874,13 @@ export default function RevenueProjectionsDashboard() {
           rangeLabel={rangeLabel}
           view={view}
           goalPct={commissionGoalPct}
+          pace={paceForPdf}
+          policiesStats={policiesStats}
+          dailyCumulative={dailyCumulative}
+          yesterdayEarned={yesterdayEarned}
+          byProducer={byProducer}
+          lastMonthCommission={lastMonthCommission}
+          advisoryBrief={advisoryBrief}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -1151,6 +1249,112 @@ export default function RevenueProjectionsDashboard() {
         })()}
       </div>
 
+      {/* Daily Cumulative Earnings Chart (month view only) */}
+      {view === "month" && dailyCumulative.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+          {/* Header row */}
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm">
+                Daily Earnings — {new Date().toLocaleString("default", { month: "long" })}
+              </h3>
+              <p className="text-xs text-gray-500 mt-0.5">Cumulative commission vs. ideal pace</p>
+            </div>
+            <div className="text-right">
+              {yesterdayEarned > 0 && (
+                <p className="text-sm font-black text-emerald-600">{fmtFull$(yesterdayEarned)} yesterday</p>
+              )}
+              <p className={`text-xs font-semibold mt-0.5 ${mtdAhead ? "text-emerald-600" : "text-amber-600"}`}>
+                {mtdAhead
+                  ? `${fmtFull$(mtdCommission - (dailyCumulative.at(-1)?.idealPace ?? 0))} ahead of pace`
+                  : `${fmtFull$(Math.abs(mtdGap))} ${mtdGap > 0 ? "to goal" : "over goal"}`
+                }
+              </p>
+            </div>
+          </div>
+
+          <ResponsiveContainer width="100%" height={180}>
+            <ComposedChart data={dailyCumulative} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="cumulativeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
+                  <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+                interval={4}
+                tickFormatter={d => `${d}`}
+              />
+              <YAxis
+                tick={{ fontSize: 10, fill: "#9ca3af" }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={v => fmt$(v)}
+                width={48}
+              />
+              <Tooltip
+                formatter={(value, name) => [
+                  fmtFull$(value),
+                  name === "cumulative" ? "Earned MTD" : "Ideal Pace"
+                ]}
+                labelFormatter={day => `Day ${day}`}
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid #e5e7eb" }}
+              />
+              {/* Ideal pace reference line */}
+              <Line
+                type="monotone"
+                dataKey="idealPace"
+                stroke="#d1d5db"
+                strokeWidth={1.5}
+                strokeDasharray="4 3"
+                dot={false}
+                name="idealPace"
+              />
+              {/* Actual cumulative */}
+              <Area
+                type="monotone"
+                dataKey="cumulative"
+                stroke="#10b981"
+                strokeWidth={2.5}
+                fill="url(#cumulativeGrad)"
+                dot={false}
+                activeDot={{ r: 4, fill: "#10b981" }}
+                name="cumulative"
+              />
+              {/* $40k goal line */}
+              <ReferenceLine
+                y={COMMISSION_GOAL}
+                stroke="#3b82f6"
+                strokeDasharray="6 3"
+                strokeWidth={1}
+                label={{ value: "$40k", position: "right", fontSize: 9, fill: "#3b82f6" }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+
+          {/* Legend */}
+          <div className="flex items-center gap-4 mt-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-0.5 bg-emerald-500 rounded" />
+              <span className="text-xs text-gray-500">Actual MTD</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-0.5 bg-gray-300 rounded" style={{ borderTop: "1px dashed #d1d5db", background: "transparent" }} />
+              <span className="text-xs text-gray-500">Ideal pace</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-0.5 bg-blue-500 rounded" style={{ borderTop: "1px dashed #3b82f6", background: "transparent" }} />
+              <span className="text-xs text-gray-500">$40k goal</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Goal Tracking (month only) */}
       {view === "month" && <div className="card" style={{ marginBottom: 20, padding: "16px 20px" }}>
         {/* Commission Goal — primary */}
@@ -1378,7 +1582,7 @@ export default function RevenueProjectionsDashboard() {
                 <div style={{ display: "flex", gap: 6 }}>
                   <button className="btn-ghost" onClick={exportCSV}>Export CSV</button>
                   <button className="btn-ghost" onClick={exportPDF} disabled={pdfGenerating}>
-                    {pdfGenerating ? "Generating…" : "Export PDF"}
+                    {pdfGenerating ? "Generating…" : "Export Report"}
                   </button>
                 </div>
               )}
