@@ -1,7 +1,7 @@
 // components/Layout.jsx - ULTRA ADVANCED VERSION
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
@@ -14,8 +14,10 @@ import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 function Layout({ forcePlane = null }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hideNav, setHideNav] = useState(false);
   const location = useLocation();
   const scrollTimeoutRef = useRef(null);
+  const lastScrollY = useRef(0);
 
   // Two-Plane RBAC: Get user context and determine active plane
   const {
@@ -51,20 +53,30 @@ function Layout({ forcePlane = null }) {
       || null
     : null;
 
+  // Minimal funnel nav on /save routes
+  const isFunnelRoute = location.pathname === '/save' || location.pathname.startsWith('/save/');
+
   // Handle scroll for nav blur effect with throttling
-  useEffect(() => {
-    const handleScroll = () => {
-      // Clear existing timeout
-      if (scrollTimeoutRef.current) {
-        clearTimeout(scrollTimeoutRef.current);
+  const handleScroll = useCallback(() => {
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+    scrollTimeoutRef.current = setTimeout(() => {
+      const currentY = window.scrollY;
+
+      // Existing scrolled state (used by full nav blur effect)
+      setScrolled(currentY > 10);
+
+      // Funnel-only: hide on scroll down, show on scroll up
+      if (isFunnelRoute) {
+        const scrollingDown = currentY > lastScrollY.current;
+        const pastThreshold = currentY > 80;
+        setHideNav(scrollingDown && pastThreshold);
       }
 
-      // Throttle scroll updates to every 100ms
-      scrollTimeoutRef.current = setTimeout(() => {
-        setScrolled(window.scrollY > 10);
-      }, 100);
-    };
+      lastScrollY.current = currentY;
+    }, 50);
+  }, [isFunnelRoute]);
 
+  useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -72,7 +84,7 @@ function Layout({ forcePlane = null }) {
         clearTimeout(scrollTimeoutRef.current);
       }
     };
-  }, []);
+  }, [handleScroll]);
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -129,16 +141,21 @@ function Layout({ forcePlane = null }) {
   // Show bottom tab bar only for agency/platform planes (not consumer)
   const showBottomTabs = activePlane === PLANES.AGENCY || activePlane === PLANES.PLATFORM;
 
-  // Minimal funnel nav on /save routes
-  const isFunnelRoute = location.pathname === '/save' || location.pathname.startsWith('/save/');
+  // Reset hideNav when leaving funnel route
+  useEffect(() => {
+    if (!isFunnelRoute) setHideNav(false);
+  }, [isFunnelRoute]);
 
   return (
     <div className="min-h-screen bg-[#0f172a] text-white flex flex-col">
       {isFunnelRoute ? (
         /* ── Minimal funnel nav — dark glass, logo + phone only ── */
         <header
-          className="fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/80 backdrop-blur-2xl border-b border-white/10"
-          style={{ overflow: 'visible' }}
+          className="fixed top-0 left-0 right-0 z-50 bg-[#0f172a]/80 backdrop-blur-2xl border-b border-white/10 transition-transform duration-300"
+          style={{
+            overflow: 'visible',
+            transform: hideNav ? 'translateY(-100%)' : 'translateY(0)',
+          }}
         >
           {/* Animated gradient line — identical to full nav */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x"></div>

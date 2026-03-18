@@ -145,7 +145,7 @@ const MANUAL_ADVANCE_STEPS = new Set([
 
 // ─── Progress Wheel ────────────────────────────────────────────────
 
-function ProgressWheel({ pct }) {
+function ProgressWheel({ pct, hidden }) {
   const size = 120;
   const stroke = 8;
   const r = (size - stroke) / 2;
@@ -159,7 +159,9 @@ function ProgressWheel({ pct }) {
         position: 'fixed',
         top: '16px',
         left: '50%',
-        transform: 'translateX(-50%)',
+        transform: hidden ? 'translateX(-50%) translateY(-20px)' : 'translateX(-50%)',
+        opacity: hidden ? 0 : 1,
+        transition: 'transform 300ms ease, opacity 300ms ease',
         zIndex: 60,
         pointerEvents: 'none',
       }}
@@ -217,6 +219,23 @@ export default function SaveWizardPage() {
 
   const utmParams = useRef(getUtmParams());
   const partialLeadInserted = useRef(false);
+
+  // Scroll-hide: wheel follows header hide/show behavior
+  const [hideWheel, setHideWheel] = useState(false);
+  const lastScrollY = useRef(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      const scrollingDown = currentY > lastScrollY.current;
+      const pastThreshold = currentY > 80;
+      setHideWheel(scrollingDown && pastThreshold);
+      lastScrollY.current = currentY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // MT-08: Fetch agency from ?agency= slug param (or default agency)
   const { data: funnelAgency } = useFunnelAgency();
@@ -762,7 +781,7 @@ export default function SaveWizardPage() {
       {!isConfirmation && <ProgressWheel pct={Math.min(
         Math.round(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100),
         99
-      )} />}
+      )} hidden={hideWheel} />}
 
       {/* Content container — top padding removed, bottom padding kept */}
       <div className="container mx-auto px-4 pt-20 pb-12 sm:pb-16 relative z-10">
