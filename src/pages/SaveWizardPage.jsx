@@ -572,7 +572,7 @@ export default function SaveWizardPage() {
             ownsHome={answers.ownsHome}
             maritalStatus={answers.maritalStatus}
             multipleDrivers={answers.multipleDrivers}
-            multipleVehicles={answers.vehicleCount >= 2}
+            multipleVehicles={answers.vehicleCount === null ? null : answers.vehicleCount >= 2}
             onOwnsHomeChange={(v) => setAnswer('ownsHome', v)}
             onMaritalStatusChange={(v) => setAnswer('maritalStatus', v)}
             onMultipleDriversChange={(v) => setAnswer('multipleDrivers', v)}
