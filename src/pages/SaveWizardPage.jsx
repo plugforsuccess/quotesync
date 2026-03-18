@@ -146,32 +146,46 @@ const MANUAL_ADVANCE_STEPS = new Set([
 // ─── Progress Wheel ────────────────────────────────────────────────
 
 function ProgressWheel({ pct }) {
-  const size = 80;
-  const stroke = 6;
+  const size = 120;
+  const stroke = 8;
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const offset = circ - (pct / 100) * circ;
+  const gradientId = 'progress-wheel-gradient';
 
   return (
-    <div className="flex justify-center mb-8">
+    <div className="flex justify-center" style={{ marginTop: `-${size / 2}px`, marginBottom: '24px', position: 'relative', zIndex: 10 }}>
       <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90" style={{ display: 'block' }}>
-          {/* Track */}
+        <svg
+          width={size}
+          height={size}
+          className="-rotate-90"
+          style={{ display: 'block' }}
+        >
+          <defs>
+            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#3B82F6" />
+              <stop offset="100%" stopColor="#06B6D4" />
+            </linearGradient>
+          </defs>
+
+          {/* Track — subtle white ring, transparent center */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={r}
-            fill="none"
+            fill="transparent"
             stroke="rgba(255,255,255,0.2)"
             strokeWidth={stroke}
           />
+
           {/* Arc */}
           <circle
             cx={size / 2}
             cy={size / 2}
             r={r}
-            fill="none"
-            stroke="#3B82F6"
+            fill="transparent"
+            stroke={`url(#${gradientId})`}
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={circ}
@@ -179,10 +193,11 @@ function ProgressWheel({ pct }) {
             style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
           />
         </svg>
-        {/* Label */}
+
+        {/* Center label */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-black text-gray-900 leading-none">{pct}%</span>
-          <span className="text-xs text-gray-500 font-medium mt-0.5">Complete</span>
+          <span className="text-2xl font-black text-gray-900 leading-none" style={{ textShadow: '0 0 8px rgba(255,255,255,0.8)' }}>{pct}%</span>
+          <span className="text-xs font-semibold text-gray-600 mt-0.5" style={{ textShadow: '0 0 6px rgba(255,255,255,0.8)' }}>Complete</span>
         </div>
       </div>
     </div>
@@ -734,7 +749,7 @@ export default function SaveWizardPage() {
   const animClass = direction === 'forward' ? 'wizard-slide-in-right' : 'wizard-slide-in-left';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-x-hidden">
       <title>See How Much You Could Save | {funnelAgency?.brand_name || 'QuoteSync'}</title>
       <meta name="description" content="Get a personalized Georgia auto and home insurance quote in 60 seconds. No forms, no spam calls." />
       <meta name="robots" content="noindex" />
@@ -826,14 +841,14 @@ export default function SaveWizardPage() {
                 </div>
               )}
 
-              {/* Back button — inside card, below everything else */}
+              {/* Back button — bottom-left of card */}
               {showBackButton && (
-                <div className="mt-4 flex justify-center">
+                <div className="mt-5 flex justify-start">
                   <button
                     type="button"
                     onClick={handleBack}
                     disabled={isSubmitting}
-                    className="inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 font-medium transition-colors bg-transparent border-0 cursor-pointer px-3 py-2 rounded-lg hover:bg-gray-50 disabled:opacity-40"
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:text-black transition-colors bg-transparent border-0 cursor-pointer px-0 py-1 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     <ArrowLeft className="w-3.5 h-3.5" />
                     <span>Back</span>
