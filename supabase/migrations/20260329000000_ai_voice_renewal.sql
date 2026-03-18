@@ -57,15 +57,18 @@ CREATE INDEX IF NOT EXISTS idx_ai_call_log_called_at ON ai_call_log(called_at);
 
 ALTER TABLE ai_call_log ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agent reads call log" ON ai_call_log;
 CREATE POLICY "Agent reads call log" ON ai_call_log FOR SELECT
   USING (agency_id = (SELECT am.agency_id FROM agency_memberships am WHERE am.user_id = auth.uid() LIMIT 1));
 
+DROP POLICY IF EXISTS "Service role inserts call log" ON ai_call_log;
 CREATE POLICY "Service role inserts call log" ON ai_call_log FOR INSERT
   WITH CHECK (true);
 
 -- Webhook retries use upsert (INSERT ... ON CONFLICT UPDATE), which requires
 -- both INSERT and UPDATE policies. Service role bypasses RLS, but add UPDATE
 -- policy for defense-in-depth in case service role is ever removed.
+DROP POLICY IF EXISTS "Service role updates call log" ON ai_call_log;
 CREATE POLICY "Service role updates call log" ON ai_call_log FOR UPDATE
   USING (true);
 
