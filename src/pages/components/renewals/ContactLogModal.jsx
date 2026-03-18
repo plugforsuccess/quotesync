@@ -3,8 +3,9 @@
 // Used from RenewalsPage row cards and RenewalDetailPage.
 
 import { useState, useEffect } from 'react';
-import { X, Phone, Mail, Bot, AlertTriangle } from 'lucide-react';
+import { X, Phone, Mail, Bot, AlertTriangle, Shield } from 'lucide-react';
 import { useLogContact } from '../../../hooks/useRenewalPolicies';
+import { useCustomerConsent } from '../../../hooks/useCustomerConsent';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
 import { useAuth } from '../../../contexts/AuthContext';
 
@@ -38,10 +39,17 @@ const FOLLOWUP_REASONS = [
   { value: 'manual', label: 'Manual' },
 ];
 
+const CONSENT_OPTIONS = [
+  { value: '', label: 'Did not ask' },
+  { value: 'yes', label: 'Yes — customer consented to automated calls' },
+  { value: 'no', label: 'No — customer declined automated calls' },
+];
+
 export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) {
-  const { currentAgencyId } = useAuth();
+  const { currentAgencyId, profile } = useAuth();
   const { data: employees = [] } = useActiveEmployees(currentAgencyId);
   const logContact = useLogContact();
+  const { upsertConsent } = useCustomerConsent(currentAgencyId);
 
   const [channel, setChannel] = useState('human_call');
   const [outcome, setOutcome] = useState('');
@@ -49,6 +57,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
   const [escalate, setEscalate] = useState(false);
   const [followupReason, setFollowupReason] = useState('');
   const [assignedTo, setAssignedTo] = useState('');
+  const [consentChoice, setConsentChoice] = useState('');
   const [error, setError] = useState(null);
 
   // Auto-toggle escalation for shopping/escalated outcomes
@@ -68,6 +77,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
       setEscalate(false);
       setFollowupReason('');
       setAssignedTo('');
+      setConsentChoice('');
       setError(null);
     }
   }, [isOpen]);
@@ -92,6 +102,30 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
         followupReason: escalate ? followupReason : null,
         assignedTo: assignedTo || null,
       });
+
+      // Consent capture — upsert if user selected yes or no
+      if (consentChoice && policy.customer_phone && upsertConsent) {
+        const consentData = {
+          agency_id: currentAgencyId,
+          customer_phone: policy.customer_phone,
+          customer_name: policy.customer_name,
+          autodial_consent: consentChoice === 'yes',
+          consent_collected_by: profile?.id || null,
+        };
+        if (consentChoice === 'yes') {
+          consentData.autodial_consent_date = new Date().toISOString();
+          consentData.autodial_consent_source = channel === 'human_call' ? 'inbound_call' : 'service_interaction';
+        } else {
+          consentData.autodial_opt_out_date = new Date().toISOString();
+          consentData.autodial_opt_out_channel = 'verbal';
+        }
+        try {
+          await upsertConsent(consentData);
+        } catch (consentErr) {
+          console.error('Consent upsert error (non-fatal):', consentErr);
+        }
+      }
+
       onSuccess?.();
       onClose();
     } catch (err) {
@@ -215,6 +249,31 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
               ))}
             </select>
           </div>
+
+          {/* Consent capture */}
+          {channel === 'human_call' && (
+            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Shield className="w-4 h-4 text-blue-500" />
+                <span className="text-sm font-medium text-blue-800">Consent (optional)</span>
+              </div>
+              <div className="space-y-1">
+                {CONSENT_OPTIONS.map((opt) => (
+                  <label key={opt.value} className="flex items-center gap-2 cursor-pointer text-sm text-blue-700">
+                    <input
+                      type="radio"
+                      name="consent"
+                      value={opt.value}
+                      checked={consentChoice === opt.value}
+                      onChange={() => setConsentChoice(opt.value)}
+                      className="text-primary-600 focus:ring-primary-500"
+                    />
+                    {opt.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Error */}
           {error && (
