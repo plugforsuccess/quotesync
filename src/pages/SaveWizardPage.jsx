@@ -749,7 +749,7 @@ export default function SaveWizardPage() {
   const animClass = direction === 'forward' ? 'wizard-slide-in-right' : 'wizard-slide-in-left';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-gray-600 via-primary-900 to-secondary-900 relative overflow-x-hidden">
       <title>See How Much You Could Save | {funnelAgency?.brand_name || 'QuoteSync'}</title>
       <meta name="description" content="Get a personalized Georgia auto and home insurance quote in 60 seconds. No forms, no spam calls." />
       <meta name="robots" content="noindex" />
