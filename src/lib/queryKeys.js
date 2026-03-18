@@ -83,6 +83,8 @@ export const queryKeys = {
     consent: (agencyId) => ['customer_consent', agencyId],
     consentMap: (agencyId) => ['customer_consent', 'map', agencyId],
     batches: (agencyId) => ['renewal_upload_batches', agencyId],
+    aiCallLog: (agencyId, daysBack) => ['ai_call_log', agencyId, daysBack],
+    webhookHealth: (agencyId) => ['ai_call_log', 'webhook_health', agencyId],
   },
 
   // ── Compensation Model ─────────────────────────────────────────────────────

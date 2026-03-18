@@ -5,7 +5,7 @@
 -- ── Table 1: renewal_upload_batches ─────────────────────────────────────────
 -- Tracks each upload for auditability.
 
-CREATE TABLE renewal_upload_batches (
+CREATE TABLE IF NOT EXISTS renewal_upload_batches (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
   uploaded_by uuid REFERENCES employees(id),
@@ -26,7 +26,7 @@ CREATE TABLE renewal_upload_batches (
 -- ── Table 2: customer_renewal_groups ────────────────────────────────────────
 -- Groups multi-policy households by phone number for dedup and routing.
 
-CREATE TABLE customer_renewal_groups (
+CREATE TABLE IF NOT EXISTS customer_renewal_groups (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
 
@@ -64,7 +64,7 @@ CREATE TABLE customer_renewal_groups (
 -- ── Table 3: renewal_policies ───────────────────────────────────────────────
 -- Stores each policy renewal record uploaded from Allstate reports.
 
-CREATE TABLE renewal_policies (
+CREATE TABLE IF NOT EXISTS renewal_policies (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
 
@@ -193,7 +193,7 @@ CREATE TABLE renewal_policies (
 -- ── Table 4: customer_consent ───────────────────────────────────────────────
 -- Tracks auto-dial consent and DNC status per customer per agency.
 
-CREATE TABLE customer_consent (
+CREATE TABLE IF NOT EXISTS customer_consent (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   agency_id uuid NOT NULL REFERENCES agencies(id),
 
@@ -236,27 +236,27 @@ CREATE TABLE customer_consent (
 -- ── Indexes ─────────────────────────────────────────────────────────────────
 
 -- renewal_policies
-CREATE INDEX idx_renewal_policies_agency_id ON renewal_policies(agency_id);
-CREATE INDEX idx_renewal_policies_renewal_date ON renewal_policies(renewal_date);
-CREATE INDEX idx_renewal_policies_status ON renewal_policies(renewal_status);
-CREATE INDEX idx_renewal_policies_priority ON renewal_policies(priority_tier);
-CREATE INDEX idx_renewal_policies_followup ON renewal_policies(human_followup_required, assigned_to);
-CREATE INDEX idx_renewal_policies_batch ON renewal_policies(upload_batch_id);
-CREATE INDEX idx_renewal_policies_group ON renewal_policies(customer_group_id);
-CREATE INDEX idx_renewal_policies_human_only ON renewal_policies(human_only) WHERE human_only = true;
-CREATE INDEX idx_renewal_policies_claim ON renewal_policies(claim_flag) WHERE claim_flag != 'none';
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_agency_id ON renewal_policies(agency_id);
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_renewal_date ON renewal_policies(renewal_date);
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_status ON renewal_policies(renewal_status);
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_priority ON renewal_policies(priority_tier);
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_followup ON renewal_policies(human_followup_required, assigned_to);
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_batch ON renewal_policies(upload_batch_id);
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_group ON renewal_policies(customer_group_id);
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_human_only ON renewal_policies(human_only) WHERE human_only = true;
+CREATE INDEX IF NOT EXISTS idx_renewal_policies_claim ON renewal_policies(claim_flag) WHERE claim_flag != 'none';
 
 -- customer_renewal_groups
-CREATE INDEX idx_renewal_groups_agency ON customer_renewal_groups(agency_id);
-CREATE INDEX idx_renewal_groups_phone ON customer_renewal_groups(customer_phone);
-CREATE INDEX idx_renewal_groups_human_only ON customer_renewal_groups(agency_id, human_only) WHERE human_only = true;
+CREATE INDEX IF NOT EXISTS idx_renewal_groups_agency ON customer_renewal_groups(agency_id);
+CREATE INDEX IF NOT EXISTS idx_renewal_groups_phone ON customer_renewal_groups(customer_phone);
+CREATE INDEX IF NOT EXISTS idx_renewal_groups_human_only ON customer_renewal_groups(agency_id, human_only) WHERE human_only = true;
 
 -- customer_consent
-CREATE INDEX idx_customer_consent_agency ON customer_consent(agency_id);
-CREATE INDEX idx_customer_consent_phone ON customer_consent(customer_phone);
-CREATE INDEX idx_customer_consent_autodial ON customer_consent(agency_id, autodial_consent)
+CREATE INDEX IF NOT EXISTS idx_customer_consent_agency ON customer_consent(agency_id);
+CREATE INDEX IF NOT EXISTS idx_customer_consent_phone ON customer_consent(customer_phone);
+CREATE INDEX IF NOT EXISTS idx_customer_consent_autodial ON customer_consent(agency_id, autodial_consent)
   WHERE autodial_consent = true;
-CREATE INDEX idx_customer_consent_dnc ON customer_consent(agency_id, dnc)
+CREATE INDEX IF NOT EXISTS idx_customer_consent_dnc ON customer_consent(agency_id, dnc)
   WHERE dnc = true;
 
 -- ── updated_at trigger ──────────────────────────────────────────────────────
@@ -269,14 +269,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_renewal_policies_updated_at ON renewal_policies;
 CREATE TRIGGER trg_renewal_policies_updated_at
   BEFORE UPDATE ON renewal_policies
   FOR EACH ROW EXECUTE FUNCTION update_renewal_updated_at();
 
+DROP TRIGGER IF EXISTS trg_customer_consent_updated_at ON customer_consent;
 CREATE TRIGGER trg_customer_consent_updated_at
   BEFORE UPDATE ON customer_consent
   FOR EACH ROW EXECUTE FUNCTION update_renewal_updated_at();
 
+DROP TRIGGER IF EXISTS trg_customer_renewal_groups_updated_at ON customer_renewal_groups;
 CREATE TRIGGER trg_customer_renewal_groups_updated_at
   BEFORE UPDATE ON customer_renewal_groups
   FOR EACH ROW EXECUTE FUNCTION update_renewal_updated_at();
@@ -286,88 +289,99 @@ CREATE TRIGGER trg_customer_renewal_groups_updated_at
 -- renewal_policies
 ALTER TABLE renewal_policies ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agency members can read their renewals" ON renewal_policies;
 CREATE POLICY "Agency members can read their renewals"
   ON renewal_policies FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() LIMIT 1
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() LIMIT 1
   ));
 
+DROP POLICY IF EXISTS "Agent role can insert renewals" ON renewal_policies;
 CREATE POLICY "Agent role can insert renewals"
   ON renewal_policies FOR INSERT
-  WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
+  WITH CHECK (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
+DROP POLICY IF EXISTS "Agent role can update renewals" ON renewal_policies;
 CREATE POLICY "Agent role can update renewals"
   ON renewal_policies FOR UPDATE
-  USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
+  USING (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
 -- customer_renewal_groups
 ALTER TABLE customer_renewal_groups ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agency members can read their groups" ON customer_renewal_groups;
 CREATE POLICY "Agency members can read their groups"
   ON customer_renewal_groups FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() LIMIT 1
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() LIMIT 1
   ));
 
+DROP POLICY IF EXISTS "Agent role can insert groups" ON customer_renewal_groups;
 CREATE POLICY "Agent role can insert groups"
   ON customer_renewal_groups FOR INSERT
-  WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
+  WITH CHECK (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
+DROP POLICY IF EXISTS "Agent role can update groups" ON customer_renewal_groups;
 CREATE POLICY "Agent role can update groups"
   ON customer_renewal_groups FOR UPDATE
-  USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
+  USING (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
 
 -- customer_consent
 ALTER TABLE customer_consent ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agency members can read consent records" ON customer_consent;
 CREATE POLICY "Agency members can read consent records"
   ON customer_consent FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() LIMIT 1
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() LIMIT 1
   ));
 
+DROP POLICY IF EXISTS "Agency members can insert consent" ON customer_consent;
 CREATE POLICY "Agency members can insert consent"
   ON customer_consent FOR INSERT
   WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() LIMIT 1
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() LIMIT 1
   ));
 
+DROP POLICY IF EXISTS "Agency members can update consent" ON customer_consent;
 CREATE POLICY "Agency members can update consent"
   ON customer_consent FOR UPDATE
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() LIMIT 1
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() LIMIT 1
   ));
 
 -- renewal_upload_batches
 ALTER TABLE renewal_upload_batches ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Agent can read upload batches" ON renewal_upload_batches;
 CREATE POLICY "Agent can read upload batches"
   ON renewal_upload_batches FOR SELECT
   USING (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() LIMIT 1
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() LIMIT 1
   ));
 
+DROP POLICY IF EXISTS "Agent can insert upload batches" ON renewal_upload_batches;
 CREATE POLICY "Agent can insert upload batches"
   ON renewal_upload_batches FOR INSERT
-  WITH CHECK (agency_id = (
-    SELECT agency_id FROM employees
-    WHERE auth_user_id = auth.uid() AND 'agent' = ANY(roles) LIMIT 1
+  WITH CHECK (agency_id IN (
+    SELECT am.agency_id FROM agency_memberships am
+    WHERE am.user_id = auth.uid() AND am.status = 'active' AND am.agency_role = 'agent'
   ));
