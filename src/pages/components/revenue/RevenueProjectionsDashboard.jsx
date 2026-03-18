@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
-import { BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
+import { BarChart, Bar, LineChart, Line, AreaChart, Area, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from "recharts";
 import { useQuery } from "@tanstack/react-query";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
@@ -1274,7 +1274,7 @@ export default function RevenueProjectionsDashboard() {
           </div>
 
           <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={dailyCumulative} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <ComposedChart data={dailyCumulative} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="cumulativeGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.15} />
@@ -1334,7 +1334,7 @@ export default function RevenueProjectionsDashboard() {
                 strokeWidth={1}
                 label={{ value: "$40k", position: "right", fontSize: 9, fill: "#3b82f6" }}
               />
-            </AreaChart>
+            </ComposedChart>
           </ResponsiveContainer>
 
           {/* Legend */}
