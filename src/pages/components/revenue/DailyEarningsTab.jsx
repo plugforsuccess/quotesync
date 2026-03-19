@@ -40,9 +40,9 @@ export default function DailyEarningsTab({ agencyId }) {
 
     const byDay = {};
     entries.forEach(e => {
-      const d = new Date(e.date);
-      if (d.getFullYear() === y && d.getMonth() === m) {
-        const day = d.getDate();
+      const [ey, em, ed] = e.date.split('-').map(Number);
+      if (ey === y && em - 1 === m) {
+        const day = ed;
         if (!byDay[day]) byDay[day] = 0;
         byDay[day] += calcCommission(e.premium, e.product, e.tier ?? 'monoline');
       }
