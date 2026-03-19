@@ -1,6 +1,6 @@
 // App.jsx
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { ShieldOff, Home, Building2 as Building2Icon } from 'lucide-react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
@@ -114,6 +114,16 @@ function AdminLayout() {
     return <Layout forcePlane="platform" />;
   }
   return <Layout />;
+}
+
+// Redirect helpers for dynamic-param routes moved from /admin to /agency
+function RedirectRenewalDetail() {
+  const { policyId } = useParams();
+  return <Navigate to={`/agency/renewals/${policyId}`} replace />;
+}
+function RedirectProducerComp() {
+  const { employeeId } = useParams();
+  return <Navigate to={`/agency/producers/${employeeId}/comp-model`} replace />;
 }
 
 function App() {
@@ -345,6 +355,71 @@ function App() {
               }
             />
 
+            {/* Agency principal tools (moved from /admin) */}
+            <Route path="agency/staff-performance" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><StaffPerformancePage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/planning" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><PlanningHubPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/book-health" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/renewals" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RenewalsPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/renewals/upload" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RenewalUploadPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/renewals/consent" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><ConsentManagementPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/renewals/:policyId" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><RenewalDetailPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/producers/:employeeId/comp-model" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><ProducerCompModelPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/time-attendance" element={
+              <ProtectedRoute requiredAgencyRole="agent">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminTimeAttendancePage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+
             {/* Access denied pages */}
             <Route path="unauthorized" element={
               <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center p-4">
@@ -418,70 +493,17 @@ function App() {
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
-            <Route path="time-attendance" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><AdminTimeAttendancePage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="staff-performance" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><StaffPerformancePage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="planning" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><PlanningHubPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="revenue-projections" element={<Navigate to="/admin/planning" replace />} />
-            <Route path="producers/:employeeId/comp-model" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><ProducerCompModelPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="book-health" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="renewals" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><RenewalsPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="renewals/upload" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><RenewalUploadPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="renewals/consent" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><ConsentManagementPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="renewals/:policyId" element={
-              <ProtectedRoute requiredAgencyRole="agent">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><RenewalDetailPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
+            {/* Redirects for moved agency routes */}
+            <Route path="staff-performance" element={<Navigate to="/agency/staff-performance" replace />} />
+            <Route path="planning" element={<Navigate to="/agency/planning" replace />} />
+            <Route path="revenue-projections" element={<Navigate to="/agency/planning" replace />} />
+            <Route path="book-health" element={<Navigate to="/agency/book-health" replace />} />
+            <Route path="renewals" element={<Navigate to="/agency/renewals" replace />} />
+            <Route path="renewals/upload" element={<Navigate to="/agency/renewals/upload" replace />} />
+            <Route path="renewals/consent" element={<Navigate to="/agency/renewals/consent" replace />} />
+            <Route path="renewals/:policyId" element={<RedirectRenewalDetail />} />
+            <Route path="producers/:employeeId/comp-model" element={<RedirectProducerComp />} />
+            <Route path="time-attendance" element={<Navigate to="/agency/time-attendance" replace />} />
           </Route>
           </Routes>
           </AuthProvider>
