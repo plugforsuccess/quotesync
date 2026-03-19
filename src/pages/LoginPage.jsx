@@ -18,6 +18,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState('');
   const [mode, setMode] = useState('login');
   const [resetSuccess, setResetSuccess] = useState('');
@@ -57,6 +58,7 @@ const LoginPage = () => {
         throw new Error('No session returned. Please try again.');
       }
 
+      setVerifying(true);
       // AuthContext SIGNED_IN handler takes it from here — don't call resolveAuthz
     } catch (error) {
       if (error.message?.includes('Failed to fetch') || error.message?.includes('network')) {
@@ -65,6 +67,7 @@ const LoginPage = () => {
         setError(error.message || 'Login failed. Please try again.');
       }
       setLoading(false);
+      setVerifying(false);
     }
   };
 
@@ -88,6 +91,63 @@ const LoginPage = () => {
       setLoading(false);
     }
   };
+
+  if (verifying) {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center px-4"
+        style={{
+          backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(56, 189, 148, 0.03) 0%, transparent 50%), linear-gradient(135deg, #0f1117 0%, #1a1d28 50%, #0f1117 100%)'
+        }}
+      >
+        {/* Logo mark with spinning ring */}
+        <div className="relative mb-8">
+          <div
+            className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center"
+            style={{ boxShadow: '0 0 40px rgba(16, 185, 129, 0.2)' }}
+          >
+            <svg className="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          {/* Spinning ring — uses --qs-success token */}
+          <div
+            className="absolute inset-0 rounded-2xl animate-spin"
+            style={{
+              border: '2px solid transparent',
+              borderTopColor: 'var(--qs-success)',
+              borderRightColor: 'rgba(16, 185, 129, 0.2)',
+              animationDuration: '1.2s'
+            }}
+          />
+        </div>
+
+        {/* Text — uses --qs-bright and --qs-dim tokens */}
+        <p className="font-semibold text-lg mb-2" style={{ color: 'var(--qs-bright)' }}>
+          Verifying your account
+        </p>
+        <p className="text-sm" style={{ color: 'var(--qs-dim)' }}>
+          Setting up your workspace…
+        </p>
+
+        {/* Three-dot pulse — uses --qs-success token */}
+        <div className="flex gap-1.5 mt-6">
+          {[0, 1, 2].map(i => (
+            <div
+              key={i}
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                backgroundColor: 'var(--qs-success)',
+                animation: 'pulse 1.2s ease-in-out infinite',
+                animationDelay: `${i * 0.2}s`,
+                opacity: 0.7
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -181,9 +241,14 @@ const LoginPage = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in…
+                </>
+              ) : 'Sign In'}
             </button>
           </form>
         ) : (
