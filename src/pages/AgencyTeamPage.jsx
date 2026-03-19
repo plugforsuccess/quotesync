@@ -126,9 +126,16 @@ export default function AgencyTeamPage() {
   const hasAccess = (emp) => !!emp.membership_id && emp.membership_status === 'active';
   const isPending = (emp) => !!emp.membership_id && emp.membership_status === 'pending';
 
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '—';
+    return new Date(dateStr + (dateStr.includes('T') ? '' : 'T00:00:00')).toLocaleDateString('en-US', {
+      month: '2-digit', day: '2-digit', year: 'numeric',
+    });
+  };
+
   return (
     <div className="dark-page">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
@@ -214,12 +221,15 @@ export default function AgencyTeamPage() {
           {employees.length === 0 ? (
             <div className="px-6 py-8 text-center text-qs-subtle">No active employees.</div>
           ) : (
-            <table className="w-full">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[700px]">
               <thead className="bg-qs-elevated">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Name</th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Platform Access</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Bind ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Hired</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-qs-subtle uppercase">Platform Login</th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-qs-subtle uppercase">Actions</th>
                 </tr>
               </thead>
@@ -282,6 +292,12 @@ export default function AgencyTeamPage() {
                           </button>
                         )}
                       </td>
+                      <td className="px-6 py-4 text-qs-dim font-mono text-xs">
+                        {emp.allstate_id || '—'}
+                      </td>
+                      <td className="px-6 py-4 text-qs-dim text-sm">
+                        {formatDate(emp.hire_date)}
+                      </td>
                       <td className="px-6 py-4">
                         {access ? (
                           <span className="px-2 py-1 bg-emerald-900/20 text-emerald-400 rounded-full text-xs font-medium">
@@ -293,7 +309,7 @@ export default function AgencyTeamPage() {
                           </span>
                         ) : (
                           <span className="px-2 py-1 bg-qs-elevated text-qs-subtle rounded-full text-xs font-medium">
-                            No access
+                            None
                           </span>
                         )}
                       </td>
@@ -341,6 +357,7 @@ export default function AgencyTeamPage() {
                 })}
               </tbody>
             </table>
+            </div>
           )}
         </div>
 
