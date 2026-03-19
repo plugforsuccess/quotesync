@@ -1,12 +1,26 @@
 import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { Link } from 'react-router-dom';
 import { createPortal } from "react-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LineChart, ReferenceLine, Cell } from "recharts";
+import {
+  RefreshCw, ChevronDown, ChevronRight,
+  Search, Phone, CheckCircle, AlertTriangle, Clock, ShieldAlert,
+  Bot, Play, BarChart3, Shield,
+} from 'lucide-react';
 import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
+import { useAuth } from '../contexts/AuthContext';
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
+import { useRenewalPolicies } from '../hooks/useRenewalCases';
+import { useRenewalStats, filterByBucket } from '../hooks/useRenewalStats';
+import { useActiveEmployees } from '../hooks/useEmployees';
+import { useFireAiQueue, useFireCancelQueue } from '../hooks/useAiQueue';
 import { calcRenewalPriority, calcCancelPriority, CURRENT_YEAR } from '../lib/retentionPriority';
 import { useOtherActiveCases } from '../hooks/useOtherActiveCases';
+import ContactLogModal from './components/renewals/ContactLogModal';
+import FinalOutcomeModal from './components/renewals/FinalOutcomeModal';
+import AiPerformanceDashboard from './components/renewals/AiPerformanceDashboard';
 
 // ─── Friendly error messages ──────────────────────────────────────────────────
 function friendlyUploadError(raw = "") {
@@ -3792,11 +3806,302 @@ function ImportTab({
   );
 }
 
+// ─── Renewal Components (lifted from RenewalsPage) ─────────────────────────────
+
+const POLICY_TYPES = [
+  { value: '', label: 'All Types' },
+  { value: 'auto', label: 'Auto' },
+  { value: 'home', label: 'Home' },
+  { value: 'condo', label: 'Condo' },
+  { value: 'renters', label: 'Renters' },
+  { value: 'landlord', label: 'Landlord' },
+  { value: 'pup', label: 'PUP' },
+  { value: 'boat', label: 'Boat' },
+  { value: 'manufactured', label: 'Manufactured' },
+  { value: 'specialty_auto', label: 'Specialty Auto' },
+  { value: 'other', label: 'Other' },
+];
+
+const PRIORITY_COLORS = {
+  critical: 'bg-red-100 text-red-800',
+  high: 'bg-orange-100 text-orange-800',
+  medium: 'bg-yellow-100 text-yellow-800',
+  standard: 'bg-gray-100 text-gray-700',
+};
+
+const RENEWAL_OUTCOME_LABELS = {
+  no_answer: 'No Answer',
+  confirmed: 'Confirmed',
+  hesitant: 'Hesitant',
+  shopping: 'Shopping',
+  escalated: 'Escalated',
+  left_voicemail: 'Voicemail',
+  wrong_number: 'Wrong #',
+  third_party_answer: '3rd Party',
+};
+
+const FOLLOWUP_LABELS = {
+  rate_shock: 'Rate Shock',
+  shopping: 'Shopping',
+  no_response: 'No Response',
+  eft_lapse: 'EFT Lapse',
+  multi_policy: 'Multi-Policy',
+  hesitant: 'Hesitant',
+  address_discrepancy: 'Address Discrepancy',
+  amount_due: 'Amount Due',
+  wrong_number: 'Wrong Number',
+  manual: 'Manual',
+};
+
+const HUMAN_ONLY_REASON_LABELS = {
+  dnc: 'Do Not Call',
+  claim_activity: 'Claim Activity',
+  multi_date_conflict: 'Multi-Date Conflict',
+  premium_sanity: 'Premium Sanity',
+  stale_upload: 'Stale Upload',
+  amount_due: 'Amount Due',
+  no_consent: 'No Consent',
+  attempt_cap: 'Attempt Cap',
+  manual: 'Manual',
+};
+
+const COACHING_NOTES = {
+  rate_shock: 'Customer received rate increase — they agreed to a callback. Lead with empathy, review options before pitching retention.',
+  shopping: 'Customer mentioned shopping — they agreed to hear from us. Call today; window is open.',
+  hesitant: 'Customer was uncertain — soft follow-up, no pressure. Confirm they are comfortable with the renewal.',
+  manual: 'Customer had a question the AI could not answer — answer it first, then move to retention.',
+};
+
+const TENURE_HINTS = {
+  long: 'Long-term customer — lead with relationship and loyalty',
+  mid: 'Established customer — lead with coverage continuity',
+  short: 'Newer customer — lead with value, savings, and service',
+};
+
+function getDaysUntilRenewal(dateStr) {
+  if (!dateStr) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(dateStr);
+  d.setHours(0, 0, 0, 0);
+  return Math.ceil((d - today) / (1000 * 60 * 60 * 24));
+}
+
+function formatCurrencyFull(val) {
+  if (val == null) return '—';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val);
+}
+
+function formatDateShort(dateStr) {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getFollowupDueBadge(followupDueBy) {
+  if (!followupDueBy) return null;
+  const now = new Date();
+  const due = new Date(followupDueBy);
+  const hoursUntil = (due - now) / (1000 * 60 * 60);
+  if (hoursUntil < 0) return { label: 'OVERDUE', color: 'bg-red-100 text-red-700' };
+  if (hoursUntil < 4) return { label: 'DUE SOON', color: 'bg-amber-100 text-amber-700' };
+  return null;
+}
+
+function getTenureHint(years) {
+  if (years == null || years <= 0) return null;
+  if (years >= 10) return TENURE_HINTS.long;
+  if (years >= 5) return TENURE_HINTS.mid;
+  return TENURE_HINTS.short;
+}
+
+function RenewalCard({ policy, onLogContact, onMarkComplete }) {
+  const daysUntil = getDaysUntilRenewal(policy.renewal_date);
+  const pctChange = policy.premium_change_pct;
+  const isIncrease = pctChange != null && pctChange > 0;
+  const isDecrease = pctChange != null && pctChange < 0;
+  const dueBadge = getFollowupDueBadge(policy.followup_due_by);
+  const tenureHint = getTenureHint(policy.customer_tenure_years);
+  const coachingNote = policy.human_followup_required && policy.followup_reason
+    ? COACHING_NOTES[policy.followup_reason]
+    : null;
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link
+              to={`/agency/renewals/${policy.id}`}
+              className="font-semibold text-gray-900 hover:text-primary-600 truncate"
+            >
+              {policy.customer_name}
+            </Link>
+            <span className="text-xs text-gray-500 font-mono">{policy.policy_no}</span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+              {policy.policy_type}
+            </span>
+          </div>
+          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 flex-wrap">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5" />
+              {formatDateShort(policy.renewal_date)}
+              {daysUntil != null && (
+                <span className={`font-medium ${daysUntil <= 14 ? 'text-red-600' : daysUntil <= 30 ? 'text-amber-600' : 'text-gray-600'}`}>
+                  ({daysUntil} days)
+                </span>
+              )}
+            </span>
+            <span>
+              {formatCurrencyFull(policy.current_premium)} → {formatCurrencyFull(policy.premium)}
+              {pctChange != null && (
+                <span className={`ml-1 text-xs font-semibold ${isIncrease ? 'text-red-600' : isDecrease ? 'text-green-600' : 'text-gray-500'}`}>
+                  {isIncrease ? '+' : ''}{pctChange}%
+                </span>
+              )}
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold capitalize ${PRIORITY_COLORS[policy.priority_tier] || PRIORITY_COLORS.standard}`}>
+            {policy.priority_tier}
+          </span>
+          {dueBadge && (
+            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${dueBadge.color}`}>
+              {dueBadge.label}
+            </span>
+          )}
+          {policy.last_contact_outcome && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+              {RENEWAL_OUTCOME_LABELS[policy.last_contact_outcome] || policy.last_contact_outcome}
+            </span>
+          )}
+          {policy.last_contact_channel === 'ai_voice' && (
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700">
+              <Bot className="w-3 h-3" />
+              AI Call
+            </span>
+          )}
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+            policy.consent?.autodial_consent ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+          }`}>
+            <Phone className="w-3 h-3" />
+            {policy.consent?.autodial_consent ? 'Consented' : 'No consent'}
+          </span>
+          {policy.human_only && policy.human_only_reason && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+              {HUMAN_ONLY_REASON_LABELS[policy.human_only_reason] || policy.human_only_reason}
+            </span>
+          )}
+          {policy.human_followup_required && policy.followup_reason && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+              {FOLLOWUP_LABELS[policy.followup_reason] || policy.followup_reason}
+            </span>
+          )}
+          {policy.amount_due > 0 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">
+              ${policy.amount_due} due
+            </span>
+          )}
+          {policy.customer_tenure_years != null && policy.customer_tenure_years > 0 && (
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700" title={tenureHint || 'Customer tenure'}>
+              {policy.customer_tenure_years}yr tenure
+            </span>
+          )}
+          <button
+            onClick={() => onLogContact(policy)}
+            className="px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+          >
+            Log Contact
+          </button>
+          {policy.human_followup_required && !policy.followup_completed_at && onMarkComplete && (
+            <button
+              onClick={() => onMarkComplete(policy)}
+              className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+            >
+              Mark Complete
+            </button>
+          )}
+          <Link
+            to={`/agency/renewals/${policy.id}`}
+            className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            View
+          </Link>
+        </div>
+      </div>
+      {coachingNote && !policy.followup_completed_at && (
+        <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700 border border-blue-100">
+          {coachingNote}
+        </div>
+      )}
+      {tenureHint && policy.human_followup_required && !policy.followup_completed_at && (
+        <div className="mt-1 text-xs text-purple-600 italic">
+          {tenureHint}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen = true, onLogContact, onMarkComplete }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const borderColor = { red: 'border-l-red-500', orange: 'border-l-orange-500', yellow: 'border-l-yellow-500', green: 'border-l-green-500' }[color] || 'border-l-gray-300';
+
+  return (
+    <div className={`border rounded-lg ${borderColor} border-l-4`}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Icon className="w-5 h-5 text-gray-600" />
+          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
+          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+            color === 'red' ? 'bg-red-100 text-red-700' :
+            color === 'orange' ? 'bg-orange-100 text-orange-700' :
+            color === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
+            'bg-green-100 text-green-700'
+          }`}>
+            {count}
+          </span>
+        </div>
+        {isOpen ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronRight className="w-5 h-5 text-gray-400" />}
+      </button>
+      {isOpen && (
+        <div className="px-4 pb-4 space-y-2">
+          {Array.isArray(policies) && policies.length > 0 ? (
+            policies.map((p) => <RenewalCard key={p.id} policy={p} onLogContact={onLogContact} onMarkComplete={onMarkComplete} />)
+          ) : (
+            <p className="text-sm text-gray-400 py-2">No policies in this bucket.</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RenewalStatCard({ label, value, color }) {
+  const colorMap = {
+    blue: 'bg-blue-50 text-blue-700 border-blue-200',
+    red: 'bg-red-50 text-red-700 border-red-200',
+    orange: 'bg-orange-50 text-orange-700 border-orange-200',
+    yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200',
+    green: 'bg-green-50 text-green-700 border-green-200',
+  };
+
+  return (
+    <div className={`rounded-lg border p-4 ${colorMap[color] || colorMap.blue}`}>
+      <p className="text-sm font-medium opacity-80">{label}</p>
+      <p className="text-2xl font-bold">{value}</p>
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 
 export { EventDetailModal, RenewalDetailModal, UnifiedAtRiskTab, ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab, ImportTab, parseReport, diffReport, friendlyUploadError };
 
-export default function BookHealthPage() {
+export default function RetentionHubPage() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
   const queryClient = useQueryClient();
@@ -3823,6 +4128,74 @@ export default function BookHealthPage() {
   const [isCancelAuditCommitting, setIsCancelAuditCommitting] = useState(false);
   const cancelAuditFileInputRef = useRef(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  // ─── Renewal state ──────────────────────────────────────────────────────────
+  const { currentAgencyId, currentAgencyRole } = useAuth();
+  const effectiveAgencyId = agencyId || currentAgencyId;
+  const isAgent = currentAgencyRole === 'principal';
+  const { data: employees = [] } = useActiveEmployees(effectiveAgencyId);
+
+  const [renewalPolicyType, setRenewalPolicyType] = useState('');
+  const [renewalAssignedTo, setRenewalAssignedTo] = useState('');
+  const [renewalSearch, setRenewalSearch] = useState('');
+  const [aiCallType, setAiCallType] = useState('all');
+
+  const renewalFilters = useMemo(() => ({
+    policyType: renewalPolicyType || undefined,
+    assignedTo: renewalAssignedTo || undefined,
+    search: renewalSearch || undefined,
+  }), [renewalPolicyType, renewalAssignedTo, renewalSearch]);
+
+  const { data: renewalPolicies, isLoading: renewalsLoading, refetch: refetchRenewals } = useRenewalPolicies(effectiveAgencyId, renewalFilters);
+  const renewalStats = useRenewalStats(renewalPolicies);
+
+  const escalatedPolicies = useMemo(() => filterByBucket(renewalPolicies, 'escalated'), [renewalPolicies]);
+  const humanOnlyPolicies = useMemo(() => filterByBucket(renewalPolicies, 'human_only'), [renewalPolicies]);
+  const needsHumanPolicies = useMemo(() => filterByBucket(renewalPolicies, 'needs_human_call'), [renewalPolicies]);
+  const automationPolicies = useMemo(() => filterByBucket(renewalPolicies, 'automation_cleared'), [renewalPolicies]);
+
+  const [contactPolicy, setContactPolicy] = useState(null);
+  const [outcomePolicy, setOutcomePolicy] = useState(null);
+
+  // ─── AI Queue hooks ─────────────────────────────────────────────────────────
+  const { fireQueue: fireRenewalQueue, isPending: isRenewalQueueFiring, lastResult: renewalQueueResult, clearResult: clearRenewalResult } = useFireAiQueue();
+  const { fireQueue: fireCancelQueue, isPending: isCancelQueueFiring, lastResult: cancelQueueResult, clearResult: clearCancelResult } = useFireCancelQueue();
+  const [showRenewalSuppressionOverride, setShowRenewalSuppressionOverride] = useState(false);
+  const [showCancelSuppressionOverride, setShowCancelSuppressionOverride] = useState(false);
+
+  const handleFireRenewalQueue = (override = false) => {
+    setShowRenewalSuppressionOverride(false);
+    clearRenewalResult();
+    fireRenewalQueue(
+      { overrideSuppression: override },
+      {
+        onSuccess: (data) => {
+          if (data?.suppressed && !override) {
+            setShowRenewalSuppressionOverride(true);
+          } else {
+            refetchRenewals();
+          }
+        },
+      }
+    );
+  };
+
+  const handleFireCancelQueue = (override = false) => {
+    setShowCancelSuppressionOverride(false);
+    clearCancelResult();
+    fireCancelQueue(
+      { overrideSuppression: override },
+      {
+        onSuccess: (data) => {
+          if (data?.suppressed && !override) {
+            setShowCancelSuppressionOverride(true);
+          } else {
+            loadEvents();
+          }
+        },
+      }
+    );
+  };
 
   const { data: events = [], isLoading: loading } = useQuery({
     queryKey: ["pending_cases", agencyId],
@@ -4393,10 +4766,101 @@ export default function BookHealthPage() {
       <style>{GLOBAL_STYLES}</style>
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", margin: 0 }}>Book Health</h1>
-        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginTop: 2 }}>Pending Cancellation · {currentAgency?.agencies?.name || 'Agency'}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", margin: 0 }}>Retention Hub</h1>
+          <div style={{ fontSize: 13, color: "var(--qs-dim)", marginTop: 2 }}>{currentAgency?.agencies?.name || 'Agency'}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isAgent && (
+            <>
+              <button
+                onClick={() => handleFireRenewalQueue(false)}
+                disabled={isRenewalQueueFiring}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                  color: '#4F46E5', background: '#EEF2FF', border: '1px solid #C7D2FE',
+                  borderRadius: 8, cursor: isRenewalQueueFiring ? 'not-allowed' : 'pointer',
+                  opacity: isRenewalQueueFiring ? 0.6 : 1,
+                }}
+              >
+                {isRenewalQueueFiring ? 'Running...' : '▶ Run AI Renewals'}
+              </button>
+              <button
+                onClick={() => handleFireCancelQueue(false)}
+                disabled={isCancelQueueFiring}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px', fontSize: 13, fontWeight: 600,
+                  color: '#B45309', background: '#FFFBEB', border: '1px solid #FCD34D',
+                  borderRadius: 8, cursor: isCancelQueueFiring ? 'not-allowed' : 'pointer',
+                  opacity: isCancelQueueFiring ? 0.6 : 1,
+                }}
+              >
+                {isCancelQueueFiring ? 'Running...' : '▶ Run AI Cancels'}
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setActiveTab('import')}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '8px 16px', fontSize: 13, fontWeight: 600,
+              color: 'var(--qs-subtle)', background: 'transparent',
+              border: '1px solid var(--qs-border)', borderRadius: 8, cursor: 'pointer',
+            }}
+          >
+            Import
+          </button>
+        </div>
       </div>
+
+      {/* AI Queue result banners */}
+      {renewalQueueResult && !renewalQueueResult.suppressed && (
+        <div style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 8, padding: 12, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 13, color: '#3730A3' }}>
+            <strong>AI Renewals Complete:</strong>{' '}
+            {renewalQueueResult.queued} queued, {renewalQueueResult.blocked} blocked, {renewalQueueResult.skipped} skipped
+            {renewalQueueResult.held > 0 && `, ${renewalQueueResult.held} held for next run`}
+            {renewalQueueResult.rate_limited && ' (rate limited — retry later)'}
+          </div>
+          <button onClick={clearRenewalResult} style={{ color: '#6366F1', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Dismiss</button>
+        </div>
+      )}
+      {showRenewalSuppressionOverride && renewalQueueResult?.suppressed && (
+        <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 8, padding: 12, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 13, color: '#92400E' }}>
+            <strong>AI renewals suppressed:</strong> {renewalQueueResult.message}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setShowRenewalSuppressionOverride(false); clearRenewalResult(); }} style={{ padding: '4px 12px', fontSize: 12, color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={() => handleFireRenewalQueue(true)} style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#B45309', background: '#FEF3C7', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Override</button>
+          </div>
+        </div>
+      )}
+      {cancelQueueResult && !cancelQueueResult.suppressed && (
+        <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 8, padding: 12, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 13, color: '#92400E' }}>
+            <strong>AI Cancels Complete:</strong>{' '}
+            {cancelQueueResult.queued} queued, {cancelQueueResult.blocked} blocked, {cancelQueueResult.skipped} skipped
+            {cancelQueueResult.held > 0 && `, ${cancelQueueResult.held} held for next run`}
+            {cancelQueueResult.rate_limited && ' (rate limited — retry later)'}
+          </div>
+          <button onClick={clearCancelResult} style={{ color: '#B45309', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Dismiss</button>
+        </div>
+      )}
+      {showCancelSuppressionOverride && cancelQueueResult?.suppressed && (
+        <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 8, padding: 12, marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ fontSize: 13, color: '#92400E' }}>
+            <strong>AI cancels suppressed:</strong> {cancelQueueResult.message}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setShowCancelSuppressionOverride(false); clearCancelResult(); }} style={{ padding: '4px 12px', fontSize: 12, color: '#6B7280', background: 'none', border: 'none', cursor: 'pointer' }}>Cancel</button>
+            <button onClick={() => handleFireCancelQueue(true)} style={{ padding: '4px 12px', fontSize: 12, fontWeight: 600, color: '#B45309', background: '#FEF3C7', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Override</button>
+          </div>
+        </div>
+      )}
 
       {loading && (
         <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
@@ -4413,14 +4877,16 @@ export default function BookHealthPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {["at_risk","resolved","attrition","growth","trends","import"].map(t => (
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: 'wrap' }}>
+        {["at_risk","renewals","ai_perf","resolved","attrition","growth","trends","import"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "at_risk"   ? "⚡ At Risk"       :
-             t === "resolved"  ? "Cancel Outcomes"  :
+            {t === "at_risk"   ? "At Risk"          :
+             t === "renewals"  ? "Renewals"         :
+             t === "ai_perf"   ? "AI Performance"   :
+             t === "resolved"  ? "Outcomes"         :
              t === "attrition" ? "Terminations"     :
              t === "growth"    ? "Net Growth"       :
-             t === "trends"    ? "Cancel Trends"    :
+             t === "trends"    ? "Trends"           :
                                  "Import"}
           </button>
         ))}
@@ -4433,6 +4899,97 @@ export default function BookHealthPage() {
           currentUserId={currentUserId}
           currentEmployeeId={currentEmployee?.id}
         />
+      )}
+      {activeTab === "renewals" && (
+        <div className="space-y-4" style={{ padding: '0 4px' }}>
+          {renewalsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-5 h-5 text-primary-500 animate-spin" />
+              <span className="ml-2 text-gray-500 text-sm">Loading renewals...</span>
+            </div>
+          ) : !Array.isArray(renewalPolicies) || renewalPolicies.length === 0 ? (
+            <div style={{ background: 'var(--qs-card)', borderRadius: 12, padding: 48, textAlign: 'center' }}>
+              <p style={{ color: 'var(--qs-subtle)', fontSize: 14 }}>No renewals uploaded yet. Use the Import tab to upload a renewal report.</p>
+            </div>
+          ) : (
+            <>
+              {/* Summary stat cards */}
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <RenewalStatCard label="Due in 60 Days" value={renewalStats.totalDue60Days} color="blue" />
+                <RenewalStatCard label="Escalated" value={renewalStats.escalated} color="red" />
+                <RenewalStatCard label="Human Only" value={renewalStats.humanOnly} color="orange" />
+                <RenewalStatCard label="Needs Human Call" value={renewalStats.needsHumanCall} color="yellow" />
+                <RenewalStatCard label="Automation Cleared" value={renewalStats.automationCleared} color="green" />
+              </div>
+
+              {/* Filters */}
+              <div className="flex flex-wrap items-center gap-3 bg-white rounded-lg border border-gray-200 p-3">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    value={renewalSearch}
+                    onChange={(e) => setRenewalSearch(e.target.value)}
+                    placeholder="Search by name or policy #..."
+                    className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <select
+                  value={renewalPolicyType}
+                  onChange={(e) => setRenewalPolicyType(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500"
+                >
+                  {POLICY_TYPES.map((pt) => (
+                    <option key={pt.value} value={pt.value}>{pt.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={renewalAssignedTo}
+                  onChange={(e) => setRenewalAssignedTo(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500"
+                >
+                  <option value="">All Assignees</option>
+                  {Array.isArray(employees) && employees.map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.preferred_name || emp.first_name} {emp.last_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Triage sections */}
+              <div className="space-y-4">
+                <TriageSection title="Escalated" icon={AlertTriangle} color="red" count={escalatedPolicies.length} policies={escalatedPolicies} defaultOpen={true} onLogContact={setContactPolicy} onMarkComplete={setOutcomePolicy} />
+                <TriageSection title="Human Only" icon={ShieldAlert} color="orange" count={humanOnlyPolicies.length} policies={humanOnlyPolicies} defaultOpen={true} onLogContact={setContactPolicy} onMarkComplete={setOutcomePolicy} />
+                <TriageSection title="Needs Human Call" icon={Phone} color="yellow" count={needsHumanPolicies.length} policies={needsHumanPolicies} defaultOpen={true} onLogContact={setContactPolicy} onMarkComplete={setOutcomePolicy} />
+                <TriageSection title="Automation Cleared" icon={CheckCircle} color="green" count={automationPolicies.length} policies={automationPolicies} defaultOpen={false} onLogContact={setContactPolicy} onMarkComplete={setOutcomePolicy} />
+              </div>
+            </>
+          )}
+
+          {/* Renewal modals */}
+          <ContactLogModal isOpen={!!contactPolicy} onClose={() => setContactPolicy(null)} policy={contactPolicy} onSuccess={refetchRenewals} />
+          <FinalOutcomeModal isOpen={!!outcomePolicy} onClose={() => setOutcomePolicy(null)} policy={outcomePolicy} onSuccess={refetchRenewals} />
+        </div>
+      )}
+      {activeTab === "ai_perf" && (
+        <div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {['all', 'renewal', 'cancel'].map(t => (
+              <button
+                key={t}
+                onClick={() => setAiCallType(t)}
+                className={`tab ${aiCallType === t ? 'active' : ''}`}
+              >
+                {t === 'all' ? 'All Calls' : t === 'renewal' ? 'Renewals' : 'Cancels'}
+              </button>
+            ))}
+          </div>
+          <AiPerformanceDashboard
+            agencyId={effectiveAgencyId}
+            callType={aiCallType === 'all' ? null : aiCallType}
+          />
+        </div>
       )}
       {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
       {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}

@@ -53,9 +53,9 @@ function MetricCard({ icon: Icon, label, value, subtext, color = 'blue' }) {
   );
 }
 
-export default function AiPerformanceDashboard({ agencyId }) {
+export default function AiPerformanceDashboard({ agencyId, callType = null }) {
   const [daysBack, setDaysBack] = useState(30);
-  const { metrics, isLoading, error } = useAiCallLog(agencyId, daysBack);
+  const { metrics, isLoading, error } = useAiCallLog(agencyId, daysBack, callType);
   const { data: healthData } = useWebhookHealth(agencyId);
 
   if (isLoading) {

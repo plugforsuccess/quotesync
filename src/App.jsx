@@ -88,10 +88,8 @@ const AgencyTeamPage = lazyWithRetry(() => import('./pages/AgencyTeamPage'));
 const EmployeeRosterPage = lazyWithRetry(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
 const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
-const BookHealthPage = lazyWithRetry(() => import('./pages/BookHealthPage'));
+const RetentionHubPage = lazyWithRetry(() => import('./pages/RetentionHubPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
-const RenewalsPage = lazyWithRetry(() => import('./pages/RenewalsPage'));
-const RenewalUploadPage = lazyWithRetry(() => import('./pages/RenewalUploadPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
 
@@ -373,24 +371,12 @@ function App() {
             <Route path="agency/book-health" element={
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
+                  <Suspense fallback={<PageLoader />}><RetentionHubPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
-            <Route path="agency/renewals" element={
-              <ProtectedRoute requiredAgencyRole="principal">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><RenewalsPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
-            <Route path="agency/renewals/upload" element={
-              <ProtectedRoute requiredAgencyRole="principal">
-                <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><RenewalUploadPage /></Suspense>
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
+            <Route path="agency/renewals" element={<Navigate to="/agency/book-health" replace />} />
+            <Route path="agency/renewals/upload" element={<Navigate to="/agency/book-health" replace />} />
             <Route path="agency/renewals/consent" element={
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
@@ -498,8 +484,8 @@ function App() {
             <Route path="planning" element={<Navigate to="/agency/planning" replace />} />
             <Route path="revenue-projections" element={<Navigate to="/agency/planning" replace />} />
             <Route path="book-health" element={<Navigate to="/agency/book-health" replace />} />
-            <Route path="renewals" element={<Navigate to="/agency/renewals" replace />} />
-            <Route path="renewals/upload" element={<Navigate to="/agency/renewals/upload" replace />} />
+            <Route path="renewals" element={<Navigate to="/agency/book-health" replace />} />
+            <Route path="renewals/upload" element={<Navigate to="/agency/book-health" replace />} />
             <Route path="renewals/consent" element={<Navigate to="/agency/renewals/consent" replace />} />
             <Route path="renewals/:policyId" element={<RedirectRenewalDetail />} />
             <Route path="producers/:employeeId/comp-model" element={<RedirectProducerComp />} />

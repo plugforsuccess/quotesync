@@ -5,17 +5,20 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
 
-async function fetchAiCallLog(agencyId, daysBack = 30) {
+async function fetchAiCallLog(agencyId, daysBack = 30, callType = null) {
   const since = new Date();
   since.setDate(since.getDate() - daysBack);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('ai_call_log')
     .select('*')
     .eq('agency_id', agencyId)
     .gte('called_at', since.toISOString())
     .order('called_at', { ascending: false });
 
+  if (callType) query = query.eq('call_type', callType);
+
+  const { data, error } = await query;
   if (error) throw error;
   return data || [];
 }
@@ -98,10 +101,10 @@ function computeMetrics(logs) {
   };
 }
 
-export function useAiCallLog(agencyId, daysBack = 30) {
+export function useAiCallLog(agencyId, daysBack = 30, callType = null) {
   const query = useQuery({
-    queryKey: queryKeys.renewals.aiCallLog(agencyId, daysBack),
-    queryFn: () => fetchAiCallLog(agencyId, daysBack),
+    queryKey: queryKeys.renewals.aiCallLog(agencyId, daysBack, callType),
+    queryFn: () => fetchAiCallLog(agencyId, daysBack, callType),
     enabled: !!agencyId,
     staleTime: 2 * 60 * 1000,
   });

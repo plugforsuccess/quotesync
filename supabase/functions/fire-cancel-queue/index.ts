@@ -1,8 +1,8 @@
-// Supabase Edge Function: fire-ai-queue
-// POST /functions/v1/fire-ai-queue
-// Triggered by the "Run AI Queue" button in QuoteSync.
-// Validates records against all 12 pre-call gates, normalizes phones,
-// submits eligible calls to Bland.ai one at a time with 30-second delays.
+// Supabase Edge Function: fire-cancel-queue
+// POST /functions/v1/fire-cancel-queue
+// Triggered by the "Run AI Cancels" button in QuoteSync.
+// Validates records against pre-call gates, normalizes phones,
+// submits eligible calls to Bland.ai one at a time with 4-second delays.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -88,48 +88,46 @@ function isSuppressedDay(): { suppressed: boolean; reason?: string } {
 }
 
 // System prompt for Bland.ai
-const SYSTEM_PROMPT = `You are a courtesy outreach assistant calling on behalf of Wiley-Wilson Insurance Agency in Conyers, Georgia. Your role is to inform policyholders about their upcoming renewal, confirm key account details, capture their intent, and give them a reason to stay before making any decisions.
+const CANCEL_SYSTEM_PROMPT = `You are a courtesy outreach assistant calling on behalf of Wiley-Wilson Insurance Agency in Conyers, Georgia. Your role is to inform policyholders that their policy has a pending cancellation notice, understand the situation, and help them resolve it — either by collecting a payment promise, routing them to a team member, or confirming their intent.
 
 STRICT RULES — follow these without exception:
-1. You are only permitted to discuss information explicitly provided in your metadata. Do not speculate about coverage details, claim history, discounts, vehicle specifics, driver history, or any information not provided to you.
-2. If the customer asks ANY question you cannot answer from the metadata — do NOT attempt to answer. Say: "That's a great question for your agent. I want to make sure you get the right answer — let me flag this for Cameron to call you personally." Then escalate and end the call.
-3. If asked about total premiums across multiple policies, only state the pre-calculated total provided in your metadata. Never perform arithmetic. If no total is provided, say: "Your agent can give you the exact combined total when they reach out."
-4. You are not a licensed insurance agent. You cannot recommend coverage changes, re-quote, bind changes, or offer alternatives. Route any such request to a human immediately.
-5. If the customer says anything resembling "stop calling," "don't call me again," "remove me from your list," or "I don't want to be contacted" — acknowledge it, apologize, confirm they will be removed, set variables.opt_out_requested = "true", and end the call immediately. This is a legal requirement.
-6. If the customer becomes upset or aggressive — do not argue. Acknowledge their concern, apologize, offer a personal callback from Cameron, escalate, and end the call.
-7. Never disclose premium amounts, policy numbers, or any account details to a third party. If someone other than the named insured answers, do not share any account information.
-8. You must identify yourself as an automated call in the first sentence of every call.
-9. Your goal is not just to inform — it is to give every customer a reason to stay before they make any decisions. Always offer a personal callback before ending any call where the customer has expressed hesitation or concern.
-10. If a customer says their address is wrong or wants to change their payment setup — do not attempt to make the change. Tell them a team member will call to handle it personally. This ensures it is handled correctly and protects the customer.
-11. At the end of every call, populate the analysis_schema fields accurately. Set call_outcome to the single best match from the enum. Set callback_confirmed to true only if the customer explicitly agreed to a callback.`
+1. You are only permitted to discuss information explicitly provided in your metadata. Do not speculate about coverage details, payment history, or any information not provided.
+2. Identify yourself as an automated call in the first sentence of every call.
+3. If asked ANY question you cannot answer from the metadata — do NOT attempt to answer. Say: "That's a great question for your agent. Let me flag this for Cameron to call you personally." Then escalate and end the call.
+4. If the customer says anything resembling "stop calling," "don't call me again," "remove me from your list" — acknowledge it, apologize, confirm removal, set variables.opt_out_requested = "true", and end the call immediately. Legal requirement.
+5. If the customer becomes upset or aggressive — acknowledge, apologize, offer Cameron callback, escalate, end call.
+6. Never disclose account details to a third party. If someone other than the named insured answers, do not share any account information.
+7. Your goal: collect a payment promise or route to the right team member. Always offer a personal callback before ending any call where the customer has not committed to payment.
+8. If the customer says they intend to cancel — acknowledge respectfully, confirm their intent, and set call_outcome to intentional_cancel. Do not pressure them.
+9. If the customer mentions a claim — immediately escalate to Cameron. Do not discuss the claim.
+10. At the end of every call, populate the analysis_schema fields accurately.`
 
-const ANALYSIS_SCHEMA = {
+const CANCEL_ANALYSIS_SCHEMA = {
   call_outcome: {
     type: 'string',
-    description: 'Primary outcome of the call — choose the single best match',
+    description: 'Primary outcome — choose single best match',
     enum: [
-      'confirmed', 'hesitant', 'shopping', 'rate_shock_escalated',
-      'callback_scheduled', 'address_discrepancy', 'eft_lapse',
-      'out_of_scope_escalated', 'opt_out_requested',
-      'wrong_number', 'third_party_answer', 'voicemail', 'no_answer',
+      'payment_promised',
+      'payment_made',
+      'payment_plan_requested',
+      'claims_dispute',
+      'intentional_cancel',
+      'rate_shock_escalated',
+      'callback_scheduled',
+      'wrong_number',
+      'third_party_answer',
+      'voicemail',
+      'no_answer',
+      'opt_out_requested',
     ],
   },
-  customer_intent: {
+  payment_promise_date: {
     type: 'string',
-    description: 'Whether the customer indicated they plan to renew, are unsure, or are shopping',
-    enum: ['will_renew', 'unsure', 'shopping', 'unknown'],
-  },
-  service_changes_requested: {
-    type: 'array',
-    description: 'Service changes the customer mentioned needing',
-    items: {
-      type: 'string',
-      enum: ['address_update', 'eft_cancellation', 'eft_update', 'none'],
-    },
+    description: 'Date customer promised to pay (YYYY-MM-DD), if applicable',
   },
   callback_confirmed: {
     type: 'boolean',
-    description: 'True only if the customer explicitly agreed to a personal callback from the agency',
+    description: 'True only if customer explicitly agreed to a callback from the agency',
   },
 }
 
@@ -142,7 +140,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Auth: validate JWT and enforce agent role
+  // Auth: validate JWT and enforce principal role
   const authHeader = req.headers.get('Authorization')
   if (!authHeader?.startsWith('Bearer ')) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -171,7 +169,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  // Look up the caller's employee record + agency membership to verify agent role
+  // Look up the caller's employee record + agency membership to verify principal role
   const serviceSupabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const { data: membership, error: membershipError } = await serviceSupabase
     .from('agency_memberships')
@@ -223,36 +221,31 @@ Deno.serve(async (req) => {
 
   // Log override if applicable
   if (override_suppression && suppression.suppressed) {
-    console.warn(`[FIRE_AI_QUEUE] Suppression overridden: ${suppression.reason} | agency: ${agency_id}`)
+    console.warn(`[FIRE_CANCEL_QUEUE] Suppression overridden: ${suppression.reason} | agency: ${agency_id}`)
   }
 
   // Fetch automation-cleared candidates
   const { data: candidates, error: fetchError } = await supabase
-    .from('renewal_cases')
+    .from('pending_cases')
     .select(`
-      id, policy_no, policy_type, customer_name, phone,
-      customer_address, renewal_date, premium, current_premium,
-      premium_change_pct, easy_pay, multi_line, customer_tenure_years,
+      id, policy_no, product, customer_name, phone,
+      cancel_effective_date, amount_due, premium_at_risk,
       attempt_count, last_contact_date, last_contact_outcome,
-      status, human_only, human_followup_required, followup_completed_at,
-      premium_sanity_flag, claim_flag, customer_group_id,
-      customer_renewal_groups ( id, total_renewal_premium, total_current_premium, total_premium_change, policy_count ),
+      status, stage, human_only,
       customer_consent!inner ( autodial_consent, dnc )
     `)
     .eq('agency_id', agency_id)
     .in('status', ['pending', 'contacted'])
     .eq('human_only', false)
-    .eq('premium_sanity_flag', false)
-    .eq('claim_flag', 'none')
     .lt('attempt_count', 3)
-    .neq('last_contact_outcome', 'shopping')
-    .neq('last_contact_outcome', 'escalated')
-    .gte('renewal_date', today)
-    .order('renewal_date', { ascending: true })
+    .neq('last_contact_outcome', 'intentional_cancel')
+    .neq('last_contact_outcome', 'claims_dispute')
+    .gte('cancel_effective_date', today)
+    .order('cancel_effective_date', { ascending: true })
     .limit(BATCH_LIMIT * 2) // fetch extra to account for gate failures
 
   if (fetchError) {
-    console.error('[FIRE_AI_QUEUE] Fetch error:', fetchError)
+    console.error('[FIRE_CANCEL_QUEUE] Fetch error:', fetchError)
     return new Response(JSON.stringify({ error: 'Failed to fetch candidates', details: fetchError.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -271,10 +264,10 @@ Deno.serve(async (req) => {
       blocked.push({ policy_id: record.id, reason: 'consent_or_dnc' }); continue
     }
 
-    // Gate: contact window (15–60 days)
-    const renewalDate = new Date(record.renewal_date)
-    const daysUntil = Math.ceil((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    if (daysUntil < 15 || daysUntil > 60) {
+    // Gate: contact window (0–21 days until cancel effective date)
+    const cancelDate = new Date(record.cancel_effective_date)
+    const daysUntil = Math.ceil((cancelDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+    if (daysUntil < 0 || daysUntil > 21) {
       blocked.push({ policy_id: record.id, reason: 'outside_contact_window' }); continue
     }
 
@@ -291,7 +284,7 @@ Deno.serve(async (req) => {
     }
 
     // Gate: open followup
-    if (record.human_followup_required && !record.followup_completed_at) {
+    if (record.human_followup_required) {
       blocked.push({ policy_id: record.id, reason: 'open_followup' }); continue
     }
 
@@ -302,43 +295,28 @@ Deno.serve(async (req) => {
     }
 
     // Build payload
-    const group = record.customer_renewal_groups
-    const premiumChangeDollars = (record.premium && record.current_premium)
-      ? (record.premium - record.current_premium).toFixed(2)
-      : ''
-
     const payload = {
       phone_number: e164Phone,
       from: TWILIO_NUMBER,
-      task: SYSTEM_PROMPT,
+      task: CANCEL_SYSTEM_PROMPT,
       voice: 'maya',
       language: 'en-US',
       max_duration: 4,
       record: false,
-      webhook: `${SUPABASE_URL}/functions/v1/bland-renewal-webhook`,
+      webhook: `${SUPABASE_URL}/functions/v1/bland-cancel-webhook`,
       webhook_events: ['call_ended'],
-      analysis_schema: ANALYSIS_SCHEMA,
+      analysis_schema: CANCEL_ANALYSIS_SCHEMA,
       metadata: {
         policy_id: record.id,
         agency_id,
-        customer_group_id: record.customer_group_id || null,
+        call_type: 'cancel',
         customer_first_name: record.customer_name.split(' ')[0],
         customer_name: record.customer_name,
-        policy_number: record.policy_no,
-        policy_type: record.policy_type,
-        policy_count: String(group?.policy_count || 1),
-        renewal_date: record.renewal_date,
-        renewal_premium: String(record.premium || ''),
-        current_premium: String(record.current_premium || ''),
-        premium_change_pct: String(record.premium_change_pct || ''),
-        premium_change_dollars: premiumChangeDollars,
-        customer_address: record.customer_address || '',
-        eft_on_file: record.easy_pay ? 'Y' : 'N',
-        is_multi_policy: record.multi_line ? 'true' : 'false',
-        total_renewal_premium: group?.total_renewal_premium ? String(group.total_renewal_premium) : '',
-        total_current_premium: group?.total_current_premium ? String(group.total_current_premium) : '',
-        total_premium_change: group?.total_premium_change ? String(group.total_premium_change) : '',
-        customer_tenure_years: record.customer_tenure_years ? String(record.customer_tenure_years) : '',
+        policy_no: record.policy_no,
+        product: record.product || '',
+        cancel_effective_date: record.cancel_effective_date,
+        amount_due: String(record.amount_due || ''),
+        premium_at_risk: String(record.premium_at_risk || ''),
       },
     }
 
@@ -351,14 +329,14 @@ Deno.serve(async (req) => {
       })
 
       if (response.status === 429 || response.status === 503) {
-        console.warn(`[FIRE_AI_QUEUE] Rate limited at record ${queued.length} of ${candidates?.length || 0}. Stopping run.`)
+        console.warn(`[FIRE_CANCEL_QUEUE] Rate limited at record ${queued.length} of ${candidates?.length || 0}. Stopping run.`)
         rateLimited = true
         break
       }
 
       if (!response.ok) {
         const err = await response.text()
-        console.error(`[FIRE_AI_QUEUE] Bland.ai error for ${record.id}:`, err)
+        console.error(`[FIRE_CANCEL_QUEUE] Bland.ai error for ${record.id}:`, err)
         skipped.push({ policy_id: record.id, reason: `bland_error_${response.status}` })
         continue
       }
@@ -368,12 +346,12 @@ Deno.serve(async (req) => {
       // and inflate every metric. The webhook is the single source of truth.
       queued.push(record.id)
 
-      // 30-second delay between submissions (last call doesn't need delay)
+      // 4-second delay between submissions (last call doesn't need delay)
       if (queued.length < BATCH_LIMIT && queued.length < (candidates?.length || 0)) {
         await new Promise(resolve => setTimeout(resolve, CALL_DELAY_MS))
       }
     } catch (err) {
-      console.error(`[FIRE_AI_QUEUE] Network error for ${record.id}:`, err)
+      console.error(`[FIRE_CANCEL_QUEUE] Network error for ${record.id}:`, err)
       skipped.push({ policy_id: record.id, reason: 'network_error' })
       continue
     }
@@ -382,7 +360,7 @@ Deno.serve(async (req) => {
   const totalCandidates = candidates?.length || 0
   const held = Math.max(0, totalCandidates - queued.length - blocked.length - skipped.length)
 
-  console.log(`[FIRE_AI_QUEUE] Run complete: ${queued.length} queued, ${blocked.length} blocked, ${skipped.length} skipped, ${held} held, rate_limited: ${rateLimited}`)
+  console.log(`[FIRE_CANCEL_QUEUE] Run complete: ${queued.length} queued, ${blocked.length} blocked, ${skipped.length} skipped, ${held} held, rate_limited: ${rateLimited}`)
 
   return new Response(JSON.stringify({
     success: true,

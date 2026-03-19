@@ -23,9 +23,8 @@ const primaryItems = {
   leads:            { to: '/agency/leads',             label: 'Leads',       icon: '📋' },
   timeAttendance:   { to: '/agency/time-attendance',   label: 'Attendance',  icon: '⏱️' },
   staffPerformance: { to: '/agency/staff-performance', label: 'Performance', icon: '📈' },
-  renewals:         { to: '/agency/renewals',          label: 'Renewals',    icon: '🔄' },
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
-  bookHealth:       { to: '/agency/book-health',       label: 'Book Health', icon: '🛡️' },
+  retentionHub:     { to: '/agency/book-health',       label: 'Retention Hub', icon: '🛡️' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
 };
 
@@ -49,9 +48,8 @@ export const platformNav = {
       primaryItems.funnel,
       primaryItems.timeAttendance,
       primaryItems.staffPerformance,
-      primaryItems.renewals,
       primaryItems.planning,
-      primaryItems.bookHealth,
+      primaryItems.retentionHub,
     ],
     secondary: [
       secondaryItems.leads,
@@ -66,9 +64,8 @@ export const platformNav = {
       primaryItems.funnel,
       primaryItems.timeAttendance,
       primaryItems.staffPerformance,
-      primaryItems.renewals,
       primaryItems.planning,
-      primaryItems.bookHealth,
+      primaryItems.retentionHub,
     ],
     secondary: [
       secondaryItems.leads,
@@ -110,10 +107,9 @@ export const agencyNav = {
   principal: {
     primary: [
       primaryItems.leads,
-      primaryItems.renewals,
+      primaryItems.retentionHub,
       primaryItems.staffPerformance,
       primaryItems.planning,
-      primaryItems.bookHealth,
     ],
     secondary: [
       primaryItems.funnel,

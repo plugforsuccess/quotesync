@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
-import { EventDetailModal, RenewalDetailModal } from './BookHealthPage';
+import { EventDetailModal, RenewalDetailModal } from './RetentionHubPage';
 
 export default function MyQueuePage() {
   const { data: employee } = useCurrentEmployee();
