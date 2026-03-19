@@ -3,17 +3,23 @@
 // Shows all active employees with platform access status
 
 import { useState } from 'react';
-import { Users, UserPlus, Trash2, AlertCircle, Mail } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { Users, UserPlus, Trash2, AlertCircle, Mail, Edit2 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAgencyTeamWithEmployees, useRemoveTeamMember, useInviteAgencyUser, useUpdateMemberRole } from '../hooks/useAgencies';
+import { useUpdateEmployee } from '../hooks/useEmployees';
+import { supabase } from '../lib/supabase';
+import EmployeeFormModal from './components/employees/EmployeeFormModal';
 import PageSpinner from '../components/PageSpinner';
 
 export default function AgencyTeamPage() {
+  const queryClient = useQueryClient();
   const { currentAgencyId, user } = useAuth();
   const { data: team, isLoading } = useAgencyTeamWithEmployees(currentAgencyId);
   const removeMember = useRemoveTeamMember(currentAgencyId);
   const updateRole = useUpdateMemberRole(currentAgencyId);
   const inviteUser = useInviteAgencyUser();
+  const { mutate: updateEmployee, isPending: updatingEmployee } = useUpdateEmployee();
 
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -21,6 +27,9 @@ export default function AgencyTeamPage() {
   const [inviteError, setInviteError] = useState(null);
   const [inviteSuccess, setInviteSuccess] = useState(null);
   const [editingRoleId, setEditingRoleId] = useState(null);
+  const [editFormOpen, setEditFormOpen] = useState(false);
+  const [editingEmployee, setEditingEmployee] = useState(null);
+  const [loadingEmployee, setLoadingEmployee] = useState(false);
 
   if (isLoading) return <PageSpinner />;
 
@@ -77,6 +86,34 @@ export default function AgencyTeamPage() {
     } catch (err) {
       console.error('Failed to update role:', err);
     }
+  };
+
+  const handleEditOpen = async (emp) => {
+    setLoadingEmployee(true);
+    try {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('id', emp.employee_id)
+        .single();
+      if (error) throw error;
+      setEditingEmployee(data);
+      setEditFormOpen(true);
+    } catch (err) {
+      console.error('Failed to load employee:', err);
+    } finally {
+      setLoadingEmployee(false);
+    }
+  };
+
+  const handleEditSave = (payload) => {
+    updateEmployee({ id: editingEmployee.id, ...payload }, {
+      onSuccess: () => {
+        setEditFormOpen(false);
+        setEditingEmployee(null);
+        queryClient.invalidateQueries({ queryKey: ['agency_team_full', currentAgencyId] });
+      },
+    });
   };
 
   const getEmployeeName = (emp) => {
@@ -261,6 +298,14 @@ export default function AgencyTeamPage() {
                         )}
                       </td>
                       <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditOpen(emp)}
+                          disabled={loadingEmployee}
+                          className="text-qs-subtle hover:text-primary-400 p-1 rounded transition-colors disabled:opacity-50"
+                          title="Edit employee"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
                         {access && isOwner ? (
                           <span className="text-xs text-qs-muted" title="Can't remove the last agency principal">
                             Owner
@@ -298,6 +343,16 @@ export default function AgencyTeamPage() {
             </table>
           )}
         </div>
+
+        {/* Edit Employee Modal */}
+        <EmployeeFormModal
+          open={editFormOpen}
+          onClose={() => { setEditFormOpen(false); setEditingEmployee(null); }}
+          onSave={handleEditSave}
+          saving={updatingEmployee}
+          employee={editingEmployee}
+          agencyId={currentAgencyId}
+        />
       </div>
     </div>
   );
