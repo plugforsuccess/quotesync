@@ -29,29 +29,29 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
         { data: closedByMe },
       ] = await Promise.all([
         supabase
-          .from('pending_cancel_events')
+          .from('pending_cases')
           .select('id, status, premium_at_risk, contacted_at, resolution_date, promise_date, updated_at, attempt_count, opened_by_id, closed_by_id, stage')
           .eq(cancelFilter.column, cancelFilter.value),
 
         supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .select('id, status, premium, renewal_date, original_year, contacted_at, resolution_date, updated_at, attempt_count, premium_change_pct, opened_by_id, closed_by_id')
           .eq(renewalFilter.column, renewalFilter.value),
 
         supabase
           .from('pending_cancel_attempts')
-          .select('id, pending_cancel_event_id, result, attempted_at')
+          .select('id, pending_case_id, result, attempted_at')
           .eq('employee_id', employeeId),
 
         supabase
           .from('renewal_attempts')
-          .select('id, renewal_event_id, result, attempted_at')
+          .select('id, renewal_case_id, result, attempted_at')
           .eq('employee_id', employeeId),
 
         // Inbound only: count cases closed by this employee that were opened by someone else
         scoreType === 'inbound'
           ? supabase
-              .from('pending_cancel_events')
+              .from('pending_cases')
               .select('id, status, premium_at_risk, opened_by_id')
               .eq('closed_by_id', employeeId)
               .neq('opened_by_id', employeeId)
@@ -72,9 +72,9 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
       const cancelSaved    = allCancel.filter(e => e.status === 'saved');
       const cancelLost     = allCancel.filter(e => ['lost','requested_cancellation','cancelled'].includes(e.status));
 
-      const cancelCaseIdsWithAttempts = new Set(allCancelAttempts.map(a => a.pending_cancel_event_id));
+      const cancelCaseIdsWithAttempts = new Set(allCancelAttempts.map(a => a.pending_case_id));
       const cancelCaseIdsReached = new Set(
-        allCancelAttempts.filter(a => a.result === 'reached').map(a => a.pending_cancel_event_id)
+        allCancelAttempts.filter(a => a.result === 'reached').map(a => a.pending_case_id)
       );
 
       const cancelContactRate = allCancel.length > 0
@@ -104,9 +104,9 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
       const renewalsShopping  = allRenewals.filter(e => e.status === 'shopping');
       const renewalsEscalated = allRenewals.filter(e => e.status === 'escalated');
 
-      const renewalCaseIdsWithAttempts = new Set(allRenewalAttempts.map(a => a.renewal_event_id));
+      const renewalCaseIdsWithAttempts = new Set(allRenewalAttempts.map(a => a.renewal_case_id));
       const renewalCaseIdsReached = new Set(
-        allRenewalAttempts.filter(a => a.result === 'reached').map(a => a.renewal_event_id)
+        allRenewalAttempts.filter(a => a.result === 'reached').map(a => a.renewal_case_id)
       );
 
       const renewalContactRate = allRenewals.length > 0
@@ -123,7 +123,7 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
         .filter(e => renewalCaseIdsWithAttempts.has(e.id) && e.renewal_date)
         .map(e => {
           const first = allRenewalAttempts
-            .filter(a => a.renewal_event_id === e.id)
+            .filter(a => a.renewal_case_id === e.id)
             .sort((a, b) => a.attempted_at.localeCompare(b.attempted_at))[0];
           if (!first) return null;
           const d = Math.ceil((new Date(e.renewal_date) - new Date(first.attempted_at)) / 86400000);

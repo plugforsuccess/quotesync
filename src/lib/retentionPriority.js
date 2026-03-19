@@ -137,7 +137,7 @@ export function calcCancelPriority(event) {
   // NOTE: For pending cancels, tenure churn risk (0-5yr customers most likely
   // to leave permanently after a cancel event) is captured implicitly through
   // cycle — a 1-year customer who cancels is less likely to return than a
-  // 10-year customer, but we don't have original_year on pending_cancel_events.
+  // 10-year customer, but we don't have original_year on pending_cases.
   // If original_year is added to the pending cancel report in the future,
   // apply the same tenure bracket logic as calcRenewalPriority.
   const cycleFactor =

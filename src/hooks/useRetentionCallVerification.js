@@ -35,7 +35,7 @@ export function useRetentionCallVerification({ employeeId, agencyId, month }) {
           .from('pending_cancel_attempts')
           .select(`
             id, attempted_at, result, method,
-            pending_cancel_events!inner(id, phone, customer_name, policy_no)
+            pending_cases!inner(id, phone, customer_name, policy_no)
           `)
           .eq('employee_id', employeeId)
           .eq('result', 'reached')
@@ -47,7 +47,7 @@ export function useRetentionCallVerification({ employeeId, agencyId, month }) {
           .from('renewal_attempts')
           .select(`
             id, attempted_at, result, method,
-            renewal_events!inner(id, phone, customer_name, policy_no)
+            renewal_cases!inner(id, phone, customer_name, policy_no)
           `)
           .eq('employee_id', employeeId)
           .eq('result', 'reached')
@@ -61,16 +61,16 @@ export function useRetentionCallVerification({ employeeId, agencyId, month }) {
         ...(cancelAttempts || []).map(a => ({
           ...a,
           caseType: 'cancel',
-          phone: a.pending_cancel_events?.phone,
-          customer: a.pending_cancel_events?.customer_name,
-          policy_no: a.pending_cancel_events?.policy_no,
+          phone: a.pending_cases?.phone,
+          customer: a.pending_cases?.customer_name,
+          policy_no: a.pending_cases?.policy_no,
         })),
         ...(renewalAttempts || []).map(a => ({
           ...a,
           caseType: 'renewal',
-          phone: a.renewal_events?.phone,
-          customer: a.renewal_events?.customer_name,
-          policy_no: a.renewal_events?.policy_no,
+          phone: a.renewal_cases?.phone,
+          customer: a.renewal_cases?.customer_name,
+          policy_no: a.renewal_cases?.policy_no,
         })),
       ].filter(a => a.phone); // skip attempts where we have no phone number
 
@@ -134,8 +134,8 @@ export function useRetentionCallVerification({ employeeId, agencyId, month }) {
 
       // Also count attempts where we had no phone at all
       const noPhone = [
-        ...(cancelAttempts || []).filter(a => !a.pending_cancel_events?.phone),
-        ...(renewalAttempts || []).filter(a => !a.renewal_events?.phone),
+        ...(cancelAttempts || []).filter(a => !a.pending_cases?.phone),
+        ...(renewalAttempts || []).filter(a => !a.renewal_cases?.phone),
       ].length;
 
       return {

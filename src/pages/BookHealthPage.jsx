@@ -655,7 +655,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     supabase
       .from("pending_cancel_attempts")
       .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-      .eq("pending_cancel_event_id", event.id)
+      .eq("pending_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
   }, [event.id]);
@@ -663,7 +663,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   async function logAttempt() {
     setLoggingAttempt(true);
     const { error } = await supabase.from("pending_cancel_attempts").insert({
-      pending_cancel_event_id: event.id,
+      pending_case_id: event.id,
       agency_id: agencyId,
       employee_id: currentEmployeeId,
       method: attemptForm.method,
@@ -671,7 +671,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       note: attemptForm.note || null,
     });
     if (!error) {
-      await supabase.from("pending_cancel_events").update({
+      await supabase.from("pending_cases").update({
         attempt_count: (event.attempt_count || 0) + 1,
         last_attempt_at: new Date().toISOString(),
         last_attempt_result: attemptForm.result,
@@ -682,7 +682,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       // If this is the first attempt on the case, set opened_by_id
       if (event.attempt_count === 0 || !event.opened_by_id) {
         await supabase
-          .from('pending_cancel_events')
+          .from('pending_cases')
           .update({ opened_by_id: currentEmployeeId })
           .eq('id', event.id)
           .is('opened_by_id', null);
@@ -690,7 +690,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       const { data } = await supabase
         .from("pending_cancel_attempts")
         .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-        .eq("pending_cancel_event_id", event.id)
+        .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
       setAttemptForm({ method: "phone", result: "no_answer", note: "" });
@@ -1140,7 +1140,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     supabase
       .from("renewal_attempts")
       .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-      .eq("renewal_event_id", event.id)
+      .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
   }, [event.id]);
@@ -1148,7 +1148,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   async function logAttempt() {
     setLoggingAttempt(true);
     const { error } = await supabase.from("renewal_attempts").insert({
-      renewal_event_id: event.id,
+      renewal_case_id: event.id,
       agency_id: agencyId,
       employee_id: currentEmployeeId,
       method: attemptForm.method,
@@ -1166,7 +1166,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         // Don't auto-set, just leave as attempting — auto-unreachable handles at 5+
       }
 
-      await supabase.from("renewal_events").update({
+      await supabase.from("renewal_cases").update({
         attempt_count: newCount,
         last_attempt_at: new Date().toISOString(),
         last_attempt_result: attemptForm.result,
@@ -1175,7 +1175,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       // If this is the first attempt on the case, set opened_by_id
       if (event.attempt_count === 0 || !event.opened_by_id) {
         await supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .update({ opened_by_id: currentEmployeeId })
           .eq('id', event.id)
           .is('opened_by_id', null);
@@ -1184,7 +1184,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const { data } = await supabase
         .from("renewal_attempts")
         .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-        .eq("renewal_event_id", event.id)
+        .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
       setAttemptForm({ method: "phone", result: "no_answer", note: "" });
@@ -1439,10 +1439,10 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
 
   // Load renewal events
   const { data: renewalEvents = [], isLoading: loading } = useQuery({
-    queryKey: ["renewal_events", agencyId],
+    queryKey: ["renewal_cases", agencyId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("renewal_events")
+        .from("renewal_cases")
         .select("*")
         .eq("agency_id", agencyId)
         .order("renewal_date", { ascending: true });
@@ -1485,11 +1485,11 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
     hasFlaggedUnreachable.current = true;
     Promise.all(
       toFlag.map(e =>
-        supabase.from("renewal_events")
+        supabase.from("renewal_cases")
           .update({ status: "unreachable" })
           .eq("id", e.id)
       )
-    ).then(() => queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] }));
+    ).then(() => queryClient.invalidateQueries({ queryKey: ["renewal_cases", agencyId] }));
   }, [renewalEvents, agencyId, queryClient]);
 
   const employeeMap = useMemo(() => {
@@ -1556,11 +1556,11 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
 
   async function updateRenewalEvent(id, updates) {
     const { error } = await supabase
-      .from("renewal_events")
+      .from("renewal_cases")
       .update(updates)
       .eq("id", id);
     if (!error) {
-      queryClient.setQueryData(["renewal_events", agencyId], (prev) =>
+      queryClient.setQueryData(["renewal_cases", agencyId], (prev) =>
         (prev ?? []).map(e => e.id === id ? { ...e, ...updates } : e)
       );
     }
@@ -1615,7 +1615,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
       // 1. Find existing rows (for upsert dedup)
       const policyNos = parsedRows.map(r => r.policy_no);
       const { data: existing } = await supabase
-        .from("renewal_events")
+        .from("renewal_cases")
         .select("policy_no, renewal_date")
         .eq("agency_id", agencyId)
         .in("policy_no", policyNos);
@@ -1640,7 +1640,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
       const runningCount = {};
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
-          .from("renewal_events")
+          .from("renewal_cases")
           .select("assigned_to_id")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
@@ -1705,14 +1705,14 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
 
       if (newRecords.length > 0) {
         const { error: insErr } = await supabase
-          .from("renewal_events")
+          .from("renewal_cases")
           .insert(newRecords);
         if (insErr) throw new Error(insErr.message);
       }
 
       if (updateRecords.length > 0) {
         const { error: updErr } = await supabase
-          .from("renewal_events")
+          .from("renewal_cases")
           .upsert(updateRecords, { onConflict: "agency_id,policy_no,renewal_date" });
         if (updErr) throw new Error(updErr.message);
       }
@@ -1733,7 +1733,7 @@ function RenewalTab({ agencyId, currentUserId, currentEmployeeId }) {
       setParsedRows(null);
       setExcludedCount(0);
       setUploadFile(null);
-      queryClient.invalidateQueries({ queryKey: ["renewal_events", agencyId] });
+      queryClient.invalidateQueries({ queryKey: ["renewal_cases", agencyId] });
       queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
     } catch (err) {
       console.error("[renewal commit error]", err.message);
@@ -2596,17 +2596,17 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
           ? (rep.preferred_name || `${rep.first_name || ''} ${rep.last_name || ''}`.trim())
           : null;
         const { error } = await supabase
-          .from('pending_cancel_events')
+          .from('pending_cases')
           .update({ assigned_to_id: employeeId || null, assigned_to: displayName })
           .eq('id', r.cancel_event_id);
         if (error) throw error;
         setLocalRow(prev => ({ ...prev, cancel_assigned_to_id: employeeId || null }));
       }
-      if (side === 'renewal' && r.renewal_event_id) {
+      if (side === 'renewal' && r.renewal_case_id) {
         const { error } = await supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .update({ assigned_to_id: employeeId || null })
-          .eq('id', r.renewal_event_id);
+          .eq('id', r.renewal_case_id);
         if (error) throw error;
         setLocalRow(prev => ({ ...prev, renewal_assigned_to_id: employeeId || null }));
       }
@@ -2729,7 +2729,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
         )}
 
         {/* Renewal section */}
-        {r.renewal_event_id && (
+        {r.renewal_case_id && (
           <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-info-border)' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-info)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               🔄 Renewal
@@ -2855,7 +2855,7 @@ function calcUnifiedPriority(row) {
       })
     : 0;
 
-  const renewalScore = row.renewal_event_id
+  const renewalScore = row.renewal_case_id
     ? calcRenewalPriority({
         renewal_date:       row.renewal_date,
         premium_change_pct: row.premium_change_pct,
@@ -2932,18 +2932,18 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
       }
     }
     // Fetch full event record so the detail modal has all fields
-    let eventId = side === 'cancel' ? row.cancel_event_id : row.renewal_event_id;
+    let eventId = side === 'cancel' ? row.cancel_event_id : row.renewal_case_id;
 
     // Fallback: if this side has no event ID, try the other side
     if (!eventId) {
       const otherSide = side === 'cancel' ? 'renewal' : 'cancel';
-      const otherId   = side === 'cancel' ? row.renewal_event_id : row.cancel_event_id;
+      const otherId   = side === 'cancel' ? row.renewal_case_id : row.cancel_event_id;
       if (!otherId) return; // genuinely no event on either side
       side    = otherSide;
       eventId = otherId;
     }
 
-    const table = side === 'cancel' ? 'pending_cancel_events' : 'renewal_events';
+    const table = side === 'cancel' ? 'pending_cases' : 'renewal_cases';
     const { data } = await supabase.from(table).select('*').eq('id', eventId).single();
     if (data) {
       // Carry over computed priority from unified row
@@ -2954,7 +2954,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
 
   async function updateCancelEvent(id, updates) {
     const { error } = await supabase
-      .from('pending_cancel_events')
+      .from('pending_cases')
       .update(updates)
       .eq('id', id);
     if (!error) {
@@ -2965,7 +2965,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
 
   async function updateRenewalEvent(id, updates) {
     const { error } = await supabase
-      .from('renewal_events')
+      .from('renewal_cases')
       .update(updates)
       .eq('id', id);
     if (!error) {
@@ -3232,7 +3232,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               const renewalDays = row.renewal_date ? daysUntilRenewal(row.renewal_date) : null;
 
               return (
-                <tr key={`${row.cancel_event_id || ''}-${row.renewal_event_id || ''}`}
+                <tr key={`${row.cancel_event_id || ''}-${row.renewal_case_id || ''}`}
                   className="triage-row"
                   onClick={() => openDrilldown(row)}>
 
@@ -3475,7 +3475,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       for (let i = 0; i < policyNos.length; i += CHUNK_SIZE) {
         const chunk = policyNos.slice(i, i + CHUNK_SIZE);
         const { data, error: lookupErr } = await supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .select('policy_no, renewal_date, status')
           .eq('agency_id', agencyId)
           .in('policy_no', chunk);
@@ -3514,7 +3514,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       const runningCount = {};
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .select('assigned_to_id')
           .eq('agency_id', agencyId)
           .not('assigned_to_id', 'is', null)
@@ -3596,14 +3596,14 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
       if (newRecords.length > 0) {
         const { error: insErr } = await supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .upsert(newRecords, { onConflict: 'agency_id,policy_no,renewal_date', ignoreDuplicates: true });
         if (insErr) throw new Error(insErr.message);
       }
 
       if (updateRecords.length > 0) {
         const { error: updErr } = await supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .upsert(updateRecords, { onConflict: 'agency_id,policy_no,renewal_date' });
         if (updErr) throw new Error(updErr.message);
       }
@@ -3627,7 +3627,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       setExcludedCount(0);
       setUploadFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
-      queryClient.invalidateQueries({ queryKey: ['renewal_events', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
     } catch (err) {
       console.error('[renewal commit error]', err.message);
@@ -3821,10 +3821,10 @@ export default function BookHealthPage() {
   const [currentUserId, setCurrentUserId] = useState(null);
 
   const { data: events = [], isLoading: loading } = useQuery({
-    queryKey: ["pending_cancel_events", agencyId],
+    queryKey: ["pending_cases", agencyId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("pending_cancel_events")
+        .from("pending_cases")
         .select("*")
         .eq("agency_id", agencyId)
         .order("cancel_effective_date", { ascending: true });
@@ -3836,7 +3836,7 @@ export default function BookHealthPage() {
   });
 
   const loadEvents = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["pending_cancel_events", agencyId] });
+    queryClient.invalidateQueries({ queryKey: ["pending_cases", agencyId] });
   }, [queryClient, agencyId]);
 
   useEffect(() => {
@@ -3893,7 +3893,7 @@ export default function BookHealthPage() {
     hasFlaggedBroken.current = true;
     Promise.all(
       broken.map(e =>
-        supabase.from("pending_cancel_events")
+        supabase.from("pending_cases")
           .update({ status: "promise_broken" })
           .eq("id", e.id)
       )
@@ -4050,7 +4050,7 @@ export default function BookHealthPage() {
       const runningCount = {};
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
-          .from("pending_cancel_events")
+          .from("pending_cases")
           .select("assigned_to_id")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
@@ -4093,7 +4093,7 @@ export default function BookHealthPage() {
 
       if (diffResult.toAdd.length > 0) {
         const { error } = await supabase
-          .from("pending_cancel_events")
+          .from("pending_cases")
           .insert(diffResult.toAdd.map(r => {
             const rep = pickNextRep();
             return {
@@ -4115,7 +4115,7 @@ export default function BookHealthPage() {
         if (u.stage != null)         updatePayload.stage = u.stage;
         if (u.amount_due != null)    updatePayload.amount_due = u.amount_due;
         await supabase
-          .from("pending_cancel_events")
+          .from("pending_cases")
           .update(updatePayload)
           .eq("id", u.id);
       }
@@ -4123,7 +4123,7 @@ export default function BookHealthPage() {
       if (diffResult.toAutoResolve.length > 0) {
         const ids = diffResult.toAutoResolve.map(r => r.id);
         await supabase
-          .from("pending_cancel_events")
+          .from("pending_cases")
           .update({ status: "auto_resolved", resolution_date: new Date().toISOString().slice(0,10) })
           .in("id", ids);
       }
@@ -4197,7 +4197,7 @@ export default function BookHealthPage() {
       const runningCount = {};
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
-          .from("pending_cancel_events")
+          .from("pending_cases")
           .select("assigned_to_id")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
@@ -4236,7 +4236,7 @@ export default function BookHealthPage() {
       let stageAdvanceMap = new Map();
       if (policyNosFromAdd.length > 0) {
         const { data: existing } = await supabase
-          .from('pending_cancel_events')
+          .from('pending_cases')
           .select('id, policy_no, stage, status, cancel_effective_date')
           .eq('agency_id', agencyId)
           .in('policy_no', policyNosFromAdd)
@@ -4279,7 +4279,7 @@ export default function BookHealthPage() {
               ...(r.premium_at_risk != null ? { premium_at_risk: r.premium_at_risk } : {}),
             };
             await supabase
-              .from('pending_cancel_events')
+              .from('pending_cases')
               .update(advancePayload)
               .eq('id', existingByPolicyNo.id);
             rowsUpdated++;
@@ -4300,7 +4300,7 @@ export default function BookHealthPage() {
         }
         if (trueInserts.length > 0) {
           const { error } = await supabase
-            .from("pending_cancel_events")
+            .from("pending_cases")
             .insert(trueInserts);
           if (error) throw new Error(error.message);
         }
@@ -4313,7 +4313,7 @@ export default function BookHealthPage() {
         if (u.stage != null)         updatePayload.stage = u.stage;
         if (u.amount_due != null)    updatePayload.amount_due = u.amount_due;
         await supabase
-          .from("pending_cancel_events")
+          .from("pending_cases")
           .update(updatePayload)
           .eq("id", u.id);
         rowsUpdated++;
@@ -4351,11 +4351,11 @@ export default function BookHealthPage() {
 
   async function updateEvent(id, updates) {
     const { error } = await supabase
-      .from("pending_cancel_events")
+      .from("pending_cases")
       .update(updates)
       .eq("id", id);
     if (!error) {
-      queryClient.setQueryData(["pending_cancel_events", agencyId], (prev) =>
+      queryClient.setQueryData(["pending_cases", agencyId], (prev) =>
         (prev ?? []).map(e => e.id === id ? { ...e, ...updates } : e)
       );
       if (selectedEvent?.id === id) setSelectedEvent(prev => ({ ...prev, ...updates }));
@@ -4373,7 +4373,7 @@ export default function BookHealthPage() {
       .map(e => e.id);
     if (!pendingIds.length) return;
     await supabase
-      .from("pending_cancel_events")
+      .from("pending_cases")
       .update({
         assigned_to_id: employee.id,
         assigned_to:    displayName,  // keep in sync for display
