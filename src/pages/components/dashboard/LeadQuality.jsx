@@ -27,13 +27,16 @@ const INTENT_LABELS = {
 
 function ScoreHistogram({ data }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Score Distribution</h3>
+    <div className="dark-card">
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Score Distribution</h3>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} margin={{ top: 5, right: 5, left: -10, bottom: 0 }}>
-          <XAxis dataKey="bucket" tick={{ fontSize: 11 }} />
-          <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-          <Tooltip formatter={(v) => [`${v} leads`, 'Count']} />
+          <XAxis dataKey="bucket" tick={{ fontSize: 11, fill: 'var(--qs-dim)' }} />
+          <YAxis tick={{ fontSize: 11, fill: 'var(--qs-dim)' }} allowDecimals={false} />
+          <Tooltip
+            formatter={(v) => [`${v} leads`, 'Count']}
+            contentStyle={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}
+          />
           <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={36}>
             {data.map((entry, i) => (
               <Cell key={entry.bucket} fill={SCORE_COLORS[i]} />
@@ -53,10 +56,10 @@ function OwnerRenterCard({ owners, renters }) {
   const renterPct = total > 0 ? 100 - ownerPct : 0;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Owner vs. Renter</h3>
+    <div className="dark-card">
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Owner vs. Renter</h3>
       <div className="flex items-center gap-2 mb-2">
-        <div className="flex-1 h-4 rounded-full bg-gray-100 overflow-hidden flex">
+        <div className="flex-1 h-4 rounded-full overflow-hidden flex" style={{ background: 'var(--qs-elevated)' }}>
           <div
             className="h-full bg-primary-500 transition-all"
             style={{ width: `${ownerPct}%` }}
@@ -67,7 +70,7 @@ function OwnerRenterCard({ owners, renters }) {
           />
         </div>
       </div>
-      <div className="flex justify-between text-xs text-gray-600">
+      <div className="flex justify-between text-xs" style={{ color: 'var(--qs-dim)' }}>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-full bg-primary-500 inline-block" />
           Owners: {owners} ({ownerPct}%)
@@ -90,9 +93,9 @@ function IntentMixCard({ intentMix }) {
   const total = Object.values(intentMix).reduce((a, b) => a + b, 0);
   if (total === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Product Intent Mix</h3>
-        <p className="text-sm text-gray-400">No data</p>
+      <div className="dark-card">
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Product Intent Mix</h3>
+        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}>No data</p>
       </div>
     );
   }
@@ -102,18 +105,18 @@ function IntentMixCard({ intentMix }) {
     .sort((a, b) => b[1] - a[1]);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Product Intent Mix</h3>
+    <div className="dark-card">
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Product Intent Mix</h3>
       <div className="space-y-2">
         {entries.map(([key, count]) => {
           const pct = Math.round((count / total) * 100);
           return (
             <div key={key}>
-              <div className="flex justify-between text-xs text-gray-600 mb-0.5">
+              <div className="flex justify-between text-xs mb-0.5" style={{ color: 'var(--qs-dim)' }}>
                 <span>{INTENT_LABELS[key] || key}</span>
                 <span>{count} ({pct}%)</span>
               </div>
-              <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+              <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--qs-elevated)' }}>
                 <div
                   className="h-full rounded-full transition-all"
                   style={{ width: `${pct}%`, backgroundColor: INTENT_COLORS[key] || '#9ca3af' }}
@@ -141,13 +144,13 @@ function RiskProfileCard({ riskProfile }) {
   ].filter(d => d.value > 0) : [];
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Risk Profile</h3>
+    <div className="dark-card">
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Risk Profile</h3>
 
       {totalDriving > 0 && (
         <div className="mb-3">
-          <p className="text-xs text-gray-500 mb-1">Driving Record</p>
-          <div className="flex items-center gap-2 h-4 rounded-full bg-gray-100 overflow-hidden">
+          <p className="text-xs mb-1" style={{ color: 'var(--qs-subtle)' }}>Driving Record</p>
+          <div className="flex items-center gap-2 h-4 rounded-full overflow-hidden" style={{ background: 'var(--qs-elevated)' }}>
             {drivingData.map(d => (
               <div
                 key={d.name}
@@ -157,7 +160,7 @@ function RiskProfileCard({ riskProfile }) {
               />
             ))}
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--qs-subtle)' }}>
             {drivingData.map(d => (
               <span key={d.name} className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: d.color }} />
@@ -170,8 +173,8 @@ function RiskProfileCard({ riskProfile }) {
 
       {totalClaims > 0 && (
         <div>
-          <p className="text-xs text-gray-500 mb-1">Home Claims</p>
-          <div className="flex items-center gap-2 h-4 rounded-full bg-gray-100 overflow-hidden">
+          <p className="text-xs mb-1" style={{ color: 'var(--qs-subtle)' }}>Home Claims</p>
+          <div className="flex items-center gap-2 h-4 rounded-full overflow-hidden" style={{ background: 'var(--qs-elevated)' }}>
             <div
               className="h-full rounded-l-full"
               style={{ width: `${(claims01 / totalClaims) * 100}%`, backgroundColor: '#22c55e' }}
@@ -181,7 +184,7 @@ function RiskProfileCard({ riskProfile }) {
               style={{ width: `${(claims2plus / totalClaims) * 100}%`, backgroundColor: '#ef4444' }}
             />
           </div>
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--qs-subtle)' }}>
             <span>0-1 Claims: {Math.round((claims01 / totalClaims) * 100)}%</span>
             <span>2+ Claims: {Math.round((claims2plus / totalClaims) * 100)}%</span>
           </div>
@@ -189,7 +192,7 @@ function RiskProfileCard({ riskProfile }) {
       )}
 
       {totalDriving === 0 && totalClaims === 0 && (
-        <p className="text-sm text-gray-400">No risk data available</p>
+        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}>No risk data available</p>
       )}
 
       {incidents3plus > 0 && totalDriving > 0 && (incidents3plus / totalDriving) > 0.15 && (
@@ -204,39 +207,41 @@ function RiskProfileCard({ riskProfile }) {
 function ChannelTable({ channels }) {
   if (!channels || channels.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Channel Performance</h3>
-        <p className="text-sm text-gray-400">No channel data available</p>
+      <div className="dark-card">
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Channel Performance</h3>
+        <p className="text-sm" style={{ color: 'var(--qs-muted)' }}>No channel data available</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3">Channel Performance</h3>
+    <div className="dark-card">
+      <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Channel Performance</h3>
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>
-            <tr className="border-b border-gray-200">
-              <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 uppercase">Channel</th>
-              <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Leads</th>
-              <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Conv Rate</th>
-              <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Avg Score</th>
-              <th className="text-left py-2 pl-4 text-xs font-medium text-gray-500 uppercase">Top Intent</th>
+            <tr style={{ borderBottom: '1px solid var(--qs-border)' }}>
+              <th className="text-left py-2 pr-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Channel</th>
+              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Leads</th>
+              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Conv Rate</th>
+              <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Avg Score</th>
+              <th className="text-left py-2 pl-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Top Intent</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody>
             {channels.map(ch => (
-              <tr key={ch.channel}>
-                <td className="py-2 pr-4 font-medium text-gray-900 capitalize">{ch.channel}</td>
-                <td className="py-2 px-4 text-right text-gray-700">{ch.leads}</td>
-                <td className="py-2 px-4 text-right text-gray-700">{ch.conversionRate}%</td>
+              <tr key={ch.channel} style={{ borderTop: '1px solid var(--qs-border)' }}>
+                <td className="py-2 pr-4 font-medium capitalize" style={{ color: 'var(--qs-bright)' }}>{ch.channel}</td>
+                <td className="py-2 px-4 text-right" style={{ color: 'var(--qs-text)' }}>{ch.leads}</td>
+                <td className="py-2 px-4 text-right" style={{ color: 'var(--qs-text)' }}>{ch.conversionRate}%</td>
                 <td className="py-2 px-4 text-right">
-                  <span className={`${ch.avgScore >= 60 ? 'text-green-600' : ch.avgScore >= 40 ? 'text-yellow-600' : 'text-gray-600'} font-medium`}>
+                  <span className={`${ch.avgScore >= 60 ? 'text-green-600' : ch.avgScore >= 40 ? 'text-yellow-600' : ''} font-medium`}
+                    style={ch.avgScore < 40 ? { color: 'var(--qs-dim)' } : undefined}
+                  >
                     {ch.avgScore}
                   </span>
                 </td>
-                <td className="py-2 pl-4 text-gray-600 capitalize">{ch.topIntent}</td>
+                <td className="py-2 pl-4 capitalize" style={{ color: 'var(--qs-dim)' }}>{ch.topIntent}</td>
               </tr>
             ))}
           </tbody>
@@ -258,14 +263,14 @@ function NoPriorInsuranceCallout({ noPriorInsurance, totalCompleted }) {
   if (autoPct <= 15 && homePct <= 15) return null;
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+    <div className="rounded-lg p-4" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
       {autoPct > 15 && (
-        <p className="text-xs text-amber-700">
+        <p className="text-xs" style={{ color: 'var(--qs-warning)' }}>
           {autoPct}% of leads have no prior auto insurance — these are hard to place at standard rates. Consider routing to a non-standard market partner.
         </p>
       )}
       {homePct > 15 && (
-        <p className={`text-xs text-amber-700 ${autoPct > 15 ? 'mt-1' : ''}`}>
+        <p className={`text-xs ${autoPct > 15 ? 'mt-1' : ''}`} style={{ color: 'var(--qs-warning)' }}>
           {homePct}% of leads have no prior home insurance — limited carrier options for first-time buyers.
         </p>
       )}
@@ -283,7 +288,7 @@ export default function LeadQuality({ quality, channels }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold text-gray-900">Lead Quality & Scoring</h2>
+      <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Lead Quality & Scoring</h2>
 
       {/* Score Histogram — full width */}
       <ScoreHistogram data={scoreDistribution} />

@@ -75,7 +75,7 @@ const AgencySettingsPage = () => {
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === key
                   ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent hover:border-gray-500'
+                  : 'border-transparent hover:border-white/30'
               }`}
               style={activeTab !== key ? { color: 'var(--qs-subtle)' } : undefined}
             >
@@ -599,11 +599,15 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
                   <td className="px-4 py-3" style={{ color: 'var(--qs-text)' }}>{rule.zip_prefix || 'All'}</td>
                   <td className="px-4 py-3" style={{ color: 'var(--qs-text)' }}>{rule.priority_tier}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      rule.status === 'active' ? 'bg-green-100 text-green-700' :
-                      rule.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        rule.status === 'active' ? 'bg-green-100 text-green-700' :
+                        rule.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-700' : ''
+                      }`}
+                      style={rule.status !== 'active' && rule.status !== 'pending_approval' ? {
+                        background: 'var(--qs-elevated)', color: 'var(--qs-subtle)'
+                      } : undefined}
+                    >
                       {rule.status === 'pending_approval' ? 'Pending' : rule.status || 'Active'}
                     </span>
                   </td>
