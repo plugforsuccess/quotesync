@@ -19,14 +19,14 @@ export const consumerNav = [
 // ── Primary nav items (always visible in top bar) ────────────────────────────
 
 const primaryItems = {
-  funnel:         { to: '/agency/dashboard',      label: 'Dashboard',          icon: '📊' },
-  leads:          { to: '/agency/leads',           label: 'Leads',              icon: '📋' },
-  timeAttendance: { to: '/admin/time-attendance',  label: 'Attendance',         icon: '⏱️' },
-  staffPerformance: { to: '/admin/staff-performance', label: 'Performance',        icon: '📈' },
-  renewals:         { to: '/admin/renewals',              label: 'Renewals',         icon: '🔄' },
-  planning:           { to: '/admin/planning',             label: 'Planning',       icon: '📊' },
-  bookHealth:     { to: '/admin/book-health',        label: 'Book Health',        icon: '🛡️' },
-  newsroom:       { to: '/news/dashboard',         label: 'Newsroom',           icon: '📰' },
+  funnel:           { to: '/agency/dashboard',         label: 'Dashboard',   icon: '📊' },
+  leads:            { to: '/agency/leads',             label: 'Leads',       icon: '📋' },
+  timeAttendance:   { to: '/agency/time-attendance',   label: 'Attendance',  icon: '⏱️' },
+  staffPerformance: { to: '/agency/staff-performance', label: 'Performance', icon: '📈' },
+  renewals:         { to: '/agency/renewals',          label: 'Renewals',    icon: '🔄' },
+  planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
+  bookHealth:       { to: '/agency/book-health',       label: 'Book Health', icon: '🛡️' },
+  newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
 };
 
 // ── Secondary nav items (inside hamburger menu) ──────────────────────────────
@@ -37,7 +37,7 @@ const secondaryItems = {
   agencyMgmt:          { to: '/admin/agencies',              label: 'Agency Management',   icon: '🏢' },
   employeeRoster:      { to: '/admin/agency/employees',      label: 'Employee Roster',     icon: '👥' },
   audit:               { to: '/admin/audit',                 label: 'Audit',               icon: '🔍' },
-  planning:            { to: '/admin/planning',               label: 'Planning',            icon: '📊' },
+  planning:            { to: '/agency/planning',              label: 'Planning',            icon: '📊' },
 };
 
 // ── Platform plane navigation by role ────────────────────────────────────────
