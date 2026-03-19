@@ -234,20 +234,25 @@ export default function DailyEarningsTab({ agencyId }) {
         </div>
         <div
           className="card"
-          onClick={() => setEarningsMode(prev => prev === 'yesterday' ? 'today' : 'yesterday')}
+          onClick={() => setEarningsMode(m => m === 'yesterday' ? 'today' : 'yesterday')}
           style={{ cursor: 'pointer', userSelect: 'none' }}
+          title="Click to toggle Today / Yesterday"
         >
-          <div style={{ fontSize: 11, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            {displayLabel}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6,
+          }}>
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              {earningsMode === 'yesterday' ? 'Yesterday' : 'Today'}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--qs-info)', fontWeight: 600 }}>
+              {earningsMode === 'yesterday' ? '→ Today' : '→ Yesterday'}
+            </div>
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-text)' }}>
             {displayEarned > 0 ? fmtFull$(displayEarned) : '—'}
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
             commission earned
-          </div>
-          <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginTop: 4 }}>
-            Tap to see {earningsMode === 'yesterday' ? 'today' : 'yesterday'}
           </div>
         </div>
       </div>
