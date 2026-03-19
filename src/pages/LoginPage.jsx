@@ -30,7 +30,8 @@ const LoginPage = () => {
   useEffect(() => {
     if (!authLoading && empResolved && user) {
       // Employee (not platform admin) → send to their queue
-      if (employeeRecord && !isPlatformUser) {
+      const isAgencyMember = currentAgencyRole === 'principal' || currentAgencyRole === 'manager';
+      if (employeeRecord && !isPlatformUser && !isAgencyMember) {
         navigate('/my/queue', { replace: true });
       } else {
         const agencyRoleVal = currentAgencyId ? currentAgencyRole : null;
