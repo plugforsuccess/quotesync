@@ -272,8 +272,7 @@ const StaffPerformancePage = () => {
   }, [rcEmployeeMap, rosterEmployees]);
 
   // Use roster employees (employees table) for dropdown
-  const employeeOptions = (rosterEmployees.length > 0 ? rosterEmployees : employees)
-    .filter(e => !!e.auth_user_id);
+  const employeeOptions = rosterEmployees.length > 0 ? rosterEmployees : employees;
 
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
