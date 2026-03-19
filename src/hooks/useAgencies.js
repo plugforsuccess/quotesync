@@ -349,6 +349,22 @@ export function useRemoveTeamMember(agencyId) {
   });
 }
 
+// Update an existing member's agency role
+export function useUpdateMemberRole(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ membershipId, newRole }) => {
+      const { error } = await supabase
+        .from('agency_memberships')
+        .update({ agency_role: newRole })
+        .eq('id', membershipId)
+        .eq('agency_id', agencyId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['agency_team_full', agencyId] }),
+  });
+}
+
 // MT-05: Fetch team from employee_platform_access view (employees + membership status)
 export function useAgencyTeamWithEmployees(agencyId) {
   return useQuery({
