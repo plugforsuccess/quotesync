@@ -186,44 +186,36 @@ export default function PlanningHubPage() {
       {activeTab === 'daily_earnings' && <DailyEarningsTab agencyId={currentAgencyId} />}
       {activeTab === 'capacity'       && (
         <div style={{ marginTop: 8 }}>
-          {/* Light-surface wrapper — capacity components are light-themed */}
-          <div style={{
-            background: '#f8fafc',
-            border: '1px solid var(--qs-border)',
-            borderRadius: 12,
-            padding: 24,
-          }}>
-            <div style={{ marginBottom: 6 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 2 }}>
-                Sales Capacity Model
-              </div>
-              <div style={{ fontSize: 13, color: '#64748b' }}>
-                Model producer capacity, quoting throughput, and new hire ROI
-              </div>
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 2 }}>
+              Sales Capacity Model
             </div>
-            <div className="space-y-6 mt-6">
-              <CapacityPlanner
-                plannerInputs={effectivePlanner}
-                onInputChange={handlePlannerChange}
-                onMixChange={handleMixChange}
-                onMixAdd={handleMixAdd}
-                onMixRemove={handleMixRemove}
-                tierOptions={TIER_OPTIONS}
-                productLines={Object.keys(agencyRates.commissionMatrix)}
-                renewalInfo={RENEWAL_INFO}
-              />
-              <StaffingCapacity
-                staffingInputs={staffingInputs}
-                onStaffingChange={handleStaffingChange}
-                plannerInputs={effectivePlanner}
-                ytdAvgPremium={ytdBlended?.avgPremiumPerPolicy}
-                ytdCommissionRate={ytdBlended ? ytdBlended.blendedCommissionRate * 100 : undefined}
-                producerConfigs={producerConfigs}
-                selectedProducerConfig={selectedProducerConfig}
-                selectedProducerConfigId={selectedProducerConfigId}
-                onProducerConfigChange={setSelectedProducerConfigId}
-              />
+            <div style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
+              Model producer capacity, quoting throughput, and new hire ROI
             </div>
+          </div>
+          <div className="space-y-6">
+            <CapacityPlanner
+              plannerInputs={effectivePlanner}
+              onInputChange={handlePlannerChange}
+              onMixChange={handleMixChange}
+              onMixAdd={handleMixAdd}
+              onMixRemove={handleMixRemove}
+              tierOptions={TIER_OPTIONS}
+              productLines={Object.keys(agencyRates.commissionMatrix)}
+              renewalInfo={RENEWAL_INFO}
+            />
+            <StaffingCapacity
+              staffingInputs={staffingInputs}
+              onStaffingChange={handleStaffingChange}
+              plannerInputs={effectivePlanner}
+              ytdAvgPremium={ytdBlended?.avgPremiumPerPolicy}
+              ytdCommissionRate={ytdBlended ? ytdBlended.blendedCommissionRate * 100 : undefined}
+              producerConfigs={producerConfigs}
+              selectedProducerConfig={selectedProducerConfig}
+              selectedProducerConfigId={selectedProducerConfigId}
+              onProducerConfigChange={setSelectedProducerConfigId}
+            />
           </div>
         </div>
       )}
