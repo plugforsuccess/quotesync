@@ -1,14 +1,17 @@
 // src/pages/components/time-attendance/TargetsModal.jsx
 // Modal for editing per-employee performance targets with effective dating.
+// Redesigned with dark-theme-correct inputs, section cards, and inline styles
+// to bypass the global :not(.dark-page) CSS cascade that forces white backgrounds.
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, Target, RotateCcw, Save } from 'lucide-react';
+import { X, Target, RotateCcw, Save, Activity, Gauge, Award, BarChart3 } from 'lucide-react';
 import { DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
 
 // Full field groups for service reps
 const SERVICE_FIELD_GROUPS = [
   {
     title: 'Activity Targets',
+    icon: Activity,
     fields: [
       { key: 'outbound_calls_weekly', label: 'Outbound Calls / Week', type: 'int' },
       { key: 'total_calls_weekly', label: 'Total Calls / Week', type: 'int' },
@@ -19,6 +22,7 @@ const SERVICE_FIELD_GROUPS = [
   },
   {
     title: 'Efficiency & Quality Targets',
+    icon: Gauge,
     fields: [
       { key: 'answer_rate_pct', label: 'Answer Rate %', type: 'float' },
       { key: 'avg_speed_of_answer_sec', label: 'Avg Speed of Answer (sec)', type: 'int' },
@@ -29,6 +33,7 @@ const SERVICE_FIELD_GROUPS = [
   },
   {
     title: 'Grade Thresholds (Outbound)',
+    icon: Award,
     fields: [
       { key: 'grade_a_outbound', label: 'A Grade ≥', type: 'int' },
       { key: 'grade_b_outbound', label: 'B Grade ≥', type: 'int' },
@@ -37,6 +42,7 @@ const SERVICE_FIELD_GROUPS = [
   },
   {
     title: 'Grade Thresholds (Answer Rate %)',
+    icon: BarChart3,
     fields: [
       { key: 'grade_a_answer_rate', label: 'A Grade ≥', type: 'float' },
       { key: 'grade_b_answer_rate', label: 'B Grade ≥', type: 'float' },
@@ -49,6 +55,7 @@ const SERVICE_FIELD_GROUPS = [
 const PRODUCER_FIELD_GROUPS = [
   {
     title: 'Activity Targets',
+    icon: Activity,
     fields: [
       { key: 'outbound_calls_weekly', label: 'Outbound Calls / Week', type: 'int' },
       { key: 'total_calls_weekly', label: 'Total Calls / Week', type: 'int' },
@@ -56,6 +63,68 @@ const PRODUCER_FIELD_GROUPS = [
     ],
   },
 ];
+
+// Shared input style — explicitly overrides the global white-bg cascade
+const inputStyle = {
+  width: '100%',
+  padding: '8px 12px',
+  background: 'var(--qs-elevated)',
+  border: '1px solid var(--qs-border)',
+  borderRadius: 8,
+  color: 'var(--qs-text)',
+  fontSize: 14,
+  outline: 'none',
+  transition: 'border-color 0.15s',
+};
+
+const labelStyle = {
+  display: 'block',
+  fontSize: 12,
+  fontWeight: 500,
+  color: 'var(--qs-dim)',
+  marginBottom: 6,
+};
+
+// Section card wrapper
+function Section({ icon: Icon, title, children }) {
+  return (
+    <div style={{
+      background: 'var(--qs-elevated)',
+      border: '1px solid var(--qs-border)',
+      borderRadius: 12,
+      padding: '20px 24px',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+        <div style={{
+          width: 28, height: 28,
+          background: 'rgba(99,102,241,0.12)',
+          borderRadius: 6,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Icon size={14} style={{ color: 'var(--qs-info)' }} />
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{title}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Input({ value, onChange, type = 'text', step, placeholder }) {
+  return (
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      step={step}
+      placeholder={placeholder}
+      style={inputStyle}
+      onFocus={e => e.target.style.borderColor = 'var(--qs-info)'}
+      onBlur={e => e.target.style.borderColor = 'var(--qs-border)'}
+    />
+  );
+}
 
 export default function TargetsModal({ open, onClose, employeeName, employeeId, orgId, currentTargets, onSave, saving, roleType = 'service' }) {
   const [form, setForm] = useState({ ...DEFAULT_TARGETS });
@@ -113,90 +182,201 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
     });
   }
 
-  return (
-    <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
-      <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7" style={{ background: '#161924' }}>
-          {/* Header */}
-          <div className="sticky top-0 border-b border-qs-border pb-4 mb-4 z-10" style={{ background: '#161924' }}>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-primary-600" />
-                <div>
-                  <h3 className="text-lg font-semibold text-qs-bright">Performance Goals</h3>
-                  <p className="text-sm text-qs-subtle">{employeeName}</p>
-                </div>
-              </div>
-              <button onClick={onClose} className="text-qs-muted hover:text-qs-subtle transition min-w-[44px] min-h-[44px] inline-flex items-center justify-center" aria-label="Close">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+  const fieldGroups = roleType === 'sales' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS;
 
-          {/* Body */}
-          <div className="space-y-6">
-            {/* Effective Date */}
+  return (
+    <div style={{
+      position: 'fixed', inset: 0,
+      background: 'rgba(0,0,0,0.75)',
+      backdropFilter: 'blur(4px)',
+      zIndex: 50,
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'center',
+      padding: '24px 16px',
+      overflowY: 'auto',
+    }}>
+      {/* Backdrop dismiss */}
+      <div style={{ position: 'absolute', inset: 0 }} onClick={onClose} />
+
+      {/* Modal panel */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        maxWidth: 860,
+        background: 'var(--qs-card)',
+        border: '1px solid var(--qs-border)',
+        borderRadius: 16,
+        overflow: 'hidden',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
+      }}>
+        {/* Header */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '18px 24px',
+          borderBottom: '1px solid var(--qs-border)',
+          background: 'var(--qs-elevated)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 32, height: 32,
+              background: 'rgba(99,102,241,0.15)',
+              borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Target size={16} style={{ color: 'var(--qs-info)' }} />
+            </div>
             <div>
-              <label className="dark-label">Effective Date</label>
-              <input
-                type="date"
-                value={effectiveDate}
-                onChange={(e) => setEffectiveDate(e.target.value)}
-                className="dark-input"
-              />
-              <p className="text-xs text-qs-subtle mt-1">
-                Targets apply from this date forward. Historical weeks before this date keep their original targets.
+              <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>
+                Performance Goals
+              </h2>
+              <p style={{ fontSize: 12, color: 'var(--qs-dim)', margin: 0 }}>
+                {employeeName}
               </p>
             </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 32, height: 32,
+              background: 'var(--qs-card)',
+              border: '1px solid var(--qs-border)',
+              borderRadius: 8,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--qs-dim)',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--qs-border)'; e.currentTarget.style.color = 'var(--qs-bright)'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--qs-card)'; e.currentTarget.style.color = 'var(--qs-dim)'; }}
+            aria-label="Close"
+          >
+            <X size={15} />
+          </button>
+        </div>
 
-            {(roleType === 'sales' ? PRODUCER_FIELD_GROUPS : SERVICE_FIELD_GROUPS).map((group) => (
-              <div key={group.title}>
-                <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide mb-3">{group.title}</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {group.fields.map((field) => (
-                    <div key={field.key}>
-                      <label className="block text-xs font-medium text-qs-dim mb-1">{field.label}</label>
-                      <input
-                        type="number"
-                        step={field.type === 'float' ? '0.1' : '1'}
-                        value={form[field.key]}
-                        onChange={(e) => handleChange(field.key, e.target.value, field.type)}
-                        className="dark-input"
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+        {/* Scrollable body */}
+        <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Effective Date */}
+          <div style={{
+            background: 'var(--qs-elevated)',
+            border: '1px solid var(--qs-border)',
+            borderRadius: 12,
+            padding: '20px 24px',
+          }}>
+            <label style={labelStyle}>Effective Date</label>
+            <Input
+              type="date"
+              value={effectiveDate}
+              onChange={(e) => setEffectiveDate(e.target.value)}
+            />
+            <p style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
+              Targets apply from this date forward. Historical weeks before this date keep their original targets.
+            </p>
           </div>
 
-          {/* Footer */}
-          <div className="sticky bottom-0 border-t border-qs-border pt-4 mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between" style={{ background: '#161924' }}>
+          {/* Field group sections */}
+          {fieldGroups.map((group) => (
+            <Section key={group.title} icon={group.icon} title={group.title}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                {group.fields.map((field) => (
+                  <div key={field.key}>
+                    <label style={labelStyle}>{field.label}</label>
+                    <Input
+                      type="number"
+                      step={field.type === 'float' ? '0.1' : '1'}
+                      value={form[field.key]}
+                      onChange={(e) => handleChange(field.key, e.target.value, field.type)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </Section>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+          padding: '16px 24px',
+          borderTop: '1px solid var(--qs-border)',
+          background: 'var(--qs-elevated)',
+        }}>
+          <button
+            type="button"
+            onClick={handleReset}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '8px 16px',
+              fontSize: 13,
+              fontWeight: 500,
+              color: 'var(--qs-text)',
+              background: 'var(--qs-card)',
+              border: '1px solid var(--qs-border)',
+              borderRadius: 8,
+              cursor: 'pointer',
+              transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'var(--qs-border)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'var(--qs-card)'}
+          >
+            <RotateCcw size={14} />
+            Reset to Defaults
+          </button>
+          <div style={{ display: 'flex', gap: 10 }}>
             <button
-              onClick={handleReset}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
+              type="button"
+              onClick={onClose}
+              style={{
+                padding: '8px 16px',
+                fontSize: 13,
+                fontWeight: 500,
+                color: 'var(--qs-text)',
+                background: 'var(--qs-card)',
+                border: '1px solid var(--qs-border)',
+                borderRadius: 8,
+                cursor: 'pointer',
+                transition: 'all 0.15s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--qs-border)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'var(--qs-card)'}
             >
-              <RotateCcw className="w-4 h-4" />
-              Reset to Defaults
+              Cancel
             </button>
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50"
-              >
-                <Save className="w-4 h-4" />
-                {saving ? 'Saving...' : 'Save Targets'}
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 20px',
+                fontSize: 13,
+                fontWeight: 600,
+                color: '#fff',
+                background: saving ? 'var(--qs-muted)' : 'var(--qs-info)',
+                border: 'none',
+                borderRadius: 8,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.7 : 1,
+                transition: 'all 0.15s',
+              }}
+            >
+              <Save size={14} />
+              {saving ? 'Saving…' : 'Save Targets'}
+            </button>
           </div>
         </div>
       </div>
+    </div>
   );
 }

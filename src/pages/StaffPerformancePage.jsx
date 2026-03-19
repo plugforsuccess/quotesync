@@ -514,7 +514,11 @@ const StaffPerformancePage = () => {
               <select
                 value={selectedEmployee}
                 onChange={(e) => setSelectedEmployee(e.target.value)}
-                className="px-3 py-2 rounded-lg text-sm font-medium bg-qs-elevated text-qs-text border-0 focus:ring-2 focus:ring-primary-500"
+                className="px-3 py-2 rounded-lg text-sm font-medium border-0 focus:ring-2 focus:ring-primary-500"
+                style={{
+                  background: 'var(--qs-elevated)',
+                  color: 'var(--qs-text)',
+                }}
               >
                 <option value="all">All Employees</option>
                 {employeeOptions.map((emp) => (
