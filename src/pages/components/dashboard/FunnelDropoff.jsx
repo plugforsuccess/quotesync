@@ -72,7 +72,15 @@ export default function FunnelDropoff({ funnel }) {
                   const drop = props.payload.dropOffPercent;
                   return [`${value.toLocaleString()} leads${drop > 0 ? ` (${drop}% drop)` : ''}`, 'Reached'];
                 }}
-                contentStyle={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}
+                contentStyle={{
+                  background: 'var(--qs-card)',
+                  border: '1px solid var(--qs-border)',
+                  borderRadius: 8,
+                  padding: '8px 12px',
+                }}
+                labelStyle={{ color: 'var(--qs-bright)', fontWeight: 600, fontSize: 13 }}
+                itemStyle={{ color: 'var(--qs-dim)', fontSize: 12 }}
+                cursor={false}
               />
               <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={28}>
                 {chartData.map((entry, index) => (
