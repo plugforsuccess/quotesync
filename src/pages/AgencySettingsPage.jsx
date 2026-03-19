@@ -28,7 +28,7 @@ const AgencySettingsPage = () => {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState('profile');
-  const isAgent = currentAgencyRole === 'agent';
+  const isAgent = currentAgencyRole === 'principal';
 
   if (!currentAgencyId) {
     return (

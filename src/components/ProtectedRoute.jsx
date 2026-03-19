@@ -13,7 +13,7 @@ import PageSpinner from './PageSpinner';
  * Props:
  * - requiredRole: Legacy role check (editor, admin) - for backward compatibility
  * - requiredPlatformRole: Platform plane role (platform_editor, platform_admin, etc.)
- * - requiredAgencyRole: Agency plane role (viewer, producer, manager, agent)
+ * - requiredAgencyRole: Agency plane role (producer, manager, principal)
  * - requirePlatformUser: If true, only platform users can access
  * - requireAgencyMembership: If true, user must have at least one active agency
  * - redirectTo: Where to redirect on access denied (default: login page)

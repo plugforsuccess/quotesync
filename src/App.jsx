@@ -317,7 +317,7 @@ function App() {
             <Route
               path="agency/settings"
               element={
-                <ProtectedRoute requiredAgencyRole="agent">
+                <ProtectedRoute requiredAgencyRole="principal">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencySettingsPage />
@@ -331,7 +331,7 @@ function App() {
             <Route
               path="agency/setup"
               element={
-                <ProtectedRoute requiredAgencyRole="agent">
+                <ProtectedRoute requiredAgencyRole="principal">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencySetupPage />
@@ -345,7 +345,7 @@ function App() {
             <Route
               path="agency/team"
               element={
-                <ProtectedRoute requiredAgencyRole="agent">
+                <ProtectedRoute requiredAgencyRole="principal">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencyTeamPage />
@@ -357,63 +357,63 @@ function App() {
 
             {/* Agency principal tools (moved from /admin) */}
             <Route path="agency/staff-performance" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><StaffPerformancePage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/planning" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><PlanningHubPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/book-health" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/renewals" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RenewalsPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/renewals/upload" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RenewalUploadPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/renewals/consent" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><ConsentManagementPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/renewals/:policyId" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RenewalDetailPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/producers/:employeeId/comp-model" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><ProducerCompModelPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
             <Route path="agency/time-attendance" element={
-              <ProtectedRoute requiredAgencyRole="agent">
+              <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><AdminTimeAttendancePage /></Suspense>
                 </ErrorBoundary>

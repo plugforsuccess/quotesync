@@ -329,7 +329,7 @@ function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen 
 export default function RenewalsPage() {
   const { currentAgencyId, currentAgencyRole } = useAuth();
   const { data: employees = [] } = useActiveEmployees(currentAgencyId);
-  const isAgent = currentAgencyRole === 'agent';
+  const isAgent = currentAgencyRole === 'principal';
 
   // Filters
   const [policyType, setPolicyType] = useState('');

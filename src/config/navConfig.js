@@ -104,10 +104,10 @@ export const platformNav = {
 };
 
 // ── Agency plane navigation by role (Allstate terminology) ───────────────────
-// agent = agency principal (owns the book), producer = licensed staff
+// principal = agency owner, manager = team lead, producer = licensed staff
 
 export const agencyNav = {
-  agent: {
+  principal: {
     primary: [
       primaryItems.leads,
       primaryItems.renewals,
@@ -177,10 +177,10 @@ export function getDefaultLanding(platformRole, agencyRole, agency = null) {
   }
   if (agencyRole) {
     // MT-04: Redirect new agents to setup page if onboarding not complete
-    if (agencyRole === 'agent' && agency && !agency.setup_completed_at) {
+    if (agencyRole === 'principal' && agency && !agency.setup_completed_at) {
       return '/agency/setup';
     }
-    if (agencyRole === 'agent') return '/agency/dashboard';
+    if (agencyRole === 'principal') return '/agency/dashboard';
     return '/agency/leads';
   }
   return '/';
@@ -193,6 +193,7 @@ export const roleDisplayNames = {
   platform_support: 'Support',
   platform_editor: 'Editor',
   platform_auditor: 'Auditor',
-  agent: 'Agent',
+  principal: 'Principal',
+  manager: 'Manager',
   producer: 'Producer',
 };

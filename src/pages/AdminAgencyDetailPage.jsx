@@ -613,7 +613,7 @@ const AdminAgencyDetailPage = () => {
                     >
                       <option value="producer">Producer</option>
                       <option value="manager">Manager</option>
-                      <option value="agent">Agent (Principal)</option>
+                      <option value="principal">Principal</option>
                     </select>
                   </div>
                 </div>

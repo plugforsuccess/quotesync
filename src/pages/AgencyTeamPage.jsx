@@ -25,8 +25,8 @@ export default function AgencyTeamPage() {
   const employees = team || [];
 
   // Guard: count active agents to prevent removing the last one
-  const activeAgentCount = employees.filter(
-    e => e.agency_role === 'agent' && e.membership_status === 'active'
+  const activePrincipalCount = employees.filter(
+    e => e.agency_role === 'principal' && e.membership_status === 'active'
   ).length;
 
   const handleRemove = async (membershipId) => {
@@ -123,7 +123,8 @@ export default function AgencyTeamPage() {
                   className="dark-input"
                 >
                   <option value="producer">Producer</option>
-                  <option value="agent">Agent</option>
+                  <option value="manager">Manager</option>
+                  <option value="principal">Principal</option>
                 </select>
               </div>
               {inviteError && (
@@ -178,7 +179,7 @@ export default function AgencyTeamPage() {
                 {employees.map((emp) => {
                   const access = hasAccess(emp);
                   const pending = isPending(emp);
-                  const isOwner = emp.agency_role === 'agent' && activeAgentCount <= 1;
+                  const isOwner = emp.agency_role === 'principal' && activePrincipalCount <= 1;
                   const isSelf = emp.auth_user_id === user?.id;
 
                   return (
@@ -193,11 +194,11 @@ export default function AgencyTeamPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          emp.roles?.includes('admin') || emp.agency_role === 'agent'
+                          emp.roles?.includes('admin') || emp.agency_role === 'principal'
                             ? 'bg-purple-900/20 text-purple-400'
                             : 'bg-blue-900/20 text-blue-400'
                         }`}>
-                          {emp.agency_role === 'agent' ? 'Agent' : emp.roles?.includes('admin') ? 'Admin' : emp.roles?.includes('sales') ? 'Sales' : emp.roles?.includes('service_inbound') && emp.roles?.includes('service_outbound') ? 'Service (Both)' : emp.roles?.includes('service_outbound') ? 'Service — Outbound' : emp.roles?.includes('service_inbound') ? 'Service — Inbound' : emp.roles?.includes('service') ? 'Service' : 'Staff'}
+                          {emp.agency_role === 'principal' ? 'Principal' : emp.agency_role === 'manager' ? 'Manager' : emp.roles?.includes('admin') ? 'Admin' : emp.roles?.includes('sales') ? 'Sales' : emp.roles?.includes('service_inbound') && emp.roles?.includes('service_outbound') ? 'Service (Both)' : emp.roles?.includes('service_outbound') ? 'Service — Outbound' : emp.roles?.includes('service_inbound') ? 'Service — Inbound' : emp.roles?.includes('service') ? 'Service' : 'Staff'}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -217,7 +218,7 @@ export default function AgencyTeamPage() {
                       </td>
                       <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
                         {access && isOwner ? (
-                          <span className="text-xs text-qs-muted" title="Can't remove the last agency owner">
+                          <span className="text-xs text-qs-muted" title="Can't remove the last agency principal">
                             Owner
                           </span>
                         ) : access && isSelf ? (
