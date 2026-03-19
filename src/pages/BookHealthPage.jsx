@@ -2447,7 +2447,9 @@ function NetGrowthTab({ agencyId }) {
           <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
           <Tooltip
             labelFormatter={fmtMonth}
-            contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12 }}
+            contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12, color: "var(--qs-text)" }}
+            labelStyle={{ color: "var(--qs-dim)" }}
+            itemStyle={{ color: "var(--qs-text)" }}
             formatter={(value, name) => [value, name === "nb_points" ? "Points Gained" : name === "lapse_points" ? "Points Lost" : "Net"]}
           />
           <ReferenceLine y={0} stroke="#334155" />{/* Recharts SVG attribute — hex required */}
@@ -2465,7 +2467,9 @@ function NetGrowthTab({ agencyId }) {
             <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />{/* Recharts SVG attribute — hex required */}
             <Tooltip
               labelFormatter={fmtMonth}
-              contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12 }}
+              contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12, color: "var(--qs-text)" }}
+              labelStyle={{ color: "var(--qs-dim)" }}
+              itemStyle={{ color: "var(--qs-text)" }}
               formatter={(value) => [value, "Net Points"]}
             />
             <Line

@@ -1320,7 +1320,7 @@ export default function RevenueProjectionsDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
                 <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
+                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} labelStyle={{ color: "#94A3B8" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
                 <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
                 <Bar dataKey="commission" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (
@@ -2095,7 +2095,7 @@ export default function RevenueProjectionsDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
                 <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
+                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} labelStyle={{ color: "#94A3B8" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
                 <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
                 <Bar dataKey="commission" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (

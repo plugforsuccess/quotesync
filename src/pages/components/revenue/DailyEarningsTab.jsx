@@ -159,6 +159,8 @@ export default function DailyEarningsTab({ agencyId }) {
                 border: '1px solid var(--qs-border)',
                 color: 'var(--qs-text)',
               }}
+              labelStyle={{ color: 'var(--qs-dim)' }}
+              itemStyle={{ color: 'var(--qs-text)' }}
             />
             <Line
               type="monotone"
