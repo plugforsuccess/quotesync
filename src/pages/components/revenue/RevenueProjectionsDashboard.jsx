@@ -705,6 +705,7 @@ export default function RevenueProjectionsDashboard() {
   }, [view, entries]);
 
   const yesterdayEarned = dailyCumulative.find(d => d.isYesterday)?.dailyEarned ?? 0;
+  const todayEarned = dailyCumulative.find(d => d.isToday)?.dailyEarned ?? 0;
   const mtdCommission = totals.totalCommission;
   const mtdGap = COMMISSION_GOAL - mtdCommission;
   const mtdAhead = mtdCommission > (dailyCumulative.at(-1)?.idealPace ?? 0);

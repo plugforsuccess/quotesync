@@ -1,5 +1,5 @@
 // src/pages/components/revenue/DailyEarningsTab.jsx
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { AreaChart, Area, Line, ComposedChart, XAxis, YAxis, CartesianGrid,
          Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useRevenueEntries } from '../../../hooks/useRevenueEntries';
@@ -57,6 +57,7 @@ export default function DailyEarningsTab({ agencyId }) {
         cumulative: running,
         idealPace: (COMMISSION_GOAL / daysInMonth) * day,
         isYesterday: day === todayDay - 1,
+        isToday: day === todayDay,
         dailyEarned: byDay[day] ?? 0,
       };
     });
@@ -67,6 +68,11 @@ export default function DailyEarningsTab({ agencyId }) {
 
     return { dailyCumulative: data, yesterdayEarned, mtdCommission, mtdAhead };
   }, [entries]);
+
+  const [earningsMode, setEarningsMode] = useState('yesterday');
+  const todayEarned    = dailyCumulative.find(d => d.isToday)?.dailyEarned ?? 0;
+  const displayEarned  = earningsMode === 'yesterday' ? yesterdayEarned : todayEarned;
+  const displayLabel   = earningsMode === 'yesterday' ? 'yesterday' : 'today';
 
   const mtdGap = COMMISSION_GOAL - mtdCommission;
 
@@ -101,9 +107,9 @@ export default function DailyEarningsTab({ agencyId }) {
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>
-            {yesterdayEarned > 0 && (
+            {displayEarned > 0 && (
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-success)' }}>
-                {fmtFull$(yesterdayEarned)} yesterday
+                {fmtFull$(displayEarned)} {displayLabel}
               </div>
             )}
             <div style={{
@@ -157,7 +163,7 @@ export default function DailyEarningsTab({ agencyId }) {
             <Line
               type="monotone"
               dataKey="idealPace"
-              stroke="var(--qs-muted)"
+              stroke="rgba(255,255,255,0.5)"
               strokeWidth={1.5}
               strokeDasharray="4 3"
               dot={false}
@@ -187,7 +193,7 @@ export default function DailyEarningsTab({ agencyId }) {
         <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
           {[
             { color: '#10b981', label: 'Actual MTD' },
-            { color: 'var(--qs-muted)', label: 'Ideal pace', dashed: true },
+            { color: 'rgba(255,255,255,0.5)', label: 'Ideal pace', dashed: true },
             { color: 'var(--qs-info)', label: '$40k goal', dashed: true },
           ].map(({ color, label, dashed }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -226,12 +232,28 @@ export default function DailyEarningsTab({ agencyId }) {
             {mtdCommission >= COMMISSION_GOAL ? 'Goal exceeded' : 'remaining this month'}
           </div>
         </div>
-        <div className="card">
-          <div style={{ fontSize: 11, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-            Yesterday
+        <div
+          className="card"
+          onClick={() => setEarningsMode(m => m === 'yesterday' ? 'today' : 'yesterday')}
+          style={{ cursor: 'pointer', userSelect: 'none' }}
+          title="Click to toggle Today / Yesterday"
+        >
+          <div style={{
+            display: 'flex', justifyContent: 'space-between',
+            alignItems: 'center', marginBottom: 6,
+          }}>
+            <div style={{
+              fontSize: 11, color: 'var(--qs-subtle)',
+              textTransform: 'uppercase', letterSpacing: '0.05em',
+            }}>
+              {earningsMode === 'yesterday' ? 'Yesterday' : 'Today'}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--qs-info)', fontWeight: 600 }}>
+              {earningsMode === 'yesterday' ? '→ Today' : '→ Yesterday'}
+            </div>
           </div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-text)' }}>
-            {yesterdayEarned > 0 ? fmtFull$(yesterdayEarned) : '—'}
+            {displayEarned > 0 ? fmtFull$(displayEarned) : '—'}
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
             commission earned
