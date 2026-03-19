@@ -14,7 +14,7 @@ const LoginPage = () => {
   // Only query for employee record if the user is not a platform user — avoids
   // an unnecessary DB round trip on every platform admin login.
   const { data: employeeRecord, isLoading: empLoading } = useCurrentEmployee();
-  const empResolved = isPlatformUser || !empLoading;
+  const empResolved = isPlatformUser || !!currentAgencyRole || !empLoading;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
