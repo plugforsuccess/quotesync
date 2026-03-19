@@ -126,8 +126,8 @@ export function useWebhookHealth(agencyId) {
 
       // Fetch ai_voice policies with no outcome and recent contact
       const { data: policies, error: pError } = await supabase
-        .from('renewal_policies')
-        .select('id, policy_number, customer_name, last_contact_date')
+        .from('renewal_cases')
+        .select('id, policy_no, customer_name, last_contact_date')
         .eq('agency_id', agencyId)
         .eq('last_contact_channel', 'ai_voice')
         .is('last_contact_outcome', null)

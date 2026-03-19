@@ -39,7 +39,7 @@ function useSetFinalOutcome() {
       }
 
       const { data, error } = await supabase
-        .from('renewal_policies')
+        .from('renewal_cases')
         .update(updates)
         .eq('id', policyId)
         .select()
@@ -101,7 +101,7 @@ export default function FinalOutcomeModal({ isOpen, onClose, policy, onSuccess }
         <div className="flex items-center justify-between p-4 border-b">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">How did this call go?</h3>
-            <p className="text-sm text-gray-500">{policy.customer_name} — {policy.policy_number}</p>
+            <p className="text-sm text-gray-500">{policy.customer_name} — {policy.policy_no}</p>
           </div>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
             <X className="w-5 h-5" />

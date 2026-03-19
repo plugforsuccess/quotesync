@@ -17,8 +17,8 @@ const COLUMN_MAP = {
   'insured first name': '_first_name',
   'insured last name': '_last_name',
   'insured name': 'customer_name',
-  'premium new($)': 'renewal_premium',
-  'premium new': 'renewal_premium',
+  'premium new($)': 'premium',
+  'premium new': 'premium',
   'premium current($)': 'current_premium',
   'premium current': 'current_premium',
   'premium old($)': 'current_premium',
@@ -38,11 +38,11 @@ const COLUMN_MAP = {
   'tenure years': 'customer_tenure_years',
   'tenure': 'customer_tenure_years',
   // Generic column names
-  'policy number': 'policy_number',
-  'policy_number': 'policy_number',
-  'policynumber': 'policy_number',
-  'policy #': 'policy_number',
-  'policy no': 'policy_number',
+  'policy number': 'policy_no',
+  'policy_number': 'policy_no',
+  'policynumber': 'policy_no',
+  'policy #': 'policy_no',
+  'policy no': 'policy_no',
   'policy type': 'policy_type',
   'policy_type': 'policy_type',
   'policytype': 'policy_type',
@@ -59,19 +59,19 @@ const COLUMN_MAP = {
   'current_premium': 'current_premium',
   'currentpremium': 'current_premium',
   'current prem': 'current_premium',
-  'renewal premium': 'renewal_premium',
-  'renewal_premium': 'renewal_premium',
-  'renewalpremium': 'renewal_premium',
-  'new premium': 'renewal_premium',
-  'renewal prem': 'renewal_premium',
+  'renewal premium': 'premium',
+  'renewal_premium': 'premium',
+  'renewalpremium': 'premium',
+  'new premium': 'premium',
+  'renewal prem': 'premium',
   'amount_due': 'amount_due',
   'amountdue': 'amount_due',
-  'phone': 'customer_phone',
-  'customer_phone': 'customer_phone',
-  'customer phone': 'customer_phone',
-  'email': 'customer_email',
-  'customer_email': 'customer_email',
-  'customer email': 'customer_email',
+  'phone': 'phone',
+  'customer_phone': 'phone',
+  'customer phone': 'phone',
+  'email': 'email',
+  'customer_email': 'email',
+  'customer email': 'email',
   'address': 'customer_address',
   'customer_address': 'customer_address',
   'customer address': 'customer_address',
@@ -215,7 +215,7 @@ function applyRoutingRules(row, consentMap, stale) {
   let humanOnly = false;
   let humanOnlyReason = null;
 
-  const consent = row.customer_phone ? consentMap[row.customer_phone] : null;
+  const consent = row.phone ? consentMap[row.phone] : null;
   if (consent?.dnc) {
     humanOnly = true;
     humanOnlyReason = 'dnc';
@@ -227,7 +227,7 @@ function applyRoutingRules(row, consentMap, stale) {
       humanOnlyReason = 'stale_upload';
     }
   }
-  if (!humanOnly && row.current_premium && row.renewal_premium && row.renewal_premium > row.current_premium * 3) {
+  if (!humanOnly && row.current_premium && row.premium && row.premium > row.current_premium * 3) {
     humanOnly = true;
     humanOnlyReason = 'premium_sanity';
     row.premium_sanity_flag = true;
@@ -245,13 +245,13 @@ function applyRoutingRules(row, consentMap, stale) {
 // ── Safe upsert columns (never overwrite contact/status fields) ─────────────
 
 const SAFE_UPSERT_COLUMNS = [
-  'policy_number', 'policy_type', 'customer_name', 'renewal_date',
-  'current_premium', 'renewal_premium', 'amount_due',
-  'customer_phone', 'customer_email', 'customer_address',
+  'policy_no', 'policy_type', 'customer_name', 'renewal_date',
+  'current_premium', 'premium', 'amount_due',
+  'phone', 'email', 'customer_address',
   'mortgagee', 'eft_on_file', 'multi_policy',
   'option_package', 'renewal_status_allstate', 'customer_tenure_years',
   'premium_sanity_flag', 'human_only', 'human_only_reason',
-  'customer_group_id', 'upload_batch_id', 'agency_id',
+  'customer_group_id', 'ai_batch_id', 'agency_id',
 ];
 
 function pickSafeColumns(row) {
@@ -366,7 +366,7 @@ export default function RenewalUploadPage() {
           if (first || last) mapped.customer_name = `${first} ${last}`.trim();
         }
 
-        if (!mapped.policy_number || !String(mapped.policy_number).trim()) {
+        if (!mapped.policy_no || !String(mapped.policy_no).trim()) {
           skipped.push({ row: rowNum, reason: 'Missing policy number' });
           continue;
         }
@@ -388,18 +388,18 @@ export default function RenewalUploadPage() {
         }
 
         const currentPremium = parsePremium(mapped.current_premium);
-        const renewalPremium = parsePremium(mapped.renewal_premium);
+        const premium = parsePremium(mapped.premium);
 
         let record = {
-          policy_number: String(mapped.policy_number).trim(),
+          policy_no: String(mapped.policy_no).trim(),
           policy_type: policyType,
           customer_name: String(mapped.customer_name).trim(),
           renewal_date: renewalDate,
           current_premium: currentPremium,
-          renewal_premium: renewalPremium,
+          premium: premium,
           amount_due: parsePremium(mapped.amount_due),
-          customer_phone: mapped.customer_phone ? String(mapped.customer_phone).trim() : null,
-          customer_email: mapped.customer_email ? String(mapped.customer_email).trim() : null,
+          phone: mapped.phone ? String(mapped.phone).trim() : null,
+          email: mapped.email ? String(mapped.email).trim() : null,
           customer_address: mapped.customer_address ? String(mapped.customer_address).trim() : null,
           mortgagee: mapped.mortgagee ? String(mapped.mortgagee).trim() : null,
           eft_on_file: parseBool(mapped.eft_on_file),
@@ -458,11 +458,11 @@ export default function RenewalUploadPage() {
       // Group rows by phone for customer_renewal_groups upsert
       const phoneGroups = {};
       parsedRows.forEach((row) => {
-        if (row.customer_phone) {
-          if (!phoneGroups[row.customer_phone]) {
-            phoneGroups[row.customer_phone] = { name: row.customer_name, policies: [] };
+        if (row.phone) {
+          if (!phoneGroups[row.phone]) {
+            phoneGroups[row.phone] = { name: row.customer_name, policies: [] };
           }
-          phoneGroups[row.customer_phone].policies.push(row);
+          phoneGroups[row.phone].policies.push(row);
         }
       });
 
@@ -470,7 +470,7 @@ export default function RenewalUploadPage() {
       const groupIdMap = {};
       for (const [phone, group] of Object.entries(phoneGroups)) {
         const totalCurrent = group.policies.reduce((sum, p) => sum + (p.current_premium || 0), 0);
-        const totalRenewal = group.policies.reduce((sum, p) => sum + (p.renewal_premium || 0), 0);
+        const totalRenewal = group.policies.reduce((sum, p) => sum + (p.premium || 0), 0);
         const uniqueDates = new Set(group.policies.map((p) => p.renewal_date));
         const hasMultiDateConflict = uniqueDates.size > 1 && group.policies.length > 1;
 
@@ -502,16 +502,16 @@ export default function RenewalUploadPage() {
         const batchRows = parsedRows.slice(i, i + BATCH_SIZE).map((row) => {
           const safe = pickSafeColumns(row);
           safe.agency_id = currentAgencyId;
-          safe.upload_batch_id = batch.id;
-          safe.customer_group_id = row.customer_phone ? groupIdMap[row.customer_phone] || null : null;
+          safe.ai_batch_id = batch.id;
+          safe.customer_group_id = row.phone ? groupIdMap[row.phone] || null : null;
           return safe;
         });
 
         // Try insert first (new rows only)
         const { data: inserted, error: insertErr } = await supabase
-          .from('renewal_policies')
+          .from('renewal_cases')
           .upsert(batchRows, {
-            onConflict: 'agency_id,policy_number,renewal_date',
+            onConflict: 'agency_id,policy_no,renewal_date',
             ignoreDuplicates: false,
             // PostgREST upsert: only update safe columns, not contact/status fields
             // The safe columns list ensures no outcome fields are in the payload
@@ -646,12 +646,12 @@ export default function RenewalUploadPage() {
                 <tbody className="divide-y divide-gray-200">
                   {parsedRows.slice(0, 5).map((row, i) => (
                     <tr key={i} className={row.human_only ? 'bg-orange-50' : ''}>
-                      <td className="px-3 py-2 font-mono text-xs">{row.policy_number}</td>
+                      <td className="px-3 py-2 font-mono text-xs">{row.policy_no}</td>
                       <td className="px-3 py-2 capitalize">{row.policy_type}</td>
                       <td className="px-3 py-2">{row.customer_name}</td>
                       <td className="px-3 py-2">{row.renewal_date}</td>
                       <td className="px-3 py-2">{row.current_premium != null ? `$${row.current_premium}` : '—'}</td>
-                      <td className="px-3 py-2">{row.renewal_premium != null ? `$${row.renewal_premium}` : '—'}</td>
+                      <td className="px-3 py-2">{row.premium != null ? `$${row.premium}` : '—'}</td>
                       <td className="px-3 py-2">
                         {row.human_only ? (
                           <span className="text-xs font-medium text-orange-700">{(row.human_only_reason || '').replace(/_/g, ' ')}</span>
