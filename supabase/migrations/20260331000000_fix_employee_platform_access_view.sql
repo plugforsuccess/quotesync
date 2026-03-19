@@ -1,5 +1,5 @@
 -- Fix employee_platform_access view: role_type was dropped in favor of roles TEXT[].
--- Also add preferred_name and roles to support the team page edit form.
+-- Also add preferred_name, roles, hire_date, allstate_id to support the team page.
 
 DROP VIEW IF EXISTS employee_platform_access;
 
@@ -11,6 +11,8 @@ SELECT
   e.last_name,
   e.preferred_name,
   e.roles,
+  e.hire_date,
+  e.allstate_id,
   e.employment_status,
   e.auth_user_id,
   am.id             AS membership_id,
