@@ -29,7 +29,7 @@ function CustomBarLabel({ x, y, width, value, index, data }) {
     ? ` (${Math.round(step.dropOffPercent)}% drop)`
     : '';
   return (
-    <text x={x + width + 8} y={y + 14} fill="#374151" fontSize={12} fontWeight={500}>
+    <text x={x + width + 8} y={y + 14} fill="var(--qs-text)" fontSize={12} fontWeight={500}>
       {step.count.toLocaleString()}{dropText}
     </text>
   );
@@ -49,8 +49,8 @@ export default function FunnelDropoff({ funnel }) {
   }));
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h2 className="text-lg font-semibold text-gray-900 mb-4">Funnel Step Drop-off</h2>
+    <div className="dark-card">
+      <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}>Funnel Step Drop-off</h2>
 
       <div className="overflow-x-auto">
         <div style={{ minWidth: '600px' }}>
@@ -65,13 +65,14 @@ export default function FunnelDropoff({ funnel }) {
                 type="category"
                 dataKey="name"
                 width={95}
-                tick={{ fontSize: 12, fill: '#374151' }}
+                tick={{ fontSize: 12, fill: 'var(--qs-text)' }}
               />
               <Tooltip
                 formatter={(value, name, props) => {
                   const drop = props.payload.dropOffPercent;
                   return [`${value.toLocaleString()} leads${drop > 0 ? ` (${drop}% drop)` : ''}`, 'Reached'];
                 }}
+                contentStyle={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}
               />
               <Bar dataKey="count" radius={[0, 4, 4, 0]} barSize={28}>
                 {chartData.map((entry, index) => (
@@ -92,14 +93,20 @@ export default function FunnelDropoff({ funnel }) {
 
       {/* Worst step callout */}
       {worstStep && worstStep.dropOffPercent > 5 && (
-        <div className={`mt-4 p-4 rounded-lg border-l-4 ${worstStep.dropOffPercent > 15 ? 'border-red-500 bg-red-50' : 'border-amber-500 bg-amber-50'}`}>
+        <div
+          className="mt-4 p-4 rounded-lg border-l-4"
+          style={worstStep.dropOffPercent > 15
+            ? { borderColor: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)' }
+            : { borderColor: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)' }
+          }
+        >
           <div className="flex items-start gap-3">
             <AlertTriangle className={`w-5 h-5 mt-0.5 flex-shrink-0 ${worstStep.dropOffPercent > 15 ? 'text-red-500' : 'text-amber-500'}`} />
             <div>
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>
                 Your biggest drop-off is at <strong>{worstStep.name}</strong> ({Math.round(worstStep.dropOffPercent)}%).
               </p>
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="text-sm mt-1" style={{ color: 'var(--qs-dim)' }}>
                 {STEP_RECOMMENDATIONS[worstStep.name] || 'Review this step for usability issues.'}
               </p>
             </div>

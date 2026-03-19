@@ -32,11 +32,11 @@ const AgencySettingsPage = () => {
 
   if (!currentAgencyId) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="dark-page flex items-center justify-center p-4">
         <div className="text-center">
-          <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">No Agency Found</h2>
-          <p className="text-gray-600">You are not currently associated with an agency.</p>
+          <AlertCircle className="w-16 h-16 mx-auto mb-4" style={{ color: 'var(--qs-subtle)' }} />
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--qs-bright)' }}>No Agency Found</h2>
+          <p style={{ color: 'var(--qs-dim)' }}>You are not currently associated with an agency.</p>
         </div>
       </div>
     );
@@ -45,29 +45,29 @@ const AgencySettingsPage = () => {
   if (isLoading) return <PageSpinner />;
   if (error || !agency) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="dark-page flex items-center justify-center p-4">
         <div className="text-center">
           <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-xl font-bold text-gray-900 mb-2">Error Loading Agency</h2>
-          <p className="text-gray-600">{error?.message || 'Agency not found.'}</p>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--qs-bright)' }}>Error Loading Agency</h2>
+          <p style={{ color: 'var(--qs-dim)' }}>{error?.message || 'Agency not found.'}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dark-page">
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="dark-header rounded-xl mb-6 flex items-center gap-3">
           <Building2 className="w-8 h-8 text-primary-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Agency Settings</h1>
-            <p className="text-gray-500">Manage your agency profile and configuration</p>
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Agency Settings</h1>
+            <p style={{ color: 'var(--qs-subtle)' }}>Manage your agency profile and configuration</p>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-gray-200 mb-6 overflow-x-auto">
+        <div className="flex mb-6 overflow-x-auto" style={{ borderBottom: '1px solid var(--qs-border)' }}>
           {TABS.map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -75,8 +75,9 @@ const AgencySettingsPage = () => {
               className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 activeTab === key
                   ? 'border-primary-600 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  : 'border-transparent hover:border-white/30'
               }`}
+              style={activeTab !== key ? { color: 'var(--qs-subtle)' } : undefined}
             >
               <Icon className="w-4 h-4" />
               {label}
@@ -140,9 +141,9 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
+    <div className="dark-card">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Agency Profile</h2>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Agency Profile</h2>
         {isAgent && !editing && (
           <button onClick={startEditing} className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
             Edit
@@ -165,7 +166,7 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
             <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
               <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save Changes'}
             </button>
-            <button onClick={() => setEditing(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Cancel</button>
+            <button onClick={() => setEditing(false)} className="btn-ghost">Cancel</button>
           </div>
         </div>
       ) : (
@@ -220,9 +221,9 @@ function NotificationsTab({ agency, agencyId, isAgent, queryClient }) {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="dark-card">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Notification Settings</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Notification Settings</h2>
           {isAgent && !editing && (
             <button onClick={startEditing} className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
               Edit
@@ -233,28 +234,28 @@ function NotificationsTab({ agency, agencyId, isAgent, queryClient }) {
         {editing ? (
           <div className="space-y-4">
             <Field label="Your Cell Number" type="tel" value={form.agent_cell_number} onChange={(v) => setForm(f => ({ ...f, agent_cell_number: v }))} placeholder="(404) 555-1234" />
-            <p className="text-xs text-gray-500">This is where speed-to-call will ring and where forwarded SMS messages will go.</p>
+            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>This is where speed-to-call will ring and where forwarded SMS messages will go.</p>
             <div className="flex gap-2 pt-2">
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
                 <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save'}
               </button>
-              <button onClick={() => setEditing(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={() => setEditing(false)} className="btn-ghost">Cancel</button>
             </div>
           </div>
         ) : (
           <div className="space-y-4">
             <ReadOnly label="Your Cell Number" value={agency.agent_cell_number || 'Not set'} />
             <ReadOnly label="Twilio SMS Number" value={agency.twilio_from_number || 'Using platform default'} />
-            <p className="text-xs text-gray-500">Contact platform support to configure a dedicated Twilio number.</p>
+            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Contact platform support to configure a dedicated Twilio number.</p>
           </div>
         )}
       </div>
 
       {/* SMS Preview */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">SMS Preview</h3>
-        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-          <p className="text-sm text-gray-700 leading-relaxed">
+      <div className="dark-card">
+        <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-dim)' }}>SMS Preview</h3>
+        <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: '8px', padding: '16px' }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--qs-dim)' }}>
             Hey [Name]! This is <span className="font-semibold">{agentName}</span> from <span className="font-semibold">{brandName}</span>. I'm pulling up your personalized quotes right now. I'll call you in about 30 seconds to walk you through your options. Talk soon!
           </p>
         </div>
@@ -331,7 +332,7 @@ function CommissionTab({ agencyId, isAgent }) {
     }
   };
 
-  if (isLoading) return <div className="py-8 text-center text-gray-500">Loading commission data...</div>;
+  if (isLoading) return <div className="py-8 text-center" style={{ color: 'var(--qs-subtle)' }}>Loading commission data...</div>;
 
   const tiers = ['preferred', 'bundled', 'monoline'];
   const tierLabels = { preferred: 'Preferred', bundled: 'Bundled', monoline: 'Monoline' };
@@ -340,8 +341,8 @@ function CommissionTab({ agencyId, isAgent }) {
     <div className="space-y-6">
       {/* Carrier Config */}
       {carrierConfig && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Carrier Configuration</h2>
+        <div className="dark-card">
+          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}>Carrier Configuration</h2>
           <div className="grid gap-4 md:grid-cols-3">
             <ReadOnly label="Carrier" value={carrierConfig.carrier_name || 'Allstate'} />
             <ReadOnly label="Commissionable Factor" value={carrierConfig.commissionable_factor ? `${(carrierConfig.commissionable_factor * 100).toFixed(1)}%` : '-'} />
@@ -351,9 +352,9 @@ function CommissionTab({ agencyId, isAgent }) {
       )}
 
       {/* Commission Rates Grid */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="dark-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Commission Rates</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Commission Rates</h2>
           {isAgent && hasRates && !editRates && (
             <button onClick={startEditing} className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
               Edit
@@ -363,8 +364,8 @@ function CommissionTab({ agencyId, isAgent }) {
 
         {!hasRates ? (
           <div className="text-center py-8">
-            <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-600 mb-4">No commission rates configured yet.</p>
+            <DollarSign className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
+            <p className="mb-4" style={{ color: 'var(--qs-dim)' }}>No commission rates configured yet.</p>
             {isAgent && (
               <button
                 onClick={handleSeedDefaults}
@@ -380,14 +381,14 @@ function CommissionTab({ agencyId, isAgent }) {
             <table className="w-full text-sm">
               <thead>
                 <tr>
-                  <th className="text-left py-2 text-gray-500 font-medium">Product</th>
-                  {tiers.map(t => <th key={t} className="text-center py-2 text-gray-500 font-medium">{tierLabels[t]}</th>)}
+                  <th className="text-left py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>Product</th>
+                  {tiers.map(t => <th key={t} className="text-center py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>{tierLabels[t]}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {Object.keys(editRates).map(product => (
-                  <tr key={product} className="border-t border-gray-100">
-                    <td className="py-2 font-medium text-gray-900 capitalize">{product}</td>
+                  <tr key={product} style={{ borderTop: '1px solid var(--qs-border)' }}>
+                    <td className="py-2 font-medium capitalize" style={{ color: 'var(--qs-bright)' }}>{product}</td>
                     {tiers.map(tier => (
                       <td key={tier} className="py-2 text-center">
                         <input
@@ -402,7 +403,7 @@ function CommissionTab({ agencyId, isAgent }) {
                               [product]: { ...prev[product], [tier]: e.target.value },
                             }));
                           }}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded text-center text-sm"
+                          className="dark-input w-20 text-center"
                         />
                       </td>
                     ))}
@@ -410,28 +411,28 @@ function CommissionTab({ agencyId, isAgent }) {
                 ))}
               </tbody>
             </table>
-            <p className="text-xs text-gray-500 mt-2">Enter rates as decimals (e.g. 0.25 = 25%)</p>
+            <p className="text-xs mt-2" style={{ color: 'var(--qs-subtle)' }}>Enter rates as decimals (e.g. 0.25 = 25%)</p>
             <div className="flex gap-2 mt-4">
               <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50">
                 <Save className="w-4 h-4" />{saving ? 'Saving...' : 'Save Rates'}
               </button>
-              <button onClick={() => setEditRates(null)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={() => setEditRates(null)} className="btn-ghost">Cancel</button>
             </div>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr>
-                <th className="text-left py-2 text-gray-500 font-medium">Product</th>
-                {tiers.map(t => <th key={t} className="text-center py-2 text-gray-500 font-medium">{tierLabels[t]}</th>)}
+                <th className="text-left py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>Product</th>
+                {tiers.map(t => <th key={t} className="text-center py-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>{tierLabels[t]}</th>)}
               </tr>
             </thead>
             <tbody>
               {Object.keys(rateGrid).map(product => (
-                <tr key={product} className="border-t border-gray-100">
-                  <td className="py-2 font-medium text-gray-900 capitalize">{product}</td>
+                <tr key={product} style={{ borderTop: '1px solid var(--qs-border)' }}>
+                  <td className="py-2 font-medium capitalize" style={{ color: 'var(--qs-bright)' }}>{product}</td>
                   {tiers.map(tier => (
-                    <td key={tier} className="py-2 text-center text-gray-700">
+                    <td key={tier} className="py-2 text-center" style={{ color: 'var(--qs-dim)' }}>
                       {rateGrid[product]?.[tier] != null
                         ? `${Math.round(rateGrid[product][tier] * 100)}%`
                         : '-'}
@@ -502,9 +503,9 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
   return (
     <div className="space-y-6">
       {/* Licensed States */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Licensed States</h2>
-        <p className="text-sm text-gray-500 mb-4">Select all states where your agency is licensed to sell insurance.</p>
+      <div className="dark-card">
+        <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}>Licensed States</h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--qs-subtle)' }}>Select all states where your agency is licensed to sell insurance.</p>
         <div className="flex flex-wrap gap-2 mb-4">
           {US_STATES.map(state => (
             <button
@@ -514,8 +515,9 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
               className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 licensedStates.includes(state)
                   ? 'bg-primary-100 text-primary-700 border border-primary-300'
-                  : 'bg-gray-50 text-gray-500 border border-gray-200 hover:border-gray-300'
+                  : 'border'
               } ${!isAgent ? 'cursor-default' : 'cursor-pointer'}`}
+              style={!licensedStates.includes(state) ? { background: 'var(--qs-elevated)', color: 'var(--qs-subtle)', borderColor: 'var(--qs-border)' } : undefined}
             >
               {state}
             </button>
@@ -533,9 +535,9 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
       </div>
 
       {/* Routing Rules */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
+      <div className="dark-card">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Routing Rules</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Routing Rules</h2>
           {isAgent && (
             <button
               onClick={() => setShowAddRule(!showAddRule)}
@@ -546,62 +548,66 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
           )}
         </div>
 
-        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-700 mb-4">
+        <div className="text-sm mb-4" style={{ background: 'var(--qs-info-subtle)', border: '1px solid var(--qs-info-border)', borderRadius: '8px', padding: '12px', color: 'var(--qs-info)' }}>
           Territory rules require platform approval before going live. Existing approved rules remain active.
         </div>
 
         {showAddRule && (
-          <form onSubmit={handleAddRule} className="bg-gray-50 rounded-lg p-4 mb-4 space-y-3">
+          <form onSubmit={handleAddRule} className="mb-4 space-y-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: '8px', padding: '16px' }}>
             <div className="grid gap-3 md:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
-                <select value={newRule.state} onChange={(e) => setNewRule(r => ({ ...r, state: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" required>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>State</label>
+                <select value={newRule.state} onChange={(e) => setNewRule(r => ({ ...r, state: e.target.value }))} className="dark-select" required>
                   <option value="">Select...</option>
                   {licensedStates.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Prefix (optional)</label>
-                <input type="text" value={newRule.zip_prefix} onChange={(e) => setNewRule(r => ({ ...r, zip_prefix: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="e.g. 303" maxLength={3} />
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>ZIP Prefix (optional)</label>
+                <input type="text" value={newRule.zip_prefix} onChange={(e) => setNewRule(r => ({ ...r, zip_prefix: e.target.value }))} className="dark-input" placeholder="e.g. 303" maxLength={3} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
-                <input type="number" value={newRule.priority_tier} onChange={(e) => setNewRule(r => ({ ...r, priority_tier: e.target.value }))} className="w-full px-3 py-2 border border-gray-300 rounded-lg" min={1} max={10} />
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Priority</label>
+                <input type="number" value={newRule.priority_tier} onChange={(e) => setNewRule(r => ({ ...r, priority_tier: e.target.value }))} className="dark-input" min={1} max={10} />
               </div>
             </div>
             <div className="flex gap-2">
               <button type="submit" disabled={createRule.isPending} className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50 text-sm">
                 {createRule.isPending ? 'Creating...' : 'Create Rule'}
               </button>
-              <button type="button" onClick={() => setShowAddRule(false)} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg text-sm">Cancel</button>
+              <button type="button" onClick={() => setShowAddRule(false)} className="btn-ghost text-sm">Cancel</button>
             </div>
           </form>
         )}
 
         {rulesLoading ? (
-          <p className="text-gray-500 text-sm py-4">Loading rules...</p>
+          <p className="text-sm py-4" style={{ color: 'var(--qs-subtle)' }}>Loading rules...</p>
         ) : rules && rules.length > 0 ? (
           <table className="w-full text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">State</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ZIP Prefix</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Priority</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+            <thead>
+              <tr style={{ background: 'var(--qs-elevated)' }}>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>State</th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>ZIP Prefix</th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Priority</th>
+                <th className="px-4 py-2 text-left text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {rules.map(rule => (
-                <tr key={rule.id}>
-                  <td className="px-4 py-3 font-medium text-gray-900">{rule.state}</td>
-                  <td className="px-4 py-3 text-gray-700">{rule.zip_prefix || 'All'}</td>
-                  <td className="px-4 py-3 text-gray-700">{rule.priority_tier}</td>
+                <tr key={rule.id} style={{ borderTop: '1px solid var(--qs-border)' }}>
+                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--qs-bright)' }}>{rule.state}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--qs-text)' }}>{rule.zip_prefix || 'All'}</td>
+                  <td className="px-4 py-3" style={{ color: 'var(--qs-text)' }}>{rule.priority_tier}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      rule.status === 'active' ? 'bg-green-100 text-green-700' :
-                      rule.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        rule.status === 'active' ? 'bg-green-100 text-green-700' :
+                        rule.status === 'pending_approval' ? 'bg-yellow-100 text-yellow-700' : ''
+                      }`}
+                      style={rule.status !== 'active' && rule.status !== 'pending_approval' ? {
+                        background: 'var(--qs-elevated)', color: 'var(--qs-subtle)'
+                      } : undefined}
+                    >
                       {rule.status === 'pending_approval' ? 'Pending' : rule.status || 'Active'}
                     </span>
                   </td>
@@ -610,7 +616,7 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
             </tbody>
           </table>
         ) : (
-          <p className="text-gray-500 text-sm py-4">No routing rules configured.</p>
+          <p className="text-sm py-4" style={{ color: 'var(--qs-subtle)' }}>No routing rules configured.</p>
         )}
       </div>
     </div>
@@ -622,12 +628,12 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
 function Field({ label, type = 'text', value, onChange, placeholder }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+        className="dark-input"
         placeholder={placeholder}
       />
     </div>
@@ -637,8 +643,8 @@ function Field({ label, type = 'text', value, onChange, placeholder }) {
 function ReadOnly({ label, value }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-500 mb-1">{label}</label>
-      <p className="text-gray-900">{value || '-'}</p>
+      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-subtle)' }}>{label}</label>
+      <p style={{ color: 'var(--qs-bright)' }}>{value || '-'}</p>
     </div>
   );
 }
