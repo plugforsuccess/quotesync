@@ -414,7 +414,7 @@ function Layout({ forcePlane = null }) {
               </div>
 
               {/* Admin tools link — agent role only */}
-              {currentAgencyRole === 'agent' && (
+              {currentAgencyRole === 'principal' && (
                 <NavLink
                   to="/admin"
                   className="flex items-center gap-2 mt-3 px-2 py-2 text-xs text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"

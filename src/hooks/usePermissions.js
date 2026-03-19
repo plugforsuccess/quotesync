@@ -16,7 +16,8 @@ import { useAuth } from '../contexts/AuthContext';
  * - platform_auditor: Read-only logs and compliance exports
  *
  * Tenant Plane (agency users - Allstate terminology):
- * - agent: Agency principal — owns the book, manages producers, full control
+ * - principal: Agency principal — owns the book, full control
+ * - manager: Team lead — manages staff and routing, subset of principal access
  * - producer: Licensed staff who work leads and write policies
  *
  * Future roles (schema supports, not yet enabled):
@@ -60,21 +61,19 @@ export function usePermissions() {
   }), [isPlatformUser, platformRole, hasPlatformRole]);
 
   // Agency permission checks (for current agency)
-  // Allstate terminology: agent = principal, producer = staff
   const agency = useMemo(() => ({
-    // Role checks (only agent/producer active)
-    isPrincipal: hasAgencyRole('agent'),
+    isPrincipal: hasAgencyRole('principal'),
     isProducer: hasAgencyRole('producer'),
 
-    // Feature access (agent/principal gets all, producer gets lead work)
+    // Feature access (principal gets all, producer gets lead work)
     canViewLeads: hasAgencyRole('producer'),      // producer+
     canUpdateLeads: hasAgencyRole('producer'),    // producer+
-    canDeleteLeads: hasAgencyRole('agent'),    // agent only (no manager yet)
-    canManageRouting: hasAgencyRole('agent'),  // agent only
-    canInviteMembers: hasAgencyRole('agent'),  // agent only (no manager yet)
-    canRemoveMembers: hasAgencyRole('agent'),  // agent only
-    canUpdateMemberRoles: hasAgencyRole('agent'),
-    canUpdateAgencySettings: hasAgencyRole('agent'),
+    canDeleteLeads: hasAgencyRole('principal'),
+    canManageRouting: hasAgencyRole('principal'),
+    canInviteMembers: hasAgencyRole('principal'),
+    canRemoveMembers: hasAgencyRole('principal'),
+    canUpdateMemberRoles: hasAgencyRole('principal'),
+    canUpdateAgencySettings: hasAgencyRole('principal'),
 
     // Current agency info
     currentAgencyId,
@@ -169,11 +168,9 @@ export const PLATFORM_ROLES = [
   'platform_auditor'
 ];
 
-// Active agency roles (Allstate terminology)
-export const AGENCY_ROLES = ['agent', 'producer'];
+export const AGENCY_ROLES = ['principal', 'manager', 'producer'];
 
-// Future agency roles (schema supports these)
-export const AGENCY_ROLES_FUTURE = ['agent', 'manager', 'producer', 'viewer'];
+export const AGENCY_ROLES_FUTURE = ['principal', 'manager', 'producer'];
 
 /**
  * Audit event types for admin actions

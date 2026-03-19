@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.jsx
 // Global authentication context with two-plane RBAC support
 // Platform plane: internal staff (platform_master_admin, platform_admin, platform_support, platform_editor, platform_auditor)
-// Tenant plane: agency users (agent, manager, producer, viewer)
+// Tenant plane: agency users (principal, manager, producer)
 
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase, authChannel } from '../lib/supabase';
@@ -52,11 +52,10 @@ const PLATFORM_ROLE_HIERARCHY = {
   platform_master_admin: 5
 };
 
-// Agency role hierarchy (Allstate terminology: agent = principal, producer = staff)
 const AGENCY_ROLE_HIERARCHY = {
   producer: 1,
-  agent: 2
-  // Future: viewer: 0, manager: 2 (insert between producer/agent)
+  manager: 2,
+  principal: 3,
 };
 
 // ── RBAC cache ──────────────────────────────────────────────────────────────
@@ -174,7 +173,7 @@ export const AuthProvider = ({ children }) => {
         // Restore agency selection
         const storedAgencyId = localStorage.getItem('currentAgencyId');
         const activeMemberships = (cached.memberships || []).filter(m =>
-          m.status === 'active' && m.agencies?.status === 'approved'
+          m.status === 'active'
         );
         if (activeMemberships.length > 0) {
           const preferred = activeMemberships.find(m => m.agency_id === storedAgencyId);
@@ -269,7 +268,7 @@ export const AuthProvider = ({ children }) => {
 
       const storedAgencyId = localStorage.getItem('currentAgencyId');
       const activeMemberships = (memberships || []).filter(m =>
-        m.status === 'active' && m.agencies?.status === 'approved'
+        m.status === 'active'
       );
 
       if (activeMemberships.length > 0) {
