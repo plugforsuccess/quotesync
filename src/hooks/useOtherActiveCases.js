@@ -1,25 +1,37 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
-// Returns other active cases for the same customer (by last name match)
-// excluding the current event/row being viewed.
-export function useOtherActiveCases({ agencyId, customerName, excludeEventId, excludeRenewalId }) {
-  const lastName = customerName?.trim().split(/\s+/).pop() || '';
+export function useOtherActiveCases({ agencyId, customerName, policyNo, excludeEventId, excludeRenewalId }) {
+  // Policy prefix — first 7 chars identify the Allstate customer account
+  const policyPrefix = policyNo?.slice(0, 7) || '';
+
+  // Name fallback — require both first AND last name to reduce false positives
+  const parts = customerName?.trim().split(/\s+/) || [];
+  const firstName = parts.length > 1 ? parts[0] : '';
+  const lastName  = parts.length > 1 ? parts[parts.length - 1] : '';
+
+  const hasPolicyMatch = policyPrefix.length >= 7;
+  const hasNameMatch   = firstName.length >= 2 && lastName.length >= 2;
 
   return useQuery({
-    queryKey: ['other_active_cases', agencyId, lastName, excludeEventId, excludeRenewalId],
+    queryKey: ['other_active_cases', agencyId, policyPrefix, lastName, firstName, excludeEventId, excludeRenewalId],
     queryFn: async () => {
-      if (!agencyId || !lastName || lastName.length < 3) return [];
+      if (!agencyId || (!hasPolicyMatch && !hasNameMatch)) return [];
 
-      const TERMINAL = ['saved', 'lost', 'auto_resolved', 'requested_cancellation', 'cancelled'];
+      const TERMINAL         = ['saved', 'lost', 'auto_resolved', 'requested_cancellation', 'cancelled'];
       const RENEWAL_TERMINAL = ['confirmed', 'lost', 'auto_resolved', 'unreachable'];
+
+      // Build the match filter — policy prefix takes priority over name
+      const matchFilter = hasPolicyMatch
+        ? `policy_no.ilike.${policyPrefix}%`
+        : `customer_name.ilike.${firstName} ${lastName}`;
 
       const [{ data: cancelCases }, { data: renewalCases }] = await Promise.all([
         supabase
           .from('pending_cancel_events')
           .select('id, customer_name, policy_no, product, cancel_effective_date, status, stage, premium_at_risk')
           .eq('agency_id', agencyId)
-          .ilike('customer_name', `%${lastName}%`)
+          .or(matchFilter)
           .not('status', 'in', `(${TERMINAL.join(',')})`)
           .limit(10),
 
@@ -27,48 +39,36 @@ export function useOtherActiveCases({ agencyId, customerName, excludeEventId, ex
           .from('renewal_events')
           .select('id, customer_name, policy_no, product, renewal_date, status, premium')
           .eq('agency_id', agencyId)
-          .ilike('customer_name', `%${lastName}%`)
+          .or(matchFilter)
           .not('status', 'in', `(${RENEWAL_TERMINAL.join(',')})`)
           .limit(10),
       ]);
 
       const results = [];
 
-      // Cancel cases — exclude the current one
       for (const c of (cancelCases || [])) {
         if (c.id === excludeEventId) continue;
         results.push({
-          id: c.id,
-          type: 'cancel',
-          customer_name: c.customer_name,
-          policy_no: c.policy_no,
-          product: c.product,
-          date: c.cancel_effective_date,
-          status: c.status,
-          stage: c.stage,
-          premium: c.premium_at_risk,
+          id: c.id, type: 'cancel',
+          customer_name: c.customer_name, policy_no: c.policy_no,
+          product: c.product, date: c.cancel_effective_date,
+          status: c.status, stage: c.stage, premium: c.premium_at_risk,
         });
       }
 
-      // Renewal cases — exclude the current one
       for (const r of (renewalCases || [])) {
         if (r.id === excludeRenewalId) continue;
         results.push({
-          id: r.id,
-          type: 'renewal',
-          customer_name: r.customer_name,
-          policy_no: r.policy_no,
-          product: r.product,
-          date: r.renewal_date,
-          status: r.status,
-          stage: null,
-          premium: r.premium,
+          id: r.id, type: 'renewal',
+          customer_name: r.customer_name, policy_no: r.policy_no,
+          product: r.product, date: r.renewal_date,
+          status: r.status, stage: null, premium: r.premium,
         });
       }
 
       return results;
     },
-    enabled: !!agencyId && !!lastName && lastName.length >= 3,
+    enabled: !!agencyId && (hasPolicyMatch || hasNameMatch),
     staleTime: 2 * 60 * 1000,
   });
 }

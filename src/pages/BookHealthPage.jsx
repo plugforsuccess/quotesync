@@ -584,7 +584,7 @@ function TrendsTab({ trendsData }) {
 // ─── Other Cases Warning ─────────────────────────────────────────────────────
 
 function OtherCasesWarning({ cases }) {
-  if (!cases || cases.length === 0) return null;
+  if (!cases || cases.length < 2) return null;
 
   return (
     <div style={{
@@ -646,6 +646,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
     customerName: event.customer_name,
+    policyNo: event.policy_no,
     excludeEventId: event.id,
     excludeRenewalId: null,
   });
@@ -1130,6 +1131,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
     customerName: event.customer_name,
+    policyNo: event.policy_no,
     excludeEventId: null,
     excludeRenewalId: event.id,
   });
@@ -2930,9 +2932,18 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
       }
     }
     // Fetch full event record so the detail modal has all fields
+    let eventId = side === 'cancel' ? row.cancel_event_id : row.renewal_event_id;
+
+    // Fallback: if this side has no event ID, try the other side
+    if (!eventId) {
+      const otherSide = side === 'cancel' ? 'renewal' : 'cancel';
+      const otherId   = side === 'cancel' ? row.renewal_event_id : row.cancel_event_id;
+      if (!otherId) return; // genuinely no event on either side
+      side    = otherSide;
+      eventId = otherId;
+    }
+
     const table = side === 'cancel' ? 'pending_cancel_events' : 'renewal_events';
-    const eventId = side === 'cancel' ? row.cancel_event_id : row.renewal_event_id;
-    if (!eventId) return;
     const { data } = await supabase.from(table).select('*').eq('id', eventId).single();
     if (data) {
       // Carry over computed priority from unified row
