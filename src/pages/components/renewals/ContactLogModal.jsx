@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { X, Phone, Mail, Bot, AlertTriangle, Shield } from 'lucide-react';
-import { useLogContact } from '../../../hooks/useRenewalPolicies';
+import { useLogContact } from '../../../hooks/useRenewalCases';
 import { useCustomerConsent } from '../../../hooks/useCustomerConsent';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -104,10 +104,10 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
       });
 
       // Consent capture — upsert if user selected yes or no
-      if (consentChoice && policy.customer_phone && upsertConsent) {
+      if (consentChoice && policy.phone && upsertConsent) {
         const consentData = {
           agency_id: currentAgencyId,
-          customer_phone: policy.customer_phone,
+          customer_phone: policy.phone,
           customer_name: policy.customer_name,
           autodial_consent: consentChoice === 'yes',
           consent_collected_by: profile?.id || null,
@@ -140,7 +140,7 @@ export default function ContactLogModal({ isOpen, onClose, policy, onSuccess }) 
         <div className="flex items-center justify-between p-4 border-b">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">Log Contact</h3>
-            <p className="text-sm text-gray-500">{policy.customer_name} — {policy.policy_number}</p>
+            <p className="text-sm text-gray-500">{policy.customer_name} — {policy.policy_no}</p>
           </div>
           <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100">
             <X className="w-5 h-5" />

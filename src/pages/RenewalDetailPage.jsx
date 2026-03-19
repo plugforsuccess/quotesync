@@ -8,7 +8,7 @@ import {
   XCircle, AlertTriangle, Shield, MapPin, Users, Flag,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useRenewalDetail, useUpdateRenewalStatus, useAssignFollowup } from '../hooks/useRenewalPolicies';
+import { useRenewalDetail, useUpdateRenewalStatus, useAssignFollowup } from '../hooks/useRenewalCases';
 import { useCustomerConsent } from '../hooks/useCustomerConsent';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import ContactLogModal from './components/renewals/ContactLogModal';
@@ -102,7 +102,7 @@ export default function RenewalDetailPage() {
 
   // Find consent for this customer
   const consent = Array.isArray(consentRecords)
-    ? consentRecords.find((c) => c.customer_phone === policy.customer_phone)
+    ? consentRecords.find((c) => c.customer_phone === policy.phone)
     : null;
 
   const pctChange = policy.premium_change_pct;
@@ -139,7 +139,7 @@ export default function RenewalDetailPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-900">{policy.customer_name}</h1>
-            <p className="text-sm text-gray-500 font-mono">{policy.policy_number}</p>
+            <p className="text-sm text-gray-500 font-mono">{policy.policy_no}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className={`px-2.5 py-1 rounded text-xs font-semibold capitalize ${STATUS_COLORS[policy.renewal_status] || STATUS_COLORS.pending}`}>
@@ -165,7 +165,7 @@ export default function RenewalDetailPage() {
           </div>
           <div>
             <p className="text-gray-500">Renewal Premium</p>
-            <p className="font-medium">{formatCurrency(policy.renewal_premium)}</p>
+            <p className="font-medium">{formatCurrency(policy.premium)}</p>
           </div>
           <div>
             <p className="text-gray-500">Change</p>
@@ -177,16 +177,16 @@ export default function RenewalDetailPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm border-t pt-4">
-          {policy.customer_phone && (
+          {policy.phone && (
             <div className="flex items-center gap-2">
               <Phone className="w-4 h-4 text-gray-400" />
-              <span>{policy.customer_phone}</span>
+              <span>{policy.phone}</span>
             </div>
           )}
-          {policy.customer_email && (
+          {policy.email && (
             <div className="flex items-center gap-2">
               <Mail className="w-4 h-4 text-gray-400" />
-              <span>{policy.customer_email}</span>
+              <span>{policy.email}</span>
             </div>
           )}
           {policy.customer_address && (
@@ -292,7 +292,7 @@ export default function RenewalDetailPage() {
       {/* Section 3: Contact Log */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-3">Contact Log</h2>
-        {policy.contact_attempts > 0 ? (
+        {policy.attempt_count > 0 ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg text-sm">
               {(() => {
@@ -306,7 +306,7 @@ export default function RenewalDetailPage() {
               </div>
               <span className="text-gray-500">{formatDateTime(policy.last_contact_date)}</span>
             </div>
-            <p className="text-sm text-gray-500">{policy.contact_attempts} total attempt{policy.contact_attempts !== 1 ? 's' : ''}</p>
+            <p className="text-sm text-gray-500">{policy.attempt_count} total attempt{policy.attempt_count !== 1 ? 's' : ''}</p>
             {policy.followup_notes && (
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">{policy.followup_notes}</p>
             )}
@@ -343,7 +343,7 @@ export default function RenewalDetailPage() {
           <div className="flex-1 min-w-[200px]">
             <label className="block text-sm text-gray-600 mb-1">Assign to</label>
             <select
-              value={assignTo || policy.assigned_to || ''}
+              value={assignTo || policy.assigned_to_id || ''}
               onChange={(e) => setAssignTo(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
             >

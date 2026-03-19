@@ -34,7 +34,7 @@ export function getTriageBucket(policy) {
 
   // Contact attempt cap — >=3 no-answer or voicemail attempts → needs human call
   if (
-    policy.contact_attempts >= 3 &&
+    policy.attempt_count >= 3 &&
     ['no_answer', 'left_voicemail'].includes(policy.last_contact_outcome)
   ) {
     return 'needs_human_call';

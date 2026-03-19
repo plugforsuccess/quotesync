@@ -1,6 +1,6 @@
-// src/hooks/useRenewalPolicies.js
+// src/hooks/useRenewalCases.js
 // React Query hooks for the Renewal Management module.
-// Handles fetching, filtering, and mutating renewal policy records.
+// Handles fetching, filtering, and mutating renewal case records.
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -10,7 +10,7 @@ import { queryKeys } from '../lib/queryKeys';
 
 async function fetchRenewalPolicies(agencyId, filters = {}) {
   let query = supabase
-    .from('renewal_policies')
+    .from('renewal_cases')
     .select('*')
     .eq('agency_id', agencyId);
 
@@ -22,7 +22,7 @@ async function fetchRenewalPolicies(agencyId, filters = {}) {
     query = query.eq('priority_tier', filters.priorityTier);
   }
   if (filters.assignedTo) {
-    query = query.eq('assigned_to', filters.assignedTo);
+    query = query.eq('assigned_to_id', filters.assignedTo);
   }
   if (filters.policyType) {
     query = query.eq('policy_type', filters.policyType);
@@ -35,7 +35,7 @@ async function fetchRenewalPolicies(agencyId, filters = {}) {
   }
   if (filters.search) {
     const term = `%${filters.search}%`;
-    query = query.or(`customer_name.ilike.${term},policy_number.ilike.${term}`);
+    query = query.or(`customer_name.ilike.${term},policy_no.ilike.${term}`);
   }
 
   // Default sort: priority_tier DESC (critical first), then renewal_date ASC
@@ -107,7 +107,7 @@ export function useRenewalPolicies(agencyId, filters = {}) {
     const consentMap = consentQuery.data || {};
     const merged = policiesQuery.data.map((p) => ({
       ...p,
-      consent: p.customer_phone ? consentMap[p.customer_phone] || null : null,
+      consent: p.phone ? consentMap[p.phone] || null : null,
     }));
     return sortByPriorityThenDate(merged);
   })();
@@ -130,7 +130,7 @@ export function useRenewalDetail(policyId) {
     queryKey: queryKeys.renewals.detail(policyId),
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('renewal_policies')
+        .from('renewal_cases')
         .select('*')
         .eq('id', policyId)
         .single();
@@ -149,16 +149,16 @@ export function useLogContact() {
 
   return useMutation({
     mutationFn: async ({ policyId, channel, outcome, notes, escalate, followupReason, assignedTo }) => {
-      // First get current contact_attempts
+      // First get current attempt_count
       const { data: current, error: fetchErr } = await supabase
-        .from('renewal_policies')
-        .select('contact_attempts, agency_id')
+        .from('renewal_cases')
+        .select('attempt_count, agency_id')
         .eq('id', policyId)
         .single();
       if (fetchErr) throw fetchErr;
 
       const updates = {
-        contact_attempts: (current.contact_attempts || 0) + 1,
+        attempt_count: (current.attempt_count || 0) + 1,
         last_contact_date: new Date().toISOString(),
         last_contact_outcome: outcome,
         last_contact_channel: channel,
@@ -171,7 +171,7 @@ export function useLogContact() {
         updates.renewal_status = 'escalated';
       }
       if (assignedTo) {
-        updates.assigned_to = assignedTo;
+        updates.assigned_to_id = assignedTo;
       }
       if (outcome === 'confirmed') {
         updates.renewal_status = 'confirmed';
@@ -182,7 +182,7 @@ export function useLogContact() {
       }
 
       const { data, error } = await supabase
-        .from('renewal_policies')
+        .from('renewal_cases')
         .update(updates)
         .eq('id', policyId)
         .select()
@@ -208,7 +208,7 @@ export function useUpdateRenewalStatus() {
       }
 
       const { data, error } = await supabase
-        .from('renewal_policies')
+        .from('renewal_cases')
         .update(updates)
         .eq('id', policyId)
         .select()
@@ -229,14 +229,14 @@ export function useAssignFollowup() {
   return useMutation({
     mutationFn: async ({ policyId, assignedTo, followupReason, notes }) => {
       const updates = {
-        assigned_to: assignedTo,
+        assigned_to_id: assignedTo,
         human_followup_required: true,
       };
       if (followupReason) updates.followup_reason = followupReason;
       if (notes) updates.followup_notes = notes;
 
       const { data, error } = await supabase
-        .from('renewal_policies')
+        .from('renewal_cases')
         .update(updates)
         .eq('id', policyId)
         .select()

@@ -9,7 +9,7 @@ import {
   Bot, Play, BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useRenewalPolicies } from '../hooks/useRenewalPolicies';
+import { useRenewalPolicies } from '../hooks/useRenewalCases';
 import { useRenewalStats, filterByBucket } from '../hooks/useRenewalStats';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import { useFireAiQueue } from '../hooks/useAiQueue';
@@ -152,7 +152,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
             >
               {policy.customer_name}
             </Link>
-            <span className="text-xs text-gray-500 font-mono">{policy.policy_number}</span>
+            <span className="text-xs text-gray-500 font-mono">{policy.policy_no}</span>
             <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 capitalize">
               {policy.policy_type}
             </span>
@@ -169,7 +169,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
               )}
             </span>
             <span>
-              {formatCurrency(policy.current_premium)} → {formatCurrency(policy.renewal_premium)}
+              {formatCurrency(policy.current_premium)} → {formatCurrency(policy.premium)}
               {pctChange != null && (
                 <span className={`ml-1 text-xs font-semibold ${isIncrease ? 'text-red-600' : isDecrease ? 'text-green-600' : 'text-gray-500'}`}>
                   {isIncrease ? '+' : ''}{pctChange}%

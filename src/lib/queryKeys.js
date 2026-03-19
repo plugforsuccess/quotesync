@@ -77,9 +77,9 @@ export const queryKeys = {
 
   // ── Renewals ───────────────────────────────────────────────────────────────
   renewals: {
-    all: () => ['renewal_policies'],
-    list: (agencyId, filters) => ['renewal_policies', agencyId, filters],
-    detail: (policyId) => ['renewal_policies', 'detail', policyId],
+    all: () => ['renewal_cases'],
+    list: (agencyId, filters) => ['renewal_cases', agencyId, filters],
+    detail: (policyId) => ['renewal_cases', 'detail', policyId],
     consent: (agencyId) => ['customer_consent', agencyId],
     consentMap: (agencyId) => ['customer_consent', 'map', agencyId],
     batches: (agencyId) => ['renewal_upload_batches', agencyId],
