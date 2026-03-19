@@ -5,13 +5,14 @@
 import { useState } from 'react';
 import { Users, UserPlus, Trash2, AlertCircle, Mail } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useAgencyTeamWithEmployees, useRemoveTeamMember, useInviteAgencyUser } from '../hooks/useAgencies';
+import { useAgencyTeamWithEmployees, useRemoveTeamMember, useInviteAgencyUser, useUpdateMemberRole } from '../hooks/useAgencies';
 import PageSpinner from '../components/PageSpinner';
 
 export default function AgencyTeamPage() {
   const { currentAgencyId, user } = useAuth();
   const { data: team, isLoading } = useAgencyTeamWithEmployees(currentAgencyId);
   const removeMember = useRemoveTeamMember(currentAgencyId);
+  const updateRole = useUpdateMemberRole(currentAgencyId);
   const inviteUser = useInviteAgencyUser();
 
   const [showInvite, setShowInvite] = useState(false);
@@ -19,6 +20,7 @@ export default function AgencyTeamPage() {
   const [inviteRole, setInviteRole] = useState('producer');
   const [inviteError, setInviteError] = useState(null);
   const [inviteSuccess, setInviteSuccess] = useState(null);
+  const [editingRoleId, setEditingRoleId] = useState(null);
 
   if (isLoading) return <PageSpinner />;
 
@@ -65,6 +67,15 @@ export default function AgencyTeamPage() {
       setInviteRole('producer');
     } catch (err) {
       setInviteError(err.message || 'Failed to invite user');
+    }
+  };
+
+  const handleRoleChange = async (membershipId, newRole) => {
+    try {
+      await updateRole.mutateAsync({ membershipId, newRole });
+      setEditingRoleId(null);
+    } catch (err) {
+      console.error('Failed to update role:', err);
     }
   };
 
@@ -193,13 +204,46 @@ export default function AgencyTeamPage() {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          emp.roles?.includes('admin') || emp.agency_role === 'principal'
-                            ? 'bg-purple-900/20 text-purple-400'
-                            : 'bg-blue-900/20 text-blue-400'
-                        }`}>
-                          {emp.agency_role === 'principal' ? 'Principal' : emp.agency_role === 'manager' ? 'Manager' : emp.roles?.includes('admin') ? 'Admin' : emp.roles?.includes('sales') ? 'Sales' : emp.roles?.includes('service_inbound') && emp.roles?.includes('service_outbound') ? 'Service (Both)' : emp.roles?.includes('service_outbound') ? 'Service — Outbound' : emp.roles?.includes('service_inbound') ? 'Service — Inbound' : emp.roles?.includes('service') ? 'Service' : 'Staff'}
-                        </span>
+                        {editingRoleId === emp.membership_id && emp.membership_id ? (
+                          <select
+                            autoFocus
+                            defaultValue={emp.agency_role || 'producer'}
+                            onChange={(e) => handleRoleChange(emp.membership_id, e.target.value)}
+                            onBlur={() => setEditingRoleId(null)}
+                            disabled={updateRole.isPending}
+                            className="dark-select text-xs py-1 px-2"
+                          >
+                            <option value="producer">Producer</option>
+                            <option value="manager">Manager</option>
+                            <option value="principal">Principal</option>
+                          </select>
+                        ) : (
+                          <button
+                            onClick={() => emp.membership_id && !isSelf && !isOwner ? setEditingRoleId(emp.membership_id) : null}
+                            title={isSelf || isOwner ? undefined : 'Click to change role'}
+                            className={`px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                              emp.agency_role === 'principal'
+                                ? 'bg-purple-900/20 text-purple-400 hover:bg-purple-900/40'
+                                : emp.agency_role === 'manager'
+                                ? 'bg-blue-900/20 text-blue-400 hover:bg-blue-900/40'
+                                : 'bg-qs-elevated text-qs-dim hover:bg-qs-border'
+                            } ${(!emp.membership_id || isSelf || isOwner) ? 'cursor-default' : 'cursor-pointer'}`}
+                          >
+                            {emp.agency_role === 'principal'
+                              ? 'Principal'
+                              : emp.agency_role === 'manager'
+                              ? 'Manager'
+                              : emp.roles?.includes('sales')
+                              ? 'Sales'
+                              : emp.roles?.includes('service_inbound') && emp.roles?.includes('service_outbound')
+                              ? 'Service (Both)'
+                              : emp.roles?.includes('service_outbound')
+                              ? 'Service — Outbound'
+                              : emp.roles?.includes('service_inbound')
+                              ? 'Service — Inbound'
+                              : 'Producer'}
+                          </button>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {access ? (
