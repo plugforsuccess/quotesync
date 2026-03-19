@@ -35,7 +35,15 @@ function ScoreHistogram({ data }) {
           <YAxis tick={{ fontSize: 11, fill: 'var(--qs-dim)' }} allowDecimals={false} />
           <Tooltip
             formatter={(v) => [`${v} leads`, 'Count']}
-            contentStyle={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}
+            contentStyle={{
+              background: 'var(--qs-card)',
+              border: '1px solid var(--qs-border)',
+              borderRadius: 8,
+              padding: '8px 12px',
+            }}
+            labelStyle={{ color: 'var(--qs-bright)', fontWeight: 600, fontSize: 13 }}
+            itemStyle={{ color: 'var(--qs-dim)', fontSize: 12 }}
+            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={36}>
             {data.map((entry, i) => (
