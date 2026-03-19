@@ -26,7 +26,7 @@ export default function MyQueuePage() {
     queryFn: async () => {
       if (!employeeId) return [];
       const { data, error } = await supabase
-        .from('pending_cancel_events')
+        .from('pending_cases')
         .select('*')
         .eq('assigned_to_id', employeeId)
         .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)')
@@ -46,7 +46,7 @@ export default function MyQueuePage() {
     queryFn: async () => {
       if (!employeeId) return [];
       const { data, error } = await supabase
-        .from('renewal_events')
+        .from('renewal_cases')
         .select('*')
         .eq('assigned_to_id', employeeId)
         .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)')
@@ -60,7 +60,7 @@ export default function MyQueuePage() {
 
   async function updateCancelCase(id, updates) {
     const { error } = await supabase
-      .from('pending_cancel_events')
+      .from('pending_cases')
       .update(updates)
       .eq('id', id);
     if (!error) {
@@ -71,7 +71,7 @@ export default function MyQueuePage() {
 
   async function updateRenewalCase(id, updates) {
     const { error } = await supabase
-      .from('renewal_events')
+      .from('renewal_cases')
       .update(updates)
       .eq('id', id);
     if (!error) {

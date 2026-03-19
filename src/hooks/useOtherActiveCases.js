@@ -28,7 +28,7 @@ export function useOtherActiveCases({ agencyId, customerName, policyNo, excludeE
 
       const [{ data: cancelCases }, { data: renewalCases }] = await Promise.all([
         supabase
-          .from('pending_cancel_events')
+          .from('pending_cases')
           .select('id, customer_name, policy_no, product, cancel_effective_date, status, stage, premium_at_risk')
           .eq('agency_id', agencyId)
           .or(matchFilter)
@@ -36,7 +36,7 @@ export function useOtherActiveCases({ agencyId, customerName, policyNo, excludeE
           .limit(10),
 
         supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .select('id, customer_name, policy_no, product, renewal_date, status, premium')
           .eq('agency_id', agencyId)
           .or(matchFilter)

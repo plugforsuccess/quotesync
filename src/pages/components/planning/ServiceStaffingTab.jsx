@@ -78,12 +78,12 @@ export default function ServiceStaffingTab({ agencyId }) {
       // Pull both queues + terminated cancels in parallel
       const [{ data: renewals }, { data: cancels }, { data: terminatedCancels }] = await Promise.all([
         supabase
-          .from('renewal_events')
+          .from('renewal_cases')
           .select('policy_no, premium, renewal_date, multi_line, product')
           .eq('agency_id', agencyId)
           .not('status', 'in', '(confirmed,lost,auto_resolved)'),
         supabase
-          .from('pending_cancel_events')
+          .from('pending_cases')
           .select('policy_no, cancel_effective_date')
           .eq('agency_id', agencyId)
           .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)'),
@@ -91,7 +91,7 @@ export default function ServiceStaffingTab({ agencyId }) {
         // Only lost and cancelled are truly terminal — cancelled = past termination date, reinstatement prohibited.
         // saved/auto_resolved are positive outcomes — their renewals should remain visible in the queue.
         supabase
-          .from('pending_cancel_events')
+          .from('pending_cases')
           .select('policy_no')
           .eq('agency_id', agencyId)
           .in('status', ['lost', 'cancelled']),
