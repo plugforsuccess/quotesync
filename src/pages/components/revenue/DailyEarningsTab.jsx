@@ -70,9 +70,9 @@ export default function DailyEarningsTab({ agencyId }) {
   }, [entries]);
 
   const [earningsMode, setEarningsMode] = useState('yesterday');
-  const todayEarned = dailyCumulative.find(d => d.isToday)?.dailyEarned ?? 0;
-  const displayEarned = earningsMode === 'yesterday' ? yesterdayEarned : todayEarned;
-  const displayLabel = earningsMode === 'yesterday' ? 'Yesterday' : 'Today';
+  const todayEarned    = dailyCumulative.find(d => d.isToday)?.dailyEarned ?? 0;
+  const displayEarned  = earningsMode === 'yesterday' ? yesterdayEarned : todayEarned;
+  const displayLabel   = earningsMode === 'yesterday' ? 'yesterday' : 'today';
 
   const mtdGap = COMMISSION_GOAL - mtdCommission;
 
@@ -109,7 +109,7 @@ export default function DailyEarningsTab({ agencyId }) {
           <div style={{ textAlign: 'right' }}>
             {displayEarned > 0 && (
               <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-success)' }}>
-                {fmtFull$(displayEarned)} {displayLabel.toLowerCase()}
+                {fmtFull$(displayEarned)} {displayLabel}
               </div>
             )}
             <div style={{
@@ -239,9 +239,13 @@ export default function DailyEarningsTab({ agencyId }) {
           title="Click to toggle Today / Yesterday"
         >
           <div style={{
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6,
+            display: 'flex', justifyContent: 'space-between',
+            alignItems: 'center', marginBottom: 6,
           }}>
-            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{
+              fontSize: 11, color: 'var(--qs-subtle)',
+              textTransform: 'uppercase', letterSpacing: '0.05em',
+            }}>
               {earningsMode === 'yesterday' ? 'Yesterday' : 'Today'}
             </div>
             <div style={{ fontSize: 10, color: 'var(--qs-info)', fontWeight: 600 }}>
