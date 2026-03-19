@@ -62,7 +62,7 @@ const AGENCY_ROLE_HIERARCHY = {
 // Keyed by access_token so cache is automatically invalidated on token refresh.
 // sessionStorage is cleared on tab close — no stale data across sessions.
 
-const RBAC_CACHE_KEY = 'qs_rbac_cache';
+const RBAC_CACHE_KEY = 'qs_rbac_cache_v2';
 
 function saveRBACCache(accessToken, data) {
   try {
