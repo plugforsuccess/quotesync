@@ -150,7 +150,7 @@ const FunnelDashboardPage = () => {
                     </div>
                   </div>
                   <Link
-                    to="/admin/staff-performance?tab=capacity"
+                    to="/agency/staff-performance?tab=capacity"
                     className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
                   >
                     View Capacity &rarr;

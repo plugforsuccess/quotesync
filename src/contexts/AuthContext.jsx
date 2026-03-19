@@ -173,9 +173,9 @@ export const AuthProvider = ({ children }) => {
 
         // Restore agency selection
         const storedAgencyId = localStorage.getItem('currentAgencyId');
-        const activeMemberships = (cached.memberships || []).filter(m =>
-          m.status === 'active' && m.agencies?.status === 'approved'
-        );
+        const allActive = (cached.memberships || []).filter(m => m.status === 'active');
+        const approvedMemberships = allActive.filter(m => m.agencies?.status === 'approved');
+        const activeMemberships = approvedMemberships.length > 0 ? approvedMemberships : allActive;
         if (activeMemberships.length > 0) {
           const preferred = activeMemberships.find(m => m.agency_id === storedAgencyId);
           const current = preferred || activeMemberships[0];
@@ -268,9 +268,11 @@ export const AuthProvider = ({ children }) => {
       setImpersonationSession(activeImpersonation);
 
       const storedAgencyId = localStorage.getItem('currentAgencyId');
-      const activeMemberships = (memberships || []).filter(m =>
-        m.status === 'active' && m.agencies?.status === 'approved'
-      );
+      const allActive = (memberships || []).filter(m => m.status === 'active');
+      // Prefer approved agencies, but fall back to any active membership so
+      // that RBAC (hasAgencyRole) works even if the agency is still pending.
+      const approvedMemberships = allActive.filter(m => m.agencies?.status === 'approved');
+      const activeMemberships = approvedMemberships.length > 0 ? approvedMemberships : allActive;
 
       if (activeMemberships.length > 0) {
         const preferred = activeMemberships.find(m => m.agency_id === storedAgencyId);

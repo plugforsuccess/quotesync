@@ -124,8 +124,8 @@ function Layout({ forcePlane = null }) {
   const bottomTabRoutes = [
     '/agency/dashboard',
     '/agency/leads',
-    '/admin/staff-performance',
-    '/admin/revenue-projections',
+    '/agency/staff-performance',
+    '/agency/planning',
   ];
 
   // Drawer nav items: secondary items that are NOT in the bottom tab bar, grouped

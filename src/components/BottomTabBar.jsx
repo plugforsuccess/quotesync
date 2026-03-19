@@ -7,8 +7,8 @@ import { LayoutDashboard, ClipboardList, BarChart2, DollarSign, Grid } from 'luc
 const tabs = [
   { to: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/agency/leads', label: 'Leads', icon: ClipboardList },
-  { to: '/admin/staff-performance', label: 'Performance', icon: BarChart2 },
-  { to: '/admin/revenue-projections', label: 'Revenue', icon: DollarSign },
+  { to: '/agency/staff-performance', label: 'Performance', icon: BarChart2 },
+  { to: '/agency/planning', label: 'Revenue', icon: DollarSign },
 ];
 
 function BottomTabBar({ onMorePress, moreActive }) {
