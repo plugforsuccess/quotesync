@@ -528,7 +528,7 @@ const AdminTimeAttendancePage = () => {
 
   // ── Permission Check ─────────────────────────────────────────────────────
 
-  if (!platform.isAdmin) {
+  if (!platform.isAdmin && !agency.isPrincipal) {
     return (
       <div className="dark-page flex items-center justify-center">
         <div className="text-center">

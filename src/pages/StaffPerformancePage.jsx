@@ -97,7 +97,7 @@ const TABS = [
 
 const StaffPerformancePage = () => {
   const { user, currentAgencyId } = useAuth();
-  const { platform } = usePermissions();
+  const { platform, agency } = usePermissions();
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('all');
@@ -369,7 +369,7 @@ const StaffPerformancePage = () => {
 
   // ── Permission Check ─────────────────────────────────────────────────────
 
-  if (!platform.isAdmin) {
+  if (!platform.isAdmin && !agency.isPrincipal) {
     return (
       <div className="dark-page flex items-center justify-center">
         <div className="text-center">
