@@ -277,7 +277,7 @@ function App() {
             <Route
               path="agency/dashboard"
               element={
-                <ProtectedRoute requiredRole="editor">
+                <ProtectedRoute requiredAgencyRole="producer">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <FunnelDashboardPage />
@@ -291,7 +291,7 @@ function App() {
             <Route
               path="agency/leads"
               element={
-                <ProtectedRoute requiredRole="editor">
+                <ProtectedRoute requiredAgencyRole="producer">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencyLeadsPage />
@@ -303,7 +303,7 @@ function App() {
             <Route
               path="agency/leads/:id"
               element={
-                <ProtectedRoute requiredRole="editor">
+                <ProtectedRoute requiredAgencyRole="producer">
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencyLeadDetailPage />
