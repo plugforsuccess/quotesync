@@ -8,8 +8,8 @@ import { totalCostMonthly } from '../../../utils/compModelCalculations';
 
 function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-      <label className="text-sm text-gray-600">{label}</label>
+    <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
+      <label className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</label>
       <div className="flex items-center gap-1">
         <input
           type="number"
@@ -18,9 +18,9 @@ function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
           min={min}
           max={max}
           step={step}
-          className="w-20 text-right text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          className="dark-input w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
-        {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
+        {suffix && <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{suffix}</span>}
       </div>
     </div>
   );
@@ -28,9 +28,9 @@ function InputRow({ label, value, onChange, suffix, min, max, step = 1 }) {
 
 function OutputRow({ label, value, color }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-      <span className="text-sm text-gray-600">{label}</span>
-      <span className={`text-sm font-semibold ${color || 'text-gray-900'}`}>{value}</span>
+    <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
+      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</span>
+      <span className="text-sm font-semibold" style={{ color: color || 'var(--qs-bright)' }}>{value}</span>
     </div>
   );
 }
@@ -129,10 +129,10 @@ export default function StaffingCapacity({
 
   // Peak alert colors
   const peakBorderColor = outputs.minutesBetween < 10
-    ? 'border-red-500 bg-red-50'
+    ? 'border-red-500'
     : outputs.minutesBetween <= 20
-      ? 'border-amber-500 bg-amber-50'
-      : 'border-green-500 bg-green-50';
+      ? 'border-amber-500'
+      : 'border-green-500';
 
   // Scenarios table
   const scenarios = useMemo(() => {
@@ -184,16 +184,16 @@ export default function StaffingCapacity({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Users className="w-5 h-5 text-primary-600" />
-        <h2 className="text-lg font-semibold text-gray-900">Staffing & Quoting Capacity</h2>
+        <Users className="w-5 h-5" style={{ color: 'var(--qs-info)' }} />
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>Staffing & Quoting Capacity</h2>
       </div>
 
       {/* Row 1: Staffing Calculator */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Staffing Calculator</h3>
+      <div className="dark-card">
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Staffing Calculator</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Inputs */}
-          <div className="bg-primary-50 rounded-lg p-4">
+          <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
             <InputRow label="Active Producers" value={activeProducers} onChange={(v) => onStaffingChange('activeProducers', v)} min={1} max={50} />
             <InputRow label="Avg Quote Time" value={avgQuoteTime} onChange={(v) => onStaffingChange('avgQuoteTime', v)} suffix="min" min={5} max={120} />
             <InputRow label="Working Hours/Day" value={workingHours} onChange={(v) => onStaffingChange('workingHours', v)} suffix="hrs" min={1} max={16} />
@@ -202,12 +202,12 @@ export default function StaffingCapacity({
             <InputRow label="Working Days/Month" value={workingDays} onChange={(v) => onStaffingChange('workingDays', v)} min={1} max={31} />
             {/* Producer Cost Template */}
             {producerConfigs?.length > 0 && (
-              <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                <label className="text-sm text-gray-600">Cost Based On</label>
+              <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
+                <label className="text-sm" style={{ color: 'var(--qs-dim)' }}>Cost Based On</label>
                 <select
                   value={selectedProducerConfigId || 'none'}
                   onChange={(e) => onProducerConfigChange(e.target.value)}
-                  className="text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded px-2 py-1 focus:ring-2 focus:ring-primary-500"
+                  className="dark-select text-sm font-semibold"
                 >
                   <option value="none">Gross only (no cost)</option>
                   {producerConfigs.map(cfg => {
@@ -228,7 +228,7 @@ export default function StaffingCapacity({
           </div>
 
           {/* Outputs */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
             <OutputRow label="Quotes/Producer/Day" value={outputs.quotesPerProducerDay.toFixed(1)} />
             <OutputRow label="Quotes/Producer/Month" value={outputs.quotesPerProducerMonth} />
             <OutputRow label="Team Capacity/Month" value={outputs.totalCapacity} />
@@ -243,8 +243,8 @@ export default function StaffingCapacity({
       </div>
 
       {/* Row 2: Daily Capacity Timeline */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+      <div className="dark-card">
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">
           <Clock className="w-4 h-4 inline mr-1" />
           Producer Day Breakdown (per producer)
         </h3>
@@ -267,9 +267,9 @@ export default function StaffingCapacity({
       </div>
 
       {/* Row 3: Staffing Scenarios Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-1">Staffing Scenarios</h3>
-        <p className="text-xs text-gray-400 mb-3">
+      <div className="dark-card">
+        <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-1">Staffing Scenarios</h3>
+        <p className="text-xs mb-3" style={{ color: 'var(--qs-subtle)' }}>
           {ytdAvgPremium
             ? `Using YTD actuals: $${Math.round(ytdAvgPremium).toLocaleString()} avg premium · ${ytdCommissionRate.toFixed(1)}% blended rate`
             : 'Using planner estimates — add revenue entries for actual rates'}
@@ -277,36 +277,40 @@ export default function StaffingCapacity({
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-2 pr-4 text-xs font-medium text-gray-500 uppercase">Producers</th>
-                <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Quotes/Mo</th>
-                <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Lead Capacity</th>
-                <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Gross Revenue</th>
+              <tr style={{ borderBottom: '1px solid var(--qs-border)' }}>
+                <th className="text-left py-2 pr-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Producers</th>
+                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Quotes/Mo</th>
+                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Lead Capacity</th>
+                <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Gross Revenue</th>
                 {selectedProducerConfig && (
-                  <th className="text-right py-2 px-4 text-xs font-medium text-gray-500 uppercase">Producer Cost</th>
+                  <th className="text-right py-2 px-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Producer Cost</th>
                 )}
                 {selectedProducerConfig && (
                   <th className="text-right py-2 px-4 text-xs font-medium text-green-700 uppercase">Net Profit</th>
                 )}
-                <th className="text-left py-2 pl-4 text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="text-left py-2 pl-4 text-xs font-medium uppercase" style={{ color: 'var(--qs-subtle)' }}>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {scenarios.map(s => (
                 <tr
                   key={s.producers}
                   className={s.producers === activeProducers
-                    ? 'border-l-4 border-l-primary-500 bg-primary-50'
+                    ? 'border-l-4 border-l-primary-500'
                     : ''
                   }
+                  style={s.producers === activeProducers
+                    ? { background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }
+                    : { borderBottom: '1px solid var(--qs-border)' }
+                  }
                 >
-                  <td className="py-2 pr-4 font-medium text-gray-900">
+                  <td className="py-2 pr-4 font-medium" style={{ color: 'var(--qs-bright)' }}>
                     {s.producers}
                     {s.producers === activeProducers && <span className="ml-2 text-xs text-primary-600">(current)</span>}
                   </td>
-                  <td className="py-2 px-4 text-right text-gray-700">{s.qpm.toLocaleString()}</td>
-                  <td className="py-2 px-4 text-right text-gray-700">{s.canHandle.toLocaleString()}</td>
-                  <td className="py-2 px-4 text-right text-gray-700">
+                  <td className="py-2 px-4 text-right" style={{ color: 'var(--qs-text)' }}>{s.qpm.toLocaleString()}</td>
+                  <td className="py-2 px-4 text-right" style={{ color: 'var(--qs-text)' }}>{s.canHandle.toLocaleString()}</td>
+                  <td className="py-2 px-4 text-right" style={{ color: 'var(--qs-text)' }}>
                     ${Math.round(s.grossRevenue).toLocaleString()}
                   </td>
                   {selectedProducerConfig && (
@@ -328,12 +332,12 @@ export default function StaffingCapacity({
       </div>
 
       {/* Row 4: Peak Hour Alert */}
-      <div className={`rounded-lg border-l-4 p-4 ${peakBorderColor}`}>
+      <div className={`rounded-lg border-l-4 p-4 ${peakBorderColor}`} style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
         <div className="flex items-start gap-3">
           <Zap className={`w-5 h-5 mt-0.5 flex-shrink-0 ${outputs.minutesBetween < 10 ? 'text-red-500' : outputs.minutesBetween <= 20 ? 'text-amber-500' : 'text-green-500'}`} />
           <div>
-            <p className="text-sm font-semibold text-gray-900">Peak Hours</p>
-            <p className="text-sm text-gray-700 mt-1">
+            <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Peak Hours</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--qs-text)' }}>
               Based on typical ad traffic patterns, ~40% of daily leads arrive between 5-9 PM.
               At {outputs.leadsPerDay} leads/day, that&apos;s ~{outputs.peakLeads} leads in a 4-hour window.
               With {activeProducers} producer{activeProducers !== 1 ? 's' : ''}, each would need to handle {outputs.peakPerProducer} initial

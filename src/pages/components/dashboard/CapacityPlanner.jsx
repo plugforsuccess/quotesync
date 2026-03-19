@@ -9,20 +9,20 @@ import { getCommissionRate, getFirstYearMultiplier } from '../../../lib/commissi
 
 function StatRow({ label, value, highlight }) {
   return (
-    <div className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
-      <span className="text-sm text-gray-600">{label}</span>
-      <span className={`text-sm font-semibold ${highlight || 'text-gray-900'}`}>{value}</span>
+    <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
+      <span className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</span>
+      <span className="text-sm font-semibold" style={{ color: highlight || 'var(--qs-bright)' }}>{value}</span>
     </div>
   );
 }
 
 function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, description }) {
   return (
-    <div className="py-2 border-b border-gray-100 last:border-b-0">
+    <div className="py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
       <div className="flex justify-between items-center">
-        <label className="text-sm text-gray-600">{label}</label>
+        <label className="text-sm" style={{ color: 'var(--qs-dim)' }}>{label}</label>
         <div className="relative">
-          {prefix && <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">{prefix}</span>}
+          {prefix && <span className="absolute left-2 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--qs-subtle)' }}>{prefix}</span>}
           <input
             type="number"
             value={value}
@@ -30,12 +30,12 @@ function InputRow({ label, value, onChange, prefix, suffix, min, max, step = 1, 
             min={min}
             max={max}
             step={step}
-            className={`w-24 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${prefix ? 'pl-6 pr-2' : suffix ? 'pl-2 pr-6' : 'px-2'}`}
+            className={`dark-input w-24 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${prefix ? 'pl-6 pr-2' : suffix ? 'pl-2 pr-6' : 'px-2'}`}
           />
-          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500">{suffix}</span>}
+          {suffix && <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm" style={{ color: 'var(--qs-subtle)' }}>{suffix}</span>}
         </div>
       </div>
-      {description && <p className="text-xs text-gray-400 mt-0.5">{description}</p>}
+      {description && <p className="text-xs mt-0.5" style={{ color: 'var(--qs-subtle)' }}>{description}</p>}
     </div>
   );
 }
@@ -54,7 +54,8 @@ function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-1 text-sm font-medium text-primary-700 hover:text-primary-900"
+        className="flex items-center gap-1 text-sm font-medium"
+        style={{ color: 'var(--qs-info)' }}
       >
         New Business Commission Schedule
         {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -63,14 +64,14 @@ function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
         <div className="mt-2 overflow-x-auto">
           <table className="min-w-full text-xs">
             <thead>
-              <tr className="border-b border-primary-200">
-                <th className="text-left py-1 pr-3 font-medium text-gray-500" />
+              <tr style={{ borderBottom: '1px solid var(--qs-border)' }}>
+                <th className="text-left py-1 pr-3 font-medium" style={{ color: 'var(--qs-subtle)' }} />
                 {tiers.map(k => (
-                  <th key={k} className="text-right py-1 px-2 font-medium text-gray-500">
+                  <th key={k} className="text-right py-1 px-2 font-medium" style={{ color: 'var(--qs-subtle)' }}>
                     {TIER_LABELS[k]}
                   </th>
                 ))}
-                <th className="text-left py-1 pl-3 font-medium text-gray-500" />
+                <th className="text-left py-1 pl-3 font-medium" style={{ color: 'var(--qs-subtle)' }} />
               </tr>
             </thead>
             <tbody>
@@ -86,20 +87,20 @@ function CommissionReferenceTable({ matrix, baseCommission, renewalInfo }) {
                   }
                 }
                 return (
-                  <tr key={pl} className="border-b border-gray-100">
-                    <td className="py-1 pr-3 text-gray-700 whitespace-nowrap">{pl}</td>
+                  <tr key={pl} style={{ borderBottom: '1px solid var(--qs-border)' }}>
+                    <td className="py-1 pr-3 whitespace-nowrap" style={{ color: 'var(--qs-text)' }}>{pl}</td>
                     {tiers.map(tier => (
-                      <td key={tier} className="py-1 px-2 text-right text-gray-800 font-medium">
+                      <td key={tier} className="py-1 px-2 text-right font-medium" style={{ color: 'var(--qs-text)' }}>
                         {baseCommission + matrix[pl][tier]}%
                       </td>
                     ))}
-                    <td className="py-1 pl-3 text-gray-400 whitespace-nowrap text-xs">{renewalNote}</td>
+                    <td className="py-1 pl-3 whitespace-nowrap text-xs" style={{ color: 'var(--qs-subtle)' }}>{renewalNote}</td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs mt-1" style={{ color: 'var(--qs-dim)' }}>
             Base: {baseCommission}% new business
             {renewalInfo && (
               <> | Auto 1st renewal: {renewalInfo['Standard Auto']?.renewalBase ?? baseCommission}% | Home/OPL 1st renewal: {renewalInfo['Homeowners / Condo']?.renewalBase ?? baseCommission}%</>
@@ -123,10 +124,10 @@ function PolicyMixTable({
 
   return (
     <div className="mt-3">
-      <p className="text-sm font-medium text-gray-700 mb-2">Your Policy Mix</p>
+      <p className="text-sm font-medium mb-2" style={{ color: 'var(--qs-text)' }}>Your Policy Mix</p>
 
       {/* Desktop header */}
-      <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_2.5rem_1.5rem] gap-1 text-xs font-medium text-gray-500 mb-1 px-1">
+      <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_2.5rem_1.5rem] gap-1 text-xs font-medium mb-1 px-1" style={{ color: 'var(--qs-subtle)' }}>
         <span>Product Line</span>
         <span>Tier</span>
         <span className="text-right">Premium</span>
@@ -142,12 +143,12 @@ function PolicyMixTable({
         return (
           <div key={idx}>
             {/* Desktop row */}
-            <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_2.5rem_1.5rem] gap-1 items-center py-1 border-b border-gray-100">
+            <div className="hidden md:grid md:grid-cols-[minmax(120px,1fr)_minmax(100px,1fr)_5rem_3.5rem_4rem_2.5rem_1.5rem] gap-1 items-center py-1" style={{ borderBottom: '1px solid var(--qs-border)' }}>
               {/* Product line select */}
               <select
                 value={row.productLine}
                 onChange={(e) => onMixChange(idx, 'productLine', e.target.value)}
-                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="dark-select text-sm truncate"
               >
                 {productLines.map(pl => (
                   <option key={pl} value={pl}>{pl}</option>
@@ -158,7 +159,7 @@ function PolicyMixTable({
               <select
                 value={row.tier}
                 onChange={(e) => onMixChange(idx, 'tier', e.target.value)}
-                className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 truncate focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className="dark-select text-sm truncate"
               >
                 {tierOptions.map(t => (
                   <option key={t.key} value={t.key}>{t.label}</option>
@@ -167,19 +168,19 @@ function PolicyMixTable({
 
               {/* Premium input */}
               <div className="relative">
-                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
+                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--qs-subtle)' }}>$</span>
                 <input
                   type="number"
                   value={row.avgPremium}
                   onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                   min={0}
                   step={100}
-                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="dark-input w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-5 pr-1"
                 />
               </div>
 
               {/* Commission % (read-only, auto-populated) */}
-              <span className="text-sm text-right text-gray-600 bg-gray-50 font-medium px-1 py-1 rounded">{commRate}%</span>
+              <span className="text-sm text-right font-medium px-1 py-1 rounded" style={{ color: 'var(--qs-dim)', background: 'var(--qs-elevated)' }}>{commRate}%</span>
 
               {/* Mix % input */}
               <div className="relative">
@@ -189,9 +190,9 @@ function PolicyMixTable({
                   onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                   min={0}
                   max={100}
-                  className="w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="dark-input w-full text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-1 pr-5"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--qs-subtle)' }}>%</span>
               </div>
 
               {/* 1st Year multiplier badge */}
@@ -206,7 +207,8 @@ function PolicyMixTable({
                 type="button"
                 onClick={() => onMixRemove(idx)}
                 disabled={policyMix.length <= 1}
-                className={`p-0.5 ${policyMix.length <= 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}
+                className={`p-0.5 ${policyMix.length <= 1 ? 'cursor-not-allowed' : 'hover:text-red-500'}`}
+                style={{ color: policyMix.length <= 1 ? 'var(--qs-border)' : 'var(--qs-subtle)' }}
                 title="Remove row"
               >
                 <X className="w-4 h-4" />
@@ -214,12 +216,12 @@ function PolicyMixTable({
             </div>
 
             {/* Mobile stacked row */}
-            <div className="md:hidden py-2 border-b border-gray-100">
+            <div className="md:hidden py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
               <div className="flex items-center justify-between mb-1.5">
                 <select
                   value={row.productLine}
                   onChange={(e) => onMixChange(idx, 'productLine', e.target.value)}
-                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="dark-select text-sm flex-1 mr-1"
                 >
                   {productLines.map(pl => (
                     <option key={pl} value={pl}>{pl}</option>
@@ -228,7 +230,7 @@ function PolicyMixTable({
                 <select
                   value={row.tier}
                   onChange={(e) => onMixChange(idx, 'tier', e.target.value)}
-                  className="text-sm text-gray-900 bg-white border border-gray-200 rounded px-1 py-1 flex-1 mr-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="dark-select text-sm flex-1 mr-1"
                 >
                   {tierOptions.map(t => (
                     <option key={t.key} value={t.key}>{t.label}</option>
@@ -238,7 +240,8 @@ function PolicyMixTable({
                   type="button"
                   onClick={() => onMixRemove(idx)}
                   disabled={policyMix.length <= 1}
-                  className={`p-0.5 flex-shrink-0 ${policyMix.length <= 1 ? 'text-gray-200 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}
+                  className={`p-0.5 flex-shrink-0 ${policyMix.length <= 1 ? 'cursor-not-allowed' : 'hover:text-red-500'}`}
+                  style={{ color: policyMix.length <= 1 ? 'var(--qs-border)' : 'var(--qs-subtle)' }}
                   title="Remove row"
                 >
                   <X className="w-4 h-4" />
@@ -246,17 +249,17 @@ function PolicyMixTable({
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <div className="relative">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">$</span>
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--qs-subtle)' }}>$</span>
                   <input
                     type="number"
                     value={row.avgPremium}
                     onChange={(e) => onMixChange(idx, 'avgPremium', parseFloat(e.target.value) || 0)}
                     min={0}
                     step={100}
-                    className="w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-5 pr-1 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="dark-input w-20 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-5 pr-1"
                   />
                 </div>
-                <span className="text-gray-600 bg-gray-50 font-medium px-2 py-1 rounded text-sm">{commRate}%</span>
+                <span className="font-medium px-2 py-1 rounded text-sm" style={{ color: 'var(--qs-dim)', background: 'var(--qs-elevated)' }}>{commRate}%</span>
                 <div className="relative">
                   <input
                     type="number"
@@ -264,9 +267,9 @@ function PolicyMixTable({
                     onChange={(e) => onMixChange(idx, 'mixPct', parseFloat(e.target.value) || 0)}
                     min={0}
                     max={100}
-                    className="w-14 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none text-sm font-semibold text-gray-900 bg-white border border-gray-200 rounded pl-1 pr-5 py-1 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="dark-input w-14 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none pl-1 pr-5"
                   />
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-500">%</span>
+                  <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs" style={{ color: 'var(--qs-subtle)' }}>%</span>
                 </div>
                 <span className={`text-xs font-medium px-1.5 py-0.5 rounded flex-shrink-0 ${
                   multiplier === 2 ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
@@ -284,13 +287,14 @@ function PolicyMixTable({
         <button
           type="button"
           onClick={onMixAdd}
-          className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-800 font-medium"
+          className="flex items-center gap-1 text-sm font-medium"
+          style={{ color: 'var(--qs-info)' }}
         >
           <Plus className="w-4 h-4" /> Add Row
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">
+          <span className="text-sm" style={{ color: 'var(--qs-dim)' }}>
             Total: <span className={`font-semibold ${mixValid ? 'text-green-600' : 'text-red-600'}`}>
               {Math.round(totalMix)}%
             </span>
@@ -407,17 +411,17 @@ export default function CapacityPlanner({
   const [showBreakeven, setShowBreakeven] = useState(false);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div className="dark-card">
       <div className="flex items-center gap-2 mb-4">
-        <Calculator className="w-5 h-5 text-primary-600" />
-        <h2 className="text-lg font-semibold text-gray-900">Capacity Planning Model</h2>
+        <Calculator className="w-5 h-5" style={{ color: 'var(--qs-info)' }} />
+        <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>Capacity Planning Model</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Left: Current Performance */}
         <div>
-          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Current Performance</h3>
-          <div className="bg-gray-50 rounded-lg p-4">
+          <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Current Performance</h3>
+          <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
             <StatRow label="Submissions (30d)" value={submissions.toLocaleString()} />
             <StatRow label="Conversion Rate" value={`${conversionRate}%`} />
             <StatRow label="Avg Lead Score" value={avgScore} />
@@ -433,8 +437,8 @@ export default function CapacityPlanner({
 
         {/* Right: Scenario Planner */}
         <div>
-          <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">Scenario Planner</h3>
-          <div className="bg-primary-50 rounded-lg p-4 mb-4">
+          <h3 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Scenario Planner</h3>
+          <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }} className="mb-4">
             <InputRow
               label="Target Submissions/mo"
               value={targetSubmissions}
@@ -486,18 +490,18 @@ export default function CapacityPlanner({
             />
 
             {/* Blended summary */}
-            <div className="flex items-center justify-between mt-3 pt-2 border-t border-primary-200 text-sm text-gray-700">
-              <span>Blended Premium: <span className="font-semibold text-gray-900">${outputs.blendedPremium.toLocaleString()}</span></span>
-              <span title="Premium-weighted average across your product mix">Blended Commission: <span className="font-semibold text-gray-900">{outputs.blendedCommission}%</span></span>
+            <div className="flex items-center justify-between mt-3 pt-2 text-sm" style={{ borderTop: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
+              <span>Blended Premium: <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>${outputs.blendedPremium.toLocaleString()}</span></span>
+              <span title="Premium-weighted average across your product mix">Blended Commission: <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{outputs.blendedCommission}%</span></span>
             </div>
           </div>
 
           {/* Projections */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">Projections</h4>
+          <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: 16 }}>
+            <h4 style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-3">Projections</h4>
 
             {/* Monthly Snapshot */}
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Monthly Snapshot</p>
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-2">Monthly Snapshot</p>
             <StatRow label="Policies Closed/mo" value={outputs.estPoliciesClosed.toLocaleString()} />
             <StatRow
               label="New Business Commission"
@@ -507,8 +511,8 @@ export default function CapacityPlanner({
               label="Ad Spend"
               value={`$${outputs.estMonthlyAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             />
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700">Net</span>
+            <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
+              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}>Net</span>
               <span className={`text-sm font-bold ${monthlyNetColor}`}>
                 {outputs.monthlyNet < 0 ? '(' : ''}${Math.abs(outputs.monthlyNet).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.monthlyNet < 0 ? ')' : ''}
                 {outputs.monthlyNet >= 0
@@ -518,25 +522,25 @@ export default function CapacityPlanner({
               </span>
             </div>
 
-            <div className="border-t border-gray-200 my-3" />
+            <div className="my-3" style={{ borderTop: '1px solid var(--qs-border)' }} />
 
             {/* First-Year Projection */}
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+            <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' }} className="mb-2">
               First-Year Projection
-              <span className="text-xs font-normal text-gray-400 normal-case ml-1">(12 months of new business)</span>
+              <span className="text-xs font-normal normal-case ml-1" style={{ color: 'var(--qs-subtle)' }}>(12 months of new business)</span>
             </p>
             <StatRow label="Total Policies Written" value={outputs.firstYearPolicies.toLocaleString()} />
             <StatRow
               label="Gross Commission"
               value={`$${outputs.firstYearGrossCommission.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
-              highlight="text-gray-900"
+              highlight="var(--qs-bright)"
             />
             <StatRow
               label="Total Ad Spend"
               value={`$${outputs.firstYearAdSpend.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
             />
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-sm font-medium text-gray-700">Net</span>
+            <div className="flex justify-between items-center py-2" style={{ borderBottom: '1px solid var(--qs-border)' }}>
+              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}>Net</span>
               <span className={`text-sm font-bold ${firstYearNetColor}`}>
                 {outputs.firstYearNet < 0 ? '(' : ''}${Math.abs(outputs.firstYearNet).toLocaleString(undefined, { maximumFractionDigits: 0 })}{outputs.firstYearNet < 0 ? ')' : ''}
                 {outputs.firstYearNet >= 0
@@ -546,14 +550,14 @@ export default function CapacityPlanner({
               </span>
             </div>
             <div className="flex justify-between items-center py-2">
-              <span className="text-sm font-medium text-gray-700">ROI</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--qs-text)' }}>ROI</span>
               <span className={`text-sm font-bold ${firstYearRoiColor}`}>
                 {outputs.firstYearROI.toFixed(1)}%
               </span>
             </div>
 
             {/* Leads per day context */}
-            <div className="border-t border-gray-200 my-2" />
+            <div className="my-2" style={{ borderTop: '1px solid var(--qs-border)' }} />
             <StatRow label="Leads Per Day" value={outputs.leadsPerDay.toFixed(1)} highlight="text-primary-600" />
 
             {!mixValid && (
@@ -567,13 +571,14 @@ export default function CapacityPlanner({
               <button
                 type="button"
                 onClick={() => setShowBreakeven(!showBreakeven)}
-                className="flex items-center gap-1 text-xs font-medium text-primary-700 hover:text-primary-900"
+                className="flex items-center gap-1 text-xs font-medium"
+                style={{ color: 'var(--qs-info)' }}
               >
                 Breakeven Analysis
                 {showBreakeven ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
               {showBreakeven && (
-                <div className="mt-2 bg-white rounded p-3 border border-gray-200">
+                <div className="mt-2 rounded p-3" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
                   <StatRow
                     label="Cost Per Policy"
                     value={`$${outputs.costPerPolicy.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
