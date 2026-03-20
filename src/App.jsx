@@ -91,6 +91,7 @@ const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
 const BookHealthPage = lazyWithRetry(() => import('./pages/BookHealthPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
 const RenewalsPage = lazyWithRetry(() => import('./pages/RenewalsPage'));
+const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
 const RenewalUploadPage = lazyWithRetry(() => import('./pages/RenewalUploadPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
@@ -370,13 +371,15 @@ function App() {
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
-            <Route path="agency/book-health" element={
+            <Route path="agency/retention" element={
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
-                  <Suspense fallback={<PageLoader />}><BookHealthPage /></Suspense>
+                  <Suspense fallback={<PageLoader />}><RetentionPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
+            {/* Redirects from old routes */}
+            <Route path="agency/book-health" element={<Navigate to="/agency/retention" replace />} />
             <Route path="agency/renewals" element={
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>

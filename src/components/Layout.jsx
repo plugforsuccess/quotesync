@@ -590,6 +590,7 @@ function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
 const drawerIconMap = {
   '/admin/time-attendance': Clock,
   '/admin/book-health': Shield,
+  '/agency/retention': Shield,
   '/admin/agencies': Building2,
   '/admin/agency/employees': Users,
   '/news': Newspaper,
@@ -622,7 +623,7 @@ function buildDrawerGroups(primaryNav, secondaryNav, bottomTabRoutes, agencyRole
   const contentItems = [];
   const adminItems = [];
 
-  const agencyRoutes = ['/admin/time-attendance', '/admin/book-health', '/admin/agencies', '/admin/agency/employees'];
+  const agencyRoutes = ['/admin/time-attendance', '/admin/book-health', '/agency/retention', '/admin/agencies', '/admin/agency/employees'];
   const contentRoutes = ['/news', '/admin/audit'];
 
   for (const item of filtered) {
