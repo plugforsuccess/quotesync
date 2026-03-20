@@ -1,6 +1,6 @@
 // Supabase Edge Function: lead-notify-sms
 // POST /functions/v1/lead-notify-sms
-// Sends instant SMS to lead + initiates speed-to-call bridge to agent
+// Sends warm-up SMS to lead (speed-to-call is handled by trigger-bland-outbound)
 // Called internally by create-lead after successful lead insertion
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -135,16 +135,8 @@ Deno.serve(async (req) => {
       })
     }
 
-    // ====== STEP 2: Enqueue speed-to-call (fires 30s later via pg_cron) ======
-    await supabase.from('call_queue').insert({
-      lead_id,
-      phone: formattedPhone,
-      first_name: name,
-      zip: zip || null,
-      owns_home: owns_home ?? null,
-      vehicle_count: vehicle_count ?? null,
-      fire_after: new Date(Date.now() + 30_000).toISOString(),
-    })
+    // Speed-to-call is now handled by trigger-bland-outbound (Bland AI),
+    // fired separately from create-lead. This function is SMS-only.
 
     return new Response(JSON.stringify({
       success: true,
