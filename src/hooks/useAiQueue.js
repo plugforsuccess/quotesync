@@ -48,3 +48,46 @@ export function useFireAiQueue() {
     error: mutation.error,
   };
 }
+
+// ── Cancel queue ─────────────────────────────────────────────────────────────
+
+async function fireCancelQueue(overrideSuppression = false) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('Not authenticated');
+
+  const response = await supabase.functions.invoke('fire-ai-queue', {
+    body: {
+      override_suppression: overrideSuppression,
+      call_type: 'cancel',
+    },
+  });
+
+  if (response.error) {
+    throw new Error(response.error.message || 'Failed to fire cancel queue');
+  }
+
+  return response.data;
+}
+
+export function useFireCancelQueue() {
+  const queryClient = useQueryClient();
+  const [lastResult, setLastResult] = useState(null);
+
+  const mutation = useMutation({
+    mutationFn: ({ overrideSuppression } = {}) =>
+      fireCancelQueue(overrideSuppression),
+    onSuccess: (data) => {
+      setLastResult(data);
+      queryClient.invalidateQueries({ queryKey: queryKeys.renewals.all() });
+    },
+  });
+
+  return {
+    fireQueue: mutation.mutate,
+    fireQueueAsync: mutation.mutateAsync,
+    isPending: mutation.isPending,
+    lastResult,
+    clearResult: () => setLastResult(null),
+    error: mutation.error,
+  };
+}

@@ -24,7 +24,6 @@ export default defineConfig({
           'xlsx': ['xlsx'],
           'stripe': ['@stripe/stripe-js'],
           // Large admin pages in isolated chunks
-          'book-health': ['./src/pages/BookHealthPage.jsx'],
           'planning': [
             './src/pages/PlanningHubPage.jsx',
             './src/pages/components/planning/ServiceStaffingTab.jsx',

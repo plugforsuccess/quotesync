@@ -23,9 +23,7 @@ const primaryItems = {
   leads:            { to: '/agency/leads',             label: 'Leads',       icon: '📋' },
   timeAttendance:   { to: '/agency/time-attendance',   label: 'Attendance',  icon: '⏱️' },
   staffPerformance: { to: '/agency/staff-performance', label: 'Performance', icon: '📈' },
-  renewals:         { to: '/agency/renewals',          label: 'Renewals',    icon: '🔄' },
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
-  bookHealth:       { to: '/agency/book-health',       label: 'Book Health', icon: '🛡️' },
   retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
 };
