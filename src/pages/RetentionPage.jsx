@@ -13,6 +13,9 @@ import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
 import { EventDetailModal } from "./components/retention/RetentionCancels";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
+import { useFireAiQueue, useFireCancelQueue } from '../hooks/useAiQueue';
+import RetentionRenewals      from './components/retention/RetentionRenewals';
+import RetentionAIPerformance from './components/retention/RetentionAIPerformance';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -59,6 +62,50 @@ export default function RetentionPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const hasFlaggedBroken = useRef(false);
+
+  // AI queue hooks
+  const {
+    fireQueue: fireRenewalQueue,
+    isPending: isRenewalFiring,
+    lastResult: renewalQueueResult,
+    clearResult: clearRenewalResult,
+  } = useFireAiQueue();
+
+  const {
+    fireQueue: fireCancelQueue,
+    isPending: isCancelFiring,
+    lastResult: cancelQueueResult,
+    clearResult: clearCancelResult,
+  } = useFireCancelQueue();
+
+  const [showRenewalSuppressionOverride, setShowRenewalSuppressionOverride] = useState(false);
+  const [showCancelSuppressionOverride, setShowCancelSuppressionOverride] = useState(false);
+
+  const handleFireRenewalQueue = (override = false) => {
+    setShowRenewalSuppressionOverride(false);
+    clearRenewalResult();
+    fireRenewalQueue(
+      { overrideSuppression: override },
+      {
+        onSuccess: (data) => {
+          if (data?.suppressed && !override) setShowRenewalSuppressionOverride(true);
+        },
+      }
+    );
+  };
+
+  const handleFireCancelQueue = (override = false) => {
+    setShowCancelSuppressionOverride(false);
+    clearCancelResult();
+    fireCancelQueue(
+      { overrideSuppression: override },
+      {
+        onSuccess: (data) => {
+          if (data?.suppressed && !override) setShowCancelSuppressionOverride(true);
+        },
+      }
+    );
+  };
 
   // ─── Fetch events ──────────────────────────────────────────────────────
 
@@ -219,10 +266,99 @@ export default function RetentionPage() {
       <style>{GLOBAL_STYLES}</style>
 
       {/* Header */}
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", margin: 0 }}>Retention Hub</h1>
-        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginTop: 2 }}>Policy Retention · {currentAgency?.agencies?.name || "Agency"}</div>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Retention Hub</h1>
+          <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 2 }}>
+            {currentAgency?.agencies?.name || 'Wiley-Wilson Agency'}
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {/* Run AI Renewals */}
+          <button
+            onClick={() => handleFireRenewalQueue(false)}
+            disabled={isRenewalFiring}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 14px', fontSize: 13, fontWeight: 600, borderRadius: 8,
+              border: 'none', cursor: isRenewalFiring ? 'not-allowed' : 'pointer',
+              background: isRenewalFiring ? 'var(--qs-muted)' : 'var(--qs-info)',
+              color: '#fff', opacity: isRenewalFiring ? 0.7 : 1,
+              transition: 'opacity 0.15s',
+            }}
+          >
+            {isRenewalFiring ? (
+              <>
+                <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                Running...
+              </>
+            ) : '▶ Run AI Renewals'}
+          </button>
+
+          {/* Run AI Cancels */}
+          <button
+            onClick={() => handleFireCancelQueue(false)}
+            disabled={isCancelFiring}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '8px 14px', fontSize: 13, fontWeight: 600, borderRadius: 8,
+              border: 'none', cursor: isCancelFiring ? 'not-allowed' : 'pointer',
+              background: isCancelFiring ? 'var(--qs-muted)' : 'var(--qs-warning)',
+              color: '#fff', opacity: isCancelFiring ? 0.7 : 1,
+              transition: 'opacity 0.15s',
+            }}
+          >
+            {isCancelFiring ? (
+              <>
+                <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                Running...
+              </>
+            ) : '▶ Run AI Cancels'}
+          </button>
+        </div>
       </div>
+
+      {/* Queue result banners — renewals */}
+      {renewalQueueResult && !renewalQueueResult.suppressed && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.25)', fontSize: 13 }}>
+          <span style={{ color: 'var(--qs-text)' }}>
+            <strong style={{ color: 'var(--qs-info)' }}>AI Renewals complete —</strong>{' '}
+            {renewalQueueResult.queued} queued · {renewalQueueResult.blocked} blocked · {renewalQueueResult.skipped} skipped
+            {renewalQueueResult.rate_limited ? ' · rate limited, retry later' : ''}
+          </span>
+          <button onClick={clearRenewalResult} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
+        </div>
+      )}
+      {showRenewalSuppressionOverride && renewalQueueResult?.suppressed && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', fontSize: 13 }}>
+          <span style={{ color: 'var(--qs-warning)', flex: 1 }}>
+            <strong>AI Renewals suppressed</strong> — {renewalQueueResult.message}
+          </span>
+          <button onClick={() => { setShowRenewalSuppressionOverride(false); clearRenewalResult(); }} style={{ background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+          <button onClick={() => handleFireRenewalQueue(true)} style={{ padding: '4px 10px', borderRadius: 5, background: 'var(--qs-warning)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Override</button>
+        </div>
+      )}
+
+      {/* Queue result banners — cancels */}
+      {cancelQueueResult && !cancelQueueResult.suppressed && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', fontSize: 13 }}>
+          <span style={{ color: 'var(--qs-text)' }}>
+            <strong style={{ color: 'var(--qs-warning)' }}>AI Cancels complete —</strong>{' '}
+            {cancelQueueResult.queued} queued · {cancelQueueResult.blocked} blocked · {cancelQueueResult.skipped} skipped
+            {cancelQueueResult.rate_limited ? ' · rate limited, retry later' : ''}
+          </span>
+          <button onClick={clearCancelResult} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 16, lineHeight: 1 }}>✕</button>
+        </div>
+      )}
+      {showCancelSuppressionOverride && cancelQueueResult?.suppressed && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 8, marginBottom: 8, background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', fontSize: 13 }}>
+          <span style={{ color: 'var(--qs-warning)', flex: 1 }}>
+            <strong>AI Cancels suppressed</strong> — {cancelQueueResult.message}
+          </span>
+          <button onClick={() => { setShowCancelSuppressionOverride(false); clearCancelResult(); }} style={{ background: 'none', border: 'none', color: 'var(--qs-dim)', cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+          <button onClick={() => handleFireCancelQueue(true)} style={{ padding: '4px 10px', borderRadius: 5, background: 'var(--qs-warning)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Override</button>
+        </div>
+      )}
 
       {loading && (
         <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
@@ -239,14 +375,16 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "resolved", "attrition", "growth", "trends", "import"].map(t => (
+        {["at_risk", "renewals", "ai_perf", "resolved", "attrition", "growth", "trends", "import"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "at_risk"   ? "\u26A1 At Risk"       :
-             t === "resolved"  ? "Cancel Outcomes"  :
-             t === "attrition" ? "Terminations"     :
-             t === "growth"    ? "Net Growth"       :
-             t === "trends"    ? "Cancel Trends"    :
-                                 "Import"}
+            {t === "at_risk"   ? "⚡ At Risk"        :
+             t === "renewals"  ? "🔄 Renewals"       :
+             t === "ai_perf"   ? "📊 AI Performance" :
+             t === "resolved"  ? "✅ Outcomes"       :
+             t === "attrition" ? "📉 Terminations"   :
+             t === "growth"    ? "📈 Net Growth"     :
+             t === "trends"    ? "📋 Trends"         :
+                                 "⬆ Import"}
           </button>
         ))}
       </div>
@@ -259,6 +397,14 @@ export default function RetentionPage() {
           currentEmployeeId={currentEmployee?.id}
         />
       )}
+      {activeTab === "renewals" && (
+        <RetentionRenewals agencyId={agencyId} />
+      )}
+
+      {activeTab === "ai_perf" && (
+        <RetentionAIPerformance agencyId={agencyId} />
+      )}
+
       {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
       {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
       {activeTab === "attrition" && (
