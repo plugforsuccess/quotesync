@@ -191,7 +191,7 @@ const AgencyLeadsPage = () => {
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
                 className="dark-select"
-                style={{ width: 'auto' }}
+                style={{ width: 'auto', background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' }}
               >
                 {STATUS_OPTIONS.map(opt => (
                   <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -205,6 +205,7 @@ const AgencyLeadsPage = () => {
                   value={filters.zip}
                   onChange={(e) => handleFilterChange('zip', e.target.value)}
                   className="dark-input pl-10 w-32"
+                  style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' }}
                 />
               </div>
             </div>
@@ -225,6 +226,7 @@ const AgencyLeadsPage = () => {
                   value={filters.source}
                   onChange={(e) => handleFilterChange('source', e.target.value)}
                   className="dark-select"
+                  style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' }}
                 >
                   {SOURCE_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -237,6 +239,7 @@ const AgencyLeadsPage = () => {
                   value={filters.hasDocuments}
                   onChange={(e) => handleFilterChange('hasDocuments', e.target.value)}
                   className="dark-select"
+                  style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' }}
                 >
                   {DOCS_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -249,6 +252,7 @@ const AgencyLeadsPage = () => {
                   value={filters.riskFlag}
                   onChange={(e) => handleFilterChange('riskFlag', e.target.value)}
                   className="dark-select"
+                  style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' }}
                 >
                   {RISK_OPTIONS.map(opt => (
                     <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -265,6 +269,7 @@ const AgencyLeadsPage = () => {
                   onChange={(e) => handleFilterChange('minScore', e.target.value)}
                   placeholder="0"
                   className="dark-input"
+                  style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' }}
                 />
               </div>
               <div>
@@ -277,6 +282,7 @@ const AgencyLeadsPage = () => {
                   onChange={(e) => handleFilterChange('maxScore', e.target.value)}
                   placeholder="100"
                   className="dark-input"
+                  style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' }}
                 />
               </div>
             </div>

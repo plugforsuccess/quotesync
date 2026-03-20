@@ -30,11 +30,11 @@ const POLICY_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
-const PRIORITY_COLORS = {
-  critical: 'bg-red-100 text-red-800',
-  high: 'bg-orange-100 text-orange-800',
-  medium: 'bg-yellow-100 text-yellow-800',
-  standard: 'bg-gray-100 text-gray-700',
+const PRIORITY_STYLES = {
+  critical: { background: 'rgba(239,68,68,0.15)',  color: '#F87171' },
+  high:     { background: 'rgba(249,115,22,0.15)', color: '#FB923C' },
+  medium:   { background: 'rgba(245,158,11,0.15)', color: '#FBBF24' },
+  standard: { background: 'var(--qs-elevated)',    color: 'var(--qs-dim)' },
 };
 
 const OUTCOME_LABELS = {
@@ -112,8 +112,8 @@ function getFollowupDueBadge(followupDueBy) {
   const now = new Date();
   const due = new Date(followupDueBy);
   const hoursUntil = (due - now) / (1000 * 60 * 60);
-  if (hoursUntil < 0) return { label: 'OVERDUE', color: 'bg-red-100 text-red-700' };
-  if (hoursUntil < 4) return { label: 'DUE SOON', color: 'bg-amber-100 text-amber-700' };
+  if (hoursUntil < 0) return { label: 'OVERDUE', style: { background: 'rgba(239,68,68,0.15)', color: '#F87171' } };
+  if (hoursUntil < 4) return { label: 'DUE SOON', style: { background: 'rgba(245,158,11,0.15)', color: '#FBBF24' } };
   return null;
 }
 
@@ -137,30 +137,34 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
     ? COACHING_NOTES[policy.followup_reason]
     : null;
 
+  const consentStyle = policy.consent?.autodial_consent
+    ? { background: 'rgba(52,211,153,0.15)', color: '#34D399' }
+    : { background: 'var(--qs-elevated)', color: 'var(--qs-muted)' };
+
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
+    <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 16, marginBottom: 8 }}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         {/* Left: Customer info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <Link
               to={`/admin/renewals/${policy.id}`}
-              className="font-semibold text-gray-900 hover:text-primary-600 truncate"
+              style={{ fontWeight: 600, color: 'var(--qs-bright)', textDecoration: 'none' }}
             >
               {policy.customer_name}
             </Link>
-            <span className="text-xs text-gray-500 font-mono">{policy.policy_no}</span>
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 capitalize">
+            <span style={{ fontSize: 12, color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace" }}>{policy.policy_no}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 600, background: 'rgba(59,130,246,0.15)', color: '#60A5FA', textTransform: 'capitalize' }}>
               {policy.policy_type}
             </span>
           </div>
 
-          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500 flex-wrap">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4, fontSize: 13, color: 'var(--qs-dim)', flexWrap: 'wrap' }}>
             <span className="flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
               {formatDate(policy.renewal_date)}
               {daysUntil != null && (
-                <span className={`font-medium ${daysUntil <= 14 ? 'text-red-600' : daysUntil <= 30 ? 'text-amber-600' : 'text-gray-600'}`}>
+                <span style={{ fontWeight: 600, color: daysUntil <= 14 ? '#F87171' : daysUntil <= 30 ? '#FBBF24' : 'var(--qs-dim)' }}>
                   ({daysUntil} days)
                 </span>
               )}
@@ -168,7 +172,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
             <span>
               {formatCurrency(policy.current_premium)} → {formatCurrency(policy.premium)}
               {pctChange != null && (
-                <span className={`ml-1 text-xs font-semibold ${isIncrease ? 'text-red-600' : isDecrease ? 'text-green-600' : 'text-gray-500'}`}>
+                <span style={{ fontWeight: 700, fontSize: 11, color: isIncrease ? '#F87171' : isDecrease ? '#34D399' : 'var(--qs-dim)', marginLeft: 4 }}>
                   {isIncrease ? '+' : ''}{pctChange}%
                 </span>
               )}
@@ -178,77 +182,77 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
 
         {/* Right: Badges and actions */}
         <div className="flex items-center gap-2 flex-wrap">
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold capitalize ${PRIORITY_COLORS[policy.priority_tier] || PRIORITY_COLORS.standard}`}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 700, textTransform: 'capitalize', ...(PRIORITY_STYLES[policy.priority_tier] || PRIORITY_STYLES.standard) }}>
             {policy.priority_tier}
           </span>
 
           {dueBadge && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${dueBadge.color}`}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 700, ...dueBadge.style }}>
               {dueBadge.label}
             </span>
           )}
 
           {policy.last_contact_outcome && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'var(--qs-elevated)', color: 'var(--qs-dim)' }}>
               {OUTCOME_LABELS[policy.last_contact_outcome] || policy.last_contact_outcome}
             </span>
           )}
 
           {policy.last_contact_channel === 'ai_voice' && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700">
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(99,102,241,0.15)', color: '#818CF8' }}>
               <Bot className="w-3 h-3" />
               AI Call
             </span>
           )}
 
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
-            policy.consent?.autodial_consent ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
-          }`}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, ...consentStyle }}>
             <Phone className="w-3 h-3" />
             {policy.consent?.autodial_consent ? 'Consented' : 'No consent'}
           </span>
 
           {policy.human_only && policy.human_only_reason && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(249,115,22,0.15)', color: '#FB923C' }}>
               {HUMAN_ONLY_REASON_LABELS[policy.human_only_reason] || policy.human_only_reason}
             </span>
           )}
 
           {policy.human_followup_required && policy.followup_reason && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(245,158,11,0.15)', color: '#FBBF24' }}>
               {FOLLOWUP_LABELS[policy.followup_reason] || policy.followup_reason}
             </span>
           )}
 
           {policy.amount_due > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-700">
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 700, background: 'rgba(239,68,68,0.15)', color: '#F87171' }}>
               ${policy.amount_due} due
             </span>
           )}
 
           {policy.customer_tenure_years != null && policy.customer_tenure_years > 0 && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700" title={tenureHint || 'Customer tenure'}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', padding: '1px 7px', borderRadius: 4, fontSize: 11, fontWeight: 500, background: 'rgba(168,85,247,0.15)', color: '#C084FC' }} title={tenureHint || 'Customer tenure'}>
               {policy.customer_tenure_years}yr tenure
             </span>
           )}
 
           <button
             onClick={() => onLogContact(policy)}
-            className="px-3 py-1.5 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+            className="btn-ghost"
+            style={{ fontSize: 12, padding: '4px 10px' }}
           >
             Log Contact
           </button>
           {policy.human_followup_required && !policy.followup_completed_at && onMarkComplete && (
             <button
               onClick={() => onMarkComplete(policy)}
-              className="px-3 py-1.5 text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+              style={{ fontSize: 12, padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer', background: 'rgba(52,211,153,0.15)', color: '#34D399', fontWeight: 600 }}
             >
               Mark Complete
             </button>
           )}
           <Link
             to={`/admin/renewals/${policy.id}`}
-            className="px-3 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            className="btn-ghost"
+            style={{ fontSize: 12, padding: '4px 10px' }}
           >
             View
           </Link>
@@ -256,13 +260,13 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
       </div>
 
       {coachingNote && !policy.followup_completed_at && (
-        <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-700 border border-blue-100">
+        <div style={{ marginTop: 8, padding: '6px 10px', borderRadius: 6, fontSize: 12, background: 'rgba(59,130,246,0.1)', color: 'var(--qs-info)', border: '1px solid rgba(59,130,246,0.2)' }}>
           {coachingNote}
         </div>
       )}
 
       {tenureHint && policy.human_followup_required && !policy.followup_completed_at && (
-        <div className="mt-1 text-xs text-purple-600 italic">
+        <div style={{ marginTop: 4, fontSize: 12, color: '#C084FC', fontStyle: 'italic' }}>
           {tenureHint}
         </div>
       )}
@@ -272,36 +276,44 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
 
 // ── Collapsible Section ─────────────────────────────────────────────────────
 
+const SECTION_COLORS = {
+  red:    '#EF4444',
+  orange: '#F97316',
+  yellow: '#F59E0B',
+  green:  '#10B981',
+};
+
 function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen = true, onLogContact, onMarkComplete }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  const borderColor = { red: 'border-l-red-500', orange: 'border-l-orange-500', yellow: 'border-l-yellow-500', green: 'border-l-green-500' }[color] || 'border-l-gray-300';
 
   return (
-    <div className={`border rounded-lg ${borderColor} border-l-4`}>
+    <div style={{ border: '1px solid var(--qs-border)', borderLeft: `4px solid ${SECTION_COLORS[color] || 'var(--qs-border)'}`, borderRadius: 8, marginBottom: 8 }}>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-gray-50 transition-colors"
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 16, textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 8 }}
+        onMouseEnter={e => e.currentTarget.style.background = 'var(--qs-elevated)'}
+        onMouseLeave={e => e.currentTarget.style.background = 'none'}
       >
         <div className="flex items-center gap-2">
-          <Icon className="w-5 h-5 text-gray-600" />
-          <h3 className="text-base font-semibold text-gray-900">{title}</h3>
-          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-            color === 'red' ? 'bg-red-100 text-red-700' :
-            color === 'orange' ? 'bg-orange-100 text-orange-700' :
-            color === 'yellow' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-green-100 text-green-700'
-          }`}>
+          <Icon size={18} style={{ color: SECTION_COLORS[color] || 'var(--qs-dim)' }} />
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)', margin: 0 }}>{title}</h3>
+          <span style={{
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            width: 22, height: 22, borderRadius: '50%', fontSize: 11, fontWeight: 700,
+            background: `${SECTION_COLORS[color] || 'var(--qs-border)'}22`,
+            color: SECTION_COLORS[color] || 'var(--qs-dim)',
+          }}>
             {count}
           </span>
         </div>
-        {isOpen ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronRight className="w-5 h-5 text-gray-400" />}
+        {isOpen ? <ChevronDown size={18} style={{ color: 'var(--qs-subtle)' }} /> : <ChevronRight size={18} style={{ color: 'var(--qs-subtle)' }} />}
       </button>
       {isOpen && (
         <div className="px-4 pb-4 space-y-2">
           {Array.isArray(policies) && policies.length > 0 ? (
             policies.map((p) => <RenewalCard key={p.id} policy={p} onLogContact={onLogContact} onMarkComplete={onMarkComplete} />)
           ) : (
-            <p className="text-sm text-gray-400 py-2">No policies in this bucket.</p>
+            <p style={{ fontSize: 13, color: 'var(--qs-muted)', padding: '8px 0' }}>No policies in this bucket.</p>
           )}
         </div>
       )}
@@ -311,19 +323,20 @@ function TriageSection({ title, icon: Icon, color, count, policies, defaultOpen 
 
 // ── Stat Card ───────────────────────────────────────────────────────────────
 
-function StatCard({ label, value, color }) {
-  const colorMap = {
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
-    red: 'bg-red-50 text-red-700 border-red-200',
-    orange: 'bg-orange-50 text-orange-700 border-orange-200',
-    yellow: 'bg-yellow-50 text-yellow-700 border-yellow-200',
-    green: 'bg-green-50 text-green-700 border-green-200',
-  };
+const STAT_COLORS = {
+  blue:   { bg: 'rgba(59,130,246,0.1)',  border: 'rgba(59,130,246,0.2)',  text: '#60A5FA' },
+  red:    { bg: 'rgba(239,68,68,0.1)',   border: 'rgba(239,68,68,0.2)',   text: '#F87171' },
+  orange: { bg: 'rgba(249,115,22,0.1)',  border: 'rgba(249,115,22,0.2)',  text: '#FB923C' },
+  yellow: { bg: 'rgba(245,158,11,0.1)',  border: 'rgba(245,158,11,0.2)',  text: '#FBBF24' },
+  green:  { bg: 'rgba(52,211,153,0.1)',  border: 'rgba(52,211,153,0.2)',  text: '#34D399' },
+};
 
+function StatCard({ label, value, color }) {
+  const c = STAT_COLORS[color] || STAT_COLORS.blue;
   return (
-    <div className={`rounded-lg border p-4 ${colorMap[color] || colorMap.blue}`}>
-      <p className="text-sm font-medium opacity-80">{label}</p>
-      <p className="text-2xl font-bold">{value}</p>
+    <div style={{ borderRadius: 8, border: `1px solid ${c.border}`, padding: 16, background: c.bg }}>
+      <p style={{ fontSize: 13, fontWeight: 500, color: c.text, marginBottom: 4 }}>{label}</p>
+      <p style={{ fontSize: 24, fontWeight: 700, color: c.text }}>{value}</p>
     </div>
   );
 }
@@ -406,15 +419,23 @@ export default function RetentionRenewals({ agencyId }) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name or policy #..."
-            style={{ width: '100%', paddingLeft: 30 }}
+            style={{ width: '100%', paddingLeft: 30, background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)', borderRadius: 6, padding: '7px 10px 7px 30px', fontSize: 13 }}
           />
         </div>
-        <select value={policyType} onChange={(e) => setPolicyType(e.target.value)}>
+        <select
+          value={policyType}
+          onChange={(e) => setPolicyType(e.target.value)}
+          style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)', borderRadius: 6, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}
+        >
           {POLICY_TYPES.map((pt) => (
             <option key={pt.value} value={pt.value}>{pt.label}</option>
           ))}
         </select>
-        <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)}>
+        <select
+          value={assignedTo}
+          onChange={(e) => setAssignedTo(e.target.value)}
+          style={{ background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)', borderRadius: 6, padding: '7px 10px', fontSize: 13, cursor: 'pointer' }}
+        >
           <option value="">All Assignees</option>
           {employees.map((emp) => (
             <option key={emp.id} value={emp.id}>
