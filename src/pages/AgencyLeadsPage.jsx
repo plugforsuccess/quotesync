@@ -368,6 +368,21 @@ const AgencyLeadsPage = () => {
                           `}>
                             {lead.status}
                           </span>
+                          {lead.bland_partial_capture && (
+                            <span style={{
+                              display: 'inline-block',
+                              padding: '1px 7px',
+                              borderRadius: 4,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              background: 'rgba(245,158,11,0.15)',
+                              color: 'var(--qs-warning)',
+                              border: '1px solid rgba(245,158,11,0.3)',
+                              marginLeft: 6,
+                            }}>
+                              Partial
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-dim)' }}>
                           {lead.zip || '-'} / {lead.state || '-'}

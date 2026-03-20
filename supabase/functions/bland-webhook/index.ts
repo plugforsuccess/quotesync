@@ -62,6 +62,29 @@ function parseBoolVar(variables: Record<string, any> | null, key: string): boole
   return parseVar(variables, key) === 'true'
 }
 
+// ── Business hours check ────────────────────────────────────────────────────
+
+function isEasternBusinessHours(): boolean {
+  const now = new Date()
+  const year = now.getUTCFullYear()
+  const marchSecondSunday = new Date(Date.UTC(year, 2, 1))
+  marchSecondSunday.setUTCDate(marchSecondSunday.getUTCDate() + ((7 - marchSecondSunday.getUTCDay()) % 7) + 7)
+  const novFirstSunday = new Date(Date.UTC(year, 10, 1))
+  novFirstSunday.setUTCDate(novFirstSunday.getUTCDate() + ((7 - novFirstSunday.getUTCDay()) % 7))
+
+  const dstStart = new Date(marchSecondSunday.getTime() + 7 * 60 * 60 * 1000)
+  const dstEnd = new Date(novFirstSunday.getTime() + 6 * 60 * 60 * 1000)
+
+  const isDST = now >= dstStart && now < dstEnd
+  const offsetHours = isDST ? 4 : 5
+  const easternHour = (now.getUTCHours() - offsetHours + 24) % 24
+  const easternDay = now.getUTCDay()
+
+  // Mon-Fri 9am-6pm Eastern
+  if (easternDay === 0 || easternDay === 6) return false
+  return easternHour >= 9 && easternHour < 18
+}
+
 // ── Main handler ────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -126,7 +149,7 @@ Deno.serve(async (req) => {
     // Try to match as outbound first
     const { data: outboundLead } = await supabase
       .from('leads')
-      .select('id, phone, agency_id, bland_outbound_call_id, canopy_link_sent')
+      .select('id, phone, agency_id, bland_outbound_call_id, canopy_link_sent, bland_retry_count')
       .eq('bland_outbound_call_id', call_id)
       .single()
 
@@ -218,6 +241,57 @@ async function handleOutbound(
     })
   }
 
+  // No-answer retry logic (Gap 4)
+  const isNoAnswer = callStatus === 'no-answer' || callStatus === 'no_answer'
+  if (isNoAnswer) {
+    const retryCount = lead.bland_retry_count ?? 0
+    const is_business_hours = isEasternBusinessHours()
+
+    if (retryCount < 1 && is_business_hours) {
+      // Schedule one retry at T+15min
+      const retryAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+      await supabase
+        .from('leads')
+        .update({
+          bland_retry_count: retryCount + 1,
+          bland_retry_at: retryAt,
+        })
+        .eq('id', lead.id)
+
+      await logAudit(supabase, 'BLAND_RETRY_SCHEDULED', lead.id, {
+        retry_at: retryAt,
+        retry_count: retryCount + 1,
+      })
+    } else {
+      // Max retries or after hours — hand off to drip immediately
+      await supabase
+        .from('leads')
+        .update({
+          bland_outbound_status: 'no-answer-final',
+          drip_stage: 0,
+          drip_scenario: 'never_reached',
+        })
+        .eq('id', lead.id)
+
+      await logAudit(supabase, 'BLAND_HANDOFF_TO_DRIP', lead.id, {
+        retry_count: retryCount,
+        reason: retryCount >= 1 ? 'max_retries' : 'after_hours',
+      })
+
+      // Trigger SCENARIO A drip immediately — don't wait for next cron run
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+      const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+      fetch(`${supabaseUrl}/functions/v1/lead-sms-drip`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${serviceKey}`,
+        },
+        body: JSON.stringify({ lead_id: lead.id, force_scenario: 'never_reached' }),
+      }).catch(err => console.error('[BLAND_WEBHOOK] Drip trigger failed:', err))
+    }
+  }
+
   // Write to bland_call_logs
   try {
     await supabase.from('bland_call_logs').upsert(
@@ -248,6 +322,43 @@ async function handleOutbound(
       step: 'call_log_insert',
       error: String(err),
     })
+  }
+
+  // Transfer outcome resolution (Gap 7)
+  if (transferred) {
+    const transferredToPhone = parseVar(variables, 'transfer_number_used')
+    let transferredToName = parseVar(variables, 'transferred_to_name')
+    let transferOutcome: 'connected' | 'no-answer' | 'failed' | null = null
+
+    // Resolve outcome from Bland variables if available
+    const transferConnected = parseBoolVar(variables, 'transfer_connected')
+    if (transferConnected) {
+      transferOutcome = 'connected'
+    } else if (transferredToPhone) {
+      transferOutcome = 'no-answer'
+    }
+
+    // If Bland didn't return the name, look it up from agent_availability
+    if (!transferredToName && transferredToPhone) {
+      const { data: agent } = await supabase
+        .from('agent_availability')
+        .select('user_id, profiles(full_name)')
+        .eq('transfer_phone', transferredToPhone)
+        .eq('agency_id', lead.agency_id)
+        .maybeSingle()
+      transferredToName = (agent?.profiles as any)?.full_name ?? null
+    }
+
+    if (transferredToPhone || transferOutcome) {
+      await supabase
+        .from('bland_call_logs')
+        .update({
+          transferred_to_phone: transferredToPhone,
+          transferred_to_name: transferredToName,
+          transfer_outcome: transferOutcome,
+        })
+        .eq('call_id', call_id)
+    }
   }
 
   // Audit events

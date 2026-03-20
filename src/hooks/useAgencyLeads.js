@@ -54,6 +54,7 @@ export const useAgencyLeads = (agencyId, filters = {}) => {
           current_auto_carrier,
           current_home_carrier,
           allstate_conflict,
+          bland_partial_capture,
           lead_score,
           score_factors,
           first_contact_at,

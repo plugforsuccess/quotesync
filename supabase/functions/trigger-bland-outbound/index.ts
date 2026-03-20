@@ -61,7 +61,7 @@ Never discuss specific rates, coverage details, or make binding commitments. You
 Keep under 5 minutes. Warm, natural, conversational.
 
 Output these variables after every call:
-verified_name, verified_address, verified_dob, verified_state, verified_zip, vehicle_count, owns_home, current_carrier, coverage_interest ("auto"|"home"|"bundle"|"unknown"), qualified (boolean), disqualify_reason, transfer_attempted (boolean), transferred (boolean), transferred_to_name, callback_requested (boolean), callback_time_preference, canopy_offered (boolean), canopy_accepted (boolean)`
+verified_name, verified_address, verified_dob, verified_state, verified_zip, vehicle_count, owns_home, current_carrier, coverage_interest ("auto"|"home"|"bundle"|"unknown"), qualified (boolean), disqualify_reason, transfer_attempted (boolean), transferred (boolean), transferred_to_name, transfer_number_used (string — E.164 of the number Bland actually transferred to, or null), transfer_connected (boolean — true if the transferred call was answered), callback_requested (boolean), callback_time_preference, canopy_offered (boolean), canopy_accepted (boolean)`
 
 async function logAudit(
   supabase: any,
@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     // 2. Fetch lead record
     const { data: lead, error: leadError } = await supabase
       .from('leads')
-      .select('id, phone, agency_id, bland_outbound_call_id')
+      .select('id, phone, agency_id, bland_outbound_call_id, bland_outbound_status')
       .eq('id', lead_id)
       .single()
 
@@ -141,8 +141,9 @@ Deno.serve(async (req) => {
       })
     }
 
-    // 3. Idempotency guard — do not double-call
-    if (lead.bland_outbound_call_id) {
+    // 3. Idempotency guard — do not double-call (allow retry for no-answer leads)
+    const isRetry = lead.bland_outbound_status === 'no-answer' || lead.bland_outbound_status === 'no_answer'
+    if (lead.bland_outbound_call_id && !isRetry) {
       console.log(`[BLAND_OUTBOUND] Already called lead ${lead_id}, skipping`)
       return new Response(JSON.stringify({ skipped: true, reason: 'already_called' }), {
         status: 200,

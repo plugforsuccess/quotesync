@@ -1,26 +1,61 @@
 // Supabase Edge Function: lead-sms-drip
 // POST /functions/v1/lead-sms-drip
-// Scheduled function (via pg_cron) that sends follow-up SMS to non-responsive leads
+// Scheduled function (via pg_cron) that sends follow-up SMS to non-responsive leads.
+// Rekeyed off Bland AI outcome columns — routes by drip scenario instead of call_connected.
 // Drip stages: 0=initial, 1=T+2h, 2=T+24h, 3=T+72h (final)
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
 import { sendSMS, formatPhoneUS, checkRequiredEnvVars } from '../_shared/twilio.ts'
+import { sendCanopyLink } from '../_shared/sendCanopyLink.ts'
 
-// Drip message templates — agency-agnostic (no agent name baked in)
-function getDripMessage(
-  stage: number,
-  firstName: string,
-  zip: string
-): string | null {
+// ── Scenario routing ────────────────────────────────────────────────────────
+
+type DripScenario = 'never_reached' | 'called_declined_transfer' | 'callback_scheduled' | 'qualified_no_canopy' | null
+
+function getDripScenario(lead: any): DripScenario {
+  const status = lead.bland_outbound_status
+  const qualified = lead.bland_qualified
+
+  // SCENARIO A — never reached
+  if (
+    status === 'no-answer-final' ||
+    status === 'failed' ||
+    (status == null && new Date(lead.created_at) <= new Date(Date.now() - 30 * 60 * 1000))
+  ) {
+    return 'never_reached'
+  }
+
+  // SCENARIO B — called, qualified, declined transfer and no callback
+  if (status === 'completed' && qualified === true) {
+    if (lead.drip_scenario === 'called_declined_transfer') return 'called_declined_transfer'
+  }
+
+  // SCENARIO C — callback scheduled
+  if (lead.drip_scenario === 'callback_scheduled') return 'callback_scheduled'
+
+  // SCENARIO D — qualified, no Canopy link sent yet
+  if (qualified === true && !lead.canopy_link_sent) {
+    return 'qualified_no_canopy'
+  }
+
+  return null
+}
+
+const OFFICE_NUMBER = Deno.env.get('RINGCENTRAL_OFFICE_NUMBER') || 'your agent'
+const SITE_URL = 'insuredbycam.com'
+
+function getDripMessage(scenario: DripScenario, firstName: string, zip: string): string | null {
   const name = firstName || 'there'
-  switch (stage) {
-    case 1:
-      return `${name}, your quote estimate is ready. Reply QUOTE to get your numbers, or I can call at a time that works for you. Reply STOP to opt out.`
-    case 2:
-      return `Hey ${name}, just a heads up — I found some bundle discounts for your area (${zip}). These change monthly. Want me to lock in your rate? Reply STOP to opt out.`
-    case 3:
-      return `Last check-in, ${name}. I've got your personalized quote saved. Reply YES if you'd like me to walk you through it, or STOP to opt out.`
+  switch (scenario) {
+    case 'never_reached':
+      return `Hi ${name}, we tried calling but missed you! We have some great options for auto and home coverage in Georgia. When's a good time to connect? Reply here or call us at ${OFFICE_NUMBER}. Reply STOP to opt out.`
+    case 'called_declined_transfer':
+      return `Hi ${name}, thanks for chatting with us earlier! Whenever you're ready to take a look at your options, we're here. Reply to this message or visit ${SITE_URL}. Reply STOP to opt out.`
+    case 'callback_scheduled':
+      return `Hi ${name}, just a reminder that we have a callback scheduled for you. Looking forward to connecting! Reply here if you need to reschedule. Reply STOP to opt out.`
+    case 'qualified_no_canopy':
+      return null // handled separately — triggers Canopy link send, not a plain SMS
     default:
       return null
   }
@@ -45,7 +80,7 @@ Deno.serve(async (req) => {
     })
   }
 
-  // F-07 fix: Authenticate — only allow calls with service role key (pg_cron passes this)
+  // Authenticate — only allow calls with service role key (pg_cron passes this)
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
   const authHeader = req.headers.get('Authorization')
   if (!serviceRoleKey || authHeader !== `Bearer ${serviceRoleKey}`) {
@@ -59,6 +94,7 @@ Deno.serve(async (req) => {
   const missingVar = checkRequiredEnvVars([
     'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY',
     'TWILIO_ACCOUNT_SID', 'TWILIO_AUTH_TOKEN', 'TWILIO_PHONE_NUMBER',
+    'RINGCENTRAL_OFFICE_NUMBER',
   ])
   if (missingVar) {
     console.error(`[SMS_DRIP] Missing required env var: ${missingVar}`)
@@ -77,22 +113,21 @@ Deno.serve(async (req) => {
   const ENV_TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER')!
 
   try {
-    // Query leads eligible for drip messages:
-    // - SMS was sent (initial contact made)
-    // - Call not connected (or no response yet)
-    // - Not opted out
-    // - Status is still 'new' (hasn't progressed)
-    // - Drip stage < 3 (haven't exhausted all drip messages)
-    // - Has a phone number
+    // Query leads eligible for drip messages — rekeyed off Bland outcome columns
     const { data: leads, error: queryError } = await supabase
       .from('leads')
-      .select('id, first_name, phone, zip, drip_stage, created_at, sms_sent_at, agency_id')
-      .eq('sms_sent', true)
-      .eq('call_connected', false)
+      .select(`
+        id, first_name, phone, zip, drip_stage, drip_scenario,
+        created_at, sms_sent_at, agency_id,
+        bland_outbound_status, bland_qualified, bland_partial_capture,
+        canopy_link_sent, canopy_link_sent_at
+      `)
       .eq('sms_opted_out', false)
-      .eq('status', 'new')
+      .not('status', 'in', '("bound","disqualified","duplicate","transferred","contacted")')
+      .eq('bland_partial_capture', false)        // never drip partial captures
       .lt('drip_stage', 3)
       .not('phone', 'is', null)
+      .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
 
     if (queryError) throw queryError
 
@@ -123,18 +158,31 @@ Deno.serve(async (req) => {
     let sent = 0
 
     for (const lead of leads) {
-      // Use sms_sent_at if available, fall back to created_at
+      const scenario = getDripScenario(lead)
+      if (!scenario) continue
+
+      // SCENARIO D: send Canopy link instead of SMS
+      if (scenario === 'qualified_no_canopy' && !lead.canopy_link_sent && lead.phone) {
+        try {
+          await sendCanopyLink({ lead_id: lead.id, phone_number: lead.phone, supabase })
+          // sendCanopyLink handles its own audit logging
+        } catch (err) {
+          console.error(`[SMS_DRIP] Canopy link failed for lead ${lead.id}:`, err)
+        }
+        continue
+      }
+
+      // Check timing threshold
       const baseTime = lead.sms_sent_at
         ? new Date(lead.sms_sent_at).getTime()
         : new Date(lead.created_at).getTime()
       const elapsed = now - baseTime
       const nextStage = lead.drip_stage + 1
-
-      // Check if enough time has passed for the next drip stage
       const threshold = DRIP_THRESHOLDS[nextStage]
-      if (!threshold || elapsed < threshold) {
-        continue
-      }
+      if (!threshold || elapsed < threshold) continue
+
+      const message = getDripMessage(scenario, lead.first_name, lead.zip)
+      if (!message) continue
 
       processed++
 
@@ -143,9 +191,6 @@ Deno.serve(async (req) => {
         console.error(`[SMS_DRIP] Invalid phone for lead ${lead.id}`)
         continue
       }
-
-      const message = getDripMessage(nextStage, lead.first_name, lead.zip)
-      if (!message) continue
 
       // Resolve per-agency Twilio number, falling back to env var
       const agencyConfig = lead.agency_id ? agencyMap[lead.agency_id] : null
@@ -190,7 +235,7 @@ Deno.serve(async (req) => {
         await supabase.from('audit_log').insert({
           event_type: 'SMS_DRIP_SENT',
           lead_id: lead.id,
-          metadata: { drip_stage: nextStage, twilio_sid: smsResult.sid },
+          metadata: { drip_stage: nextStage, scenario, twilio_sid: smsResult.sid },
         })
       } else {
         console.error(`[SMS_DRIP] Failed to send drip ${nextStage} to lead ${lead.id}:`, smsResult.error, 'code:', smsResult.code)
@@ -199,7 +244,7 @@ Deno.serve(async (req) => {
         await supabase.from('audit_log').insert({
           event_type: 'SMS_DRIP_FAILED',
           lead_id: lead.id,
-          metadata: { drip_stage: nextStage, error: smsResult.error, code: smsResult.code },
+          metadata: { drip_stage: nextStage, scenario, error: smsResult.error, code: smsResult.code },
         })
 
         // Roll back drip_stage on SMS failure so next run retries
