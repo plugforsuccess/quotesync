@@ -106,13 +106,13 @@ export const platformNav = {
 export const agencyNav = {
   principal: {
     primary: [
+      primaryItems.funnel,
       primaryItems.leads,
       primaryItems.retention,
       primaryItems.staffPerformance,
       primaryItems.planning,
     ],
     secondary: [
-      primaryItems.funnel,
       primaryItems.timeAttendance,
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
