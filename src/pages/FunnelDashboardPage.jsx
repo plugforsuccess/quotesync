@@ -3,10 +3,11 @@
 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BarChart3, List, AlertCircle, Users } from 'lucide-react';
+import { BarChart3, List, AlertCircle, Users, Phone } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useFunnelMetrics } from '../hooks/useFunnelMetrics';
 import { useActiveEmployees } from '../hooks/useEmployees';
+import { useTeamAvailability } from '../hooks/useAgentAvailability';
 import KPICards from './components/dashboard/KPICards';
 import FunnelDropoff from './components/dashboard/FunnelDropoff';
 import LeadQuality from './components/dashboard/LeadQuality';
@@ -122,6 +123,9 @@ const FunnelDashboardPage = () => {
             {/* Section 3: Lead Quality & Scoring */}
             <LeadQuality quality={metrics.quality} channels={metrics.channels} />
 
+            {/* Team Availability — read-only panel for principal */}
+            <TeamAvailabilityPanel agencyId={agencyId} />
+
             {/* Staffing Summary — links to CS Performance > Capacity tab */}
             {(() => {
               const quotableLeads = Math.round((metrics.totalLeads || 0) * 0.65);
@@ -167,5 +171,108 @@ const FunnelDashboardPage = () => {
     </div>
   );
 };
+
+// ─── Team Availability Panel (read-only, principal view) ─────────────────────
+
+function TeamAvailabilityPanel({ agencyId }) {
+  const { data: team = [], isLoading } = useTeamAvailability(agencyId);
+
+  const availableCount = team.filter(t => t.available).length;
+
+  function timeSince(dateStr) {
+    if (!dateStr) return '';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  function maskPhone(phone) {
+    if (!phone || phone.length < 4) return 'Not set';
+    return `••• ••• ${phone.slice(-4)}`;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="dark-card">
+        <div className="flex items-center gap-3 mb-4">
+          <Phone className="w-5 h-5 text-primary-600" />
+          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>Team Availability</h3>
+        </div>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading...</p>
+      </div>
+    );
+  }
+
+  if (team.length === 0) {
+    return (
+      <div className="dark-card">
+        <div className="flex items-center gap-3 mb-4">
+          <Phone className="w-5 h-5 text-primary-600" />
+          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>Team Availability</h3>
+        </div>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No team members have set up availability yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="dark-card">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <Phone className="w-5 h-5 text-primary-600" />
+          <h3 className="text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>Team Availability</h3>
+        </div>
+        <span className="text-sm font-medium" style={{
+          color: availableCount > 0 ? '#22C55E' : 'var(--qs-subtle)',
+        }}>
+          {availableCount} available
+        </span>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {team.map((member) => (
+          <div
+            key={member.user_id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 12px',
+              background: 'var(--qs-elevated)',
+              borderRadius: 8,
+              border: '1px solid var(--qs-border)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 10,
+                height: 10,
+                borderRadius: '50%',
+                background: member.available ? '#22C55E' : '#6B7280',
+                flexShrink: 0,
+              }} />
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>
+                  {member.profiles?.full_name || 'Unknown'}
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>
+                  {member.priority_tier === 0 ? 'Principal' : 'Producer'}
+                  {member.last_toggled_at ? ` · toggled ${timeSince(member.last_toggled_at)}` : ''}
+                </div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--qs-subtle)', textAlign: 'right' }}>
+              {maskPhone(member.transfer_phone)}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default FunnelDashboardPage;

@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
+import AvailabilityToggle from '../components/AvailabilityToggle';
 
 export default function MyQueuePage() {
   const { data: employee } = useCurrentEmployee();
@@ -84,6 +85,9 @@ export default function MyQueuePage() {
 
   return (
     <div>
+      {/* Availability Toggle — prominent at top */}
+      <AvailabilityToggle />
+
       {/* Header */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
