@@ -580,7 +580,7 @@ Deno.serve(async (req) => {
     // For now, log to console (visible in Supabase logs)
     console.log(`[LEAD NOTIFICATION] New lead ${lead.id} for agency ${agency?.name} (${agency?.email})`)
 
-    // Trigger SMS + speed-to-call automation (fire-and-forget)
+    // Trigger warm-up SMS (fire-and-forget)
     // Only if lead has a valid phone number (will be null for Canopy-only leads until enrichment)
     if (isValidPhone) {
       const notifyUrl = `${supabaseUrl}/functions/v1/lead-notify-sms`
@@ -602,6 +602,20 @@ Deno.serve(async (req) => {
       }).catch(smsError => {
         // Don't fail lead creation if SMS fails
         console.error('[CREATE_LEAD] SMS automation fire-and-forget error:', smsError.message)
+      })
+
+      // Trigger Bland AI outbound call (fire-and-forget, separate from SMS)
+      const blandUrl = `${supabaseUrl}/functions/v1/trigger-bland-outbound`
+      fetch(blandUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ lead_id: lead.id }),
+      }).catch(blandError => {
+        // Don't fail lead creation if Bland call fails
+        console.error('[CREATE_LEAD] Bland outbound fire-and-forget error:', blandError.message)
       })
     }
 

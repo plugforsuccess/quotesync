@@ -2,16 +2,18 @@
 // MT-06: Agency settings with Profile / Notifications / Commission / Territory tabs
 
 import { useState, useMemo } from 'react';
-import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map } from 'lucide-react';
+import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map, PhoneCall } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAgencyDetail, useAgencyCarrierConfig, useAgencyCommissionRatesRaw, useUpsertCommissionRates, useAgencyRoutingRulesForAgent, useCreateAgencyRoutingRule } from '../hooks/useAgencies';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { useTeamAvailability, useSetTransferPhone, validateE164 } from '../hooks/useAgentAvailability';
 import PageSpinner from '../components/PageSpinner';
 
 const TABS = [
   { key: 'profile', label: 'Profile', icon: Building2 },
   { key: 'notifications', label: 'Notifications', icon: Bell },
+  { key: 'transfers', label: 'Transfers', icon: PhoneCall },
   { key: 'commission', label: 'Commission', icon: DollarSign },
   { key: 'territory', label: 'Territory', icon: Map },
 ];
@@ -88,6 +90,7 @@ const AgencySettingsPage = () => {
         {/* Tab Content */}
         {activeTab === 'profile' && <ProfileTab agency={agency} agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
         {activeTab === 'notifications' && <NotificationsTab agency={agency} agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
+        {activeTab === 'transfers' && <TransferPhoneTab agencyId={currentAgencyId} isAgent={isAgent} />}
         {activeTab === 'commission' && <CommissionTab agencyId={currentAgencyId} isAgent={isAgent} />}
         {activeTab === 'territory' && <TerritoryTab agency={agency} agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
       </div>
@@ -618,6 +621,174 @@ function TerritoryTab({ agency, agencyId, isAgent, queryClient }) {
         ) : (
           <p className="text-sm py-4" style={{ color: 'var(--qs-subtle)' }}>No routing rules configured.</p>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Transfer Phone Tab ───────────────────────────────────────────────────────
+
+function TransferPhoneTab({ agencyId, isAgent }) {
+  const { data: team = [], isLoading } = useTeamAvailability(agencyId);
+  const setPhoneMutation = useSetTransferPhone();
+  const [editingUserId, setEditingUserId] = useState(null);
+  const [phoneInput, setPhoneInput] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
+  const startEditing = (member) => {
+    setEditingUserId(member.user_id);
+    setPhoneInput(member.transfer_phone || '');
+    setPhoneError('');
+  };
+
+  const handleSave = async (userId) => {
+    const phone = phoneInput.trim();
+    if (!phone) {
+      setPhoneError('Phone number is required');
+      return;
+    }
+    if (!validateE164(phone)) {
+      setPhoneError('Enter a valid US number in E.164 format (e.g. +14045551234)');
+      return;
+    }
+
+    try {
+      await setPhoneMutation.mutateAsync({
+        agencyId,
+        userId,
+        transferPhone: phone,
+      });
+      setEditingUserId(null);
+      setPhoneInput('');
+    } catch (err) {
+      setPhoneError('Failed to save: ' + err.message);
+    }
+  };
+
+  function maskPhone(phone) {
+    if (!phone || phone.length < 4) return 'Not set';
+    return `••• ••• ${phone.slice(-4)}`;
+  }
+
+  if (isLoading) {
+    return <div className="py-8 text-center" style={{ color: 'var(--qs-subtle)' }}>Loading transfer settings...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="dark-card">
+        <h2 className="text-lg font-semibold mb-2" style={{ color: 'var(--qs-bright)' }}>Transfer Phone Numbers</h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--qs-subtle)' }}>
+          Set direct phone numbers for each producer. These numbers are used by Bland AI for live call transfers when agents are available.
+        </p>
+
+        {team.length === 0 ? (
+          <div className="text-center py-8">
+            <PhoneCall className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
+            <p style={{ color: 'var(--qs-dim)' }}>No team members have set up availability yet.</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--qs-subtle)' }}>
+              Producers can toggle their availability from their My Queue page to create their record.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {team.map((member) => (
+              <div
+                key={member.user_id}
+                style={{
+                  padding: '12px 16px',
+                  background: 'var(--qs-elevated)',
+                  borderRadius: 10,
+                  border: '1px solid var(--qs-border)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: editingUserId === member.user_id ? 12 : 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: '50%',
+                      background: member.available ? '#22C55E' : '#6B7280',
+                      flexShrink: 0,
+                    }} />
+                    <div>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
+                        {member.profiles?.full_name || 'Unknown'}
+                      </span>
+                      <span style={{ fontSize: 12, color: 'var(--qs-subtle)', marginLeft: 8 }}>
+                        {member.priority_tier === 0 ? 'Principal' : 'Producer'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {editingUserId !== member.user_id && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
+                        {maskPhone(member.transfer_phone)}
+                      </span>
+                      {isAgent && (
+                        <button
+                          onClick={() => startEditing(member)}
+                          className="text-sm font-medium text-primary-600 hover:text-primary-700"
+                        >
+                          Edit
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {editingUserId === member.user_id && (
+                  <div>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1 }}>
+                        <input
+                          type="tel"
+                          value={phoneInput}
+                          onChange={(e) => { setPhoneInput(e.target.value); setPhoneError(''); }}
+                          placeholder="+14045551234"
+                          className="dark-input"
+                          style={{ width: '100%', fontSize: 14 }}
+                          autoFocus
+                        />
+                        {phoneError && (
+                          <div style={{ fontSize: 12, color: 'var(--qs-danger)', marginTop: 4 }}>
+                            {phoneError}
+                          </div>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => handleSave(member.user_id)}
+                        disabled={setPhoneMutation.isPending}
+                        className="flex items-center gap-1 px-3 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50 text-sm"
+                      >
+                        <Save className="w-3 h-3" />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => { setEditingUserId(null); setPhoneError(''); }}
+                        className="btn-ghost text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="dark-card">
+        <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--qs-dim)' }}>How Transfers Work</h3>
+        <ul className="text-sm space-y-1" style={{ color: 'var(--qs-subtle)' }}>
+          <li>When a lead submits the quote funnel, Bland AI calls them within seconds.</li>
+          <li>If an agent is available and it's business hours, Bland offers a live transfer.</li>
+          <li>The principal (priority 0) always routes first when available.</li>
+          <li>Other producers route in round-robin order behind the principal.</li>
+          <li>Each producer manages their own availability toggle from their My Queue page.</li>
+        </ul>
       </div>
     </div>
   );
