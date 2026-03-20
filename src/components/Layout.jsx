@@ -2,7 +2,7 @@
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings } from 'lucide-react';
+import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
@@ -232,6 +232,20 @@ function Layout({ forcePlane = null }) {
                 </div>
               </div>
             </NavLink>
+
+            {/* Bland AI Inbound Phone CTA — "Call for a Quote" */}
+            {import.meta.env.VITE_BLAND_INBOUND_NUMBER && activePlane === PLANES.CONSUMER && (
+              <a
+                href={`tel:${import.meta.env.VITE_BLAND_INBOUND_NUMBER_E164 || import.meta.env.VITE_BLAND_INBOUND_NUMBER}`}
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 transition-all duration-300 group"
+              >
+                <PhoneIcon className="w-4 h-4 group-hover:animate-pulse" />
+                <span className="text-sm font-semibold whitespace-nowrap">
+                  {import.meta.env.VITE_BLAND_INBOUND_NUMBER}
+                </span>
+                <span className="hidden lg:inline text-xs text-gray-400 font-normal">Call for a Quote</span>
+              </a>
+            )}
 
             {/* Desktop Navigation with Advanced Effects */}
             <nav className="hidden md:flex items-center gap-3">
