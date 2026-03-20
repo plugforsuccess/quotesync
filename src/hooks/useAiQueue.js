@@ -55,10 +55,9 @@ async function fireCancelQueue(overrideSuppression = false) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
-  const response = await supabase.functions.invoke('fire-ai-queue', {
+  const response = await supabase.functions.invoke('fire-cancel-queue', {
     body: {
       override_suppression: overrideSuppression,
-      call_type: 'cancel',
     },
   });
 
