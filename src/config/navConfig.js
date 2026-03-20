@@ -26,6 +26,7 @@ const primaryItems = {
   renewals:         { to: '/agency/renewals',          label: 'Renewals',    icon: '🔄' },
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
   bookHealth:       { to: '/agency/book-health',       label: 'Book Health', icon: '🛡️' },
+  retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
 };
 
@@ -49,9 +50,8 @@ export const platformNav = {
       primaryItems.funnel,
       primaryItems.timeAttendance,
       primaryItems.staffPerformance,
-      primaryItems.renewals,
+      primaryItems.retention,
       primaryItems.planning,
-      primaryItems.bookHealth,
     ],
     secondary: [
       secondaryItems.leads,
@@ -66,9 +66,8 @@ export const platformNav = {
       primaryItems.funnel,
       primaryItems.timeAttendance,
       primaryItems.staffPerformance,
-      primaryItems.renewals,
+      primaryItems.retention,
       primaryItems.planning,
-      primaryItems.bookHealth,
     ],
     secondary: [
       secondaryItems.leads,
@@ -110,10 +109,9 @@ export const agencyNav = {
   principal: {
     primary: [
       primaryItems.leads,
-      primaryItems.renewals,
+      primaryItems.retention,
       primaryItems.staffPerformance,
       primaryItems.planning,
-      primaryItems.bookHealth,
     ],
     secondary: [
       primaryItems.funnel,

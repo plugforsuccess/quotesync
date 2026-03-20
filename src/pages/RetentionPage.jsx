@@ -1,0 +1,293 @@
+// src/pages/RetentionPage.jsx
+// Retention Hub — unified page combining Book Health + Renewals functionality.
+
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "../lib/supabase";
+import { useCurrentAgency } from "../hooks/useAgencyLeads";
+import { calcCancelPriority } from "../lib/retentionPriority";
+
+// Extracted tab components
+import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
+import { EventDetailModal } from "./components/retention/RetentionCancels";
+import RetentionImport from "./components/retention/RetentionImport";
+import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function fmt$(n) {
+  if (n == null || isNaN(n)) return "$0";
+  return "$" + Math.round(n).toLocaleString();
+}
+
+function daysUntilCancel(dateStr) {
+  if (!dateStr) return 999;
+  const d = new Date(dateStr);
+  const now = new Date();
+  return Math.ceil((d - now) / 86400000);
+}
+
+// ─── Styles ─────────────────────────────────────────────────────────────────
+
+const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap'); * { box-sizing: border-box; } ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: var(--qs-elevated); } ::-webkit-scrollbar-thumb { background: var(--qs-muted); border-radius: 3px; } input, select { background: var(--qs-elevated) !important; color: var(--qs-text) !important; border: 1px solid var(--qs-border) !important; border-radius: 6px; padding: 8px 10px; font-family: inherit; font-size: 13px; outline: none; } input:focus, select:focus { border-color: var(--qs-info) !important; } .card { background: var(--qs-card); border: 1px solid var(--qs-border); border-radius: 12px; padding: 20px; } .btn-primary { background: var(--qs-info); color: #fff; border: none; border-radius: 7px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: background 0.15s; } .btn-primary:hover { background: #2563EB; } .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; } .btn-ghost { background: transparent; color: var(--qs-dim); border: 1px solid var(--qs-border); border-radius: 7px; padding: 8px 14px; font-size: 13px; cursor: pointer; font-family: inherit; transition: all 0.15s; } .btn-ghost:hover, .btn-ghost.active { background: var(--qs-elevated); color: var(--qs-text); border-color: var(--qs-info); } .tab { padding: 8px 16px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 500; border: none; background: transparent; color: var(--qs-subtle); transition: all 0.15s; } .tab.active { background: var(--qs-elevated); color: var(--qs-text); } .upload-zone { border: 2px dashed var(--qs-border); border-radius: 10px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; } .upload-zone:hover { border-color: var(--qs-info); } label { font-size: 12px; color: var(--qs-subtle); font-weight: 500; display: block; margin-bottom: 4px; } table { width: 100%; border-collapse: collapse; font-size: 14px; } th { text-align: left; padding: 8px 12px; font-size: 12px; font-weight: 600; color: var(--qs-subtle); text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--qs-border); } td { padding: 9px 12px; border-bottom: 1px solid var(--qs-elevated); color: var(--qs-text); } .urgency-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 700; font-family: 'DM Mono', monospace; } .status-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; } .triage-row:hover td { background: var(--qs-elevated); cursor: pointer; } .scroll-hint-container { position: relative; } .scroll-hint-container::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 24px; background: linear-gradient(to right, transparent, var(--qs-dark)); pointer-events: none; opacity: 1; transition: opacity 0.2s; } @media (min-width: 840px) { .scroll-hint-container::after { opacity: 0; } }`;
+
+// ─── KPI Card ───────────────────────────────────────────────────────────────
+
+function KpiCard({ label, value, sub, color, urgent, urgentCount }) {
+  return (
+    <div className="card" style={{ position: "relative" }}>
+      <div style={{ fontSize: 12, color: "var(--qs-subtle)", fontWeight: 500, marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 700, color: color || "var(--qs-text)" }}>{value}</div>
+      {sub && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{sub}</div>}
+      {urgent && urgentCount > 0 && (
+        <div style={{ position: "absolute", top: 8, right: 10, background: "#EF4444", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 10, fontWeight: 700 }}>
+          {urgentCount} urgent
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Main Page ──────────────────────────────────────────────────────────────
+
+export default function RetentionPage() {
+  const { data: currentAgency } = useCurrentAgency();
+  const agencyId = currentAgency?.agency_id;
+  const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState("at_risk");
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const hasFlaggedBroken = useRef(false);
+
+  // ─── Fetch events ──────────────────────────────────────────────────────
+
+  const { data: events = [], isLoading: loading } = useQuery({
+    queryKey: ["pending_cases", agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pending_cases")
+        .select("*")
+        .eq("agency_id", agencyId)
+        .order("cancel_effective_date", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  const loadEvents = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["pending_cases", agencyId] });
+  }, [queryClient, agencyId]);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id ?? null));
+  }, []);
+
+  // ─── Current employee ─────────────────────────────────────────────────
+
+  const { data: currentEmployee } = useQuery({
+    queryKey: ["current_employee", agencyId, currentUserId],
+    queryFn: async () => {
+      if (!agencyId || !currentUserId) return null;
+      const { data } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, roles")
+        .eq("org_id", agencyId)
+        .eq("auth_user_id", currentUserId)
+        .maybeSingle();
+      return data || null;
+    },
+    enabled: !!agencyId && !!currentUserId,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  // ─── Producers ────────────────────────────────────────────────────────
+
+  const { data: producers = [] } = useQuery({
+    queryKey: ["producers", agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("employees")
+        .select("id, first_name, last_name, preferred_name")
+        .eq("org_id", agencyId)
+        .eq("employment_status", "active")
+        .overlaps("roles", ["service_inbound", "service_outbound", "service"])
+        .order("last_name");
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!agencyId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // ─── Promise-Broken Auto-Flag ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (hasFlaggedBroken.current) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const broken = events.filter(e =>
+      e.status === "promise_to_pay" &&
+      e.promise_date &&
+      e.promise_date < today
+    );
+    if (broken.length === 0) return;
+    hasFlaggedBroken.current = true;
+    Promise.all(
+      broken.map(e =>
+        supabase.from("pending_cases")
+          .update({ status: "promise_broken" })
+          .eq("id", e.id)
+      )
+    ).then(() => loadEvents());
+  }, [events, loadEvents]);
+
+  // ─── KPI Calculations ────────────────────────────────────────────────
+
+  const kpis = useMemo(() => {
+    const active = events.filter(e =>
+      !["saved", "lost", "auto_resolved", "requested_cancellation"].includes(e.status)
+    );
+    const saved = events.filter(e => e.status === "saved");
+    const lost = events.filter(e => ["lost", "promise_broken"].includes(e.status));
+    const terminations = events.filter(e => e.status === "requested_cancellation");
+    const contacted = events.filter(e =>
+      ["contacted", "payment_plan_requested", "promise_to_pay", "saved", "promise_broken", "requested_cancellation", "lost"].includes(e.status)
+    );
+
+    const premiumAtRisk = active.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
+    const premiumSaved = saved.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
+
+    const workable = saved.length + lost.length;
+    const saveRate = workable > 0 ? saved.length / workable : null;
+    const contactRate = (active.length + contacted.length) > 0
+      ? contacted.length / (active.length + contacted.length) : null;
+
+    const today = new Date();
+    const urgent = active.filter(e => {
+      const d = new Date(e.cancel_effective_date);
+      return (d - today) / 86400000 <= 3;
+    });
+
+    return {
+      totalActive: active.length, premiumAtRisk,
+      premiumSaved,
+      saveRate, contactRate,
+      terminations: terminations.length,
+      urgentCount: urgent.length,
+    };
+  }, [events]);
+
+  // ─── Resolved + Trends data ───────────────────────────────────────────
+
+  const resolvedEvents = useMemo(() => {
+    return events
+      .filter(e => ["saved", "lost", "auto_resolved", "requested_cancellation", "promise_broken"].includes(e.status))
+      .sort((a, b) => (b.resolution_date || b.updated_at || "").localeCompare(a.resolution_date || a.updated_at || ""));
+  }, [events]);
+
+  const trendsData = useMemo(() => {
+    const months = {};
+    for (const e of events) {
+      const d = e.cancel_effective_date || e.created_at?.slice(0, 10);
+      if (!d) continue;
+      const key = d.slice(0, 7);
+      if (!months[key]) months[key] = { month: key, cancels: 0, saves: 0, saveRate: 0 };
+      months[key].cancels++;
+      if (e.status === "saved") months[key].saves++;
+    }
+    const sorted = Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
+    for (const m of sorted) {
+      m.saveRate = m.cancels > 0 ? Math.round((m.saves / m.cancels) * 100) : 0;
+    }
+    return sorted;
+  }, [events]);
+
+  // ─── Event update handler ─────────────────────────────────────────────
+
+  function updateEvent(id, updates) {
+    queryClient.setQueryData(["pending_cases", agencyId], old =>
+      (old || []).map(e => e.id === id ? { ...e, ...updates } : e)
+    );
+  }
+
+  // ─── Page Render ──────────────────────────────────────────────────────
+
+  return (
+    <div style={{ minHeight: "100vh", background: "var(--qs-dark)", color: "var(--qs-text)", fontFamily: "'DM Sans', sans-serif", padding: "32px 24px" }}>
+      <style>{GLOBAL_STYLES}</style>
+
+      {/* Header */}
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "var(--qs-bright)", margin: 0 }}>Retention Hub</h1>
+        <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginTop: 2 }}>Policy Retention · {currentAgency?.agencies?.name || "Agency"}</div>
+      </div>
+
+      {loading && (
+        <div style={{ color: "var(--qs-subtle)", fontSize: 13, marginBottom: 12 }}>Loading events...</div>
+      )}
+
+      {/* KPI Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
+        <KpiCard label="At Risk" value={fmt$(kpis.premiumAtRisk)} sub={`${kpis.totalActive} policies`} color="#F59E0B" urgent={kpis.urgentCount > 0} urgentCount={kpis.urgentCount} />
+        <KpiCard label="Save Rate" value={kpis.saveRate !== null ? `${Math.round(kpis.saveRate * 100)}%` : "\u2014"} sub="saved / worked" color="#10B981" />
+        <KpiCard label="Contact Rate" value={kpis.contactRate !== null ? `${Math.round(kpis.contactRate * 100)}%` : "\u2014"} sub="of active queue" color="#3B82F6" />
+        <KpiCard label="Premium Saved" value={fmt$(kpis.premiumSaved)} sub="this period" color="#10B981" />
+        <KpiCard label="Terminations" value={kpis.terminations} sub="requested cancel" color="#64748B" />
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
+        {["at_risk", "resolved", "attrition", "growth", "trends", "import"].map(t => (
+          <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
+            {t === "at_risk"   ? "\u26A1 At Risk"       :
+             t === "resolved"  ? "Cancel Outcomes"  :
+             t === "attrition" ? "Terminations"     :
+             t === "growth"    ? "Net Growth"       :
+             t === "trends"    ? "Cancel Trends"    :
+                                 "Import"}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "at_risk" && (
+        <UnifiedAtRiskTab
+          agencyId={agencyId}
+          currentUserId={currentUserId}
+          currentEmployeeId={currentEmployee?.id}
+        />
+      )}
+      {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
+      {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
+      {activeTab === "attrition" && (
+        <AttritionTab
+          agencyId={agencyId}
+          currentUserId={currentUserId}
+        />
+      )}
+      {activeTab === "growth" && <NetGrowthTab agencyId={agencyId} />}
+      {activeTab === "import" && (
+        <RetentionImport
+          agencyId={agencyId}
+          currentUserId={currentUserId}
+          currentEmployeeId={currentEmployee?.id ?? null}
+        />
+      )}
+
+      {/* Detail Modal */}
+      {selectedEvent && createPortal(
+        <EventDetailModal
+          event={selectedEvent}
+          onClose={() => setSelectedEvent(null)}
+          onUpdate={updateEvent}
+          agencyId={agencyId}
+          currentEmployeeId={currentEmployee?.id ?? null}
+          producers={producers}
+        />,
+        document.body
+      )}
+    </div>
+  );
+}

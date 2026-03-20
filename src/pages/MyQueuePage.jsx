@@ -1,5 +1,5 @@
 // Employee's personal retention queue — cases assigned to them.
-// Reuses EventDetailModal and RenewalDetailModal from BookHealthPage
+// Reuses EventDetailModal and RenewalDetailModal from RetentionCancels
 // but scoped entirely to the current employee via RLS.
 
 import { useState } from 'react';
@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
-import { EventDetailModal, RenewalDetailModal } from './BookHealthPage';
+import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
 export default function MyQueuePage() {
   const { data: employee } = useCurrentEmployee();
