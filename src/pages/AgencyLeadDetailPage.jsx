@@ -7,7 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft, Clock, MapPin, FileText, Tag, Phone,
   CheckCircle, AlertCircle, ExternalLink, RefreshCw, MessageSquare,
-  XCircle
+  XCircle, Bot, PhoneIncoming, PhoneOutgoing, ChevronDown, ChevronUp
 } from 'lucide-react';
 import {
   useCurrentAgency,
@@ -153,6 +153,23 @@ const AgencyLeadDetailPage = () => {
   const recomputeScore = useRecomputeLeadScore();
   const disposeLead = useDisposeLead();
   const [showDisposition, setShowDisposition] = useState(false);
+
+  // Fetch latest bland_call_log for this lead
+  const [blandCallLog, setBlandCallLog] = useState(null);
+  const [transcriptOpen, setTranscriptOpen] = useState(false);
+  useEffect(() => {
+    if (!leadId) return;
+    supabase
+      .from('bland_call_logs')
+      .select('*')
+      .eq('lead_id', leadId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) setBlandCallLog(data);
+      });
+  }, [leadId]);
 
   const quoteData = lead?.lead_quotes?.[0];
   const quoteSummary = quoteData?.quote_summary || {};
@@ -613,6 +630,148 @@ const AgencyLeadDetailPage = () => {
                 <p className="text-gray-500">No enrichment data available yet.</p>
               )}
             </div>
+
+            {/* AI Verification */}
+            {(lead.bland_outbound_call_id || lead.bland_inbound_call_id || blandCallLog) && (
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-purple-500" />
+                  AI Verification
+                </h2>
+
+                <div className="space-y-4">
+                  {/* Status Badges Row */}
+                  <div className="flex flex-wrap gap-2">
+                    {/* Verification Status */}
+                    {lead.bland_verified ? (
+                      lead.bland_qualified === true ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-700">
+                          <CheckCircle className="w-3.5 h-3.5" /> Verified & Qualified
+                        </span>
+                      ) : lead.bland_qualified === false ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                          <XCircle className="w-3.5 h-3.5" /> Disqualified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                          <CheckCircle className="w-3.5 h-3.5" /> Verified
+                        </span>
+                      )
+                    ) : lead.bland_outbound_status === 'pending' ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-700">
+                        <Clock className="w-3.5 h-3.5" /> Call In Progress
+                      </span>
+                    ) : lead.bland_outbound_call_id || lead.bland_inbound_call_id ? (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                        Attempted
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-500">
+                        Not Called
+                      </span>
+                    )}
+
+                    {/* Call Type */}
+                    {blandCallLog && (
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
+                        blandCallLog.direction === 'outbound'
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-indigo-100 text-indigo-700'
+                      }`}>
+                        {blandCallLog.direction === 'outbound'
+                          ? <><PhoneOutgoing className="w-3.5 h-3.5" /> Outbound Verification</>
+                          : <><PhoneIncoming className="w-3.5 h-3.5" /> Inbound Call</>
+                        }
+                      </span>
+                    )}
+
+                    {/* Transfer Outcome */}
+                    {blandCallLog?.transferred === true && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                        <CheckCircle className="w-3.5 h-3.5" /> Transferred
+                      </span>
+                    )}
+                    {blandCallLog?.transferred === false && blandCallLog?.variables?.transfer_attempted === 'true' && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                        Transfer — No Answer
+                      </span>
+                    )}
+
+                    {/* Canopy Link */}
+                    {lead.canopy_link_sent && (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-teal-100 text-teal-700">
+                        <ExternalLink className="w-3.5 h-3.5" /> Canopy Link Sent
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Details Grid */}
+                  <dl className="grid grid-cols-2 gap-3 text-sm">
+                    {lead.bland_disqualify_reason && (
+                      <div className="col-span-2">
+                        <dt className="text-gray-500 text-xs">Disqualify Reason</dt>
+                        <dd className="text-red-600 font-medium">{lead.bland_disqualify_reason}</dd>
+                      </div>
+                    )}
+                    {blandCallLog?.transferred_to_name && (
+                      <div>
+                        <dt className="text-gray-500 text-xs">Transferred To</dt>
+                        <dd className="text-gray-900 font-medium">{blandCallLog.transferred_to_name}</dd>
+                      </div>
+                    )}
+                    {blandCallLog?.duration_seconds != null && (
+                      <div>
+                        <dt className="text-gray-500 text-xs">Call Duration</dt>
+                        <dd className="text-gray-900 font-medium">
+                          {Math.floor(blandCallLog.duration_seconds / 60)}m {blandCallLog.duration_seconds % 60}s
+                        </dd>
+                      </div>
+                    )}
+                    {blandCallLog?.variables?.coverage_interest && (
+                      <div>
+                        <dt className="text-gray-500 text-xs">Coverage Interest</dt>
+                        <dd className="text-gray-900 font-medium capitalize">{blandCallLog.variables.coverage_interest}</dd>
+                      </div>
+                    )}
+                    {blandCallLog?.variables?.callback_requested === 'true' && (
+                      <div>
+                        <dt className="text-gray-500 text-xs">Callback Requested</dt>
+                        <dd className="text-gray-900 font-medium">
+                          {blandCallLog.variables.callback_time_preference || 'Yes — no time specified'}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+
+                  {/* Transcript (collapsible) */}
+                  {(lead.bland_call_transcript || blandCallLog?.transcript) && (
+                    <div>
+                      <button
+                        onClick={() => setTranscriptOpen(prev => !prev)}
+                        className="flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
+                      >
+                        {transcriptOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        {transcriptOpen ? 'Hide' : 'Show'} Transcript
+                      </button>
+                      {transcriptOpen && (
+                        <div className="mt-2 p-3 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
+                          <pre className="text-xs text-gray-700 whitespace-pre-wrap font-mono leading-relaxed">
+                            {lead.bland_call_transcript || blandCallLog?.transcript}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Timestamp */}
+                  {lead.bland_verified_at && (
+                    <p className="text-xs text-gray-400">
+                      Verified {formatTimeAgo(lead.bland_verified_at)}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Messages */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
