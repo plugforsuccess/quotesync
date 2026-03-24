@@ -378,7 +378,7 @@ export default function RevenueProjectionsDashboard() {
   const [activeTab, setActiveTab] = useState("overview"); // overview | entries | upload
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [modal, setModal] = useState(null); // null | "commission" | "premium" | "trend" | "products" | "kpi-*"
-  const [productStatsMode, setProductStatsMode] = useState("all"); // "all" | "vc" | "core"
+  const [productStatsMode, setProductStatsMode] = useState("all"); // "all" | "vc" | "core" | "auto"
   const [producerModal, setProducerModal] = useState(null); // null | producer name string
   const [producerRange, setProducerRange] = useState("main"); // "main" | "ytd" | "YYYY-MM" | "custom"
   const [producerCustomStart, setProducerCustomStart] = useState(""); // "YYYY-MM-DD"
@@ -2112,12 +2112,15 @@ export default function RevenueProjectionsDashboard() {
       {modal === "products" && (() => {
         const VC_KEYS    = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured"];
         const CORE_KEYS  = ["auto", "ho", "condo"];
+        const AUTO_KEYS  = ["auto"];
         const ALL_KEYS   = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured", "motor_club", "other"];
 
         const statsKeys = productStatsMode === "vc"
           ? VC_KEYS
           : productStatsMode === "core"
           ? CORE_KEYS
+          : productStatsMode === "auto"
+          ? AUTO_KEYS
           : ALL_KEYS;
 
         const statsPremium    = statsKeys.reduce((s, k) => s + (totals.byProduct[k]?.premium    ?? 0), 0);
@@ -2138,6 +2141,7 @@ export default function RevenueProjectionsDashboard() {
               { key: "all",  label: "All Products" },
               { key: "vc",   label: "VC Eligible" },
               { key: "core", label: "Auto + Home + Condo" },
+              { key: "auto", label: "Auto" },
             ].map(({ key, label }) => (
               <button
                 key={key}
@@ -2154,6 +2158,7 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ fontSize: 11, color: "#475569", marginBottom: 16 }}>
             {productStatsMode === "vc"   && "Auto · Specialty Auto · Home · Condo · Renters · Landlord · PUP · Boat · Manufactured"}
             {productStatsMode === "core" && "Auto · Homeowners · Condo"}
+            {productStatsMode === "auto" && "Standard Auto only"}
             {productStatsMode === "all"  && "All product lines"}
           </div>
 
@@ -2220,6 +2225,7 @@ export default function RevenueProjectionsDashboard() {
                 <th>Policies</th>
                 <th>Items</th>
                 <th>Avg Premium</th>
+                <th>Avg Comm/Policy</th>
                 <th>Avg/Item</th>
               </tr>
             </thead>
@@ -2230,6 +2236,7 @@ export default function RevenueProjectionsDashboard() {
                 .map(([key, val]) => {
                   const pct = totals.totalPremium > 0 ? (val.premium / totals.totalPremium * 100).toFixed(1) : "—";
                   const avgPrem = val.count > 0 ? fmtFull$(val.premium / val.count) : "—";
+                  const avgCommPerPolicy = val.count > 0 ? fmtFull$(val.commission / val.count) : "—";
                   return (
                     <tr key={key}>
                       <td><span className="tag" style={{ background: `${PRODUCT_COLORS[key]}22`, color: PRODUCT_COLORS[key] }}>{COMMISSION[key].label}</span></td>
@@ -2240,6 +2247,7 @@ export default function RevenueProjectionsDashboard() {
                       <td style={{ color: "var(--qs-text)" }}>{val.count}</td>
                       <td style={{ color: "var(--qs-subtle)" }}>{val.itemCount ?? val.count}</td>
                       <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-subtle)" }}>{avgPrem}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>{avgCommPerPolicy}</td>
                       <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-dim)" }}>{val.itemCount > 0 ? fmtFull$(Math.round(val.premium / val.itemCount)) : "—"}</td>
                     </tr>
                   );
