@@ -44,11 +44,11 @@ const PRODUCT_LABELS = {
 const PORTFOLIO_POINTS = {
   auto:          10,
   ho:            20,  // Homeowners — always 1 item per policy
-  condo:         20,  // Condo — always 1 item per policy
+  condo:          0,  // Georgia statewide exclusion — Agency Bonus 2026
   renters:        5,
   landlord:      20,  // same points as HO but tracked separately
   specialty_auto: 5,  // Motorcycle, motor home, off-road, trailers
-  pup:            5,  // Personal Umbrella Policy
+  pup:            0,  // Georgia statewide exclusion — Agency Bonus 2026
   manufactured:   5,  // Manufactured Home
   boat:           5,  // Boat Owners — always 1 item per policy
   motor_club:     0,  // Motor Club — excluded from Allstate VC Baseline
@@ -56,7 +56,7 @@ const PORTFOLIO_POINTS = {
 };
 
 // VC-eligible product keys for item count calculations
-const VC_ITEM_PRODUCTS = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured"];
+const VC_ITEM_PRODUCTS = ["auto", "specialty_auto", "ho", "renters", "landlord", "boat", "manufactured"]; // condo and pup removed — Georgia statewide VC exclusion 2026
 
 // VC Baseline = all VC-eligible product items (target 53/month)
 const VC_BASELINE_TARGET = 53;
@@ -2114,8 +2114,8 @@ export default function RevenueProjectionsDashboard() {
 
       {/* Product breakdown drill-down */}
       {modal === "products" && (() => {
-        const VC_KEYS    = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured"];
-        const CORE_KEYS  = ["auto", "ho", "condo"];
+        const VC_KEYS    = ["auto", "specialty_auto", "ho", "renters", "landlord", "boat", "manufactured"]; // condo and pup removed — Georgia statewide VC exclusion 2026
+        const CORE_KEYS  = ["auto", "ho"];
         const AUTO_KEYS  = ["auto"];
         const ALL_KEYS   = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured", "motor_club", "other"];
 
@@ -2144,7 +2144,7 @@ export default function RevenueProjectionsDashboard() {
             {[
               { key: "all",  label: "All Products" },
               { key: "vc",   label: "VC Eligible" },
-              { key: "core", label: "Auto + Home + Condo" },
+              { key: "core", label: "Auto + Home" },
               { key: "auto", label: "Auto" },
             ].map(({ key, label }) => (
               <button
@@ -2161,7 +2161,7 @@ export default function RevenueProjectionsDashboard() {
           {/* Mode sub-label */}
           <div style={{ fontSize: 11, color: "#475569", marginBottom: 16 }}>
             {productStatsMode === "vc"   && "Auto · Specialty Auto · Home · Condo · Renters · Landlord · PUP · Boat · Manufactured"}
-            {productStatsMode === "core" && "Auto · Homeowners · Condo"}
+            {productStatsMode === "core" && "Auto · Homeowners"}
             {productStatsMode === "auto" && "Standard Auto only"}
             {productStatsMode === "all"  && "All product lines"}
           </div>
