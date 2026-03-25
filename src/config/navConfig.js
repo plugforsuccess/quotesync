@@ -26,6 +26,12 @@ const primaryItems = {
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
   retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
+  // Platform admin primary items
+  adminDashboard:   { to: '/admin',                    label: 'Overview',    icon: '🏠' },
+  adminAgencies:    { to: '/admin/agencies',           label: 'Agencies',    icon: '🏢' },
+  adminSettings:    { to: '/admin/settings',           label: 'Settings',    icon: '⚙️' },
+  adminAudit:       { to: '/admin/audit',              label: 'Audit Log',   icon: '🔍' },
+  adminEmployees:   { to: '/admin/agency/employees',   label: 'Employees',   icon: '👥' },
 };
 
 // ── Secondary nav items (inside hamburger menu) ──────────────────────────────
@@ -45,44 +51,39 @@ const secondaryItems = {
 export const platformNav = {
   platform_master_admin: {
     primary: [
-      primaryItems.funnel,
-      primaryItems.timeAttendance,
-      primaryItems.staffPerformance,
-      primaryItems.retention,
-      primaryItems.planning,
+      primaryItems.adminDashboard,
+      primaryItems.adminAgencies,
+      primaryItems.adminEmployees,
+      primaryItems.adminAudit,
+      primaryItems.adminSettings,
     ],
     secondary: [
-      secondaryItems.leads,
       secondaryItems.newsroom,
-      secondaryItems.agencyMgmt,
-      secondaryItems.employeeRoster,
-      secondaryItems.audit,
     ],
   },
   platform_admin: {
     primary: [
-      primaryItems.funnel,
-      primaryItems.timeAttendance,
-      primaryItems.staffPerformance,
-      primaryItems.retention,
-      primaryItems.planning,
+      primaryItems.adminDashboard,
+      primaryItems.adminAgencies,
+      primaryItems.adminEmployees,
+      primaryItems.adminAudit,
     ],
     secondary: [
-      secondaryItems.leads,
       secondaryItems.newsroom,
-      secondaryItems.agencyMgmt,
-      secondaryItems.employeeRoster,
-      secondaryItems.audit,
     ],
   },
   platform_support: {
     primary: [
-      primaryItems.funnel,
-      primaryItems.leads,
+      primaryItems.adminAgencies,
+      primaryItems.adminAudit,
     ],
-    secondary: [
-      secondaryItems.audit,
+    secondary: [],
+  },
+  platform_auditor: {
+    primary: [
+      primaryItems.adminAudit,
     ],
+    secondary: [],
   },
   platform_editor: {
     primary: [
@@ -90,12 +91,6 @@ export const platformNav = {
     ],
     secondary: [
       { to: '/news/standards', label: 'Standards', icon: '📋' },
-    ],
-  },
-  platform_auditor: {
-    primary: [],
-    secondary: [
-      secondaryItems.audit,
     ],
   },
 };
@@ -169,7 +164,7 @@ export function getAllNavItems(plane, platformRole, agencyRole) {
 export function getDefaultLanding(platformRole, agencyRole, agency = null) {
   if (platformRole) {
     if (platformRole === 'platform_editor') return '/news/dashboard';
-    if (platformRole === 'platform_master_admin' || platformRole === 'platform_admin') return '/admin/agencies';
+    if (platformRole === 'platform_master_admin' || platformRole === 'platform_admin') return '/admin';
     return '/agency/dashboard';
   }
   if (agencyRole) {

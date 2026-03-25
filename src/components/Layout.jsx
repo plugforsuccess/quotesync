@@ -8,6 +8,7 @@ import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
 import BottomTabBar from './BottomTabBar';
 import VerificationBanner from './VerificationBanner';
+import ImpersonationBanner from './ImpersonationBanner';
 import { useAuth } from '../contexts/AuthContext';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 
@@ -447,6 +448,8 @@ function Layout({ forcePlane = null }) {
 
       {/* Verification overdue banner — admin only */}
       {!isFunnelRoute && <VerificationBanner />}
+      {/* Impersonation mode banner — shown when platform admin is viewing as an agency */}
+      {!isFunnelRoute && <ImpersonationBanner />}
 
       {/* Main content — add bottom padding on mobile for tab bar clearance */}
       <main className={`flex-1 ${showBottomTabs && !isFunnelRoute ? 'pb-20 md:pb-0' : ''}`}>

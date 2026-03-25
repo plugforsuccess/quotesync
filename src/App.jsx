@@ -74,6 +74,8 @@ const NewsroomEditorPage = lazyWithRetry(() => import('./pages/NewsroomEditorPag
 const ArchivedStoriesPage = lazyWithRetry(() => import('./pages/ArchivedStoriesPage'));
 const StoryPreviewPage = lazyWithRetry(() => import('./pages/StoryPreviewPage'));
 const EditorialStandardsPage = lazyWithRetry(() => import('./pages/EditorialStandardsPage'));
+const AdminDashboardPage = lazyWithRetry(() => import('./pages/AdminDashboardPage'));
+const AdminPlatformSettingsPage = lazyWithRetry(() => import('./pages/AdminPlatformSettingsPage'));
 const AdminAgenciesPage = lazyWithRetry(() => import('./pages/AdminAgenciesPage'));
 const AdminAgencyOnboardingPage = lazyWithRetry(() => import('./pages/AdminAgencyOnboardingPage'));
 const AdminAgencyDetailPage = lazyWithRetry(() => import('./pages/AdminAgencyDetailPage'));
@@ -454,6 +456,22 @@ function App() {
 
           {/* Admin routes — dedicated layout forces platform nav */}
           <Route path="/admin" element={<AdminLayout />}>
+            {/* Platform Dashboard — index */}
+            <Route index element={
+              <ProtectedRoute requiredRole="admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminDashboardPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            {/* Platform Settings */}
+            <Route path="settings" element={
+              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminPlatformSettingsPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
             <Route path="agencies" element={
               <ProtectedRoute requiredRole="admin">
                 <ErrorBoundary fallback={<PageError />}>
