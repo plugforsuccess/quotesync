@@ -1355,3 +1355,262 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
     </div>
   );
 }
+
+// ─── Home Insurance Wizard Steps ──────────────────────────────────
+
+export function CanopyHomeStep({ carrierName, onSync, onSkip }) {
+  const { launchCanopy } = useCanopyLauncher();
+  const [syncing, setSyncing] = useState(false);
+
+  const handleSync = () => {
+    setSyncing(true);
+    trackEvent('canopy_home_midfunnel_clicked', { carrier: carrierName });
+    launchCanopy('wizard_home_midfunnel');
+    setTimeout(() => {
+      onSync?.();
+      setSyncing(false);
+    }, 500);
+  };
+
+  const displayCarrier = carrierName
+    ? carrierName.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : 'your current carrier';
+
+  return (
+    <div>
+      <StepHeading>See your exact savings before the call?</StepHeading>
+      <StepDescription>
+        Sync your {displayCarrier} policy — your agent will have your
+        coverage details ready in advance.
+      </StepDescription>
+
+      <div className="bg-gradient-to-br from-accent-50 to-white border border-accent-200 rounded-xl p-5 mb-4 max-w-sm mx-auto">
+        <div className="space-y-2 mb-5">
+          {[
+            { icon: Clock,       text: 'Takes 60 seconds' },
+            { icon: Shield,      text: 'Bank-level security' },
+            { icon: CheckCircle, text: 'No forms to fill out' },
+          ].map(({ icon: Icon, text }) => (
+            <div key={text} className="flex items-center gap-2">
+              <Icon className="w-4 h-4 text-success-500 flex-shrink-0" />
+              <span className="text-sm text-gray-700 font-medium">{text}</span>
+            </div>
+          ))}
+        </div>
+        <button
+          onClick={handleSync}
+          disabled={syncing}
+          className="group relative w-full inline-flex items-center justify-center gap-3 overflow-hidden rounded-xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98]"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 animate-gradient-x" />
+          <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-accent-500 via-accent-600 to-accent-500 px-6 py-3.5 rounded-xl">
+            <Zap className="relative z-10 w-5 h-5 text-white" />
+            <span className="relative z-10 text-white font-bold text-base">
+              {syncing ? 'Opening...' : 'Sync My Policy'}
+            </span>
+          </div>
+        </button>
+      </div>
+
+      <button
+        onClick={onSkip}
+        className="w-full text-sm text-gray-400 hover:text-gray-600 py-2 transition-colors"
+      >
+        Skip for now →
+      </button>
+    </div>
+  );
+}
+
+export function HomeInsuranceStatusStep({ value, onChange, onAutoAdvance }) {
+  const options = [
+    { value: 'switching',  label: "I'm switching providers",       emoji: '🔄' },
+    { value: 'first_time', label: "First-time homebuyer",          emoji: '🏡' },
+    { value: 'lapsed',     label: "My current coverage has lapsed", emoji: '⚠️' },
+  ];
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>What brings you here today?</StepHeading>
+      <StepDescription>This helps your agent prepare for your call.</StepDescription>
+      <div className="flex flex-col gap-3 max-w-sm mx-auto">
+        {options.map(opt => (
+          <ChoiceButton
+            key={opt.value}
+            selected={value === opt.value}
+            onClick={() => handleSelect(opt.value)}
+          >
+            <span className="mr-2">{opt.emoji}</span>
+            {opt.label}
+          </ChoiceButton>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export function HomeOccupancyTypeStep({ value, onChange, onAutoAdvance }) {
+  const options = [
+    { value: 'primary',  label: 'Yes — it\'s my primary home',       emoji: '🏠' },
+    { value: 'seasonal', label: 'Sometimes — seasonal / second home', emoji: '🌴' },
+    { value: 'rental',   label: 'No — I rent it out',                emoji: '🔑' },
+  ];
+
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>Do you live at this property?</StepHeading>
+      <StepDescription>
+        Rental properties qualify for a different type of coverage.
+      </StepDescription>
+      <div className="flex flex-col gap-3 max-w-sm mx-auto">
+        {options.map(opt => (
+          <ChoiceButton
+            key={opt.value}
+            selected={value === opt.value}
+            onClick={() => handleSelect(opt.value)}
+          >
+            <span className="mr-2">{opt.emoji}</span>
+            {opt.label}
+          </ChoiceButton>
+        ))}
+      </div>
+      {value === 'rental' && (
+        <p className="mt-3 text-xs text-amber-600 text-center font-medium">
+          Rental properties need a Dwelling Fire policy — your agent will cover this on the call.
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function RoofReplacedRecentlyStep({ value, onChange, onAutoAdvance }) {
+  const handleSelect = (val) => {
+    onChange(val);
+    setTimeout(() => onAutoAdvance?.(), 300);
+  };
+
+  return (
+    <div>
+      <StepHeading>Full roof replacement in the last 5 years?</StepHeading>
+      <StepDescription>
+        Partial repairs don&apos;t count — only a complete replacement.
+      </StepDescription>
+      <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
+        <ChoiceButton selected={value === true}  onClick={() => handleSelect(true)}>Yes</ChoiceButton>
+        <ChoiceButton selected={value === false} onClick={() => handleSelect(false)}>No</ChoiceButton>
+      </div>
+    </div>
+  );
+}
+
+export function PropertyDetailsStep({ yearBuilt, squareFootage, stories, isPrefilled, onYearBuiltChange, onSquareFootageChange, onStoriesChange, onContinue }) {
+  const [yearErr, setYearErr]   = useState('');
+  const [sqftErr, setSqftErr]   = useState('');
+  const currentYear = new Date().getFullYear();
+
+  const STORIES_OPTIONS = ['1', '1.5', '2', '2+'];
+
+  const validate = () => {
+    let valid = true;
+    if (!yearBuilt || yearBuilt < 1800 || yearBuilt > currentYear) {
+      setYearErr(`Enter a year between 1800 and ${currentYear}`);
+      valid = false;
+    } else { setYearErr(''); }
+    if (!squareFootage || squareFootage < 100 || squareFootage > 20000) {
+      setSqftErr('Enter a valid square footage');
+      valid = false;
+    } else { setSqftErr(''); }
+    return valid;
+  };
+
+  const handleContinue = () => {
+    if (validate()) onContinue?.();
+  };
+
+  return (
+    <div>
+      <StepHeading>Tell us about your home.</StepHeading>
+      {isPrefilled && (
+        <StepDescription>
+          We pre-filled these from public records — please verify and correct if needed.
+        </StepDescription>
+      )}
+      {!isPrefilled && (
+        <StepDescription>
+          These details help us prepare the most accurate quote.
+        </StepDescription>
+      )}
+
+      <div className="space-y-5 max-w-sm mx-auto">
+        {/* Year Built */}
+        <InputField
+          id="yearBuilt"
+          label="Year Built"
+          type="text"
+          inputMode="numeric"
+          value={yearBuilt ?? ''}
+          onChange={e => {
+            const v = parseInt(e.target.value.replace(/\D/g, ''), 10);
+            onYearBuiltChange(isNaN(v) ? null : v);
+          }}
+          placeholder={`e.g. ${currentYear - 20}`}
+          error={yearErr}
+          maxLength={4}
+        />
+
+        {/* Square Footage */}
+        <InputField
+          id="squareFootage"
+          label="Square Footage"
+          type="text"
+          inputMode="numeric"
+          value={squareFootage != null ? squareFootage.toLocaleString() : ''}
+          onChange={e => {
+            const v = parseInt(e.target.value.replace(/\D/g, ''), 10);
+            onSquareFootageChange(isNaN(v) ? null : v);
+          }}
+          placeholder="e.g. 1,800"
+          error={sqftErr}
+        />
+
+        {/* Stories */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Number of Stories
+          </label>
+          <div className="grid grid-cols-4 gap-2">
+            {STORIES_OPTIONS.map(opt => (
+              <ChoiceButton
+                key={opt}
+                selected={stories === opt}
+                onClick={() => onStoriesChange(opt)}
+              >
+                {opt}
+              </ChoiceButton>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-6 max-w-sm mx-auto">
+        <button
+          onClick={handleContinue}
+          disabled={!yearBuilt || !squareFootage || !stories}
+          className="w-full py-4 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl text-base transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Continue
+        </button>
+      </div>
+    </div>
+  );
+}

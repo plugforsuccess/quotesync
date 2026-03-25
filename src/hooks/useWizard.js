@@ -35,6 +35,15 @@ export const SESSION_KEYS = {
   VETERAN_STATUS: 'qs_funnel_veteran_status',
   CURRENT_AUTO_PREMIUM: 'qs_funnel_current_auto_premium',
   CURRENT_HOME_PREMIUM: 'qs_funnel_current_home_premium',
+  HOME_INSURANCE_STATUS: 'qs_funnel_home_insurance_status',
+  HOME_OCCUPANCY_TYPE: 'qs_funnel_home_occupancy_type',
+  ROOF_REPLACED_RECENTLY: 'qs_funnel_roof_replaced_recently',
+  YEAR_BUILT: 'qs_funnel_year_built',
+  SQUARE_FOOTAGE: 'qs_funnel_square_footage',
+  STORIES: 'qs_funnel_stories',
+  CANOPY_HOME_SHOWN: 'qs_funnel_canopy_home_shown',
+  CANOPY_HOME_SYNCED: 'qs_funnel_canopy_home_synced',
+  PROPERTY_DATA_SOURCE: 'qs_funnel_property_data_source',
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -76,6 +85,14 @@ function restore() {
     veteranStatus: sessionStorage.getItem(SESSION_KEYS.VETERAN_STATUS) || null,
     currentAutoPremium: jp(sessionStorage.getItem(SESSION_KEYS.CURRENT_AUTO_PREMIUM), null),
     currentHomePremium: jp(sessionStorage.getItem(SESSION_KEYS.CURRENT_HOME_PREMIUM), null),
+    homeInsuranceStatus: sessionStorage.getItem(SESSION_KEYS.HOME_INSURANCE_STATUS) || null,
+    homeOccupancyType: sessionStorage.getItem(SESSION_KEYS.HOME_OCCUPANCY_TYPE) || null,
+    roofReplacedRecently: jp(sessionStorage.getItem(SESSION_KEYS.ROOF_REPLACED_RECENTLY), null),
+    yearBuilt: jp(sessionStorage.getItem(SESSION_KEYS.YEAR_BUILT), null),
+    squareFootage: jp(sessionStorage.getItem(SESSION_KEYS.SQUARE_FOOTAGE), null),
+    stories: sessionStorage.getItem(SESSION_KEYS.STORIES) || null,
+    canopyHomeSynced: jp(sessionStorage.getItem(SESSION_KEYS.CANOPY_HOME_SYNCED), false),
+    propertyDataSource: sessionStorage.getItem(SESSION_KEYS.PROPERTY_DATA_SOURCE) || null,
   };
 }
 
@@ -112,6 +129,14 @@ function persistToSession(a) {
     [SESSION_KEYS.VETERAN_STATUS, a.veteranStatus],
     [SESSION_KEYS.CURRENT_AUTO_PREMIUM, a.currentAutoPremium !== null ? String(a.currentAutoPremium) : null],
     [SESSION_KEYS.CURRENT_HOME_PREMIUM, a.currentHomePremium !== null ? String(a.currentHomePremium) : null],
+    [SESSION_KEYS.HOME_INSURANCE_STATUS, a.homeInsuranceStatus],
+    [SESSION_KEYS.HOME_OCCUPANCY_TYPE, a.homeOccupancyType],
+    [SESSION_KEYS.ROOF_REPLACED_RECENTLY, a.roofReplacedRecently !== null ? JSON.stringify(a.roofReplacedRecently) : null],
+    [SESSION_KEYS.YEAR_BUILT, a.yearBuilt !== null ? JSON.stringify(a.yearBuilt) : null],
+    [SESSION_KEYS.SQUARE_FOOTAGE, a.squareFootage !== null ? JSON.stringify(a.squareFootage) : null],
+    [SESSION_KEYS.STORIES, a.stories],
+    [SESSION_KEYS.CANOPY_HOME_SYNCED, JSON.stringify(a.canopyHomeSynced)],
+    [SESSION_KEYS.PROPERTY_DATA_SOURCE, a.propertyDataSource],
   ];
   pairs.forEach(([k, v]) => {
     if (v != null && v !== '') {
@@ -138,12 +163,20 @@ export function computeStepSequence(answers) {
   if (intent === 'auto') {
     steps.push(
       'currentAutoCarrier', 'currentAutoPremium',
-      'coverageLapse',
       'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
-      'autoDrivingRecord'
+      'coverageLapse', 'autoDrivingRecord'
     );
   } else if (intent === 'home' && isOwner) {
-    steps.push('currentHomeCarrier', 'currentHomePremium', 'homeClaimsHistory');
+    steps.push(
+      'currentHomeCarrier',
+      'canopyHome',
+      'currentHomePremium',
+      'homeInsuranceStatus',
+      'homeOccupancyType',
+      'roofReplacedRecently',
+      'propertyDetails',
+      'homeClaimsHistory'
+    );
   } else if (intent === 'auto_renters') {
     steps.push(
       'currentAutoCarrier', 'currentAutoPremium',
@@ -154,11 +187,17 @@ export function computeStepSequence(answers) {
     );
   } else if (intent === 'bundle' && isOwner) {
     steps.push(
+      'currentHomeCarrier',
+      'canopyHome',
+      'currentHomePremium',
+      'homeInsuranceStatus',
+      'homeOccupancyType',
+      'roofReplacedRecently',
+      'propertyDetails',
+      'homeClaimsHistory',
       'currentAutoCarrier', 'currentAutoPremium',
-      'currentHomeCarrier', 'currentHomePremium',
-      'coverageLapse',
       'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
-      'autoDrivingRecord', 'homeClaimsHistory'
+      'coverageLapse', 'autoDrivingRecord'
     );
   }
   // 'unsure' or null → no carrier, no premium, no vehicle steps
@@ -240,6 +279,11 @@ export function useWizard() {
         next.phone = value;
       }
 
+      // Rental occupancy → auto-route to landlord product intent
+      if (field === 'homeOccupancyType' && value === 'rental') {
+        next.productIntent = 'landlord';
+      }
+
       return next;
     });
   }, []);
@@ -250,12 +294,24 @@ export function useWizard() {
     setDirection('forward');
     setAnswers(prev => { persistToSession(prev); return prev; });
     setCurrentIndex(prev => {
-      const next = Math.min(prev + 1, stepSequence.length - 1);
+      let next = prev + 1;
+      // Skip canopyHome if carrier is "none" or not set
+      const nextStepId = stepSequence[next];
+      if (nextStepId === 'canopyHome' &&
+          (!answers.currentHomeCarrier || answers.currentHomeCarrier === 'none')) {
+        next += 1;
+      }
+      // Skip currentHomePremium if Canopy already synced
+      const nextStepId2 = stepSequence[next];
+      if (nextStepId2 === 'currentHomePremium' && answers.canopyHomeSynced) {
+        next += 1;
+      }
+      next = Math.min(next, stepSequence.length - 1);
       sessionStorage.setItem(SESSION_KEYS.CURRENT_STEP, String(next));
       return next;
     });
     return timeMs;
-  }, [stepSequence.length]);
+  }, [stepSequence, answers.currentHomeCarrier, answers.canopyHomeSynced]);
 
   const goBack = useCallback(() => {
     const timeMs = Date.now() - stepEnteredAt.current;
