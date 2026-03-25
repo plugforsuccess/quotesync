@@ -75,6 +75,7 @@ const ArchivedStoriesPage = lazyWithRetry(() => import('./pages/ArchivedStoriesP
 const StoryPreviewPage = lazyWithRetry(() => import('./pages/StoryPreviewPage'));
 const EditorialStandardsPage = lazyWithRetry(() => import('./pages/EditorialStandardsPage'));
 const AdminAgenciesPage = lazyWithRetry(() => import('./pages/AdminAgenciesPage'));
+const AdminAgencyOnboardingPage = lazyWithRetry(() => import('./pages/AdminAgencyOnboardingPage'));
 const AdminAgencyDetailPage = lazyWithRetry(() => import('./pages/AdminAgencyDetailPage'));
 const AdminAuditPage = lazyWithRetry(() => import('./pages/AdminAuditPage'));
 const AdminTimeAttendancePage = lazyWithRetry(() => import('./pages/AdminTimeAttendancePage'));
@@ -457,6 +458,13 @@ function App() {
               <ProtectedRoute requiredRole="admin">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><AdminAgenciesPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agencies/new" element={
+              <ProtectedRoute requirePlatformUser requiredPlatformRole="platform_master_admin">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><AdminAgencyOnboardingPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
