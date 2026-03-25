@@ -1,18 +1,18 @@
 // src/hooks/useAiQueue.js
-// React Query hook for firing the AI call queue via the fire-ai-queue edge function.
+// React Query hook for firing the renewal AI call queue via the fire-renewal-queue edge function.
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
 
-async function fireAiQueue(overrideSuppression = false) {
+async function fireRenewalQueue(overrideSuppression = false) {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
   // agency_id is derived server-side from the JWT — not sent by the client.
   // This prevents a malicious client from firing calls against another agency.
-  const response = await supabase.functions.invoke('fire-ai-queue', {
+  const response = await supabase.functions.invoke('fire-renewal-queue', {
     body: {
       override_suppression: overrideSuppression,
     },
@@ -25,13 +25,13 @@ async function fireAiQueue(overrideSuppression = false) {
   return response.data;
 }
 
-export function useFireAiQueue() {
+export function useFireRenewalQueue() {
   const queryClient = useQueryClient();
   const [lastResult, setLastResult] = useState(null);
 
   const mutation = useMutation({
     mutationFn: ({ overrideSuppression } = {}) =>
-      fireAiQueue(overrideSuppression),
+      fireRenewalQueue(overrideSuppression),
     onSuccess: (data) => {
       setLastResult(data);
       // Refresh renewal policies after queue run

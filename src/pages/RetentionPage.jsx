@@ -13,7 +13,7 @@ import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
 import { EventDetailModal } from "./components/retention/RetentionCancels";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
-import { useFireAiQueue, useFireCancelQueue } from '../hooks/useAiQueue';
+import { useFireRenewalQueue, useFireCancelQueue } from '../hooks/useAiQueue';
 import RetentionRenewals      from './components/retention/RetentionRenewals';
 import RetentionAIPerformance from './components/retention/RetentionAIPerformance';
 
@@ -69,7 +69,7 @@ export default function RetentionPage() {
     isPending: isRenewalFiring,
     lastResult: renewalQueueResult,
     clearResult: clearRenewalResult,
-  } = useFireAiQueue();
+  } = useFireRenewalQueue();
 
   const {
     fireQueue: fireCancelQueue,
