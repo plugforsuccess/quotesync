@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map, PhoneCall } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { useAgencyDetail, useAgencyCarrierConfig, useAgencyCommissionRatesRaw, useUpsertCommissionRates, useAgencyRoutingRulesForAgent, useCreateAgencyRoutingRule } from '../hooks/useAgencies';
+import { useAgencyDetail, useAgencyCarrierConfig, useAgencyCommissionRatesRaw, useUpsertCommissionRates, useUpdateRevenueGoals, useAgencyRoutingRulesForAgent, useCreateAgencyRoutingRule } from '../hooks/useAgencies';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useTeamAvailability, useSetTransferPhone, validateE164 } from '../hooks/useAgentAvailability';
@@ -273,8 +273,11 @@ function CommissionTab({ agencyId, isAgent }) {
   const { data: rates, isLoading: ratesLoading } = useAgencyCommissionRatesRaw(agencyId);
   const { data: carrierConfig, isLoading: configLoading } = useAgencyCarrierConfig(agencyId);
   const upsertRates = useUpsertCommissionRates(agencyId);
+  const updateGoals = useUpdateRevenueGoals(agencyId);
   const [editRates, setEditRates] = useState(null);
+  const [editGoals, setEditGoals] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [savingGoals, setSavingGoals] = useState(false);
 
   const isLoading = ratesLoading || configLoading;
 
@@ -345,12 +348,79 @@ function CommissionTab({ agencyId, isAgent }) {
       {/* Carrier Config */}
       {carrierConfig && (
         <div className="dark-card">
-          <h2 className="text-lg font-semibold mb-4" style={{ color: 'var(--qs-bright)' }}>Carrier Configuration</h2>
-          <div className="grid gap-4 md:grid-cols-3">
-            <ReadOnly label="Carrier" value={carrierConfig.carrier_name || 'Allstate'} />
-            <ReadOnly label="Commissionable Factor" value={carrierConfig.commissionable_factor ? `${(carrierConfig.commissionable_factor * 100).toFixed(1)}%` : '-'} />
-            <ReadOnly label="Commission Goal" value={carrierConfig.commission_goal ? `$${Number(carrierConfig.commission_goal).toLocaleString()}` : '-'} />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Carrier Configuration</h2>
+            {isAgent && !editGoals && (
+              <button
+                onClick={() => setEditGoals({
+                  commission_goal: carrierConfig.commission_goal || 40000,
+                  premium_goal: carrierConfig.premium_goal || 160000,
+                })}
+                className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+              >
+                Edit Goals
+              </button>
+            )}
           </div>
+          {editGoals ? (
+            <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Commission Goal ($/mo)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={editGoals.commission_goal}
+                    onChange={(e) => setEditGoals(g => ({ ...g, commission_goal: e.target.value }))}
+                    className="dark-input"
+                    placeholder="40000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>Premium Goal ($/mo)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={editGoals.premium_goal}
+                    onChange={(e) => setEditGoals(g => ({ ...g, premium_goal: e.target.value }))}
+                    className="dark-input"
+                    placeholder="160000"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    setSavingGoals(true);
+                    try {
+                      await updateGoals.mutateAsync({
+                        commission_goal: parseFloat(editGoals.commission_goal) || 0,
+                        premium_goal: parseFloat(editGoals.premium_goal) || 0,
+                      });
+                      setEditGoals(null);
+                    } catch (err) {
+                      alert('Failed to save goals: ' + err.message);
+                    } finally {
+                      setSavingGoals(false);
+                    }
+                  }}
+                  disabled={savingGoals}
+                  className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />{savingGoals ? 'Saving...' : 'Save Goals'}
+                </button>
+                <button onClick={() => setEditGoals(null)} className="btn-ghost">Cancel</button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-3">
+              <ReadOnly label="Carrier" value={carrierConfig.carrier_name || 'Allstate'} />
+              <ReadOnly label="Commission Goal" value={carrierConfig.commission_goal ? `$${Number(carrierConfig.commission_goal).toLocaleString()}/mo` : '-'} />
+              <ReadOnly label="Premium Goal" value={carrierConfig.premium_goal ? `$${Number(carrierConfig.premium_goal).toLocaleString()}/mo` : '-'} />
+            </div>
+          )}
         </div>
       )}
 

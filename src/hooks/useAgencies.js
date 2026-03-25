@@ -400,6 +400,23 @@ export function useAgencyCarrierConfig(agencyId) {
   });
 }
 
+// MT-06: Update revenue goals (commission_goal + premium_goal)
+export function useUpdateRevenueGoals(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ commission_goal, premium_goal }) => {
+      const { error } = await supabase
+        .from('agency_carrier_config')
+        .update({ commission_goal, premium_goal, updated_at: new Date().toISOString() })
+        .eq('agency_id', agencyId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agency_carrier_config', agencyId] });
+    },
+  });
+}
+
 // MT-06: Fetch agency commission rates
 export function useAgencyCommissionRatesRaw(agencyId) {
   return useQuery({
