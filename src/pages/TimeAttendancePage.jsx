@@ -1,4 +1,4 @@
-// src/pages/AdminTimeAttendancePage.jsx
+// src/pages/TimeAttendancePage.jsx
 // Admin Attendance Page — Cameron enters weekly time for each employee.
 // No employee self-service, no approval workflow. Admin-only data entry.
 // Route: /admin/time-attendance
@@ -384,7 +384,7 @@ function exportToXLSX(entries, weekStart, getEmployeeName, ytdEntries, year) {
 
 // ── Page Component ─────────────────────────────────────────────────────────────
 
-const AdminTimeAttendancePage = () => {
+const TimeAttendancePage = () => {
   const { platform, agency } = usePermissions();
   const { currentAgencyId } = useAuth();
 
@@ -783,4 +783,4 @@ const AdminTimeAttendancePage = () => {
   );
 };
 
-export default AdminTimeAttendancePage;
+export default TimeAttendancePage;

@@ -1,5 +1,5 @@
 // src/pages/AdminAgenciesPage.jsx
-// Admin panel for managing agency applications and statuses
+// Admin panel for managing agency applications and statuses — dark theme
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -8,11 +8,26 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAgencies } from '../hooks/useAgencies';
 import PageSpinner from '../components/PageSpinner';
 
-const STATUS_CONFIG = {
-  pending: { label: 'Pending', icon: Clock, color: 'yellow', bg: 'bg-yellow-100', text: 'text-yellow-700' },
-  approved: { label: 'Approved', icon: CheckCircle, color: 'green', bg: 'bg-green-100', text: 'text-green-700' },
-  rejected: { label: 'Rejected', icon: XCircle, color: 'red', bg: 'bg-red-100', text: 'text-red-700' },
-  suspended: { label: 'Suspended', icon: Ban, color: 'gray', bg: 'bg-gray-100', text: 'text-gray-700' }
+const STATUS_STYLES = {
+  pending:   { background: 'rgba(245,158,11,0.15)',  color: '#FBBF24' },
+  approved:  { background: 'rgba(52,211,153,0.15)',  color: '#34D399' },
+  rejected:  { background: 'rgba(239,68,68,0.15)',   color: '#F87171' },
+  suspended: { background: 'var(--qs-elevated)',     color: 'var(--qs-dim)' },
+};
+
+const STATUS_ICONS = {
+  pending: Clock,
+  approved: CheckCircle,
+  rejected: XCircle,
+  suspended: Ban,
+};
+
+const STAT_COLORS = {
+  total:     { value: 'var(--qs-bright)',  bg: 'var(--qs-elevated)' },
+  pending:   { value: '#FBBF24',           bg: 'rgba(245,158,11,0.1)' },
+  approved:  { value: '#34D399',           bg: 'rgba(52,211,153,0.1)' },
+  rejected:  { value: '#F87171',           bg: 'rgba(239,68,68,0.1)' },
+  suspended: { value: 'var(--qs-dim)',     bg: 'var(--qs-elevated)' },
 };
 
 const AdminAgenciesPage = () => {
@@ -25,11 +40,11 @@ const AdminAgenciesPage = () => {
   // Redirect if not admin
   if (userRole !== 'admin') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 to-white flex items-center justify-center">
-        <div className="text-center">
-          <ShieldOff className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You do not have permission to view this page.</p>
+      <div className="dark-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <ShieldOff style={{ width: 64, height: 64, color: '#F87171', margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 8 }}>Access Denied</h2>
+          <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>You do not have permission to view this page.</p>
         </div>
       </div>
     );
@@ -41,7 +56,7 @@ const AdminAgenciesPage = () => {
     pending: agencies.filter(a => a.status === 'pending').length,
     approved: agencies.filter(a => a.status === 'approved').length,
     rejected: agencies.filter(a => a.status === 'rejected').length,
-    suspended: agencies.filter(a => a.status === 'suspended').length
+    suspended: agencies.filter(a => a.status === 'suspended').length,
   };
 
   if (isLoading) {
@@ -50,16 +65,20 @@ const AdminAgenciesPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white rounded-lg shadow-sm p-8 text-center">
-          <AlertCircle className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Failed to Load</h2>
-          <p className="text-gray-600 mb-6">{error.message}</p>
+      <div className="dark-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: 16 }}>
+        <div className="dark-card" style={{ maxWidth: 400, textAlign: 'center', padding: 32 }}>
+          <h2 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 16 }}>Failed to Load</h2>
+          <p style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 24 }}>{error.message}</p>
           <button
             onClick={() => refetch()}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-colors mx-auto"
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '10px 20px', borderRadius: 8, border: 'none',
+              background: 'var(--qs-primary, #3B82F6)', color: '#fff',
+              fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            }}
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw size={14} />
             Retry
           </button>
         </div>
@@ -68,75 +87,70 @@ const AdminAgenciesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dark-page">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)' }}>
         <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Building2 className="w-8 h-8 text-primary-600" />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <Building2 size={28} style={{ color: 'var(--qs-primary, #3B82F6)' }} />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Agency Management</h1>
-                <p className="text-gray-600 text-sm">Review applications and manage agency partners</p>
+                <h1 style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-bright)' }}>Agency Management</h1>
+                <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>Review applications and manage agency partners</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <button
                 onClick={() => navigate('/admin/agencies/new')}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-sm font-semibold rounded-lg transition-colors"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '8px 16px', borderRadius: 8, border: 'none',
+                  background: 'var(--qs-primary, #3B82F6)', color: '#fff',
+                  fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                }}
               >
-                <Plus className="w-4 h-4" />
+                <Plus size={14} />
                 New Agency
               </button>
               <button
                 onClick={() => refetch()}
-                className="p-2 text-gray-600 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                style={{
+                  padding: 8, borderRadius: 8, border: '1px solid var(--qs-border)',
+                  background: 'none', color: 'var(--qs-dim)', cursor: 'pointer',
+                }}
                 title="Refresh"
               >
-                <RefreshCw className="w-5 h-5" />
+                <RefreshCw size={18} />
               </button>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-900">{stats.total}</div>
-              <div className="text-sm text-gray-600">Total</div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-yellow-700">{stats.pending}</div>
-              <div className="text-sm text-yellow-600">Pending</div>
-            </div>
-            <div className="bg-green-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-green-700">{stats.approved}</div>
-              <div className="text-sm text-green-600">Approved</div>
-            </div>
-            <div className="bg-red-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-red-700">{stats.rejected}</div>
-              <div className="text-sm text-red-600">Rejected</div>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-700">{stats.suspended}</div>
-              <div className="text-sm text-gray-600">Suspended</div>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 16 }}>
+            {['total', 'pending', 'approved', 'rejected', 'suspended'].map(key => (
+              <div key={key} style={{ background: STAT_COLORS[key].bg, borderRadius: 8, padding: 16 }}>
+                <div style={{ fontSize: 22, fontWeight: 700, color: STAT_COLORS[key].value }}>{stats[key]}</div>
+                <div style={{ fontSize: 13, color: 'var(--qs-dim)', textTransform: 'capitalize' }}>{key}</div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white border-b border-gray-200">
+      <div style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)' }}>
         <div className="max-w-7xl mx-auto px-4 py-3">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             {['all', 'pending', 'approved', 'rejected', 'suspended'].map(status => (
               <button
                 key={status}
                 onClick={() => setFilter(status)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  filter === status
-                    ? 'bg-primary-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                style={{
+                  padding: '8px 16px', borderRadius: 8, fontSize: 13, fontWeight: 500,
+                  border: 'none', cursor: 'pointer',
+                  background: filter === status ? 'var(--qs-primary, #3B82F6)' : 'var(--qs-elevated)',
+                  color: filter === status ? '#fff' : 'var(--qs-dim)',
+                }}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
               </button>
@@ -148,91 +162,85 @@ const AdminAgenciesPage = () => {
       {/* Agency List */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         {agencies.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">No agencies found</h2>
-            <p className="text-gray-600">
-              {filter === 'all'
-                ? 'No agencies have applied yet.'
-                : `No agencies with status "${filter}"`}
+          <div className="dark-card" style={{ padding: 48, textAlign: 'center' }}>
+            <Building2 size={64} style={{ color: 'var(--qs-subtle)', margin: '0 auto 16px' }} />
+            <h2 style={{ fontSize: 18, fontWeight: 600, color: 'var(--qs-bright)', marginBottom: 8 }}>No agencies found</h2>
+            <p style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
+              {filter === 'all' ? 'No agencies have applied yet.' : `No agencies with status "${filter}"`}
             </p>
           </div>
         ) : (
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px]">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Agency
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Contact
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      States
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
-                      Applied
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase">
-                      Actions
-                    </th>
+          <div className="dark-card" style={{ padding: 0, overflow: 'hidden' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: 'var(--qs-elevated)', borderBottom: '1px solid var(--qs-border)' }}>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Agency</th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Contact</th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>States</th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Status</th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'left' }}>Applied</th>
+                    <th className="dark-section-label" style={{ padding: '10px 20px', textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody>
                   {agencies.map((agency) => {
-                    const statusConfig = STATUS_CONFIG[agency.status] || STATUS_CONFIG.pending;
-                    const StatusIcon = statusConfig.icon;
+                    const StatusIcon = STATUS_ICONS[agency.status] || Clock;
+                    const statusStyle = STATUS_STYLES[agency.status] || STATUS_STYLES.pending;
 
                     return (
-                      <tr key={agency.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
-                          <div>
-                            <div className="font-semibold text-gray-900">{agency.name}</div>
-                            {agency.brand_name && (
-                              <div className="text-sm text-gray-500">{agency.brand_name}</div>
-                            )}
-                          </div>
+                      <tr
+                        key={agency.id}
+                        style={{ borderBottom: '1px solid var(--qs-border)' }}
+                        onMouseEnter={e => e.currentTarget.style.background = 'var(--qs-elevated)'}
+                        onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <td style={{ padding: '12px 20px' }}>
+                          <div style={{ fontWeight: 600, fontSize: 13, color: 'var(--qs-bright)' }}>{agency.name}</div>
+                          {agency.brand_name && (
+                            <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{agency.brand_name}</div>
+                          )}
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm">
-                            <div className="font-medium text-gray-900">
-                              {agency.primary_contact_name || '-'}
-                            </div>
-                            <div className="text-gray-500">{agency.email}</div>
+                        <td style={{ padding: '12px 20px' }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--qs-bright)' }}>
+                            {agency.primary_contact_name || '-'}
                           </div>
+                          <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>{agency.email}</div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600">
-                            {agency.state_licenses?.length > 0
-                              ? agency.state_licenses.slice(0, 3).join(', ') +
-                                (agency.state_licenses.length > 3 ? ` +${agency.state_licenses.length - 3}` : '')
-                              : '-'}
-                          </div>
+                        <td style={{ padding: '12px 20px', fontSize: 13, color: 'var(--qs-dim)' }}>
+                          {agency.state_licenses?.length > 0
+                            ? agency.state_licenses.slice(0, 3).join(', ') +
+                              (agency.state_licenses.length > 3 ? ` +${agency.state_licenses.length - 3}` : '')
+                            : '-'}
                         </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusConfig.bg} ${statusConfig.text}`}>
-                            <StatusIcon className="w-3.5 h-3.5" />
-                            {statusConfig.label}
+                        <td style={{ padding: '12px 20px' }}>
+                          <span style={{
+                            ...statusStyle,
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            padding: '2px 8px', borderRadius: 4, fontSize: 12, fontWeight: 600,
+                          }}>
+                            <StatusIcon size={12} />
+                            {agency.status.charAt(0).toUpperCase() + agency.status.slice(1)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td style={{ padding: '12px 20px', fontSize: 13, color: 'var(--qs-subtle)' }}>
                           {new Date(agency.created_at).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
+                            month: 'short', day: 'numeric', year: 'numeric',
                           })}
                         </td>
-                        <td className="px-6 py-4 text-right">
+                        <td style={{ padding: '12px 20px', textAlign: 'right' }}>
                           <Link
                             to={`/admin/agencies/${agency.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-lg transition-colors"
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6,
+                              padding: '6px 12px', fontSize: 13, fontWeight: 500,
+                              color: 'var(--qs-primary, #3B82F6)', textDecoration: 'none',
+                              borderRadius: 6, border: '1px solid transparent',
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--qs-border)'}
+                            onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye size={14} />
                             View
                           </Link>
                         </td>
