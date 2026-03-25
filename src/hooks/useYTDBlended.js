@@ -1,27 +1,11 @@
+// src/hooks/useYTDBlended.js
+
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-
-// Allstate commissionable factors (mirrors RevenueProjectionsDashboard)
-const COMMISSIONABLE_FACTORS = {
-  auto: 0.998, specialty_auto: 0.998, ho: 0.935, condo: 0.959,
-  renters: 1.0, landlord: 1.0, pup: 1.0, manufactured: 1.0,
-  boat: 1.0, motor_club: 1.0, other: 1.0,
-};
-
-const COMMISSION_RATES = {
-  auto:           { preferred: 0.25, bundled: 0.20, monoline: 0.15 },
-  ho:             { preferred: 0.29, bundled: 0.25, monoline: 0.16 },
-  renters:        { preferred: 0.26, bundled: 0.21, monoline: 0.15 },
-  other:          { preferred: 0.26, bundled: 0.21, monoline: 0.15 },
-};
-
-function calcCommission(premium, product, tier = 'monoline') {
-  const rates = COMMISSION_RATES[product] ?? COMMISSION_RATES.other;
-  const factor = COMMISSIONABLE_FACTORS[product] ?? 1.0;
-  return premium * factor * (rates[tier] ?? rates.monoline);
-}
+import { useAgencyProductConfig } from './useAgencyProductConfig';
 
 export function useYTDBlended(agencyId) {
+  const { config } = useAgencyProductConfig(agencyId);
   const year = new Date().getFullYear();
 
   return useQuery({
@@ -35,27 +19,29 @@ export function useYTDBlended(agencyId) {
         .lte('issued_date', `${year}-12-31`);
 
       if (error) throw error;
-      if (!data || data.length === 0) return null;
+      if (!data?.length) return null;
 
-      let totalPremium = 0;
-      let totalCommission = 0;
-      let totalPolicies = 0;
+      let totalPremium = 0, totalCommission = 0, totalPolicies = 0;
 
       for (const e of data) {
-        const prem = parseFloat(e.premium) || 0;
+        const prem     = parseFloat(e.premium) || 0;
         const policies = e.policy_count || 1;
-        const commission = calcCommission(prem, e.product, e.tier ?? 'monoline');
+        const tier     = e.tier ?? 'monoline';
+        const factor   = config.commissionableFactors[e.product] ?? 1.0;
+        const rates    = config.nbRates[e.product] ?? config.nbRates['other'] ?? { preferred: 0.26, bundled: 0.21, monoline: 0.15 };
+        const rate     = rates[tier] ?? rates.monoline;
+
         totalPremium    += prem;
-        totalCommission += commission;
+        totalCommission += prem * factor * rate;
         totalPolicies   += policies;
       }
 
-      if (totalPolicies === 0 || totalPremium === 0) return null;
+      if (!totalPolicies || !totalPremium) return null;
 
       return {
         avgPremiumPerPolicy:    totalPremium    / totalPolicies,
         avgCommissionPerPolicy: totalCommission / totalPolicies,
-        blendedCommissionRate:  totalCommission / totalPremium, // as decimal e.g. 0.196
+        blendedCommissionRate:  totalCommission / totalPremium,
         totalPolicies,
         totalPremium,
         totalCommission,

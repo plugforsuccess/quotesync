@@ -6,7 +6,7 @@ import * as XLSX from "xlsx";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LineChart, ReferenceLine, Cell } from "recharts";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
-import { LAPSE_PORTFOLIO_POINTS } from "../../../lib/lapseConstants";
+import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 
 function friendlyUploadError(raw = "") {
   const msg = raw.toLowerCase();
@@ -215,6 +215,7 @@ function TrendsTab({ trendsData }) {
 }
 
 function AttritionTab({ agencyId, currentUserId }) {
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
   const [lapseFile, setLapseFile] = useState(null);
   const [reportMonth, setReportMonth] = useState(() => {
     // Default to first day of current month
@@ -245,7 +246,7 @@ function AttritionTab({ agencyId, currentUserId }) {
         const m = r.report_month;
         if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
         byMonth[m].items += r.item_count ?? 1;
-        byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+        byMonth[m].points += (productConfig.portfolioPoints[r.product] ?? 0) * (r.item_count ?? 1);
         byMonth[m].premium += r.premium ?? 0;
       });
       return Object.values(byMonth).sort((a, b) => b.report_month.localeCompare(a.report_month));
@@ -542,6 +543,7 @@ const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"
 
 
 function NetGrowthTab({ agencyId }) {
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
   const { data: months = [], isLoading: loading } = useQuery({
     queryKey: ["net_growth", agencyId],
     queryFn: async () => {
@@ -570,7 +572,7 @@ function NetGrowthTab({ agencyId }) {
         const m = r.issued_date?.slice(0, 7);
         if (!m) return;
         ensure(m);
-        const pts = (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+        const pts = (productConfig.portfolioPoints[r.product] ?? 0) * (r.item_count ?? 1);
         monthMap[m].nb_points   += pts;
         monthMap[m].nb_items    += r.item_count ?? 1;
         monthMap[m].nb_premium  += r.premium ?? 0;
@@ -580,7 +582,7 @@ function NetGrowthTab({ agencyId }) {
         const m = r.report_month?.slice(0, 7);
         if (!m) return;
         ensure(m);
-        const pts = (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
+        const pts = (productConfig.portfolioPoints[r.product] ?? 0) * (r.item_count ?? 1);
         monthMap[m].lapse_points   += pts;
         monthMap[m].lapse_items    += r.item_count ?? 1;
         monthMap[m].lapse_premium  += r.premium ?? 0;
