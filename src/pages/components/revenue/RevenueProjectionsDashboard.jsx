@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
 import { useAgencyCarrierConfig } from "../../../hooks/useAgencies";
+import { useAgencyProductConfig } from "../../../hooks/useAgencyProductConfig";
 import { supabase } from "../../../lib/supabase";
 import * as XLSX from "xlsx";
 
@@ -39,27 +40,8 @@ const PRODUCT_LABELS = {
   manufactured: "Manufactured Home", boat: "Boat Owners", motor_club: "Motor Club", other: "Other",
 };
 
-// ─── Portfolio Points Matrix ──────────────────────────────────────────────────
-// Points are per ITEM (not per policy). A 2-car auto policy = 2 items × 10 pts = 20 pts.
-const PORTFOLIO_POINTS = {
-  auto:          10,
-  ho:            20,  // Homeowners — always 1 item per policy
-  condo:          0,  // Georgia statewide exclusion — Agency Bonus 2026
-  renters:        5,
-  landlord:      20,  // same points as HO but tracked separately
-  specialty_auto: 5,  // Motorcycle, motor home, off-road, trailers
-  pup:            0,  // Georgia statewide exclusion — Agency Bonus 2026
-  manufactured:   5,  // Manufactured Home
-  boat:           5,  // Boat Owners — always 1 item per policy
-  motor_club:     0,  // Motor Club — excluded from Allstate VC Baseline
-  other:          0,
-};
-
-// VC-eligible product keys for item count calculations
-const VC_ITEM_PRODUCTS = ["auto", "specialty_auto", "ho", "renters", "landlord", "boat", "manufactured"]; // condo and pup removed — Georgia statewide VC exclusion 2026
-
-// VC Baseline = all VC-eligible product items (target 53/month)
-const VC_BASELINE_TARGET = 53;
+// Portfolio points, VC eligibility, and baseline target are now sourced from
+// useAgencyProductConfig — see hook call inside the component below.
 
 const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n).toLocaleString()}`;
 const fmtFull$ = (n) => `$${Math.round(n).toLocaleString()}`;
@@ -76,26 +58,12 @@ function maskCustomerName(fullName) {
   return `${first} ${lastInitial}.`;
 }
 
-// CAT reinsurance retention factors by product
-// commissionable premium = written premium × retention factor
-// Source: Allstate CAT reinsurance premium schedule
-const COMMISSIONABLE_FACTORS = {
-  auto:           0.998,  // 0.2% CAT reinsurance
-  specialty_auto: 0.998,  // 0.2% CAT reinsurance
-  ho:             0.935,  // 6.5% CAT reinsurance (HO3 Homeowners)
-  condo:          0.959,  // 4.1% CAT reinsurance (HO6 Condo)
-  renters:        1.000,  // no CAT reinsurance
-  landlord:       1.000,  // no CAT reinsurance
-  pup:            1.000,  // no CAT reinsurance
-  manufactured:   1.000,  // no CAT reinsurance
-  boat:           1.000,  // no CAT reinsurance
-  motor_club:     1.000,  // no CAT reinsurance
-  other:          1.000,  // no CAT reinsurance
-};
+// CAT reinsurance factors are now sourced from useAgencyProductConfig
+// (cat_reinsurance_factors table by agency state, with agency_products override fallback).
 
-function calcCommission(premium, product, tier = "monoline") {
+function calcCommission(premium, product, tier = "monoline", catFactors = {}) {
   const rates = COMMISSION[product] ?? COMMISSION.other;
-  const factor = COMMISSIONABLE_FACTORS[product] ?? 1.0;
+  const factor = catFactors[product] ?? 1.0;
   return premium * factor * (rates[tier] ?? rates.monoline);
 }
 
@@ -363,8 +331,13 @@ export default function RevenueProjectionsDashboard() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
   const { data: carrierConfig } = useAgencyCarrierConfig(agencyId);
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
   const COMMISSION_GOAL = carrierConfig?.commission_goal ? Number(carrierConfig.commission_goal) : DEFAULT_COMMISSION_GOAL;
   const PREMIUM_GOAL = carrierConfig?.premium_goal ? Number(carrierConfig.premium_goal) : DEFAULT_PREMIUM_GOAL;
+  const PORTFOLIO_POINTS   = productConfig.portfolioPoints;
+  const VC_ITEM_PRODUCTS   = productConfig.vcEligibleKeys;
+  const VC_BASELINE_TARGET = productConfig.vcBaselineTarget;
+  const COMMISSIONABLE_FACTORS = productConfig.commissionableFactors;
   const [newEntry, setNewEntry] = useState(emptyEntry());
   const [view, setView] = useState("month"); // month | ytd | custom
   const [customStart, setCustomStart] = useState(""); // "YYYY-MM-DD"
@@ -497,8 +470,8 @@ export default function RevenueProjectionsDashboard() {
         case "tier":       av = a.tier;       bv = b.tier;       break;
         case "premium":    av = a.premium;    bv = b.premium;    break;
         case "commission":
-          av = calcCommission(a.premium, a.product, a.tier);
-          bv = calcCommission(b.premium, b.product, b.tier);
+          av = calcCommission(a.premium, a.product, a.tier, COMMISSIONABLE_FACTORS);
+          bv = calcCommission(b.premium, b.product, b.tier, COMMISSIONABLE_FACTORS);
           break;
         case "source":     av = a.source;     bv = b.source;     break;
         default:           av = a.date;       bv = b.date;
@@ -518,7 +491,7 @@ export default function RevenueProjectionsDashboard() {
       manufactured: {...base}, boat: {...base}, motor_club: {...base}, other: {...base},
     };
     filtered.forEach(e => {
-      const c = calcCommission(e.premium, e.product, e.tier ?? "monoline");
+      const c = calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
       const p = byProduct[e.product] ?? byProduct.other;
       p.premium += e.premium;
       p.commission += c;
@@ -589,7 +562,7 @@ export default function RevenueProjectionsDashboard() {
       map[name].policies   += 1;
       map[name].items      += e.itemCount ?? 1;
       map[name].premium    += e.premium ?? 0;
-      map[name].commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline");
+      map[name].commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
       map[name].points     += (PORTFOLIO_POINTS[e.product] ?? 0) * (e.itemCount ?? 1);
     });
     const totalCommission = Object.values(map).reduce((s, p) => s + p.commission, 0);
@@ -620,7 +593,7 @@ export default function RevenueProjectionsDashboard() {
       const end = new Date(year, month + 1, 0);
       const slice = entries.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
       const premium = slice.reduce((s, e) => s + e.premium, 0);
-      const commission = slice.reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline"), 0);
+      const commission = slice.reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS), 0);
       return { name: `${MONTH_NAMES[month]} '${String(year).slice(2)}`, premium, commission, goal: COMMISSION_GOAL };
     });
   }, [entries]);
@@ -667,7 +640,7 @@ export default function RevenueProjectionsDashboard() {
     const end   = new Date(y, m, 0);
     return entries
       .filter(e => { const d = new Date(e.date); return d >= start && d <= end; })
-      .reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline"), 0);
+      .reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS), 0);
   }, [entries]);
 
   // ─── Daily cumulative commission (month view only) ──────────────────────
@@ -687,7 +660,7 @@ export default function RevenueProjectionsDashboard() {
       if (ey === y && em - 1 === m) {
         const day = ed;
         if (!byDay[day]) byDay[day] = 0;
-        byDay[day] += calcCommission(e.premium, e.product, e.tier ?? "monoline");
+        byDay[day] += calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
       }
     });
 
@@ -909,7 +882,7 @@ export default function RevenueProjectionsDashboard() {
       PRODUCT_LABELS[e.product] ?? e.product,
       TIER_LABELS[e.tier ?? "monoline"],
       e.premium.toFixed(2),
-      calcCommission(e.premium, e.product, e.tier ?? "monoline").toFixed(2),
+      calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS).toFixed(2),
       e.policyCount,
       e.source,
       e.note,
@@ -1106,7 +1079,7 @@ export default function RevenueProjectionsDashboard() {
                 label: "VC BASELINE",
                 value: String(vcBaselineCount),
                 sub: vcOnTrack
-                  ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (Auto + HO + Condo)`
+                  ? `✓ ${vcBaselineCount} / ${VC_BASELINE_TARGET} (${productConfig.vcProgramLabel})`
                   : `${vcBaselineCount} / ${VC_BASELINE_TARGET} · ${vcShortfall} needed`,
                 subColor: vcOnTrack ? "var(--qs-success)" : "var(--qs-warning)",
               },
@@ -1615,7 +1588,7 @@ export default function RevenueProjectionsDashboard() {
                       <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{PRODUCT_LABELS[e.product] ?? e.product}</span></td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
                       <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
-                      <td style={{ color: "var(--qs-success)", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier))}</td>
+                      <td style={{ color: "var(--qs-success)", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS))}</td>
                       <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "var(--qs-dim)" }}>{e.source}</span></td>
                       <td style={{ color: "var(--qs-subtle)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
                       <td><button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button></td>
@@ -2114,8 +2087,8 @@ export default function RevenueProjectionsDashboard() {
 
       {/* Product breakdown drill-down */}
       {modal === "products" && (() => {
-        const VC_KEYS    = ["auto", "specialty_auto", "ho", "renters", "landlord", "boat", "manufactured"]; // condo and pup removed — Georgia statewide VC exclusion 2026
-        const CORE_KEYS  = ["auto", "ho"];
+        const VC_KEYS   = productConfig.vcEligibleKeys;
+        const CORE_KEYS = productConfig.coreKeys;
         const AUTO_KEYS  = ["auto"];
         const ALL_KEYS   = ["auto", "specialty_auto", "ho", "condo", "renters", "landlord", "pup", "boat", "manufactured", "motor_club", "other"];
 
@@ -2144,7 +2117,7 @@ export default function RevenueProjectionsDashboard() {
             {[
               { key: "all",  label: "All Products" },
               { key: "vc",   label: "VC Eligible" },
-              { key: "core", label: "Auto + Home" },
+              { key: "core", label: productConfig.coreKeys.map(k => productConfig.productLabels[k] || k).join(' + ') },
               { key: "auto", label: "Auto" },
             ].map(({ key, label }) => (
               <button
@@ -2281,7 +2254,7 @@ export default function RevenueProjectionsDashboard() {
           acc.policies   += 1;
           acc.items      += e.itemCount ?? 1;
           acc.premium    += e.premium ?? 0;
-          acc.commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline");
+          acc.commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
           acc.points     += (PORTFOLIO_POINTS[e.product] ?? 0) * (e.itemCount ?? 1);
           return acc;
         }, { policies: 0, items: 0, premium: 0, commission: 0, points: 0 });
@@ -2329,7 +2302,7 @@ export default function RevenueProjectionsDashboard() {
                 </thead>
                 <tbody>
                   {producerEntries.map(entry => {
-                    const comm = calcCommission(entry.premium ?? 0, entry.product, entry.tier ?? "monoline");
+                    const comm = calcCommission(entry.premium ?? 0, entry.product, entry.tier ?? "monoline", COMMISSIONABLE_FACTORS);
                     const pts = (PORTFOLIO_POINTS[entry.product] ?? 0) * (entry.itemCount ?? 1);
                     const issuedFmt = entry.date ? new Date(entry.date + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) : "—";
                     return (

@@ -132,8 +132,8 @@ export function averageConfig(configs) {
 }
 
 // ── VC Product Keys ─────────────────────────────────────────────────────────
-// Allstate NB VC-eligible product keys
-// Source: Allstate NB Variable Compensation eligibility rules (effective Jan 1, 2023)
+// ⚠️ These are Georgia/Allstate 2026 fallbacks only.
+// useProducerCompModel reads is_vc_eligible from agency_products at runtime.
 export const VC_PRODUCT_KEYS = [
   'auto',
   'specialty_auto',
@@ -146,8 +146,8 @@ export const VC_PRODUCT_KEYS = [
 
 // Non-VC product keys (tracked for non-VC bonus purposes)
 export const NON_VC_PRODUCT_KEYS = [
-  'condo',        // Georgia statewide exclusion — Agency Bonus + VC 2026
-  'pup',          // Georgia statewide exclusion — Agency Bonus + VC 2026
+  'condo',
+  'pup',
   'motor_club',
   'other',
 ];

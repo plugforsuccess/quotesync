@@ -394,6 +394,8 @@ export const AuthProvider = ({ children }) => {
                 const m = r.report_month;
                 if (!byMonth[m]) byMonth[m] = { report_month: m, items: 0, points: 0, premium: 0 };
                 byMonth[m].items += r.item_count ?? 1;
+                // Uses fallback LAPSE_PORTFOLIO_POINTS (Georgia defaults) at boot time.
+                // Once agency config loads, RetentionAnalytics uses useAgencyProductConfig instead.
                 byMonth[m].points += (LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.item_count ?? 1);
                 byMonth[m].premium += r.premium ?? 0;
               });

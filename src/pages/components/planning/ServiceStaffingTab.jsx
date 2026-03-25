@@ -1,24 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
+import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 
-// Allstate renewal commission rates by product group and bundling tier.
-// Preferred bundled cannot be determined from reports — use bundled as ceiling.
-// motor_club and other are excluded (no renewal commission).
-const RENEWAL_COMMISSION_RATES = {
-  auto:           { bundled: 6, monoline: 4 },
-  specialty_auto: { bundled: 6, monoline: 4 },
-  ho:             { bundled: 9, monoline: 7 },
-  condo:          { bundled: 9, monoline: 7 },
-  renters:        { bundled: 9, monoline: 7 },
-  landlord:       { bundled: 9, monoline: 7 },
-  pup:            { bundled: 9, monoline: 7 },
-  manufactured:   { bundled: 9, monoline: 7 },
-  boat:           { bundled: 9, monoline: 7 },
-  // motor_club and other: excluded
-};
-
-const EXCLUDED_PRODUCTS = new Set(['motor_club', 'other']);
 
 // Property follow always earns property bundled rate since
 // multi-line customers with property are by definition bundled.
@@ -32,6 +16,7 @@ const EMPLOYMENT_TYPES = [
 ];
 
 export default function ServiceStaffingTab({ agencyId }) {
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
 
   // ── Employment type ──────────────────────────────────────────────────────
   const [employmentType, setEmploymentType] = useState('part_time');
@@ -157,16 +142,16 @@ export default function ServiceStaffingTab({ agencyId }) {
 
       // Compute premium-weighted blended commission rate from actual book mix
       const eligibleRenewals = dedupedRenewals.filter(r =>
-        r.product && !EXCLUDED_PRODUCTS.has(r.product) && r.premium > 0
+        r.product && productConfig.renewalRates[r.product] && r.premium > 0
       );
 
       let blendedRate = 6.5; // fallback if no eligible data
       if (eligibleRenewals.length > 0) {
         const totalWeightedCommission = eligibleRenewals.reduce((sum, r) => {
-          const rates = RENEWAL_COMMISSION_RATES[r.product];
+          const rates = productConfig.renewalRates[r.product];
           if (!rates) return sum; // skip unknown products
           const tier = r.multi_line === 'Yes' ? 'bundled' : 'monoline';
-          return sum + (r.premium * (rates[tier] / 100));
+          return sum + (r.premium * rates[tier]);
         }, 0);
         const totalEligiblePremium = eligibleRenewals.reduce((sum, r) => sum + r.premium, 0);
         blendedRate = totalEligiblePremium > 0

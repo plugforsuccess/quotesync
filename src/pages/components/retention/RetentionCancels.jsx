@@ -6,7 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { calcRenewalPriority, calcCancelPriority, CURRENT_YEAR } from '../../../lib/retentionPriority';
 import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
-import { LAPSE_PORTFOLIO_POINTS } from "../../../lib/lapseConstants";
+import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "#94A3B8", bg: "#94A3B822" },
@@ -1060,7 +1060,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                 { label: 'Items',
                   value: r.renewal_item_count || 1 },
                 { label: 'Points',
-                  value: `${((LAPSE_PORTFOLIO_POINTS[r.product] ?? 0) * (r.renewal_item_count || 1)).toLocaleString()} pts`,
+                  value: `${((productConfig.portfolioPoints[r.product] ?? 0) * (r.renewal_item_count || 1)).toLocaleString()} pts`,
                   color: '#8B5CF6' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
@@ -1107,9 +1107,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 // For dual risk: use renewal_item_count (more accurate — has actual vehicle count).
 // For pending cancel only: use cancel_item_count (always 1).
 // For renewal only: use renewal_item_count.
-function calcRowPoints(row) {
+function calcRowPoints(row, portfolioPoints) {
   const product = row.product || 'other';
-  const pts = LAPSE_PORTFOLIO_POINTS[product] ?? 0;
+  const pts = portfolioPoints?.[product] ?? 0;
   const items = row.risk_type === 'pending_cancel'
     ? (row.cancel_item_count || 1)
     : (row.renewal_item_count || 1);
@@ -1144,6 +1144,7 @@ function calcUnifiedPriority(row) {
 }
 
 function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
   const queryClient = useQueryClient();
 
   const { data: rows = [], isLoading } = useQuery({
@@ -1331,7 +1332,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
         {(() => {
           const totalPremium = rows.reduce((s, r) =>
             s + (r.premium_at_risk || 0) + (r.renewal_premium || 0), 0);
-          const totalPoints  = rows.reduce((s, r) => s + calcRowPoints(r), 0);
+          const totalPoints  = rows.reduce((s, r) => s + calcRowPoints(r, productConfig.portfolioPoints), 0);
           const totalItems   = rows.reduce((s, r) => s + (
             r.risk_type === 'pending_cancel'
               ? (r.cancel_item_count || 1)

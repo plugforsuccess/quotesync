@@ -1,7 +1,7 @@
 // ─── Retention Priority Scoring ─────────────────────────────────────────────
 // Shared scoring functions for renewal and pending cancel triage tables.
 
-import { LAPSE_PORTFOLIO_POINTS } from './lapseConstants';
+import { getPortfolioPoints } from './lapseConstants';
 
 export const CURRENT_YEAR = new Date().getFullYear();
 
@@ -70,7 +70,7 @@ export function calcRenewalPriority(event) {
   // Points incorporate both product weight (HO=20, auto=10 per item) and item count.
   // A 4-vehicle auto = 40 pts. A HO = 20 pts. A renters = 5 pts.
   // Normalized: 50 pts = score of 100. Capped at 100.
-  const pts = (LAPSE_PORTFOLIO_POINTS[product] ?? 0) * itemCount;
+  const pts = getPortfolioPoints(product, null) * itemCount;
   const valueFactor = Math.min((pts / 0.5), 100); // 50 pts → 100
 
   // Multi-line modifier: bundled customers have hidden exposure (property follows auto)
