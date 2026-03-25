@@ -138,16 +138,16 @@ export const VC_PRODUCT_KEYS = [
   'auto',
   'specialty_auto',
   'ho',
-  'condo',
   'renters',
   'landlord',
-  'pup',
   'boat',
   'manufactured',
 ];
 
 // Non-VC product keys (tracked for non-VC bonus purposes)
 export const NON_VC_PRODUCT_KEYS = [
+  'condo',        // Georgia statewide exclusion — Agency Bonus + VC 2026
+  'pup',          // Georgia statewide exclusion — Agency Bonus + VC 2026
   'motor_club',
   'other',
 ];
