@@ -5,6 +5,7 @@ import { BarChart, Bar, LineChart, Line, AreaChart, Area, ComposedChart, XAxis, 
 import { useQuery } from "@tanstack/react-query";
 import { useRevenueEntries } from "../../../hooks/useRevenueEntries";
 import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
+import { useAgencyCarrierConfig } from "../../../hooks/useAgencies";
 import { supabase } from "../../../lib/supabase";
 import * as XLSX from "xlsx";
 
@@ -26,8 +27,8 @@ const COMMISSION = {
 const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
 const TIER_COLORS = { preferred: "#10B981", bundled: "#3B82F6", monoline: "#64748B" };
 
-const COMMISSION_GOAL = 40000;  // primary goal — commission revenue
-const PREMIUM_GOAL    = 160000; // secondary goal — written premium volume
+const DEFAULT_COMMISSION_GOAL = 40000;  // fallback when no DB config exists
+const DEFAULT_PREMIUM_GOAL    = 160000; // fallback when no DB config exists
 const PRODUCT_COLORS = {
   auto: "#3B82F6", ho: "#10B981", condo: "#34D399", renters: "#F59E0B", other: "#8B5CF6",
   landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", boat: "#0EA5E9", motor_club: "#F43F5E",
@@ -361,6 +362,9 @@ function friendlyUploadError(raw = "") {
 export default function RevenueProjectionsDashboard() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
+  const { data: carrierConfig } = useAgencyCarrierConfig(agencyId);
+  const COMMISSION_GOAL = carrierConfig?.commission_goal ? Number(carrierConfig.commission_goal) : DEFAULT_COMMISSION_GOAL;
+  const PREMIUM_GOAL = carrierConfig?.premium_goal ? Number(carrierConfig.premium_goal) : DEFAULT_PREMIUM_GOAL;
   const [newEntry, setNewEntry] = useState(emptyEntry());
   const [view, setView] = useState("month"); // month | ytd | custom
   const [customStart, setCustomStart] = useState(""); // "YYYY-MM-DD"
@@ -1321,7 +1325,7 @@ export default function RevenueProjectionsDashboard() {
                 <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} labelStyle={{ color: "#94A3B8" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
-                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
+                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: fmt$(COMMISSION_GOAL), fill: "#10B981", fontSize: 11 }} />
                 <Bar dataKey="commission" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (
                     <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
@@ -2096,7 +2100,7 @@ export default function RevenueProjectionsDashboard() {
                 <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
                 <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} labelStyle={{ color: "#94A3B8" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
-                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: "$40K", fill: "#10B981", fontSize: 11 }} />
+                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: fmt$(COMMISSION_GOAL), fill: "#10B981", fontSize: 11 }} />
                 <Bar dataKey="commission" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (
                     <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
