@@ -1,5 +1,5 @@
-// Supabase Edge Function: fire-ai-queue
-// POST /functions/v1/fire-ai-queue
+// Supabase Edge Function: fire-renewal-queue
+// POST /functions/v1/fire-renewal-queue
 // Triggered by the "Run AI Queue" button in QuoteSync.
 // Validates records against all 12 pre-call gates, normalizes phones,
 // submits eligible calls to Bland.ai one at a time with 30-second delays.
@@ -223,7 +223,7 @@ Deno.serve(async (req) => {
 
   // Log override if applicable
   if (override_suppression && suppression.suppressed) {
-    console.warn(`[FIRE_AI_QUEUE] Suppression overridden: ${suppression.reason} | agency: ${agency_id}`)
+    console.warn(`[FIRE_RENEWAL_QUEUE] Suppression overridden: ${suppression.reason} | agency: ${agency_id}`)
   }
 
   // Fetch automation-cleared candidates
@@ -252,7 +252,7 @@ Deno.serve(async (req) => {
     .limit(BATCH_LIMIT * 2) // fetch extra to account for gate failures
 
   if (fetchError) {
-    console.error('[FIRE_AI_QUEUE] Fetch error:', fetchError)
+    console.error('[FIRE_RENEWAL_QUEUE] Fetch error:', fetchError)
     return new Response(JSON.stringify({ error: 'Failed to fetch candidates', details: fetchError.message }), {
       status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -351,14 +351,14 @@ Deno.serve(async (req) => {
       })
 
       if (response.status === 429 || response.status === 503) {
-        console.warn(`[FIRE_AI_QUEUE] Rate limited at record ${queued.length} of ${candidates?.length || 0}. Stopping run.`)
+        console.warn(`[FIRE_RENEWAL_QUEUE] Rate limited at record ${queued.length} of ${candidates?.length || 0}. Stopping run.`)
         rateLimited = true
         break
       }
 
       if (!response.ok) {
         const err = await response.text()
-        console.error(`[FIRE_AI_QUEUE] Bland.ai error for ${record.id}:`, err)
+        console.error(`[FIRE_RENEWAL_QUEUE] Bland.ai error for ${record.id}:`, err)
         skipped.push({ policy_id: record.id, reason: `bland_error_${response.status}` })
         continue
       }
@@ -373,7 +373,7 @@ Deno.serve(async (req) => {
         await new Promise(resolve => setTimeout(resolve, CALL_DELAY_MS))
       }
     } catch (err) {
-      console.error(`[FIRE_AI_QUEUE] Network error for ${record.id}:`, err)
+      console.error(`[FIRE_RENEWAL_QUEUE] Network error for ${record.id}:`, err)
       skipped.push({ policy_id: record.id, reason: 'network_error' })
       continue
     }
@@ -382,7 +382,7 @@ Deno.serve(async (req) => {
   const totalCandidates = candidates?.length || 0
   const held = Math.max(0, totalCandidates - queued.length - blocked.length - skipped.length)
 
-  console.log(`[FIRE_AI_QUEUE] Run complete: ${queued.length} queued, ${blocked.length} blocked, ${skipped.length} skipped, ${held} held, rate_limited: ${rateLimited}`)
+  console.log(`[FIRE_RENEWAL_QUEUE] Run complete: ${queued.length} queued, ${blocked.length} blocked, ${skipped.length} skipped, ${held} held, rate_limited: ${rateLimited}`)
 
   return new Response(JSON.stringify({
     success: true,
