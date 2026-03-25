@@ -380,6 +380,10 @@ Deno.serve(async (req) => {
     // F-04 fix: Capture consent_ip server-side from request header (client can't reliably self-report)
     const consentIp = clientIp !== 'unknown' ? clientIp : null
 
+    // Landlord routing: if occupancy is rental, override product intent
+    const effectiveProductIntent =
+      body.home_occupancy_type === 'rental' ? 'landlord' : body.product_intent;
+
     let lead: any
 
     if (existingPartialLead) {
@@ -398,7 +402,7 @@ Deno.serve(async (req) => {
           last_name: body.last_name || null,
           phone: isValidPhone ? normalizedPhone : null,
           email: body.email || null,
-          product_intent: body.product_intent ?? null,
+          product_intent: effectiveProductIntent ?? null,
           owns_home: body.owns_home === true ? true : body.owns_home === false || body.owns_home === 'other' ? false : null,
           housing_situation: body.owns_home === true ? 'own' : body.owns_home === 'other' ? 'other' : body.owns_home === false ? 'rent' : null,
           vehicle_count: body.vehicle_count ?? null,
@@ -434,6 +438,14 @@ Deno.serve(async (req) => {
           current_home_premium: body.current_home_premium != null
             ? parseInt(body.current_home_premium, 10) || null
             : null,
+          // Home insurance wizard fields
+          home_insurance_status: body.home_insurance_status ?? null,
+          home_occupancy_type: body.home_occupancy_type ?? null,
+          roof_replaced_recently: body.roof_replaced_recently ?? null,
+          year_built: body.year_built ?? null,
+          square_footage: body.square_footage ?? null,
+          stories: body.stories ?? null,
+          property_data_source: body.property_data_source ?? null,
         })
         .eq('id', existingPartialLead.id)
         .select()
@@ -448,7 +460,7 @@ Deno.serve(async (req) => {
         agency_id: finalAgencyId,
         state: state.toUpperCase(),
         zip,
-        product_intent: body.product_intent ?? null,
+        product_intent: effectiveProductIntent ?? null,
         session_id: sessionId,
         ...sanitizedUtm,
         referral_code: body.referral_code || null,
@@ -496,6 +508,14 @@ Deno.serve(async (req) => {
         current_home_premium: body.current_home_premium != null
           ? parseInt(body.current_home_premium, 10) || null
           : null,
+        // Home insurance wizard fields
+        home_insurance_status: body.home_insurance_status ?? null,
+        home_occupancy_type: body.home_occupancy_type ?? null,
+        roof_replaced_recently: body.roof_replaced_recently ?? null,
+        year_built: body.year_built ?? null,
+        square_footage: body.square_footage ?? null,
+        stories: body.stories ?? null,
+        property_data_source: body.property_data_source ?? null,
       }
 
       const { data: newLead, error: leadError } = await supabase

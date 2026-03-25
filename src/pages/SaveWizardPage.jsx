@@ -31,6 +31,11 @@ import {
   AddressStep,
   ContactStep,
   ConfirmationStep,
+  CanopyHomeStep,
+  HomeInsuranceStatusStep,
+  HomeOccupancyTypeStep,
+  RoofReplacedRecentlyStep,
+  PropertyDetailsStep,
 } from './components/wizard/WizardSteps';
 import { validateStep } from './components/wizard/wizardValidation';
 
@@ -124,6 +129,11 @@ function hasValueForCurrentStep(stepId, answers) {
     case 'vehicleUse': return answers.vehicleUse?.length > 0;
     case 'autoDrivingRecord': return answers.autoDrivingRecord != null;
     case 'homeClaimsHistory': return answers.homeClaimsHistory != null;
+    case 'canopyHome': return true;
+    case 'homeInsuranceStatus': return answers.homeInsuranceStatus != null;
+    case 'homeOccupancyType': return answers.homeOccupancyType != null;
+    case 'roofReplacedRecently': return answers.roofReplacedRecently != null;
+    case 'propertyDetails': return !!answers.yearBuilt && !!answers.squareFootage && !!answers.stories;
     case 'dob': return answers.dob?.length === 10;
     case 'address': return answers.street?.trim()?.length > 0 && answers.city?.trim()?.length > 0;
     case 'contact': return true;
@@ -140,6 +150,7 @@ const MANUAL_ADVANCE_STEPS = new Set([
   'dob',
   'address',
   'contact',
+  'propertyDetails',
 ]);
 
 // ─── Progress Wheel ────────────────────────────────────────────────
@@ -215,6 +226,8 @@ export default function SaveWizardPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [animKey, setAnimKey] = useState(0);
+  const [propertyPrefill, setPropertyPrefill] = useState(null);
+  const [enrichmentPending, setEnrichmentPending] = useState(false);
 
   const utmParams = useRef(getUtmParams());
   const partialLeadInserted = useRef(false);
@@ -315,6 +328,37 @@ export default function SaveWizardPage() {
     }
   }, []);
 
+  // ─── Property Enrichment (Estated) ──────────────────────────────
+
+  const firePropertyEnrichment = useCallback(async (streetAddress, zip) => {
+    if (!streetAddress || !zip) return;
+    setEnrichmentPending(true);
+    try {
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-property`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+        body: JSON.stringify({ street_address: streetAddress, zip }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.year_built || data.square_footage || data.stories) {
+          setPropertyPrefill(data);
+          if (!answers.yearBuilt   && data.year_built)       setAnswer('yearBuilt',    data.year_built);
+          if (!answers.squareFootage && data.square_footage) setAnswer('squareFootage', data.square_footage);
+          if (!answers.stories     && data.stories)          setAnswer('stories',       data.stories);
+          setAnswer('propertyDataSource', 'public_records');
+        }
+      }
+    } catch (_) {
+      // Enrichment failure is silent — user fills in manually
+    } finally {
+      setEnrichmentPending(false);
+    }
+  }, [answers.yearBuilt, answers.squareFootage, answers.stories, setAnswer]);
+
   // ─── Abandon Tracking (page unload) ───────────────────────────
 
   useEffect(() => {
@@ -377,6 +421,13 @@ export default function SaveWizardPage() {
           veteran_status: answers.veteranStatus,
           current_auto_premium: answers.currentAutoPremium ?? null,
           current_home_premium: answers.currentHomePremium ?? null,
+          home_insurance_status: answers.homeInsuranceStatus || null,
+          home_occupancy_type: answers.homeOccupancyType || null,
+          roof_replaced_recently: answers.roofReplacedRecently ?? null,
+          year_built: answers.yearBuilt ?? null,
+          square_footage: answers.squareFootage ?? null,
+          stories: answers.stories || null,
+          property_data_source: answers.propertyDataSource || null,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('quotesync_session_id'),
@@ -497,8 +548,9 @@ export default function SaveWizardPage() {
         city: answers.city?.trim() || null,
         address_source: answers.addressSource || 'manual_entry',
       });
+      firePropertyEnrichment(answers.street, answers.zip);
     }
-  }, [currentIndex, answers, insertPartialLead, updatePartialLead]);
+  }, [currentIndex, answers, insertPartialLead, updatePartialLead, firePropertyEnrichment]);
 
   const handleAutoAdvance = useCallback(() => {
     setError(null);
@@ -711,6 +763,54 @@ export default function SaveWizardPage() {
             vehicleLabel={[answers.vehicleYear, answers.vehicleMake, answers.vehicleModel].filter(Boolean).join(' ')}
             value={answers.vehicleUse}
             onChange={(v) => setAnswer('vehicleUse', v)}
+          />
+        );
+      case 'canopyHome':
+        return (
+          <CanopyHomeStep
+            carrierName={answers.currentHomeCarrier}
+            onSync={() => {
+              setAnswer('canopyHomeSynced', true);
+              handleAutoAdvance();
+            }}
+            onSkip={handleAutoAdvance}
+          />
+        );
+      case 'homeInsuranceStatus':
+        return (
+          <HomeInsuranceStatusStep
+            value={answers.homeInsuranceStatus}
+            onChange={(v) => setAnswer('homeInsuranceStatus', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'homeOccupancyType':
+        return (
+          <HomeOccupancyTypeStep
+            value={answers.homeOccupancyType}
+            onChange={(v) => setAnswer('homeOccupancyType', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'roofReplacedRecently':
+        return (
+          <RoofReplacedRecentlyStep
+            value={answers.roofReplacedRecently}
+            onChange={(v) => setAnswer('roofReplacedRecently', v)}
+            onAutoAdvance={handleAutoAdvance}
+          />
+        );
+      case 'propertyDetails':
+        return (
+          <PropertyDetailsStep
+            yearBuilt={answers.yearBuilt}
+            squareFootage={answers.squareFootage}
+            stories={answers.stories}
+            isPrefilled={!!propertyPrefill}
+            onYearBuiltChange={(v) => setAnswer('yearBuilt', v)}
+            onSquareFootageChange={(v) => setAnswer('squareFootage', v)}
+            onStoriesChange={(v) => setAnswer('stories', v)}
+            onContinue={handleAutoAdvance}
           />
         );
       case 'dob':

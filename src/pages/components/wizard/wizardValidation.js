@@ -164,6 +164,15 @@ export function validateStep(stepId, answers) {
     case 'dob': return dobStepValidate(answers.dob);
     case 'address': return addressStepValidate(answers.street, answers.city);
     case 'contact': return contactStepValidate(answers.firstName, answers.lastName, answers.phone, answers.email);
+    case 'canopyHome': return null;
+    case 'homeInsuranceStatus': return answers.homeInsuranceStatus ? null : 'Please select one.';
+    case 'homeOccupancyType': return answers.homeOccupancyType ? null : 'Please select one.';
+    case 'roofReplacedRecently': return answers.roofReplacedRecently !== null && answers.roofReplacedRecently !== undefined ? null : 'Please select one.';
+    case 'propertyDetails':
+      if (!answers.yearBuilt) return { yearBuilt: 'Required' };
+      if (!answers.squareFootage) return { squareFootage: 'Required' };
+      if (!answers.stories) return { stories: 'Required' };
+      return null;
     case 'confirmation': return null;
     default: return null;
   }
