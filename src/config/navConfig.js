@@ -169,6 +169,7 @@ export function getAllNavItems(plane, platformRole, agencyRole) {
 export function getDefaultLanding(platformRole, agencyRole, agency = null) {
   if (platformRole) {
     if (platformRole === 'platform_editor') return '/news/dashboard';
+    if (platformRole === 'platform_master_admin' || platformRole === 'platform_admin') return '/admin/agencies';
     return '/agency/dashboard';
   }
   if (agencyRole) {
