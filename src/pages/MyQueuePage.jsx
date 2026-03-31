@@ -2,11 +2,12 @@
 // Reuses EventDetailModal and RenewalDetailModal from RetentionCancels
 // but scoped entirely to the current employee via RLS.
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import AvailabilityToggle from '../components/AvailabilityToggle';
@@ -69,6 +70,9 @@ export default function MyQueuePage() {
   // Transcript expand
   const [expandedTranscript, setExpandedTranscript] = useState(null); // event.id
 
+  // Stale refresh tracking
+  const [lastRefreshed, setLastRefreshed] = useState(Date.now());
+
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
 
@@ -109,6 +113,45 @@ export default function MyQueuePage() {
     enabled: !!employeeId,
     staleTime: 2 * 60 * 1000,
   });
+
+  // Scorecard metrics
+  const roles     = employee?.roles || [];
+  const scoreType = roles.includes('service_outbound') ? 'outbound'
+    : roles.includes('service_inbound') ? 'inbound' : 'both';
+  const { data: metrics } = useRetentionMetrics(employeeId, scoreType);
+
+  // Track stale refresh
+  useEffect(() => {
+    if (!cancelLoading && !renewalLoading) setLastRefreshed(Date.now());
+  }, [cancelLoading, renewalLoading]);
+
+  // Today's Focus stats
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const focusStats = useMemo(() => {
+    const criticalCount    = cancelCases.filter(e => {
+      const d = daysUntilCancel(e.cancel_effective_date);
+      return d !== null && d <= 3;
+    }).length;
+    const totalPremiumAtRisk = cancelCases.reduce((s, e) => s + (parseFloat(e.premium_at_risk) || 0), 0);
+    const attemptedToday   =
+      cancelCases.filter(e => e.last_attempt_at?.slice(0, 10) === todayStr).length +
+      renewalCases.filter(e => e.last_attempt_at?.slice(0, 10) === todayStr).length;
+    const untouched        = cancelCases.filter(e => !e.attempt_count || e.attempt_count === 0).length;
+    return { criticalCount, totalPremiumAtRisk, attemptedToday, untouched };
+  }, [cancelCases, renewalCases, todayStr]);
+
+  // Cancel priority buckets
+  const cancelBuckets = useMemo(() => ({
+    critical: cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d <= 3; }),
+    thisWeek: cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d > 3 && d <= 7; }),
+    later:    cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d === null || d > 7; }),
+  }), [cancelCases]);
+
+  const BUCKETS = [
+    { key: 'critical', label: '🔴 Act Today', color: '#F87171', cases: cancelBuckets.critical },
+    { key: 'thisWeek', label: '🟡 This Week', color: '#FBBF24', cases: cancelBuckets.thisWeek },
+    { key: 'later',    label: '🟢 Later',     color: '#34D399', cases: cancelBuckets.later    },
+  ];
 
   async function updateCancelCase(id, updates) {
     const { error } = await supabase
@@ -521,24 +564,117 @@ export default function MyQueuePage() {
 
   return (
     <div>
-      {/* Availability Toggle — prominent at top */}
+
+      {/* ── Availability Toggle ───────────────────────────────────────── */}
       <AvailabilityToggle />
 
-      {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
-          My Queue
+      {/* ── Scorecard Preview Strip ───────────────────────────────────── */}
+      {metrics && (
+        <div style={{
+          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+          borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+          display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap',
+        }}>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)',
+            textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            This Month
+          </span>
+          {[
+            { label: 'Save Rate', value: metrics.cancelSaveRate != null ? `${Math.round(metrics.cancelSaveRate * 100)}%` : '—' },
+            { label: 'Saved',     value: metrics.cancelSaved     ?? '—' },
+            { label: 'Renewals ✓',value: metrics.renewalsConfirmed ?? '—' },
+            { label: 'Attempts',  value: metrics.totalCancelAttempts ?? '—' },
+          ].map(stat => (
+            <div key={stat.label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>{stat.label}:</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>{stat.value}</span>
+            </div>
+          ))}
+          <a href="/my/scorecard"
+            style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--qs-info)',
+              textDecoration: 'none', fontWeight: 600 }}>
+            Full Scorecard →
+          </a>
         </div>
-        <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
-          {cancelCases.length} pending cancel &middot; {renewalCases.length} renewals
+      )}
+
+      {/* ── Header: title + stale indicator ──────────────────────────── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 2 }}>
+            My Queue
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
+            {cancelCases.length} pending cancel &middot; {renewalCases.length} renewals
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
+            Updated {relativeTime(new Date(lastRefreshed).toISOString())}
+          </span>
+          <button
+            onClick={() => {
+              queryClient.invalidateQueries({ queryKey: ['my_cancel_cases', employeeId] });
+              queryClient.invalidateQueries({ queryKey: ['my_renewal_cases', employeeId] });
+            }}
+            style={{ fontSize: 11, padding: '3px 8px', borderRadius: 6,
+              border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
+              color: 'var(--qs-subtle)', cursor: 'pointer' }}>
+            ↻ Refresh
+          </button>
         </div>
       </div>
 
-      {/* Tab toggle */}
+      {/* ── Today's Focus ────────────────────────────────────────────── */}
+      <div style={{
+        background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+        borderRadius: 12, padding: '14px 16px', marginBottom: 16,
+        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+      }}>
+        {[
+          {
+            label: 'Critical',
+            value: focusStats.criticalCount,
+            color: focusStats.criticalCount > 0 ? '#F87171' : '#34D399',
+            sub:   '≤ 3 days',
+          },
+          {
+            label: 'At Risk',
+            value: fmt$(focusStats.totalPremiumAtRisk),
+            color: 'var(--qs-bright)',
+            sub:   'premium',
+          },
+          {
+            label: 'Contacts',
+            value: focusStats.attemptedToday,
+            color: focusStats.attemptedToday > 0 ? '#34D399' : 'var(--qs-dim)',
+            sub:   'logged today',
+          },
+          {
+            label: 'Untouched',
+            value: focusStats.untouched,
+            color: focusStats.untouched > 5 ? '#FBBF24' : 'var(--qs-dim)',
+            sub:   'never called',
+          },
+        ].map(stat => (
+          <div key={stat.label} style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginBottom: 3,
+              textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+              {stat.label}
+            </div>
+            <div style={{ fontSize: 20, fontWeight: 700, color: stat.color, lineHeight: 1 }}>
+              {stat.value}
+            </div>
+            <div style={{ fontSize: 10, color: 'var(--qs-muted)', marginTop: 2 }}>{stat.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* ── Tab Toggle ───────────────────────────────────────────────── */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 16 }}>
         {[
-          { key: 'cancel',  label: `\u26A0 Pending Cancel (${cancelCases.length})`  },
-          { key: 'renewal', label: `\uD83D\uDD04 Renewals (${renewalCases.length})` },
+          { key: 'cancel',  label: `⚠ Pending Cancel (${cancelCases.length})`  },
+          { key: 'renewal', label: `🔄 Renewals (${renewalCases.length})`       },
         ].map(t => (
           <button key={t.key}
             onClick={() => setActiveTab(t.key)}
@@ -546,17 +682,21 @@ export default function MyQueuePage() {
               padding: '8px 16px', borderRadius: 8, border: 'none', cursor: 'pointer',
               fontSize: 13, fontWeight: 600,
               background: activeTab === t.key ? 'var(--qs-info)' : 'var(--qs-elevated)',
-              color: activeTab === t.key ? '#FFFFFF' : 'var(--qs-subtle)',
+              color:      activeTab === t.key ? '#FFFFFF'        : 'var(--qs-subtle)',
             }}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* Pending Cancel cases */}
+      {/* ── Pending Cancel Tab ───────────────────────────────────────── */}
       {activeTab === 'cancel' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {cancelLoading && <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading...</div>}
+        <div>
+          {cancelLoading && (
+            <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading...</div>
+          )}
+
+          {/* Empty state */}
           {!cancelLoading && cancelCases.length === 0 && (
             <div style={{ textAlign: 'center', padding: '48px 16px' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>✅</div>
@@ -569,16 +709,48 @@ export default function MyQueuePage() {
               </div>
             </div>
           )}
-          {cancelCases.map(event => (
-            <CancelCard key={event.id} event={event} />
-          ))}
+
+          {/* Priority buckets */}
+          {!cancelLoading && cancelCases.length > 0 && BUCKETS.map(bucket =>
+            bucket.cases.length > 0 && (
+              <div key={bucket.key} style={{ marginBottom: 20 }}>
+                {/* Bucket header */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  marginBottom: 8, paddingBottom: 6,
+                  borderBottom: `1px solid ${bucket.color}33`,
+                }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: bucket.color,
+                    textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {bucket.label}
+                  </span>
+                  <span style={{ fontSize: 11, color: 'var(--qs-muted)',
+                    background: 'var(--qs-elevated)', padding: '1px 6px',
+                    borderRadius: 10, fontWeight: 600 }}>
+                    {bucket.cases.length}
+                  </span>
+                </div>
+
+                {/* Cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {bucket.cases.map(event => (
+                    <CancelCard key={event.id} event={event} />
+                  ))}
+                </div>
+              </div>
+            )
+          )}
         </div>
       )}
 
-      {/* Renewal cases */}
+      {/* ── Renewals Tab ─────────────────────────────────────────────── */}
       {activeTab === 'renewal' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {renewalLoading && <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading...</div>}
+        <div>
+          {renewalLoading && (
+            <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading...</div>
+          )}
+
+          {/* Empty state */}
           {!renewalLoading && renewalCases.length === 0 && (
             <div style={{ textAlign: 'center', padding: '48px 16px' }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>📋</div>
@@ -590,13 +762,19 @@ export default function MyQueuePage() {
               </div>
             </div>
           )}
-          {renewalCases.map(event => (
-            <RenewalCard key={event.id} event={event} />
-          ))}
+
+          {/* Renewal cards */}
+          {!renewalLoading && renewalCases.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {renewalCases.map(event => (
+                <RenewalCard key={event.id} event={event} />
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* Detail modals — portaled to body to escape fixed bottom tab bar z-index */}
+      {/* ── Detail Modals (existing — unchanged) ─────────────────────── */}
       {selectedEvent && createPortal(
         <EventDetailModal
           event={selectedEvent}
@@ -620,7 +798,7 @@ export default function MyQueuePage() {
         document.body
       )}
 
-      {/* Inline Log Call Popover */}
+      {/* ── Log Call Popover ───────────────────────────────────────── */}
       {logCallTarget && createPortal(
         <div
           style={{
