@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
-import { useTimeEntries, useRCData, useProactivityData, useInvalidateTimeData } from '../hooks/useTimeAttendance';
+import { useTimeEntries, useRCData, useProactivityData, useYTDEntries, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { useRCEmployeeMap, useActiveEmployees, normalizeAliasKey } from '../hooks/useEmployees';
 import {
   useEmployeeTargets, useSaveTargets,
@@ -146,6 +146,10 @@ const StaffPerformancePage = () => {
   const { mutate: saveOutboundBreakdown, isPending: savingOutboundBreakdown } = useSaveOutboundBreakdown();
   const { data: trendData } = useTrendData(singleEmployee, weekStart);
   const { data: teamData, isLoading: teamLoading } = useTeamData(weekStart);
+
+  // Attendance: YTD entries for producer detail view
+  const currentYear = new Date(weekStart + 'T00:00:00').getFullYear();
+  const { data: ytdData } = useYTDEntries(currentYear, !!singleEmployee);
 
   // v3: Call log data
   const { data: callLogData = [], refetch: refetchCallLog } = useCallLogData(singleEmployee, weekStart);
@@ -562,9 +566,11 @@ const StaffPerformancePage = () => {
               </div>
             ) : (
               <TeamComparisonView
-                teamData={teamData}
+                teamData={{ ...teamData, weekStart }}
                 roleFilter={roleFilter}
                 onSelectEmployee={handleSelectEmployeeFromTeam}
+                weekEntries={entries}
+                rosterEmployees={rosterEmployees}
               />
             )}
           </div>
@@ -602,6 +608,9 @@ const StaffPerformancePage = () => {
                       trendData={isSelectedEmployee ? trendData : null}
                       targets={isSelectedEmployee ? employeeTargets : null}
                       producerId={rosterEmp?.id}
+                      ytdEntries={(ytdData?.entries || []).filter(e => e.employee_user_id === rc.employee_user_id)}
+                      hireDate={rosterEmp?.hire_date || null}
+                      currentYear={currentYear}
                     />
                   </div>
                 );

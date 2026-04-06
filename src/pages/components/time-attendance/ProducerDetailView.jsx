@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Phone, TrendingUp, CalendarDays, ChevronDown, ChevronRight, AlertTriangle, CheckCircle, DollarSign } from 'lucide-react';
+import { computeAttendance } from '../../../lib/attendanceUtils';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer,
@@ -68,7 +69,7 @@ function StatCard({ label, value, target, unit }) {
 
 // ── Component ───────────────────────────────────────────────────────────────
 
-export default function ProducerDetailView({ rcData, employeeName, weekStart, trendData, targets, producerId }) {
+export default function ProducerDetailView({ rcData, employeeName, weekStart, trendData, targets, producerId, ytdEntries, hireDate, currentYear }) {
   const [dailyExpanded, setDailyExpanded] = useState(true);
 
   if (!rcData) {
@@ -80,6 +81,16 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
       </div>
     );
   }
+
+  const ytdStart = `${currentYear}-01-01`;
+  const ytdEnd = `${currentYear}-12-31`;
+  const ytdAttendance = computeAttendance(
+    producerId,
+    hireDate,
+    ytdEntries || [],
+    ytdStart,
+    ytdEnd
+  );
 
   const outbound = rcData.outbound_calls || 0;
   const avgCallsDay = rcData.avg_calls_per_day || 0;
@@ -133,6 +144,45 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
         <StatCard label="Avg Calls / Day" value={avgCallsDay} target={avgCallsDayTarget} />
         <StatCard label="Total Calls" value={totalCalls} />
         <StatCard label="Avg Handle (Out)" value={avgHandleOut} unit="min" />
+      </div>
+
+      {/* YTD Attendance */}
+      <div className="bg-qs-card rounded-lg border border-qs-border p-4">
+        <p className="text-xs font-medium text-qs-subtle uppercase tracking-wide mb-3">
+          YTD Attendance ({currentYear})
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.daysWorked}</p>
+            <p className="text-xs text-qs-subtle mt-0.5">Days Worked</p>
+          </div>
+          <div>
+            <p className={`text-2xl font-bold ${ytdAttendance.sick > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
+              {ytdAttendance.sick}
+            </p>
+            <p className="text-xs text-qs-subtle mt-0.5">Sick</p>
+          </div>
+          <div>
+            <p className={`text-2xl font-bold ${ytdAttendance.pto > 0 ? 'text-blue-400' : 'text-qs-bright'}`}>
+              {ytdAttendance.pto}
+            </p>
+            <p className="text-xs text-qs-subtle mt-0.5">PTO</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.appt}</p>
+            <p className="text-xs text-qs-subtle mt-0.5">Appt</p>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.early}</p>
+            <p className="text-xs text-qs-subtle mt-0.5">Early Out</p>
+          </div>
+          <div>
+            <p className={`text-2xl font-bold ${ytdAttendance.unexcused > 0 ? 'text-red-400' : 'text-qs-bright'}`}>
+              {ytdAttendance.unexcused}
+            </p>
+            <p className="text-xs text-qs-subtle mt-0.5">Unexcused</p>
+          </div>
+        </div>
       </div>
 
       {/* 8-Week Trend */}
