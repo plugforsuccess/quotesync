@@ -5,6 +5,7 @@
 import { useState, useMemo } from 'react';
 import { Users, ArrowUpDown, AlertTriangle } from 'lucide-react';
 import { GRADE_CONFIG, calculateGrade, computeMetrics, DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
+import { computeAttendance } from '../../../lib/attendanceUtils';
 
 // ── Role labels ─────────────────────────────────────────────────────────────
 
@@ -21,6 +22,7 @@ const SERVICE_COLUMNS = [
   { key: 'avgHold', label: 'Avg Hold', sortable: true, format: 'time' },
   { key: 'missed', label: 'Missed', sortable: true },
   { key: 'flags', label: 'Flags', sortable: true },
+  { key: 'daysOut', label: 'Days Out', sortable: true },
 ];
 
 const TEAM_COLUMNS = {
@@ -35,6 +37,7 @@ const TEAM_COLUMNS = {
     { key: 'inbound', label: 'Inbound', sortable: true },
     { key: 'missed', label: 'Missed', sortable: true },
     { key: 'avgHandleOut', label: 'Avg Handle (Out)', sortable: true, format: 'time' },
+    { key: 'daysOut', label: 'Days Out', sortable: true },
   ],
   all: [
     { key: 'name', label: 'Employee', sortable: true },
@@ -44,6 +47,7 @@ const TEAM_COLUMNS = {
     { key: 'avgCallsDay', label: 'Avg Calls/Day', sortable: true, format: 'decimal' },
     { key: 'missed', label: 'Missed', sortable: true },
     { key: 'grade', label: 'Grade', sortable: true, roleSpecific: 'service' },
+    { key: 'daysOut', label: 'Days Out', sortable: true },
   ],
 };
 
@@ -106,6 +110,27 @@ function CellValue({ col, row }) {
     return <span className="text-sm text-qs-text">{(val || 0).toFixed(1)}</span>;
   }
 
+  if (col.key === 'daysOut') {
+    const detail = row.daysOutDetail;
+    if (!detail || row.daysOut === 0) return <span className="text-qs-muted">—</span>;
+
+    const parts = [];
+    if (detail.sick > 0) parts.push(`${detail.sick} Sick`);
+    if (detail.pto > 0) parts.push(`${detail.pto} PTO`);
+    if (detail.appt > 0) parts.push(`${detail.appt} Appt`);
+    if (detail.early > 0) parts.push(`${detail.early} Early`);
+    if (detail.unexcused > 0) parts.push(`${detail.unexcused} Unexcused`);
+
+    return (
+      <span
+        className={`text-sm font-medium ${detail.unexcused > 0 ? 'text-red-400' : 'text-amber-400'}`}
+        title={parts.join(' · ')}
+      >
+        {row.daysOut}
+      </span>
+    );
+  }
+
   if (col.key === 'name') {
     return <span className="text-sm font-medium text-qs-bright">{val}</span>;
   }
@@ -127,7 +152,7 @@ function AvgCellValue({ col, teamAvg }) {
   if (col.key === 'grade') {
     return val ? <GradeBadge grade={val} /> : <span className="text-qs-muted">—</span>;
   }
-  if (col.key === 'flags') {
+  if (col.key === 'flags' || col.key === 'daysOut') {
     return <span className="text-sm text-qs-muted">—</span>;
   }
   if (col.format === 'pct') {
@@ -145,7 +170,7 @@ function AvgCellValue({ col, teamAvg }) {
 
 // ── Main component ──────────────────────────────────────────────────────────
 
-export default function TeamComparisonView({ teamData, roleFilter = 'service_inbound', onSelectEmployee }) {
+export default function TeamComparisonView({ teamData, roleFilter = 'service_inbound', onSelectEmployee, weekEntries, rosterEmployees }) {
   const defaultSort = DEFAULT_SORT[roleFilter] || DEFAULT_SORT.service;
   const [sortKey, setSortKey] = useState(defaultSort.key);
   const [sortDir, setSortDir] = useState(defaultSort.dir);
@@ -197,6 +222,29 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
           ? `${emp.preferred_name || emp.first_name} ${emp.last_name}`
           : (rc.employee_name || rc.employee_user_id.substring(0, 8));
 
+        // Attendance for this week
+        const weekStart = teamData.weekStart;
+        const weekEnd = (() => {
+          const d = new Date((weekStart) + 'T00:00:00');
+          d.setDate(d.getDate() + 4);
+          return d.toLocaleDateString('en-CA');
+        })();
+
+        const empRecord = rosterEmployees?.find(
+          (r) => r.auth_user_id === rc.employee_user_id || r.id === rc.employee_user_id
+        );
+        const hireDate = empRecord?.hire_date || null;
+        const empEntries = (weekEntries || []).filter(
+          (e) => e.employee_user_id === rc.employee_user_id
+        );
+        const attendance = computeAttendance(
+          rc.employee_user_id,
+          hireDate,
+          empEntries,
+          weekStart,
+          weekEnd
+        );
+
         return {
           employeeId: rc.employee_user_id,
           roleType: empRoleType,
@@ -214,10 +262,12 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
           avgCallsDay: rc.avg_calls_per_day || 0,
           avgHandleOut: rc.avg_handle_time_out_minutes || 0,
           role: empRoleType,
+          daysOut: attendance.totalAbsences,
+          daysOutDetail: attendance,
         };
       })
       .filter(Boolean);
-  }, [teamData, roleFilter]);
+  }, [teamData, roleFilter, weekEntries, rosterEmployees]);
 
   const sorted = useMemo(() => {
     return [...rows].sort((a, b) => {
@@ -264,6 +314,8 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
       avgCallsDay: avg('avgCallsDay'),
       avgHandleOut: avg('avgHandleOut'),
       flags: 0,
+      daysOut: avg('daysOut'),
+      daysOutDetail: null,
     };
   }, [rows]);
 
