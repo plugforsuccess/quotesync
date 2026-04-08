@@ -38,7 +38,20 @@ async function fetchRenewalPolicies(agencyId, filters = {}) {
     query = query.or(`customer_name.ilike.${term},policy_no.ilike.${term}`);
   }
 
-  // Default sort: priority_tier DESC (critical first), then renewal_date ASC
+  // Default: exclude resolved/closed cases unless caller explicitly includes them
+  if (!filters.includeResolved) {
+    query = query.not('status', 'in', '(auto_resolved,confirmed,lost,unreachable)');
+  }
+
+  // Default: exclude past renewal dates unless caller explicitly includes them
+  // Past-due renewals have no action to take — they either renewed or are now
+  // in the pending cancel queue
+  if (!filters.includePast) {
+    const today = new Date().toISOString().slice(0, 10);
+    query = query.gte('renewal_date', today);
+  }
+
+  // Default sort: renewal_date ASC (soonest first)
   query = query
     .order('renewal_date', { ascending: true });
 

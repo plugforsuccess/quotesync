@@ -252,6 +252,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   }, [event.id]);
 
   async function logAttempt() {
+    if (!currentEmployeeId) {
+      console.warn('[logAttempt] No employee ID — cannot log attempt');
+      return;
+    }
     setLoggingAttempt(true);
     const { error } = await supabase.from("pending_cancel_attempts").insert({
       pending_case_id: event.id,
@@ -271,7 +275,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         ...(attemptForm.result === "reached" ? { contacted_at: event.contacted_at || new Date().toISOString() } : {}),
       }).eq("id", event.id);
       // If this is the first attempt on the case, set opened_by_id
-      if (event.attempt_count === 0 || !event.opened_by_id) {
+      if ((event.attempt_count === 0 || !event.opened_by_id) && currentEmployeeId) {
         await supabase
           .from('pending_cases')
           .update({ opened_by_id: currentEmployeeId })
@@ -304,11 +308,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       updates.closed_by_id = currentEmployeeId;
     }
     // Sync assigned_to (legacy text) with assigned_to_id (employee FK)
-    if (!updates.assigned_to_id) {
-      updates.assigned_to_id = null;
+    // Treat empty string same as unset — use strict null check
+    const assignedId = updates.assigned_to_id || null;
+    updates.assigned_to_id = assignedId;
+    if (!assignedId) {
       updates.assigned_to = null;
     } else {
-      const rep = producers.find(p => p.id === updates.assigned_to_id);
+      const rep = producers.find(p => p.id === assignedId);
       updates.assigned_to = rep
         ? (rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim())
         : null;
@@ -414,7 +420,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               <button
                 className="btn-primary"
                 onClick={logAttempt}
-                disabled={loggingAttempt}
+                disabled={loggingAttempt || !currentEmployeeId}
+                title={!currentEmployeeId ? 'Employee record not loaded' : undefined}
                 style={{ width: "100%" }}
               >
                 {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
@@ -578,6 +585,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   }, [event.id]);
 
   async function logAttempt() {
+    if (!currentEmployeeId) {
+      console.warn('[logAttempt] No employee ID — cannot log attempt');
+      return;
+    }
     setLoggingAttempt(true);
     const { error } = await supabase.from("renewal_attempts").insert({
       renewal_event_id: event.id,
@@ -605,7 +616,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         ...statusUpdate,
       }).eq("id", event.id);
       // If this is the first attempt on the case, set opened_by_id
-      if (event.attempt_count === 0 || !event.opened_by_id) {
+      if ((event.attempt_count === 0 || !event.opened_by_id) && currentEmployeeId) {
         await supabase
           .from('renewal_cases')
           .update({ opened_by_id: currentEmployeeId })
@@ -638,7 +649,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     if (["confirmed","lost","unreachable"].includes(form.status)) {
       updates.closed_by_id = currentEmployeeId;
     }
-    if (!updates.assigned_to_id) updates.assigned_to_id = null;
+    updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
     await onUpdate(event.id, updates);
     setSaving(false);
@@ -756,7 +767,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               <button
                 className="btn-primary"
                 onClick={logAttempt}
-                disabled={loggingAttempt}
+                disabled={loggingAttempt || !currentEmployeeId}
+                title={!currentEmployeeId ? 'Employee record not loaded' : undefined}
                 style={{ width: "100%" }}
               >
                 {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
