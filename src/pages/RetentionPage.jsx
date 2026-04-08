@@ -16,6 +16,8 @@ import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components
 import { useFireRenewalQueue, useFireCancelQueue } from '../hooks/useAiQueue';
 import RetentionRenewals      from './components/retention/RetentionRenewals';
 import RetentionAIPerformance from './components/retention/RetentionAIPerformance';
+import { useUploadReminders } from '../hooks/useUploadReminders';
+import UploadReminderBanner from './components/retention/UploadReminderBanner';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -62,6 +64,8 @@ export default function RetentionPage() {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const hasFlaggedBroken = useRef(false);
+
+  const { data: reminders = [] } = useUploadReminders(agencyId);
 
   // AI queue hooks
   const {
@@ -372,6 +376,9 @@ export default function RetentionPage() {
         <KpiCard label="Premium Saved" value={fmt$(kpis.premiumSaved)} sub="this period" color="#10B981" />
         <KpiCard label="Terminations" value={kpis.terminations} sub="requested cancel" color="#64748B" />
       </div>
+
+      {/* Upload reminders — shown on all tabs */}
+      <UploadReminderBanner reminders={reminders} />
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
