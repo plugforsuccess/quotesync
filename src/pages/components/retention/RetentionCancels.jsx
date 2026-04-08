@@ -572,7 +572,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     supabase
       .from("renewal_attempts")
       .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-      .eq("renewal_case_id", event.id)
+      .eq("renewal_event_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
   }, [event.id]);
@@ -580,7 +580,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   async function logAttempt() {
     setLoggingAttempt(true);
     const { error } = await supabase.from("renewal_attempts").insert({
-      renewal_case_id: event.id,
+      renewal_event_id: event.id,
       agency_id: agencyId,
       employee_id: currentEmployeeId,
       method: attemptForm.method,
@@ -616,7 +616,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const { data } = await supabase
         .from("renewal_attempts")
         .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-        .eq("renewal_case_id", event.id)
+        .eq("renewal_event_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
       setAttemptForm({ method: "phone", result: "no_answer", note: "" });
@@ -875,11 +875,11 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
         if (error) throw error;
         setLocalRow(prev => ({ ...prev, cancel_assigned_to_id: employeeId || null }));
       }
-      if (side === 'renewal' && r.renewal_case_id) {
+      if (side === 'renewal' && r.renewal_event_id) {
         const { error } = await supabase
           .from('renewal_cases')
           .update({ assigned_to_id: employeeId || null })
-          .eq('id', r.renewal_case_id);
+          .eq('id', r.renewal_event_id);
         if (error) throw error;
         setLocalRow(prev => ({ ...prev, renewal_assigned_to_id: employeeId || null }));
       }
@@ -1002,7 +1002,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
         )}
 
         {/* Renewal section */}
-        {r.renewal_case_id && (
+        {r.renewal_event_id && (
           <div style={{ background: 'var(--qs-elevated)', borderRadius: 8, padding: '12px 14px', marginBottom: 12, border: '1px solid var(--qs-info-border)' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-info)', marginBottom: 10, fontWeight: 600, textTransform: 'uppercase' }}>
               🔄 Renewal
@@ -1128,7 +1128,7 @@ function calcUnifiedPriority(row) {
       })
     : 0;
 
-  const renewalScore = row.renewal_case_id
+  const renewalScore = row.renewal_event_id
     ? calcRenewalPriority({
         renewal_date:       row.renewal_date,
         premium_change_pct: row.premium_change_pct,
@@ -1206,12 +1206,12 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
       }
     }
     // Fetch full event record so the detail modal has all fields
-    let eventId = side === 'cancel' ? row.cancel_event_id : row.renewal_case_id;
+    let eventId = side === 'cancel' ? row.cancel_event_id : row.renewal_event_id;
 
     // Fallback: if this side has no event ID, try the other side
     if (!eventId) {
       const otherSide = side === 'cancel' ? 'renewal' : 'cancel';
-      const otherId   = side === 'cancel' ? row.renewal_case_id : row.cancel_event_id;
+      const otherId   = side === 'cancel' ? row.renewal_event_id : row.cancel_event_id;
       if (!otherId) return; // genuinely no event on either side
       side    = otherSide;
       eventId = otherId;
@@ -1506,7 +1506,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               const renewalDays = row.renewal_date ? daysUntilRenewal(row.renewal_date) : null;
 
               return (
-                <tr key={`${row.cancel_event_id || ''}-${row.renewal_case_id || ''}`}
+                <tr key={`${row.cancel_event_id || ''}-${row.renewal_event_id || ''}`}
                   className="triage-row"
                   onClick={() => openDrilldown(row)}>
 
