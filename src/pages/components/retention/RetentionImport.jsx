@@ -808,7 +808,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       if (newRecords.length > 0) {
         const { error: insErr } = await supabase
           .from('renewal_cases')
-          .upsert(newRecords, { onConflict: 'agency_id,policy_no,renewal_date', ignoreDuplicates: true });
+          .insert(newRecords);
         if (insErr) throw new Error(insErr.message);
       }
 
