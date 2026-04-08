@@ -5,6 +5,7 @@
 
 import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, CheckCircle, XCircle, Shield, Edit3, BarChart2, Info } from 'lucide-react';
 import { GRADE_CONFIG, DEFAULT_TARGETS, calculateGrade, computeMetrics } from '../../../config/staffPerformanceDefaults';
+import { computeAttendance } from '../../../lib/attendanceUtils';
 
 // ── Metric Display Components ──────────────────────────────────────────────────
 
@@ -105,6 +106,9 @@ export default function StaffScorecard({
   proactivity,
   onProactivityChange,
   savingProactivity,
+  ytdEntries,
+  hireDate,
+  currentYear,
 }) {
   const hasCallLog = callLogMetrics && callLogMetrics.totalCalls > 0;
   const hasRCData = !!rcData;
@@ -151,6 +155,18 @@ export default function StaffScorecard({
   const hasZeroCallDays = hasCallLog ? clm.hasZeroCallDays : false;
 
   const employeeName = rcData?.employee_name || (hasCallLog ? 'Employee' : '');
+
+  // YTD Attendance
+  const ytdStart = `${currentYear}-01-01`;
+  const ytdEnd   = `${currentYear}-12-31`;
+  const ytdAttendance = computeAttendance(
+    null,
+    hireDate || null,
+    ytdEntries || [],
+    ytdStart,
+    ytdEnd
+  );
+  const hasAttendanceData = (ytdEntries || []).length > 0;
 
   return (
     <div className="space-y-6">
@@ -363,6 +379,47 @@ export default function StaffScorecard({
           </div>
         </div>
       </div>
+
+      {/* YTD Attendance */}
+      {hasAttendanceData && (
+        <div className="bg-qs-card rounded-lg border border-qs-border p-4">
+          <p className="text-xs font-medium text-qs-subtle uppercase tracking-wide mb-3">
+            YTD Attendance ({currentYear})
+          </p>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.daysWorked}</p>
+              <p className="text-xs text-qs-subtle mt-0.5">Days Worked</p>
+            </div>
+            <div>
+              <p className={`text-2xl font-bold ${ytdAttendance.sick > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
+                {ytdAttendance.sick}
+              </p>
+              <p className="text-xs text-qs-subtle mt-0.5">Sick</p>
+            </div>
+            <div>
+              <p className={`text-2xl font-bold ${ytdAttendance.pto > 0 ? 'text-blue-400' : 'text-qs-bright'}`}>
+                {ytdAttendance.pto}
+              </p>
+              <p className="text-xs text-qs-subtle mt-0.5">PTO</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.appt}</p>
+              <p className="text-xs text-qs-subtle mt-0.5">Appt</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.early}</p>
+              <p className="text-xs text-qs-subtle mt-0.5">Early Out</p>
+            </div>
+            <div>
+              <p className={`text-2xl font-bold ${ytdAttendance.unexcused > 0 ? 'text-red-400' : 'text-qs-bright'}`}>
+                {ytdAttendance.unexcused}
+              </p>
+              <p className="text-xs text-qs-subtle mt-0.5">Unexcused</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

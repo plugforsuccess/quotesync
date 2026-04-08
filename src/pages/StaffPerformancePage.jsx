@@ -711,6 +711,14 @@ const StaffPerformancePage = () => {
                   proactivity={proactivityList.find((p) => p.employee_user_id === singleEmployee)}
                   onProactivityChange={handleProactivityChange}
                   savingProactivity={savingProactivity}
+                  ytdEntries={(ytdData?.entries || []).filter(e => e.employee_user_id === singleEmployee)}
+                  hireDate={(() => {
+                    const emp = rosterEmployees?.find(
+                      e => e.auth_user_id === singleEmployee || e.id === singleEmployee
+                    );
+                    return emp?.hire_date || null;
+                  })()}
+                  currentYear={currentYear}
                 />
 
                 {/* Queue Coverage summary (when queue data exists) */}
@@ -790,6 +798,14 @@ const StaffPerformancePage = () => {
                       proactivity={empProactivity}
                       onProactivityChange={isSelectedEmployee ? handleProactivityChange : null}
                       savingProactivity={savingProactivity}
+                      ytdEntries={(ytdData?.entries || []).filter(e => e.employee_user_id === rc.employee_user_id)}
+                      hireDate={(() => {
+                        const emp = rosterEmployees?.find(
+                          e => e.auth_user_id === rc.employee_user_id || e.id === rc.employee_user_id
+                        );
+                        return emp?.hire_date || null;
+                      })()}
+                      currentYear={currentYear}
                     />
 
                     {/* Daily Breakdown */}
