@@ -1,9 +1,10 @@
 // src/pages/components/time-attendance/WeekPickerCalendar.jsx
 // Calendar popup for picking a week. Clicking any date selects that week (Mon–Fri).
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { getFederalHolidays, getHolidayLabel } from '../../../lib/federalHolidays';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -67,6 +68,15 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
   }, [weekStart]);
+
+  // Compute holidays for the viewed year (plus neighbors for edge months)
+  const holidays = useMemo(() => {
+    const set = new Set();
+    for (const y of [viewYear, viewYear - 1, viewYear + 1]) {
+      for (const d of getFederalHolidays(y)) set.add(d);
+    }
+    return set;
+  }, [viewYear]);
 
   // Position popup below trigger button on open
   useEffect(() => {
@@ -182,6 +192,8 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
           const isMonday = date.getDay() === 1 && inWeek;
           const isFriday = date.getDay() === 5 && inWeek;
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const isHoliday = holidays.has(ds);
+          const holidayLabel = isHoliday ? getHolidayLabel(ds) : null;
 
           return (
             <button
@@ -189,7 +201,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
               onClick={() => handleDayClick(date)}
               tabIndex={open ? 0 : -1}
               aria-pressed={inWeek}
-              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}${inWeek ? ' (selected week)' : ''}`}
+              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}${isHoliday ? ` (${holidayLabel})` : ''}${inWeek ? ' (selected week)' : ''}`}
               className={`
                 py-1.5 text-xs text-center transition-colors relative
                 ${!currentMonth ? 'text-qs-muted' : isWeekend ? 'text-qs-muted' : 'text-qs-text'}
@@ -197,11 +209,19 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
                 ${isMonday ? 'rounded-l-lg' : ''}
                 ${isFriday ? 'rounded-r-lg' : ''}
                 ${isToday && !inWeek ? 'font-bold text-primary-400' : ''}
+                ${isHoliday && !inWeek ? 'text-blue-400 font-medium' : ''}
+                ${isHoliday && inWeek ? 'text-blue-300' : ''}
               `}
             >
               {date.getDate()}
               {isToday && (
                 <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary-500" />
+              )}
+              {isHoliday && !isToday && (
+                <span
+                  title={holidayLabel}
+                  className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500"
+                />
               )}
             </button>
           );
@@ -211,6 +231,14 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
       <p className="mt-2 text-[10px] text-qs-muted text-center">
         Click any day to jump to that week &middot; Arrow keys change month &middot; Esc to close
       </p>
+      <div className="mt-2 flex items-center justify-center gap-4 text-[10px] text-qs-muted">
+        <span className="flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary-500 inline-block" /> Today
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block" /> Holiday
+        </span>
+      </div>
 
       <div className="mt-2 pt-3 border-t border-qs-border flex justify-between">
         <button

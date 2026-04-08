@@ -182,6 +182,10 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
             </p>
             <p className="text-xs text-qs-subtle mt-0.5">Unexcused</p>
           </div>
+          <div>
+            <p className="text-2xl font-bold text-blue-400">{ytdAttendance.holiday}</p>
+            <p className="text-xs text-qs-subtle mt-0.5">Holidays</p>
+          </div>
         </div>
       </div>
 
