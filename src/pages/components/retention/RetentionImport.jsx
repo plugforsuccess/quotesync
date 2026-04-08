@@ -185,18 +185,25 @@ function parseReport(file) {
 
 // ─── Diff Engine ───────────────────────────────────────────────────────────────
 
-function diffReport(parsed, existing) {
+function diffReport(parsed, existing, lapseMap = new Map()) {
   const today = new Date().toISOString().slice(0, 10);
   const makeKey = (pno, cdate) => `${pno.toLowerCase()}|${cdate}`;
   const parsedKeys = new Set(parsed.map(r => makeKey(r.policy_no, r.cancel_effective_date)));
 
-  const activeStatuses = ["pending", "attempting", "left_voicemail", "contacted", "promise_to_pay", "promise_broken", "pending_review"];
+  const activeStatuses = [
+    'pending', 'attempting', 'left_voicemail', 'contacted',
+    'payment_plan_requested', 'promise_to_pay', 'promise_broken', 'pending_review',
+  ];
   const activeEvents = existing.filter(e => activeStatuses.includes(e.status));
-  const activeKeys = new Map(activeEvents.map(e => [makeKey(e.policy_no, e.cancel_effective_date), e]));
+  const activeKeys = new Map(
+    activeEvents.map(e => [makeKey(e.policy_no, e.cancel_effective_date), e])
+  );
 
   const toAdd = [];
   const toUpdate = [];
   const duplicates = [];
+  const autoLost = [];   // confirmed in lapse_events — auto-closed
+  const toReview = [];   // absent from report, no lapse record — verify in Allstate
 
   for (const row of parsed) {
     const key = makeKey(row.policy_no, row.cancel_effective_date);
@@ -219,26 +226,57 @@ function diffReport(parsed, existing) {
         duplicates.push(key);
       }
     } else {
-      const priorEvents = existing.filter(e => e.policy_no.toLowerCase() === row.policy_no.toLowerCase());
+      const priorEvents = existing.filter(
+        e => e.policy_no.toLowerCase() === row.policy_no.toLowerCase()
+      );
       const cycle = priorEvents.length + 1;
       toAdd.push({ ...row, cycle, first_seen_on: today, last_seen_on: today });
     }
   }
 
-  const toAutoResolve = activeEvents
-    .filter(e => !parsedKeys.has(makeKey(e.policy_no, e.cancel_effective_date)))
-    .map(e => ({
-      id: e.id,
-      policy_no: e.policy_no,
-      customer_name: e.customer_name,
-      product: e.product,
-      premium_at_risk: e.premium_at_risk,
-      cancel_effective_date: e.cancel_effective_date,
-      attempt_count: e.attempt_count,
-      last_seen_on: e.last_seen_on,
-    }));
+  // Classify absent active cases
+  for (const e of activeEvents) {
+    if (parsedKeys.has(makeKey(e.policy_no, e.cancel_effective_date))) continue;
 
-  return { toAdd, toUpdate, toAutoResolve, duplicates };
+    const cancelDate = new Date(e.cancel_effective_date + 'T00:00:00');
+    const daysPastCancel = Math.floor((new Date() - cancelDate) / 86400000);
+    const lapseRecord = lapseMap.get(e.policy_no);
+
+    if (lapseRecord) {
+      // Authoritative — confirmed in termination report. Auto-close as lost.
+      autoLost.push({
+        id: e.id,
+        policy_no: e.policy_no,
+        customer_name: e.customer_name,
+        product: e.product,
+        premium_at_risk: e.premium_at_risk,
+        cancel_effective_date: e.cancel_effective_date,
+        lapse_date: lapseRecord.lapse_date,
+        termination_reason: lapseRecord.termination_reason,
+        resolution_date: lapseRecord.lapse_date || today,
+      });
+    } else if (daysPastCancel <= 0) {
+      // Cancel date is today or future — still in active window.
+      // Do nothing — leave status unchanged, don't surface in review.
+    } else {
+      // Cancel date has passed but no lapse record.
+      // Absence = ambiguous (paid OR lapsed). Must verify in Allstate.
+      toReview.push({
+        id: e.id,
+        policy_no: e.policy_no,
+        customer_name: e.customer_name,
+        product: e.product,
+        premium_at_risk: e.premium_at_risk,
+        cancel_effective_date: e.cancel_effective_date,
+        last_seen_on: e.last_seen_on,
+        attempt_count: e.attempt_count,
+        daysPastCancel,
+        autoReason: e.attempt_count === 0 ? 'no_contact_missing' : 'worked_case_missing',
+      });
+    }
+  }
+
+  return { toAdd, toUpdate, duplicates, autoLost, toReview };
 }
 
 // ─── Auto-Resolve Review Panel ──────────────────────────────────────────────
@@ -309,6 +347,12 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
                   · Cancel {c.cancel_effective_date} · Last seen {c.last_seen_on}
                   {c.attempt_count > 0 && ` · ${c.attempt_count} attempts`}
                 </div>
+                <div style={{ fontSize: 10, color: 'var(--qs-muted)', marginTop: 2 }}>
+                  {c.autoReason === 'no_contact_missing'
+                    ? '⚠ Never contacted — verify in Allstate: paid or lapsed?'
+                    : `⚠ ${c.attempt_count} attempt${c.attempt_count !== 1 ? 's' : ''} made — verify outcome in Allstate`
+                  }
+                </div>
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                 {[
@@ -356,7 +400,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
 
 // ─── Upload Tab ──────────────────────────────────────────────────────────────
 
-function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancel, showReviewPanel, autoResolveCases, autoResolveDecisions, onAutoResolveDecide, onAutoResolveConfirm }) {
+function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancel, autoResolveDecisions, onAutoResolveDecide, onAutoResolveConfirm }) {
   return (
     <div style={{ maxWidth: 640 }}>
       <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
@@ -389,12 +433,13 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
           {/* Detail grid — color values used as inline style props */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 20 }}>
             {[
-              { label: "New Policies", value: diffResult.toAdd.length, color: "#10B981" },
-              { label: "Updated", value: diffResult.toUpdate.length, color: "#3B82F6" },
-              { label: "Auto-Resolved", value: diffResult.toAutoResolve.length, color: "#F59E0B" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, padding: "12px 14px" }}>
-                <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
+              { label: 'New Policies',    value: diffResult.toAdd.length,    color: '#10B981' },
+              { label: 'Updated',         value: diffResult.toUpdate.length,  color: '#3B82F6' },
+              { label: 'Confirmed Lost',  value: diffResult.autoLost.length,  color: '#EF4444' },
+              { label: 'Needs Review',    value: diffResult.toReview.length,  color: '#F59E0B' },
+            ].filter(item => item.value > 0).map(({ label, value, color }) => (
+              <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 4 }}>{label}</div>
                 <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
               </div>
             ))}
@@ -409,15 +454,27 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             </div>
           )}
 
-          {diffResult.toAutoResolve.length > 0 && !showReviewPanel && (
-            <div style={{ fontSize: 12, color: "var(--qs-warning)", marginBottom: 14, background: "var(--qs-warning-subtle)", borderRadius: 6, padding: "8px 12px" }}>
-              {diffResult.toAutoResolve.length} active policies not found in this report will be staged for review.
+          {diffResult.autoLost.length > 0 && (
+            <div style={{ fontSize: 12, background: '#EF444411', border: '1px solid #EF444433',
+              borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
+              <span style={{ color: '#EF4444', fontWeight: 600 }}>
+                ✗ {diffResult.autoLost.length} confirmed lost
+              </span>
+              {' '}— matched termination report. Marked lost automatically.
+              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
+                {diffResult.autoLost.map(c => (
+                  <span key={c.id} style={{ marginRight: 12 }}>
+                    {c.customer_name} ({c.product?.toUpperCase()})
+                    {c.termination_reason ? ` — ${c.termination_reason}` : ''}
+                  </span>
+                ))}
+              </div>
             </div>
           )}
 
-          {showReviewPanel && autoResolveCases.length > 0 && (
+          {diffResult.toReview.length > 0 && onAutoResolveDecide && (
             <AutoResolveReviewPanel
-              cases={autoResolveCases}
+              cases={diffResult.toReview}
               decisions={autoResolveDecisions}
               onDecide={onAutoResolveDecide}
               onConfirmAll={onAutoResolveConfirm}
@@ -1109,7 +1166,7 @@ function ImportTab({
   isCancelAuditCommitting, cancelAuditDiff, cancelAuditFileInputRef,
   onCancelAuditFileSelect, onCancelAuditCommit, onCancelAuditCancel,
   agencyId, currentUserId, currentEmployeeId,
-  showReviewPanel, autoResolveCases, autoResolveDecisions,
+  autoResolveDecisions,
   onAutoResolveDecide, onAutoResolveConfirm,
 }) {
   return (
@@ -1216,8 +1273,6 @@ function ImportTab({
             onFileSelect={onFileSelect}
             onCommit={onCommit}
             onCancel={onCancelUpload}
-            showReviewPanel={showReviewPanel}
-            autoResolveCases={autoResolveCases}
             autoResolveDecisions={autoResolveDecisions}
             onAutoResolveDecide={onAutoResolveDecide}
             onAutoResolveConfirm={onAutoResolveConfirm}
@@ -1268,7 +1323,6 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
   // Auto-resolve review state
   const [autoResolveDecisions, setAutoResolveDecisions] = useState({});
-  const [showReviewPanel, setShowReviewPanel] = useState(false);
 
   // Fetch pending_cases for diff engine
   const { data: events = [] } = useQuery({
@@ -1295,18 +1349,36 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
   async function handleFileSelect(file) {
     if (!file) return;
     setUploadFile(file);
-    setUploadError("");
-    setUploadMsg("");
+    setUploadError('');
+    setUploadMsg('');
     setDiffResult(null);
     setIsParsing(true);
     try {
       const parsed = await parseReport(file);
-      const diff = diffReport(parsed, events);
+
+      // Always fetch fresh — never diff against stale cache
+      const [
+        { data: freshEvents, error: fetchErr },
+        { data: lapseEvents, error: lapseErr },
+      ] = await Promise.all([
+        supabase
+          .from('pending_cases')
+          .select('*')
+          .eq('agency_id', agencyId)
+          .order('cancel_effective_date', { ascending: true }),
+        supabase
+          .from('lapse_events')
+          .select('policy_no, lapse_date, termination_reason')
+          .eq('agency_id', agencyId),
+      ]);
+      if (fetchErr) throw new Error(fetchErr.message);
+
+      const lapseMap = new Map((lapseEvents || []).map(l => [l.policy_no, l]));
+      const diff = diffReport(parsed, freshEvents || [], lapseMap);
       setDiffResult(diff);
       setAutoResolveDecisions({});
-      setShowReviewPanel(diff.toAutoResolve.length > 0);
     } catch (err) {
-      console.error("[triage upload error]", err.message);
+      console.error('[triage upload error]', err.message);
       setUploadError(`❌ ${friendlyUploadError(err.message)}`);
     } finally {
       setIsParsing(false);
@@ -1330,7 +1402,6 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
     if (keep.length > 0)
       await supabase.from('pending_cases').update({ status: 'pending' }).in('id', keep);
 
-    setShowReviewPanel(false);
     setAutoResolveDecisions({});
     queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
     queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
@@ -1379,7 +1450,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
           filename: uploadFile?.name,
           rows_added: diffResult.toAdd.length,
           rows_updated: diffResult.toUpdate.length,
-          rows_auto_resolved: diffResult.toAutoResolve.length,
+          rows_auto_resolved: diffResult.autoLost.length + diffResult.toReview.length,
           committed: false,
         })
         .select().single();
@@ -1409,11 +1480,24 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         await supabase.from("pending_cases").update(updatePayload).eq("id", u.id);
       }
 
-      if (diffResult.toAutoResolve.length > 0) {
+      // Auto-close confirmed lost from lapse_events
+      if (diffResult.autoLost.length > 0) {
+        for (const c of diffResult.autoLost) {
+          await supabase.from('pending_cases').update({
+            status: 'lost',
+            resolution_date: c.resolution_date,
+            termination_reason: c.termination_reason || null,
+            lapse_date: c.lapse_date || null,
+          }).eq('id', c.id);
+        }
+      }
+
+      // Stage ambiguous absent cases for human review
+      if (diffResult.toReview.length > 0) {
         await supabase
-          .from("pending_cases")
-          .update({ status: "pending_review" })
-          .in("id", diffResult.toAutoResolve.map(r => r.id));
+          .from('pending_cases')
+          .update({ status: 'pending_review' })
+          .in('id', diffResult.toReview.map(c => c.id));
       }
 
       await supabase.from("pending_cancel_uploads").update({ committed: true }).eq("id", batchId);
@@ -1423,7 +1507,14 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         : activeReps.length === 1 ? `assigned to ${repNames[0]}`
         : `distributed across ${repNames.join(", ")}`;
 
-      setUploadMsg(`${diffResult.toAdd.length} added · ${diffResult.toUpdate.length} updated · ${diffResult.toAutoResolve.length} staged for review · ${assignmentSummary}`);
+      const parts = [
+        diffResult.toAdd.length > 0     && `${diffResult.toAdd.length} added`,
+        diffResult.toUpdate.length > 0   && `${diffResult.toUpdate.length} updated`,
+        diffResult.autoLost.length > 0   && `${diffResult.autoLost.length} confirmed lost`,
+        diffResult.toReview.length > 0   && `${diffResult.toReview.length} need review`,
+      ].filter(Boolean).join(' · ');
+
+      setUploadMsg(`${parts} · ${assignmentSummary}`);
       setDiffResult(null);
       setUploadFile(null);
       await loadEvents();
@@ -1604,8 +1695,6 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       agencyId={agencyId}
       currentUserId={currentUserId}
       currentEmployeeId={currentEmployeeId}
-      showReviewPanel={showReviewPanel}
-      autoResolveCases={diffResult?.toAutoResolve ?? []}
       autoResolveDecisions={autoResolveDecisions}
       onAutoResolveDecide={handleAutoResolveDecision}
       onAutoResolveConfirm={handleConfirmReviewDecisions}
