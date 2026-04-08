@@ -1155,7 +1155,7 @@ function calcUnifiedPriority(row) {
   return row.risk_type === 'dual_risk' ? Math.min(base + 15, 100) : base;
 }
 
-function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
+function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFilter = false, onClearUrgentFilter }) {
   const { config: productConfig } = useAgencyProductConfig(agencyId);
   const queryClient = useQueryClient();
 
@@ -1283,6 +1283,16 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
       );
     }
 
+    // Urgent filter — cases with cancel date ≤ 3 days away or past due
+    if (urgentFilter) {
+      const today = new Date();
+      list = list.filter(r => {
+        if (!r.cancel_effective_date) return false;
+        const days = (new Date(r.cancel_effective_date) - today) / 86400000;
+        return days <= 3;
+      });
+    }
+
     // Sort logic
     if (sortCol === 'priority') {
       return list.sort((a, b) =>
@@ -1325,7 +1335,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           return sortDir === 'asc' ? a._priority - b._priority : b._priority - a._priority;
       }
     });
-  }, [rows, riskFilter, myCasesOnly, currentEmployeeId, sortCol, sortDir]);
+  }, [rows, riskFilter, myCasesOnly, currentEmployeeId, sortCol, sortDir, urgentFilter]);
 
   const kpiFilteredRows = useMemo(() => {
     if (kpiFilter === null) return filteredRows;
@@ -1432,7 +1442,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
               sub={kpi.sub}
               color={kpi.color}
               clickable={!!kpi.filterKey}
-              onClick={kpi.filterKey ? () => setKpiFilter(kpi.filterKey) : undefined}
+              onClick={kpi.filterKey ? () => { setKpiFilter(kpi.filterKey); onClearUrgentFilter?.(); } : undefined}
             />
           ));
         })()}
@@ -1447,7 +1457,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           { key: 'renewal',        label: 'Renewals' },
         ].map(f => (
           <button key={f.key} className={`btn-ghost ${riskFilter === f.key ? 'active' : ''}`}
-            onClick={() => { setRiskFilter(f.key); setKpiFilter(null); }}>
+            onClick={() => { setRiskFilter(f.key); setKpiFilter(null); onClearUrgentFilter?.(); }}>
             {f.label}
           </button>
         ))}
@@ -1482,6 +1492,28 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId }) {
           👤 My Cases
         </button>
       </div>
+
+      {/* Urgent filter banner */}
+      {urgentFilter && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          background: '#EF444411', border: '1px solid #EF444433',
+          borderRadius: 8, padding: '8px 14px', marginBottom: 12,
+        }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#EF4444' }}>
+            🚨 Showing urgent cases only — cancel date within 3 days
+          </span>
+          <button
+            onClick={() => { onClearUrgentFilter?.(); }}
+            style={{
+              fontSize: 11, color: 'var(--qs-muted)',
+              background: 'none', border: 'none', cursor: 'pointer',
+            }}
+          >
+            Clear filter ✕
+          </button>
+        </div>
+      )}
 
       {/* Table */}
       <div style={{ overflowX: 'auto' }}>

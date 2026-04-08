@@ -40,14 +40,24 @@ const GLOBAL_STYLES = `@import url('https://fonts.googleapis.com/css2?family=DM+
 
 // ─── KPI Card ───────────────────────────────────────────────────────────────
 
-function KpiCard({ label, value, sub, color, urgent, urgentCount }) {
+function KpiCard({ label, value, sub, color, urgent, urgentCount, onUrgentClick }) {
   return (
     <div className="card" style={{ position: "relative" }}>
       <div style={{ fontSize: 12, color: "var(--qs-subtle)", fontWeight: 500, marginBottom: 6 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 700, color: color || "var(--qs-text)" }}>{value}</div>
       {sub && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{sub}</div>}
       {urgent && urgentCount > 0 && (
-        <div style={{ position: "absolute", top: 8, right: 10, background: "#EF4444", color: "#fff", borderRadius: 10, padding: "1px 7px", fontSize: 10, fontWeight: 700 }}>
+        <div
+          onClick={onUrgentClick}
+          style={{
+            position: 'absolute', top: 8, right: 10,
+            background: '#EF4444', color: '#fff',
+            borderRadius: 10, padding: '1px 7px',
+            fontSize: 10, fontWeight: 700,
+            cursor: onUrgentClick ? 'pointer' : 'default',
+            userSelect: 'none',
+          }}
+        >
           {urgentCount} urgent
         </div>
       )}
@@ -62,6 +72,7 @@ export default function RetentionPage() {
   const agencyId = currentAgency?.agency_id;
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("at_risk");
+  const [urgentFilter, setUrgentFilter] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
   const hasFlaggedBroken = useRef(false);
@@ -420,7 +431,7 @@ export default function RetentionPage() {
 
       {/* KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 24 }}>
-        <KpiCard label="At Risk" value={fmt$(kpis.premiumAtRisk)} sub={`${kpis.totalActive} policies`} color="#F59E0B" urgent={kpis.urgentCount > 0} urgentCount={kpis.urgentCount} />
+        <KpiCard label="At Risk" value={fmt$(kpis.premiumAtRisk)} sub={`${kpis.totalActive} policies`} color="#F59E0B" urgent={kpis.urgentCount > 0} urgentCount={kpis.urgentCount} onUrgentClick={() => { setActiveTab('at_risk'); setUrgentFilter(true); }} />
         <KpiCard label="Save Rate" value={kpis.saveRate !== null ? `${Math.round(kpis.saveRate * 100)}%` : "\u2014"} sub="saved / worked" color="#10B981" />
         <KpiCard label="Contact Rate" value={kpis.contactRate !== null ? `${Math.round(kpis.contactRate * 100)}%` : "\u2014"} sub="of active queue" color="#3B82F6" />
         <KpiCard label="Premium Saved" value={fmt$(kpis.premiumSaved)} sub="this period" color="#10B981" />
@@ -452,6 +463,8 @@ export default function RetentionPage() {
           agencyId={agencyId}
           currentUserId={currentUserId}
           currentEmployeeId={currentEmployee?.id}
+          urgentFilter={urgentFilter}
+          onClearUrgentFilter={() => setUrgentFilter(false)}
         />
       )}
       {activeTab === "renewals" && (
