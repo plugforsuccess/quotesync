@@ -38,8 +38,11 @@ import TrendsView from './components/time-attendance/TrendsView';
 import DailyBreakdown from './components/time-attendance/DailyBreakdown';
 import OutboundBreakdownForm from './components/time-attendance/OutboundBreakdownForm';
 import ProducerDetailView from './components/time-attendance/ProducerDetailView';
+import ProducerScorecard from './components/time-attendance/ProducerScorecard';
 import CallLogTable from './components/time-attendance/CallLogTable';
 import AgentAliasManager from './components/time-attendance/AgentAliasManager';
+import { useProducerTargets } from '../hooks/useProducerTargets';
+import { useRevenueEntries } from '../hooks/useRevenueEntries';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
@@ -150,6 +153,59 @@ const StaffPerformancePage = () => {
   // Attendance: YTD entries for producer detail view
   const currentYear = new Date(weekStart + 'T00:00:00').getFullYear();
   const { data: ytdData } = useYTDEntries(currentYear, !!singleEmployee);
+
+  // Producer targets (for scorecard grading)
+  const { data: producerTargets } = useProducerTargets(
+    currentAgencyId,
+    singleEmployee || null
+  );
+
+  // Monthly production actuals from revenue_entries
+  const currentMonthStr = useMemo(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  }, []);
+
+  const monthRangeStart = useMemo(() => {
+    const [y, m] = currentMonthStr.split('-');
+    return new Date(`${y}-${m}-01T00:00:00`);
+  }, [currentMonthStr]);
+
+  const monthRangeEnd = useMemo(() => {
+    const d = new Date(monthRangeStart);
+    d.setMonth(d.getMonth() + 1);
+    d.setDate(d.getDate() - 1);
+    return d;
+  }, [monthRangeStart]);
+
+  const { entries: revenueEntries = [] } = useRevenueEntries({
+    agencyId: currentAgencyId,
+    rangeStart: monthRangeStart,
+    rangeEnd: monthRangeEnd,
+  });
+
+  // Compute monthly production for selected producer
+  const monthlyProduction = useMemo(() => {
+    if (!singleEmployee || !revenueEntries.length) return { vcItems: 0, premium: 0, policies: 0 };
+    // producer_id maps to employees.id — resolve from roster
+    const rosterEmp = rosterEmployees.find(e => (e.auth_user_id || e.id) === singleEmployee);
+    const rosterId = rosterEmp?.id;
+    const filtered = revenueEntries.filter(e => {
+      if (rosterId && e.producerId === rosterId) return true;
+      if (e.producerId === singleEmployee) return true;
+      // Fallback: match by producer name
+      if (!e.producerId && e.producerName && rosterEmp) {
+        const name = `${rosterEmp.preferred_name || rosterEmp.first_name} ${rosterEmp.last_name}`.trim().toLowerCase();
+        return e.producerName.toLowerCase() === name;
+      }
+      return false;
+    });
+    return {
+      vcItems:  filtered.reduce((s, e) => s + (e.itemCount ?? 1), 0),
+      premium:  filtered.reduce((s, e) => s + (parseFloat(e.premium) || 0), 0),
+      policies: filtered.length,
+    };
+  }, [revenueEntries, singleEmployee, rosterEmployees]);
 
   // v3: Call log data
   const { data: callLogData = [], refetch: refetchCallLog } = useCallLogData(singleEmployee, weekStart);
@@ -598,6 +654,20 @@ const StaffPerformancePage = () => {
                       rcData={rc}
                       weekStart={weekStart}
                       roleType="sales"
+                    />
+
+                    {/* Producer scorecard (graded) */}
+                    <ProducerScorecard
+                      employeeName={rc.employee_name || getEmployeeName(rc.employee_user_id)}
+                      targets={producerTargets}
+                      weeklyOutbound={rc?.outbound_calls ?? 0}
+                      weeklyTotalCalls={rc?.total_calls ?? 0}
+                      weeklyAvgPerDay={rc?.avg_calls_per_day ?? 0}
+                      monthlyVcItems={monthlyProduction.vcItems}
+                      monthlyPremium={monthlyProduction.premium}
+                      monthlyPolicies={monthlyProduction.policies}
+                      weekLabel={`Week of ${weekStart}`}
+                      monthLabel={currentMonthStr}
                     />
 
                     {/* Producer detail view */}
