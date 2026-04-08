@@ -1,7 +1,8 @@
 // Supabase Edge Function: bland-renewal-webhook
 // POST /functions/v1/bland-renewal-webhook
 // Called by Bland.ai on call_ended event.
-// Writes outcome, assignment, followup deadline, cost to renewal_policies + ai_call_log.
+// Writes outcome to renewal_cases + ai_call_log.
+// All renewal_policies references replaced with renewal_cases.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -54,11 +55,8 @@ function resolveOutcome(body: BlandWebhookPayload): ContactOutcome {
     if (o === 'voicemail') return 'left_voicemail'
     if (o === 'no_answer') return 'no_answer'
   }
-
-  // Fallback: keyword matching on transcript/analysis
   const analysis = (body.analysis || '').toLowerCase()
   const t = (body.concatenated_transcript || '').toLowerCase()
-
   if (body.answered_by === 'voicemail') return 'left_voicemail'
   if (body.answered_by === 'no-answer' || !body.completed) return 'no_answer'
   if (body.variables?.opt_out_requested === 'true') return 'escalated'
@@ -68,20 +66,17 @@ function resolveOutcome(body: BlandWebhookPayload): ContactOutcome {
   if (analysis.includes('escalat') || analysis.includes('rate shock') || t.includes('way too high') || t.includes('talk to cameron')) return 'escalated'
   if (analysis.includes('hesitant') || t.includes('i guess') || t.includes('not sure')) return 'hesitant'
   if (analysis.includes('confirmed') || t.includes('sounds good') || t.includes('yes')) return 'confirmed'
-
   return 'no_answer'
 }
 
 function resolveFollowupReason(outcome: ContactOutcome, body: BlandWebhookPayload): string | null {
   const schema = body.analysis_schema
   const t = (body.concatenated_transcript || '').toLowerCase()
-
   if (schema?.call_outcome === 'address_discrepancy' || schema?.service_changes_requested?.includes('address_update')) return 'address_discrepancy'
   if (schema?.call_outcome === 'eft_lapse' || schema?.service_changes_requested?.some(s => s.includes('eft'))) return 'eft_lapse'
   if (schema?.call_outcome === 'rate_shock_escalated') return 'rate_shock'
   if (schema?.call_outcome === 'shopping') return 'shopping'
   if (schema?.call_outcome === 'opt_out_requested') return null
-
   switch (outcome) {
     case 'shopping': return 'shopping'
     case 'wrong_number': return 'wrong_number'
@@ -100,12 +95,12 @@ function resolveFollowupReason(outcome: ContactOutcome, body: BlandWebhookPayloa
 
 function resolveAssignment(followupReason: string | null, env: Record<string, string>): string | null {
   if (!followupReason) return null
-  const { TRACY_EMPLOYEE_ID: t, CINDY_EMPLOYEE_ID: c, CAMERON_EMPLOYEE_ID: cam } = env
+  const { TRACY_EMPLOYEE_ID: t, CAMERON_EMPLOYEE_ID: cam } = env
   switch (followupReason) {
     case 'rate_shock': case 'shopping': case 'hesitant': case 'multi_policy': case 'manual':
       return t || cam || null
     case 'address_discrepancy': case 'eft_lapse': case 'wrong_number': case 'no_response': case 'amount_due':
-      return c || cam || null
+      return t || cam || null
     default:
       return cam || null
   }
@@ -113,18 +108,14 @@ function resolveAssignment(followupReason: string | null, env: Record<string, st
 
 function resolveFollowupDueBy(followupReason: string | null, renewalDate: string | null, now: Date): string | null {
   if (!followupReason) return null
-
   const eodUTC = new Date(now)
-  eodUTC.setUTCHours(22, 0, 0, 0) // ~5-6PM ET
+  eodUTC.setUTCHours(22, 0, 0, 0)
   const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000)
   const in72h = new Date(now.getTime() + 72 * 60 * 60 * 1000)
-
-  // Urgent: renewal within 15 days
   if (renewalDate) {
     const daysUntil = Math.ceil((new Date(renewalDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     if (daysUntil <= 15) return eodUTC.toISOString()
   }
-
   if (['rate_shock', 'shopping'].includes(followupReason)) return eodUTC.toISOString()
   if (['address_discrepancy', 'eft_lapse', 'hesitant', 'manual'].includes(followupReason)) return in48h.toISOString()
   return in72h.toISOString()
@@ -134,7 +125,6 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 
-  // Webhook secret validation
   const BLAND_WEBHOOK_SECRET = Deno.env.get('BLAND_WEBHOOK_SECRET')
   if (BLAND_WEBHOOK_SECRET && req.headers.get('x-bland-webhook-secret') !== BLAND_WEBHOOK_SECRET) {
     console.error('[BLAND_RENEWAL_WEBHOOK] Invalid webhook secret')
@@ -154,7 +144,6 @@ Deno.serve(async (req) => {
   const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
   const envStaff = {
     TRACY_EMPLOYEE_ID: Deno.env.get('TRACY_EMPLOYEE_ID') || '',
-    CINDY_EMPLOYEE_ID: Deno.env.get('CINDY_EMPLOYEE_ID') || '',
     CAMERON_EMPLOYEE_ID: Deno.env.get('CAMERON_EMPLOYEE_ID') || '',
   }
   const AI_COST_PER_MIN = parseFloat(Deno.env.get('AI_CALL_COST_PER_MINUTE') || '0.10')
@@ -166,51 +155,61 @@ Deno.serve(async (req) => {
     const now = new Date()
     const nowISO = now.toISOString()
 
-    // Fetch current policy state
+    // Fetch current case from renewal_cases (not renewal_policies)
     const { data: current, error: fetchError } = await supabase
-      .from('renewal_policies')
-      .select('contact_attempts, customer_phone, customer_name, renewal_date')
-      .eq('id', policy_id).eq('agency_id', agency_id).single()
+      .from('renewal_cases')
+      .select('attempt_count, phone, customer_name, renewal_date')
+      .eq('id', policy_id)
+      .eq('agency_id', agency_id)
+      .single()
 
     if (fetchError || !current) {
-      return new Response(JSON.stringify({ error: 'Policy not found' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      return new Response(JSON.stringify({ error: 'Renewal case not found', details: fetchError?.message }), {
+        status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const newAttempts = (current.contact_attempts || 0) + 1
+    const newAttempts = (current.attempt_count || 0) + 1
     const needsFollowup = ['shopping', 'escalated', 'hesitant', 'wrong_number'].includes(outcome)
     const followupReason = resolveFollowupReason(outcome, body)
+    // assigned_to on renewal_cases is UUID type — resolveAssignment returns employee ID string
     const assignedTo = needsFollowup ? resolveAssignment(followupReason, envStaff) : null
-    const renewalStatus = outcome === 'confirmed' ? 'confirmed' : outcome === 'shopping' ? 'at_risk' : outcome === 'escalated' ? 'escalated' : 'contacted'
     const followupDueBy = needsFollowup ? resolveFollowupDueBy(followupReason, current.renewal_date, now) : null
     const callLengthSec = body.call_length || 0
     const estimatedCost = parseFloat(((callLengthSec / 60) * AI_COST_PER_MIN).toFixed(4))
     const consentCaptured = body.variables?.consent_captured === 'true'
     const autodialConsent = body.variables?.autodial_consent === 'true'
 
-    // 1. Update renewal_policies
-    const updateData: Record<string, unknown> = {
-      last_contact_date: nowISO,
-      last_contact_outcome: outcome,
-      last_contact_channel: 'ai_voice',
-      ai_transcript: transcript || null,
-      contact_attempts: newAttempts,
-      renewal_status: renewalStatus,
-      human_followup_required: needsFollowup,
-      followup_reason: followupReason,
-      assigned_to: assignedTo,
-      followup_due_by: followupDueBy,
-      updated_at: nowISO,
-    }
+    // Map call outcome to renewal_cases status values
+    const newStatus =
+      outcome === 'confirmed' ? 'confirmed' :
+      outcome === 'shopping' ? 'at_risk' :
+      outcome === 'escalated' ? 'escalated' :
+      'contacted'
 
+    // 1. Update renewal_cases
     const { error: updateError } = await supabase
-      .from('renewal_policies')
-      .update(updateData)
+      .from('renewal_cases')
+      .update({
+        last_contact_date: nowISO,
+        last_contact_outcome: outcome,
+        last_contact_channel: 'ai_voice',
+        ai_transcript: transcript || null,
+        attempt_count: newAttempts,
+        status: newStatus,
+        human_followup_required: needsFollowup,
+        followup_reason: followupReason,
+        // assigned_to is UUID — pass null if no assignment, otherwise the employee UUID string
+        assigned_to: assignedTo || null,
+        followup_due_by: followupDueBy,
+        updated_at: nowISO,
+      })
       .eq('id', policy_id)
       .eq('agency_id', agency_id)
+
     if (updateError) throw updateError
 
-    // 2. Write ai_call_log (non-fatal, idempotent via bland_call_id UNIQUE)
-    // Bland.ai may retry the webhook up to 3 times — upsert prevents duplicate rows.
+    // 2. Write ai_call_log — upsert on bland_call_id prevents duplicates on webhook retries
     await supabase.from('ai_call_log').upsert({
       agency_id,
       policy_id,
@@ -222,16 +221,18 @@ Deno.serve(async (req) => {
       consent_captured: consentCaptured,
       autodial_consent_result: consentCaptured ? autodialConsent : null,
       opt_out: optOut,
-      assigned_to: assignedTo,
+      assigned_to: assignedTo || null,
       followup_reason: followupReason,
       called_at: nowISO,
-    }, { onConflict: 'bland_call_id' }).then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] ai_call_log upsert error:', error) })
+      call_type: 'renewal',
+    }, { onConflict: 'bland_call_id' })
+      .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] ai_call_log error:', error) })
 
     // 3. Opt-out → DNC (CRITICAL — legal compliance)
-    if (optOut && current.customer_phone) {
+    if (optOut && current.phone) {
       const { error: dncError } = await supabase.from('customer_consent').upsert({
         agency_id,
-        customer_phone: current.customer_phone,
+        customer_phone: current.phone,
         customer_name: current.customer_name,
         dnc: true,
         dnc_date: nowISO,
@@ -246,10 +247,10 @@ Deno.serve(async (req) => {
     }
 
     // 4. Consent capture (non opt-out)
-    if (!optOut && consentCaptured && current.customer_phone) {
+    if (!optOut && consentCaptured && current.phone) {
       const cu: Record<string, unknown> = {
         agency_id,
-        customer_phone: current.customer_phone,
+        customer_phone: current.phone,
         customer_name: current.customer_name,
         autodial_consent: autodialConsent,
         updated_at: nowISO,
@@ -265,33 +266,41 @@ Deno.serve(async (req) => {
         .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] Consent upsert error:', error) })
     }
 
-    // 5. Attempt cap → group ineligible + assign Cindy
-    if (newAttempts >= 3 && ['no_answer', 'left_voicemail'].includes(outcome) && body.metadata.customer_group_id) {
-      await supabase.from('customer_renewal_groups')
-        .update({ ai_eligible: false, updated_at: nowISO })
-        .eq('id', body.metadata.customer_group_id).eq('agency_id', agency_id)
-      if (envStaff.CINDY_EMPLOYEE_ID) {
-        await supabase.from('renewal_policies').update({
-          human_followup_required: true,
-          followup_reason: 'no_response',
-          assigned_to: envStaff.CINDY_EMPLOYEE_ID,
-          followup_due_by: resolveFollowupDueBy('no_response', current.renewal_date, now),
-          updated_at: nowISO,
-        }).eq('id', policy_id).eq('agency_id', agency_id)
+    // 5. Attempt cap — 3+ no-answer/voicemail → flag for human call on renewal_cases
+    // Also update customer_renewal_groups if group exists
+    if (newAttempts >= 3 && ['no_answer', 'left_voicemail'].includes(outcome)) {
+      await supabase.from('renewal_cases').update({
+        human_only: true,
+        human_only_reason: 'ai_attempt_cap',
+        human_followup_required: true,
+        followup_reason: 'no_response',
+        assigned_to: envStaff.TRACY_EMPLOYEE_ID || envStaff.CAMERON_EMPLOYEE_ID || null,
+        followup_due_by: resolveFollowupDueBy('no_response', current.renewal_date, now),
+        updated_at: nowISO,
+      }).eq('id', policy_id).eq('agency_id', agency_id)
+
+      if (body.metadata.customer_group_id) {
+        await supabase.from('customer_renewal_groups')
+          .update({ ai_eligible: false, updated_at: nowISO })
+          .eq('id', body.metadata.customer_group_id)
+          .eq('agency_id', agency_id)
       }
     }
 
-    // 6. Update group status (non-fatal)
-    const groupId = body.metadata?.customer_group_id
-    if (groupId) {
-      const gs = renewalStatus === 'confirmed' ? 'confirmed' : renewalStatus === 'escalated' ? 'escalated' : renewalStatus === 'at_risk' ? 'at_risk' : 'contacted'
+    // 6. Update customer_renewal_groups contact status
+    if (body.metadata.customer_group_id) {
+      const gs =
+        newStatus === 'confirmed' ? 'confirmed' :
+        newStatus === 'escalated' ? 'escalated' :
+        newStatus === 'at_risk' ? 'at_risk' : 'contacted'
       await supabase.from('customer_renewal_groups')
         .update({ group_contact_status: gs, last_contact_date: nowISO, updated_at: nowISO })
-        .eq('id', groupId).eq('agency_id', agency_id)
+        .eq('id', body.metadata.customer_group_id)
+        .eq('agency_id', agency_id)
         .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] Group update error:', error) })
     }
 
-    console.log(`[BLAND_RENEWAL_WEBHOOK] ${body.call_id} → ${outcome} | policy: ${policy_id} | assigned: ${assignedTo || 'none'} | $${estimatedCost}`)
+    console.log(`[BLAND_RENEWAL_WEBHOOK] ${body.call_id} → ${outcome} | case: ${policy_id} | $${estimatedCost}`)
 
     return new Response(JSON.stringify({
       success: true,
