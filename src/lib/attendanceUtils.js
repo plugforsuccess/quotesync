@@ -1,5 +1,7 @@
 // src/lib/attendanceUtils.js
 
+import { getFederalHolidays } from './federalHolidays';
+
 /**
  * Returns an array of YYYY-MM-DD strings for all Mon–Fri dates
  * between startDate and endDate (inclusive).
@@ -44,7 +46,15 @@ export function computeAttendance(employeeId, hireDate, entries, rangeStart, ran
   const effectiveStart = hireDate && hireDate > rangeStart ? hireDate : rangeStart;
 
   if (effectiveStart > effectiveEnd) {
-    return { sick: 0, pto: 0, appt: 0, early: 0, unexcused: 0, daysWorked: 0, totalAbsences: 0 };
+    return { sick: 0, pto: 0, appt: 0, early: 0, unexcused: 0, holiday: 0, daysWorked: 0, totalAbsences: 0 };
+  }
+
+  // Build holiday set covering all years in range
+  const startYear = parseInt(rangeStart.slice(0, 4));
+  const endYear = parseInt(effectiveEnd.slice(0, 4));
+  const holidays = new Set();
+  for (let y = startYear; y <= endYear; y++) {
+    for (const d of getFederalHolidays(y)) holidays.add(d);
   }
 
   const businessDays = getBusinessDays(effectiveStart, effectiveEnd);
@@ -53,9 +63,13 @@ export function computeAttendance(employeeId, hireDate, entries, rangeStart, ran
     entryMap[e.work_date] = e.code;
   }
 
-  let sick = 0, pto = 0, appt = 0, early = 0, unexcused = 0, daysWorked = 0;
+  let sick = 0, pto = 0, appt = 0, early = 0, unexcused = 0, holiday = 0, daysWorked = 0;
 
   for (const day of businessDays) {
+    if (holidays.has(day)) {
+      holiday++;
+      continue; // never count holiday as unexcused
+    }
     const code = entryMap[day];
     if (!code) {
       unexcused++;
@@ -69,11 +83,11 @@ export function computeAttendance(employeeId, hireDate, entries, rangeStart, ran
       appt++;
     } else if (code === 'EARLY') {
       early++;
-    } else if (code === 'REG' || code === 'WFH') {
+    } else if (code === 'REG' || code === 'WFH' || code === 'HOLIDAY') {
       daysWorked++;
     }
   }
 
   const totalAbsences = sick + pto + appt + early + unexcused;
-  return { sick, pto, appt, early, unexcused, daysWorked, totalAbsences };
+  return { sick, pto, appt, early, unexcused, holiday, daysWorked, totalAbsences };
 }

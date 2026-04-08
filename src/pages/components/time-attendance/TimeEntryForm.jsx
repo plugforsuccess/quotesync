@@ -1,9 +1,10 @@
 // src/pages/components/time-attendance/TimeEntryForm.jsx
 // Employee time entry form with upsert on (employee_user_id, work_date)
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Clock, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { getFederalHolidays } from '../../../lib/federalHolidays';
 
 const CODES = [
   { value: 'REG', label: 'Regular' },
@@ -13,6 +14,7 @@ const CODES = [
   { value: 'PTO', label: 'PTO' },
   { value: 'APPT', label: 'Appointment' },
   { value: 'EARLY', label: 'Left Early' },
+  { value: 'HOLIDAY', label: 'Federal Holiday' },
 ];
 
 const LOCATIONS = [
@@ -21,7 +23,7 @@ const LOCATIONS = [
 ];
 
 // Codes that don't require time fields
-const NO_TIME_CODES = ['PTO', 'SICK'];
+const NO_TIME_CODES = ['PTO', 'SICK', 'HOLIDAY'];
 // Codes that require notes
 const NOTES_REQUIRED_CODES = ['WFH', 'SICK_PART', 'APPT', 'EARLY'];
 
@@ -40,12 +42,28 @@ function toMonday(d) {
   return toLocalDateStr(date);
 }
 
-export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onSaved }) {
-  const [workDate, setWorkDate] = useState(() => toLocalDateStr(new Date()));
+export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onSaved, workDate: workDateProp }) {
+  const [workDate, setWorkDate] = useState(() => workDateProp || toLocalDateStr(new Date()));
   const weekStart = useMemo(() => toMonday(workDate), [workDate]);
 
+  const isHoliday = useMemo(() => {
+    if (!workDate) return false;
+    const year = parseInt(workDate.slice(0, 4));
+    return getFederalHolidays(year).has(workDate);
+  }, [workDate]);
+
   const [location, setLocation] = useState('OFFICE');
-  const [code, setCode] = useState('REG');
+  const [code, setCode] = useState(() => {
+    const wd = workDateProp || toLocalDateStr(new Date());
+    const yr = parseInt(wd.slice(0, 4));
+    return getFederalHolidays(yr).has(wd) ? 'HOLIDAY' : 'REG';
+  });
+
+  // Auto-switch code when workDate changes to/from a holiday
+  useEffect(() => {
+    if (isHoliday && code !== 'HOLIDAY') setCode('HOLIDAY');
+    else if (!isHoliday && code === 'HOLIDAY') setCode('REG');
+  }, [workDate, isHoliday]);
   const [startTime, setStartTime] = useState('');
   const [lunchOut, setLunchOut] = useState('');
   const [lunchIn, setLunchIn] = useState('');
@@ -222,6 +240,16 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           />
         </div>
       </div>
+
+      {code === 'HOLIDAY' && (
+        <div style={{
+          fontSize: 12, color: '#3B82F6',
+          background: '#3B82F611', borderRadius: 6,
+          padding: '6px 10px', marginTop: 8
+        }}>
+          Federal holiday — no time entry required
+        </div>
+      )}
 
       {/* Actions */}
       <div className="mt-4 flex items-center gap-3">
