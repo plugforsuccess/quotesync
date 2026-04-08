@@ -1138,7 +1138,7 @@ function ImportTab({
                 <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>{s.sublabel}</div>
               </div>
               {i < arr.length - 1 && (
-                <div style={{ color: 'var(--qs-muted)', fontSize: 16, padding: '0 4px' }}>\u2192</div>
+                <div style={{ color: 'var(--qs-muted)', fontSize: 16, padding: '0 4px' }}>{'\u2192'}</div>
               )}
             </div>
           ))}
