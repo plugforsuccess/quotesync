@@ -10,7 +10,7 @@ const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
-const DAY_HEADERS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+const DAY_HEADERS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
 function toLocalDateStr(date) {
   const y = date.getFullYear();
@@ -33,7 +33,7 @@ function getCalendarDays(year, month) {
   const days = [];
 
   // Fill in days from previous month to start on Monday
-  const startDow = (firstDay.getDay() + 6) % 7; // Mon=0
+  const startDow = firstDay.getDay(); // Sun=0
   for (let i = startDow - 1; i >= 0; i--) {
     const d = new Date(year, month, -i);
     days.push({ date: d, currentMonth: false });
