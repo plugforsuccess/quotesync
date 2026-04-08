@@ -601,7 +601,7 @@ const TimeAttendancePage = () => {
 
       {/* Controls bar: Employee selector + Week navigator */}
       <div className="bg-qs-card border-b border-qs-border">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap overflow-x-auto pb-2">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-4 flex-wrap">
           {/* Employee selector */}
           <div className="flex items-center gap-2">
             <Users className="w-4 h-4 text-qs-subtle" />

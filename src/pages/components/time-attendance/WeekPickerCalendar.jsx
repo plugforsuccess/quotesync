@@ -2,6 +2,7 @@
 // Calendar popup for picking a week. Clicking any date selects that week (Mon–Fri).
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 
 const MONTH_NAMES = [
@@ -53,32 +54,47 @@ function getCalendarDays(year, month) {
 
 export default function WeekPickerCalendar({ weekStart, onChange, label }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [popupStyle, setPopupStyle] = useState({});
   const triggerRef = useRef(null);
+  const popupRef = useRef(null);
 
-  // Calendar navigation state — start viewing the month of the current weekStart
   const wsDate = new Date(weekStart + 'T00:00:00');
   const [viewYear, setViewYear] = useState(wsDate.getFullYear());
   const [viewMonth, setViewMonth] = useState(wsDate.getMonth());
 
-  // Sync view when weekStart changes externally
   useEffect(() => {
     const d = new Date(weekStart + 'T00:00:00');
     setViewYear(d.getFullYear());
     setViewMonth(d.getMonth());
   }, [weekStart]);
 
+  // Position popup below trigger button on open
+  useEffect(() => {
+    if (!open || !triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    setPopupStyle({
+      position: 'fixed',
+      top: rect.bottom + 8,
+      left: rect.left + rect.width / 2,
+      transform: 'translateX(-50%)',
+      zIndex: 9999,
+    });
+  }, [open]);
+
   // Close on outside click
   useEffect(() => {
     if (!open) return;
     function handleClick(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (
+        popupRef.current && !popupRef.current.contains(e.target) &&
+        triggerRef.current && !triggerRef.current.contains(e.target)
+      ) setOpen(false);
     }
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
-  // Keyboard handling: Escape to close, arrow keys for month nav
+  // Keyboard handling
   const handleKeyDown = useCallback((e) => {
     if (!open) return;
     if (e.key === 'Escape') {
@@ -86,12 +102,12 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
       triggerRef.current?.focus();
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault();
-      if (viewMonth === 0) { setViewMonth(11); setViewYear((y) => y - 1); }
-      else setViewMonth((m) => m - 1);
+      if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y - 1); }
+      else setViewMonth(m => m - 1);
     } else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      if (viewMonth === 11) { setViewMonth(0); setViewYear((y) => y + 1); }
-      else setViewMonth((m) => m + 1);
+      if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y + 1); }
+      else setViewMonth(m => m + 1);
     }
   }, [open, viewMonth]);
 
@@ -118,8 +134,6 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
 
   const days = getCalendarDays(viewYear, viewMonth);
   const today = toLocalDateStr(new Date());
-
-  // Determine which week row is selected (Mon–Fri only)
   const selectedMonday = weekStart;
   const selectedFriday = (() => {
     const d = new Date(weekStart + 'T00:00:00');
@@ -132,11 +146,91 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
     return ds >= selectedMonday && ds <= selectedFriday;
   }
 
+  const popup = open ? (
+    <div
+      ref={popupRef}
+      role="dialog"
+      aria-label="Pick a week"
+      style={{ ...popupStyle, background: '#161924', width: 300, borderRadius: 12, border: '1px solid #252A3A', padding: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+    >
+      {/* Month/Year header */}
+      <div className="flex items-center justify-between mb-3">
+        <button onClick={prevMonth} aria-label="Previous month" className="p-1 rounded hover:bg-qs-card text-qs-dim">
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <span className="text-sm font-semibold text-qs-bright" aria-live="polite">
+          {MONTH_NAMES[viewMonth]} {viewYear}
+        </span>
+        <button onClick={nextMonth} aria-label="Next month" className="p-1 rounded hover:bg-qs-card text-qs-dim">
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Day headers */}
+      <div className="grid grid-cols-7 mb-1" role="row">
+        {DAY_HEADERS.map(d => (
+          <div key={d} role="columnheader" className="text-center text-xs font-medium text-qs-muted py-1">{d}</div>
+        ))}
+      </div>
+
+      {/* Calendar grid */}
+      <div className="grid grid-cols-7" role="grid">
+        {days.map(({ date, currentMonth }, i) => {
+          const ds = toLocalDateStr(date);
+          const isToday = ds === today;
+          const inWeek = isInSelectedWeek(date);
+          const isMonday = date.getDay() === 1 && inWeek;
+          const isFriday = date.getDay() === 5 && inWeek;
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+
+          return (
+            <button
+              key={i}
+              onClick={() => handleDayClick(date)}
+              tabIndex={open ? 0 : -1}
+              aria-pressed={inWeek}
+              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}${inWeek ? ' (selected week)' : ''}`}
+              className={`
+                py-1.5 text-xs text-center transition-colors relative
+                ${!currentMonth ? 'text-qs-muted' : isWeekend ? 'text-qs-muted' : 'text-qs-text'}
+                ${inWeek ? 'bg-primary-900/20 text-primary-300 font-semibold' : 'hover:bg-qs-card'}
+                ${isMonday ? 'rounded-l-lg' : ''}
+                ${isFriday ? 'rounded-r-lg' : ''}
+                ${isToday && !inWeek ? 'font-bold text-primary-400' : ''}
+              `}
+            >
+              {date.getDate()}
+              {isToday && (
+                <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary-500" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+
+      <p className="mt-2 text-[10px] text-qs-muted text-center">
+        Click any day to jump to that week &middot; Arrow keys change month &middot; Esc to close
+      </p>
+
+      <div className="mt-2 pt-3 border-t border-qs-border flex justify-between">
+        <button
+          onClick={() => { onChange(toMonday(new Date())); setOpen(false); }}
+          className="text-xs text-primary-400 hover:text-primary-300 font-medium"
+        >
+          This Week
+        </button>
+        <button onClick={() => setOpen(false)} className="text-xs text-qs-subtle hover:text-qs-text font-medium">
+          Close
+        </button>
+      </div>
+    </div>
+  ) : null;
+
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
         ref={triggerRef}
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen(o => !o)}
         aria-haspopup="dialog"
         aria-expanded={open}
         className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-qs-bright bg-qs-card border border-qs-border rounded-lg hover:bg-qs-elevated hover:border-primary-400 transition-colors min-w-[220px] justify-center"
@@ -144,101 +238,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
         <Calendar className="w-4 h-4 text-primary-400" />
         {label}
       </button>
-
-      {open && (
-        <div
-          role="dialog"
-          aria-label="Pick a week"
-          className="absolute top-full left-1/2 -translate-x-1/2 mt-2 z-50 rounded-xl shadow-md border border-qs-border p-4 w-[300px]"
-          style={{ background: '#161924' }}
-        >
-          {/* Month/Year header */}
-          <div className="flex items-center justify-between mb-3">
-            <button
-              onClick={prevMonth}
-              aria-label="Previous month"
-              className="p-1 rounded hover:bg-qs-card text-qs-dim"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <span className="text-sm font-semibold text-qs-bright" aria-live="polite">
-              {MONTH_NAMES[viewMonth]} {viewYear}
-            </span>
-            <button
-              onClick={nextMonth}
-              aria-label="Next month"
-              className="p-1 rounded hover:bg-qs-card text-qs-dim"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          {/* Day-of-week headers */}
-          <div className="grid grid-cols-7 mb-1" role="row">
-            {DAY_HEADERS.map((d) => (
-              <div key={d} role="columnheader" className="text-center text-xs font-medium text-qs-muted py-1">
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7" role="grid" aria-label="Calendar">
-            {days.map(({ date, currentMonth }, i) => {
-              const ds = toLocalDateStr(date);
-              const isToday = ds === today;
-              const inWeek = isInSelectedWeek(date);
-              const isMonday = date.getDay() === 1 && inWeek;
-              const isFriday = date.getDay() === 5 && inWeek;
-              const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-
-              return (
-                <button
-                  key={i}
-                  onClick={() => handleDayClick(date)}
-                  aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}${inWeek ? ' (selected week)' : ''}`}
-                  aria-pressed={inWeek}
-                  tabIndex={open ? 0 : -1}
-                  className={`
-                    py-1.5 text-xs text-center transition-colors relative
-                    ${!currentMonth ? 'text-qs-muted' : isWeekend ? 'text-qs-muted' : 'text-qs-text'}
-                    ${inWeek ? 'bg-primary-900/20 text-primary-300 font-semibold' : 'hover:bg-qs-card'}
-                    ${isMonday ? 'rounded-l-lg' : ''}
-                    ${isFriday ? 'rounded-r-lg' : ''}
-                    ${isToday && !inWeek ? 'font-bold text-primary-400' : ''}
-                  `}
-                >
-                  {date.getDate()}
-                  {isToday && (
-                    <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary-500" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Hint */}
-          <p className="mt-2 text-[10px] text-qs-muted text-center">
-            Click any day to jump to that week &middot; Arrow keys change month &middot; Esc to close
-          </p>
-
-          {/* Quick actions */}
-          <div className="mt-2 pt-3 border-t border-qs-border flex justify-between">
-            <button
-              onClick={() => { onChange(toMonday(new Date())); setOpen(false); }}
-              className="text-xs text-primary-400 hover:text-primary-300 font-medium"
-            >
-              This Week
-            </button>
-            <button
-              onClick={() => setOpen(false)}
-              className="text-xs text-qs-subtle hover:text-qs-text font-medium"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+      {createPortal(popup, document.body)}
+    </>
   );
 }
