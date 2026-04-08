@@ -4,7 +4,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { Clock, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
-import { getFederalHolidays } from '../../../lib/federalHolidays';
+import { getFederalHolidays, getHolidayLabel } from '../../../lib/federalHolidays';
 
 const CODES = [
   { value: 'REG', label: 'Regular' },
@@ -52,6 +52,19 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
     return getFederalHolidays(year).has(workDate);
   }, [workDate]);
 
+  const holidayLabel = useMemo(() => {
+    if (!isHoliday || !workDate) return null;
+    return getHolidayLabel(workDate);
+  }, [isHoliday, workDate]);
+
+  const isWeekend = useMemo(() => {
+    if (!workDate) return false;
+    const dow = new Date(workDate + 'T00:00:00').getDay();
+    return dow === 0 || dow === 6;
+  }, [workDate]);
+
+  const isBlocked = isHoliday || isWeekend;
+
   const [location, setLocation] = useState('OFFICE');
   const [code, setCode] = useState(() => {
     const wd = workDateProp || toLocalDateStr(new Date());
@@ -77,6 +90,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
   const timesRequired = !NO_TIME_CODES.includes(code);
 
   const canSave =
+    !isBlocked &&
     workDate &&
     location &&
     code &&
@@ -138,6 +152,26 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           />
         </div>
 
+        {isWeekend && (
+          <div className="sm:col-span-2" style={{
+            background: '#94A3B811', border: '1px solid #94A3B833',
+            borderRadius: 6, padding: '8px 12px',
+            fontSize: 12, color: '#94A3B8',
+          }}>
+            ⚠ Weekends are not working days — no entry required.
+          </div>
+        )}
+
+        {isHoliday && (
+          <div className="sm:col-span-2" style={{
+            background: '#3B82F611', border: '1px solid #3B82F633',
+            borderRadius: 6, padding: '8px 12px',
+            fontSize: 12, color: '#3B82F6', fontWeight: 500,
+          }}>
+            🏛 {holidayLabel} — Agency closed. No entry required.
+          </div>
+        )}
+
         {/* Location */}
         <div>
           <label className="dark-label">Location</label>
@@ -159,8 +193,12 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             value={code}
             onChange={(e) => setCode(e.target.value)}
             className="dark-input"
+            disabled={isHoliday}
           >
-            {CODES.map((c) => (
+            {(isHoliday
+              ? [{ value: 'HOLIDAY', label: 'Federal Holiday' }]
+              : CODES
+            ).map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
             ))}
           </select>
@@ -240,16 +278,6 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           />
         </div>
       </div>
-
-      {code === 'HOLIDAY' && (
-        <div style={{
-          fontSize: 12, color: '#3B82F6',
-          background: '#3B82F611', borderRadius: 6,
-          padding: '6px 10px', marginTop: 8
-        }}>
-          Federal holiday — no time entry required
-        </div>
-      )}
 
       {/* Actions */}
       <div className="mt-4 flex items-center gap-3">
