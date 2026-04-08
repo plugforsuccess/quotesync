@@ -6,6 +6,16 @@ import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 
+async function syncRetentionQueue(supabase) {
+  try {
+    await supabase.rpc('auto_resolve_stale_renewals');
+  } catch (err) {
+    // Non-fatal — log but don't surface to user
+    // Queue will self-correct on next cron run (6am ET daily)
+    console.warn('[retention sync] queue sync failed:', err.message);
+  }
+}
+
 function friendlyUploadError(raw = "") {
   const msg = raw.toLowerCase();
 
@@ -911,6 +921,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       setExcludedCount(0);
       setUploadFile(null);
       if (fileInputRef.current) fileInputRef.current.value = '';
+      await syncRetentionQueue(supabase);
       queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
     } catch (err) {
@@ -1161,11 +1172,11 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       setCommitMsg(`${parsedRows.length} terminations recorded${crossMsg}`);
       setParsedRows(null);
       setLapseFile(null);
+      await syncRetentionQueue(supabase);
       queryClient.invalidateQueries({ queryKey: ["lapse_events_summary", agencyId] });
-      if (crossResolved > 0) {
-        queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
-        queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
     } catch (err) {
       console.error("[termination commit error]", err.message);
       setParseError(friendlyUploadError(err.message));
@@ -1591,6 +1602,8 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       setDiffResult(null);
       setUploadFile(null);
       await loadEvents();
+      await syncRetentionQueue(supabase);
+      queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
     } catch (err) {
       console.error("[triage commit error]", err.message);
@@ -1734,6 +1747,8 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       setCancelAuditDiff(null);
       setCancelAuditFile(null);
       await loadEvents();
+      await syncRetentionQueue(supabase);
+      queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ["policy_retention_status", agencyId] });
     } catch (err) {
       console.error("[cancel audit commit error]", err.message);

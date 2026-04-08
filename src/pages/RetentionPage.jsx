@@ -14,6 +14,7 @@ import { EventDetailModal } from "./components/retention/RetentionCancels";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
 import { useFireRenewalQueue, useFireCancelQueue } from '../hooks/useAiQueue';
+import { RefreshCw } from 'lucide-react';
 import RetentionRenewals      from './components/retention/RetentionRenewals';
 import RetentionAIPerformance from './components/retention/RetentionAIPerformance';
 import { useUploadReminders } from '../hooks/useUploadReminders';
@@ -84,6 +85,25 @@ export default function RetentionPage() {
 
   const [showRenewalSuppressionOverride, setShowRenewalSuppressionOverride] = useState(false);
   const [showCancelSuppressionOverride, setShowCancelSuppressionOverride] = useState(false);
+
+  const [syncing, setSyncing] = useState(false);
+  const [lastSynced, setLastSynced] = useState(null);
+
+  async function handleSyncQueue() {
+    if (syncing) return;
+    setSyncing(true);
+    try {
+      await supabase.rpc('auto_resolve_stale_renewals');
+      setLastSynced(new Date());
+      queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+    } catch (err) {
+      console.error('[sync queue]', err.message);
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   const handleFireRenewalQueue = (override = false) => {
     setShowRenewalSuppressionOverride(false);
@@ -319,6 +339,36 @@ export default function RetentionPage() {
               </>
             ) : '▶ Run AI Cancels'}
           </button>
+
+          {/* Sync Queue */}
+          <button
+            onClick={handleSyncQueue}
+            disabled={syncing}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '6px 14px', borderRadius: 8, fontSize: 12,
+              fontWeight: 600, cursor: syncing ? 'not-allowed' : 'pointer',
+              background: 'var(--qs-elevated)',
+              border: '1px solid var(--qs-border)',
+              color: syncing ? 'var(--qs-muted)' : 'var(--qs-text)',
+              opacity: syncing ? 0.6 : 1,
+              transition: 'all 0.15s',
+            }}
+          >
+            <RefreshCw
+              className="w-3.5 h-3.5"
+              style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}
+            />
+            {syncing ? 'Syncing…' : 'Sync Queue'}
+          </button>
+
+          {lastSynced && (
+            <span style={{ fontSize: 11, color: 'var(--qs-muted)', display: 'flex', alignItems: 'center' }}>
+              Last synced {lastSynced.toLocaleTimeString('en-US', {
+                hour: 'numeric', minute: '2-digit', hour12: true
+              })}
+            </span>
+          )}
         </div>
       </div>
 
