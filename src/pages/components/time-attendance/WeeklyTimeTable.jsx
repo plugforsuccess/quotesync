@@ -5,6 +5,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
+import { getFederalHolidays, getHolidayLabel } from '../../../lib/federalHolidays';
 
 const CODES = [
   { value: 'REG', label: 'Regular' },
@@ -14,6 +15,7 @@ const CODES = [
   { value: 'PTO', label: 'PTO' },
   { value: 'APPT', label: 'Appointment' },
   { value: 'EARLY', label: 'Early' },
+  { value: 'HOLIDAY', label: 'Holiday' },
 ];
 
 const LOCATIONS = [
@@ -22,7 +24,7 @@ const LOCATIONS = [
 ];
 
 // Full-day absence codes — no time fields needed
-const NO_TIME_CODES = ['PTO', 'SICK'];
+const NO_TIME_CODES = ['PTO', 'SICK', 'HOLIDAY'];
 // Codes that require notes
 const NOTES_REQUIRED_CODES = ['SICK_PART', 'APPT', 'EARLY'];
 
@@ -79,6 +81,14 @@ export default function WeeklyTimeTable({
   employeeDefaults,
 }) {
   const weekDates = useMemo(() => getWeekDates(weekStart), [weekStart]);
+
+  const holidays = useMemo(() => {
+    const year = parseInt(weekStart.slice(0, 4));
+    // Cover year boundary weeks (e.g. Dec 29 – Jan 2)
+    const nextYear = year + 1;
+    const set = new Set([...getFederalHolidays(year), ...getFederalHolidays(nextYear)]);
+    return set;
+  }, [weekStart]);
 
   // Per-employee schedule defaults (fall back to global defaults)
   const scheduleDefaults = {
@@ -168,6 +178,8 @@ export default function WeeklyTimeTable({
 
   // Validation: notes required for certain codes
   const validationErrors = rows.reduce((errs, row, idx) => {
+    // Skip validation for holiday rows — they render as read-only banners
+    if (holidays.has(row.date)) return errs;
     if (NOTES_REQUIRED_CODES.includes(row.code) && !row.notes.trim()) {
       errs.push(`${formatDayLabel(row.date)}: Notes required for ${row.code}`);
     }
@@ -184,20 +196,22 @@ export default function WeeklyTimeTable({
     setSaving(true);
     setMsg(null);
 
-    const entries = rows.map((row) => ({
-      org_id: orgId,
-      employee_user_id: employeeId,
-      week_start: weekStart,
-      work_date: row.date,
-      location: row.location,
-      code: row.code,
-      start_time: row.startTime || null,
-      lunch_out: row.lunchOut || null,
-      lunch_in: row.lunchIn || null,
-      end_time: row.endTime || null,
-      unpaid_break_minutes: row.unpaidBreak || 0,
-      notes: row.notes?.trim() || null,
-    }));
+    const entries = rows
+      .filter((row) => !holidays.has(row.date))
+      .map((row) => ({
+        org_id: orgId,
+        employee_user_id: employeeId,
+        week_start: weekStart,
+        work_date: row.date,
+        location: row.location,
+        code: row.code,
+        start_time: row.startTime || null,
+        lunch_out: row.lunchOut || null,
+        lunch_in: row.lunchIn || null,
+        end_time: row.endTime || null,
+        unpaid_break_minutes: row.unpaidBreak || 0,
+        notes: row.notes?.trim() || null,
+      }));
 
     const { error } = await supabase
       .from('employee_time_entries')
@@ -241,6 +255,30 @@ export default function WeeklyTimeTable({
           </thead>
           <tbody className="divide-y divide-qs-border">
             {rows.map((row, idx) => {
+              const dateStr = row.date;
+              const isHoliday = holidays.has(dateStr);
+              const holidayLabel = isHoliday ? getHolidayLabel(dateStr) : null;
+
+              if (isHoliday) {
+                return (
+                  <tr key={dateStr}>
+                    <td className="px-4 py-3 text-sm font-medium text-qs-bright">
+                      {formatDayLabel(dateStr)}
+                    </td>
+                    <td colSpan={7} className="px-4 py-3">
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        background: '#3B82F611', border: '1px solid #3B82F633',
+                        borderRadius: 6, padding: '6px 12px',
+                        fontSize: 12, color: '#3B82F6', fontWeight: 500,
+                      }}>
+                        🏛 {holidayLabel} — Agency closed
+                      </div>
+                    </td>
+                  </tr>
+                );
+              }
+
               const noTime = isNoTime(row.code);
               const needsNotes = NOTES_REQUIRED_CODES.includes(row.code);
 
@@ -375,6 +413,8 @@ export default function WeeklyTimeTable({
       <span><strong className="text-qs-text">APPT</strong> Appointment</span>
       <span className="text-qs-muted">|</span>
       <span><strong className="text-qs-text">EARLY</strong> Left Early</span>
+      <span className="text-qs-muted">|</span>
+      <span><strong className="text-qs-text">HOLIDAY</strong> Federal Holiday</span>
     </div>
     </>
   );
