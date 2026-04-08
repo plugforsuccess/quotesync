@@ -819,6 +819,78 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         if (updErr) throw new Error(updErr.message);
       }
 
+      // ── Post-commit cross-reference ─────────────────────────────────────────
+      let crossRefMsg = '';
+      const tenDaysAgo = new Date();
+      tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+      const tenDaysAgoStr = tenDaysAgo.toISOString().slice(0, 10);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().slice(0, 10);
+
+      // Fetch all active renewal cases past their renewal date
+      const { data: pastDueCases } = await supabase
+        .from('renewal_cases')
+        .select('id, policy_no, renewal_date, easy_pay, status')
+        .eq('agency_id', agencyId)
+        .lt('renewal_date', today)
+        .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)');
+
+      if (pastDueCases && pastDueCases.length > 0) {
+        // Fetch policy numbers from pending_cases (active cancel cases)
+        const { data: cancelCases } = await supabase
+          .from('pending_cases')
+          .select('policy_no')
+          .eq('agency_id', agencyId)
+          .not('status', 'in', '(lost,auto_resolved,cancelled,requested_cancellation)');
+
+        const cancelPolicies = new Set((cancelCases || []).map(c => c.policy_no));
+
+        // Fetch policy numbers from lapse_events (terminated)
+        const { data: lapseData } = await supabase
+          .from('lapse_events')
+          .select('policy_no')
+          .eq('agency_id', agencyId);
+
+        const lapsedPolicies = new Set((lapseData || []).map(l => l.policy_no));
+
+        const toLost = [];
+        const toAutoResolve = [];
+
+        for (const rc of pastDueCases) {
+          if (cancelPolicies.has(rc.policy_no) || lapsedPolicies.has(rc.policy_no)) {
+            // On pending cancel or termination report — didn't renew
+            toLost.push(rc.id);
+          } else if (rc.easy_pay && rc.renewal_date < tenDaysAgoStr) {
+            // EasyPay, 10+ days past — auto-processed
+            toAutoResolve.push(rc.id);
+          } else if (!rc.easy_pay && rc.renewal_date < thirtyDaysAgoStr) {
+            // Non-EasyPay, 30+ days past, not on any report — paid manually
+            toAutoResolve.push(rc.id);
+          }
+          // Within buffer — leave active
+        }
+
+        if (toLost.length > 0) {
+          await supabase
+            .from('renewal_cases')
+            .update({ status: 'lost', resolution_date: today })
+            .in('id', toLost);
+        }
+
+        if (toAutoResolve.length > 0) {
+          await supabase
+            .from('renewal_cases')
+            .update({ status: 'auto_resolved', resolution_date: today })
+            .in('id', toAutoResolve);
+        }
+
+        crossRefMsg = [
+          toLost.length > 0 && `${toLost.length} renewal${toLost.length > 1 ? 's' : ''} closed (entered cancel cycle)`,
+          toAutoResolve.length > 0 && `${toAutoResolve.length} auto-resolved`,
+        ].filter(Boolean).join(' \u00b7 ');
+      }
+
       await supabase.from('renewal_uploads').update({ committed: true }).eq('id', upload.id);
 
       // 6. Build summary message
@@ -833,7 +905,8 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
       const autoResolved = updateRecords.filter(r => r.status === 'auto_resolved').length;
       const autoResolvedMsg = autoResolved > 0 ? ` · ${autoResolved} auto-resolved` : '';
-      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated${autoResolvedMsg} · ${assignmentSummary}`);
+      const crossRefSummary = crossRefMsg ? ` · ${crossRefMsg}` : '';
+      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated${autoResolvedMsg}${crossRefSummary} · ${assignmentSummary}`);
       setParsedRows(null);
       setExcludedCount(0);
       setUploadFile(null);
