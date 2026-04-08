@@ -190,7 +190,7 @@ function diffReport(parsed, existing) {
   const makeKey = (pno, cdate) => `${pno.toLowerCase()}|${cdate}`;
   const parsedKeys = new Set(parsed.map(r => makeKey(r.policy_no, r.cancel_effective_date)));
 
-  const activeStatuses = ["pending", "contacted", "promise_to_pay", "promise_broken"];
+  const activeStatuses = ["pending", "attempting", "left_voicemail", "contacted", "promise_to_pay", "promise_broken", "pending_review"];
   const activeEvents = existing.filter(e => activeStatuses.includes(e.status));
   const activeKeys = new Map(activeEvents.map(e => [makeKey(e.policy_no, e.cancel_effective_date), e]));
 
@@ -227,14 +227,136 @@ function diffReport(parsed, existing) {
 
   const toAutoResolve = activeEvents
     .filter(e => !parsedKeys.has(makeKey(e.policy_no, e.cancel_effective_date)))
-    .map(e => ({ id: e.id }));
+    .map(e => ({
+      id: e.id,
+      policy_no: e.policy_no,
+      customer_name: e.customer_name,
+      product: e.product,
+      premium_at_risk: e.premium_at_risk,
+      cancel_effective_date: e.cancel_effective_date,
+      attempt_count: e.attempt_count,
+      last_seen_on: e.last_seen_on,
+    }));
 
   return { toAdd, toUpdate, toAutoResolve, duplicates };
 }
 
+// ─── Auto-Resolve Review Panel ──────────────────────────────────────────────
+
+function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
+  const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n || 0)}`;
+
+  const allDecided = cases.length > 0 && cases.every(c => decisions[c.id]);
+  const counts = {
+    paid: Object.values(decisions).filter(d => d === 'auto_resolved').length,
+    lost: Object.values(decisions).filter(d => d === 'lost').length,
+    keep: Object.values(decisions).filter(d => d === 'keep').length,
+  };
+
+  return (
+    <div style={{ marginTop: 24 }}>
+      <div style={{
+        fontSize: 13, fontWeight: 600, color: 'var(--qs-warning)',
+        marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8
+      }}>
+        ⚠ {cases.length} cases not found in this report — review before closing
+      </div>
+
+      <div style={{
+        fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16,
+        background: 'var(--qs-elevated)', borderRadius: 6, padding: '8px 12px'
+      }}>
+        These policies were active but absent from this report. Confirm whether
+        they paid, mark as lost, or keep active for follow-up.
+      </div>
+
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+        <button className="btn-ghost" style={{ fontSize: 12 }}
+          onClick={() => cases.forEach(c => onDecide(c.id, 'auto_resolved'))}>
+          Mark All Paid
+        </button>
+        <button className="btn-ghost" style={{ fontSize: 12 }}
+          onClick={() => cases.forEach(c => onDecide(c.id, 'keep'))}>
+          Keep All Active
+        </button>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+        {cases.map(c => {
+          const decision = decisions[c.id];
+          return (
+            <div key={c.id} style={{
+              background: 'var(--qs-elevated)',
+              border: `1px solid ${
+                decision === 'auto_resolved' ? '#10B98133'
+                : decision === 'lost' ? '#EF444433'
+                : decision === 'keep' ? '#3B82F633'
+                : 'var(--qs-border)'
+              }`,
+              borderRadius: 8, padding: '10px 14px',
+              display: 'grid', gridTemplateColumns: '1fr auto',
+              gap: 12, alignItems: 'center'
+            }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>
+                  {c.customer_name || 'Unknown'}{' '}
+                  <span style={{ fontWeight: 400, color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace", fontSize: 11 }}>
+                    {c.policy_no}
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>
+                  {c.product?.toUpperCase()} · {fmt$(c.premium_at_risk)} at risk
+                  · Cancel {c.cancel_effective_date} · Last seen {c.last_seen_on}
+                  {c.attempt_count > 0 && ` · ${c.attempt_count} attempts`}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                {[
+                  { value: 'auto_resolved', label: 'Paid ✓', color: '#10B981' },
+                  { value: 'lost',          label: 'Lost',   color: '#EF4444' },
+                  { value: 'keep',          label: 'Keep',   color: '#3B82F6' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => onDecide(c.id, opt.value)}
+                    style={{
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px',
+                      borderRadius: 6, border: `1px solid ${opt.color}33`,
+                      background: decision === opt.value ? `${opt.color}22` : 'transparent',
+                      color: decision === opt.value ? opt.color : 'var(--qs-subtle)',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                    }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {Object.keys(decisions).length > 0 && (
+        <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
+          {counts.paid > 0 && <span style={{ color: '#10B981', marginRight: 12 }}>✓ {counts.paid} marked paid</span>}
+          {counts.lost > 0 && <span style={{ color: '#EF4444', marginRight: 12 }}>✗ {counts.lost} marked lost</span>}
+          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} kept active</span>}
+        </div>
+      )}
+
+      <button className="btn-primary" disabled={!allDecided} onClick={onConfirmAll}
+        style={{ opacity: allDecided ? 1 : 0.4 }}>
+        Confirm {cases.length} decisions
+      </button>
+      {!allDecided && (
+        <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
+          Decide every case above to continue.
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Upload Tab ──────────────────────────────────────────────────────────────
 
-function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancel }) {
+function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting, diffResult, fileInputRef, onFileSelect, onCommit, onCancel, showReviewPanel, autoResolveCases, autoResolveDecisions, onAutoResolveDecide, onAutoResolveConfirm }) {
   return (
     <div style={{ maxWidth: 640 }}>
       <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>
@@ -287,10 +409,19 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             </div>
           )}
 
-          {diffResult.toAutoResolve.length > 0 && (
+          {diffResult.toAutoResolve.length > 0 && !showReviewPanel && (
             <div style={{ fontSize: 12, color: "var(--qs-warning)", marginBottom: 14, background: "var(--qs-warning-subtle)", borderRadius: 6, padding: "8px 12px" }}>
-              {diffResult.toAutoResolve.length} active policies not found in this report will be marked auto-resolved (they likely paid).
+              {diffResult.toAutoResolve.length} active policies not found in this report will be staged for review.
             </div>
+          )}
+
+          {showReviewPanel && autoResolveCases.length > 0 && (
+            <AutoResolveReviewPanel
+              cases={autoResolveCases}
+              decisions={autoResolveDecisions}
+              onDecide={onAutoResolveDecide}
+              onConfirmAll={onAutoResolveConfirm}
+            />
           )}
 
           <div style={{ display: "flex", gap: 10 }}>
@@ -729,6 +860,246 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
   );
 }
 
+// ─── Lapse XLSX parser (shared with Analytics) ─────────────────────────────
+
+function parseLapseXLSX(data) {
+  const wb = XLSX.read(data, { type: "array" });
+  const allRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+  if (allRows.length < 2) return [];
+
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(10, allRows.length); i++) {
+    const r = allRows[i].map(h => h?.toString().toLowerCase().trim());
+    if (r.some(h => h?.includes("policy"))) { headerIdx = i; break; }
+  }
+
+  const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
+  const rows = allRows.slice(headerIdx);
+  const findLapseCol = (candidates) => headers.findIndex(h => candidates.some(c => h?.includes(c)));
+
+  const iPolicy   = findLapseCol(["policy", "policy no", "policy number"]);
+  const iCustomer = findLapseCol(["customer", "insured", "name"]);
+  const iProduct  = findLapseCol(["product name", "line code", "product code", "product", "line of business", "lob"]);
+  const iPremium  = findLapseCol(["premium new", "written premium", "annual premium", "premium"]);
+  const iDate     = findLapseCol(["termination effective", "lapse date", "cancel date", "cancellation date", "eff date", "effective date"]);
+  const iReason   = findLapseCol(["termination reason", "cancel reason", "reason"]);
+  const iItems    = findLapseCol(["number of items", "no. of items", "item count", "items"]);
+
+  const SINGLE_ITEM_PRODUCTS = ["ho", "condo", "renters", "landlord", "pup", "manufactured", "boat", "motor_club"];
+
+  return rows.slice(1).filter(r => r.some(Boolean)).map(r => {
+    const productRaw = iProduct >= 0 ? r[iProduct]?.toString() ?? "" : "";
+    const product = normaliseProduct(productRaw);
+
+    const rawDate = iDate >= 0 ? r[iDate] : null;
+    let lapseDate = null;
+    if (rawDate) {
+      const d = new Date(rawDate);
+      if (!isNaN(d)) lapseDate = d.toISOString().slice(0, 10);
+    }
+
+    const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
+    const item_count = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
+
+    return {
+      policy_no:          iPolicy >= 0   ? r[iPolicy]?.toString().trim() ?? "" : "",
+      customer_name:      iCustomer >= 0 ? r[iCustomer]?.toString().trim() ?? "" : "",
+      product,
+      product_raw:        productRaw,
+      premium:            iPremium >= 0  ? parseFloat(r[iPremium]?.toString().replace(/[$,]/g, "")) || null : null,
+      item_count,
+      lapse_date:         lapseDate,
+      termination_reason: iReason >= 0   ? r[iReason]?.toString().trim() ?? "" : "",
+    };
+  }).filter(r => r.policy_no);
+}
+
+// ─── Termination Upload Zone (shared component) ─────────────────────────────
+
+function TerminationUploadZone({ agencyId, currentUserId }) {
+  const queryClient = useQueryClient();
+  const [lapseFile, setLapseFile] = useState(null);
+  const [reportMonth, setReportMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+  });
+  const [parsedRows, setParsedRows] = useState(null);
+  const [isCommitting, setIsCommitting] = useState(false);
+  const [commitMsg, setCommitMsg] = useState("");
+  const [parseError, setParseError] = useState("");
+  const lapseFileRef = useRef(null);
+
+  async function handleFileSelect(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setLapseFile(file);
+    setParseError("");
+    setParsedRows(null);
+    setCommitMsg("");
+    try {
+      const buf = await file.arrayBuffer();
+      const rows = parseLapseXLSX(new Uint8Array(buf));
+      if (rows.length === 0) { setParseError("No valid rows found. Check that your file has a Policy No column."); return; }
+      setParsedRows(rows);
+    } catch (err) {
+      console.error("[termination parse error]", err.message);
+      setParseError(friendlyUploadError(err.message));
+    }
+  }
+
+  async function handleCommit() {
+    if (!parsedRows || !agencyId) return;
+    if (!currentUserId) {
+      setParseError("Session expired. Please refresh and try again.");
+      return;
+    }
+    setIsCommitting(true);
+    try {
+      const policyNos = parsedRows.map(r => r.policy_no);
+      const { data: existing } = await supabase
+        .from("lapse_events")
+        .select("policy_no")
+        .eq("agency_id", agencyId)
+        .eq("report_month", reportMonth)
+        .in("policy_no", policyNos);
+      const existingCount = existing?.length ?? 0;
+      const newCount = parsedRows.length - existingCount;
+
+      const { data: upload, error: upErr } = await supabase
+        .from("lapse_uploads")
+        .insert({
+          agency_id: agencyId,
+          uploaded_by: currentUserId,
+          filename: lapseFile?.name ?? "unknown",
+          report_month: reportMonth,
+          rows_added: newCount,
+          rows_updated: existingCount,
+          committed: false,
+        })
+        .select("id")
+        .single();
+      if (upErr) throw new Error(upErr.message);
+
+      const records = parsedRows.map(r => ({
+        agency_id: agencyId,
+        report_month: reportMonth,
+        upload_batch_id: upload.id,
+        ...r,
+      }));
+
+      const { error: evtErr } = await supabase
+        .from("lapse_events")
+        .upsert(records, { onConflict: "agency_id,policy_no,report_month" });
+      if (evtErr) throw new Error(evtErr.message);
+
+      // Cross-reference: close any pending_cases that appear on the termination report
+      const terminatedPolicyNos = parsedRows.map(r => r.policy_no).filter(Boolean);
+      let crossResolved = 0;
+
+      if (terminatedPolicyNos.length > 0) {
+        const { data: matchedCases } = await supabase
+          .from('pending_cases')
+          .select('id, policy_no, lapse_date')
+          .eq('agency_id', agencyId)
+          .in('policy_no', terminatedPolicyNos)
+          .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation,pending_review)');
+
+        if (matchedCases && matchedCases.length > 0) {
+          const today = new Date().toISOString().slice(0, 10);
+
+          for (const c of matchedCases) {
+            const lapseRow = parsedRows.find(r => r.policy_no === c.policy_no);
+            await supabase
+              .from('pending_cases')
+              .update({
+                status: 'lost',
+                resolution_date: lapseRow?.lapse_date || today,
+                termination_reason: lapseRow?.termination_reason || null,
+              })
+              .eq('id', c.id);
+          }
+
+          crossResolved = matchedCases.length;
+        }
+      }
+
+      await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
+
+      const crossMsg = crossResolved > 0
+        ? ` \u00b7 ${crossResolved} pending case${crossResolved > 1 ? 's' : ''} closed from termination report`
+        : '';
+      setCommitMsg(`${parsedRows.length} terminations recorded${crossMsg}`);
+      setParsedRows(null);
+      setLapseFile(null);
+      queryClient.invalidateQueries({ queryKey: ["lapse_events_summary", agencyId] });
+      if (crossResolved > 0) {
+        queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
+        queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+      }
+    } catch (err) {
+      console.error("[termination commit error]", err.message);
+      setParseError(friendlyUploadError(err.message));
+    } finally {
+      setIsCommitting(false);
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
+        <div>
+          <label style={{ fontSize: 12, color: "var(--qs-subtle)", display: "block", marginBottom: 4 }}>Report Month</label>
+          <input
+            type="month"
+            value={reportMonth.slice(0, 7)}
+            onChange={e => setReportMonth(`${e.target.value}-01`)}
+            style={{ fontFamily: "inherit" }}
+          />
+        </div>
+        <div style={{ marginTop: 16 }}>
+          <input ref={lapseFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleFileSelect} />
+          <button className="btn-ghost" onClick={() => lapseFileRef.current?.click()}>
+            {lapseFile ? `\uD83D\uDCC4 ${lapseFile.name}` : "Choose File"}
+          </button>
+        </div>
+      </div>
+
+      {parseError && (
+        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--qs-danger)" }}>
+          {parseError}
+        </div>
+      )}
+
+      {parsedRows && !commitMsg && (
+        <div style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>
+            Preview — {parsedRows.length} rows for {reportMonth.slice(0, 7)}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginBottom: 16 }}>
+            {Object.entries(parsedRows.reduce((acc, r) => { acc[r.product] = (acc[r.product] || 0) + 1; return acc; }, {})).map(([prod, count]) => (
+              <span key={prod} style={{ marginRight: 12 }}>{prod}: <strong style={{ color: "var(--qs-dim)" }}>{count}</strong></span>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
+              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+            </button>
+            <button className="btn-ghost" onClick={() => { setParsedRows(null); setLapseFile(null); }}>
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {commitMsg && (
+        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--qs-success)" }}>
+          {commitMsg}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Import Tab (unified upload) ──────────────────────────────────────────────
 
 function ImportTab({
@@ -738,61 +1109,79 @@ function ImportTab({
   isCancelAuditCommitting, cancelAuditDiff, cancelAuditFileInputRef,
   onCancelAuditFileSelect, onCancelAuditCommit, onCancelAuditCancel,
   agencyId, currentUserId, currentEmployeeId,
+  showReviewPanel, autoResolveCases, autoResolveDecisions,
+  onAutoResolveDecide, onAutoResolveConfirm,
 }) {
   return (
     <div style={{ maxWidth: 996, margin: '0 auto' }}>
-      <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 28, textAlign: 'center' }}>
-        Upload Allstate reports to refresh the At Risk queue. Each report is processed independently.
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 128, alignItems: 'stretch' }}>
-
-        {/* Left — Pending Cancellation */}
-        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-warning-border)', borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-warning)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-            ⚠ Pending Cancellation Report
-          </div>
-          <UploadTab
-            uploadFile={uploadFile}
-            uploadError={uploadError}
-            uploadMsg={uploadMsg}
-            isParsing={isParsing}
-            isCommitting={isCommitting}
-            diffResult={diffResult}
-            fileInputRef={fileInputRef}
-            onFileSelect={onFileSelect}
-            onCommit={onCommit}
-            onCancel={onCancelUpload}
-          />
+      <div style={{ marginBottom: 28 }}>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)', textAlign: 'center', marginBottom: 14 }}>
+          Upload Allstate reports to refresh the At Risk queue.
         </div>
 
-        {/* Right — Renewal Audit */}
-        <div style={{ background: 'var(--qs-card)', border: '1px solid #3B82F633', borderRadius: 12, padding: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-info)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-            🔄 Renewal Audit Report
-          </div>
-          <RenewalUploadZone
-            agencyId={agencyId}
-            currentUserId={currentUserId}
-            currentEmployeeId={currentEmployeeId}
-          />
+        {/* Upload sequence strip */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 0, background: 'var(--qs-elevated)',
+          border: '1px solid var(--qs-border)', borderRadius: 10, padding: '10px 20px',
+        }}>
+          {[
+            { step: '\u2460', label: 'Termination',       color: '#EF4444', sublabel: 'closes lost cases' },
+            { step: '\u2461', label: 'Cancellation Audit', color: '#F59E0B', sublabel: 'advances staged cases' },
+            { step: '\u2462', label: 'Pending Cancel',     color: '#F59E0B', sublabel: 'adds at-risk cases' },
+            { step: '\u2463', label: 'Renewal',            color: '#3B82F6', sublabel: 'adds renewal queue' },
+          ].map((s, i, arr) => (
+            <div key={s.step} style={{ display: 'flex', alignItems: 'center' }}>
+              <div style={{ textAlign: 'center', padding: '0 12px' }}>
+                <div style={{ fontSize: 16, color: s.color }}>{s.step}</div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-text)', marginTop: 2 }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)' }}>{s.sublabel}</div>
+              </div>
+              {i < arr.length - 1 && (
+                <div style={{ color: 'var(--qs-muted)', fontSize: 16, padding: '0 4px' }}>\u2192</div>
+              )}
+            </div>
+          ))}
         </div>
 
+        <div style={{ fontSize: 11, color: 'var(--qs-muted)', textAlign: 'center', marginTop: 8 }}>
+          Upload in this order for the most accurate queue diff results
+        </div>
       </div>
 
-      {/* Cancellation Audit — full width below */}
+      {/* ① Termination Report — full width, first in logical order */}
+      <div style={{
+        marginTop: 16,
+        background: 'var(--qs-card)',
+        border: '1px solid #EF444433',
+        borderRadius: 12, padding: 20
+      }}>
+        <div style={{
+          fontSize: 12, fontWeight: 600, color: '#EF4444',
+          textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16
+        }}>
+          {'\u2460'} Termination Report
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
+          Upload the Allstate <span style={{ fontFamily: "'DM Mono', monospace" }}>Termination</span> report (XLSX).
+          Confirmed lapses are recorded and any matching pending cases are automatically closed as lost.
+        </div>
+        <TerminationUploadZone agencyId={agencyId} currentUserId={currentUserId} />
+      </div>
+
+      {/* ② Cancellation Audit — full width */}
       <div style={{ marginTop: 16, background: 'var(--qs-card)', border: '1px solid var(--qs-danger-border)',
         borderRadius: 12, padding: 20 }}>
         <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-danger)',
           textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
-          🚫 Cancellation Audit
+          {'\u2461'} Cancellation Audit
         </div>
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
           Upload the Allstate{' '}
           <span style={{ fontFamily: "'DM Mono', monospace" }}>Cancellation Audit</span> report (XLSX).
           <br />
-          <span style={{ color: 'var(--qs-warning)' }}>Cancel</span> rows → Stage 1 (pending).{' '}
-          <span style={{ color: 'var(--qs-danger)' }}>Cancelled</span> rows → Stage 2 (coverage lapsed).
+          <span style={{ color: 'var(--qs-warning)' }}>Cancel</span> rows {'\u2192'} Stage 1 (pending).{' '}
+          <span style={{ color: 'var(--qs-danger)' }}>Cancelled</span> rows {'\u2192'} Stage 2 (coverage lapsed).
         </div>
         <UploadTab
           uploadFile={cancelAuditFile}
@@ -806,6 +1195,47 @@ function ImportTab({
           onCommit={onCancelAuditCommit}
           onCancel={onCancelAuditCancel}
         />
+      </div>
+
+      {/* ③ Pending Cancel  |  ④ Renewal — side by side */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 128, alignItems: 'stretch', marginTop: 16 }}>
+
+        {/* ③ Pending Cancellation */}
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-warning-border)', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-warning)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+            {'\u2462'} Pending Cancellation Report
+          </div>
+          <UploadTab
+            uploadFile={uploadFile}
+            uploadError={uploadError}
+            uploadMsg={uploadMsg}
+            isParsing={isParsing}
+            isCommitting={isCommitting}
+            diffResult={diffResult}
+            fileInputRef={fileInputRef}
+            onFileSelect={onFileSelect}
+            onCommit={onCommit}
+            onCancel={onCancelUpload}
+            showReviewPanel={showReviewPanel}
+            autoResolveCases={autoResolveCases}
+            autoResolveDecisions={autoResolveDecisions}
+            onAutoResolveDecide={onAutoResolveDecide}
+            onAutoResolveConfirm={onAutoResolveConfirm}
+          />
+        </div>
+
+        {/* ④ Renewal Audit */}
+        <div style={{ background: 'var(--qs-card)', border: '1px solid #3B82F633', borderRadius: 12, padding: 20 }}>
+          <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-info)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16 }}>
+            {'\u2463'} Renewal Audit Report
+          </div>
+          <RenewalUploadZone
+            agencyId={agencyId}
+            currentUserId={currentUserId}
+            currentEmployeeId={currentEmployeeId}
+          />
+        </div>
+
       </div>
     </div>
   );
@@ -835,6 +1265,10 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
   const [isCancelAuditParsing, setIsCancelAuditParsing]     = useState(false);
   const [isCancelAuditCommitting, setIsCancelAuditCommitting] = useState(false);
   const cancelAuditFileInputRef = useRef(null);
+
+  // Auto-resolve review state
+  const [autoResolveDecisions, setAutoResolveDecisions] = useState({});
+  const [showReviewPanel, setShowReviewPanel] = useState(false);
 
   // Fetch pending_cases for diff engine
   const { data: events = [] } = useQuery({
@@ -869,12 +1303,37 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       const parsed = await parseReport(file);
       const diff = diffReport(parsed, events);
       setDiffResult(diff);
+      setAutoResolveDecisions({});
+      setShowReviewPanel(diff.toAutoResolve.length > 0);
     } catch (err) {
       console.error("[triage upload error]", err.message);
       setUploadError(`❌ ${friendlyUploadError(err.message)}`);
     } finally {
       setIsParsing(false);
     }
+  }
+
+  function handleAutoResolveDecision(id, decision) {
+    setAutoResolveDecisions(prev => ({ ...prev, [id]: decision }));
+  }
+
+  async function handleConfirmReviewDecisions() {
+    const today = new Date().toISOString().slice(0, 10);
+    const paid = Object.entries(autoResolveDecisions).filter(([, d]) => d === 'auto_resolved').map(([id]) => id);
+    const lost = Object.entries(autoResolveDecisions).filter(([, d]) => d === 'lost').map(([id]) => id);
+    const keep = Object.entries(autoResolveDecisions).filter(([, d]) => d === 'keep').map(([id]) => id);
+
+    if (paid.length > 0)
+      await supabase.from('pending_cases').update({ status: 'auto_resolved', resolution_date: today }).in('id', paid);
+    if (lost.length > 0)
+      await supabase.from('pending_cases').update({ status: 'lost', resolution_date: today }).in('id', lost);
+    if (keep.length > 0)
+      await supabase.from('pending_cases').update({ status: 'pending' }).in('id', keep);
+
+    setShowReviewPanel(false);
+    setAutoResolveDecisions({});
+    queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
+    queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
   }
 
   async function handleCommitUpload() {
@@ -953,7 +1412,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       if (diffResult.toAutoResolve.length > 0) {
         await supabase
           .from("pending_cases")
-          .update({ status: "auto_resolved", resolution_date: new Date().toISOString().slice(0,10) })
+          .update({ status: "pending_review" })
           .in("id", diffResult.toAutoResolve.map(r => r.id));
       }
 
@@ -964,7 +1423,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         : activeReps.length === 1 ? `assigned to ${repNames[0]}`
         : `distributed across ${repNames.join(", ")}`;
 
-      setUploadMsg(`${diffResult.toAdd.length} added · ${diffResult.toUpdate.length} updated · ${diffResult.toAutoResolve.length} auto-resolved · ${assignmentSummary}`);
+      setUploadMsg(`${diffResult.toAdd.length} added · ${diffResult.toUpdate.length} updated · ${diffResult.toAutoResolve.length} staged for review · ${assignmentSummary}`);
       setDiffResult(null);
       setUploadFile(null);
       await loadEvents();
@@ -1145,6 +1604,13 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       agencyId={agencyId}
       currentUserId={currentUserId}
       currentEmployeeId={currentEmployeeId}
+      showReviewPanel={showReviewPanel}
+      autoResolveCases={diffResult?.toAutoResolve ?? []}
+      autoResolveDecisions={autoResolveDecisions}
+      onAutoResolveDecide={handleAutoResolveDecision}
+      onAutoResolveConfirm={handleConfirmReviewDecisions}
     />
   );
 }
+
+export { TerminationUploadZone };

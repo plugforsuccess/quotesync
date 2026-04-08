@@ -1,12 +1,12 @@
 // src/pages/components/retention/RetentionAnalytics.jsx
 // Extracted from BookHealthPage.jsx — analytics/reporting tabs.
 
-import { useState, useMemo, useRef } from "react";
-import * as XLSX from "xlsx";
+import { useMemo } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Line, ComposedChart, LineChart, ReferenceLine, Cell } from "recharts";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
+import { TerminationUploadZone } from './RetentionImport';
 
 function friendlyUploadError(raw = "") {
   const msg = raw.toLowerCase();
@@ -216,18 +216,6 @@ function TrendsTab({ trendsData }) {
 
 function AttritionTab({ agencyId, currentUserId }) {
   const { config: productConfig } = useAgencyProductConfig(agencyId);
-  const [lapseFile, setLapseFile] = useState(null);
-  const [reportMonth, setReportMonth] = useState(() => {
-    // Default to first day of current month
-    const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
-  });
-  const [parsedRows, setParsedRows] = useState(null);
-  const [isCommitting, setIsCommitting] = useState(false);
-  const [commitMsg, setCommitMsg] = useState("");
-  const [parseError, setParseError] = useState("");
-  const queryClient = useQueryClient();
-  const lapseFileRef = useRef();
 
   // Monthly summary data — React Query cache survives unmount/remount
   const { data: monthlySummary = [], isLoading: loading } = useQuery({
@@ -254,91 +242,6 @@ function AttritionTab({ agencyId, currentUserId }) {
     enabled: !!agencyId,
     staleTime: 2 * 60 * 1000,
   });
-
-  async function handleFileSelect(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLapseFile(file);
-    setParseError("");
-    setParsedRows(null);
-    setCommitMsg("");
-    try {
-      const buf = await file.arrayBuffer();
-      const rows = parseLapseXLSX(new Uint8Array(buf));
-      if (rows.length === 0) { setParseError("No valid rows found. Check that your file has a Policy No column."); return; }
-      setParsedRows(rows);
-    } catch (err) {
-      console.error("[attrition parse error]", err.message);
-      setParseError(`❌ ${friendlyUploadError(err.message)}`);
-    }
-  }
-
-  async function handleCommit() {
-    if (!parsedRows || !agencyId) return;
-    if (!currentUserId) {
-      setParseError("Session expired. Please refresh and try again.");
-      return;
-    }
-    setIsCommitting(true);
-    try {
-      // Count existing rows for this month to distinguish inserts vs updates
-      const policyNos = parsedRows.map(r => r.policy_no);
-      const { data: existing } = await supabase
-        .from("lapse_events")
-        .select("policy_no")
-        .eq("agency_id", agencyId)
-        .eq("report_month", reportMonth)
-        .in("policy_no", policyNos);
-      const existingCount = existing?.length ?? 0;
-      const newCount = parsedRows.length - existingCount;
-
-      // Create upload record first
-      const { data: upload, error: upErr } = await supabase
-        .from("lapse_uploads")
-        .insert({
-          agency_id: agencyId,
-          uploaded_by: currentUserId,
-          filename: lapseFile?.name ?? "unknown",
-          report_month: reportMonth,
-          rows_added: newCount,
-          rows_updated: existingCount,
-          committed: false,
-        })
-        .select("id")
-        .single();
-      if (upErr) throw new Error(upErr.message);
-
-      // Upsert events
-      const records = parsedRows.map(r => ({
-        agency_id: agencyId,
-        report_month: reportMonth,
-        upload_batch_id: upload.id,
-        ...r,  // includes item_count from parser
-      }));
-
-      const { error: evtErr } = await supabase
-        .from("lapse_events")
-        .upsert(records, { onConflict: "agency_id,policy_no,report_month" });
-      if (evtErr) throw new Error(evtErr.message);
-
-      // Mark upload committed
-      await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
-
-      const monthLabel = new Date(reportMonth).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
-      const msg = existingCount > 0
-        ? `✅ ${newCount} ${newCount === 1 ? "record" : "records"} added · ${existingCount} updated for ${monthLabel}.`
-        : `✅ ${parsedRows.length} attrition ${parsedRows.length === 1 ? "record" : "records"} loaded for ${monthLabel}.`;
-      setCommitMsg(msg);
-      setParsedRows(null);
-      setLapseFile(null);
-      queryClient.invalidateQueries({ queryKey: ["lapse_events_summary", agencyId] });
-    } catch (err) {
-      console.error("[attrition commit error]", err.message);
-      setParseError(`❌ ${friendlyUploadError(err.message)}`);
-    } finally {
-      setIsCommitting(false);
-    }
-  }
 
   // Gap analysis: compare consecutive months
   // For each month, the "gap" is items/points lost. The following month must exceed it.
@@ -367,16 +270,6 @@ function AttritionTab({ agencyId, currentUserId }) {
       daysIntoMonth,
     };
   }, [monthlySummary]);
-
-  const preview = parsedRows ? {
-    items: parsedRows.reduce((s, r) => s + (r.item_count ?? 1), 0),
-    points: calcLapsePoints(parsedRows),
-    premium: parsedRows.reduce((s, r) => s + (r.premium ?? 0), 0),
-    byProduct: parsedRows.reduce((acc, r) => {
-      acc[r.product] = (acc[r.product] || 0) + 1;
-      return acc;
-    }, {}),
-  } : null;
 
   return (
     <div>
@@ -462,72 +355,9 @@ function AttritionTab({ agencyId, currentUserId }) {
         <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginBottom: 20 }}>No attrition history yet. Upload your first report below.</div>
       )}
 
-      {/* Upload Section */}
+      {/* Upload Section — delegated to shared component */}
       <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 10 }}>Upload Termination Report</div>
-
-      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" }}>
-        <div>
-          <label style={{ fontSize: 12, color: "var(--qs-subtle)", display: "block", marginBottom: 4 }}>Report Month</label>
-          <input
-            type="month"
-            value={reportMonth.slice(0, 7)}
-            onChange={e => setReportMonth(`${e.target.value}-01`)}
-            style={{ fontFamily: "inherit" }}
-          />
-        </div>
-        <div style={{ marginTop: 16 }}>
-          <input ref={lapseFileRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={handleFileSelect} />
-          <button className="btn-ghost" onClick={() => lapseFileRef.current?.click()}>
-            {lapseFile ? `\uD83D\uDCC4 ${lapseFile.name}` : "Choose File"}
-          </button>
-        </div>
-      </div>
-
-      {parseError && (
-        <div style={{ background: "var(--qs-danger-subtle)", border: "1px solid var(--qs-danger-border)", borderRadius: 8, padding: "10px 14px", marginBottom: 16, fontSize: 13, color: "var(--qs-danger)" }}>
-          {parseError}
-        </div>
-      )}
-
-      {/* Preview */}
-      {preview && !commitMsg && (
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ fontSize: 14, fontWeight: 600, color: "var(--qs-bright)", marginBottom: 12 }}>Preview — {reportMonth.slice(0, 7)}</div>
-          {/* Detail grid — color values used as inline style props */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 10, marginBottom: 16 }}>
-            {[
-              { label: "Items Lost", value: preview.items, color: "#EF4444" },
-              { label: "Points Lost", value: preview.points, color: "#F59E0B" },
-              { label: "Premium Lost", value: `$${Math.round(preview.premium).toLocaleString()}`, color: "#94A3B8" },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, padding: "12px 14px" }}>
-                <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
-              </div>
-            ))}
-          </div>
-          {/* Product breakdown */}
-          <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginBottom: 16 }}>
-            {Object.entries(preview.byProduct).map(([prod, count]) => (
-              <span key={prod} style={{ marginRight: 12 }}>{prod}: <strong style={{ color: "var(--qs-dim)" }}>{count}</strong></span>
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn-primary" onClick={handleCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
-            </button>
-            <button className="btn-ghost" onClick={() => { setParsedRows(null); setLapseFile(null); }}>
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
-      {commitMsg && (
-        <div style={{ background: "var(--qs-success-subtle)", border: "1px solid var(--qs-success-border)", borderRadius: 8, padding: "10px 14px", fontSize: 13, color: "var(--qs-success)" }}>
-          {commitMsg}
-        </div>
-      )}
+      <TerminationUploadZone agencyId={agencyId} currentUserId={currentUserId} />
     </div>
   );
 }
