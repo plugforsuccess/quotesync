@@ -140,8 +140,30 @@ const StaffPerformancePage = () => {
   const { data: rosterEmployees = [] } = useActiveEmployees(currentAgencyId);
   const { invalidateRCData, invalidateProactivity } = useInvalidateTimeData();
 
+  // After rosterEmployees loads, auto-select if only one employee
+  useEffect(() => {
+    if (selectedEmployee === 'all' && rosterEmployees.length === 1) {
+      const emp = rosterEmployees[0];
+      setSelectedEmployee(emp.auth_user_id || emp.id);
+    }
+  }, [rosterEmployees]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // v2 hooks — per-employee targets, outbound breakdown, trends, team
-  const singleEmployee = selectedEmployee !== 'all' ? selectedEmployee : (rcData.length === 1 ? rcData[0]?.employee_user_id : null);
+  const singleEmployee = useMemo(() => {
+    // If a specific employee is selected in the dropdown, always use that
+    if (selectedEmployee !== 'all') return selectedEmployee;
+
+    // If only one employee in roster, auto-select them
+    // Use auth_user_id (matches employee_user_id in rc_call_log)
+    if (rosterEmployees.length === 1) {
+      return rosterEmployees[0].auth_user_id || rosterEmployees[0].id;
+    }
+
+    // Fall back to rcData if available (Weekly Summary was uploaded)
+    if (rcData.length === 1) return rcData[0]?.employee_user_id;
+
+    return null;
+  }, [selectedEmployee, rosterEmployees, rcData]);
 
   const { data: employeeTargets } = useEmployeeTargets(singleEmployee, weekStart);
   const { mutate: saveTargets, isPending: savingTargets } = useSaveTargets();
@@ -382,13 +404,39 @@ const StaffPerformancePage = () => {
         import('./components/time-attendance/ScorecardPDF'),
       ]);
 
-      const empEntries = entries.filter((e) => e.employee_user_id === rc.employee_user_id);
+      const empEntries = entries.filter((e) => e.employee_user_id === singleEmployee);
       const daysWorked = empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length || 5;
-      const empProactivity = proactivityList.find((p) => p.employee_user_id === rc.employee_user_id);
+      const empProactivity = proactivityList.find((p) => p.employee_user_id === singleEmployee);
+
+      // If no rc from Weekly Summary, build a minimal rc from call log metrics
+      // so the PDF still generates with available data
+      const effectiveRc = rc || (callLogMetrics && singleEmployee ? {
+        employee_user_id: singleEmployee,
+        employee_name: getEmployeeName(singleEmployee),
+        week_start: weekStart,
+        total_calls: callLogMetrics.totalCalls || 0,
+        outbound_calls: callLogMetrics.outboundCalls || 0,
+        inbound_calls: callLogMetrics.inboundCalls || 0,
+        answered_calls: callLogMetrics.answeredCalls || 0,
+        missed_calls: callLogMetrics.missedCalls || 0,
+        missed_pct: callLogMetrics.missedPct || 0,
+        avg_calls_per_day: callLogMetrics.avgCallsPerDay || 0,
+        avg_handle_time_minutes: callLogMetrics.avgHandleTimeMinutes || 0,
+        // Fields only from Weekly Summary — null when not available
+        avg_speed_of_answer_seconds: null,
+        avg_hold_time_minutes: null,
+        total_handle_time_minutes: null,
+      } : null);
+
+      if (!effectiveRc) {
+        console.error('No data available for PDF generation');
+        setPdfGenerating(false);
+        return;
+      }
 
       const blob = await pdf(
         <ScorecardPDF
-          rcData={rc}
+          rcData={effectiveRc}
           daysWorked={daysWorked}
           targets={employeeTargets}
           proactivity={empProactivity}
@@ -401,7 +449,7 @@ const StaffPerformancePage = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `scorecard-${(rc.employee_name || 'employee').replace(/\s+/g, '-').toLowerCase()}-${weekStart}.pdf`;
+      a.download = `scorecard-${(effectiveRc.employee_name || 'employee').replace(/\s+/g, '-').toLowerCase()}-${weekStart}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -750,9 +798,12 @@ const StaffPerformancePage = () => {
                     <Users className="w-5 h-5 text-qs-muted" />
                     {getEmployeeName(singleEmployee)}
                   </h3>
-                  {rcData.length > 0 && (
+                  {(rcData.length > 0 || callLogMetrics) && (
                     <button
-                      onClick={() => handleDownloadPDF(rcData.find((r) => r.employee_user_id === singleEmployee) || rcData[0])}
+                      onClick={() => {
+                        const rc = rcData.find((r) => r.employee_user_id === singleEmployee) || rcData[0];
+                        handleDownloadPDF(rc || null);
+                      }}
                       disabled={pdfGenerating}
                       className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-qs-text hover:text-primary-400 hover:bg-primary-900/20 rounded-lg transition-colors disabled:opacity-50"
                       title="Download PDF scorecard"
