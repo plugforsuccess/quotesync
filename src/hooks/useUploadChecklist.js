@@ -1,0 +1,278 @@
+// src/hooks/useUploadChecklist.js
+// Computes live upload checklist for the principal sign-in modal.
+// Queries all upload tables and derives due/overdue status per report.
+
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
+
+function toMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return d.toLocaleDateString('en-CA');
+}
+
+function getBusinessDaysSince(fromDate) {
+  const days = [];
+  const start = new Date(fromDate + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const cur = new Date(start);
+  cur.setDate(cur.getDate() + 1); // start from day after fromDate
+  while (cur <= today) {
+    const dow = cur.getDay();
+    if (dow !== 0 && dow !== 6) {
+      days.push(cur.toLocaleDateString('en-CA'));
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return days;
+}
+
+export function useUploadChecklist(agencyId) {
+  return useQuery({
+    queryKey: ['upload_checklist', agencyId],
+    queryFn: async () => {
+      if (!agencyId) return [];
+
+      const today = new Date();
+      const todayStr = today.toLocaleDateString('en-CA');
+      const dayOfMonth = today.getDate();
+      const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
+        .toLocaleDateString('en-CA');
+      const priorMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+        .toLocaleDateString('en-CA');
+      const currentWeekMonday = toMonday(today);
+
+      // Fetch all upload statuses in parallel
+      const [
+        callLogDays,
+        queueData,
+        weeklySummary,
+        termination,
+        cancelAudit,
+        pendingCancel,
+        renewal,
+      ] = await Promise.all([
+        // Call log: which days have data this week?
+        supabase
+          .from('rc_call_log')
+          .select('call_date')
+          .eq('org_id', agencyId)
+          .gte('call_date', currentWeekMonday)
+          .lte('call_date', todayStr),
+
+        // Queue: any data this week?
+        supabase
+          .from('rc_queue_data')
+          .select('report_date')
+          .eq('org_id', agencyId)
+          .gte('report_date', currentWeekMonday)
+          .lte('report_date', todayStr)
+          .limit(1),
+
+        // Weekly summary: uploaded for current week?
+        supabase
+          .from('rc_performance_data')
+          .select('week_start')
+          .eq('org_id', agencyId)
+          .eq('week_start', currentWeekMonday)
+          .limit(1),
+
+        // Termination: uploaded for prior month?
+        supabase
+          .from('lapse_uploads')
+          .select('created_at, report_month')
+          .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .gte('report_month', priorMonthStart)
+          .lt('report_month', currentMonthStart)
+          .order('created_at', { ascending: false })
+          .limit(1),
+
+        // Cancellation audit: uploaded this month?
+        supabase
+          .from('cancellation_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+
+        // Pending cancel: uploaded this month?
+        supabase
+          .from('pending_cancel_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+
+        // Renewal: uploaded this month?
+        supabase
+          .from('renewal_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+      ]);
+
+      // ── Call log: find missing business days this week ──────────────────
+      const uploadedDays = new Set(
+        (callLogDays.data || []).map(r => r.call_date)
+      );
+      // Business days Mon → yesterday (today's calls haven't happened yet)
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const weekDays = getBusinessDaysSince(
+        new Date(currentWeekMonday + 'T00:00:00').setDate(
+          new Date(currentWeekMonday + 'T00:00:00').getDate() - 1
+        )
+      ).filter(d => d <= yesterday.toLocaleDateString('en-CA'));
+
+      const missingCallLogDays = weekDays.filter(d => !uploadedDays.has(d));
+
+      // ── Derive status per checklist item ────────────────────────────────
+      const items = [];
+
+      // 1. Daily Call Log
+      const callLogDue = missingCallLogDays.length > 0;
+      items.push({
+        key: 'call_log',
+        category: 'performance',
+        label: 'Daily Call Log',
+        description: callLogDue
+          ? `${missingCallLogDays.length} day(s) missing this week`
+          : 'All days uploaded',
+        status: callLogDue ? (missingCallLogDays.length > 2 ? 'overdue' : 'due') : 'current',
+        detail: callLogDue ? missingCallLogDays.join(', ') : null,
+        link: '/agency/performance',
+      });
+
+      // 2. Daily Queue Report
+      const queueDue = !queueData.data?.length;
+      items.push({
+        key: 'queue',
+        category: 'performance',
+        label: 'Daily Queue Report',
+        description: queueDue ? 'Not uploaded this week' : 'Uploaded this week',
+        status: queueDue ? 'due' : 'current',
+        detail: null,
+        link: '/agency/performance',
+      });
+
+      // 3. Weekly User Summary — only show if it's Monday or later and not uploaded
+      const weeklySummaryDue = !weeklySummary.data?.length;
+      items.push({
+        key: 'weekly_summary',
+        category: 'performance',
+        label: 'Weekly User Summary',
+        description: weeklySummaryDue
+          ? `Not uploaded for week of ${currentWeekMonday}`
+          : 'Uploaded for current week',
+        status: weeklySummaryDue ? 'due' : 'current',
+        detail: null,
+        link: '/agency/performance',
+        optional: true,
+      });
+
+      // 4. Termination Report — due 1st–5th for prior month
+      const terminationInWindow = dayOfMonth >= 1 && dayOfMonth <= 5;
+      const terminationUploaded = !!termination.data?.length;
+      const terminationDue = terminationInWindow && !terminationUploaded;
+      const terminationOverdue = dayOfMonth > 5 && !terminationUploaded;
+      items.push({
+        key: 'termination',
+        category: 'book_of_business',
+        label: 'Termination Report',
+        description: terminationUploaded
+          ? 'Uploaded for prior month'
+          : terminationDue
+          ? 'Due 1st–5th of month — upload prior month'
+          : terminationOverdue
+          ? 'Overdue — prior month not uploaded'
+          : 'Not yet due (upload 1st–5th)',
+        status: terminationUploaded ? 'current' : terminationOverdue ? 'overdue' : terminationDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=import',
+        uploadOrder: 1,
+      });
+
+      // 5. Cancellation Audit — due 8th–10th
+      const cancelAuditInWindow = dayOfMonth >= 8 && dayOfMonth <= 10;
+      const cancelAuditUploaded = !!cancelAudit.data?.length;
+      const cancelAuditDue = cancelAuditInWindow && !cancelAuditUploaded;
+      const cancelAuditOverdue = dayOfMonth > 10 && !cancelAuditUploaded;
+      items.push({
+        key: 'cancellation_audit',
+        category: 'book_of_business',
+        label: 'Cancellation Audit Report',
+        description: cancelAuditUploaded
+          ? 'Uploaded this month'
+          : cancelAuditDue
+          ? 'Due 8th–10th — upload now'
+          : cancelAuditOverdue
+          ? 'Overdue — not uploaded this month'
+          : 'Not yet due (upload 8th–10th)',
+        status: cancelAuditUploaded ? 'current' : cancelAuditOverdue ? 'overdue' : cancelAuditDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=import',
+        uploadOrder: 2,
+      });
+
+      // 6. Pending Cancellation — due 8th–10th and 20th–25th
+      const pendingCancelInWindow =
+        (dayOfMonth >= 8 && dayOfMonth <= 10) ||
+        (dayOfMonth >= 20 && dayOfMonth <= 25);
+      const pendingCancelUploaded = !!pendingCancel.data?.length;
+      const pendingCancelDue = pendingCancelInWindow && !pendingCancelUploaded;
+      const pendingCancelOverdue = (dayOfMonth > 10 && dayOfMonth < 20 || dayOfMonth > 25) && !pendingCancelUploaded;
+      items.push({
+        key: 'pending_cancel',
+        category: 'book_of_business',
+        label: 'Pending Cancellation Report',
+        description: pendingCancelUploaded
+          ? 'Uploaded this month'
+          : pendingCancelDue
+          ? 'Due now — upload current snapshot'
+          : pendingCancelOverdue
+          ? 'Overdue — upload missed'
+          : 'Not yet due',
+        status: pendingCancelUploaded ? 'current' : pendingCancelOverdue ? 'overdue' : pendingCancelDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=import',
+        uploadOrder: 3,
+      });
+
+      // 7. Renewal Report — due 8th–10th
+      const renewalInWindow = dayOfMonth >= 8 && dayOfMonth <= 10;
+      const renewalUploaded = !!renewal.data?.length;
+      const renewalDue = renewalInWindow && !renewalUploaded;
+      const renewalOverdue = dayOfMonth > 10 && !renewalUploaded;
+      items.push({
+        key: 'renewal',
+        category: 'book_of_business',
+        label: 'Renewal Report',
+        description: renewalUploaded
+          ? 'Uploaded this month'
+          : renewalDue
+          ? 'Due 8th–10th — upload now'
+          : renewalOverdue
+          ? 'Overdue — not uploaded this month'
+          : 'Not yet due (upload 8th–10th)',
+        status: renewalUploaded ? 'current' : renewalOverdue ? 'overdue' : renewalDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=import',
+        uploadOrder: 4,
+      });
+
+      return items;
+    },
+    enabled: !!agencyId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
