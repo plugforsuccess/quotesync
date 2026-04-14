@@ -9,7 +9,7 @@ const STATUS_CONFIG = {
   upcoming: { color: '#64748B', bg: 'transparent', icon: null,        label: 'Upcoming' },
 };
 
-export default function UploadChecklistModal({ items, onDismiss }) {
+export default function UploadChecklistModal({ items, onDismiss, onLogReview, agencyId }) {
   const navigate = useNavigate();
 
   const actionable = items.filter(i => i.status === 'due' || i.status === 'overdue');
@@ -17,6 +17,7 @@ export default function UploadChecklistModal({ items, onDismiss }) {
 
   const performanceItems = items.filter(i => i.category === 'performance');
   const bobItems         = items.filter(i => i.category === 'book_of_business');
+  const mgmtItems        = items.filter(i => i.category === 'management');
 
   const hasOverdue = actionable.some(i => i.status === 'overdue');
 
@@ -82,6 +83,19 @@ export default function UploadChecklistModal({ items, onDismiss }) {
           onDismiss={onDismiss}
         />
 
+        {/* Management Reviews Section */}
+        {mgmtItems.length > 0 && (
+          <Section
+            title="👥 Management Reviews"
+            subtitle="Staff performance touchpoints"
+            items={mgmtItems}
+            navigate={navigate}
+            onDismiss={onDismiss}
+            onLogReview={onLogReview}
+            agencyId={agencyId}
+          />
+        )}
+
         {/* Footer */}
         <div style={{ borderTop: '1px solid var(--qs-border)', paddingTop: 16,
           marginTop: 8, display: 'flex', justifyContent: 'space-between',
@@ -107,7 +121,7 @@ export default function UploadChecklistModal({ items, onDismiss }) {
   );
 }
 
-function Section({ title, subtitle, items, navigate, onDismiss }) {
+function Section({ title, subtitle, items, navigate, onDismiss, onLogReview, agencyId }) {
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ marginBottom: 10 }}>
@@ -178,6 +192,24 @@ function Section({ title, subtitle, items, navigate, onDismiss }) {
                   </p>
                 )}
               </div>
+
+              {/* Mark Done button for loggable (management review) items */}
+              {item.loggable && item.status !== 'current' && onLogReview && (
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    await onLogReview(agencyId, item.key, null, null);
+                  }}
+                  style={{
+                    fontSize: 10, fontWeight: 700, padding: '3px 8px',
+                    borderRadius: 4, cursor: 'pointer', flexShrink: 0,
+                    background: '#10B98122', border: '1px solid #10B98133',
+                    color: '#10B981',
+                  }}
+                >
+                  ✓ Mark Done
+                </button>
+              )}
 
               {/* Arrow for actionable items */}
               {isActionable && (

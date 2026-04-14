@@ -8,10 +8,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
-import { useUploadChecklist } from '../hooks/useUploadChecklist';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
-import UploadChecklistModal from './components/shared/UploadChecklistModal';
 import AvailabilityToggle from '../components/AvailabilityToggle';
 
 // Format relative time — "2d ago", "3h ago", "just now"
@@ -121,27 +119,6 @@ export default function MyQueuePage() {
   const scoreType = roles.includes('service_outbound') ? 'outbound'
     : roles.includes('service_inbound') ? 'inbound' : 'both';
   const { data: metrics } = useRetentionMetrics(employeeId, scoreType);
-
-  // Upload checklist — principal sign-in modal
-  const { data: checklistItems = [] } = useUploadChecklist(orgId);
-  const [showChecklist, setShowChecklist] = useState(false);
-
-  useEffect(() => {
-    const sessionKey = 'qs_checklist_shown';
-    if (sessionStorage.getItem(sessionKey)) return;
-    if (!orgId) return;
-
-    // Wait for data to load, then show if anything is actionable
-    if (checklistItems.length > 0) {
-      const hasActionable = checklistItems.some(
-        i => i.status === 'due' || i.status === 'overdue'
-      );
-      if (hasActionable) {
-        setShowChecklist(true);
-        sessionStorage.setItem(sessionKey, '1');
-      }
-    }
-  }, [checklistItems, orgId]);
 
   // Track stale refresh
   useEffect(() => {
@@ -901,12 +878,6 @@ export default function MyQueuePage() {
         document.body
       )}
 
-      {showChecklist && (
-        <UploadChecklistModal
-          items={checklistItems}
-          onDismiss={() => setShowChecklist(false)}
-        />
-      )}
     </div>
   );
 }

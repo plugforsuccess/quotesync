@@ -2,13 +2,16 @@
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon } from 'lucide-react';
+import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon, Bell } from 'lucide-react';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
 import BottomTabBar from './BottomTabBar';
 import VerificationBanner from './VerificationBanner';
 import ImpersonationBanner from './ImpersonationBanner';
+import UploadChecklistModal from '../pages/components/shared/UploadChecklistModal';
+import { useUploadChecklist } from '../hooks/useUploadChecklist';
+import { useManagementReviews } from '../hooks/useManagementReviews';
 import { useAuth } from '../contexts/AuthContext';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 
@@ -23,8 +26,36 @@ function Layout({ forcePlane = null }) {
   // Two-Plane RBAC: Get user context and determine active plane
   const {
     user, profile, isPlatformUser, platformRole,
-    activePlane: authPlane, currentAgencyRole, agencyMemberships
+    activePlane: authPlane, currentAgencyRole, currentAgencyId,
+    agencyMemberships
   } = useAuth();
+
+  // Upload/review checklist — principals only. useUploadChecklist already
+  // includes management review items (category: 'management'); we only need
+  // useManagementReviews for its logReview action.
+  const [checklistOpen, setChecklistOpen] = useState(false);
+  const { data: allChecklistItems = [] } = useUploadChecklist(
+    currentAgencyRole === 'principal' ? currentAgencyId : null
+  );
+  const { logReview } = useManagementReviews(
+    currentAgencyRole === 'principal' ? currentAgencyId : null
+  );
+
+  const actionableCount = allChecklistItems.filter(
+    i => i.status === 'due' || i.status === 'overdue'
+  ).length;
+
+  // Auto-show modal once per session if principal has actionable items
+  useEffect(() => {
+    const sessionKey = 'qs_checklist_shown';
+    if (sessionStorage.getItem(sessionKey)) return;
+    if (currentAgencyRole !== 'principal') return;
+    if (!currentAgencyId) return;
+    if (allChecklistItems.length > 0 && actionableCount > 0) {
+      setChecklistOpen(true);
+      sessionStorage.setItem(sessionKey, '1');
+    }
+  }, [allChecklistItems.length, actionableCount, currentAgencyId, currentAgencyRole]);
 
   // Platform users can toggle between platform and consumer views
   // Agency users see agency plane, everyone else sees consumer
@@ -266,6 +297,14 @@ function Layout({ forcePlane = null }) {
                 <HamburgerMenu items={secondaryNav} />
               )}
 
+              {/* Checklist bell — principals only (desktop) */}
+              {currentAgencyRole === 'principal' && (
+                <ChecklistBell
+                  count={actionableCount}
+                  onClick={() => setChecklistOpen(true)}
+                />
+              )}
+
               <UserMenu
                 activePlane={activePlane}
                 onTogglePlane={() => setPlaneOverride(p => {
@@ -274,6 +313,17 @@ function Layout({ forcePlane = null }) {
                 })}
               />
             </nav>
+
+            {/* Mobile checklist bell — principals only, visible on mobile */}
+            {currentAgencyRole === 'principal' && (
+              <div className="md:hidden flex items-center">
+                <ChecklistBell
+                  count={actionableCount}
+                  onClick={() => setChecklistOpen(true)}
+                  compact
+                />
+              </div>
+            )}
 
             {/* Mobile Menu Button — only shown when bottom tab bar is NOT active (consumer plane) */}
             {!showBottomTabs && (
@@ -465,7 +515,49 @@ function Layout({ forcePlane = null }) {
           moreActive={drawerOpen || isDrawerRouteActive}
         />
       )}
+
+      {/* Upload & review checklist modal — principals only, accessible from bell icon */}
+      {checklistOpen && currentAgencyRole === 'principal' && (
+        <UploadChecklistModal
+          items={allChecklistItems}
+          agencyId={currentAgencyId}
+          onDismiss={() => setChecklistOpen(false)}
+          onLogReview={logReview}
+        />
+      )}
     </div>
+  );
+}
+
+// ── Checklist bell icon with badge ──────────────────────────────────────────
+function ChecklistBell({ count, onClick, compact = false }) {
+  const badgeColor = count > 3 ? '#EF4444' : '#F59E0B';
+  const iconSize = compact ? 'w-5 h-5' : 'w-5 h-5';
+  const badgeDim = compact ? 14 : 16;
+  const badgeFont = compact ? 8 : 9;
+  return (
+    <button
+      onClick={onClick}
+      className="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
+      aria-label={`Open checklist${count > 0 ? ` (${count} items due)` : ''}`}
+      title="Upload & Review Checklist"
+    >
+      <Bell className={iconSize} />
+      {count > 0 && (
+        <span
+          style={{
+            position: 'absolute', top: 4, right: 4,
+            width: badgeDim, height: badgeDim, borderRadius: '50%',
+            background: badgeColor,
+            color: '#fff', fontSize: badgeFont, fontWeight: 700,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            lineHeight: 1,
+          }}
+        >
+          {count > 9 ? '9+' : count}
+        </span>
+      )}
+    </button>
   );
 }
 
