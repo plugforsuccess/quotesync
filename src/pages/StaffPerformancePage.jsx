@@ -26,6 +26,7 @@ import {
 } from '../hooks/useStaffPerformance';
 import { computeCallLogMetrics, RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/staffPerformanceDefaults';
 import CallLogUploadForm from './components/time-attendance/CallLogUploadForm';
+import WeekPickerCalendar from './components/time-attendance/WeekPickerCalendar';
 import QueueUploadForm from './components/time-attendance/QueueUploadForm';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import StaffScorecard from './components/time-attendance/StaffScorecard';
@@ -334,6 +335,9 @@ const StaffPerformancePage = () => {
   // Use roster employees (employees table) for dropdown
   const employeeOptions = rosterEmployees.length > 0 ? rosterEmployees : employees;
 
+  // Block forward navigation when already viewing the current week
+  const isCurrentWeek = weekStart === toMonday(new Date());
+
   function handleRCUploaded() {
     invalidateRCData(weekStart, selectedEmployee);
   }
@@ -556,12 +560,22 @@ const StaffPerformancePage = () => {
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm font-medium text-qs-bright min-w-[200px] text-center">
-              {formatWeekLabel(weekStart)}
-            </span>
+
+            <WeekPickerCalendar
+              weekStart={weekStart}
+              onChange={setWeekStart}
+              label={formatWeekLabel(weekStart)}
+            />
+
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
-              className="p-2 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded transition-colors min-w-[44px] min-h-[44px] inline-flex items-center justify-center"
+              disabled={isCurrentWeek}
+              className={`p-2 rounded transition-colors min-w-[44px] min-h-[44px]
+                inline-flex items-center justify-center ${
+                isCurrentWeek
+                  ? 'text-qs-muted opacity-30 cursor-not-allowed'
+                  : 'text-qs-dim hover:text-primary-400 hover:bg-primary-900/20'
+              }`}
             >
               <ChevronRight className="w-4 h-4" />
             </button>
