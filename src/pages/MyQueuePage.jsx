@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useUploadChecklist } from '../hooks/useUploadChecklist';
+import { useManagementReviews } from '../hooks/useManagementReviews';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import UploadChecklistModal from './components/shared/UploadChecklistModal';
@@ -124,6 +125,7 @@ export default function MyQueuePage() {
 
   // Upload checklist — principal sign-in modal
   const { data: checklistItems = [] } = useUploadChecklist(orgId);
+  const { logReview } = useManagementReviews(orgId);
   const [showChecklist, setShowChecklist] = useState(false);
 
   useEffect(() => {
@@ -904,7 +906,9 @@ export default function MyQueuePage() {
       {showChecklist && (
         <UploadChecklistModal
           items={checklistItems}
+          agencyId={orgId}
           onDismiss={() => setShowChecklist(false)}
+          onLogReview={logReview}
         />
       )}
     </div>

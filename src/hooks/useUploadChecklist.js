@@ -53,6 +53,7 @@ export function useUploadChecklist(agencyId) {
         cancelAudit,
         pendingCancel,
         renewal,
+        reviewResult,
       ] = await Promise.all([
         // Call log: which days have data this week?
         supabase
@@ -119,6 +120,13 @@ export function useUploadChecklist(agencyId) {
           .gte('uploaded_at', currentMonthStart)
           .order('uploaded_at', { ascending: false })
           .limit(1),
+
+        // Management reviews: last completed by type
+        supabase
+          .from('management_reviews')
+          .select('review_type, conducted_at')
+          .eq('agency_id', agencyId)
+          .order('conducted_at', { ascending: false }),
       ]);
 
       // ── Call log: find missing business days this week ──────────────────
@@ -269,6 +277,51 @@ export function useUploadChecklist(agencyId) {
         link: '/agency/retention?tab=import',
         uploadOrder: 4,
       });
+
+      // ── Management review items ─────────────────────────────────────────
+      const reviewData = reviewResult.data || [];
+      const lastByType = {};
+      for (const row of reviewData) {
+        if (!lastByType[row.review_type]) lastByType[row.review_type] = row;
+      }
+
+      const REVIEW_CADENCES = [
+        { key: 'weekly_checkin',     label: 'Weekly Check-In',               days: 7,   icon: '📅' },
+        { key: 'monthly_scorecard',  label: 'Monthly Scorecard Review',      days: 31,  icon: '📊' },
+        { key: 'quarterly_comp',     label: 'Quarterly Comp & Goals',        days: 90,  icon: '💼' },
+        { key: 'annual_evaluation',  label: 'Annual Performance Evaluation', days: 365, icon: '📋' },
+      ];
+
+      for (const rc of REVIEW_CADENCES) {
+        const last = lastByType[rc.key]?.conducted_at || null;
+        const daysSince = last
+          ? Math.floor((new Date() - new Date(last + 'T00:00:00')) / 86400000)
+          : null;
+
+        let status;
+        if (!last) {
+          status = 'overdue';
+        } else if (daysSince < rc.days * 0.8) {
+          status = 'current';
+        } else if (daysSince < rc.days) {
+          status = 'due';
+        } else {
+          status = 'overdue';
+        }
+
+        items.push({
+          key: rc.key,
+          category: 'management',
+          label: rc.icon + ' ' + rc.label,
+          description: last
+            ? `Last conducted ${daysSince === 0 ? 'today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`} (${last})`
+            : 'Never conducted',
+          status,
+          detail: null,
+          link: '/agency/performance',  // navigates to scorecard
+          loggable: true,               // shows "Mark as Done" in modal
+        });
+      }
 
       return items;
     },
