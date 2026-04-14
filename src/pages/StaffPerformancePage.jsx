@@ -46,8 +46,10 @@ import { useProducerTargets } from '../hooks/useProducerTargets';
 import { useRevenueEntries } from '../hooks/useRevenueEntries';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
+import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
 import PageSpinner from '../components/PageSpinner';
+import { buildAgencySlug, buildWeekLabel } from '../lib/exportFilename';
 // ScorecardPDF + @react-pdf/renderer loaded on-demand to avoid bloating the main bundle
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -102,6 +104,10 @@ const TABS = [
 const StaffPerformancePage = () => {
   const { user, currentAgencyId } = useAuth();
   const { platform, agency } = usePermissions();
+  const { data: currentAgency } = useCurrentAgency();
+  const agencySlug = buildAgencySlug(
+    currentAgency?.agencies?.brand_name || currentAgency?.agencies?.name
+  );
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('all');
@@ -449,7 +455,11 @@ const StaffPerformancePage = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `scorecard-${(effectiveRc.employee_name || 'employee').replace(/\s+/g, '-').toLowerCase()}-${weekStart}.pdf`;
+      const employeeSlug = (effectiveRc.employee_name || 'Employee')
+        .split(' ')
+        .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+        .join('-'); // "Tracy-Peacock"
+      a.download = `${agencySlug}_${employeeSlug}_Scorecard_Wk${buildWeekLabel(weekStart)}.pdf`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

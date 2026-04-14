@@ -10,7 +10,9 @@ import { usePermissions } from '../hooks/usePermissions';
 import { useAuth } from '../contexts/AuthContext';
 import { useTimeEntries, useRCData, useYTDEntries, useInvalidateTimeData } from '../hooks/useTimeAttendance';
 import { useActiveEmployees } from '../hooks/useEmployees';
+import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { supabase } from '../lib/supabase';
+import { buildAgencySlug, buildWeekLabel } from '../lib/exportFilename';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
 import WeekPickerCalendar from './components/time-attendance/WeekPickerCalendar';
@@ -327,7 +329,7 @@ function buildAttendanceFlagsSheet(ytdEntries, getEmployeeName, year) {
 
 // ── Build & Download XLSX ─────────────────────────────────────────────────────
 
-function exportToXLSX(entries, weekStart, getEmployeeName, ytdEntries, year) {
+function exportToXLSX(entries, weekStart, getEmployeeName, ytdEntries, year, agencySlug) {
   const wb = XLSX.utils.book_new();
 
   // Sheet 1: Weekly Detail
@@ -379,7 +381,11 @@ function exportToXLSX(entries, weekStart, getEmployeeName, ytdEntries, year) {
     XLSX.utils.book_append_sheet(wb, wsFlags, 'Attendance Flags');
   }
 
-  XLSX.writeFile(wb, `attendance-${weekStart}.xlsx`);
+  const hasYTD = ytdEntries && ytdEntries.length > 0;
+  const filename = hasYTD
+    ? `${agencySlug}_Attendance_YTD${year}_Wk${buildWeekLabel(weekStart)}.xlsx`
+    : `${agencySlug}_Attendance_Wk${buildWeekLabel(weekStart)}.xlsx`;
+  XLSX.writeFile(wb, filename);
 }
 
 // ── Page Component ─────────────────────────────────────────────────────────────
@@ -387,6 +393,10 @@ function exportToXLSX(entries, weekStart, getEmployeeName, ytdEntries, year) {
 const TimeAttendancePage = () => {
   const { platform, agency } = usePermissions();
   const { currentAgencyId } = useAuth();
+  const { data: currentAgency } = useCurrentAgency();
+  const agencySlug = buildAgencySlug(
+    currentAgency?.agencies?.brand_name || currentAgency?.agencies?.name
+  );
 
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('');
@@ -517,7 +527,7 @@ const TimeAttendancePage = () => {
       pendingExportRef.current = true;
       return;
     }
-    exportToXLSX(entries, weekStart, getEmployeeName, ytdData?.entries || [], currentYear);
+    exportToXLSX(entries, weekStart, getEmployeeName, ytdData?.entries || [], currentYear, agencySlug);
   }
 
   // When YTD data arrives and an export is pending, trigger download
@@ -525,9 +535,9 @@ const TimeAttendancePage = () => {
     if (pendingExportRef.current && ytdRequested && !ytdLoading && ytdData) {
       pendingExportRef.current = false;
       setPendingExport(false);
-      exportToXLSX(entries, weekStart, getEmployeeName, ytdData.entries || [], currentYear);
+      exportToXLSX(entries, weekStart, getEmployeeName, ytdData.entries || [], currentYear, agencySlug);
     }
-  }, [ytdRequested, ytdLoading, ytdData, entries, weekStart, getEmployeeName, currentYear]);
+  }, [ytdRequested, ytdLoading, ytdData, entries, weekStart, getEmployeeName, currentYear, agencySlug]);
 
   // ── Permission Check ─────────────────────────────────────────────────────
 
