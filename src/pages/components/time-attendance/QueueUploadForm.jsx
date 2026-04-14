@@ -4,9 +4,19 @@
 // Captures abandoned calls that never reach an agent — invisible in the Call Log.
 
 import { useState, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Upload, BarChart3, AlertCircle, CheckCircle, HelpCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import * as XLSX from 'xlsx';
+
+// ── Week Helpers ────────────────────────────────────────────────────────────────
+
+function toMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 // ── Time Parsing ────────────────────────────────────────────────────────────────
 
@@ -70,13 +80,75 @@ function abandonRateIndicator(rate, inbound) {
 
 // ── Component ───────────────────────────────────────────────────────────────────
 
-export default function QueueUploadForm({ orgId, onUploaded }) {
+export default function QueueUploadForm({ orgId, weekStart, onUploaded }) {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [preview, setPreview] = useState(null);
   const [detectedDate, setDetectedDate] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [callLogMissingWarning, setCallLogMissingWarning] = useState(false);
   const fileRef = useRef(null);
+
+  // ── Weekly coverage (Mon–Fri of selected week) ───────────────────────────────
+  const currentMonday = weekStart || toMonday(new Date());
+  const todayStr = new Date().toLocaleDateString('en-CA');
+
+  const { data: weekCoverage = [], refetch: refetchCoverage } = useQuery({
+    queryKey: ['queue_week_coverage', orgId, currentMonday],
+    queryFn: async () => {
+      const friday = new Date(currentMonday + 'T00:00:00');
+      friday.setDate(friday.getDate() + 4);
+      const fridayStr = friday.toLocaleDateString('en-CA');
+
+      const { data, error } = await supabase
+        .from('rc_queue_data')
+        .select('report_date, inbound, abandoned')
+        .eq('org_id', orgId)
+        .gte('report_date', currentMonday)
+        .lte('report_date', fridayStr);
+
+      if (error) throw error;
+
+      // Group by day — sum inbound across all queues
+      const byDay = {};
+      for (const row of data || []) {
+        if (!byDay[row.report_date]) {
+          byDay[row.report_date] = { inbound: 0, abandoned: 0 };
+        }
+        byDay[row.report_date].inbound += row.inbound || 0;
+        byDay[row.report_date].abandoned += row.abandoned || 0;
+      }
+
+      // Build Mon–Fri array
+      const days = [];
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(currentMonday + 'T00:00:00');
+        d.setDate(d.getDate() + i);
+        const ds = d.toLocaleDateString('en-CA');
+        const isFuture = ds > todayStr;
+        const isToday = ds === todayStr;
+        const dayData = byDay[ds] || null;
+        const isPast = ds < todayStr;
+
+        days.push({
+          date: ds,
+          label: d.toLocaleDateString('en-US', {
+            weekday: 'short', month: 'numeric', day: 'numeric'
+          }),
+          isFuture,
+          isToday,
+          isPast,
+          data: dayData,
+          abandonRate: dayData && dayData.inbound > 0
+            ? Math.round((dayData.abandoned / dayData.inbound) * 100)
+            : null,
+        });
+      }
+      return days;
+    },
+    enabled: !!orgId,
+    staleTime: 60 * 1000,
+  });
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -85,6 +157,7 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
     setMsg(null);
     setPreview(null);
     setDetectedDate(null);
+    setCallLogMissingWarning(false);
 
     try {
       const buffer = await file.arrayBuffer();
@@ -158,6 +231,20 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
 
       setPreview(parsed);
       setDetectedDate(reportDate);
+
+      // Check if call log exists for this date — surface cross-check warning
+      // before the principal confirms upload.
+      if (reportDate) {
+        const { data: clCheck } = await supabase
+          .from('rc_call_log')
+          .select('id')
+          .eq('org_id', orgId)
+          .eq('call_date', reportDate)
+          .limit(1);
+        setCallLogMissingWarning(!clCheck?.length);
+      } else {
+        setCallLogMissingWarning(false);
+      }
     } catch (err) {
       setMsg({ type: 'error', text: `Failed to parse file: ${err.message}` });
     }
@@ -188,6 +275,22 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
+      // Cross-check: does call log have any data for this date?
+      const { data: callLogCheck } = await supabase
+        .from('rc_call_log')
+        .select('id')
+        .eq('org_id', orgId)
+        .eq('call_date', detectedDate)
+        .limit(1);
+
+      const callLogEmpty = !callLogCheck?.length;
+      const queueHasInbound = totals && totals.inbound > 0;
+      // Flag if queue shows inbound calls but call log has zero agent records.
+      // This is NOT a missing upload — it means calls came in but no agent
+      // answered or made calls that day. Could indicate staffing gap or
+      // that the office was unmanned.
+      const noAgentActivity = callLogEmpty && queueHasInbound;
+
       const records = preview.map((row) => ({
         org_id: orgId,
         report_date: detectedDate,
@@ -204,10 +307,19 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
       if (error) {
         setMsg({ type: 'error', text: `Upload failed: ${error.message}` });
       } else {
-        setMsg({ type: 'success', text: `${records.length} queue records uploaded for ${formatDateShort(detectedDate)}.` });
+        let successText = `${records.length} queue records uploaded for ${formatDateShort(detectedDate)}.`;
+        if (noAgentActivity) {
+          successText += ` \u26A0 No agent activity on record for this date \u2014 ${totals.inbound} calls entered the queue with no agent calls logged.`;
+        }
+        setMsg({
+          type: noAgentActivity ? 'warning' : 'success',
+          text: successText,
+        });
         setPreview(null);
         setDetectedDate(null);
+        setCallLogMissingWarning(false);
         if (fileRef.current) fileRef.current.value = '';
+        refetchCoverage();
         if (onUploaded) onUploaded();
       }
     } catch (err) {
@@ -249,6 +361,84 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
             <li><strong>Filters</strong> &mdash; date range auto-detection</li>
             <li><strong>Queues</strong> &mdash; per-queue breakdown (Name, # Inbound, # Answered, # Abandoned, etc.)</li>
           </ul>
+        </div>
+      )}
+
+      {/* Weekly queue upload status */}
+      {weekCoverage.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <p style={{
+            fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)',
+            textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8,
+          }}>
+            {currentMonday === toMonday(new Date())
+              ? 'Upload Status \u2014 This Week'
+              : `Upload Status \u2014 Week of ${new Date(currentMonday + 'T00:00:00')
+                  .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+            }
+          </p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {weekCoverage.map((day) => {
+              const uploaded = !!day.data;
+              const missing = !uploaded && day.isPast && !day.isToday;
+              const highAbandon = uploaded && day.abandonRate >= 25;
+
+              return (
+                <div
+                  key={day.date}
+                  title={
+                    uploaded
+                      ? `${day.date}: ${day.data.inbound} inbound \u00B7 ${day.data.abandoned} abandoned \u00B7 ${day.abandonRate}% abandon rate`
+                      : day.isFuture ? `${day.date}: future` : `${day.date}: not uploaded`
+                  }
+                  style={{
+                    flex: 1, padding: '8px 6px', borderRadius: 8, textAlign: 'center',
+                    border: `1px solid ${
+                      highAbandon ? '#EF444433'
+                      : uploaded ? '#10B98133'
+                      : missing ? '#EF444433'
+                      : 'var(--qs-border)'
+                    }`,
+                    background: highAbandon ? '#EF444409'
+                      : uploaded ? '#10B98109'
+                      : missing ? '#EF444409'
+                      : 'var(--qs-elevated)',
+                  }}
+                >
+                  <div style={{
+                    fontSize: 10, fontWeight: 600, marginBottom: 2,
+                    color: highAbandon ? '#EF4444'
+                      : uploaded ? '#10B981'
+                      : missing ? '#EF4444'
+                      : 'var(--qs-muted)',
+                  }}>
+                    {day.label}
+                  </div>
+                  <div style={{ fontSize: 16 }}>
+                    {uploaded ? (highAbandon ? '\u26A0' : '\u2713') : missing ? '!' : '\u2014'}
+                  </div>
+                  {uploaded && (
+                    <div style={{ fontSize: 9, color: highAbandon ? '#EF4444' : 'var(--qs-muted)', marginTop: 2 }}>
+                      {day.abandonRate}% abn
+                    </div>
+                  )}
+                  {missing && (
+                    <div style={{ fontSize: 9, color: '#EF4444', marginTop: 2 }}>
+                      missing
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Missing days callout */}
+          {weekCoverage.some(d => !d.data && d.isPast && !d.isToday) && (
+            <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>
+              {'\u26A0'} {weekCoverage.filter(d => !d.data && d.isPast && !d.isToday).length} day(s)
+              missing queue uploads this week
+            </p>
+          )}
         </div>
       )}
 
@@ -330,6 +520,19 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
             </div>
           )}
 
+          {/* Call log cross-check warning — surfaced before confirming upload */}
+          {callLogMissingWarning && totals?.inbound > 0 && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-amber-300 bg-amber-900/20 border border-amber-700/40 rounded-lg p-3">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>
+                <strong>No agent activity on record for {formatDateShort(detectedDate)}.</strong>{' '}
+                Queue shows {totals.inbound} inbound call{totals.inbound !== 1 ? 's' : ''} with{' '}
+                {totals.abandoned} abandoned &mdash; but no agent calls are logged for this day.
+                Verify staffing coverage.
+              </span>
+            </div>
+          )}
+
           <div className="mt-3 flex items-center gap-3">
             <button
               onClick={confirmUpload}
@@ -340,7 +543,12 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
               {uploading ? 'Uploading...' : 'Confirm Upload'}
             </button>
             <button
-              onClick={() => { setPreview(null); setDetectedDate(null); if (fileRef.current) fileRef.current.value = ''; }}
+              onClick={() => {
+                setPreview(null);
+                setDetectedDate(null);
+                setCallLogMissingWarning(false);
+                if (fileRef.current) fileRef.current.value = '';
+              }}
               className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
               Cancel
@@ -350,8 +558,17 @@ export default function QueueUploadForm({ orgId, onUploaded }) {
       )}
 
       {msg && (
-        <div className={`mt-3 flex items-center gap-1.5 text-sm ${msg.type === 'error' ? 'text-red-400' : 'text-emerald-400'}`}>
-          {msg.type === 'error' ? <AlertCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+        <div className={`mt-3 flex items-center gap-1.5 text-sm ${
+          msg.type === 'error'   ? 'text-red-400'
+          : msg.type === 'warning' ? 'text-amber-400'
+          : 'text-emerald-400'
+        }`}>
+          {msg.type === 'error'
+            ? <AlertCircle className="w-4 h-4" />
+            : msg.type === 'warning'
+            ? <AlertCircle className="w-4 h-4" />
+            : <CheckCircle className="w-4 h-4" />
+          }
           {msg.text}
         </div>
       )}
