@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase';
 import { useTeamAvailability, useSetTransferPhone, validateE164 } from '../hooks/useAgentAvailability';
 import { useAllProducerTargets, useSaveProducerTargets, PRODUCER_DEFAULT_TARGETS } from '../hooks/useProducerTargets';
 import { useActiveEmployees } from '../hooks/useEmployees';
+import EmployeeInviteModal from './components/settings/EmployeeInviteModal';
 import PageSpinner from '../components/PageSpinner';
 
 const TABS = [
@@ -21,6 +22,7 @@ const TABS = [
   { key: 'commission', label: 'Commission', icon: DollarSign },
   { key: 'territory', label: 'Territory', icon: Map },
   { key: 'producer_goals', label: 'Producer Goals', icon: Target },
+  { key: 'employees', label: 'Employees', icon: Users },
 ];
 
 const US_STATES = [
@@ -99,10 +101,123 @@ const AgencySettingsPage = () => {
         {activeTab === 'commission' && <CommissionTab agencyId={currentAgencyId} isAgent={isAgent} />}
         {activeTab === 'territory' && <TerritoryTab agency={agency} agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
         {activeTab === 'producer_goals' && <ProducerGoalsTab agencyId={currentAgencyId} isAgent={isAgent} />}
+        {activeTab === 'employees' && <EmployeesTab agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
       </div>
     </div>
   );
 };
+
+// ─── Employees Tab ────────────────────────────────────────────────────────────
+// Roster of active employees with their auth-link status. Principals can send
+// a Supabase invite to any employee whose auth_user_id is null. Once linked,
+// the employee can sign in and use /my/queue, /my/scorecard, /punch.
+
+function EmployeesTab({ agencyId, isAgent, queryClient }) {
+  const { data: employees = [], isLoading } = useActiveEmployees(agencyId);
+  const [inviteTarget, setInviteTarget] = useState(null);
+
+  if (isLoading) {
+    return (
+      <div className="dark-card text-center py-8">
+        <p style={{ color: 'var(--qs-dim)' }}>Loading employees...</p>
+      </div>
+    );
+  }
+
+  if (!employees.length) {
+    return (
+      <div className="dark-card text-center py-8">
+        <Users className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
+        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--qs-bright)' }}>No Active Employees</h2>
+        <p style={{ color: 'var(--qs-dim)' }}>Add employees from the Employee Roster to invite them to QuoteSync.</p>
+      </div>
+    );
+  }
+
+  const linkedCount = employees.filter(e => e.auth_user_id).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="dark-card">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-primary-600" />
+            <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Employee Access</h2>
+          </div>
+          <span className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>
+            {linkedCount} of {employees.length} linked
+          </span>
+        </div>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
+          Invite employees to QuoteSync so they can access their Queue, Scorecard,
+          and Punch Clock. They'll receive an email with a link to set up their account.
+        </p>
+      </div>
+
+      <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[500px] text-sm">
+            <thead className="bg-qs-elevated border-b border-qs-border">
+              <tr>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>Name</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>Role</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>Login</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-qs-border">
+              {employees.map((emp) => {
+                const displayName = `${emp.preferred_name || emp.first_name} ${emp.last_name || ''}`.trim();
+                const roleLabel = (emp.roles || []).join(', ') || '—';
+                return (
+                  <tr key={emp.id}>
+                    <td className="px-4 py-3 font-medium" style={{ color: 'var(--qs-bright)' }}>
+                      {displayName}
+                    </td>
+                    <td className="px-4 py-3" style={{ color: 'var(--qs-dim)' }}>
+                      {roleLabel}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {emp.auth_user_id ? (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: '#10B981',
+                          background: '#10B98111', padding: '3px 8px', borderRadius: 4 }}>
+                          ● Active
+                        </span>
+                      ) : isAgent ? (
+                        <button
+                          onClick={() => setInviteTarget(emp)}
+                          style={{ fontSize: 12, fontWeight: 600, padding: '4px 12px',
+                            borderRadius: 6, background: '#3B82F622',
+                            border: '1px solid #3B82F633', color: '#3B82F6', cursor: 'pointer' }}>
+                          Invite
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)' }}>
+                          Not linked
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {inviteTarget && (
+        <EmployeeInviteModal
+          employee={inviteTarget}
+          agencyId={agencyId}
+          onClose={() => setInviteTarget(null)}
+          onSuccess={() => {
+            setInviteTarget(null);
+            queryClient.invalidateQueries({ queryKey: ['employees', 'active', agencyId] });
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Profile Tab ──────────────────────────────────────────────────────────────
 
