@@ -88,6 +88,7 @@ const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardP
 const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
 const AgencySetupPage = lazyWithRetry(() => import('./pages/AgencySetupPage'));
 const AgencyTeamPage = lazyWithRetry(() => import('./pages/AgencyTeamPage'));
+const CadenceAgendaPage = lazyWithRetry(() => import('./pages/CadenceAgendaPage'));
 const EmployeeRosterPage = lazyWithRetry(() => import('./pages/EmployeeRosterPage'));
 const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
 const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
@@ -361,6 +362,20 @@ function App() {
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencyTeamPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Management Cadence Agenda (principal only) */}
+            <Route
+              path="agency/cadence/:cadenceType/:employeeId"
+              element={
+                <ProtectedRoute requiredAgencyRole="principal">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <CadenceAgendaPage />
                     </Suspense>
                   </ErrorBoundary>
                 </ProtectedRoute>

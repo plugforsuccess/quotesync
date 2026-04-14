@@ -142,11 +142,57 @@ export function useManagementCadence(agencyId) {
     return { error };
   }
 
+  // Per-employee agency_cadences that are past their next_due_at.
+  // Deep-links straight to the agenda page for each one.
+  const { data: overdueCadences = [] } = useQuery({
+    queryKey: ['overdue_cadences', agencyId],
+    queryFn: async () => {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('agency_cadences')
+        .select('*, employees(first_name, last_name), cadence_templates(label)')
+        .eq('agency_id', agencyId)
+        .eq('active', true)
+        .lt('next_due_at', now)
+        .order('next_due_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Commitments past their due_date that haven't been closed yet
+  const { data: overdueCommitments = [] } = useQuery({
+    queryKey: ['overdue_commitments', agencyId],
+    queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('cadence_commitments')
+        .select('id, description, due_date, cadence_type, employee_id, employees(first_name, last_name)')
+        .eq('agency_id', agencyId)
+        .eq('closed', false)
+        .lt('due_date', today);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Total actionable count for bell badge:
-  // overdue/due cadences + morning huddle if overdue
+  // overdue/due quick-log cadences + per-employee overdue agenda cadences
+  // + overdue commitments
   const actionableCount = cadenceStatus.filter(
     c => c.status === 'due' || c.status === 'overdue'
-  ).length;
+  ).length + overdueCadences.length + overdueCommitments.length;
 
-  return { cadenceStatus, isLoading, logCadenceEvent, actionableCount };
+  return {
+    cadenceStatus,
+    isLoading,
+    logCadenceEvent,
+    actionableCount,
+    overdueCadences,
+    overdueCommitments,
+  };
 }

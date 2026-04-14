@@ -2,12 +2,47 @@
 // Reuses useRetentionMetrics, RetentionScorecard, and BonusVerificationAlert.
 
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
 import { BonusVerificationAlert } from './components/time-attendance/DiscrepancyAlerts';
 import { RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/staffPerformanceDefaults';
+
+// Strip showing this employee's open commitments from cadence meetings.
+// Renders above the scorecard so they see pending follow-ups at a glance.
+function OpenCommitmentsStrip({ commitments }) {
+  if (!commitments?.length) return null;
+  return (
+    <div style={{
+      background: '#F59E0B11', border: '1px solid #F59E0B33',
+      borderRadius: 10, padding: '12px 14px', marginBottom: 20,
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#F59E0B',
+        textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+        Open Commitments
+      </div>
+      {commitments.map(c => {
+        const isOverdue = new Date(c.due_date) < new Date();
+        return (
+          <div key={c.id} style={{
+            display: 'flex', justifyContent: 'space-between',
+            fontSize: 12, padding: '5px 0',
+            borderBottom: '1px solid #F59E0B22',
+          }}>
+            <span style={{ color: 'var(--qs-text)' }}>{c.description}</span>
+            <span style={{ color: isOverdue ? '#EF4444' : 'var(--qs-muted)',
+              flexShrink: 0, marginLeft: 12 }}>
+              {isOverdue ? '⚠️ ' : ''}Due {c.due_date}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function MyScorecardPage() {
   const { data: employee } = useCurrentEmployee();
@@ -44,6 +79,23 @@ export default function MyScorecardPage() {
     month:      selectedMonth,
   });
 
+  // Open commitments from cadence meetings, shown as a strip above the scorecard
+  const { data: openCommitments = [] } = useQuery({
+    queryKey: ['my_commitments', employee?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cadence_commitments')
+        .select('id, description, due_date, cadence_events(cadence_type, conducted_at)')
+        .eq('employee_id', employee.id)
+        .eq('closed', false)
+        .order('due_date', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!employee?.id,
+    staleTime: 5 * 60 * 1000,
+  });
+
   // Sales-only employees don't have a retention scorecard yet. Show a
   // placeholder until the new business / commission view is built. This
   // sits below the hooks so React's hook order stays stable.
@@ -57,6 +109,7 @@ export default function MyScorecardPage() {
         <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 24 }}>
           {employee?.preferred_name || employee?.first_name} · Sales Producer
         </div>
+        <OpenCommitmentsStrip commitments={openCommitments} />
         <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
           borderRadius: 12, padding: 32, textAlign: 'center' }}>
           <p style={{ color: 'var(--qs-muted)', fontSize: 14 }}>
@@ -89,6 +142,9 @@ export default function MyScorecardPage() {
             : 'Service'}
         </div>
       </div>
+
+      {/* Open commitments from cadence meetings */}
+      <OpenCommitmentsStrip commitments={openCommitments} />
 
       {/* Retention scorecard */}
       <RetentionScorecard

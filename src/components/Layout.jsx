@@ -32,19 +32,23 @@ function Layout({ forcePlane = null }) {
 
   // Upload/cadence checklist — principals only. useUploadChecklist already
   // includes management cadence items (category: 'management') sourced from
-  // cadence_events; we only need useManagementCadence for its logCadenceEvent
-  // action.
+  // cadence_events; useManagementCadence provides the logCadenceEvent action
+  // plus per-employee overdue cadences and overdue commitments for the modal.
   const [checklistOpen, setChecklistOpen] = useState(false);
   const { data: allChecklistItems = [] } = useUploadChecklist(
     currentAgencyRole === 'principal' ? currentAgencyId : null
   );
-  const { logCadenceEvent } = useManagementCadence(
+  const {
+    logCadenceEvent,
+    overdueCadences,
+    overdueCommitments,
+  } = useManagementCadence(
     currentAgencyRole === 'principal' ? currentAgencyId : null
   );
 
   const actionableCount = allChecklistItems.filter(
     i => i.status === 'due' || i.status === 'overdue'
-  ).length;
+  ).length + (overdueCadences?.length || 0) + (overdueCommitments?.length || 0);
 
   // Auto-show modal once per session if principal has actionable items
   useEffect(() => {
@@ -532,6 +536,8 @@ function Layout({ forcePlane = null }) {
         <UploadChecklistModal
           items={allChecklistItems}
           agencyId={currentAgencyId}
+          overdueCadences={overdueCadences}
+          overdueCommitments={overdueCommitments}
           onDismiss={() => setChecklistOpen(false)}
           onLogCadence={logCadenceEvent}
         />
