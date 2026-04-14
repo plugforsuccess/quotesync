@@ -3,6 +3,7 @@
 
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
@@ -71,7 +72,10 @@ export default function RetentionPage() {
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("at_risk");
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState(
+    () => searchParams.get("tab") || "at_risk"
+  );
   const [urgentFilter, setUrgentFilter] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);

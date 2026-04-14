@@ -38,6 +38,7 @@ export function useUploadChecklist(agencyId) {
       const today = new Date();
       const todayStr = today.toLocaleDateString('en-CA');
       const dayOfMonth = today.getDate();
+      const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
       const currentMonthStart = new Date(today.getFullYear(), today.getMonth(), 1)
         .toLocaleDateString('en-CA');
       const priorMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1)
@@ -158,7 +159,7 @@ export function useUploadChecklist(agencyId) {
           : 'All days uploaded',
         status: callLogDue ? (missingCallLogDays.length > 2 ? 'overdue' : 'due') : 'current',
         detail: callLogDue ? missingCallLogDays.join(', ') : null,
-        link: '/agency/performance',
+        link: '/agency/staff-performance?tab=individual',
       });
 
       // 2. Daily Queue Report
@@ -170,21 +171,34 @@ export function useUploadChecklist(agencyId) {
         description: queueDue ? 'Not uploaded this week' : 'Uploaded this week',
         status: queueDue ? 'due' : 'current',
         detail: null,
-        link: '/agency/performance',
+        link: '/agency/staff-performance?tab=individual',
       });
 
-      // 3. Weekly User Summary — only show if it's Monday or later and not uploaded
-      const weeklySummaryDue = !weeklySummary.data?.length;
+      // 3. Weekly User Summary — only due once the week is effectively over
+      // (Friday+). Earlier in the week there's nothing to summarize yet, so
+      // show as 'upcoming' to avoid a false-positive on Mon/Tue/Wed/Thu.
+      const weeklySummaryUploaded = !!weeklySummary.data?.length;
+      const weekIsReady = dayOfWeek === 0 || dayOfWeek >= 5; // Fri, Sat, Sun
+      let weeklySummaryStatus;
+      let weeklySummaryDescription;
+      if (weeklySummaryUploaded) {
+        weeklySummaryStatus = 'current';
+        weeklySummaryDescription = 'Uploaded for current week';
+      } else if (weekIsReady) {
+        weeklySummaryStatus = 'due';
+        weeklySummaryDescription = `Not uploaded for week of ${currentWeekMonday}`;
+      } else {
+        weeklySummaryStatus = 'upcoming';
+        weeklySummaryDescription = 'Upload Friday or later — week still in progress';
+      }
       items.push({
         key: 'weekly_summary',
         category: 'performance',
         label: 'Weekly User Summary',
-        description: weeklySummaryDue
-          ? `Not uploaded for week of ${currentWeekMonday}`
-          : 'Uploaded for current week',
-        status: weeklySummaryDue ? 'due' : 'current',
+        description: weeklySummaryDescription,
+        status: weeklySummaryStatus,
         detail: null,
-        link: '/agency/performance',
+        link: '/agency/staff-performance?tab=individual',
         optional: true,
       });
 
@@ -318,8 +332,8 @@ export function useUploadChecklist(agencyId) {
             : 'Never conducted',
           status,
           detail: null,
-          link: '/agency/performance',  // navigates to scorecard
-          loggable: true,               // shows "Mark as Done" in modal
+          link: '/agency/staff-performance',  // navigates to scorecard
+          loggable: true,                     // shows "Mark as Done" in modal
         });
       }
 
