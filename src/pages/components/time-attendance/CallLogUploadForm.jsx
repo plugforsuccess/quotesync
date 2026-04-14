@@ -12,6 +12,7 @@
 // - Upload result shows inserted/ignored/invalid counts
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Upload, Phone, AlertCircle, CheckCircle, HelpCircle, X, UserX } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { normalizeForLookup } from '../../../hooks/useEmployees';
@@ -262,6 +263,85 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
   // Store raw file buffer for SHA-256 computation during upload
   const fileBufferRef = useRef(null);
   const fileNameRef = useRef(null);
+
+  // ── Weekly coverage (Mon–Fri of current week) ────────────────────────────────
+  const today = new Date();
+  const monday = (() => {
+    const d = new Date(today);
+    const day = d.getDay();
+    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    d.setHours(0, 0, 0, 0);
+    return d.toLocaleDateString('en-CA'); // YYYY-MM-DD
+  })();
+
+  const { data: weekCoverage = [], refetch: refetchCoverage } = useQuery({
+    queryKey: ['call_log_week_coverage', orgId, monday],
+    queryFn: async () => {
+      const friday = new Date(monday + 'T00:00:00');
+      friday.setDate(friday.getDate() + 4);
+      const fridayStr = friday.toLocaleDateString('en-CA');
+
+      const { data, error } = await supabase
+        .from('rc_call_log')
+        .select('call_date, call_direction, employee_user_id')
+        .eq('org_id', orgId)
+        .gte('call_date', monday)
+        .lte('call_date', fridayStr);
+
+      if (error) throw error;
+
+      // Group by call_date
+      const byDay = {};
+      for (const row of data || []) {
+        if (!byDay[row.call_date]) {
+          byDay[row.call_date] = { records: 0, employees: new Set(), outbound: 0, inbound: 0 };
+        }
+        byDay[row.call_date].records++;
+        byDay[row.call_date].employees.add(row.employee_user_id);
+        if (row.call_direction === 'Outbound') byDay[row.call_date].outbound++;
+        else byDay[row.call_date].inbound++;
+      }
+
+      // Build Mon–Fri array
+      const todayStr = today.toLocaleDateString('en-CA');
+      const days = [];
+      for (let i = 0; i < 5; i++) {
+        const d = new Date(monday + 'T00:00:00');
+        d.setDate(d.getDate() + i);
+        const ds = d.toLocaleDateString('en-CA');
+        const isFuture = ds > todayStr;
+        const isToday = ds === todayStr;
+        days.push({
+          date: ds,
+          label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }),
+          isFuture,
+          isToday,
+          data: byDay[ds] || null,
+        });
+      }
+      return days;
+    },
+    enabled: !!orgId,
+    staleTime: 60 * 1000,
+  });
+
+  // ── Recent upload batches ────────────────────────────────────────────────────
+  const { data: recentBatches = [], refetch: refetchBatches } = useQuery({
+    queryKey: ['rc_call_log_batches_recent', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rc_call_log_batches')
+        .select('id, source_filename, uploaded_at, rows_inserted, rows_duplicate, rows_invalid')
+        .eq('org_id', orgId)
+        .gt('rows_inserted', 0) // only successful uploads
+        .order('uploaded_at', { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!orgId,
+    staleTime: 60 * 1000,
+  });
 
   async function handleFile(e) {
     const file = e.target.files?.[0];
@@ -519,6 +599,8 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         fileBufferRef.current = null;
         fileNameRef.current = null;
         if (fileRef.current) fileRef.current.value = '';
+        refetchCoverage();
+        refetchBatches();
         if (onUploaded) onUploaded();
       }
     } catch (err) {
@@ -546,7 +628,8 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           <div>
             <h3 className="text-lg font-semibold text-qs-bright">Daily Call Log Upload</h3>
             <p className="text-sm text-qs-subtle">
-              Upload the RingCentral Call Log export (XLSX or CSV). Primary data source — upload daily at end of business.
+              Upload the RingCentral Call Log export (XLSX or CSV). Export all employees unfiltered —
+              one upload covers your entire team. Upload daily at end of business.
             </p>
           </div>
         </div>
@@ -563,9 +646,24 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           <p className="font-medium mb-2">How to export the Call Log from RingCentral:</p>
           <ol className="list-decimal list-inside space-y-1 text-primary-300 mb-3">
             <li>Go to RingCentral Analytics &rarr; Performance Reports &rarr; Calls</li>
-            <li>Set the date range to the target day or week</li>
+            <li>Set the date range to <strong>yesterday</strong> (single day)</li>
+            <li>
+              <strong>Remove any user/agent filter</strong> &mdash; export all employees at once.
+              One file covers your entire team regardless of size.
+            </li>
             <li>Export as XLSX or CSV</li>
           </ol>
+          <div style={{
+            background: '#3B82F611', border: '1px solid #3B82F633',
+            borderRadius: 6, padding: '8px 12px', marginBottom: 12, fontSize: 12,
+          }}>
+            <strong style={{ color: '#3B82F6' }}>💡 One upload = all agents</strong>
+            <p style={{ color: 'var(--qs-dim)', marginTop: 4 }}>
+              Don't filter by employee in RingCentral before exporting. The system
+              automatically matches each call row to the correct agent by name.
+              With 10 employees, you still upload exactly one file per day.
+            </p>
+          </div>
           <p className="font-medium mb-2">Expected columns (from the &ldquo;Calls&rdquo; sheet):</p>
           <ul className="list-disc list-inside space-y-1 text-primary-300">
             <li><strong>From Name</strong>, <strong>To Name</strong> &mdash; agent identification</li>
@@ -575,6 +673,103 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             <li><strong>Queue</strong> &mdash; Sales or Service queue name</li>
           </ul>
         </div>
+      )}
+
+      {/* Weekly upload coverage */}
+      {weekCoverage.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)',
+            textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+            This Week's Upload Status
+          </p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            {weekCoverage.map((day) => {
+              const uploaded = !!day.data;
+              const missing = !uploaded && !day.isFuture && !day.isToday;
+
+              return (
+                <div
+                  key={day.date}
+                  title={
+                    uploaded
+                      ? `${day.date}: ${day.data.records} records · ${day.data.employees.size} employee(s) · ${day.data.outbound} out / ${day.data.inbound} in`
+                      : day.isFuture
+                      ? `${day.date}: future date`
+                      : `${day.date}: not yet uploaded`
+                  }
+                  style={{
+                    flex: 1, padding: '8px 6px', borderRadius: 8, textAlign: 'center',
+                    border: `1px solid ${uploaded ? '#10B98133' : missing ? '#EF444433' : 'var(--qs-border)'}`,
+                    background: uploaded ? '#10B98109' : missing ? '#EF444409' : 'var(--qs-elevated)',
+                  }}
+                >
+                  <div style={{ fontSize: 10, fontWeight: 600,
+                    color: uploaded ? '#10B981' : missing ? '#EF4444' : 'var(--qs-muted)',
+                    marginBottom: 2 }}>
+                    {day.label}
+                  </div>
+                  <div style={{ fontSize: 16 }}>
+                    {uploaded ? '✓' : missing ? '!' : day.isToday ? '·' : '—'}
+                  </div>
+                  {uploaded && (
+                    <div style={{ fontSize: 9, color: 'var(--qs-muted)', marginTop: 2 }}>
+                      {day.data.records} calls
+                    </div>
+                  )}
+                  {missing && (
+                    <div style={{ fontSize: 9, color: '#EF4444', marginTop: 2 }}>
+                      missing
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Missing days callout */}
+          {weekCoverage.some(d => !d.data && !d.isFuture && !d.isToday) && (
+            <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>
+              ⚠ {weekCoverage.filter(d => !d.data && !d.isFuture && !d.isToday).length} day(s)
+              missing uploads this week
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Recent uploads */}
+      {recentBatches.length > 0 && (
+        <details style={{ marginBottom: 12 }}>
+          <summary style={{ fontSize: 11, color: 'var(--qs-subtle)', cursor: 'pointer',
+            userSelect: 'none', marginBottom: 4 }}>
+            Recent uploads ({recentBatches.length})
+          </summary>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+            {recentBatches.map(b => (
+              <div key={b.id} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                fontSize: 11, color: 'var(--qs-dim)', padding: '4px 8px',
+                background: 'var(--qs-elevated)', borderRadius: 6,
+              }}>
+                <span style={{ color: 'var(--qs-text)', fontWeight: 500 }}>
+                  {new Date(b.uploaded_at).toLocaleDateString('en-US',
+                    { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                </span>
+                <span style={{ color: 'var(--qs-muted)', fontSize: 10, maxWidth: 160,
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {b.source_filename}
+                </span>
+                <span style={{ color: '#10B981', fontWeight: 600 }}>
+                  +{b.rows_inserted}
+                  {b.rows_duplicate > 0 &&
+                    <span style={{ color: 'var(--qs-muted)', fontWeight: 400 }}>
+                      {' '}({b.rows_duplicate} dupes)
+                    </span>
+                  }
+                </span>
+              </div>
+            ))}
+          </div>
+        </details>
       )}
 
       <div className="flex items-center gap-3">
