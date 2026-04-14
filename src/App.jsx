@@ -99,6 +99,7 @@ const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagem
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
 const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
+const ChangePasswordPage = lazyWithRetry(() => import('./pages/ChangePasswordPage'));
 
 // Loading fallback component
 const PageLoader = () => <PageSpinner />;
@@ -151,15 +152,25 @@ function App() {
           {/* Employee punch clock — public, no auth required */}
           <Route path="/punch" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PunchPage /></Suspense></ErrorBoundary>} />
 
-          {/* Employee-scoped routes — personal queue, scorecard */}
-          <Route path="/my" element={
-            <EmployeeRoute>
-              <EmployeeLayout />
-            </EmployeeRoute>
-          }>
-            <Route index element={<Navigate to="/my/queue" replace />} />
-            <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
-            <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+          {/* Employee-scoped routes — personal queue, scorecard.
+              The /my/change-password route is registered OUTSIDE the
+              EmployeeRoute gate so the gate's redirect to it doesn't
+              recurse and re-redirect. */}
+          <Route path="/my">
+            <Route path="change-password" element={
+              <ErrorBoundary fallback={<PageError />}>
+                <Suspense fallback={<PageLoader />}><ChangePasswordPage /></Suspense>
+              </ErrorBoundary>
+            } />
+            <Route element={
+              <EmployeeRoute>
+                <EmployeeLayout />
+              </EmployeeRoute>
+            }>
+              <Route index element={<Navigate to="/my/queue" replace />} />
+              <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
+              <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+            </Route>
           </Route>
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}

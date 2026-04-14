@@ -7,11 +7,12 @@ import { useAuth } from '../contexts/AuthContext';
 import { useAgencyDetail, useAgencyCarrierConfig, useAgencyCommissionRatesRaw, useUpsertCommissionRates, useUpdateRevenueGoals, useAgencyRoutingRulesForAgent, useCreateAgencyRoutingRule } from '../hooks/useAgencies';
 import { useTrailingRevenueStats } from '../hooks/useTrailingRevenueStats';
 import { useAgencyProductConfig } from '../hooks/useAgencyProductConfig';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useTeamAvailability, useSetTransferPhone, validateE164 } from '../hooks/useAgentAvailability';
 import { useAllProducerTargets, useSaveProducerTargets, PRODUCER_DEFAULT_TARGETS } from '../hooks/useProducerTargets';
 import { useActiveEmployees } from '../hooks/useEmployees';
+import EmployeeInviteModal from './components/settings/EmployeeInviteModal';
 import PageSpinner from '../components/PageSpinner';
 
 const TABS = [
@@ -21,6 +22,7 @@ const TABS = [
   { key: 'commission', label: 'Commission', icon: DollarSign },
   { key: 'territory', label: 'Territory', icon: Map },
   { key: 'producer_goals', label: 'Producer Goals', icon: Target },
+  { key: 'team', label: 'Team', icon: Users },
 ];
 
 const US_STATES = [
@@ -99,10 +101,270 @@ const AgencySettingsPage = () => {
         {activeTab === 'commission' && <CommissionTab agencyId={currentAgencyId} isAgent={isAgent} />}
         {activeTab === 'territory' && <TerritoryTab agency={agency} agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
         {activeTab === 'producer_goals' && <ProducerGoalsTab agencyId={currentAgencyId} isAgent={isAgent} />}
+        {activeTab === 'team' && (
+          <TeamTab agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />
+        )}
       </div>
     </div>
   );
 };
+
+// ─── Team Tab ─────────────────────────────────────────────────────────────────
+// Single-pane summary of every account connected to the agency: their email,
+// agency role, employee record (if any), and login status. Employees without
+// an auth_user_id surface in a separate section with an Invite button so the
+// principal can finish account setup without leaving Settings.
+
+const TEAM_ROLE_CONFIG = {
+  principal: { label: 'Principal',  color: '#10B981', bg: '#10B98111' },
+  employee:  { label: 'Employee',   color: '#3B82F6', bg: '#3B82F611' },
+  producer:  { label: 'Producer',   color: '#8B5CF6', bg: '#8B5CF611' },
+  manager:   { label: 'Manager',    color: '#F59E0B', bg: '#F59E0B11' },
+  owner:     { label: 'Owner',      color: '#EF4444', bg: '#EF444411' },
+};
+
+function TeamTab({ agencyId, isAgent }) {
+  const [inviteTarget, setInviteTarget] = useState(null);
+
+  // Fetch all agency memberships with profile + employee linkage
+  const { data: members, isLoading, refetch } = useQuery({
+    queryKey: ['team_access_summary', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agency_memberships')
+        .select(`
+          user_id,
+          agency_role,
+          status,
+          profiles (
+            id,
+            email,
+            full_name
+          )
+        `)
+        .eq('agency_id', agencyId)
+        .eq('status', 'active')
+        .order('agency_role');
+
+      if (error) throw error;
+
+      // For each member, check if they have an employee record
+      const { data: employees } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, auth_user_id, roles, must_reset_password')
+        .eq('org_id', agencyId);
+
+      const empByAuthId = {};
+      for (const e of employees || []) {
+        if (e.auth_user_id) empByAuthId[e.auth_user_id] = e;
+      }
+
+      // Also find unlinked employees (auth_user_id is null)
+      const unlinkedEmployees = (employees || []).filter(e => !e.auth_user_id);
+
+      return {
+        members: (data || []).map(m => ({
+          ...m,
+          employee: empByAuthId[m.user_id] || null,
+        })),
+        unlinkedEmployees,
+      };
+    },
+    enabled: !!agencyId,
+    staleTime: 30 * 1000,
+  });
+
+  if (isLoading) {
+    return (
+      <div style={{ padding: 40, textAlign: 'center', color: 'var(--qs-muted)' }}>
+        Loading team...
+      </div>
+    );
+  }
+
+  const { members: teamMembers = [], unlinkedEmployees = [] } = members || {};
+
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>
+          Team Access
+        </h2>
+        <p style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 4 }}>
+          All accounts connected to this agency. Employees with no login account
+          can be invited from this page.
+        </p>
+      </div>
+
+      {/* Active accounts table */}
+      <div style={{
+        border: '1px solid var(--qs-border)', borderRadius: 10,
+        overflow: 'hidden', marginBottom: 24,
+      }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: 'var(--qs-elevated)' }}>
+              {['Email', 'Agency Role', 'Employee Record', 'Login Status', ''].map(h => (
+                <th key={h} style={{
+                  padding: '10px 14px', textAlign: 'left', fontSize: 11,
+                  fontWeight: 600, color: 'var(--qs-subtle)',
+                  textTransform: 'uppercase', letterSpacing: '0.05em',
+                  borderBottom: '1px solid var(--qs-border)',
+                }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {teamMembers.map((member, i) => {
+              const roleCfg = TEAM_ROLE_CONFIG[member.agency_role] || TEAM_ROLE_CONFIG.producer;
+              const emp = member.employee;
+              const needsReset = emp?.must_reset_password;
+              const hasLogin = !!member.profiles?.email;
+
+              return (
+                <tr key={member.user_id}
+                  style={{
+                    borderBottom: i < teamMembers.length - 1
+                      ? '1px solid var(--qs-border)' : 'none',
+                  }}>
+
+                  {/* Email */}
+                  <td style={{ padding: '12px 14px', color: 'var(--qs-text)',
+                    fontWeight: 500 }}>
+                    {member.profiles?.email || '—'}
+                  </td>
+
+                  {/* Agency Role badge */}
+                  <td style={{ padding: '12px 14px' }}>
+                    <span style={{
+                      fontSize: 11, fontWeight: 700, padding: '3px 8px',
+                      borderRadius: 4, color: roleCfg.color, background: roleCfg.bg,
+                    }}>
+                      {roleCfg.label}
+                    </span>
+                  </td>
+
+                  {/* Employee Record */}
+                  <td style={{ padding: '12px 14px', color: 'var(--qs-dim)' }}>
+                    {emp ? (
+                      <span>
+                        <span style={{ color: 'var(--qs-text)', fontWeight: 500 }}>
+                          {emp.first_name} {emp.last_name}
+                        </span>
+                        {emp.roles?.length > 0 && (
+                          <span style={{ fontSize: 11, color: 'var(--qs-muted)',
+                            marginLeft: 6 }}>
+                            ({emp.roles.join(', ')})
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <span style={{ color: 'var(--qs-muted)', fontSize: 12 }}>
+                        No employee record
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Login Status */}
+                  <td style={{ padding: '12px 14px' }}>
+                    {needsReset ? (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: '3px 8px',
+                        borderRadius: 4, color: '#F59E0B', background: '#F59E0B11',
+                      }}>
+                        ⏳ Pending password reset
+                      </span>
+                    ) : hasLogin ? (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: '3px 8px',
+                        borderRadius: 4, color: '#10B981', background: '#10B98111',
+                      }}>
+                        ● Active
+                      </span>
+                    ) : (
+                      <span style={{
+                        fontSize: 11, fontWeight: 600, padding: '3px 8px',
+                        borderRadius: 4, color: 'var(--qs-muted)',
+                        background: 'var(--qs-elevated)',
+                      }}>
+                        No login
+                      </span>
+                    )}
+                  </td>
+
+                  {/* Actions */}
+                  <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                    {/* Placeholder for future actions e.g. remove, change role */}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Unlinked employees — need inviting */}
+      {unlinkedEmployees.length > 0 && (
+        <div>
+          <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)',
+            marginBottom: 12 }}>
+            Employees without a login account
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {unlinkedEmployees.map(emp => (
+              <div key={emp.id} style={{
+                display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px', borderRadius: 8,
+                background: 'var(--qs-elevated)',
+                border: '1px solid var(--qs-border)',
+              }}>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600,
+                    color: 'var(--qs-bright)', margin: 0 }}>
+                    {emp.first_name} {emp.last_name}
+                  </p>
+                  <p style={{ fontSize: 11, color: 'var(--qs-muted)',
+                    margin: '2px 0 0' }}>
+                    {emp.roles?.length > 0 ? emp.roles.join(', ') : 'No roles assigned'}
+                    {' · '}No QuoteSync login
+                  </p>
+                </div>
+                {isAgent && (
+                  <button
+                    onClick={() => setInviteTarget(emp)}
+                    style={{
+                      fontSize: 12, fontWeight: 600, padding: '6px 14px',
+                      borderRadius: 6, background: '#3B82F622',
+                      border: '1px solid #3B82F633', color: '#3B82F6',
+                      cursor: 'pointer',
+                    }}>
+                    Invite
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Invite modal */}
+      {inviteTarget && (
+        <EmployeeInviteModal
+          employee={inviteTarget}
+          agencyId={agencyId}
+          onClose={() => setInviteTarget(null)}
+          onSuccess={() => {
+            setInviteTarget(null);
+            refetch();
+          }}
+        />
+      )}
+    </div>
+  );
+}
 
 // ─── Profile Tab ──────────────────────────────────────────────────────────────
 

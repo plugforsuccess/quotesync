@@ -50,5 +50,12 @@ export default function EmployeeRoute({ children }) {
     );
   }
 
+  // Force password reset before accessing any employee page.
+  // The /my/change-password route is registered outside this gate so it
+  // can render without recursing through EmployeeRoute.
+  if (employee.must_reset_password) {
+    return <Navigate to="/my/change-password" replace />;
+  }
+
   return children;
 }

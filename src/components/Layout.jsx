@@ -72,7 +72,17 @@ function Layout({ forcePlane = null }) {
   // Get navigation items based on active plane and role
   // Now returns { primary: [...], secondary: [...] }
   const { primary: primaryNav, secondary: secondaryNav } = getNavItems(activePlane, platformRole, currentAgencyRole);
-  const roleLabel = platformRole
+  // Plane-aware role label: when browsing the agency plane the agency role
+  // takes priority (so a platform_editor like Logan with a producer
+  // membership shows 'Producer' instead of 'Editor'); platform plane always
+  // shows the platform role.
+  const roleLabel = activePlane === PLANES.AGENCY
+    ? currentAgencyRole
+      ? roleDisplayNames[currentAgencyRole]
+      : platformRole
+      ? roleDisplayNames[platformRole]
+      : null
+    : platformRole
     ? roleDisplayNames[platformRole]
     : currentAgencyRole
     ? roleDisplayNames[currentAgencyRole]

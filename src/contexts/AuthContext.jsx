@@ -53,9 +53,10 @@ const PLATFORM_ROLE_HIERARCHY = {
 };
 
 const AGENCY_ROLE_HIERARCHY = {
-  producer: 1,
-  manager: 2,
-  principal: 3,
+  employee: 1,
+  producer: 2,
+  manager: 3,
+  principal: 4,
 };
 
 // ── RBAC cache ──────────────────────────────────────────────────────────────

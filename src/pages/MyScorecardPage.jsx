@@ -17,9 +17,17 @@ export default function MyScorecardPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Derive scoreType from employee role
+  // Derive scoreType from employee role.
+  // employees.roles describes the functional job — the scorecard rendered
+  // depends on whether the employee handles service work, sales work, or both.
   const roles = employee?.roles || [];
-  const scoreType = roles.includes('service_outbound') && roles.includes('service_inbound')
+  const isService = roles.includes('service_inbound')
+    || roles.includes('service_outbound');
+  const isSales = roles.includes('sales');
+  const isSalesOnly = isSales && !isService;
+  const scoreType = isSalesOnly
+    ? 'sales'
+    : roles.includes('service_outbound') && roles.includes('service_inbound')
     ? 'both'
     : roles.includes('service_outbound')
     ? 'outbound'
@@ -35,6 +43,32 @@ export default function MyScorecardPage() {
     agencyId:   employee?.org_id,
     month:      selectedMonth,
   });
+
+  // Sales-only employees don't have a retention scorecard yet. Show a
+  // placeholder until the new business / commission view is built. This
+  // sits below the hooks so React's hook order stays stable.
+  if (scoreType === 'sales') {
+    return (
+      <div>
+        <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)',
+          marginBottom: 4 }}>
+          My Scorecard
+        </div>
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 24 }}>
+          {employee?.preferred_name || employee?.first_name} · Sales Producer
+        </div>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+          borderRadius: 12, padding: 32, textAlign: 'center' }}>
+          <p style={{ color: 'var(--qs-muted)', fontSize: 14 }}>
+            Sales producer scorecard coming soon.
+          </p>
+          <p style={{ color: 'var(--qs-subtle)', fontSize: 12, marginTop: 8 }}>
+            New business metrics and commission tracking will appear here.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const bonusSaves  = verificationData?.verified ?? 0;
   const bonusAmount = Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD) * RETENTION_BONUS_PER_SAVE;

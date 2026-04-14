@@ -172,6 +172,9 @@ export function getDefaultLanding(platformRole, agencyRole, agency = null) {
     if (agencyRole === 'principal' && agency && !agency.setup_completed_at) {
       return '/agency/setup';
     }
+    // Employees land on their personal queue. /agency/leads requires
+    // producer-or-higher and would redirect to /unauthorized otherwise.
+    if (agencyRole === 'employee') return '/my/queue';
     if (agencyRole === 'principal') return '/agency/dashboard';
     return '/agency/leads';
   }
@@ -186,6 +189,8 @@ export const roleDisplayNames = {
   platform_editor: 'Editor',
   platform_auditor: 'Auditor',
   principal: 'Principal',
+  owner: 'Owner',
   manager: 'Manager',
   producer: 'Producer',
+  employee: 'Employee',
 };

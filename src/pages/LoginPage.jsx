@@ -30,8 +30,13 @@ const LoginPage = () => {
   // go to their role-based landing page.
   useEffect(() => {
     if (!authLoading && empResolved && user) {
-      // Employee (not platform admin) → send to their queue
-      const isAgencyMember = currentAgencyRole === 'principal' || currentAgencyRole === 'manager';
+      // Employee (not platform admin, not principal/manager/producer) →
+      // send to their queue. 'producer' is treated as an agency member so
+      // they land via getDefaultLanding; only the new 'employee' agency
+      // role falls through to /my/queue.
+      const isAgencyMember = currentAgencyRole === 'principal'
+        || currentAgencyRole === 'manager'
+        || currentAgencyRole === 'producer';
       if (employeeRecord && !isPlatformUser && !isAgencyMember) {
         navigate('/my/queue', { replace: true });
       } else {
