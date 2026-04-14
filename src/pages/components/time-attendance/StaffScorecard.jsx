@@ -186,7 +186,26 @@ export default function StaffScorecard({
         <div>
           <h3 className="text-lg font-semibold text-qs-bright">Weekly Performance Grade</h3>
           <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
-          {employeeName && <p className="text-xs text-qs-subtle mt-1">{employeeName}</p>}
+          {employeeName && (
+            <p className="text-xs text-qs-subtle mt-1">
+              {employeeName}
+              {(() => {
+                const wfhPct = ytdAttendance.daysWorked > 0
+                  ? (ytdAttendance.wfh / ytdAttendance.daysWorked) * 100
+                  : 0;
+                return wfhPct > 10 ? (
+                  <span style={{
+                    fontSize: 10, fontWeight: 700,
+                    padding: '2px 6px', borderRadius: 4,
+                    background: '#F59E0B22', border: '1px solid #F59E0B44',
+                    color: '#F59E0B', marginLeft: 6,
+                  }}>
+                    WFH {Math.round(wfhPct)}%
+                  </span>
+                ) : null;
+              })()}
+            </p>
+          )}
           {hasCallLog && (
             <p className="text-xs text-primary-500 mt-0.5">Based on call log data</p>
           )}
@@ -401,6 +420,17 @@ export default function StaffScorecard({
             <div>
               <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.daysWorked}</p>
               <p className="text-xs text-qs-subtle mt-0.5">Days Worked</p>
+            </div>
+            <div>
+              <p className={`text-2xl font-bold ${ytdAttendance.wfh > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
+                {ytdAttendance.wfh}
+              </p>
+              <p className="text-xs text-qs-subtle mt-0.5">WFH</p>
+              <p className="text-xs text-qs-subtle mt-0.5">
+                {ytdAttendance.daysWorked > 0
+                  ? `${Math.round((ytdAttendance.wfh / ytdAttendance.daysWorked) * 100)}% of days`
+                  : 'days'}
+              </p>
             </div>
             <div>
               <p className={`text-2xl font-bold ${ytdAttendance.sick > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>

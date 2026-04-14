@@ -476,6 +476,9 @@ const TimeAttendancePage = () => {
   const totalEntries = entries.length;
   const totalHours = entries.reduce((sum, e) => sum + (parseFloat(e.hours_worked) || 0), 0);
   const employeesWithEntries = new Set(entries.map((e) => e.employee_user_id)).size;
+  const wfhThisWeek = entries.filter(
+    (e) => e.location === 'WFH' && !['PTO', 'SICK', 'HOLIDAY'].includes(e.code)
+  ).length;
 
   // ── Get employee name ─────────────────────────────────────────────────────
   // Use roster employees (employees table) for dropdown display
@@ -711,7 +714,7 @@ const TimeAttendancePage = () => {
           })()}
 
           {/* Summary cards */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="dark-card-elevated">
               <div className="text-2xl font-bold text-qs-bright">{totalEntries}</div>
               <div className="text-sm text-qs-dim">Total Entries</div>
@@ -727,6 +730,14 @@ const TimeAttendancePage = () => {
                 {employeesWithEntries} / {rosterEmployees.length}
               </div>
               <div className="text-sm text-emerald-400">Employees Entered</div>
+            </div>
+            <div className="dark-card-elevated">
+              <div className={`text-2xl font-bold ${wfhThisWeek > 0 ? 'text-amber-400' : 'text-qs-bright'}`}>
+                {wfhThisWeek}
+              </div>
+              <div className={`text-sm ${wfhThisWeek > 0 ? 'text-amber-400' : 'text-qs-dim'}`}>
+                WFH Days
+              </div>
             </div>
           </div>
 

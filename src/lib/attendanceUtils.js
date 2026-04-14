@@ -36,7 +36,9 @@ export function getBusinessDays(startDate, endDate) {
  *   appt: number,       // count of APPT entries
  *   early: number,      // count of EARLY entries
  *   unexcused: number,  // business days with no entry at all
- *   daysWorked: number, // REG + WFH entries
+ *   holiday: number,    // count of federal holidays in the range
+ *   daysWorked: number, // REG + WFH entries combined
+ *   wfh: number,        // WFH days only (subset of daysWorked)
  *   totalAbsences: number // sick + pto + appt + early + unexcused
  * }}
  */
@@ -46,7 +48,7 @@ export function computeAttendance(employeeId, hireDate, entries, rangeStart, ran
   const effectiveStart = hireDate && hireDate > rangeStart ? hireDate : rangeStart;
 
   if (effectiveStart > effectiveEnd) {
-    return { sick: 0, pto: 0, appt: 0, early: 0, unexcused: 0, holiday: 0, daysWorked: 0, totalAbsences: 0 };
+    return { sick: 0, pto: 0, appt: 0, early: 0, unexcused: 0, holiday: 0, daysWorked: 0, wfh: 0, totalAbsences: 0 };
   }
 
   // Build holiday set covering all years in range
@@ -63,7 +65,7 @@ export function computeAttendance(employeeId, hireDate, entries, rangeStart, ran
     entryMap[e.work_date] = e.code;
   }
 
-  let sick = 0, pto = 0, appt = 0, early = 0, unexcused = 0, holiday = 0, daysWorked = 0;
+  let sick = 0, pto = 0, appt = 0, early = 0, unexcused = 0, holiday = 0, daysWorked = 0, wfh = 0;
 
   for (const day of businessDays) {
     if (holidays.has(day)) {
@@ -85,9 +87,10 @@ export function computeAttendance(employeeId, hireDate, entries, rangeStart, ran
       early++;
     } else if (code === 'REG' || code === 'WFH' || code === 'HOLIDAY') {
       daysWorked++;
+      if (code === 'WFH') wfh++;
     }
   }
 
   const totalAbsences = sick + pto + appt + early + unexcused;
-  return { sick, pto, appt, early, unexcused, holiday, daysWorked, totalAbsences };
+  return { sick, pto, appt, early, unexcused, holiday, daysWorked, wfh, totalAbsences };
 }
