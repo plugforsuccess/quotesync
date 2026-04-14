@@ -338,6 +338,10 @@ export default function RevenueProjectionsDashboard() {
   const VC_ITEM_PRODUCTS   = productConfig.vcEligibleKeys;
   const VC_BASELINE_TARGET = productConfig.vcBaselineTarget;
   const COMMISSIONABLE_FACTORS = productConfig.commissionableFactors;
+  const isExcludedLine = (product) =>
+    product !== 'motor_club' &&
+    product !== 'other' &&
+    !VC_ITEM_PRODUCTS.includes(product);
   const [newEntry, setNewEntry] = useState(emptyEntry());
   const [view, setView] = useState("month"); // month | ytd | custom
   const [customStart, setCustomStart] = useState(""); // "YYYY-MM-DD"
@@ -1585,7 +1589,26 @@ export default function RevenueProjectionsDashboard() {
                     <tr key={e.id}>
                       <td style={{ color: "var(--qs-subtle)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
                       <td style={{ color: "var(--qs-dim)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.issuedDate}</td>
-                      <td><span className="tag" style={{ background: `${PRODUCT_COLORS[e.product]}22`, color: PRODUCT_COLORS[e.product] }}>{PRODUCT_LABELS[e.product] ?? e.product}</span></td>
+                      <td>
+                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                          <span className="tag" style={{
+                            background: `${PRODUCT_COLORS[e.product]}22`,
+                            color: PRODUCT_COLORS[e.product]
+                          }}>
+                            {PRODUCT_LABELS[e.product] ?? e.product}
+                          </span>
+                          {isExcludedLine(e.product) && (
+                            <span style={{
+                              fontSize: 9, fontWeight: 700, padding: '1px 5px',
+                              borderRadius: 3, letterSpacing: '0.04em',
+                              background: '#F59E0B18', color: '#F59E0B',
+                              border: '1px solid #F59E0B33',
+                            }}>
+                              EXCL
+                            </span>
+                          )}
+                        </span>
+                      </td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
                       <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
                       <td style={{ color: "var(--qs-success)", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS))}</td>
@@ -2311,6 +2334,16 @@ export default function RevenueProjectionsDashboard() {
                           <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                             <span style={{ width: 8, height: 8, borderRadius: "50%", background: PRODUCT_COLORS[entry.product] ?? "var(--qs-subtle)", flexShrink: 0 }} />
                             {PRODUCT_LABELS[entry.product] ?? entry.product}
+                            {isExcludedLine(entry.product) && (
+                              <span style={{
+                                fontSize: 9, fontWeight: 700, padding: '1px 5px',
+                                borderRadius: 3, letterSpacing: '0.04em',
+                                background: '#F59E0B18', color: '#F59E0B',
+                                border: '1px solid #F59E0B33',
+                              }}>
+                                EXCL
+                              </span>
+                            )}
                           </span>
                         </td>
                         <td>
