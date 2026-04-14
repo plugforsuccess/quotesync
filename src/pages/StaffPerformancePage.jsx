@@ -715,6 +715,7 @@ const StaffPerformancePage = () => {
             {/* 2. Daily Queue Report Upload */}
             <QueueUploadForm
               orgId={currentAgencyId}
+              weekStart={weekStart}
               onUploaded={handleQueueDataUploaded}
             />
 
