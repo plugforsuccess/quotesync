@@ -491,7 +491,7 @@ export default function MyQueuePage() {
             </span>
           )}
           {event.premium_change != null && event.premium_change !== 0 && (
-            <span style={{ fontSize: 13, color: 'var(--qs-muted)' }}>
+            <span style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
               ({changePct > 0 ? '+' : ''}{fmt$(event.premium_change)}/yr)
             </span>
           )}
@@ -500,7 +500,7 @@ export default function MyQueuePage() {
               {event.attempt_count || 0} attempts · {lastAtt}
             </span>
           ) : (
-            <span style={{ fontSize: 13, color: 'var(--qs-muted)', marginLeft: 'auto' }}>
+            <span style={{ fontSize: 13, color: 'var(--qs-dim)', marginLeft: 'auto' }}>
               {event.attempt_count || 0} attempts
             </span>
           )}
@@ -569,7 +569,7 @@ export default function MyQueuePage() {
   if (employee && !isServiceRole) {
     return (
       <div style={{ textAlign: 'center', padding: 48 }}>
-        <p style={{ color: 'var(--qs-muted)', fontSize: 16 }}>
+        <p style={{ color: 'var(--qs-dim)', fontSize: 16 }}>
           Your role doesn't include a retention queue.
         </p>
         <a href="/my/scorecard" style={{ color: '#3B82F6', fontSize: 15 }}>
@@ -603,7 +603,7 @@ export default function MyQueuePage() {
             { label: 'Attempts',  value: metrics.totalCancelAttempts ?? '—' },
           ].map(stat => (
             <div key={stat.label}>
-              <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 2 }}>{stat.label}</div>
+              <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 2 }}>{stat.label}</div>
               <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)',
                 fontFamily: "'DM Mono', monospace" }}>{stat.value}</div>
             </div>
@@ -627,7 +627,7 @@ export default function MyQueuePage() {
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 14, color: 'var(--qs-muted)' }}>
+          <span style={{ fontSize: 14, color: 'var(--qs-dim)' }}>
             Updated {relativeTime(new Date(lastRefreshed).toISOString())}
           </span>
           <button
@@ -683,7 +683,7 @@ export default function MyQueuePage() {
             <div style={{ fontSize: 28, fontWeight: 700, color: stat.color, lineHeight: 1 }}>
               {stat.value}
             </div>
-            <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginTop: 4 }}>{stat.sub}</div>
+            <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{stat.sub}</div>
           </div>
         ))}
       </div>
@@ -742,7 +742,7 @@ export default function MyQueuePage() {
                     textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                     {bucket.label}
                   </span>
-                  <span style={{ fontSize: 13, color: 'var(--qs-muted)',
+                  <span style={{ fontSize: 13, color: 'var(--qs-dim)',
                     background: 'var(--qs-elevated)', padding: '2px 8px',
                     borderRadius: 10, fontWeight: 600 }}>
                     {bucket.cases.length}
