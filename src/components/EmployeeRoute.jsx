@@ -4,12 +4,9 @@
 // Shows error for authenticated non-employees.
 //
 // IMPORTANT: useCurrentEmployee now depends on auth resolving first.
-// The guard must wait for BOTH authLoading AND empLoading before making
-// any decisions — otherwise a race condition causes a false
+// The guard must wait for BOTH authLoading AND empLoading/empFetching
+// before making any decisions — otherwise a race condition causes a false
 // "No employee record found" on first navigation after login.
-// empFetching additionally covers the retry case — when TanStack Query
-// re-fetches after an initial null result, isLoading is false but
-// isFetching is true.
 
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -24,7 +21,8 @@ export default function EmployeeRoute({ children }) {
   // empFetching covers the retry case — query may be re-fetching after null.
   if (authLoading || empLoading || empFetching) return <PageSpinner />;
 
-  // Not logged in → login page (only show spinner if token is still valid)
+  // Not logged in → check token validity before redirecting to avoid
+  // kicking out a valid session that hasn't hydrated into React state yet.
   if (!user) {
     try {
       const tokenKey = Object.keys(localStorage).find(
@@ -41,7 +39,14 @@ export default function EmployeeRoute({ children }) {
     return <Navigate to="/admin-access-8by2X" replace />;
   }
 
-  // Employee record not found → show an informative error
+  // Force password reset before any employee page is accessible.
+  // must_reset_password is set to true when a principal creates an
+  // employee account with a temporary password.
+  if (employee?.must_reset_password) {
+    return <Navigate to="/my/change-password" replace />;
+  }
+
+  // Genuine no-record case — auth resolved, user confirmed, no match.
   if (!employee) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center',
@@ -58,13 +63,6 @@ export default function EmployeeRoute({ children }) {
         </div>
       </div>
     );
-  }
-
-  // Force password reset before accessing any employee page.
-  // The /my/change-password route is registered outside this gate so it
-  // can render without recursing through EmployeeRoute.
-  if (employee.must_reset_password) {
-    return <Navigate to="/my/change-password" replace />;
   }
 
   return children;

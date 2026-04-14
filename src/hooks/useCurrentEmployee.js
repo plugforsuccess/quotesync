@@ -23,12 +23,8 @@ export function useCurrentEmployee() {
 
       return data || null;
     },
-    // Do not run until auth has resolved and we have a user ID.
-    // This prevents the query returning null before the session is ready.
     enabled: !authLoading && !!user?.id,
     staleTime: 10 * 60 * 1000,
-    // Retry once on null result — handles edge case where session is valid
-    // but the first DB round-trip returns empty due to auth timing.
     retry: 1,
     retryDelay: 500,
   });
