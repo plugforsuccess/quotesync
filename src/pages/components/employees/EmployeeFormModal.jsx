@@ -3,7 +3,7 @@
 // section cards, and a two-column panel layout.
 
 import { useState, useEffect, useCallback } from 'react';
-import { X, User, MapPin, Briefcase, Clock, Award } from 'lucide-react';
+import { X, User, MapPin, Briefcase, Clock, Award, Calendar } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 
 const ROLE_OPTIONS = [
@@ -37,6 +37,7 @@ const EMPTY_FORM = {
   default_lunch_in: '13:00', default_end_time: '18:00',
   is_licensed: false, license_verified_date: '', professional_designations: [],
   years_insurance_experience: '', years_commercial_experience: '', highest_education: '',
+  pto_days_per_year: 10, sick_days_per_year: 5, pto_eligible_date: '',
 };
 
 // Shared input style — explicitly overrides the global white-bg cascade
@@ -160,6 +161,9 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
         years_insurance_experience: employee.years_insurance_experience ?? '',
         years_commercial_experience: employee.years_commercial_experience ?? '',
         highest_education: employee.highest_education || '',
+        pto_days_per_year: employee.pto_days_per_year ?? 10,
+        sick_days_per_year: employee.sick_days_per_year ?? 5,
+        pto_eligible_date: employee.pto_eligible_date || '',
       });
       if (agencyId && employee.id) {
         supabase
@@ -235,6 +239,11 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
     if (!payload.license_verified_date) payload.license_verified_date = null;
     if (!payload.highest_education) payload.highest_education = null;
     if (payload.professional_designations.length === 0) payload.professional_designations = null;
+    if (!payload.pto_eligible_date) payload.pto_eligible_date = null;
+    payload.pto_days_per_year = parseInt(payload.pto_days_per_year, 10);
+    if (isNaN(payload.pto_days_per_year)) payload.pto_days_per_year = 10;
+    payload.sick_days_per_year = parseInt(payload.sick_days_per_year, 10);
+    if (isNaN(payload.sick_days_per_year)) payload.sick_days_per_year = 5;
 
     if (isEdit && agencyId && employee?.id && bindIdValue) {
       await supabase.from('employee_producer_codes').upsert({
@@ -484,6 +493,46 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                 </Field>
                 <Field label="End Time">
                   <Input type="time" value={form.default_end_time} onChange={e => handleChange('default_end_time', e.target.value)} />
+                </Field>
+              </div>
+            </Section>
+
+            {/* Time Off Allotment */}
+            <Section icon={Calendar} title="Time Off Allotment">
+              <p style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
+                PTO is front-loaded Jan 1 with no rollover. Hard block enforced in time entry.
+                Sick days are tracked with a soft warning threshold only.
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <Field label="Annual PTO Days">
+                  <Input
+                    type="number"
+                    value={form.pto_days_per_year}
+                    onChange={e => handleChange('pto_days_per_year', e.target.value)}
+                  />
+                  <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 4 }}>
+                    Front-loaded Jan 1. No rollover. Hard block enforced in time entry.
+                  </p>
+                </Field>
+                <Field label="Sick Day Advisory Threshold">
+                  <Input
+                    type="number"
+                    value={form.sick_days_per_year}
+                    onChange={e => handleChange('sick_days_per_year', e.target.value)}
+                  />
+                  <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 4 }}>
+                    Soft warning only — no hard block. Tracked for evaluation purposes.
+                  </p>
+                </Field>
+                <Field label="PTO Eligible Date" span={2}>
+                  <Input
+                    type="date"
+                    value={form.pto_eligible_date}
+                    onChange={e => handleChange('pto_eligible_date', e.target.value)}
+                  />
+                  <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 4 }}>
+                    Typically hire date + 180 days. Leave blank if already eligible.
+                  </p>
                 </Field>
               </div>
             </Section>

@@ -788,6 +788,12 @@ const StaffPerformancePage = () => {
                     );
                     return emp?.hire_date || null;
                   })()}
+                  ptoDaysPerYear={(() => {
+                    const emp = rosterEmployees?.find(
+                      e => e.auth_user_id === singleEmployee || e.id === singleEmployee
+                    );
+                    return emp?.pto_days_per_year ?? 10;
+                  })()}
                   currentYear={currentYear}
                 />
 
@@ -874,6 +880,12 @@ const StaffPerformancePage = () => {
                           e => e.auth_user_id === rc.employee_user_id || e.id === rc.employee_user_id
                         );
                         return emp?.hire_date || null;
+                      })()}
+                      ptoDaysPerYear={(() => {
+                        const emp = rosterEmployees?.find(
+                          e => e.auth_user_id === rc.employee_user_id || e.id === rc.employee_user_id
+                        );
+                        return emp?.pto_days_per_year ?? 10;
                       })()}
                       currentYear={currentYear}
                     />

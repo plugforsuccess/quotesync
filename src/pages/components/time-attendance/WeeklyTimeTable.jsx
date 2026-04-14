@@ -3,6 +3,7 @@
 // Cameron enters the full week and only modifies exception days.
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Save, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { getFederalHolidays, getHolidayLabel } from '../../../lib/federalHolidays';
@@ -98,6 +99,44 @@ export default function WeeklyTimeTable({
     endTime: employeeDefaults?.default_end_time?.slice(0, 5) || DEFAULT_ROW.endTime,
   };
 
+  const queryClient = useQueryClient();
+
+  // ── PTO / Sick usage (current calendar year) ─────────────────────────────
+  const currentYear = new Date().getFullYear();
+
+  const { data: leaveUsage } = useQuery({
+    queryKey: ['leave_usage', employeeId, currentYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_time_entries')
+        .select('code, work_date')
+        .eq('org_id', orgId)
+        .eq('employee_user_id', employeeId)
+        .gte('work_date', `${currentYear}-01-01`)
+        .lte('work_date', `${currentYear}-12-31`);
+      if (error) throw error;
+      return {
+        ptoUsed:  (data || []).filter(e => e.code === 'PTO').length,
+        sickUsed: (data || []).filter(e => e.code === 'SICK').length,
+      };
+    },
+    enabled: !!employeeId && !!orgId,
+    staleTime: 60 * 1000,
+  });
+
+  const ptoUsed  = leaveUsage?.ptoUsed  ?? 0;
+  const sickUsed = leaveUsage?.sickUsed ?? 0;
+
+  const ptoDaysPerYear  = employeeDefaults?.pto_days_per_year  ?? 10;
+  const sickDaysPerYear = employeeDefaults?.sick_days_per_year ?? 5;
+  const ptoEligibleDate = employeeDefaults?.pto_eligible_date  ?? null;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const ptoEligible = !ptoEligibleDate || today >= ptoEligibleDate;
+  const ptoRemaining = Math.max(0, ptoDaysPerYear - ptoUsed);
+  const ptoExhausted = ptoRemaining <= 0;
+  const sickOverThreshold = sickUsed >= sickDaysPerYear;
+
   // Build initial rows: use existing entries if available, else employee defaults
   const buildRows = useCallback(() => {
     return weekDates.map((date) => {
@@ -137,6 +176,24 @@ export default function WeeklyTimeTable({
   }, [buildRows]);
 
   function updateRow(idx, field, value) {
+    // PTO gating — block selection if not eligible or exhausted
+    if (field === 'code' && value === 'PTO') {
+      if (!ptoEligible) {
+        setMsg({
+          type: 'error',
+          text: `PTO is not available until ${ptoEligibleDate}.`,
+        });
+        return;
+      }
+      if (ptoExhausted) {
+        setMsg({
+          type: 'error',
+          text: `All ${ptoDaysPerYear} PTO days for ${currentYear} have been used.`,
+        });
+        return;
+      }
+    }
+
     setRows((prev) => {
       const next = [...prev];
       const row = { ...next[idx], [field]: value };
@@ -223,6 +280,7 @@ export default function WeeklyTimeTable({
       setMsg({ type: 'error', text: `Error: ${error.message}` });
     } else {
       setMsg({ type: 'success', text: 'Week saved successfully.' });
+      queryClient.invalidateQueries({ queryKey: ['leave_usage', employeeId, currentYear] });
       if (onSaved) onSaved();
     }
   }
@@ -238,6 +296,31 @@ export default function WeeklyTimeTable({
 
   return (
     <>
+    {/* PTO / Sick balance indicators */}
+    {ptoEligible ? (
+      <div style={{
+        display: 'flex', gap: 16, marginBottom: 12,
+        fontSize: 12, color: 'var(--qs-dim)',
+      }}>
+        <span>
+          PTO:{' '}
+          <strong style={{ color: ptoExhausted ? '#EF4444' : '#10B981' }}>
+            {ptoRemaining} of {ptoDaysPerYear} days remaining
+          </strong>
+        </span>
+        <span>
+          Sick:{' '}
+          <strong style={{ color: sickOverThreshold ? '#F59E0B' : 'var(--qs-text)' }}>
+            {sickUsed} of {sickDaysPerYear} days used
+          </strong>
+        </span>
+      </div>
+    ) : (
+      <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 12 }}>
+        PTO eligible from {ptoEligibleDate}
+      </div>
+    )}
+
     <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full min-w-[950px]">
@@ -293,9 +376,20 @@ export default function WeeklyTimeTable({
                       onChange={(e) => updateRow(idx, 'code', e.target.value)}
                       className={selectCls}
                     >
-                      {CODES.map((c) => (
-                        <option key={c.value} value={c.value}>{c.label}</option>
-                      ))}
+                      {CODES.map((c) => {
+                        const ptoBlocked = c.value === 'PTO' && (!ptoEligible || ptoExhausted);
+                        const label =
+                          c.value === 'PTO' && ptoExhausted
+                            ? 'PTO (0 days remaining)'
+                            : c.value === 'PTO' && !ptoEligible
+                            ? `PTO (eligible ${ptoEligibleDate})`
+                            : c.label;
+                        return (
+                          <option key={c.value} value={c.value} disabled={ptoBlocked}>
+                            {label}
+                          </option>
+                        );
+                      })}
                     </select>
                   </td>
                   <td className="px-3 py-2">
@@ -372,6 +466,19 @@ export default function WeeklyTimeTable({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Sick day soft warning */}
+      {rows.some(r => r.code === 'SICK') && sickOverThreshold && (
+        <div style={{
+          background: '#F59E0B11', borderTop: '1px solid #F59E0B44',
+          padding: '10px 14px',
+          fontSize: 12, color: '#F59E0B',
+        }}>
+          ⚠ {sickUsed} sick days used in {currentYear}
+          {' '}— exceeds the {sickDaysPerYear}-day advisory threshold.
+          Entry will still be saved.
         </div>
       )}
 

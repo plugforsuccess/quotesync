@@ -109,6 +109,7 @@ export default function StaffScorecard({
   ytdEntries,
   hireDate,
   currentYear,
+  ptoDaysPerYear,
 }) {
   const hasCallLog = callLogMetrics && callLogMetrics.totalCalls > 0;
   const hasRCData = !!rcData;
@@ -167,6 +168,16 @@ export default function StaffScorecard({
     ytdEnd
   );
   const hasAttendanceData = (ytdEntries || []).length > 0;
+
+  // PTO balance — front-loaded annual allotment minus YTD used
+  const ptoAllotment = ptoDaysPerYear ?? 10;
+  const ptoUsed = ytdAttendance.pto || 0;
+  const ptoRemaining = Math.max(0, ptoAllotment - ptoUsed);
+  const ptoColor =
+    ptoRemaining <= 0  ? '#EF4444'
+    : ptoRemaining <= 2 ? '#EF4444'
+    : ptoRemaining <= 5 ? '#F59E0B'
+    : '#10B981';
 
   return (
     <div className="space-y-6">
@@ -402,6 +413,12 @@ export default function StaffScorecard({
                 {ytdAttendance.pto}
               </p>
               <p className="text-xs text-qs-subtle mt-0.5">PTO</p>
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: ptoColor }}>
+                {ptoRemaining} / {ptoAllotment} days
+              </p>
+              <p className="text-xs text-qs-subtle mt-0.5">PTO Remaining</p>
             </div>
             <div>
               <p className="text-2xl font-bold text-qs-bright">{ytdAttendance.appt}</p>

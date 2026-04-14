@@ -2,6 +2,7 @@
 // Employee time entry form with upsert on (employee_user_id, work_date)
 
 import { useMemo, useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Clock, Save, AlertCircle, CheckCircle } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { getFederalHolidays, getHolidayLabel } from '../../../lib/federalHolidays';
@@ -66,7 +67,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
   const isBlocked = isHoliday || isWeekend;
 
   const [location, setLocation] = useState('OFFICE');
-  const [code, setCode] = useState(() => {
+  const [code, setCodeRaw] = useState(() => {
     const wd = workDateProp || toLocalDateStr(new Date());
     const yr = parseInt(wd.slice(0, 4));
     return getFederalHolidays(yr).has(wd) ? 'HOLIDAY' : 'REG';
@@ -74,9 +75,83 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
 
   // Auto-switch code when workDate changes to/from a holiday
   useEffect(() => {
-    if (isHoliday && code !== 'HOLIDAY') setCode('HOLIDAY');
-    else if (!isHoliday && code === 'HOLIDAY') setCode('REG');
+    if (isHoliday && code !== 'HOLIDAY') setCodeRaw('HOLIDAY');
+    else if (!isHoliday && code === 'HOLIDAY') setCodeRaw('REG');
   }, [workDate, isHoliday]);
+
+  const queryClient = useQueryClient();
+
+  // ── Employee PTO / Sick configuration ───────────────────────────────────
+  const { data: employeeRecord } = useQuery({
+    queryKey: ['employee_leave_config', employeeUserId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employees')
+        .select('pto_days_per_year, sick_days_per_year, pto_eligible_date')
+        .or(`auth_user_id.eq.${employeeUserId},id.eq.${employeeUserId}`)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!employeeUserId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // ── PTO / Sick usage (current calendar year) ────────────────────────────
+  const currentYear = new Date().getFullYear();
+
+  const { data: leaveUsage } = useQuery({
+    queryKey: ['leave_usage', employeeUserId, currentYear],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('employee_time_entries')
+        .select('code, work_date')
+        .eq('org_id', orgId)
+        .eq('employee_user_id', employeeUserId)
+        .gte('work_date', `${currentYear}-01-01`)
+        .lte('work_date', `${currentYear}-12-31`);
+      if (error) throw error;
+      return {
+        ptoUsed:  (data || []).filter(e => e.code === 'PTO').length,
+        sickUsed: (data || []).filter(e => e.code === 'SICK').length,
+      };
+    },
+    enabled: !!employeeUserId && !!orgId,
+    staleTime: 60 * 1000,
+  });
+
+  const ptoUsed  = leaveUsage?.ptoUsed  ?? 0;
+  const sickUsed = leaveUsage?.sickUsed ?? 0;
+  const ptoDaysPerYear  = employeeRecord?.pto_days_per_year  ?? 10;
+  const sickDaysPerYear = employeeRecord?.sick_days_per_year ?? 5;
+  const ptoEligibleDate = employeeRecord?.pto_eligible_date  ?? null;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const ptoEligible = !ptoEligibleDate || todayStr >= ptoEligibleDate;
+  const ptoRemaining = Math.max(0, ptoDaysPerYear - ptoUsed);
+  const ptoExhausted = ptoRemaining <= 0;
+  const sickOverThreshold = sickUsed >= sickDaysPerYear;
+
+  // PTO gate — blocks selection if not eligible or exhausted
+  function setCode(next) {
+    if (next === 'PTO') {
+      if (!ptoEligible) {
+        setMsg({
+          type: 'error',
+          text: `PTO is not available until ${ptoEligibleDate}.`,
+        });
+        return;
+      }
+      if (ptoExhausted) {
+        setMsg({
+          type: 'error',
+          text: `All ${ptoDaysPerYear} PTO days for ${currentYear} have been used.`,
+        });
+        return;
+      }
+    }
+    setCodeRaw(next);
+  }
   const [startTime, setStartTime] = useState('');
   const [lunchOut, setLunchOut] = useState('');
   const [lunchIn, setLunchIn] = useState('');
@@ -126,6 +201,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
       setMsg({ type: 'error', text: `Error: ${error.message}` });
     } else {
       setMsg({ type: 'success', text: 'Time entry saved.' });
+      queryClient.invalidateQueries({ queryKey: ['leave_usage', employeeUserId, currentYear] });
       if (onSaved) onSaved();
     }
   }
@@ -139,6 +215,44 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           <p className="text-sm text-qs-subtle">{employeeName} &middot; Week of {weekStart}</p>
         </div>
       </div>
+
+      {/* PTO / Sick balance indicators */}
+      {ptoEligible ? (
+        <div style={{
+          display: 'flex', gap: 16, marginBottom: 12,
+          fontSize: 12, color: 'var(--qs-dim)',
+        }}>
+          <span>
+            PTO:{' '}
+            <strong style={{ color: ptoExhausted ? '#EF4444' : '#10B981' }}>
+              {ptoRemaining} of {ptoDaysPerYear} days remaining
+            </strong>
+          </span>
+          <span>
+            Sick:{' '}
+            <strong style={{ color: sickOverThreshold ? '#F59E0B' : 'var(--qs-text)' }}>
+              {sickUsed} of {sickDaysPerYear} days used
+            </strong>
+          </span>
+        </div>
+      ) : (
+        <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 12 }}>
+          PTO eligible from {ptoEligibleDate}
+        </div>
+      )}
+
+      {/* Sick day soft warning */}
+      {code === 'SICK' && sickOverThreshold && (
+        <div style={{
+          background: '#F59E0B11', border: '1px solid #F59E0B44',
+          borderRadius: 8, padding: '10px 14px', marginBottom: 12,
+          fontSize: 12, color: '#F59E0B',
+        }}>
+          ⚠ {sickUsed} sick days used in {currentYear}
+          {' '}— exceeds the {sickDaysPerYear}-day advisory threshold.
+          Entry will still be saved.
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Work Date */}
@@ -198,9 +312,20 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
             {(isHoliday
               ? [{ value: 'HOLIDAY', label: 'Federal Holiday' }]
               : CODES
-            ).map((c) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
-            ))}
+            ).map((c) => {
+              const ptoBlocked = c.value === 'PTO' && (!ptoEligible || ptoExhausted);
+              const label =
+                c.value === 'PTO' && ptoExhausted
+                  ? 'PTO (0 days remaining)'
+                  : c.value === 'PTO' && !ptoEligible
+                  ? `PTO (eligible ${ptoEligibleDate})`
+                  : c.label;
+              return (
+                <option key={c.value} value={c.value} disabled={ptoBlocked}>
+                  {label}
+                </option>
+              );
+            })}
           </select>
         </div>
 
