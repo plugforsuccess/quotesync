@@ -115,6 +115,8 @@ function parseAllstateRows(rows) {
     policy:  ["policy number", "policy #", "policy no"],
     tier:    ["bundle tier", "tier", "bundle"],
     items:   ["item count", "items", "vehicle count", "vehicles"],
+    transaction_type: ["transaction type", "transaction"],
+    disposition_code: ["disposition code", "disposition"],
   };
   const findCol = (headers, keys) => {
     const h = headers.map((x) => x?.toString().toLowerCase().trim());
@@ -137,6 +139,8 @@ function parseAllstateRows(rows) {
   const iBindName    = findCol(headers, ["bind id name"]);
   const iProductDesc = findCol(headers, ["product description", "product desc"]);
   const iCustomer    = findCol(headers, ["customer name", "customer", "insured"]);
+  const iTransType   = findCol(headers, COL_MAP.transaction_type);
+  const iDisposition = findCol(headers, COL_MAP.disposition_code);
 
   return rows.slice(1).filter(r => r.some(Boolean)).map((r) => {
     // Prefer Product Description (col 11) over Product (col 9) when available
@@ -175,8 +179,45 @@ function parseAllstateRows(rows) {
       if (!isNaN(d.getTime())) writtenDateStr = d.toISOString().slice(0, 10);
     }
 
-    // Skip endorsements: if both dates are present and differ, this is not NB
-    if (writtenDateStr && writtenDateStr !== issuedDateStr) return null;
+    // Transaction Type + Disposition Code filtering — authoritative when present.
+    // Rules:
+    //   • Drop ALL endorsements (no endorsement premium counts as NB, regardless of date/term).
+    //   • Drop Sales Issued / Add Item (vehicle adds to existing policies).
+    //   • Keep Sales Issued / New Policy Issued (new Motor Club policies — commission only, not VC).
+    //   • Keep New Issued Transaction rows (genuine new business).
+    //   • Fallback to date-diff heuristic only when Transaction Type column is absent.
+    const transType   = (iTransType   >= 0 ? r[iTransType]?.toString().trim()   : "") || "";
+    const disposition = (iDisposition >= 0 ? r[iDisposition]?.toString().trim() : "") || "";
+
+    const transLower = transType.toLowerCase();
+    const dispLower  = disposition.toLowerCase();
+
+    const isNewIssued   = transLower.includes("new issued transaction");
+    const isEndorsement = transLower.includes("endorsement");
+    const isSalesIssued = transLower.startsWith("sales issued");
+    const isAddItem     = dispLower === "add item";
+    const isNewPolicy   = dispLower === "new policy issued";
+
+    if (transType) {
+      // Transaction Type column is present — use it authoritatively.
+
+      // Drop ALL endorsements — no endorsement premium counts as new business
+      // under any circumstance regardless of date, term, or what was added.
+      if (isEndorsement) return null;
+
+      // Drop Sales Issued / Add Item — vehicle adds to existing policies
+      if (isSalesIssued && isAddItem) return null;
+
+      // Drop any other Sales Issued variants that aren't New Policy Issued
+      if (isSalesIssued && !isNewPolicy) return null;
+
+      // Drop anything that isn't New Issued or the kept Sales Issued / New Policy Issued
+      if (!isNewIssued && !(isSalesIssued && isNewPolicy)) return null;
+    } else {
+      // Fallback: no Transaction Type column (older report format).
+      // Keep existing date-diff logic as the only available signal.
+      if (writtenDateStr && writtenDateStr !== issuedDateStr) return null;
+    }
 
     const date = issuedDateStr;
 
