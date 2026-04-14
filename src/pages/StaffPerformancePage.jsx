@@ -710,6 +710,7 @@ const StaffPerformancePage = () => {
               weekStart={weekStart}
               employeeMap={employeeMap}
               onUploaded={handleRCUploaded}
+              onWeekChange={(newWeek) => setWeekStart(newWeek)}
             />
 
             {/* 4. Agent Alias Manager — resolve unmatched names */}

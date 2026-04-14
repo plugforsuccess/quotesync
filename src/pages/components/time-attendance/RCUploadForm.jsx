@@ -122,15 +122,75 @@ function parsePct(val) {
   return isNaN(n) ? 0 : Math.max(0, Math.min(100, n));
 }
 
+// ── Filters sheet (date range validation) ──────────────────────────────────────
+
+/**
+ * Reads the Filters sheet from the RC workbook and extracts the date range.
+ * Returns { fromDate, toDate, rangeDays, fileMondayStr } or null if the sheet
+ * is missing/unparseable.
+ * RC exports the Filters sheet as:
+ *   Row 0: headers [..., 'From Time', 'To Time']
+ *   Row 1: values  [..., '03/02/2026 12:00:00 AM', '03/06/2026 11:59:01 PM']
+ */
+function parseFiltersSheet(workbook) {
+  const filtersSheetName = workbook.SheetNames.find(
+    (s) => s.toLowerCase() === 'filters'
+  );
+  if (!filtersSheetName) return null;
+
+  const sheet = workbook.Sheets[filtersSheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+  // Find header row to locate From Time and To Time columns
+  if (rows.length < 2) return null;
+  const headers = rows[0].map((h) => String(h).trim().toLowerCase());
+  const fromIdx = headers.indexOf('from time');
+  const toIdx = headers.indexOf('to time');
+  if (fromIdx === -1 || toIdx === -1) return null;
+
+  const dataRow = rows[1];
+  const fromRaw = dataRow[fromIdx];
+  const toRaw = dataRow[toIdx];
+  if (!fromRaw || !toRaw) return null;
+
+  // Parse date strings — handles both string format and Excel date serial
+  function parseRCDate(val) {
+    if (typeof val === 'number') {
+      // Excel date serial — SheetJS can convert
+      const d = XLSX.SSF.parse_date_code(val);
+      return new Date(d.y, d.m - 1, d.d);
+    }
+    // String format: "03/02/2026 12:00:00 AM"
+    const d = new Date(String(val));
+    return isNaN(d.getTime()) ? null : d;
+  }
+
+  const fromDate = parseRCDate(fromRaw);
+  const toDate = parseRCDate(toRaw);
+  if (!fromDate || !toDate) return null;
+
+  const rangeDays = Math.round((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Derive the Monday of the file's from date
+  const fileMonday = new Date(fromDate);
+  const dow = fileMonday.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  fileMonday.setDate(fileMonday.getDate() + diff);
+  const fileMondayStr = fileMonday.toLocaleDateString('en-CA'); // YYYY-MM-DD
+
+  return { fromDate, toDate, rangeDays, fileMondayStr };
+}
+
 // ── Component ───────────────────────────────────────────────────────────────────
 
-export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded }) {
+export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded, onWeekChange }) {
   const [uploading, setUploading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [preview, setPreview] = useState(null);
   const [showHelp, setShowHelp] = useState(false);
   const [warnings, setWarnings] = useState([]);
   const [confirmModal, setConfirmModal] = useState(null);
+  const [weekMismatch, setWeekMismatch] = useState(null);
   const fileRef = useRef(null);
 
   async function handleFile(e) {
@@ -140,10 +200,41 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
     setMsg(null);
     setPreview(null);
     setWarnings([]);
+    setWeekMismatch(null);
 
     try {
       const buffer = await file.arrayBuffer();
       const workbook = XLSX.read(buffer, { type: 'array' });
+
+      // ── Date range validation ─────────────────────────────────────────────────
+      const filtersData = parseFiltersSheet(workbook);
+
+      if (filtersData) {
+        const { rangeDays, fileMondayStr } = filtersData;
+
+        // Hard block: range wider than 7 days is not a weekly export
+        if (rangeDays > 7) {
+          setMsg({
+            type: 'error',
+            text: `This file covers ${rangeDays} days (${filtersData.fromDate.toLocaleDateString()} – ${filtersData.toDate.toLocaleDateString()}). The Weekly Summary upload requires a single-week export (Mon–Fri). Please re-export from RingCentral with a 5-day date range.`,
+          });
+          if (fileRef.current) fileRef.current.value = '';
+          return;
+        }
+
+        // Soft warning: file week doesn't match selected week in UI
+        if (fileMondayStr !== weekStart) {
+          // Auto-correct is handled by parent via onWeekChange prop
+          // Store mismatch for display — do not block upload
+          setWeekMismatch({ fileWeek: fileMondayStr, selectedWeek: weekStart });
+        } else {
+          setWeekMismatch(null);
+        }
+      } else {
+        // No Filters sheet — can't validate. Show advisory.
+        setWeekMismatch(null);
+      }
+      // ── End date range validation ─────────────────────────────────────────────
 
       // Target the "Users" sheet; fall back to first sheet if not found
       const sheetName = workbook.SheetNames.find(
@@ -365,6 +456,54 @@ export default function RCUploadForm({ orgId, weekStart, employeeMap, onUploaded
             {warnings.map((w, i) => <li key={i}>{w}</li>)}
           </ul>
           <p className="text-xs text-amber-400 mt-1">Unmatched rows will be skipped during upload.</p>
+        </div>
+      )}
+
+      {/* Week mismatch warning */}
+      {weekMismatch && (
+        <div style={{
+          marginTop: 12, padding: '12px 14px',
+          background: '#F59E0B11', border: '1px solid #F59E0B44',
+          borderRadius: 8,
+        }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: '#F59E0B', marginBottom: 6 }}>
+            ⚠ Date range mismatch
+          </p>
+          <p style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 10 }}>
+            The file covers the week of{' '}
+            <strong style={{ color: 'var(--qs-text)' }}>{weekMismatch.fileWeek}</strong>,
+            but the week picker is set to{' '}
+            <strong style={{ color: 'var(--qs-text)' }}>{weekMismatch.selectedWeek}</strong>.
+            Which week should this data be recorded under?
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button
+              onClick={() => {
+                // Use file's week — call parent to update the week selector
+                if (onWeekChange) onWeekChange(weekMismatch.fileWeek);
+                setWeekMismatch(null);
+              }}
+              style={{
+                fontSize: 12, fontWeight: 600, padding: '5px 12px',
+                borderRadius: 6, cursor: 'pointer',
+                background: '#F59E0B22', border: '1px solid #F59E0B44',
+                color: '#F59E0B',
+              }}
+            >
+              Use file's week ({weekMismatch.fileWeek})
+            </button>
+            <button
+              onClick={() => setWeekMismatch(null)}
+              style={{
+                fontSize: 12, fontWeight: 600, padding: '5px 12px',
+                borderRadius: 6, cursor: 'pointer',
+                background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+                color: 'var(--qs-dim)',
+              }}
+            >
+              Keep selected week ({weekMismatch.selectedWeek})
+            </button>
+          </div>
         </div>
       )}
 
