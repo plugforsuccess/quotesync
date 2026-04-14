@@ -1,14 +1,18 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 // Resolves the logged-in user's employee record by matching auth_user_id.
 // Returns null if the user is not an employee (e.g. platform admin).
+// Waits for auth to resolve before querying — prevents race condition where
+// the query fires before the session is ready and returns null prematurely.
 export function useCurrentEmployee() {
+  const { user, loading: authLoading } = useAuth();
+
   return useQuery({
-    queryKey: ['current_employee_self'],
+    queryKey: ['current_employee_self', user?.id],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
+      if (!user?.id) return null;
 
       const { data } = await supabase
         .from('employees')
@@ -19,6 +23,9 @@ export function useCurrentEmployee() {
 
       return data || null;
     },
+    enabled: !authLoading && !!user?.id,
     staleTime: 10 * 60 * 1000,
+    retry: 1,
+    retryDelay: 500,
   });
 }
