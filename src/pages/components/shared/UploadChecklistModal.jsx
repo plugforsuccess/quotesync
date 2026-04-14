@@ -9,7 +9,14 @@ const STATUS_CONFIG = {
   upcoming: { color: '#64748B', bg: 'transparent', icon: null,        label: 'Upcoming' },
 };
 
-export default function UploadChecklistModal({ items, onDismiss, onLogReview, agencyId }) {
+export default function UploadChecklistModal({
+  items,
+  onDismiss,
+  onLogCadence,
+  agencyId,
+  overdueCadences = [],
+  overdueCommitments = [],
+}) {
   const navigate = useNavigate();
 
   const actionable = items.filter(i => i.status === 'due' || i.status === 'overdue');
@@ -19,7 +26,10 @@ export default function UploadChecklistModal({ items, onDismiss, onLogReview, ag
   const bobItems         = items.filter(i => i.category === 'book_of_business');
   const mgmtItems        = items.filter(i => i.category === 'management');
 
-  const hasOverdue = actionable.some(i => i.status === 'overdue');
+  const totalActionable = actionable.length + overdueCadences.length + overdueCommitments.length;
+  const hasOverdue = actionable.some(i => i.status === 'overdue')
+    || overdueCadences.length > 0
+    || overdueCommitments.length > 0;
 
   return (
     <div
@@ -45,8 +55,8 @@ export default function UploadChecklistModal({ items, onDismiss, onLogReview, ag
           <div>
             <h2 style={{ fontSize: 17, fontWeight: 700, color: 'var(--qs-bright)',
               margin: 0, marginBottom: 4 }}>
-              {actionable.length > 0
-                ? `${actionable.length} report${actionable.length > 1 ? 's' : ''} need${actionable.length === 1 ? 's' : ''} your attention`
+              {totalActionable > 0
+                ? `${totalActionable} item${totalActionable > 1 ? 's' : ''} need${totalActionable === 1 ? 's' : ''} your attention`
                 : 'All reports current ✓'
               }
             </h2>
@@ -83,17 +93,106 @@ export default function UploadChecklistModal({ items, onDismiss, onLogReview, ag
           onDismiss={onDismiss}
         />
 
-        {/* Management Reviews Section */}
+        {/* Management Cadence Section */}
         {mgmtItems.length > 0 && (
           <Section
-            title="👥 Management Reviews"
-            subtitle="Staff performance touchpoints"
+            title="👥 Management Cadence"
+            subtitle="Staff touchpoints — log when completed"
             items={mgmtItems}
             navigate={navigate}
             onDismiss={onDismiss}
-            onLogReview={onLogReview}
+            onLogCadence={onLogCadence}
             agencyId={agencyId}
           />
+        )}
+
+        {/* Overdue per-employee cadences + commitments — deep-link into agenda */}
+        {(overdueCadences.length > 0 || overdueCommitments.length > 0) && (
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: 10 }}>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-text)',
+                margin: 0 }}>🎯 Overdue Meetings & Commitments</p>
+              <p style={{ fontSize: 11, color: 'var(--qs-muted)', margin: 0 }}>
+                Per-employee cadences past their next scheduled time
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {overdueCadences.map(c => {
+                const empName = c.employees
+                  ? `${c.employees.first_name} ${c.employees.last_name}`
+                  : 'Employee';
+                const label = c.cadence_templates?.label || c.cadence_type;
+                return (
+                  <div
+                    key={c.id}
+                    onClick={() => {
+                      navigate(`/agency/cadence/${c.cadence_type}/${c.employee_id}`);
+                      onDismiss();
+                    }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', borderRadius: 8,
+                      background: '#EF444411',
+                      border: '1px solid #EF444433',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ flexShrink: 0, width: 20, textAlign: 'center' }}>
+                      <AlertTriangle size={16} style={{ color: '#EF4444' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600,
+                        color: 'var(--qs-bright)' }}>
+                        {label} — {empName}
+                      </div>
+                      <p style={{ fontSize: 11, color: '#EF4444', margin: 0, marginTop: 1 }}>
+                        Due {c.next_due_at ? new Date(c.next_due_at).toLocaleDateString() : '—'}
+                      </p>
+                    </div>
+                    <ChevronRight size={14} style={{ color: '#EF4444', flexShrink: 0 }} />
+                    <span style={{ fontSize: 10, fontWeight: 700, flexShrink: 0,
+                      color: '#EF4444', minWidth: 52, textAlign: 'right' }}>
+                      Overdue
+                    </span>
+                  </div>
+                );
+              })}
+
+              {overdueCommitments.map(c => {
+                const empName = c.employees
+                  ? `${c.employees.first_name} ${c.employees.last_name}`
+                  : 'Employee';
+                return (
+                  <div
+                    key={c.id}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      padding: '10px 12px', borderRadius: 8,
+                      background: '#EF444411',
+                      border: '1px solid #EF444433',
+                    }}
+                  >
+                    <div style={{ flexShrink: 0, width: 20, textAlign: 'center' }}>
+                      <AlertTriangle size={16} style={{ color: '#EF4444' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600,
+                        color: 'var(--qs-bright)' }}>
+                        Commitment: {c.description}
+                      </div>
+                      <p style={{ fontSize: 11, color: '#EF4444', margin: 0, marginTop: 1 }}>
+                        {empName} · Due {c.due_date}
+                      </p>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, flexShrink: 0,
+                      color: '#EF4444', minWidth: 52, textAlign: 'right' }}>
+                      Overdue
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {/* Footer */}
@@ -108,12 +207,12 @@ export default function UploadChecklistModal({ items, onDismiss, onLogReview, ag
             style={{
               fontSize: 13, fontWeight: 600, padding: '8px 20px',
               borderRadius: 8, cursor: 'pointer',
-              background: actionable.length > 0 ? 'var(--qs-elevated)' : '#10B98122',
-              border: `1px solid ${actionable.length > 0 ? 'var(--qs-border)' : '#10B98133'}`,
-              color: actionable.length > 0 ? 'var(--qs-text)' : '#10B981',
+              background: totalActionable > 0 ? 'var(--qs-elevated)' : '#10B98122',
+              border: `1px solid ${totalActionable > 0 ? 'var(--qs-border)' : '#10B98133'}`,
+              color: totalActionable > 0 ? 'var(--qs-text)' : '#10B981',
             }}
           >
-            {actionable.length > 0 ? 'Dismiss' : 'All clear — close'}
+            {totalActionable > 0 ? 'Dismiss' : 'All clear — close'}
           </button>
         </div>
       </div>
@@ -121,7 +220,7 @@ export default function UploadChecklistModal({ items, onDismiss, onLogReview, ag
   );
 }
 
-function Section({ title, subtitle, items, navigate, onDismiss, onLogReview, agencyId }) {
+function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, agencyId }) {
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ marginBottom: 10 }}>
@@ -193,16 +292,16 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogReview, age
                 )}
               </div>
 
-              {/* Mark Done button for loggable (management review) items */}
-              {item.loggable && item.status !== 'current' && onLogReview && (
+              {/* Mark Done button for loggable (management cadence) items */}
+              {item.loggable && item.status !== 'current' && onLogCadence && (
                 <button
                   onClick={async (e) => {
                     e.stopPropagation();
-                    await onLogReview(agencyId, item.key, null, null);
+                    await onLogCadence(item.key);
                   }}
                   style={{
-                    fontSize: 10, fontWeight: 700, padding: '3px 8px',
-                    borderRadius: 4, cursor: 'pointer', flexShrink: 0,
+                    fontSize: 11, fontWeight: 700, padding: '3px 10px',
+                    borderRadius: 5, cursor: 'pointer', flexShrink: 0,
                     background: '#10B98122', border: '1px solid #10B98133',
                     color: '#10B981',
                   }}

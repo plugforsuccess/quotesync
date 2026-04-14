@@ -2,7 +2,7 @@
 // MT-06: Agency settings with Profile / Notifications / Commission / Territory tabs
 
 import { useState, useMemo, useCallback } from 'react';
-import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map, PhoneCall, Target, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map, PhoneCall, Target, ChevronDown, ChevronUp, Check, Activity } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAgencyDetail, useAgencyCarrierConfig, useAgencyCommissionRatesRaw, useUpsertCommissionRates, useUpdateRevenueGoals, useAgencyRoutingRulesForAgent, useCreateAgencyRoutingRule } from '../hooks/useAgencies';
 import { useTrailingRevenueStats } from '../hooks/useTrailingRevenueStats';
@@ -13,6 +13,7 @@ import { useTeamAvailability, useSetTransferPhone, validateE164 } from '../hooks
 import { useAllProducerTargets, useSaveProducerTargets, PRODUCER_DEFAULT_TARGETS } from '../hooks/useProducerTargets';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import EmployeeInviteModal from './components/settings/EmployeeInviteModal';
+import CadenceSettingsTab from './components/settings/CadenceSettingsTab';
 import PageSpinner from '../components/PageSpinner';
 
 const TABS = [
@@ -22,6 +23,7 @@ const TABS = [
   { key: 'commission', label: 'Commission', icon: DollarSign },
   { key: 'territory', label: 'Territory', icon: Map },
   { key: 'producer_goals', label: 'Producer Goals', icon: Target },
+  { key: 'cadence', label: 'Cadence', icon: Activity },
   { key: 'team', label: 'Team', icon: Users },
 ];
 
@@ -101,6 +103,9 @@ const AgencySettingsPage = () => {
         {activeTab === 'commission' && <CommissionTab agencyId={currentAgencyId} isAgent={isAgent} />}
         {activeTab === 'territory' && <TerritoryTab agency={agency} agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
         {activeTab === 'producer_goals' && <ProducerGoalsTab agencyId={currentAgencyId} isAgent={isAgent} />}
+        {activeTab === 'cadence' && (
+          <CadenceSettingsTab agencyId={currentAgencyId} isAgent={isAgent} />
+        )}
         {activeTab === 'team' && (
           <TeamTab agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />
         )}

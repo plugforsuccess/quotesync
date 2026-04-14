@@ -11,7 +11,7 @@ import VerificationBanner from './VerificationBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import UploadChecklistModal from '../pages/components/shared/UploadChecklistModal';
 import { useUploadChecklist } from '../hooks/useUploadChecklist';
-import { useManagementReviews } from '../hooks/useManagementReviews';
+import { useManagementCadence } from '../hooks/useManagementCadence';
 import { useAuth } from '../contexts/AuthContext';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 
@@ -30,24 +30,29 @@ function Layout({ forcePlane = null }) {
     agencyMemberships
   } = useAuth();
 
-  // Upload/review checklist — principals only. useUploadChecklist already
-  // includes management review items (category: 'management'); we only need
-  // useManagementReviews for its logReview action.
+  // Upload/cadence checklist — principals only. useUploadChecklist already
+  // includes management cadence items (category: 'management') sourced from
+  // cadence_events; useManagementCadence provides the logCadenceEvent action
+  // plus per-employee overdue cadences and overdue commitments for the modal.
   const [checklistOpen, setChecklistOpen] = useState(false);
   const { data: allChecklistItems = [] } = useUploadChecklist(
     currentAgencyRole === 'principal' ? currentAgencyId : null
   );
-  const { logReview } = useManagementReviews(
+  const {
+    logCadenceEvent,
+    overdueCadences,
+    overdueCommitments,
+  } = useManagementCadence(
     currentAgencyRole === 'principal' ? currentAgencyId : null
   );
 
   const actionableCount = allChecklistItems.filter(
     i => i.status === 'due' || i.status === 'overdue'
-  ).length;
+  ).length + (overdueCadences?.length || 0) + (overdueCommitments?.length || 0);
 
   // Auto-show modal once per session if principal has actionable items
   useEffect(() => {
-    const sessionKey = 'qs_checklist_shown';
+    const sessionKey = 'qs_checklist_shown_v2';
     if (sessionStorage.getItem(sessionKey)) return;
     if (currentAgencyRole !== 'principal') return;
     if (!currentAgencyId) return;
@@ -526,13 +531,15 @@ function Layout({ forcePlane = null }) {
         />
       )}
 
-      {/* Upload & review checklist modal — principals only, accessible from bell icon */}
+      {/* Upload & cadence checklist modal — principals only, accessible from bell icon */}
       {checklistOpen && currentAgencyRole === 'principal' && (
         <UploadChecklistModal
           items={allChecklistItems}
           agencyId={currentAgencyId}
+          overdueCadences={overdueCadences}
+          overdueCommitments={overdueCommitments}
           onDismiss={() => setChecklistOpen(false)}
-          onLogReview={logReview}
+          onLogCadence={logCadenceEvent}
         />
       )}
     </div>
