@@ -1366,20 +1366,22 @@ export default function RevenueProjectionsDashboard() {
               background: baselineMet ? "#10B98111" : "#F59E0B11",
               border: `1px solid ${baselineMet ? "#10B98133" : "#F59E0B33"}`,
             }}>
-              <p style={{ fontSize: 11, color: "var(--qs-muted)", margin: 0,
-                textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600,
+                textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
                 VC Bonus at Stake
-              </p>
-              <p style={{ fontSize: 24, fontWeight: 700, margin: "4px 0",
-                color: baselineMet ? "#10B981" : "#F59E0B",
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 700,
+                color: baselineMet ? "var(--qs-success)" : "var(--qs-warning)",
                 fontFamily: "'DM Mono', monospace" }}>
                 +{fmtFull$(totals.vcBonusDelta)}
-              </p>
-              <p style={{ fontSize: 11, color: "var(--qs-muted)", margin: 0 }}>
+              </div>
+              <div style={{ fontSize: 12, marginTop: 2,
+                color: baselineMet ? "var(--qs-success)" : "var(--qs-warning)",
+                fontWeight: 500 }}>
                 {baselineMet
                   ? "✓ Baseline met — VC rates active"
                   : `${VC_BASELINE_TARGET - policiesStats.vcBaselineCount} items needed to unlock`}
-              </p>
+              </div>
             </div>
           );
         })()}
