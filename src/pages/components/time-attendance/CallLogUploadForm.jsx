@@ -259,10 +259,10 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
   const [showHelp, setShowHelp] = useState(false);
   const [confirmModal, setConfirmModal] = useState(null);
   const [uploadStats, setUploadStats] = useState(null);
+  const [fileResults, setFileResults] = useState([]);  // per-file parse summary
   const fileRef = useRef(null);
-  // Store raw file buffer for SHA-256 computation during upload
-  const fileBufferRef = useRef(null);
-  const fileNameRef = useRef(null);
+  // Store raw file buffers for SHA-256 computation, keyed by filename
+  const fileBuffersRef = useRef(new Map());
 
   // ── Weekly coverage (Mon–Fri of current week) ────────────────────────────────
   const today = new Date();
@@ -344,91 +344,116 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
   });
 
   async function handleFile(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     setMsg(null);
     setPreview(null);
     setValidationErrors([]);
     setUploadStats(null);
-    fileBufferRef.current = null;
-    fileNameRef.current = null;
+    setFileResults([]);
+    fileBuffersRef.current = new Map();
 
-    // File size check
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      setMsg({ type: 'error', text: `File is ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum is ${MAX_FILE_SIZE_MB}MB.` });
+    // Multi-file state — track per-file results
+    const allValid = [];
+    const allErrors = [];
+    const fileResultsLocal = []; // { name, validCount, errorCount } for summary
+
+    for (const file of files) {
+      // File size check per file
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        allErrors.push({
+          row: 0,
+          error: `${file.name}: File is ${(file.size / 1024 / 1024).toFixed(1)}MB. Maximum is ${MAX_FILE_SIZE_MB}MB.`
+        });
+        fileResultsLocal.push({ name: file.name, validCount: 0, errorCount: 1 });
+        continue;
+      }
+
+      try {
+        const isCSV = file.name.toLowerCase().endsWith('.csv');
+        let rows;
+        let rawBuffer;
+
+        if (isCSV) {
+          rawBuffer = await file.arrayBuffer();
+          const text = new TextDecoder().decode(rawBuffer);
+          rows = parseCSVText(text);
+        } else {
+          rawBuffer = await file.arrayBuffer();
+          const workbook = XLSX.read(rawBuffer, { type: 'array' });
+          const sheetName = workbook.SheetNames.find(
+            (s) => s.toLowerCase() === 'calls'
+          ) || workbook.SheetNames[workbook.SheetNames.length - 1];
+
+          if (!sheetName) {
+            allErrors.push({ row: 0, error: `${file.name}: No "Calls" sheet found.` });
+            fileResultsLocal.push({ name: file.name, validCount: 0, errorCount: 1 });
+            continue;
+          }
+
+          const sheet = workbook.Sheets[sheetName];
+          rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+        }
+
+        if (rows.length === 0) {
+          allErrors.push({ row: 0, error: `${file.name}: No data rows found.` });
+          fileResultsLocal.push({ name: file.name, validCount: 0, errorCount: 1 });
+          continue;
+        }
+
+        if (rows.length > MAX_ROWS) {
+          allErrors.push({
+            row: 0,
+            error: `${file.name}: File has ${rows.length.toLocaleString()} rows. Maximum is ${MAX_ROWS.toLocaleString()}.`,
+          });
+          fileResultsLocal.push({ name: file.name, validCount: 0, errorCount: 1 });
+          continue;
+        }
+
+        // Validate and transform rows — tag each with its source filename
+        let fileValidCount = 0;
+        let fileErrorCount = 0;
+
+        for (let i = 0; i < rows.length; i++) {
+          const { record, error } = validateAndTransformRow(
+            rows[i], employeeMap || {}, orgId, file.name
+          );
+          if (error) {
+            allErrors.push({ row: i + 2, error: `${file.name} row ${i + 2}: ${error}` });
+            fileErrorCount++;
+          } else {
+            // Tag with source file for per-file batch records during commit
+            allValid.push({ ...record, _sourceFile: file.name });
+            fileValidCount++;
+          }
+        }
+
+        // Store buffer for SHA256 — keyed by filename
+        fileBuffersRef.current.set(file.name, rawBuffer);
+
+        fileResultsLocal.push({ name: file.name, validCount: fileValidCount, errorCount: fileErrorCount });
+
+      } catch (err) {
+        allErrors.push({ row: 0, error: `${file.name}: Parse error — ${err.message}` });
+        fileResultsLocal.push({ name: file.name, validCount: 0, errorCount: 1 });
+      }
+    }
+
+    if (allValid.length === 0) {
+      setMsg({
+        type: 'error',
+        text: `No valid call records found across ${files.length} file(s). Check validation errors below.`,
+      });
+      setValidationErrors(allErrors.slice(0, 20));
+      setFileResults(fileResultsLocal);
       return;
     }
 
-    try {
-      const isCSV = file.name.toLowerCase().endsWith('.csv');
-      let rows;
-      let rawBuffer;
-
-      if (isCSV) {
-        rawBuffer = await file.arrayBuffer();
-        const text = new TextDecoder().decode(rawBuffer);
-        rows = parseCSVText(text);
-      } else {
-        rawBuffer = await file.arrayBuffer();
-        const workbook = XLSX.read(rawBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames.find(
-          (s) => s.toLowerCase() === 'calls'
-        ) || workbook.SheetNames[workbook.SheetNames.length - 1];
-
-        if (!sheetName) {
-          setMsg({ type: 'error', text: 'No sheets found in the XLSX file.' });
-          return;
-        }
-
-        const sheet = workbook.Sheets[sheetName];
-        rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
-      }
-
-      // Store buffer for hash computation during upload
-      fileBufferRef.current = rawBuffer;
-      fileNameRef.current = file.name;
-
-      if (rows.length === 0) {
-        setMsg({ type: 'error', text: 'No data rows found in the file.' });
-        return;
-      }
-
-      if (rows.length > MAX_ROWS) {
-        setMsg({ type: 'error', text: `File has ${rows.length.toLocaleString()} rows. Maximum is ${MAX_ROWS.toLocaleString()}.` });
-        return;
-      }
-
-      // Validate and transform each row
-      const valid = [];
-      const errors = [];
-
-      for (let i = 0; i < rows.length; i++) {
-        const { record, error } = validateAndTransformRow(
-          rows[i], employeeMap || {}, orgId, file.name
-        );
-        if (error) {
-          errors.push({ row: i + 2, error }); // +2: 1-indexed + header row
-        } else {
-          valid.push(record);
-        }
-      }
-
-      if (valid.length === 0) {
-        setMsg({
-          type: 'error',
-          text: `No valid call records found. ${errors.length} row(s) had validation errors.`,
-        });
-        setValidationErrors(errors.slice(0, 20));
-        return;
-      }
-
-      setPreview(valid);
-      if (errors.length > 0) {
-        setValidationErrors(errors.slice(0, 20));
-      }
-    } catch (err) {
-      setMsg({ type: 'error', text: `Failed to parse file: ${err.message}` });
+    setFileResults(fileResultsLocal);
+    setPreview(allValid);
+    if (allErrors.length > 0) {
+      setValidationErrors(allErrors.slice(0, 20));
     }
   }
 
@@ -480,124 +505,139 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
     try {
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Compute file hash for audit trail + duplicate detection
-      let fileHash = 'unknown';
-      if (fileBufferRef.current) {
-        fileHash = await computeSHA256(fileBufferRef.current);
+      // Group matched rows by source file
+      const byFile = new Map();
+      for (const row of matchedRows) {
+        const src = row._sourceFile || 'unknown';
+        if (!byFile.has(src)) byFile.set(src, []);
+        byFile.get(src).push(row);
       }
 
-      // Warn if this exact file was already uploaded
-      if (fileHash !== 'unknown') {
-        const { data: existingBatch } = await supabase
-          .from('rc_call_log_batches')
-          .select('id, created_at, rows_inserted')
-          .eq('org_id', orgId)
-          .eq('source_sha256', fileHash)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+      let grandInserted = 0;
+      let grandDuplicate = 0;
+      let grandError = null;
+      let lastBatchId = null;
 
-        if (existingBatch) {
-          const when = new Date(existingBatch.created_at).toLocaleString();
-          const confirmed = window.confirm(
-            `This file was already uploaded on ${when} (${existingBatch.rows_inserted ?? '?'} rows inserted). Upload again?`
-          );
-          if (!confirmed) {
-            setUploading(false);
-            return;
+      // Process each source file independently
+      for (const [filename, fileRows] of byFile) {
+        // SHA256 for duplicate detection
+        let fileHash = 'unknown';
+        const buf = fileBuffersRef.current?.get(filename);
+        if (buf) fileHash = await computeSHA256(buf);
+
+        // Duplicate file check
+        if (fileHash !== 'unknown') {
+          const { data: existingBatch } = await supabase
+            .from('rc_call_log_batches')
+            .select('id, created_at, rows_inserted')
+            .eq('org_id', orgId)
+            .eq('source_sha256', fileHash)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          if (existingBatch) {
+            const when = new Date(existingBatch.created_at).toLocaleString();
+            const confirmed = window.confirm(
+              `"${filename}" was already uploaded on ${when} (${existingBatch.rows_inserted ?? '?'} rows). Upload again?`
+            );
+            if (!confirmed) continue;
           }
         }
-      }
 
-      // Create ingestion batch record
-      const { data: batch, error: batchError } = await supabase
-        .from('rc_call_log_batches')
-        .insert({
-          org_id: orgId,
-          uploaded_by: user?.id,
-          source_filename: fileNameRef.current || 'unknown',
-          source_sha256: fileHash,
-          rows_total: (preview?.length || 0) + validationErrors.length,
-          rows_valid: matchedRows.length,
-          rows_invalid: validationErrors.length,
-          rows_unmatched: skippedCount,
-          // rows_inserted and rows_duplicate updated after upserts complete
-        })
-        .select()
-        .single();
+        // Create batch record for this file
+        const fileValidationErrors = validationErrors.filter(e =>
+          e.error.startsWith(filename)
+        );
 
-      if (batchError) {
-        setMsg({ type: 'error', text: `Failed to create batch record: ${batchError.message}` });
-        setUploading(false);
-        return;
-      }
-
-      // Strip preview-only fields and add audit fields
-      const records = matchedRows.map(({ _matched, _time, _duration, _callDate, ...row }) => ({
-        ...row,
-        uploaded_by: user?.id,
-        ingestion_batch_id: batch.id,
-      }));
-
-      let totalSent = 0;
-      let totalInserted = 0;
-      let uploadError = null;
-
-      for (let i = 0; i < records.length; i += BATCH_SIZE) {
-        const chunk = records.slice(i, i + BATCH_SIZE);
-        const { data, error } = await supabase
-          .from('rc_call_log')
-          .upsert(chunk, {
-            onConflict: 'org_id,employee_user_id,call_start_time,call_direction,call_result',
-            ignoreDuplicates: true,
+        const { data: batch, error: batchError } = await supabase
+          .from('rc_call_log_batches')
+          .insert({
+            org_id: orgId,
+            uploaded_by: user?.id,
+            source_filename: filename,
+            source_sha256: fileHash,
+            rows_total: fileRows.length + fileValidationErrors.length,
+            rows_valid: fileRows.length,
+            rows_invalid: fileValidationErrors.length,
+            rows_unmatched: 0,
           })
-          .select('id');
+          .select()
+          .single();
 
-        if (error) {
-          uploadError = error;
+        if (batchError) {
+          grandError = batchError;
           break;
         }
-        totalSent += chunk.length;
-        totalInserted += data?.length || 0;
-      }
 
-      // Update batch with final stats
-      const totalDuplicate = totalSent - totalInserted;
-      await supabase
-        .from('rc_call_log_batches')
-        .update({
-          rows_inserted: totalInserted,
-          rows_duplicate: totalDuplicate,
-        })
-        .eq('id', batch.id);
+        // Strip preview-only fields and insert
+        const records = fileRows.map(({ _matched, _time, _duration,
+          _callDate, _sourceFile, ...row }) => ({
+          ...row,
+          uploaded_by: user?.id,
+          ingestion_batch_id: batch.id,
+        }));
+
+        let fileInserted = 0;
+        let fileSent = 0;
+
+        for (let i = 0; i < records.length; i += BATCH_SIZE) {
+          const chunk = records.slice(i, i + BATCH_SIZE);
+          const { data, error } = await supabase
+            .from('rc_call_log')
+            .upsert(chunk, {
+              onConflict: 'org_id,employee_user_id,call_start_time,call_direction,call_result',
+              ignoreDuplicates: true,
+            })
+            .select('id');
+
+          if (error) { grandError = error; break; }
+          fileSent += chunk.length;
+          fileInserted += data?.length || 0;
+        }
+
+        if (grandError) break;
+
+        // Update batch with final stats
+        await supabase
+          .from('rc_call_log_batches')
+          .update({
+            rows_inserted: fileInserted,
+            rows_duplicate: fileSent - fileInserted,
+          })
+          .eq('id', batch.id);
+
+        grandInserted += fileInserted;
+        grandDuplicate += fileSent - fileInserted;
+        lastBatchId = batch.id;
+      }
 
       setUploading(false);
 
-      if (uploadError) {
-        setMsg({ type: 'error', text: `Upload failed: ${uploadError.message}` });
+      if (grandError) {
+        setMsg({ type: 'error', text: `Upload failed: ${grandError.message}` });
       } else {
+        const fileCount = byFile.size;
         const stats = {
-          batchId: batch.id,
-          sent: totalSent,
-          inserted: totalInserted,
-          ignored: totalDuplicate,
+          batchId: lastBatchId,
+          sent: grandInserted + grandDuplicate,
+          inserted: grandInserted,
+          ignored: grandDuplicate,
           skipped: skippedCount,
           invalid: validationErrors.length,
         };
         setUploadStats(stats);
 
-        const warnIgnore = totalDuplicate > 0 && totalDuplicate > totalSent * 0.5;
+        const dupNote = grandDuplicate > 0 ? `, ${grandDuplicate} duplicates skipped` : '';
         const skipNote = skippedCount > 0 ? `, ${skippedCount} unmatched skipped` : '';
-        const ignoreNote = totalDuplicate > 0 ? `, ${totalDuplicate} duplicates ignored` : '';
-
         setMsg({
-          type: warnIgnore ? 'warning' : 'success',
-          text: `${totalInserted} new records inserted${ignoreNote}${skipNote}.${warnIgnore ? ' High duplicate ratio — this file may have been uploaded before.' : ''}`,
+          type: 'success',
+          text: `${grandInserted} new records inserted across ${fileCount} file(s)${dupNote}${skipNote}.`,
         });
         setPreview(null);
         setValidationErrors([]);
-        fileBufferRef.current = null;
-        fileNameRef.current = null;
+        setFileResults([]);
+        fileBuffersRef.current = new Map();
         if (fileRef.current) fileRef.current.value = '';
         refetchCoverage();
         refetchBatches();
@@ -775,12 +815,15 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       <div className="flex items-center gap-3">
         <label className="flex items-center gap-2 px-4 py-2.5 bg-qs-elevated hover:bg-qs-card text-qs-text font-medium rounded-lg cursor-pointer transition-colors">
           <Upload className="w-4 h-4" />
-          Choose File
+          {fileResults.length > 1
+            ? `${fileResults.length} files selected`
+            : 'Choose File(s)'}
           <input
             ref={fileRef}
             type="file"
             accept=".xlsx,.xls,.csv"
             onChange={handleFile}
+            multiple
             className="hidden"
           />
         </label>
@@ -802,6 +845,44 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               <li key={i}>Row {ve.row}: {ve.error}</li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {/* Multi-file preview summary */}
+      {fileResults.length > 1 && (
+        <div style={{
+          marginTop: 12, marginBottom: 8, padding: '10px 14px',
+          background: 'var(--qs-elevated)', borderRadius: 8,
+          border: '1px solid var(--qs-border)',
+        }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-text)', marginBottom: 8 }}>
+            {fileResults.length} files selected — {preview?.length || 0} total valid calls
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {fileResults.map((f, i) => (
+              <div key={i} style={{
+                display: 'flex', justifyContent: 'space-between',
+                fontSize: 11, color: 'var(--qs-dim)',
+              }}>
+                <span style={{
+                  maxWidth: 280, overflow: 'hidden',
+                  textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>
+                  {f.name}
+                </span>
+                <span>
+                  <span style={{ color: f.validCount > 0 ? '#10B981' : 'var(--qs-muted)' }}>
+                    {f.validCount} valid
+                  </span>
+                  {f.errorCount > 0 && (
+                    <span style={{ color: '#F59E0B', marginLeft: 8 }}>
+                      {f.errorCount} errors
+                    </span>
+                  )}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -877,7 +958,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               {uploading ? 'Uploading...' : 'Confirm Upload'}
             </button>
             <button
-              onClick={() => { setPreview(null); setValidationErrors([]); fileBufferRef.current = null; if (fileRef.current) fileRef.current.value = ''; }}
+              onClick={() => { setPreview(null); setValidationErrors([]); setFileResults([]); fileBuffersRef.current = new Map(); if (fileRef.current) fileRef.current.value = ''; }}
               className="px-4 py-2.5 text-qs-text font-medium hover:bg-qs-card rounded-lg transition-colors"
             >
               Cancel
