@@ -82,10 +82,14 @@ serve(async (req) => {
       authUserId = invited.user!.id;
     }
 
-    // Link auth_user_id to employee record
+    // Link auth_user_id to employee record and force a password reset on
+    // first login so the temporary credential can't be reused.
     const { error: linkError } = await admin
       .from('employees')
-      .update({ auth_user_id: authUserId })
+      .update({
+        auth_user_id: authUserId,
+        must_reset_password: true,
+      })
       .eq('id', employee_id)
       .eq('org_id', agency_id);
 

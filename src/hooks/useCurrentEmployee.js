@@ -12,7 +12,7 @@ export function useCurrentEmployee() {
 
       const { data } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, preferred_name, roles, org_id, auth_user_id')
+        .select('id, first_name, last_name, preferred_name, roles, org_id, auth_user_id, must_reset_password')
         .eq('auth_user_id', user.id)
         .eq('employment_status', 'active')
         .maybeSingle();
