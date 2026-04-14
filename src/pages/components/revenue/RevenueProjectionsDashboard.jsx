@@ -522,11 +522,16 @@ export default function RevenueProjectionsDashboard() {
   });
 
   // ─── Filtered entries ──────────────────────────────────────────────────────
+  // Compare as YYYY-MM-DD strings (local timezone) to avoid UTC parsing bugs.
+  // `new Date("2026-04-01")` parses as UTC midnight, but `rangeStart` is built
+  // with the local-timezone constructor — so in timezones west of UTC, entries
+  // dated the first of the month were silently excluded from the filter.
+  const rangeStartStr = useMemo(() => rangeStart.toLocaleDateString('en-CA'), [rangeStart]);
+  const rangeEndStr   = useMemo(() => rangeEnd.toLocaleDateString('en-CA'),   [rangeEnd]);
+
   const filtered = useMemo(() =>
-    entries.filter(e => {
-      const d = new Date(e.date);
-      return d >= rangeStart && d <= rangeEnd;
-    }), [entries, rangeStart, rangeEnd]);
+    entries.filter(e => e.date >= rangeStartStr && e.date <= rangeEndStr),
+    [entries, rangeStartStr, rangeEndStr]);
 
   // ─── Sort handler ──────────────────────────────────────────────────────────
   const handleSort = (col) => {
