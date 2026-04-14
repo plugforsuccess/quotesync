@@ -639,7 +639,12 @@ const TimeAttendancePage = () => {
             />
             <button
               onClick={() => setWeekStart(addWeeks(weekStart, 1))}
-              className="p-1.5 text-qs-dim hover:text-primary-400 hover:bg-primary-900/20 rounded transition-colors"
+              disabled={isCurrentWeek}
+              className={`p-1.5 rounded transition-colors ${
+                isCurrentWeek
+                  ? 'text-qs-muted opacity-30 cursor-not-allowed'
+                  : 'text-qs-dim hover:text-primary-400 hover:bg-primary-900/20'
+              }`}
             >
               <ChevronRight className="w-4 h-4" />
             </button>

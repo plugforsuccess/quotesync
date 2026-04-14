@@ -132,18 +132,28 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
     else setViewMonth(viewMonth - 1);
   }
   function nextMonth() {
+    const now = new Date();
+    const atCurrentMonth =
+      viewYear === now.getFullYear() && viewMonth === now.getMonth();
+    if (atCurrentMonth) return; // already at current month — don't go forward
     if (viewMonth === 11) { setViewMonth(0); setViewYear(viewYear + 1); }
     else setViewMonth(viewMonth + 1);
   }
 
+  const today = toLocalDateStr(new Date());
+
   function handleDayClick(date) {
+    const ds = toLocalDateStr(date);
+    // Block future dates — cannot log attendance for dates that haven't happened
+    if (ds > today) return;
     const monday = toMonday(date);
     onChange(monday);
     setOpen(false);
   }
 
   const days = getCalendarDays(viewYear, viewMonth);
-  const today = toLocalDateStr(new Date());
+  const isCurrentMonth =
+    viewYear === new Date().getFullYear() && viewMonth === new Date().getMonth();
   const selectedMonday = weekStart;
   const selectedFriday = (() => {
     const d = new Date(weekStart + 'T00:00:00');
@@ -171,7 +181,16 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
         <span className="text-sm font-semibold text-qs-bright" aria-live="polite">
           {MONTH_NAMES[viewMonth]} {viewYear}
         </span>
-        <button onClick={nextMonth} aria-label="Next month" className="p-1 rounded hover:bg-qs-card text-qs-dim">
+        <button
+          onClick={nextMonth}
+          disabled={isCurrentMonth}
+          aria-label="Next month"
+          className={`p-1 rounded text-qs-dim ${
+            isCurrentMonth
+              ? 'opacity-30 cursor-not-allowed'
+              : 'hover:bg-qs-card'
+          }`}
+        >
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>
@@ -192,6 +211,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
           const isMonday = date.getDay() === 1 && inWeek;
           const isFriday = date.getDay() === 5 && inWeek;
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const isFuture = ds > today;
           const isHoliday = holidays.has(ds);
           const holidayLabel = isHoliday ? getHolidayLabel(ds) : null;
 
@@ -199,18 +219,25 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
             <button
               key={i}
               onClick={() => handleDayClick(date)}
+              disabled={isFuture}
               tabIndex={open ? 0 : -1}
               aria-pressed={inWeek}
-              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}${isHoliday ? ` (${holidayLabel})` : ''}${inWeek ? ' (selected week)' : ''}`}
+              aria-label={`${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}${isHoliday ? ` (${holidayLabel})` : ''}${inWeek ? ' (selected week)' : ''}${isFuture ? ' (unavailable)' : ''}`}
               className={`
                 py-1.5 text-xs text-center transition-colors relative
-                ${!currentMonth ? 'text-qs-muted' : isWeekend ? 'text-qs-muted' : 'text-qs-text'}
-                ${inWeek ? 'bg-primary-900/20 text-primary-300 font-semibold' : 'hover:bg-qs-card'}
+                ${isFuture
+                  ? 'text-qs-muted opacity-30 cursor-not-allowed'
+                  : !currentMonth ? 'text-qs-muted'
+                  : isWeekend ? 'text-qs-muted'
+                  : 'text-qs-text'
+                }
+                ${inWeek && !isFuture ? 'bg-primary-900/20 text-primary-300 font-semibold' : ''}
+                ${!isFuture ? 'hover:bg-qs-card' : ''}
                 ${isMonday ? 'rounded-l-lg' : ''}
                 ${isFriday ? 'rounded-r-lg' : ''}
                 ${isToday && !inWeek ? 'font-bold text-primary-400' : ''}
-                ${isHoliday && !inWeek ? 'text-blue-400 font-medium' : ''}
-                ${isHoliday && inWeek ? 'text-blue-300' : ''}
+                ${isHoliday && !inWeek && !isFuture ? 'text-blue-400 font-medium' : ''}
+                ${isHoliday && inWeek && !isFuture ? 'text-blue-300' : ''}
               `}
             >
               {date.getDate()}
