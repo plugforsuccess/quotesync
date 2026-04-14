@@ -562,6 +562,23 @@ export default function MyQueuePage() {
     );
   }
 
+  // Sales-only employees don't have a retention queue. Send them to the
+  // scorecard rather than show an empty queue.
+  const isServiceRole = roles.includes('service_inbound')
+    || roles.includes('service_outbound');
+  if (employee && !isServiceRole) {
+    return (
+      <div style={{ textAlign: 'center', padding: 40 }}>
+        <p style={{ color: 'var(--qs-muted)', fontSize: 14 }}>
+          Your role doesn't include a retention queue.
+        </p>
+        <a href="/my/scorecard" style={{ color: '#3B82F6', fontSize: 13 }}>
+          Go to your scorecard →
+        </a>
+      </div>
+    );
+  }
+
   return (
     <div>
 

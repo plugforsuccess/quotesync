@@ -1,6 +1,8 @@
 // Minimal layout for employee-scoped pages.
 // No platform nav, no agency switcher, no admin tools.
-// Bottom tab bar: Queue | Scorecard | Punch
+// Bottom tab bar: Queue (service only) | Scorecard | Punch
+// The Queue tab is gated on employees.roles — sales-only employees don't
+// have a retention queue, so they shouldn't see the tab.
 
 import { Outlet, NavLink } from 'react-router-dom';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
@@ -8,6 +10,24 @@ import { supabase } from '../lib/supabase';
 
 export default function EmployeeLayout() {
   const { data: employee } = useCurrentEmployee();
+
+  const roles = employee?.roles || [];
+  const isService = roles.includes('service_inbound')
+    || roles.includes('service_outbound');
+
+  // Build tabs based on functional role
+  const tabs = [];
+
+  // Queue — service roles only (retention cases, pending cancel)
+  if (isService) {
+    tabs.push({ to: '/my/queue', icon: '\u26A1', label: 'Queue' });
+  }
+
+  // Scorecard — all employees
+  tabs.push({ to: '/my/scorecard', icon: '\uD83D\uDCCA', label: 'Scorecard' });
+
+  // Punch — all employees
+  tabs.push({ to: '/punch', icon: '\u23F1\uFE0F', label: 'Punch' });
 
   async function handleSignOut() {
     await supabase.auth.signOut();
@@ -47,11 +67,7 @@ export default function EmployeeLayout() {
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0,
         background: 'var(--qs-card)', borderTop: '1px solid var(--qs-border)',
         display: 'flex', height: 56 }}>
-        {[
-          { to: '/my/queue',     icon: '\u26A1', label: 'Queue'     },
-          { to: '/my/scorecard', icon: '\uD83D\uDCCA', label: 'Scorecard' },
-          { to: '/punch',        icon: '\u23F1\uFE0F', label: 'Punch'     },
-        ].map(({ to, icon, label }) => (
+        {tabs.map(({ to, icon, label }) => (
           <NavLink key={to} to={to}
             style={({ isActive }) => ({
               flex: 1, display: 'flex', flexDirection: 'column',
