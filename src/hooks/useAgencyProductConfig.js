@@ -13,6 +13,7 @@ const FALLBACK_CONFIG = {
   commissionableFactors:  { auto: 0.998, specialty_auto: 0.998, ho: 0.935, condo: 0.959, renters: 1.0, landlord: 1.0, pup: 1.0, manufactured: 1.0, boat: 1.0, motor_club: 1.0, other: 1.0 },
   nbRates:                { auto: { preferred: 0.25, bundled: 0.20, monoline: 0.15 }, ho: { preferred: 0.29, bundled: 0.25, monoline: 0.16 } },
   renewalRates:           { auto: { bundled: 0.06, monoline: 0.04 }, ho: { bundled: 0.09, monoline: 0.07 } },
+  baseRates:              { auto: 0.09, ho: 0.09, condo: 0.09, renters: 0.09, landlord: 0.09, specialty_auto: 0.09, pup: 0.09, manufactured: 0.09, boat: 0.09, motor_club: 0.25, other: 0.09 },
   vcEligibleKeys:         ['auto', 'specialty_auto', 'ho', 'renters', 'landlord', 'boat', 'manufactured'],
   vcBaselineTarget:       53,
   allProductKeys:         ['auto', 'ho', 'condo', 'renters', 'landlord', 'specialty_auto', 'pup', 'manufactured', 'boat', 'motor_club', 'other'],
@@ -26,7 +27,8 @@ async function fetchProductConfig(agencyId) {
         product_key, label, is_vc_eligible, points_per_item, is_active, sort_order,
         commissionable_factor,
         nb_rate_preferred, nb_rate_bundled, nb_rate_monoline,
-        renewal_rate_bundled, renewal_rate_monoline
+        renewal_rate_bundled, renewal_rate_monoline,
+        nb_rate_base
       `)
       .eq('agency_id', agencyId)
       .eq('is_active', true)
@@ -73,6 +75,7 @@ async function fetchProductConfig(agencyId) {
   const commissionableFactors = {};
   const nbRates               = {};
   const renewalRates          = {};
+  const baseRates             = {};
   const vcEligibleKeys        = [];
   const allProductKeys        = [];
   const productLabels         = {};
@@ -103,6 +106,11 @@ async function fetchProductConfig(agencyId) {
         monoline: parseFloat(p.renewal_rate_monoline) || 0,
       };
     }
+
+    // Flat base rate (Established Agency column on Allstate P&C schedule).
+    // Earned regardless of VC baseline. Motor Club is a flat 25% by convention
+    // and is handled at the call site; for all other products fall back to 9%.
+    baseRates[k] = parseFloat(p.nb_rate_base) || (k === 'motor_club' ? 0.25 : 0.09);
   }
 
   return {
@@ -110,6 +118,7 @@ async function fetchProductConfig(agencyId) {
     commissionableFactors,
     nbRates,
     renewalRates,
+    baseRates,
     vcEligibleKeys,
     vcBaselineTarget: carrier?.vc_baseline_target ?? 53,
     vcProgramLabel:   carrier?.vc_program_label   ?? 'VC Baseline',
