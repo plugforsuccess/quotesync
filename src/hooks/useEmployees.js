@@ -192,7 +192,7 @@ export function useActiveEmployees(orgId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, preferred_name, roles, rc_display_name, auth_user_id, default_start_time, default_lunch_out, default_lunch_in, default_end_time, hire_date')
+        .select('id, first_name, last_name, preferred_name, roles, rc_display_name, auth_user_id, default_start_time, default_lunch_out, default_lunch_in, default_end_time, hire_date, pto_days_per_year, sick_days_per_year, pto_eligible_date')
         .eq('org_id', orgId)
         .eq('employment_status', 'active')
         .order('last_name');

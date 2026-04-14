@@ -23,6 +23,7 @@ const SERVICE_COLUMNS = [
   { key: 'missed', label: 'Missed', sortable: true },
   { key: 'flags', label: 'Flags', sortable: true },
   { key: 'daysOut', label: 'Days Out', sortable: true },
+  { key: 'wfhDays', label: 'WFH', sortable: true },
 ];
 
 const TEAM_COLUMNS = {
@@ -38,6 +39,7 @@ const TEAM_COLUMNS = {
     { key: 'missed', label: 'Missed', sortable: true },
     { key: 'avgHandleOut', label: 'Avg Handle (Out)', sortable: true, format: 'time' },
     { key: 'daysOut', label: 'Days Out', sortable: true },
+    { key: 'wfhDays', label: 'WFH', sortable: true },
   ],
   all: [
     { key: 'name', label: 'Employee', sortable: true },
@@ -48,6 +50,7 @@ const TEAM_COLUMNS = {
     { key: 'missed', label: 'Missed', sortable: true },
     { key: 'grade', label: 'Grade', sortable: true, roleSpecific: 'service' },
     { key: 'daysOut', label: 'Days Out', sortable: true },
+    { key: 'wfhDays', label: 'WFH', sortable: true },
   ],
 };
 
@@ -120,6 +123,7 @@ function CellValue({ col, row }) {
     if (detail.appt > 0) parts.push(`${detail.appt} Appt`);
     if (detail.early > 0) parts.push(`${detail.early} Early`);
     if (detail.unexcused > 0) parts.push(`${detail.unexcused} Unexcused`);
+    if (detail.wfh > 0) parts.push(`${detail.wfh} WFH`);
 
     return (
       <span
@@ -127,6 +131,15 @@ function CellValue({ col, row }) {
         title={parts.join(' · ')}
       >
         {row.daysOut}
+      </span>
+    );
+  }
+
+  if (col.key === 'wfhDays') {
+    if (!val || val === 0) return <span className="text-qs-muted">—</span>;
+    return (
+      <span className="text-sm font-medium text-amber-400">
+        {val}
       </span>
     );
   }
@@ -264,6 +277,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
           role: empRoleType,
           daysOut: attendance.totalAbsences,
           daysOutDetail: attendance,
+          wfhDays: attendance.wfh,
         };
       })
       .filter(Boolean);
@@ -316,6 +330,7 @@ export default function TeamComparisonView({ teamData, roleFilter = 'service_inb
       flags: 0,
       daysOut: avg('daysOut'),
       daysOutDetail: null,
+      wfhDays: avg('wfhDays'),
     };
   }, [rows]);
 
