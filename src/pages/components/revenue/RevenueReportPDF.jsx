@@ -3,7 +3,8 @@
 
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
-const GOAL = 40000;
+const DEFAULT_GOAL = 40000;
+const DEFAULT_VC_BASELINE = 53;
 
 const styles = StyleSheet.create({
   page: {
@@ -258,7 +259,9 @@ function calcCommission(premium, product, tier = "monoline") {
 }
 
 // ── Main PDF document ─────────────────────────────────────────────────────────
-export default function RevenueReportPDF({ entries, totals, rangeLabel, view, goalPct, pace = null, policiesStats = null, dailyCumulative = [], yesterdayEarned = 0, byProducer = [], lastMonthCommission = 0, advisoryBrief = "" }) {
+export default function RevenueReportPDF({ entries, totals, rangeLabel, view, goalPct, pace = null, policiesStats = null, dailyCumulative = [], yesterdayEarned = 0, byProducer = [], lastMonthCommission = 0, advisoryBrief = "", commissionGoal = DEFAULT_GOAL, vcBaselineTarget = DEFAULT_VC_BASELINE }) {
+  const GOAL = commissionGoal;
+  const VC_BASELINE = vcBaselineTarget;
   const generated = new Date().toLocaleDateString("en-US", {
     month: "long", day: "numeric", year: "numeric",
   });
@@ -325,7 +328,7 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
         {/* ── Progress bar ── */}
         <View style={styles.progressWrap}>
           <View style={styles.progressLabelRow}>
-            <Text style={styles.progressLabel}>$40K Monthly New Business Goal</Text>
+            <Text style={styles.progressLabel}>{fmt$(GOAL)} Monthly New Business Goal</Text>
             <Text style={styles.progressAmt}>{fmt$(totals.totalPremium)} / {fmt$(GOAL)}</Text>
           </View>
           <View style={styles.progressTrack}>
@@ -420,17 +423,17 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
               <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>VC Baseline Items</Text>
                 <Text style={styles.kpiValue}>{policiesStats.vcBaselineCount}</Text>
-                <Text style={styles.kpiSub}>Target: 53/mo</Text>
+                <Text style={styles.kpiSub}>Target: {VC_BASELINE}/mo</Text>
               </View>
               <View style={styles.kpiCard}>
                 <Text style={styles.kpiLabel}>VC Baseline Pct</Text>
                 <Text style={[styles.kpiValue, {
-                  color: policiesStats.vcBaselineCount >= 53 ? "#059669" : "#d97706"
+                  color: policiesStats.vcBaselineCount >= VC_BASELINE ? "#059669" : "#d97706"
                 }]}>
-                  {Math.round((policiesStats.vcBaselineCount / 53) * 100)}%
+                  {Math.round((policiesStats.vcBaselineCount / VC_BASELINE) * 100)}%
                 </Text>
-                <Text style={styles.kpiSub}>{53 - policiesStats.vcBaselineCount > 0
-                  ? `${53 - policiesStats.vcBaselineCount} items to baseline`
+                <Text style={styles.kpiSub}>{VC_BASELINE - policiesStats.vcBaselineCount > 0
+                  ? `${VC_BASELINE - policiesStats.vcBaselineCount} items to baseline`
                   : "Baseline achieved"
                 }</Text>
               </View>
@@ -566,12 +569,12 @@ export default function RevenueReportPDF({ entries, totals, rangeLabel, view, go
             <View style={styles.kpiCard}>
               <Text style={styles.kpiLabel}>VC Baseline</Text>
               <Text style={[styles.kpiValue, {
-                color: (policiesStats?.vcBaselineCount ?? 0) >= 53 ? "#059669" : "#d97706"
+                color: (policiesStats?.vcBaselineCount ?? 0) >= VC_BASELINE ? "#059669" : "#d97706"
               }]}>
-                {policiesStats?.vcBaselineCount ?? 0}/53
+                {policiesStats?.vcBaselineCount ?? 0}/{VC_BASELINE}
               </Text>
               <Text style={styles.kpiSub}>
-                {(policiesStats?.vcBaselineCount ?? 0) >= 53 ? "Baseline hit" : `${53 - (policiesStats?.vcBaselineCount ?? 0)} to go`}
+                {(policiesStats?.vcBaselineCount ?? 0) >= VC_BASELINE ? "Baseline hit" : `${VC_BASELINE - (policiesStats?.vcBaselineCount ?? 0)} to go`}
               </Text>
             </View>
           </View>

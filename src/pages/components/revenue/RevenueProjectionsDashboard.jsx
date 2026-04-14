@@ -61,10 +61,39 @@ function maskCustomerName(fullName) {
 // CAT reinsurance factors are now sourced from useAgencyProductConfig
 // (cat_reinsurance_factors table by agency state, with agency_products override fallback).
 
-function calcCommission(premium, product, tier = "monoline", catFactors = {}) {
-  const rates = COMMISSION[product] ?? COMMISSION.other;
+/**
+ * Compute commission for a single policy.
+ *
+ * @param {number}  premium     Written premium for the policy.
+ * @param {string}  product     Product key (auto, ho, condo, ...).
+ * @param {string}  tier        Bundle tier — 'preferred' | 'bundled' | 'monoline'.
+ * @param {object}  catFactors  Commissionable reduction factors by product key.
+ * @param {boolean} useVCRates  true → VC tiered rates (preferred/bundled/monoline);
+ *                              false → flat base rate (Established Agency column).
+ * @param {object}  baseRates   Flat base rates by product key (from agency_products.nb_rate_base).
+ */
+function calcCommission(
+  premium,
+  product,
+  tier = "monoline",
+  catFactors = {},
+  useVCRates = true,
+  baseRates = {},
+) {
   const factor = catFactors[product] ?? 1.0;
-  return premium * factor * (rates[tier] ?? rates.monoline);
+
+  // Motor Club is a flat 25% regardless of VC baseline or toggle.
+  if (product === "motor_club") {
+    return premium * 0.25;
+  }
+
+  if (useVCRates) {
+    const rates = COMMISSION[product] ?? COMMISSION.other;
+    return premium * factor * (rates[tier] ?? rates.monoline);
+  }
+
+  const baseRate = baseRates[product] ?? 0.09;
+  return premium * factor * baseRate;
 }
 
 function normalizeTier(raw = "") {
@@ -379,11 +408,16 @@ export default function RevenueProjectionsDashboard() {
   const VC_ITEM_PRODUCTS   = productConfig.vcEligibleKeys;
   const VC_BASELINE_TARGET = productConfig.vcBaselineTarget;
   const COMMISSIONABLE_FACTORS = productConfig.commissionableFactors;
+  const BASE_RATES             = productConfig.baseRates ?? {};
   const isExcludedLine = (product) =>
     product !== 'motor_club' &&
     product !== 'other' &&
     !VC_ITEM_PRODUCTS.includes(product);
   const [newEntry, setNewEntry] = useState(emptyEntry());
+  // Commission rate regime toggle — default VC (principal optimistically tracks
+  // toward baseline). Switch to "base" to see guaranteed floor commission.
+  const [commissionView, setCommissionView] = useState("vc"); // 'vc' | 'base'
+  const showingVCRates = commissionView === "vc";
   const [view, setView] = useState("month"); // month | ytd | custom
   const [customStart, setCustomStart] = useState(""); // "YYYY-MM-DD"
   const [customEnd,   setCustomEnd]   = useState(""); // "YYYY-MM-DD"
@@ -515,8 +549,8 @@ export default function RevenueProjectionsDashboard() {
         case "tier":       av = a.tier;       bv = b.tier;       break;
         case "premium":    av = a.premium;    bv = b.premium;    break;
         case "commission":
-          av = calcCommission(a.premium, a.product, a.tier, COMMISSIONABLE_FACTORS);
-          bv = calcCommission(b.premium, b.product, b.tier, COMMISSIONABLE_FACTORS);
+          av = calcCommission(a.premium, a.product, a.tier, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
+          bv = calcCommission(b.premium, b.product, b.tier, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
           break;
         case "source":     av = a.source;     bv = b.source;     break;
         default:           av = a.date;       bv = b.date;
@@ -525,7 +559,7 @@ export default function RevenueProjectionsDashboard() {
       if (av > bv) return sortDir === "asc" ? 1 : -1;
       return 0;
     });
-  }, [filtered, sortCol, sortDir]);
+  }, [filtered, sortCol, sortDir, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES]);
 
   // ─── Aggregated totals ─────────────────────────────────────────────────────
   const totals = useMemo(() => {
@@ -536,7 +570,7 @@ export default function RevenueProjectionsDashboard() {
       manufactured: {...base}, boat: {...base}, motor_club: {...base}, other: {...base},
     };
     filtered.forEach(e => {
-      const c = calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
+      const c = calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
       const p = byProduct[e.product] ?? byProduct.other;
       p.premium += e.premium;
       p.commission += c;
@@ -546,8 +580,18 @@ export default function RevenueProjectionsDashboard() {
     const totalPremium = Object.values(byProduct).reduce((s, v) => s + v.premium, 0);
     const totalCommission = Object.values(byProduct).reduce((s, v) => s + v.commission, 0);
 
-    return { byProduct, totalPremium, totalCommission };
-  }, [filtered]);
+    // VC bonus delta — always computed regardless of current view. This is the
+    // dollar amount at stake if the VC baseline isn't hit by month-end.
+    let commissionAtVC = 0;
+    let commissionAtBase = 0;
+    filtered.forEach(e => {
+      commissionAtVC   += calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, true,  BASE_RATES);
+      commissionAtBase += calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, false, BASE_RATES);
+    });
+    const vcBonusDelta = commissionAtVC - commissionAtBase;
+
+    return { byProduct, totalPremium, totalCommission, commissionAtVC, commissionAtBase, vcBonusDelta };
+  }, [filtered, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES]);
 
   // ─── Policies stats (items, VC baseline, portfolio points) ───────────────
   const policiesStats = useMemo(() => {
@@ -607,7 +651,7 @@ export default function RevenueProjectionsDashboard() {
       map[name].policies   += 1;
       map[name].items      += e.itemCount ?? 1;
       map[name].premium    += e.premium ?? 0;
-      map[name].commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
+      map[name].commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
       map[name].points     += (PORTFOLIO_POINTS[e.product] ?? 0) * (e.itemCount ?? 1);
     });
     const totalCommission = Object.values(map).reduce((s, p) => s + p.commission, 0);
@@ -624,7 +668,7 @@ export default function RevenueProjectionsDashboard() {
         if (!aLast && bLast) return -1;
         return b.commission - a.commission;
       });
-  }, [producerFiltered]);
+  }, [producerFiltered, COMMISSIONABLE_FACTORS, PORTFOLIO_POINTS, showingVCRates, BASE_RATES]);
 
   // ─── Monthly trend (rolling 12 or YTD) ────────────────────────────────────
   const trendData = useMemo(() => {
@@ -638,10 +682,10 @@ export default function RevenueProjectionsDashboard() {
       const end = new Date(year, month + 1, 0);
       const slice = entries.filter(e => { const d = new Date(e.date); return d >= start && d <= end; });
       const premium = slice.reduce((s, e) => s + e.premium, 0);
-      const commission = slice.reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS), 0);
+      const commission = slice.reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES), 0);
       return { name: `${MONTH_NAMES[month]} '${String(year).slice(2)}`, premium, commission, goal: COMMISSION_GOAL };
     });
-  }, [entries]);
+  }, [entries, COMMISSIONABLE_FACTORS, COMMISSION_GOAL, showingVCRates, BASE_RATES]);
 
   // ─── Pace calculation (month view only) ───────────────────────────────────
   const pace = useMemo(() => {
@@ -685,8 +729,8 @@ export default function RevenueProjectionsDashboard() {
     const end   = new Date(y, m, 0);
     return entries
       .filter(e => { const d = new Date(e.date); return d >= start && d <= end; })
-      .reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS), 0);
-  }, [entries]);
+      .reduce((s, e) => s + calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES), 0);
+  }, [entries, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES]);
 
   // ─── Daily cumulative commission (month view only) ──────────────────────
   const dailyCumulative = useMemo(() => {
@@ -705,7 +749,7 @@ export default function RevenueProjectionsDashboard() {
       if (ey === y && em - 1 === m) {
         const day = ed;
         if (!byDay[day]) byDay[day] = 0;
-        byDay[day] += calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
+        byDay[day] += calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
       }
     });
 
@@ -724,7 +768,7 @@ export default function RevenueProjectionsDashboard() {
         dailyEarned: byDay[day] ?? 0,
       };
     });
-  }, [view, entries]);
+  }, [view, entries, COMMISSION_GOAL, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES]);
 
   const yesterdayEarned = dailyCumulative.find(d => d.isYesterday)?.dailyEarned ?? 0;
   const todayEarned = dailyCumulative.find(d => d.isToday)?.dailyEarned ?? 0;
@@ -850,7 +894,7 @@ export default function RevenueProjectionsDashboard() {
           dailyNeeded: dailyTarget?.dailyCommissionNeeded ?? null,
           daysRemaining: dailyTarget?.remaining ?? null,
           vcBaseline: policiesStats.vcBaselineCount,
-          vcBaselineTarget: 53,
+          vcBaselineTarget: VC_BASELINE_TARGET,
           totalPolicies: policiesStats.totalPolicies,
           blendedRate: totals.totalPremium > 0 ? totals.totalCommission / totals.totalPremium : 0,
           momDelta: totals.totalCommission - lastMonthCommission,
@@ -867,7 +911,7 @@ export default function RevenueProjectionsDashboard() {
             system: `You are a business intelligence advisor for an Allstate insurance agency in Georgia. Write a concise 3-5 sentence advisory brief for the agency principal based on their revenue KPIs. Be direct and actionable. Use dollar amounts and percentages from the data. Do not use bullet points — write in prose. Flag risks if behind pace. Celebrate wins if ahead. End with one specific recommended action for the next 3 business days.`,
             messages: [{
               role: "user",
-              content: `Generate an advisory brief for this period: ${briefPayload.rangeLabel}\n\nKPIs:\n- Commission earned: $${Math.round(briefPayload.totalCommission).toLocaleString()} of $40,000 goal (${Math.round(briefPayload.goalPct * 100)}%)\n- Projected month-end: $${briefPayload.projectedCommission ? Math.round(briefPayload.projectedCommission).toLocaleString() : "N/A"}\n- On pace: ${briefPayload.onPace ? "Yes" : "No"}\n- Daily commission needed: $${briefPayload.dailyNeeded ? Math.round(briefPayload.dailyNeeded).toLocaleString() : "N/A"} with ${briefPayload.daysRemaining ?? "N/A"} business days remaining\n- VC Baseline items: ${briefPayload.vcBaseline} of 53 target\n- Total policies: ${briefPayload.totalPolicies}\n- Blended commission rate: ${(briefPayload.blendedRate * 100).toFixed(1)}%\n- Month-over-month change: $${Math.round(Math.abs(briefPayload.momDelta)).toLocaleString()} ${briefPayload.momDelta >= 0 ? "increase" : "decrease"}\n- Yesterday's commission: $${Math.round(briefPayload.yesterdayEarned).toLocaleString()}`
+              content: `Generate an advisory brief for this period: ${briefPayload.rangeLabel}\n\nKPIs:\n- Commission earned: $${Math.round(briefPayload.totalCommission).toLocaleString()} of $${COMMISSION_GOAL.toLocaleString()} goal (${Math.round(briefPayload.goalPct * 100)}%)\n- Projected month-end: $${briefPayload.projectedCommission ? Math.round(briefPayload.projectedCommission).toLocaleString() : "N/A"}\n- On pace: ${briefPayload.onPace ? "Yes" : "No"}\n- Daily commission needed: $${briefPayload.dailyNeeded ? Math.round(briefPayload.dailyNeeded).toLocaleString() : "N/A"} with ${briefPayload.daysRemaining ?? "N/A"} business days remaining\n- VC Baseline items: ${briefPayload.vcBaseline} of ${VC_BASELINE_TARGET} target\n- Total policies: ${briefPayload.totalPolicies}\n- Blended commission rate: ${(briefPayload.blendedRate * 100).toFixed(1)}%\n- Month-over-month change: $${Math.round(Math.abs(briefPayload.momDelta)).toLocaleString()} ${briefPayload.momDelta >= 0 ? "increase" : "decrease"}\n- Yesterday's commission: $${Math.round(briefPayload.yesterdayEarned).toLocaleString()}`
             }]
           })
         });
@@ -904,6 +948,8 @@ export default function RevenueProjectionsDashboard() {
           byProducer={byProducer}
           lastMonthCommission={lastMonthCommission}
           advisoryBrief={advisoryBrief}
+          commissionGoal={COMMISSION_GOAL}
+          vcBaselineTarget={VC_BASELINE_TARGET}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -927,7 +973,7 @@ export default function RevenueProjectionsDashboard() {
       PRODUCT_LABELS[e.product] ?? e.product,
       TIER_LABELS[e.tier ?? "monoline"],
       e.premium.toFixed(2),
-      calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS).toFixed(2),
+      calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES).toFixed(2),
       e.policyCount,
       e.source,
       e.note,
@@ -1036,50 +1082,90 @@ export default function RevenueProjectionsDashboard() {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: "var(--qs-bright)" }}>Revenue Projections</h1>
           <div style={{ fontSize: 13, color: "var(--qs-subtle)", marginTop: 2 }}>New Business · Commission Goal: {fmtFull$(COMMISSION_GOAL)}/mo</div>
         </div>
-        {/* View selector */}
-        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-          {[["month","This Month"],["ytd","YTD"]].map(([v,l]) => (
+        {/* View selector + commission rate toggle */}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+            {[["month","This Month"],["ytd","YTD"]].map(([v,l]) => (
+              <button
+                key={v}
+                className={`btn-ghost ${view===v?"active":""}`}
+                onClick={() => { setView(v); setCustomOpen(false); }}
+              >
+                {l}
+              </button>
+            ))}
             <button
-              key={v}
-              className={`btn-ghost ${view===v?"active":""}`}
-              onClick={() => { setView(v); setCustomOpen(false); }}
+              className={`btn-ghost ${view==="custom"?"active":""}`}
+              onClick={() => { setView("custom"); setCustomOpen(true); }}
             >
-              {l}
+              Custom Range
             </button>
-          ))}
-          <button
-            className={`btn-ghost ${view==="custom"?"active":""}`}
-            onClick={() => { setView("custom"); setCustomOpen(true); }}
-          >
-            Custom Range
-          </button>
 
-          {/* Inline date pickers — only visible when custom is active */}
-          {view === "custom" && (
-            <div style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: 4 }}>
-              <input
-                type="date"
-                value={customStart}
-                max={customEnd || undefined}
-                onChange={e => setCustomStart(e.target.value)}
+            {/* Inline date pickers — only visible when custom is active */}
+            {view === "custom" && (
+              <div style={{ display: "flex", gap: 6, alignItems: "center", marginLeft: 4 }}>
+                <input
+                  type="date"
+                  value={customStart}
+                  max={customEnd || undefined}
+                  onChange={e => setCustomStart(e.target.value)}
+                  style={{
+                    background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
+                    color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                  }}
+                />
+                <span style={{ color: "var(--qs-subtle)", fontSize: 12 }}>to</span>
+                <input
+                  type="date"
+                  value={customEnd}
+                  min={customStart || undefined}
+                  onChange={e => setCustomEnd(e.target.value)}
+                  style={{
+                    background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
+                    color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Commission Rate Toggle — base vs VC regime */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 8,
+              background: "var(--qs-elevated)", borderRadius: 8,
+              padding: "4px", border: "1px solid var(--qs-border)",
+              marginLeft: 4,
+            }}>
+              <button
+                onClick={() => setCommissionView("base")}
                 style={{
-                  background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
-                  color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                  padding: "5px 12px", borderRadius: 6, fontSize: 12,
+                  fontWeight: 600, cursor: "pointer", border: "none",
+                  background: !showingVCRates ? "var(--qs-card)" : "transparent",
+                  color: !showingVCRates ? "var(--qs-bright)" : "var(--qs-muted)",
+                  boxShadow: !showingVCRates ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
                 }}
-              />
-              <span style={{ color: "var(--qs-subtle)", fontSize: 12 }}>to</span>
-              <input
-                type="date"
-                value={customEnd}
-                min={customStart || undefined}
-                onChange={e => setCustomEnd(e.target.value)}
+              >
+                Base (9%)
+              </button>
+              <button
+                onClick={() => setCommissionView("vc")}
                 style={{
-                  background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
-                  color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
+                  padding: "5px 12px", borderRadius: 6, fontSize: 12,
+                  fontWeight: 600, cursor: "pointer", border: "none",
+                  background: showingVCRates ? "var(--qs-card)" : "transparent",
+                  color: showingVCRates ? "#10B981" : "var(--qs-muted)",
+                  boxShadow: showingVCRates ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
                 }}
-              />
+              >
+                VC Rate
+              </button>
             </div>
-          )}
+          </div>
+          <p style={{ fontSize: 10, color: "var(--qs-muted)", margin: 0, textAlign: "right" }}>
+            {showingVCRates
+              ? "Showing VC rates — assumes baseline met"
+              : "Showing base rates — guaranteed commission"}
+          </p>
         </div>
       </div>
 
@@ -1270,6 +1356,33 @@ export default function RevenueProjectionsDashboard() {
             </div>
           );
         })()}
+
+        {/* VC Bonus at Stake — always shown, regardless of toggle */}
+        {(() => {
+          const baselineMet = policiesStats.vcBaselineCount >= VC_BASELINE_TARGET;
+          return (
+            <div style={{
+              padding: "16px 20px", borderRadius: 10,
+              background: baselineMet ? "#10B98111" : "#F59E0B11",
+              border: `1px solid ${baselineMet ? "#10B98133" : "#F59E0B33"}`,
+            }}>
+              <p style={{ fontSize: 11, color: "var(--qs-muted)", margin: 0,
+                textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                VC Bonus at Stake
+              </p>
+              <p style={{ fontSize: 24, fontWeight: 700, margin: "4px 0",
+                color: baselineMet ? "#10B981" : "#F59E0B",
+                fontFamily: "'DM Mono', monospace" }}>
+                +{fmtFull$(totals.vcBonusDelta)}
+              </p>
+              <p style={{ fontSize: 11, color: "var(--qs-muted)", margin: 0 }}>
+                {baselineMet
+                  ? "✓ Baseline met — VC rates active"
+                  : `${VC_BASELINE_TARGET - policiesStats.vcBaselineCount} items needed to unlock`}
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Daily Cumulative Earnings Chart moved to dedicated DailyEarningsTab */}
@@ -1336,7 +1449,7 @@ export default function RevenueProjectionsDashboard() {
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
           {/* Monthly Trend */}
           <div className="card clickable" style={{ gridColumn: "1 / -1" }} onClick={() => setModal("trend")}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)", marginBottom: 16 }}>Monthly Commission Earned vs $40K Goal</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)", marginBottom: 16 }}>Monthly Commission Earned vs {fmt$(COMMISSION_GOAL)} Goal</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={trendData} barSize={20}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
@@ -1652,7 +1765,16 @@ export default function RevenueProjectionsDashboard() {
                       </td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
                       <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
-                      <td style={{ color: "var(--qs-success)", fontFamily: "'DM Mono', monospace" }}>{fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS))}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", textAlign: "right" }}>
+                        <span style={{ color: "var(--qs-success)", display: "block" }}>
+                          {fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES))}
+                        </span>
+                        <span style={{ fontSize: 9, color: "var(--qs-muted)", display: "block" }}>
+                          {showingVCRates
+                            ? `Base: ${fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS, false, BASE_RATES))}`
+                            : `VC: ${fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS, true,  BASE_RATES))}`}
+                        </span>
+                      </td>
                       <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "var(--qs-dim)" }}>{e.source}</span></td>
                       <td style={{ color: "var(--qs-subtle)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
                       <td><button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button></td>
@@ -1732,7 +1854,7 @@ export default function RevenueProjectionsDashboard() {
             </div>
           </div>
           <table>
-            <thead><tr><th>Month</th><th>Commission</th><th>vs $40K Goal</th></tr></thead>
+            <thead><tr><th>Month</th><th>Commission</th><th>vs {fmt$(COMMISSION_GOAL)} Goal</th></tr></thead>
             <tbody>
               {trendData.map(d => (
                 <tr key={d.name}>
@@ -1759,7 +1881,7 @@ export default function RevenueProjectionsDashboard() {
             </div>
           </div>
           <table>
-            <thead><tr><th>Month</th><th>Premium</th><th>vs $160K Target</th></tr></thead>
+            <thead><tr><th>Month</th><th>Premium</th><th>vs {fmt$(PREMIUM_GOAL)} Target</th></tr></thead>
             <tbody>
               {trendData.map(d => (
                 <tr key={d.name}>
@@ -2129,7 +2251,7 @@ export default function RevenueProjectionsDashboard() {
 
       {/* Trend chart drill-down */}
       {modal === "trend" && (
-        <DrillDownModal title="Monthly Commission Earned vs $40K Goal" onClose={closeModal}>
+        <DrillDownModal title={`Monthly Commission Earned vs ${fmt$(COMMISSION_GOAL)} Goal`} onClose={closeModal}>
           <div style={{ flex: 1, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trendData} barSize={24}>
@@ -2318,7 +2440,7 @@ export default function RevenueProjectionsDashboard() {
           acc.policies   += 1;
           acc.items      += e.itemCount ?? 1;
           acc.premium    += e.premium ?? 0;
-          acc.commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS);
+          acc.commission += calcCommission(e.premium ?? 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
           acc.points     += (PORTFOLIO_POINTS[e.product] ?? 0) * (e.itemCount ?? 1);
           return acc;
         }, { policies: 0, items: 0, premium: 0, commission: 0, points: 0 });
@@ -2366,7 +2488,7 @@ export default function RevenueProjectionsDashboard() {
                 </thead>
                 <tbody>
                   {producerEntries.map(entry => {
-                    const comm = calcCommission(entry.premium ?? 0, entry.product, entry.tier ?? "monoline", COMMISSIONABLE_FACTORS);
+                    const comm = calcCommission(entry.premium ?? 0, entry.product, entry.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
                     const pts = (PORTFOLIO_POINTS[entry.product] ?? 0) * (entry.itemCount ?? 1);
                     const issuedFmt = entry.date ? new Date(entry.date + "T00:00:00").toLocaleDateString("en-US", { month: "2-digit", day: "2-digit", year: "numeric" }) : "—";
                     return (
