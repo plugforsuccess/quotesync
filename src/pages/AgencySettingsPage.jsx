@@ -5,6 +5,8 @@ import { useState, useMemo, useCallback } from 'react';
 import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map, PhoneCall, Target, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAgencyDetail, useAgencyCarrierConfig, useAgencyCommissionRatesRaw, useUpsertCommissionRates, useUpdateRevenueGoals, useAgencyRoutingRulesForAgent, useCreateAgencyRoutingRule } from '../hooks/useAgencies';
+import { useTrailingRevenueStats } from '../hooks/useTrailingRevenueStats';
+import { useAgencyProductConfig } from '../hooks/useAgencyProductConfig';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useTeamAvailability, useSetTransferPhone, validateE164 } from '../hooks/useAgentAvailability';
@@ -276,6 +278,8 @@ function NotificationsTab({ agency, agencyId, isAgent, queryClient }) {
 function CommissionTab({ agencyId, isAgent }) {
   const { data: rates, isLoading: ratesLoading } = useAgencyCommissionRatesRaw(agencyId);
   const { data: carrierConfig, isLoading: configLoading } = useAgencyCarrierConfig(agencyId);
+  const { data: trailingStats } = useTrailingRevenueStats(agencyId, 12);
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
   const upsertRates = useUpsertCommissionRates(agencyId);
   const updateGoals = useUpdateRevenueGoals(agencyId);
   const [editRates, setEditRates] = useState(null);
@@ -394,6 +398,22 @@ function CommissionTab({ agencyId, isAgent }) {
                   />
                 </div>
               </div>
+
+              {/* ── Implied blended rate + gap vs trailing ── */}
+              <GoalConsistencyPanel
+                commissionGoal={parseFloat(editGoals.commission_goal) || 0}
+                premiumGoal={parseFloat(editGoals.premium_goal) || 0}
+                trailingStats={trailingStats}
+                productConfig={productConfig}
+                onApplyTrailing={() => {
+                  if (!trailingStats?.trailingBlendedRate) return;
+                  const comm = parseFloat(editGoals.commission_goal) || 0;
+                  if (comm <= 0) return;
+                  const suggested = Math.round(comm / trailingStats.trailingBlendedRate / 1000) * 1000;
+                  setEditGoals(g => ({ ...g, premium_goal: String(suggested) }));
+                }}
+              />
+
               <div className="flex gap-2">
                 <button
                   onClick={async () => {
@@ -1101,6 +1121,183 @@ function ReadOnly({ label, value }) {
     <div>
       <label className="block text-sm font-medium mb-1" style={{ color: 'var(--qs-subtle)' }}>{label}</label>
       <p style={{ color: 'var(--qs-bright)' }}>{value || '-'}</p>
+    </div>
+  );
+}
+
+// ─── Goal Consistency Panel ──────────────────────────────────────────────────
+// Shown under the Commission / Premium goal inputs to surface (1) the implied
+// blended rate of the chosen pair, (2) how far it sits from the trailing-12
+// realized rate, (3) a one-click suggestion that back-solves premium goal
+// from commission goal at the trailing rate, and (4) the trailing product
+// mix so the principal can see which product lines drive the blended rate.
+//
+// Goals are NOT auto-linked — the panel is informational. See the dev brief
+// in the PR description for the reasoning.
+function GoalConsistencyPanel({ commissionGoal, premiumGoal, trailingStats, productConfig, onApplyTrailing }) {
+  const impliedRate = premiumGoal > 0 ? commissionGoal / premiumGoal : null;
+  const trailing    = trailingStats?.trailingBlendedRate ?? null;
+  const gapPts      = impliedRate != null && trailing != null
+    ? (impliedRate - trailing) * 100
+    : null;
+
+  // Trailing mix rows, sorted by premium share descending
+  const mixRows = trailingStats?.hasData
+    ? Object.entries(trailingStats.byProduct)
+        .map(([key, v]) => ({
+          key,
+          label: productConfig?.productLabels?.[key] ?? key,
+          premium: v.premium,
+          commission: v.commission,
+          share: v.share,
+          effectiveRate: v.effectiveRate,
+        }))
+        .sort((a, b) => b.share - a.share)
+    : [];
+
+  const fmt$ = (n) => `$${Math.round(n).toLocaleString()}`;
+  const fmtPct = (n) => `${(n * 100).toFixed(1)}%`;
+
+  // Classify the gap. Wider than 2pt is the threshold where the principal
+  // should actively consider mix changes rather than rounding noise.
+  let gapClass = 'neutral';
+  if (gapPts != null) {
+    if (gapPts >  2) gapClass = 'stretch';
+    else if (gapPts < -2) gapClass = 'conservative';
+  }
+  const gapColor = gapClass === 'stretch'      ? 'var(--qs-warning)'
+                 : gapClass === 'conservative' ? 'var(--qs-info)'
+                 : 'var(--qs-success)';
+
+  return (
+    <div
+      style={{
+        background: 'var(--qs-elevated)',
+        border: '1px solid var(--qs-border)',
+        borderRadius: 10,
+        padding: 16,
+      }}
+    >
+      {/* Row 1: Implied rate · Trailing · Gap */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--qs-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+            Implied Blended Rate
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', fontFamily: "'DM Mono', monospace" }}>
+            {impliedRate != null ? fmtPct(impliedRate) : '—'}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--qs-muted)' }}>
+            {commissionGoal > 0 && premiumGoal > 0
+              ? `${fmt$(commissionGoal)} ÷ ${fmt$(premiumGoal)}`
+              : 'Set both goals'}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--qs-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+            Trailing 12mo Realized
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)', fontFamily: "'DM Mono', monospace" }}>
+            {trailing != null ? fmtPct(trailing) : '—'}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--qs-muted)' }}>
+            {trailingStats?.hasData
+              ? `${trailingStats.totalPolicies} policies · ${fmt$(trailingStats.totalPremium)} premium`
+              : 'No historical data yet'}
+          </div>
+        </div>
+        <div>
+          <div style={{ fontSize: 10, color: 'var(--qs-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 2 }}>
+            Gap
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: gapColor, fontFamily: "'DM Mono', monospace" }}>
+            {gapPts != null ? `${gapPts >= 0 ? '+' : ''}${gapPts.toFixed(1)}pt` : '—'}
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--qs-muted)' }}>
+            {gapClass === 'stretch'      ? 'Stretch — requires mix shift'
+           : gapClass === 'conservative' ? 'Conservative vs history'
+           : gapPts != null              ? 'In line with history'
+                                         : ''}
+          </div>
+        </div>
+      </div>
+
+      {/* Row 2: Suggest button */}
+      {trailing != null && commissionGoal > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: mixRows.length > 0 ? 14 : 0 }}>
+          <button
+            type="button"
+            onClick={onApplyTrailing}
+            className="btn-ghost"
+            style={{ fontSize: 12, padding: '6px 12px' }}
+          >
+            Suggest premium goal from trailing rate
+          </button>
+          <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>
+            At {fmtPct(trailing)} → premium goal ≈ {fmt$(commissionGoal / trailing)}
+          </span>
+        </div>
+      )}
+
+      {/* Row 3: Trailing mix table */}
+      {mixRows.length > 0 && (
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--qs-subtle)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
+            Trailing 12mo Product Mix
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', fontSize: 12, minWidth: 480 }}>
+              <thead>
+                <tr style={{ color: 'var(--qs-muted)', textAlign: 'left' }}>
+                  <th style={{ padding: '4px 8px', fontWeight: 500 }}>Product</th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}>Premium</th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}>Mix %</th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500, textAlign: 'right' }}>Eff. Rate</th>
+                  <th style={{ padding: '4px 8px', fontWeight: 500 }}>vs Blended</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mixRows.map(row => {
+                  const liftPts = trailing != null ? (row.effectiveRate - trailing) * 100 : null;
+                  const liftColor = liftPts == null        ? 'var(--qs-muted)'
+                                  : liftPts >  0.5         ? 'var(--qs-success)'
+                                  : liftPts < -0.5         ? 'var(--qs-danger)'
+                                                           : 'var(--qs-muted)';
+                  return (
+                    <tr key={row.key} style={{ borderTop: '1px solid var(--qs-border)' }}>
+                      <td style={{ padding: '4px 8px', color: 'var(--qs-dim)' }}>{row.label}</td>
+                      <td style={{ padding: '4px 8px', textAlign: 'right', color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace" }}>
+                        {fmt$(row.premium)}
+                      </td>
+                      <td style={{ padding: '4px 8px', textAlign: 'right', color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace" }}>
+                        {fmtPct(row.share)}
+                      </td>
+                      <td style={{ padding: '4px 8px', textAlign: 'right', color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace" }}>
+                        {fmtPct(row.effectiveRate)}
+                      </td>
+                      <td style={{ padding: '4px 8px', color: liftColor, fontFamily: "'DM Mono', monospace" }}>
+                        {liftPts != null ? `${liftPts >= 0 ? '+' : ''}${liftPts.toFixed(1)}pt` : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          {gapClass === 'stretch' && (() => {
+            // Highlight the highest-rate product as the lever to close the gap
+            const topLever = [...mixRows].sort((a, b) => b.effectiveRate - a.effectiveRate)[0];
+            if (!topLever || topLever.effectiveRate <= trailing) return null;
+            return (
+              <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 8, lineHeight: 1.5 }}>
+                To close the {gapPts.toFixed(1)}pt gap, shift mix toward{' '}
+                <span style={{ color: 'var(--qs-bright)', fontWeight: 600 }}>{topLever.label}</span>
+                {' '}({fmtPct(topLever.effectiveRate)} effective rate, currently {fmtPct(topLever.share)} of premium).
+              </p>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }
