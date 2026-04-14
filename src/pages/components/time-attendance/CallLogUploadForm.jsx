@@ -26,7 +26,18 @@ const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 const MAX_ROWS = 10000;
 const BATCH_SIZE = 500;
 const VALID_DIRECTIONS = new Set(['Inbound', 'Outbound']);
+// Extension-to-extension calls within the office — valid RC value but not
+// scorecard-relevant, so silently skip (not rejected as errors).
+const SKIP_DIRECTIONS = new Set(['Internal']);
 const VALID_RESULTS = new Set(['Connected', 'Not Connected', 'Answered', 'VM/Missed']);
+// Normalize RC result variants across export formats to canonical values
+// (some older/alternate RC exports use different labels for the same result).
+const RESULT_NORMALIZATIONS = {
+  'Missed':         'VM/Missed',   // older RC export format
+  'Voicemail':      'VM/Missed',   // some RC versions
+  'No Answer':      'VM/Missed',   // some RC versions
+  'Call connected': 'Connected',   // some RC versions
+};
 // RingCentral uses different result labels per direction
 const VALID_COMBOS = {
   Outbound: new Set(['Connected', 'Not Connected']),
@@ -169,11 +180,18 @@ function parseCSVText(text) {
 function validateAndTransformRow(row, employeeMap, orgId, sourceFilename) {
   // 1. Required fields: Call Direction, Result, Call Start Time
   const direction = (row['Call Direction'] || row.call_direction || '').trim();
+  if (SKIP_DIRECTIONS.has(direction)) {
+    // Silent skip — internal extension-to-extension calls aren't errors,
+    // they just don't belong on the scorecard.
+    return { record: null, error: null };
+  }
   if (!VALID_DIRECTIONS.has(direction)) {
     return { record: null, error: `Invalid direction: "${direction}"` };
   }
 
-  const result = (row.Result || row.result || '').trim();
+  let result = (row.Result || row.result || '').trim();
+  // Normalize RC result variants to canonical values before validation
+  result = RESULT_NORMALIZATIONS[result] || result;
   if (!VALID_RESULTS.has(result)) {
     return { record: null, error: `Invalid result: "${result}"` };
   }
@@ -414,25 +432,34 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         // Validate and transform rows — tag each with its source filename
         let fileValidCount = 0;
         let fileErrorCount = 0;
+        let fileSkippedCount = 0;
 
         for (let i = 0; i < rows.length; i++) {
           const { record, error } = validateAndTransformRow(
             rows[i], employeeMap || {}, orgId, file.name
           );
-          if (error) {
-            allErrors.push({ row: i + 2, error: `${file.name} row ${i + 2}: ${error}` });
-            fileErrorCount++;
-          } else {
+          if (record) {
             // Tag with source file for per-file batch records during commit
             allValid.push({ ...record, _sourceFile: file.name });
             fileValidCount++;
+          } else if (error) {
+            allErrors.push({ row: i + 2, error: `${file.name} row ${i + 2}: ${error}` });
+            fileErrorCount++;
+          } else {
+            // null record + null error = silent skip (e.g. Internal calls)
+            fileSkippedCount++;
           }
         }
 
         // Store buffer for SHA256 — keyed by filename
         fileBuffersRef.current.set(file.name, rawBuffer);
 
-        fileResultsLocal.push({ name: file.name, validCount: fileValidCount, errorCount: fileErrorCount });
+        fileResultsLocal.push({
+          name: file.name,
+          validCount: fileValidCount,
+          errorCount: fileErrorCount,
+          skippedCount: fileSkippedCount,
+        });
 
       } catch (err) {
         allErrors.push({ row: 0, error: `${file.name}: Parse error — ${err.message}` });
@@ -456,6 +483,12 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       setValidationErrors(allErrors.slice(0, 20));
     }
   }
+
+  // Total rows silently skipped (e.g. Internal direction) across all files.
+  const skippedInternal = fileResults.reduce(
+    (sum, f) => sum + (f.skippedCount || 0),
+    0
+  );
 
   // Compute summary stats from preview
   const summary = preview ? (() => {
@@ -838,7 +871,8 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       {validationErrors.length > 0 && (
         <div className="mt-3 p-3 bg-amber-900/20 border border-amber-700/40 rounded-lg">
           <p className="text-sm font-medium text-amber-300 mb-1">
-            {validationErrors.length} row{validationErrors.length > 1 ? 's' : ''} rejected (validation errors):
+            {validationErrors.length} row{validationErrors.length > 1 ? 's' : ''} rejected
+            {skippedInternal > 0 && ` · ${skippedInternal} internal call${skippedInternal !== 1 ? 's' : ''} skipped`}:
           </p>
           <ul className="text-xs text-amber-300 space-y-0.5 max-h-32 overflow-y-auto">
             {validationErrors.map((ve, i) => (
@@ -879,6 +913,11 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
                       {f.errorCount} errors
                     </span>
                   )}
+                  {f.skippedCount > 0 && (
+                    <span style={{ color: 'var(--qs-subtle)', marginLeft: 8 }}>
+                      {f.skippedCount} skipped
+                    </span>
+                  )}
                 </span>
               </div>
             ))}
@@ -896,6 +935,9 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
               {' '}{summary.matched} agent{summary.matched !== 1 ? 's' : ''} matched
               {summary.unmatched > 0 && (
                 <span className="text-amber-400">, {summary.unmatched} unmatched</span>
+              )}
+              {skippedInternal > 0 && (
+                <span className="text-qs-subtle"> · {skippedInternal} internal call{skippedInternal !== 1 ? 's' : ''} skipped</span>
               )}
               .
             </p>
