@@ -122,11 +122,13 @@ export function useUploadChecklist(agencyId) {
           .order('uploaded_at', { ascending: false })
           .limit(1),
 
-        // Management reviews: last completed by type
+        // Management cadence: last completed by type
+        // Uses cadence_events (NOT management_reviews — that table is gone).
         supabase
-          .from('management_reviews')
-          .select('review_type, conducted_at')
+          .from('cadence_events')
+          .select('cadence_type, conducted_at')
           .eq('agency_id', agencyId)
+          .in('cadence_type', ['weekly_checkin','monthly_scorecard','quarterly_comp','annual_evaluation'])
           .order('conducted_at', { ascending: false }),
       ]);
 
@@ -292,43 +294,45 @@ export function useUploadChecklist(agencyId) {
         uploadOrder: 4,
       });
 
-      // ── Management review items ─────────────────────────────────────────
-      const reviewData = reviewResult.data || [];
+      // ── Management cadence items ────────────────────────────────────────
+      const cadenceData = reviewResult.data || [];
       const lastByType = {};
-      for (const row of reviewData) {
-        if (!lastByType[row.review_type]) lastByType[row.review_type] = row;
+      for (const row of cadenceData) {
+        if (!lastByType[row.cadence_type]) lastByType[row.cadence_type] = row;
       }
 
-      const REVIEW_CADENCES = [
+      const CADENCE_DEFS = [
         { key: 'weekly_checkin',     label: 'Weekly Check-In',               days: 7,   icon: '📅' },
         { key: 'monthly_scorecard',  label: 'Monthly Scorecard Review',      days: 31,  icon: '📊' },
         { key: 'quarterly_comp',     label: 'Quarterly Comp & Goals',        days: 90,  icon: '💼' },
         { key: 'annual_evaluation',  label: 'Annual Performance Evaluation', days: 365, icon: '📋' },
       ];
 
-      for (const rc of REVIEW_CADENCES) {
-        const last = lastByType[rc.key]?.conducted_at || null;
+      for (const cd of CADENCE_DEFS) {
+        const last = lastByType[cd.key]?.conducted_at || null;
         const daysSince = last
-          ? Math.floor((new Date() - new Date(last + 'T00:00:00')) / 86400000)
+          ? Math.floor((Date.now() - new Date(last).getTime()) / 86400000)
           : null;
 
         let status;
         if (!last) {
           status = 'overdue';
-        } else if (daysSince < rc.days * 0.8) {
+        } else if (daysSince < cd.days * 0.8) {
           status = 'current';
-        } else if (daysSince < rc.days) {
+        } else if (daysSince < cd.days) {
           status = 'due';
         } else {
           status = 'overdue';
         }
 
         items.push({
-          key: rc.key,
+          key: cd.key,
           category: 'management',
-          label: rc.icon + ' ' + rc.label,
+          label: cd.icon + ' ' + cd.label,
           description: last
-            ? `Last conducted ${daysSince === 0 ? 'today' : daysSince === 1 ? 'yesterday' : `${daysSince} days ago`} (${last})`
+            ? daysSince === 0 ? 'Conducted today'
+            : daysSince === 1 ? 'Conducted yesterday'
+            : `Last conducted ${daysSince} days ago`
             : 'Never conducted',
           status,
           detail: null,

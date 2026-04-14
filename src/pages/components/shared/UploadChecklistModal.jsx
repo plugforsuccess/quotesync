@@ -9,7 +9,7 @@ const STATUS_CONFIG = {
   upcoming: { color: '#64748B', bg: 'transparent', icon: null,        label: 'Upcoming' },
 };
 
-export default function UploadChecklistModal({ items, onDismiss, onLogReview, agencyId }) {
+export default function UploadChecklistModal({ items, onDismiss, onLogCadence, agencyId }) {
   const navigate = useNavigate();
 
   const actionable = items.filter(i => i.status === 'due' || i.status === 'overdue');
@@ -83,15 +83,15 @@ export default function UploadChecklistModal({ items, onDismiss, onLogReview, ag
           onDismiss={onDismiss}
         />
 
-        {/* Management Reviews Section */}
+        {/* Management Cadence Section */}
         {mgmtItems.length > 0 && (
           <Section
-            title="👥 Management Reviews"
-            subtitle="Staff performance touchpoints"
+            title="👥 Management Cadence"
+            subtitle="Staff touchpoints — log when completed"
             items={mgmtItems}
             navigate={navigate}
             onDismiss={onDismiss}
-            onLogReview={onLogReview}
+            onLogCadence={onLogCadence}
             agencyId={agencyId}
           />
         )}
@@ -121,7 +121,7 @@ export default function UploadChecklistModal({ items, onDismiss, onLogReview, ag
   );
 }
 
-function Section({ title, subtitle, items, navigate, onDismiss, onLogReview, agencyId }) {
+function Section({ title, subtitle, items, navigate, onDismiss, onLogCadence, agencyId }) {
   return (
     <div style={{ marginBottom: 20 }}>
       <div style={{ marginBottom: 10 }}>
@@ -193,16 +193,16 @@ function Section({ title, subtitle, items, navigate, onDismiss, onLogReview, age
                 )}
               </div>
 
-              {/* Mark Done button for loggable (management review) items */}
-              {item.loggable && item.status !== 'current' && onLogReview && (
+              {/* Mark Done button for loggable (management cadence) items */}
+              {item.loggable && item.status !== 'current' && onLogCadence && (
                 <button
                   onClick={async (e) => {
                     e.stopPropagation();
-                    await onLogReview(agencyId, item.key, null, null);
+                    await onLogCadence(item.key);
                   }}
                   style={{
-                    fontSize: 10, fontWeight: 700, padding: '3px 8px',
-                    borderRadius: 4, cursor: 'pointer', flexShrink: 0,
+                    fontSize: 11, fontWeight: 700, padding: '3px 10px',
+                    borderRadius: 5, cursor: 'pointer', flexShrink: 0,
                     background: '#10B98122', border: '1px solid #10B98133',
                     color: '#10B981',
                   }}
