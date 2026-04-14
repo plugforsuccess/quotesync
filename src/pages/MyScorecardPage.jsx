@@ -59,7 +59,7 @@ export default function MyScorecardPage() {
         </div>
         <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
           borderRadius: 12, padding: 40, textAlign: 'center' }}>
-          <p style={{ color: 'var(--qs-muted)', fontSize: 16 }}>
+          <p style={{ color: 'var(--qs-dim)', fontSize: 16 }}>
             Sales producer scorecard coming soon.
           </p>
           <p style={{ color: 'var(--qs-subtle)', fontSize: 14, marginTop: 10 }}>

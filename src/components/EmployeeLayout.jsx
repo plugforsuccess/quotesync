@@ -65,7 +65,7 @@ export default function EmployeeLayout() {
                 lineHeight: 1.2 }}>
                 Wiley-Wilson
               </div>
-              <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}>Agency</div>
+              <div style={{ fontSize: 11, color: 'var(--qs-dim)' }}>Agency</div>
             </div>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function EmployeeLayout() {
                     </div>
                     <div style={{
                       fontSize: 11,
-                      color: 'var(--qs-muted)',
+                      color: 'var(--qs-dim)',
                       marginTop: 1,
                     }}>
                       {desc}
@@ -144,7 +144,7 @@ export default function EmployeeLayout() {
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                 {fullName}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 1 }}>
+              <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 1 }}>
                 {roleLabel}
               </div>
             </div>
@@ -154,7 +154,7 @@ export default function EmployeeLayout() {
             style={{
               width: '100%', padding: '8px', borderRadius: 7,
               background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
-              color: 'var(--qs-muted)', fontSize: 13, fontWeight: 500,
+              color: 'var(--qs-dim)', fontSize: 13, fontWeight: 500,
               cursor: 'pointer', textAlign: 'center',
               transition: 'color 0.15s, border-color 0.15s',
             }}
@@ -163,7 +163,7 @@ export default function EmployeeLayout() {
               e.target.style.borderColor = 'rgba(239,68,68,0.3)';
             }}
             onMouseLeave={e => {
-              e.target.style.color = 'var(--qs-muted)';
+              e.target.style.color = 'var(--qs-dim)';
               e.target.style.borderColor = 'var(--qs-border)';
             }}
           >
