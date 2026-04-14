@@ -2,6 +2,14 @@
 // Allows any authenticated user with an active employee record.
 // Redirects unauthenticated users to login.
 // Shows error for authenticated non-employees.
+//
+// IMPORTANT: useCurrentEmployee now depends on auth resolving first.
+// The guard must wait for BOTH authLoading AND empLoading before making
+// any decisions — otherwise a race condition causes a false
+// "No employee record found" on first navigation after login.
+// empFetching additionally covers the retry case — when TanStack Query
+// re-fetches after an initial null result, isLoading is false but
+// isFetching is true.
 
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -10,9 +18,11 @@ import PageSpinner from './PageSpinner';
 
 export default function EmployeeRoute({ children }) {
   const { user, loading: authLoading } = useAuth();
-  const { data: employee, isLoading: empLoading } = useCurrentEmployee();
+  const { data: employee, isLoading: empLoading, isFetching: empFetching } = useCurrentEmployee();
 
-  if (authLoading || empLoading) return <PageSpinner />;
+  // Wait for auth AND employee query to fully resolve.
+  // empFetching covers the retry case — query may be re-fetching after null.
+  if (authLoading || empLoading || empFetching) return <PageSpinner />;
 
   // Not logged in → login page (only show spinner if token is still valid)
   if (!user) {
