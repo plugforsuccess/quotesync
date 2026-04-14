@@ -48,6 +48,24 @@ const MAX_CALL_DURATION_SEC = 86400; // 24h sanity cap
 // Business timezone for preview display (call_date is computed server-side)
 const BUSINESS_TZ = 'America/New_York';
 
+// ── Date helpers ────────────────────────────────────────────────────────────────
+
+function toMonday(date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  return d.toLocaleDateString('en-CA');
+}
+
+function formatWeekLabel(weekStart) {
+  const start = new Date(weekStart + 'T00:00:00');
+  const end = new Date(start);
+  end.setDate(end.getDate() + 4); // Mon–Fri
+  const opts = { month: 'short', day: 'numeric' };
+  return `${start.toLocaleDateString('en-US', opts)} – ${end.toLocaleDateString('en-US', { ...opts, year: 'numeric' })}`;
+}
+
 // ── PII Masking ─────────────────────────────────────────────────────────────────
 
 function maskPhone(phone) {
@@ -282,15 +300,13 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
   // Store raw file buffers for SHA-256 computation, keyed by filename
   const fileBuffersRef = useRef(new Map());
 
-  // ── Weekly coverage (Mon–Fri of current week) ────────────────────────────────
-  const today = new Date();
-  const monday = (() => {
-    const d = new Date(today);
-    const day = d.getDay();
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
-    d.setHours(0, 0, 0, 0);
-    return d.toLocaleDateString('en-CA'); // YYYY-MM-DD
-  })();
+  // ── Weekly coverage (Mon–Fri of selected week) ───────────────────────────────
+  // `weekStart` (the Monday of the selected week) drives the strip so that it
+  // reflects the week the principal is viewing, not always the current week.
+  const monday = weekStart;
+  const currentMonday = toMonday(new Date());
+  const isPastWeek = monday < currentMonday;
+  const isFutureWeek = monday > currentMonday;
 
   const { data: weekCoverage = [], refetch: refetchCoverage } = useQuery({
     queryKey: ['call_log_week_coverage', orgId, monday],
@@ -321,19 +337,20 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
       }
 
       // Build Mon–Fri array
-      const todayStr = today.toLocaleDateString('en-CA');
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const currentMondayStr = toMonday(new Date());
+      const pastWeek = monday < currentMondayStr;
       const days = [];
       for (let i = 0; i < 5; i++) {
         const d = new Date(monday + 'T00:00:00');
         d.setDate(d.getDate() + i);
         const ds = d.toLocaleDateString('en-CA');
-        const isFuture = ds > todayStr;
-        const isToday = ds === todayStr;
         days.push({
           date: ds,
           label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' }),
-          isFuture,
-          isToday,
+          isFuture: ds > todayStr,       // future relative to actual today
+          isToday: ds === todayStr,      // actual today only
+          isPastWeek: pastWeek,          // viewing a historical week
           data: byDay[ds] || null,
         });
       }
@@ -748,17 +765,26 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
         </div>
       )}
 
-      {/* Weekly upload coverage */}
-      {weekCoverage.length > 0 && (
+      {/* Weekly upload coverage — hidden for future weeks (no data exists) */}
+      {!isFutureWeek && weekCoverage.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <p style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-subtle)',
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-            This Week's Upload Status
+            {!isPastWeek
+              ? "This Week's Upload Status"
+              : `Upload Status — Week of ${new Date(weekStart + 'T00:00:00')
+                  .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+            }
           </p>
           <div style={{ display: 'flex', gap: 6 }}>
             {weekCoverage.map((day) => {
               const uploaded = !!day.data;
-              const missing = !uploaded && !day.isFuture && !day.isToday;
+              // Past weekdays with no upload are definitively missing.
+              // For the current week, only mark missing if the day has already
+              // passed (not today, not future).
+              const missing = !uploaded && (
+                day.isPastWeek || (!day.isFuture && !day.isToday)
+              );
 
               return (
                 <div
@@ -800,10 +826,10 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
           </div>
 
           {/* Missing days callout */}
-          {weekCoverage.some(d => !d.data && !d.isFuture && !d.isToday) && (
+          {weekCoverage.some(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))) && (
             <p style={{ fontSize: 11, color: '#EF4444', marginTop: 6 }}>
-              ⚠ {weekCoverage.filter(d => !d.data && !d.isFuture && !d.isToday).length} day(s)
-              missing uploads this week
+              ⚠ {weekCoverage.filter(d => !d.data && (d.isPastWeek || (!d.isFuture && !d.isToday))).length} day(s)
+              missing uploads {isPastWeek ? 'that week' : 'this week'}
             </p>
           )}
         </div>
@@ -843,6 +869,13 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             ))}
           </div>
         </details>
+      )}
+
+      {isPastWeek && (
+        <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 8 }}>
+          Viewing {formatWeekLabel(weekStart)} — uploads apply to each file&rsquo;s
+          own date range regardless of selected week.
+        </p>
       )}
 
       <div className="flex items-center gap-3">
