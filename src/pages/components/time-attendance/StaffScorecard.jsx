@@ -4,7 +4,7 @@
 // v3: Call log as primary data source, summary report as optional supplement.
 
 import { TrendingUp, TrendingDown, Phone, Clock, Activity, Award, CheckCircle, XCircle, Shield, Edit3, BarChart2, Info } from 'lucide-react';
-import { GRADE_CONFIG, DEFAULT_TARGETS, calculateGrade, computeMetrics } from '../../../config/staffPerformanceDefaults';
+import { GRADE_CONFIG, DEFAULT_TARGETS, calculateGrade, computeMetrics, classifyWeek } from '../../../config/staffPerformanceDefaults';
 import { computeAttendance } from '../../../lib/attendanceUtils';
 
 // ── Metric Display Components ──────────────────────────────────────────────────
@@ -101,6 +101,8 @@ function PassFailRow({ label, passed, manual, onToggle }) {
 export default function StaffScorecard({
   rcData,
   callLogMetrics,
+  weekEntries,
+  weekStart,
   daysWorked,
   targets,
   proactivity,
@@ -114,12 +116,35 @@ export default function StaffScorecard({
   const hasCallLog = callLogMetrics && callLogMetrics.totalCalls > 0;
   const hasRCData = !!rcData;
 
+  // Classify the week from attendance entries — drives whether we grade,
+  // whether targets are prorated, and which banner to show.
+  const weekContext = classifyWeek(weekEntries || [], weekStart || '');
+  const {
+    classification,
+    proratedTargetFactor,
+    workedDays,
+    ptoDays,
+    sickDays,
+    holidayDays,
+  } = weekContext;
+  const isUngradedWeek = ['full_pto', 'full_sick', 'full_absence'].includes(classification);
+
   if (!hasCallLog && !hasRCData) {
     return (
       <div className="bg-qs-card rounded-lg border border-qs-border p-8 text-center">
         <Activity className="w-12 h-12 text-qs-muted mx-auto mb-3" />
         <p className="text-qs-subtle">No performance data available for this week.</p>
-        <p className="text-sm text-qs-muted mt-1">Upload a call log or RingCentral XLSX to see the scorecard.</p>
+        {classification === 'no_entries' ? (
+          <p className="text-sm text-qs-muted mt-1">
+            No attendance entries logged. Upload a call log or enter time to see the scorecard.
+          </p>
+        ) : isUngradedWeek ? (
+          <p className="text-sm text-qs-muted mt-1">
+            Absence week — no grading required.
+          </p>
+        ) : (
+          <p className="text-sm text-qs-muted mt-1">Upload a call log or RingCentral XLSX to see the scorecard.</p>
+        )}
       </div>
     );
   }
@@ -127,15 +152,24 @@ export default function StaffScorecard({
   const t = { ...DEFAULT_TARGETS, ...targets };
   const clm = callLogMetrics || {};
 
-  // Compute grade: use call log metrics if available, otherwise fall back to RC summary
-  let grade;
-  if (hasCallLog) {
-    grade = calculateGrade(clm, null, t);
-  } else {
-    const legacyMetrics = computeMetrics(rcData, daysWorked);
-    grade = calculateGrade(rcData.outbound_calls, legacyMetrics.answerRate, legacyMetrics.hasZeroCallDays, t);
+  // Compute grade: use call log metrics if available, otherwise fall back to RC summary.
+  // Skip grading entirely for full-absence weeks (PTO / sick / other).
+  let grade = null;
+  if (!isUngradedWeek) {
+    if (hasCallLog) {
+      grade = calculateGrade(clm, null, t, proratedTargetFactor);
+    } else if (hasRCData) {
+      const legacyMetrics = computeMetrics(rcData, daysWorked);
+      grade = calculateGrade(
+        rcData.outbound_calls,
+        legacyMetrics.answerRate,
+        legacyMetrics.hasZeroCallDays,
+        t,
+        proratedTargetFactor,
+      );
+    }
   }
-  const gradeConfig = GRADE_CONFIG[grade];
+  const gradeConfig = grade ? GRADE_CONFIG[grade] : null;
 
   // Summary-only metrics (speed of answer, hold time) — from rcData if available
   const avgSpeedOfAnswer = rcData?.avg_speed_of_answer_seconds || null;
@@ -179,42 +213,93 @@ export default function StaffScorecard({
     : ptoRemaining <= 5 ? '#F59E0B'
     : '#10B981';
 
+  // Human-readable summary for the full_absence banner
+  const absenceParts = [];
+  if (ptoDays > 0) absenceParts.push(`${ptoDays} PTO`);
+  if (sickDays > 0) absenceParts.push(`${sickDays} sick`);
+  if (holidayDays > 0) absenceParts.push(`${holidayDays} holiday`);
+
   return (
     <div className="space-y-6">
-      {/* Grade Banner */}
-      <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${gradeConfig.bg} ${gradeConfig.border}`}>
-        <div>
-          <h3 className="text-lg font-semibold text-qs-bright">Weekly Performance Grade</h3>
-          <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
-          {employeeName && (
-            <p className="text-xs text-qs-subtle mt-1">
-              {employeeName}
-              {(() => {
-                const wfhPct = ytdAttendance.daysWorked > 0
-                  ? (ytdAttendance.wfh / ytdAttendance.daysWorked) * 100
-                  : 0;
-                return wfhPct > 10 ? (
-                  <span style={{
-                    fontSize: 10, fontWeight: 700,
-                    padding: '2px 6px', borderRadius: 4,
-                    background: '#F59E0B22', border: '1px solid #F59E0B44',
-                    color: '#F59E0B', marginLeft: 6,
-                  }}>
-                    WFH {Math.round(wfhPct)}%
-                  </span>
-                ) : null;
-              })()}
+      {/* Grade Banner — absence-aware */}
+      {isUngradedWeek ? (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '20px 24px', borderRadius: 8,
+          background: classification === 'full_sick'
+            ? 'rgba(245,158,11,0.08)' : 'rgba(59,130,246,0.08)',
+          border: `1px solid ${classification === 'full_sick'
+            ? 'rgba(245,158,11,0.3)' : 'rgba(59,130,246,0.3)'}`,
+        }}>
+          <div>
+            <h3 className="text-lg font-semibold text-qs-bright">
+              {classification === 'full_pto'     && 'PTO Week'}
+              {classification === 'full_sick'    && 'Sick Week'}
+              {classification === 'full_absence' && 'Absence Week'}
+            </h3>
+            <p style={{ fontSize: 13, marginTop: 4, color: 'var(--qs-dim)' }}>
+              {classification === 'full_pto' &&
+                `${ptoDays} PTO day${ptoDays !== 1 ? 's' : ''} — no calls expected. Week not graded.`}
+              {classification === 'full_sick' &&
+                `${sickDays} sick day${sickDays !== 1 ? 's' : ''} — no calls expected. Week not graded.`}
+              {classification === 'full_absence' &&
+                `${absenceParts.join(', ')} — week not graded.`}
             </p>
-          )}
-          {hasCallLog && (
-            <p className="text-xs text-primary-500 mt-0.5">Based on call log data</p>
-          )}
+            {employeeName && (
+              <p className="text-xs text-qs-subtle mt-1">{employeeName}</p>
+            )}
+          </div>
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-muted)' }}>
+            Not Graded
+          </span>
         </div>
-        <div className="flex items-center gap-3">
-          <Award className={`w-8 h-8 ${gradeConfig.color}`} />
-          <span className={`text-5xl font-bold ${gradeConfig.color}`}>{grade}</span>
+      ) : (
+        <div className={`flex items-center justify-between p-6 rounded-lg border-2 ${gradeConfig.bg} ${gradeConfig.border}`}>
+          <div>
+            <h3 className="text-lg font-semibold text-qs-bright">Weekly Performance Grade</h3>
+            <p className={`text-sm ${gradeConfig.color}`}>{gradeConfig.desc}</p>
+            {employeeName && (
+              <p className="text-xs text-qs-subtle mt-1">
+                {employeeName}
+                {(() => {
+                  const wfhPct = ytdAttendance.daysWorked > 0
+                    ? (ytdAttendance.wfh / ytdAttendance.daysWorked) * 100
+                    : 0;
+                  return wfhPct > 10 ? (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700,
+                      padding: '2px 6px', borderRadius: 4,
+                      background: '#F59E0B22', border: '1px solid #F59E0B44',
+                      color: '#F59E0B', marginLeft: 6,
+                    }}>
+                      WFH {Math.round(wfhPct)}%
+                    </span>
+                  ) : null;
+                })()}
+              </p>
+            )}
+            {hasCallLog && (
+              <p className="text-xs text-primary-500 mt-0.5">Based on call log data</p>
+            )}
+            {classification === 'partial_absence' && (
+              <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
+                Partial week — targets prorated to {workedDays} worked day{workedDays !== 1 ? 's' : ''}.
+                {ptoDays > 0 && ` ${ptoDays} PTO.`}
+                {sickDays > 0 && ` ${sickDays} sick.`}
+              </p>
+            )}
+            {classification === 'holiday_reduced' && (
+              <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
+                Holiday week — targets prorated to {workedDays} worked day{workedDays !== 1 ? 's' : ''}.
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <Award className={`w-8 h-8 ${gradeConfig.color}`} />
+            <span className={`text-5xl font-bold ${gradeConfig.color}`}>{grade}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Section A: Activity Metrics */}
       <div className="bg-qs-card rounded-lg border border-qs-border overflow-hidden">

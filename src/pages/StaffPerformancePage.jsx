@@ -244,14 +244,37 @@ const StaffPerformancePage = () => {
   const { data: queueData = [], refetch: refetchQueueData } = useQueueData(currentAgencyId, weekStart);
   const { invalidateQueueData } = useInvalidateQueueData();
 
+  const entries = timeData?.entries || [];
+  const employees = timeData?.employees || [];
+
+  // Week entries for the currently selected single employee — used by the
+  // scorecard for absence-aware grading and by computeCallLogMetrics below
+  // to scope zero-call day detection to actual expected workdays.
+  const weekEntries = useMemo(
+    () => entries.filter((e) => e.employee_user_id === singleEmployee),
+    [entries, singleEmployee]
+  );
+
+  // Days the employee was logged as working (REG or WFH). When present, this
+  // overrides the default Mon–Fri window so PTO/sick days don't count as
+  // zero-call days.
+  const expectedWorkdays = useMemo(
+    () => weekEntries
+      .filter((e) => ['REG', 'WFH'].includes(e.code))
+      .map((e) => e.work_date),
+    [weekEntries]
+  );
+
   // Compute call log metrics from raw call data
   const callLogMetrics = useMemo(() => {
     if (!callLogData || callLogData.length === 0) return null;
-    return computeCallLogMetrics(callLogData, weekStart);
-  }, [callLogData, weekStart]);
+    return computeCallLogMetrics(
+      callLogData,
+      weekStart,
+      expectedWorkdays.length > 0 ? expectedWorkdays : null
+    );
+  }, [callLogData, weekStart, expectedWorkdays]);
 
-  const entries = timeData?.entries || [];
-  const employees = timeData?.employees || [];
   const isLoading = entriesLoading || rcLoading;
   const error = entriesError;
 
@@ -850,6 +873,8 @@ const StaffPerformancePage = () => {
                 <StaffScorecard
                   rcData={rcData.find((r) => r.employee_user_id === singleEmployee) || null}
                   callLogMetrics={callLogMetrics}
+                  weekEntries={weekEntries}
+                  weekStart={weekStart}
                   daysWorked={(() => {
                     const empEntries = entries.filter((e) => e.employee_user_id === singleEmployee);
                     return empEntries.filter((e) => ['REG', 'WFH'].includes(e.code)).length || 5;
@@ -946,6 +971,8 @@ const StaffPerformancePage = () => {
                     {/* Scorecard with per-employee targets and manual proactivity */}
                     <StaffScorecard
                       rcData={rc}
+                      weekEntries={empEntries}
+                      weekStart={weekStart}
                       daysWorked={daysWorked || 5}
                       targets={isSelectedEmployee ? employeeTargets : null}
                       proactivity={empProactivity}
