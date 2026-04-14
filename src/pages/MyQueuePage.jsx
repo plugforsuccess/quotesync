@@ -125,6 +125,82 @@ export default function MyQueuePage() {
     if (!cancelLoading && !renewalLoading) setLastRefreshed(Date.now());
   }, [cancelLoading, renewalLoading]);
 
+  // ── Realtime subscriptions — live queue updates ───────────────
+  // When the principal auto-resolves cases via upload, or any status
+  // change occurs on an assigned case, invalidate the relevant query
+  // so Tracy's queue updates without a manual refresh.
+  useEffect(() => {
+    if (!employeeId || !orgId) return;
+
+    // Subscribe to pending_cases changes for this employee
+    const cancelChannel = supabase
+      .channel(`my_cancel_cases_${employeeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'pending_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['my_cancel_cases', employeeId] });
+          setLastRefreshed(Date.now());
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'pending_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['my_cancel_cases', employeeId] });
+          setLastRefreshed(Date.now());
+        }
+      )
+      .subscribe();
+
+    // Subscribe to renewal_cases changes for this employee
+    const renewalChannel = supabase
+      .channel(`my_renewal_cases_${employeeId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'renewal_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['my_renewal_cases', employeeId] });
+          setLastRefreshed(Date.now());
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'renewal_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['my_renewal_cases', employeeId] });
+          setLastRefreshed(Date.now());
+        }
+      )
+      .subscribe();
+
+    // Cleanup on unmount or when employeeId changes
+    return () => {
+      supabase.removeChannel(cancelChannel);
+      supabase.removeChannel(renewalChannel);
+    };
+  }, [employeeId, orgId, queryClient]);
+
   // Today's Focus stats
   const todayStr = new Date().toISOString().slice(0, 10);
   const focusStats = useMemo(() => {
