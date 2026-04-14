@@ -61,10 +61,10 @@ export const OUTBOUND_CATEGORIES = [
  *
  * Accepts either the new call-log-based metrics object or legacy positional args.
  */
-export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCallDaysOrTargets, targetsArg) {
-  // Support both new signature: calculateGrade(metrics, summaryData, targets)
-  // and legacy signature: calculateGrade(outboundCalls, answerRate, hasZeroCallDays, targets)
-  let outboundCalls, answerRate, hasZeroCallDays, zeroDays, outboundEveryDay, targets;
+export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCallDaysOrTargets, targetsArg, proratedFactor = 1) {
+  // Support both new signature: calculateGrade(metrics, summaryData, targets, proratedFactor)
+  // and legacy signature: calculateGrade(outboundCalls, answerRate, hasZeroCallDays, targets, proratedFactor)
+  let outboundCalls, answerRate, hasZeroCallDays, zeroDays, outboundEveryDay, targets, factor;
 
   if (typeof metricsOrOutbound === 'object' && metricsOrOutbound !== null && 'outboundAttempts' in metricsOrOutbound) {
     // New call-log-based signature
@@ -75,6 +75,7 @@ export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCa
     zeroDays = metrics.zeroDays || [];
     outboundEveryDay = metrics.outboundEveryDay;
     targets = hasZeroCallDaysOrTargets;
+    factor = targetsArg ?? 1;
   } else {
     // Legacy signature
     outboundCalls = metricsOrOutbound;
@@ -83,6 +84,7 @@ export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCa
     zeroDays = [];
     outboundEveryDay = true; // unknown in legacy mode
     targets = targetsArg;
+    factor = proratedFactor ?? 1;
   }
 
   // F override — zero-call days always fail regardless of other metrics
@@ -90,11 +92,17 @@ export function calculateGrade(metricsOrOutbound, answerRateOrSummary, hasZeroCa
 
   const t = { ...DEFAULT_TARGETS, ...targets };
 
-  // Axis 1: Outbound volume (40%)
+  // Prorate weekly outbound targets for partial weeks
+  // A 3-day week has 3/5 = 60% of the normal target
+  const proA = Math.round(t.grade_a_outbound * factor);
+  const proB = Math.round(t.grade_b_outbound * factor);
+  const proC = Math.round(t.grade_c_outbound * factor);
+
+  // Axis 1: Outbound volume (40%) — against prorated target
   let outGrade;
-  if (outboundCalls >= t.grade_a_outbound) outGrade = 4;
-  else if (outboundCalls >= t.grade_b_outbound) outGrade = 3;
-  else if (outboundCalls >= t.grade_c_outbound) outGrade = 2;
+  if (outboundCalls >= proA) outGrade = 4;
+  else if (outboundCalls >= proB) outGrade = 3;
+  else if (outboundCalls >= proC) outGrade = 2;
   else outGrade = 1;
 
   // Axis 2: Inbound answer rate (35%) — skip if data unavailable
@@ -161,7 +169,7 @@ const BUSINESS_TZ = 'America/New_York';
  * Compute metrics from call log data (new primary source).
  * call_date values are assumed to already be in business tz (set at ingest).
  */
-export function computeCallLogMetrics(calls, weekStart) {
+export function computeCallLogMetrics(calls, weekStart, expectedWorkdays = null) {
   if (!calls || calls.length === 0) {
     return {
       totalCalls: 0,
@@ -257,7 +265,11 @@ export function computeCallLogMetrics(calls, weekStart) {
   const daily = Object.values(dailyMap).sort((a, b) => a.date.localeCompare(b.date));
 
   // ── Zero-call days and outbound consistency ──
-  const workdays = getWorkdaysInRange(weekStart, 5);
+  // Use expectedWorkdays when provided (partial absence week) so zero-call day
+  // detection only counts days the employee was expected to work.
+  const workdays = expectedWorkdays && expectedWorkdays.length > 0
+    ? expectedWorkdays
+    : getWorkdaysInRange(weekStart, 5);
   const daysWithCalls = new Set(calls.map((c) => c.call_date));
   const zeroDays = workdays.filter((d) => !daysWithCalls.has(d));
   const hasZeroCallDays = zeroDays.length > 0;
@@ -294,6 +306,79 @@ export function computeCallLogMetrics(calls, weekStart) {
     avgOutboundPerDay,
     avgCallsPerDay,
     daysWorked,
+  };
+}
+
+// ── Week classification ────────────────────────────────────────────────────
+// Classifies a week's attendance into a grading context so that scorecards
+// can show "PTO Week" / "Sick Week" / "Absence Week" banners instead of a
+// misleading grade, and prorate outbound targets for partial weeks.
+
+const WORKED_CODES  = new Set(['REG', 'WFH', 'APPT', 'EARLY']);
+
+/**
+ * Classifies a week's attendance entries into a grading context.
+ *
+ * @param {Array} weekEntries - time entries for the employee for this week
+ * @param {string} weekStart  - YYYY-MM-DD Monday of the week
+ * @returns {{
+ *   classification: string,   // 'normal' | 'full_pto' | 'full_sick' | 'full_absence' |
+ *                             //  'partial_absence' | 'holiday_reduced' | 'no_entries'
+ *   workedDays: number,       // count of REG/WFH/APPT/EARLY days
+ *   absenceDays: number,      // count of PTO/SICK/HOLIDAY days
+ *   ptoDays: number,
+ *   sickDays: number,
+ *   holidayDays: number,
+ *   totalEntries: number,
+ *   proratedTargetFactor: number,  // 1.0 for full week, 0.6 for 3/5 days etc.
+ * }}
+ */
+export function classifyWeek(weekEntries, weekStart) {
+  if (!weekEntries || weekEntries.length === 0) {
+    return {
+      classification: 'no_entries',
+      workedDays: 0, absenceDays: 0,
+      ptoDays: 0, sickDays: 0, holidayDays: 0,
+      totalEntries: 0, proratedTargetFactor: 1,
+    };
+  }
+
+  const workdays = weekStart ? getWorkdaysInRange(weekStart, 5) : [];
+
+  // Map entries by date
+  const entryByDate = {};
+  for (const e of weekEntries) {
+    entryByDate[e.work_date] = e.code;
+  }
+
+  let workedDays = 0, ptoDays = 0, sickDays = 0, holidayDays = 0;
+
+  for (const day of workdays) {
+    const code = entryByDate[day];
+    if (!code) continue;
+    if (WORKED_CODES.has(code)) workedDays++;
+    else if (code === 'PTO') ptoDays++;
+    else if (code === 'SICK' || code === 'SICK_PART') sickDays++;
+    else if (code === 'HOLIDAY') holidayDays++;
+  }
+
+  const absenceDays = ptoDays + sickDays + holidayDays;
+  const proratedTargetFactor = workedDays > 0 ? workedDays / 5 : 1;
+
+  let classification;
+  if (workedDays === 0 && ptoDays === 5) classification = 'full_pto';
+  else if (workedDays === 0 && sickDays >= 4) classification = 'full_sick';
+  else if (workedDays === 0 && absenceDays >= 4) classification = 'full_absence';
+  else if (workedDays > 0 && absenceDays > 0 && holidayDays === 0) classification = 'partial_absence';
+  else if (workedDays > 0 && holidayDays > 0) classification = 'holiday_reduced';
+  else classification = 'normal';
+
+  return {
+    classification,
+    workedDays, absenceDays,
+    ptoDays, sickDays, holidayDays,
+    totalEntries: weekEntries.length,
+    proratedTargetFactor,
   };
 }
 
