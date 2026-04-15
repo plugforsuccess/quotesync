@@ -3,10 +3,14 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { LogOut, User, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { roleDisplayNames } from '../../config/navConfig';
 
 const UserMenu = ({ activePlane, onTogglePlane }) => {
   const location = useLocation();
-  const { user, role, profile, isPlatformUser, signOut } = useAuth();
+  const {
+    user, role, profile, isPlatformUser, signOut,
+    currentAgencyRole, platformRole,
+  } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
@@ -61,6 +65,23 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
   // Display name: use full_name if available, otherwise fall back to email
   const displayName = profile?.full_name || user?.email || 'User';
 
+  // Plane-aware role label: in the agency plane, prefer the agency role
+  // (so a principal isn't mislabeled "Editor" from the legacy profiles.role
+  // column). In the platform plane, prefer the platform role. Fall back to
+  // the legacy role only as a last resort (consumer plane).
+  const roleText = (() => {
+    if (activePlane === 'agency' && currentAgencyRole) {
+      return roleDisplayNames[currentAgencyRole] || currentAgencyRole;
+    }
+    if (platformRole) {
+      return roleDisplayNames[platformRole] || platformRole;
+    }
+    if (currentAgencyRole) {
+      return roleDisplayNames[currentAgencyRole] || currentAgencyRole;
+    }
+    return roleDisplayNames[role] || role || 'User';
+  })();
+
   const isAdminView = activePlane === 'platform';
 
   return (
@@ -75,7 +96,7 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
           <div className="text-sm font-medium text-white">
             {displayName}
           </div>
-          <div className="text-xs text-gray-400 capitalize">{role}</div>
+          <div className="text-xs text-gray-400 capitalize">{roleText}</div>
         </div>
       </button>
 

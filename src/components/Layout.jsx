@@ -527,7 +527,9 @@ function Layout({ forcePlane = null }) {
         <Outlet />
       </main>
 
-      {!isFunnelRoute && <Footer />}
+      {/* Consumer-branded footer — consumer plane only. Agency and platform
+          portals should not show insuredbycam.com marketing content. */}
+      {!isFunnelRoute && activePlane === PLANES.CONSUMER && <Footer />}
 
       {/* Bottom Tab Bar — mobile only, agency/platform planes */}
       {showBottomTabs && !isFunnelRoute && (
