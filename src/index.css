@@ -37,6 +37,92 @@
   --qs-info-border:    rgb(59 130 246 / 0.20);
 }
 
+/* ════════════════════════════════════════════════════════════
+   LIGHT THEME
+   Applied via data-theme="light" on <html>
+════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --qs-dark:     #F8FAFC;
+  --qs-card:     #FFFFFF;
+  --qs-elevated: #F1F5F9;
+  --qs-border:   #E2E8F0;
+  --qs-muted:    #CBD5E1;
+  --qs-subtle:   #94A3B8;
+  --qs-dim:      #64748B;
+  --qs-text:     #1E293B;
+  --qs-bright:   #0F172A;
+
+  --qs-danger-subtle:  rgb(239 68 68 / 0.08);
+  --qs-danger-border:  rgb(239 68 68 / 0.25);
+  --qs-warning-subtle: rgb(245 158 11 / 0.08);
+  --qs-warning-border: rgb(245 158 11 / 0.25);
+  --qs-success-subtle: rgb(16 185 129 / 0.08);
+  --qs-success-border: rgb(16 185 129 / 0.25);
+  --qs-info-subtle:    rgb(59 130 246 / 0.08);
+  --qs-info-border:    rgb(59 130 246 / 0.25);
+
+  color-scheme: light;
+}
+
+/* Layout.jsx uses hardcoded Tailwind bg-[#0f172a] — override.
+   Note: Tailwind compiles arbitrary-value + opacity as
+   `.bg-\[\#0f172a\]\/80` (bracket before the slash). */
+[data-theme="light"] .min-h-screen,
+[data-theme="light"] .bg-\[\#0f172a\],
+[data-theme="light"] .bg-\[\#0f172a\]\/50,
+[data-theme="light"] .bg-\[\#0f172a\]\/80,
+[data-theme="light"] .bg-\[\#0f172a\]\/95 {
+  background-color: #F8FAFC !important;
+}
+[data-theme="light"] .border-white\/10 { border-color: #E2E8F0 !important; }
+[data-theme="light"] .text-white        { color: #0F172A !important; }
+[data-theme="light"] .text-gray-300     { color: #475569 !important; }
+
+/* ════════════════════════════════════════════════════════════
+   HIGH CONTRAST THEME
+   Applied via data-theme="high_contrast" on <html>
+   Deeper blacks, blue-steel borders, heavier font weights on data.
+   Higher contrast ratios throughout for accessibility and
+   poor-calibration monitor readability.
+════════════════════════════════════════════════════════════ */
+[data-theme="high_contrast"] {
+  --qs-dark:     #060810;
+  --qs-card:     #0C0F1A;
+  --qs-elevated: #0F1420;
+  --qs-border:   #1E3A5F;
+  --qs-muted:    #1E3A5F;
+  --qs-subtle:   #60A5FA;
+  --qs-dim:      #93C5FD;
+  --qs-text:     #E0EEFF;
+  --qs-bright:   #FFFFFF;
+
+  --qs-danger-subtle:  rgb(248 113 113 / 0.15);
+  --qs-danger-border:  rgb(248 113 113 / 0.40);
+  --qs-warning-subtle: rgb(252 211 77  / 0.12);
+  --qs-warning-border: rgb(252 211 77  / 0.35);
+  --qs-success-subtle: rgb(52  211 153 / 0.15);
+  --qs-success-border: rgb(52  211 153 / 0.40);
+  --qs-info-subtle:    rgb(96  165 250 / 0.15);
+  --qs-info-border:    rgb(96  165 250 / 0.40);
+
+  color-scheme: dark;
+}
+
+/* High contrast — boost font weight on data-heavy elements */
+[data-theme="high_contrast"] .font-bold,
+[data-theme="high_contrast"] [style*="fontWeight: 700"],
+[data-theme="high_contrast"] [style*="font-weight: 700"] {
+  font-weight: 800 !important;
+}
+
+[data-theme="high_contrast"] .bg-\[\#0f172a\],
+[data-theme="high_contrast"] .bg-\[\#0f172a\]\/50,
+[data-theme="high_contrast"] .bg-\[\#0f172a\]\/80,
+[data-theme="high_contrast"] .bg-\[\#0f172a\]\/95 {
+  background-color: #060810 !important;
+}
+[data-theme="high_contrast"] .border-white\/10 { border-color: #1E3A5F !important; }
+
 /* ── Semantic alpha backgrounds (status banners, badges) ─── */
 .bg-danger-subtle   { background-color: rgb(239 68 68 / 0.13); }
 .bg-success-subtle  { background-color: rgb(16 185 129 / 0.13); }

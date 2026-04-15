@@ -5,6 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { PhoneOutgoing, Save } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { OUTBOUND_CATEGORIES } from '../../../config/staffPerformanceDefaults';
+import { useChartTheme } from '../../../lib/chartTheme';
 
 export default function OutboundBreakdownForm({
   breakdownData,
@@ -15,6 +16,17 @@ export default function OutboundBreakdownForm({
   employeeId,
   weekStart,
 }) {
+  const ct = useChartTheme();
+  // Theme-aware color map, keyed by category key. Overrides OUTBOUND_CATEGORIES.color
+  // so charts/legends adapt to the active theme while the static config stays intact.
+  const CATEGORY_COLORS = {
+    renewal:      ct.data.blue,
+    cross_sell:   ct.data.purple,
+    billing:      ct.data.amber,
+    save_attempt: ct.data.green,
+    winback:      ct.data.red,
+    other:        ct.data.slate,
+  };
   const [form, setForm] = useState({
     renewal: 0,
     cross_sell: 0,
@@ -47,8 +59,9 @@ export default function OutboundBreakdownForm({
     OUTBOUND_CATEGORIES.map((cat) => ({
       name: cat.label,
       value: form[cat.key] || 0,
-      color: cat.color,
+      color: CATEGORY_COLORS[cat.key] ?? ct.data.slate,
     })).filter((d) => d.value > 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [form]
   );
 
@@ -107,7 +120,7 @@ export default function OutboundBreakdownForm({
               {OUTBOUND_CATEGORIES.map((cat) => (
                 <div key={cat.key}>
                   <label className="block text-xs font-medium text-qs-dim mb-1">
-                    <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: cat.color }} />
+                    <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: CATEGORY_COLORS[cat.key] ?? ct.data.slate }} />
                     {cat.label}
                   </label>
                   <input
@@ -158,7 +171,7 @@ export default function OutboundBreakdownForm({
                   }}
                 />
                 {OUTBOUND_CATEGORIES.map((cat) => (
-                  <Bar key={cat.key} dataKey={cat.key} stackId="a" fill={cat.color} radius={0} />
+                  <Bar key={cat.key} dataKey={cat.key} stackId="a" fill={CATEGORY_COLORS[cat.key] ?? ct.data.slate} radius={0} />
                 ))}
               </BarChart>
             </ResponsiveContainer>
@@ -168,7 +181,7 @@ export default function OutboundBreakdownForm({
               {OUTBOUND_CATEGORIES.map((cat) => (
                 form[cat.key] > 0 && (
                   <span key={cat.key} className="inline-flex items-center gap-1 text-qs-dim">
-                    <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: cat.color }} />
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[cat.key] ?? ct.data.slate }} />
                     {cat.label}: {form[cat.key]}
                   </span>
                 )

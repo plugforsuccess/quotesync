@@ -5,6 +5,7 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { supabase } from '../lib/supabase';
+import ThemeToggle from './ThemeToggle';
 
 const NAV_ITEMS = [
   { to: '/my/queue',     icon: '\u26A1',         label: 'My Queue',   desc: 'Pending cancels & renewals' },
@@ -122,6 +123,15 @@ export default function EmployeeLayout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Theme toggle — dark / light / high contrast */}
+        <div style={{
+          padding: '0 10px 12px',
+          borderBottom: '1px solid var(--qs-border)',
+          marginBottom: 12,
+        }}>
+          <ThemeToggle variant="switch" />
+        </div>
 
         {/* User identity + sign out */}
         <div style={{
