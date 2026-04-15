@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
@@ -88,6 +89,9 @@ export default function MyQueuePage() {
 
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
+
+  // Fetch active employees for the Assigned To dropdown in the detail modals.
+  const { data: employees = [] } = useActiveEmployees(orgId);
 
   // Pull cases assigned to this employee — RLS enforces they only see their own.
   // Snoozed cases (snoozed_until in the future) are hidden from the default view.
@@ -408,21 +412,25 @@ export default function MyQueuePage() {
       ? 'var(--qs-dim)'
       : '#FBBF24';
 
-    // Talking-point script strip — primary purpose of the call
+    // Talking-point script strip — primary purpose of the call.
+    // NOTE: the 120-day rewrite window is an internal agent/VC business rule.
+    // It must never appear in customer-facing call scripts.
     const firstName = event.customer_name?.split(' ')[0] || 'there';
     const scriptLine = isLapsed
-      ? `"Hi ${firstName} — your ${event.product} policy lapsed on ${event.cancel_effective_date}.${
-          event.amount_due ? ` To reinstate: $${Number(event.amount_due).toLocaleString()}.` : ''
-        } Reinstatement window closes ${
-          event.termination_date
-            ? new Date(event.termination_date).toLocaleDateString()
-            : '120 days from lapse date'
-        }."`
-      : `"Hi ${firstName} — calling about your ${event.product} policy.${
+      ? `"Hi ${firstName} — this is [your name] from Wiley-Wilson. Your ${
+          event.product
+        } policy lapsed on ${event.cancel_effective_date}.${
           event.amount_due
-            ? ` Payment of $${Number(event.amount_due).toLocaleString()} due by ${event.cancel_effective_date}.`
-            : ` Payment due by ${event.cancel_effective_date}.`
-        } Calling to make sure you don't have a lapse in coverage."`;
+            ? ` We can reinstate your coverage today — the amount due is $${Number(event.amount_due).toLocaleString()}.`
+            : ' I want to help you get your coverage reinstated.'
+        } Are you in a position to take care of that today?"`
+      : `"Hi ${firstName} — this is [your name] from Wiley-Wilson. I'm calling about your ${
+          event.product
+        } policy.${
+          event.amount_due
+            ? ` We're showing a payment of $${Number(event.amount_due).toLocaleString()} due by ${event.cancel_effective_date}.`
+            : ` Your payment is due by ${event.cancel_effective_date}.`
+        } I want to make sure you don't have a gap in coverage — can I help you take care of that today?"`;
 
     return (
       <div style={{
@@ -531,21 +539,6 @@ export default function MyQueuePage() {
                 textTransform: 'uppercase', letterSpacing: '0.05em',
               }}>
                 LAPSED
-              </div>
-            )}
-
-            {/* Reinstatement deadline — for lapsed cases */}
-            {isLapsed && (
-              <div style={{ marginTop: 4, fontSize: 10, color: 'var(--qs-subtle)' }}>
-                {(() => {
-                  const lapseDate = new Date(event.cancel_effective_date);
-                  const deadline = new Date(lapseDate);
-                  deadline.setDate(deadline.getDate() + 120);
-                  const daysLeft = Math.ceil((deadline - new Date()) / 86400000);
-                  return daysLeft > 0
-                    ? `${daysLeft}d to rewrite`
-                    : 'Rewrite window closed';
-                })()}
               </div>
             )}
           </div>
@@ -1343,7 +1336,7 @@ export default function MyQueuePage() {
           onUpdate={updateCancelCase}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
         />,
         document.body
       )}
@@ -1354,7 +1347,7 @@ export default function MyQueuePage() {
           onUpdate={updateRenewalCase}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
         />,
         document.body
       )}
