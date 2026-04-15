@@ -39,6 +39,15 @@ function maskCustomerName(name) {
   return `${parts[0]} ${parts[parts.length - 1][0]}.`;
 }
 
+// Title-case a name for display in modals where full name is appropriate
+function displayCustomerName(name) {
+  if (!name) return 'Unknown Customer';
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function daysUntilCancel(dateStr) {
   const d = new Date(dateStr);
   const today = new Date();
@@ -372,7 +381,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         }}>
           <div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
-              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+              {displayCustomerName(event.customer_name)}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
@@ -899,7 +908,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         }}>
           <div>
             <div style={{ fontSize: 20, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
-              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+              {displayCustomerName(event.customer_name)}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()}
