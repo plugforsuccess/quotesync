@@ -6,7 +6,7 @@ const STATUS_CONFIG = {
   current:  { color: '#10B981', bg: '#10B98111', icon: CheckCircle, label: 'Done' },
   due:      { color: '#F59E0B', bg: '#F59E0B11', icon: Clock,        label: 'Due' },
   overdue:  { color: '#EF4444', bg: '#EF444411', icon: AlertTriangle, label: 'Overdue' },
-  upcoming: { color: '#64748B', bg: 'transparent', icon: null,        label: 'Upcoming' },
+  upcoming: { color: 'var(--qs-subtle)', bg: 'transparent', icon: null,        label: 'Upcoming' },
 };
 
 export default function UploadChecklistModal({

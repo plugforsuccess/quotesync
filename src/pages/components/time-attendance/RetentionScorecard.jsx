@@ -39,18 +39,18 @@ export default function RetentionScorecard({ metrics, isLoading }) {
   const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n).toLocaleString()}`;
   const fmtPct = (r) => r !== null && r !== undefined ? `${Math.round(r * 100)}%` : '—';
 
-  const saveRateColor = metrics.cancelSaveRate === null ? '#94A3B8'
+  const saveRateColor = metrics.cancelSaveRate === null ? 'var(--qs-dim)'
     : metrics.cancelSaveRate >= 0.7 ? '#10B981'
     : metrics.cancelSaveRate >= 0.5 ? '#F59E0B'
     : '#EF4444';
 
-  const promiseColor = metrics.promiseFollowThrough === null ? '#94A3B8'
+  const promiseColor = metrics.promiseFollowThrough === null ? 'var(--qs-dim)'
     : metrics.promiseFollowThrough >= 0.8 ? '#10B981'
     : metrics.promiseFollowThrough >= 0.6 ? '#F59E0B'
     : '#EF4444';
 
   // Days-before-renewal color: green >=21 days (in window), amber 7-20, red <7
-  const daysColor = metrics.avgDaysBeforeRenewal === null ? '#94A3B8'
+  const daysColor = metrics.avgDaysBeforeRenewal === null ? 'var(--qs-dim)'
     : metrics.avgDaysBeforeRenewal >= 21 ? '#10B981'
     : metrics.avgDaysBeforeRenewal >= 7  ? '#F59E0B'
     : '#EF4444';
@@ -100,7 +100,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
           <MetricRow
             label="Premium Still at Risk"
             value={fmt$(metrics.premiumAtRisk)}
-            color={metrics.premiumAtRisk > 0 ? '#F59E0B' : '#94A3B8'}
+            color={metrics.premiumAtRisk > 0 ? '#F59E0B' : 'var(--qs-dim)'}
           />
           {metrics.promisesDue > 0 && (
             <MetricRow

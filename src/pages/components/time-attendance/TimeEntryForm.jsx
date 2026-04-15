@@ -270,7 +270,7 @@ export default function TimeEntryForm({ orgId, employeeUserId, employeeName, onS
           <div className="sm:col-span-2" style={{
             background: '#94A3B811', border: '1px solid #94A3B833',
             borderRadius: 6, padding: '8px 12px',
-            fontSize: 12, color: '#94A3B8',
+            fontSize: 12, color: 'var(--qs-dim)',
           }}>
             ⚠ Weekends are not working days — no entry required.
           </div>

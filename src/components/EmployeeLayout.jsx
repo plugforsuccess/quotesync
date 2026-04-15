@@ -124,13 +124,24 @@ export default function EmployeeLayout() {
           ))}
         </nav>
 
-        {/* Theme toggle — dark / light / high contrast */}
+        {/* Theme toggle — dark / light / high contrast.
+            Uses the icon+dropdown variant, matching the top nav. */}
         <div style={{
-          padding: '0 10px 12px',
+          padding: '10px 16px 12px',
           borderBottom: '1px solid var(--qs-border)',
           marginBottom: 12,
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          gap: 8,
         }}>
-          <ThemeToggle variant="switch" />
+          <span style={{
+            fontSize: 11, fontWeight: 600,
+            color: 'var(--qs-subtle)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.07em',
+          }}>
+            Theme
+          </span>
+          <ThemeToggle variant="pill" />
         </div>
 
         {/* User identity + sign out */}
