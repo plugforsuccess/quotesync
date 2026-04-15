@@ -152,17 +152,17 @@ export default function EmployeeLayout() {
         overflow: 'hidden',
       }}>
 
-        {/* Agency logo / branding. The collapse toggle lives outside the
+        {/* Agency branding — logo centered on its own row above the
+            centered brand name. The collapse toggle lives outside the
             sidebar as a floating tab (see below) so it stays reachable in
             both states. */}
         <div style={{
           padding: collapsed ? '20px 12px 16px' : '20px 16px 16px',
           borderBottom: '1px solid var(--qs-border)',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          gap: 10,
-          minHeight: 68,
+          gap: 8,
         }}>
           {agencyLogoUrl ? (
             <img src={agencyLogoUrl} alt="Agency"
@@ -172,7 +172,7 @@ export default function EmployeeLayout() {
               style={{ height: 32, flexShrink: 0 }} />
           )}
           {!collapsed && (
-            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+            <div style={{ minWidth: 0, width: '100%', textAlign: 'center' }}>
               <div style={{
                 fontSize: 14, fontWeight: 700,
                 color: 'var(--qs-bright)',
