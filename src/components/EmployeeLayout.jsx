@@ -8,6 +8,22 @@ import { useQuery } from '@tanstack/react-query';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { supabase } from '../lib/supabase';
 
+// Universal "toggle sidebar" icon — rectangle with a left panel divider.
+// Same glyph used in VS Code, Linear, Figma, Notion.
+function PanelLeftIcon({ size = 18 }) {
+  return (
+    <svg
+      width={size} height={size}
+      viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2"
+      strokeLinecap="round" strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <line x1="9" y1="3" x2="9" y2="21" />
+    </svg>
+  );
+}
+
 // Inline SVG nav icons — emoji rendering is unreliable across platforms, and
 // the clock emoji in particular is nearly invisible at small sizes.
 const NAV_ITEMS = [
@@ -53,7 +69,20 @@ const NAV_ITEMS = [
 
 export default function EmployeeLayout() {
   const { data: employee } = useCurrentEmployee();
-  const [collapsed, setCollapsed] = useState(false);
+
+  // Persist collapsed state so navigation/refresh doesn't reset the layout.
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('qs_sidebar_collapsed') === 'true'; }
+    catch { return false; }
+  });
+
+  function toggleCollapsed() {
+    setCollapsed(c => {
+      const next = !c;
+      try { localStorage.setItem('qs_sidebar_collapsed', String(next)); } catch {}
+      return next;
+    });
+  }
 
   // Agency branding — pull name + logo for the sidebar header.
   const { data: agencyData } = useQuery({
@@ -116,63 +145,39 @@ export default function EmployeeLayout() {
         overflow: 'hidden',
       }}>
 
-        {/* Agency logo / branding + collapse toggle */}
+        {/* Agency logo / branding. The collapse toggle lives outside the
+            sidebar as a floating tab (see below) so it stays reachable in
+            both states. */}
         <div style={{
-          padding: '20px 16px 16px',
+          padding: collapsed ? '20px 12px 16px' : '20px 16px 16px',
           borderBottom: '1px solid var(--qs-border)',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          gap: 10,
           minHeight: 68,
         }}>
+          {agencyLogoUrl ? (
+            <img src={agencyLogoUrl} alt="Agency"
+              style={{ height: 32, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+          ) : (
+            <img src="/allstate-badge.svg" alt="Allstate"
+              style={{ height: 32, flexShrink: 0 }} />
+          )}
           {!collapsed && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10,
-              overflow: 'hidden', minWidth: 0 }}>
-              {agencyLogoUrl ? (
-                <img
-                  src={agencyLogoUrl}
-                  alt="Agency logo"
-                  style={{ height: 32, width: 'auto', objectFit: 'contain', flexShrink: 0 }}
-                />
-              ) : (
-                <img src="/allstate-badge.svg" alt="Allstate"
-                  style={{ height: 32, flexShrink: 0 }} />
-              )}
-              <div style={{ minWidth: 0 }}>
-                <div style={{
-                  fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)',
-                  lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}>
-                  {agencyName}
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--qs-dim)' }}>Agency</div>
+            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+              <div style={{
+                fontSize: 14, fontWeight: 700,
+                color: 'var(--qs-bright)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {agencyName || 'Agency'}
+              </div>
+              <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 1 }}>
+                Wiley-Wilson
               </div>
             </div>
           )}
-          {collapsed && (
-            <div style={{ margin: '0 auto' }}>
-              {agencyLogoUrl ? (
-                <img src={agencyLogoUrl} alt="Agency"
-                  style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
-              ) : (
-                <img src="/allstate-badge.svg" alt="Allstate" style={{ height: 28 }} />
-              )}
-            </div>
-          )}
-
-          <button
-            onClick={() => setCollapsed(c => !c)}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--qs-dim)', fontSize: 16, padding: '4px 6px',
-              borderRadius: 6, lineHeight: 1, flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            {collapsed ? '\u2192' : '\u2190'}
-          </button>
         </div>
 
         {/* Navigation links */}
@@ -288,6 +293,47 @@ export default function EmployeeLayout() {
           )}
         </div>
       </aside>
+
+      {/* ── Floating sidebar toggle ───────────────────────────────────
+          Sits on the right edge of the sidebar as a half-exposed tab so
+          it stays visible and clickable in both expanded and collapsed
+          states. */}
+      <button
+        onClick={toggleCollapsed}
+        title={collapsed ? 'Open sidebar' : 'Close sidebar'}
+        aria-label={collapsed ? 'Open sidebar' : 'Close sidebar'}
+        style={{
+          position: 'fixed',
+          top: 20,
+          // Sits just beyond the right edge of the sidebar
+          left: (collapsed ? 64 : 220) - 12,
+          zIndex: 200,
+          width: 24,
+          height: 24,
+          padding: 0,
+          borderRadius: '0 6px 6px 0',
+          background: 'var(--qs-elevated)',
+          border: '1px solid var(--qs-border)',
+          borderLeft: 'none',
+          color: 'var(--qs-subtle)',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          transition: 'left 0.2s ease, opacity 0.15s, color 0.15s',
+          opacity: 0.7,
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.opacity = '1';
+          e.currentTarget.style.color = 'var(--qs-bright)';
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.opacity = '0.7';
+          e.currentTarget.style.color = 'var(--qs-subtle)';
+        }}
+      >
+        <PanelLeftIcon size={14} />
+      </button>
 
       {/* ── Main content area ─────────────────────────────────────── */}
       <main style={{
