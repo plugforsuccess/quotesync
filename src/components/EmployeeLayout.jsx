@@ -101,6 +101,13 @@ export default function EmployeeLayout() {
   });
 
   const agencyName = agencyData?.brand_name || agencyData?.name || 'Agency';
+  // Show the legal name underneath when it differs from the brand name
+  // (e.g. brand "Cam Wiley Insurance" / legal "Wiley-Wilson"); otherwise
+  // fall back to the generic "Agency" label.
+  const agencySubtext =
+    agencyData?.brand_name && agencyData?.name && agencyData.brand_name !== agencyData.name
+      ? agencyData.name
+      : 'Agency';
   const agencyLogoUrl = agencyData?.logo_url || null;
 
   async function handleSignOut() {
@@ -173,8 +180,11 @@ export default function EmployeeLayout() {
               }}>
                 {agencyName || 'Agency'}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 1 }}>
-                Wiley-Wilson
+              <div style={{
+                fontSize: 11, color: 'var(--qs-subtle)', marginTop: 1,
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              }}>
+                {agencySubtext}
               </div>
             </div>
           )}
