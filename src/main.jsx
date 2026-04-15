@@ -4,6 +4,7 @@ import App from './App.jsx'  // ← Must import App, not AutoInsuranceLanding
 import './index.css'
 import './styles/animations.css'
 import { logWebVitals } from './lib/performance'
+import { ThemeProvider } from './contexts/ThemeContext'
 
 // Initialize performance monitoring
 if (typeof window !== 'undefined') {
@@ -12,6 +13,8 @@ if (typeof window !== 'undefined') {
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 )

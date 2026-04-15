@@ -9,6 +9,7 @@ import HamburgerMenu from './HamburgerMenu';
 import BottomTabBar from './BottomTabBar';
 import VerificationBanner from './VerificationBanner';
 import ImpersonationBanner from './ImpersonationBanner';
+import ThemeToggle from './ThemeToggle';
 import UploadChecklistModal from '../pages/components/shared/UploadChecklistModal';
 import { useUploadChecklist } from '../hooks/useUploadChecklist';
 import { useManagementCadence } from '../hooks/useManagementCadence';
@@ -320,6 +321,9 @@ function Layout({ forcePlane = null }) {
                 />
               )}
 
+              {/* Theme toggle — dark / light / high contrast */}
+              <ThemeToggle variant="pill" />
+
               <UserMenu
                 activePlane={activePlane}
                 onTogglePlane={() => setPlaneOverride(p => {
@@ -405,7 +409,9 @@ function Layout({ forcePlane = null }) {
               />
             ))}
 
-            <div className="mt-4">
+            <div className="mt-4 flex flex-col items-center gap-3">
+              {/* Theme toggle — mobile */}
+              <ThemeToggle variant="pill" />
               <UserMenu
                 activePlane={activePlane}
                 onTogglePlane={() => setPlaneOverride(p => {
