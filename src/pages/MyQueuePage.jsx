@@ -73,6 +73,10 @@ export default function MyQueuePage() {
   // Stale refresh tracking
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
 
+  // Cancel filter bar — client-side filter of cancelCases
+  // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy'
+  const [cancelFilter, setCancelFilter] = useState('all');
+
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
 
@@ -140,12 +144,40 @@ export default function MyQueuePage() {
     return { criticalCount, totalPremiumAtRisk, attemptedToday, untouched };
   }, [cancelCases, renewalCases, todayStr]);
 
-  // Cancel priority buckets
+  // Multi-policy flag lookup — same customer appearing in >1 case
+  const customerPolicyCounts = useMemo(() => {
+    const counts = {};
+    for (const c of cancelCases) {
+      counts[c.customer_name] = (counts[c.customer_name] || 0) + 1;
+    }
+    for (const r of renewalCases) {
+      counts[r.customer_name] = (counts[r.customer_name] || 0) + 1;
+    }
+    return counts;
+  }, [cancelCases, renewalCases]);
+
+  // Client-side filter applied to cancel cases before bucketing
+  const filteredCancelCases = useMemo(() => {
+    switch (cancelFilter) {
+      case 'lapsed':
+        return cancelCases.filter(e => e.stage === 'cancelled');
+      case 'pending':
+        return cancelCases.filter(e => e.stage === 'pending_cancel');
+      case 'never_called':
+        return cancelCases.filter(e => !e.attempt_count || e.attempt_count === 0);
+      case 'multi_policy':
+        return cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1);
+      default:
+        return cancelCases;
+    }
+  }, [cancelCases, cancelFilter, customerPolicyCounts]);
+
+  // Cancel priority buckets (built from filtered set)
   const cancelBuckets = useMemo(() => ({
-    critical: cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d <= 3; }),
-    thisWeek: cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d > 3 && d <= 7; }),
-    later:    cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d === null || d > 7; }),
-  }), [cancelCases]);
+    critical: filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d <= 3; }),
+    thisWeek: filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d > 3 && d <= 7; }),
+    later:    filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d === null || d > 7; }),
+  }), [filteredCancelCases]);
 
   const BUCKETS = [
     { key: 'critical', label: '🔴 Act Today', color: '#F87171', cases: cancelBuckets.critical },
@@ -239,13 +271,14 @@ export default function MyQueuePage() {
     }
   }
 
-  function CancelCard({ event }) {
+  function CancelCard({ event, policyCount = 1 }) {
     const days       = daysUntilCancel(event.cancel_effective_date);
     const urgent     = days !== null && days <= 3;
     const phone      = event.phone;
     const lastAtt    = lastAttemptSummary(event.last_attempt_result, event.last_attempt_at);
     const promisePast = event.promise_date && new Date(event.promise_date) < new Date();
     const promiseSoon = event.promise_date && !promisePast;
+    const isLapsed   = event.stage === 'cancelled';
 
     // Attempt density color
     const attColor = !event.attempt_count
@@ -254,11 +287,41 @@ export default function MyQueuePage() {
       ? 'var(--qs-dim)'
       : '#FBBF24';
 
+    // Talking-point script strip — primary purpose of the call
+    const firstName = event.customer_name?.split(' ')[0] || 'there';
+    const scriptLine = isLapsed
+      ? `"Hi ${firstName} — your ${event.product} policy lapsed on ${event.cancel_effective_date}.${
+          event.amount_due ? ` To reinstate: $${Number(event.amount_due).toLocaleString()}.` : ''
+        } Reinstatement window closes ${
+          event.termination_date
+            ? new Date(event.termination_date).toLocaleDateString()
+            : '120 days from lapse date'
+        }."`
+      : `"Hi ${firstName} — calling about your ${event.product} policy.${
+          event.amount_due
+            ? ` Payment of $${Number(event.amount_due).toLocaleString()} due by ${event.cancel_effective_date}.`
+            : ` Payment due by ${event.cancel_effective_date}.`
+        } Calling to make sure you don't have a lapse in coverage."`;
+
     return (
       <div style={{
         background:  'var(--qs-card)',
-        border:      `1px solid ${urgent ? 'rgba(239,68,68,0.3)' : 'var(--qs-border)'}`,
-        borderLeft:  `3px solid ${urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-border)'}`,
+        border: `1px solid ${
+          isLapsed
+            ? 'rgba(239,68,68,0.4)'
+            : urgent
+            ? 'rgba(239,68,68,0.3)'
+            : 'var(--qs-border)'
+        }`,
+        borderLeft: `3px solid ${
+          isLapsed
+            ? '#EF4444'
+            : urgent
+            ? '#F87171'
+            : days <= 7
+            ? '#FBBF24'
+            : 'var(--qs-border)'
+        }`,
         borderRadius: 10,
         padding:     '18px 20px',
       }}>
@@ -295,6 +358,15 @@ export default function MyQueuePage() {
                   Lapsed
                 </span>
               )}
+
+              {policyCount > 1 && (
+                <span style={{
+                  fontSize: 10, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
+                  borderRadius: 4, padding: '1px 6px', fontWeight: 700, flexShrink: 0,
+                }}>
+                  ⚠ {policyCount} policies
+                </span>
+              )}
             </div>
 
             <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 3 }}>
@@ -302,16 +374,75 @@ export default function MyQueuePage() {
             </div>
           </div>
 
-          {/* Days + premium at risk */}
+          {/* Days + cancel date + amount due */}
           <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-            <div style={{ fontSize: 18, fontWeight: 700,
-              color: urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)' }}>
-              {days === null ? '—' : days === 0 ? 'Today' : `${days}d`}
+            {/* Days — large and color-coded */}
+            <div style={{
+              fontSize: 18, fontWeight: 800,
+              color: urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)',
+              fontFamily: "'DM Mono', monospace", lineHeight: 1,
+            }}>
+              {days === null ? '—'
+                : days === 0 ? 'TODAY'
+                : days < 0 ? `${Math.abs(days)}d AGO`
+                : `${days}d`}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
-              {fmt$(event.premium_at_risk)}
+            {/* Cancel date — always visible */}
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>
+              {event.cancel_effective_date}
             </div>
+            {/* Amount due — if present */}
+            {event.amount_due > 0 && (
+              <div style={{
+                fontSize: 13, fontWeight: 700,
+                color: '#F87171',
+                fontFamily: "'DM Mono', monospace",
+                marginTop: 4,
+              }}>
+                ${Number(event.amount_due).toLocaleString()}
+              </div>
+            )}
+
+            {isLapsed && (
+              <div style={{
+                marginTop: 6, fontSize: 10, fontWeight: 700,
+                color: '#F87171',
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+              }}>
+                LAPSED
+              </div>
+            )}
+
+            {/* Reinstatement deadline — for lapsed cases */}
+            {isLapsed && (
+              <div style={{ marginTop: 4, fontSize: 10, color: 'var(--qs-subtle)' }}>
+                {(() => {
+                  const lapseDate = new Date(event.cancel_effective_date);
+                  const deadline = new Date(lapseDate);
+                  deadline.setDate(deadline.getDate() + 120);
+                  const daysLeft = Math.ceil((deadline - new Date()) / 86400000);
+                  return daysLeft > 0
+                    ? `${daysLeft}d to rewrite`
+                    : 'Rewrite window closed';
+                })()}
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Talking point script — primary call purpose */}
+        <div style={{
+          background: 'rgba(59,130,246,0.06)',
+          border: '1px solid rgba(59,130,246,0.15)',
+          borderRadius: 6,
+          padding: '7px 10px',
+          marginBottom: 8,
+          fontSize: 12,
+          color: 'var(--qs-dim)',
+          fontStyle: 'italic',
+          lineHeight: 1.5,
+        }}>
+          {scriptLine}
         </div>
 
         {/* Row 2: Promise / last attempt */}
@@ -354,39 +485,70 @@ export default function MyQueuePage() {
           </div>
         )}
 
-        {/* Row 3: Action buttons */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {/* Row 3: Actions */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {phone && (
             <a href={`tel:${phone}`}
-              style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+              style={{
+                fontSize: 13, padding: '7px 12px', borderRadius: 7,
                 background: 'rgba(52,211,153,0.12)', color: '#34D399',
                 border: '1px solid rgba(52,211,153,0.25)', textDecoration: 'none',
-                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+              }}>
               📞 {fmtPhone(phone)}
             </a>
           )}
 
           <button
             onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600 }}>
+              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600,
+            }}>
             Log Call
           </button>
 
           <button
             onClick={() => handleInlineResolve('cancel', event, 'saved')}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-              color: '#34D399', cursor: 'pointer', fontWeight: 600 }}>
+              color: '#34D399', cursor: 'pointer', fontWeight: 600,
+            }}>
             ✓ Saved
+          </button>
+
+          {/* Lost quick action */}
+          <button
+            onClick={() => handleInlineResolve('cancel', event, 'lost')}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+            }}>
+            ✗ Lost
+          </button>
+
+          {/* Wants to cancel quick action */}
+          <button
+            onClick={() => handleInlineResolve('cancel', event, 'requested_cancellation')}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
+              color: '#F87171', cursor: 'pointer', fontWeight: 600,
+            }}>
+            Wants to Cancel
           </button>
 
           <button
             onClick={() => setSelectedEvent(event)}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'none',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600, marginLeft: 'auto' }}>
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+              marginLeft: 'auto',
+            }}>
             View →
           </button>
         </div>
@@ -394,7 +556,7 @@ export default function MyQueuePage() {
     );
   }
 
-  function RenewalCard({ event }) {
+  function RenewalCard({ event, policyCount = 1 }) {
     const daysUntil = (() => {
       const d = new Date(event.renewal_date);
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -461,6 +623,15 @@ export default function MyQueuePage() {
                   🤖 AI spoke
                 </button>
               )}
+
+              {policyCount > 1 && (
+                <span style={{
+                  fontSize: 10, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
+                  borderRadius: 4, padding: '1px 6px', fontWeight: 700, flexShrink: 0,
+                }}>
+                  ⚠ {policyCount} policies
+                </span>
+              )}
             </div>
 
             <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 3 }}>
@@ -477,6 +648,29 @@ export default function MyQueuePage() {
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>renewal</div>
           </div>
         </div>
+
+        {/* Talking point script — primary call purpose */}
+        {(() => {
+          const firstName = event.customer_name?.split(' ')[0] || 'there';
+          const scriptLine = rateShock
+            ? `"Hi ${firstName} — calling about your ${event.product} renewal on ${event.renewal_date}. Your premium is going up ${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%. Want to review options and make sure you're getting the best rate."`
+            : `"Hi ${firstName} — calling about your ${event.product} renewal on ${event.renewal_date}. Just making sure everything still looks good and answering any questions."`;
+          return (
+            <div style={{
+              background: 'rgba(59,130,246,0.06)',
+              border: '1px solid rgba(59,130,246,0.15)',
+              borderRadius: 6,
+              padding: '7px 10px',
+              marginBottom: 8,
+              fontSize: 12,
+              color: 'var(--qs-dim)',
+              fontStyle: 'italic',
+              lineHeight: 1.5,
+            }}>
+              {scriptLine}
+            </div>
+          );
+        })()}
 
         {/* Row 2: Premium + change + attempts */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -523,38 +717,58 @@ export default function MyQueuePage() {
         )}
 
         {/* Row 3: Actions */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {phone && (
             <a href={`tel:${phone}`}
-              style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+              style={{
+                fontSize: 13, padding: '7px 12px', borderRadius: 7,
                 background: 'rgba(52,211,153,0.12)', color: '#34D399',
                 border: '1px solid rgba(52,211,153,0.25)', textDecoration: 'none',
-                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+              }}>
               📞 {fmtPhone(phone)}
             </a>
           )}
 
           <button
             onClick={() => { setLogCallTarget({ type: 'renewal', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600 }}>
+              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600,
+            }}>
             Log Call
           </button>
 
           <button
             onClick={() => handleInlineResolve('renewal', event, 'confirmed')}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-              color: '#34D399', cursor: 'pointer', fontWeight: 600 }}>
+              color: '#34D399', cursor: 'pointer', fontWeight: 600,
+            }}>
             ✓ Confirmed
+          </button>
+
+          {/* Won't Renew quick action */}
+          <button
+            onClick={() => handleInlineResolve('renewal', event, 'lost')}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+            }}>
+            ✗ Won't Renew
           </button>
 
           <button
             onClick={() => setSelectedRenewal(event)}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'none',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600, marginLeft: 'auto' }}>
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+              marginLeft: 'auto',
+            }}>
             View →
           </button>
         </div>
@@ -608,11 +822,35 @@ export default function MyQueuePage() {
                 fontFamily: "'DM Mono', monospace" }}>{stat.value}</div>
             </div>
           ))}
-          <a href="/my/scorecard"
-            style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-info)',
-              textDecoration: 'none', fontWeight: 600 }}>
-            Full Scorecard →
-          </a>
+          {/* Daily call progress */}
+          {(() => {
+            const DAILY_TARGET = 8;
+            const progressPct = Math.min(100, Math.round((focusStats.attemptedToday / DAILY_TARGET) * 100));
+            return (
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 3 }}>
+                    Today: {focusStats.attemptedToday}/{DAILY_TARGET} calls
+                  </div>
+                  <div style={{
+                    width: 100, height: 6, background: 'var(--qs-elevated)',
+                    borderRadius: 3, overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      height: '100%', borderRadius: 3,
+                      width: `${progressPct}%`,
+                      background: progressPct >= 100 ? '#10B981' : progressPct >= 50 ? '#3B82F6' : '#F59E0B',
+                      transition: 'width 0.3s',
+                    }} />
+                  </div>
+                </div>
+                <a href="/my/scorecard"
+                  style={{ fontSize: 12, color: 'var(--qs-info)', textDecoration: 'none', fontWeight: 600 }}>
+                  Full Scorecard →
+                </a>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -728,6 +966,35 @@ export default function MyQueuePage() {
             </div>
           )}
 
+          {/* Filter bar */}
+          {!cancelLoading && cancelCases.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              {[
+                { key: 'all',          label: `All (${cancelCases.length})` },
+                { key: 'lapsed',       label: `Lapsed (${cancelCases.filter(e => e.stage === 'cancelled').length})` },
+                { key: 'pending',      label: `Pending (${cancelCases.filter(e => e.stage === 'pending_cancel').length})` },
+                { key: 'never_called', label: `Untouched (${cancelCases.filter(e => !e.attempt_count).length})` },
+                { key: 'multi_policy', label: `Multi-policy (${cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1).length})` },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setCancelFilter(f.key)}
+                  style={{
+                    fontSize: 12, padding: '5px 12px', borderRadius: 20,
+                    border: '1px solid',
+                    borderColor: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-border)',
+                    background: cancelFilter === f.key ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
+                    color: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-dim)',
+                    cursor: 'pointer', fontWeight: 600,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Priority buckets */}
           {!cancelLoading && cancelCases.length > 0 && BUCKETS.map(bucket =>
             bucket.cases.length > 0 && (
@@ -752,7 +1019,11 @@ export default function MyQueuePage() {
                 {/* Cards */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {bucket.cases.map(event => (
-                    <CancelCard key={event.id} event={event} />
+                    <CancelCard
+                      key={event.id}
+                      event={event}
+                      policyCount={customerPolicyCounts[event.customer_name] || 1}
+                    />
                   ))}
                 </div>
               </div>
@@ -785,7 +1056,11 @@ export default function MyQueuePage() {
           {!renewalLoading && renewalCases.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {renewalCases.map(event => (
-                <RenewalCard key={event.id} event={event} />
+                <RenewalCard
+                  key={event.id}
+                  event={event}
+                  policyCount={customerPolicyCounts[event.customer_name] || 1}
+                />
               ))}
             </div>
           )}
