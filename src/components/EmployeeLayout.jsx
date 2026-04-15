@@ -32,7 +32,7 @@ export default function EmployeeLayout() {
     .join(', ') || 'Employee';
 
   return (
-    <div style={{
+    <div className="qs-app-shell" style={{
       display: 'flex',
       minHeight: '100vh',
       background: 'var(--qs-dark)',
