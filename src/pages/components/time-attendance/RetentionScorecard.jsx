@@ -1,15 +1,15 @@
 import { Shield, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 
-function MetricRow({ label, value, sub, color = '#E2E8F0', warn = false }) {
+function MetricRow({ label, value, sub, color = 'var(--qs-text)', warn = false }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #252A3A' }}>
-      <span style={{ fontSize: 13, color: '#94A3B8', display: 'flex', alignItems: 'center', gap: 4 }}>
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid var(--qs-border)' }}>
+      <span style={{ fontSize: 13, color: 'var(--qs-dim)', display: 'flex', alignItems: 'center', gap: 4 }}>
         {warn && <AlertTriangle className="w-3 h-3 text-amber-500" />}
         {label}
       </span>
       <div className="text-right">
         <span style={{ fontSize: 13, fontWeight: 600, color }}>{value}</span>
-        {sub && <p style={{ fontSize: 11, color: '#64748B' }}>{sub}</p>}
+        {sub && <p style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>{sub}</p>}
       </div>
     </div>
   );
@@ -18,7 +18,7 @@ function MetricRow({ label, value, sub, color = '#E2E8F0', warn = false }) {
 export default function RetentionScorecard({ metrics, isLoading }) {
   if (isLoading) {
     return (
-      <div style={{ background: '#161924', border: '1px solid #252A3A', borderRadius: 10, padding: 20 }} className="text-center text-qs-muted text-sm">
+      <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 20 }} className="text-center text-qs-muted text-sm">
         Loading retention data...
       </div>
     );
@@ -26,7 +26,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
 
   if (!metrics || (metrics.cancelTotal === 0 && metrics.renewalTotal === 0 && metrics.inboundClosures === 0)) {
     return (
-      <div style={{ background: '#161924', border: '1px solid #252A3A', borderRadius: 10, padding: 20 }} className="text-center">
+      <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 20 }} className="text-center">
         <Shield className="w-10 h-10 text-qs-muted mx-auto mb-2" />
         <p className="text-qs-subtle text-sm">No retention cases assigned yet.</p>
         <p className="text-xs text-qs-muted mt-1">
@@ -63,7 +63,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
 
       {/* Outbound section — Pending Cancellations */}
       {isOutbound && metrics.cancelTotal > 0 && (
-        <div style={{ background: '#161924', border: '1px solid #252A3A', borderRadius: 10, padding: 20 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 20 }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="p-1.5 bg-amber-900/20 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-amber-400" />
@@ -119,7 +119,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
 
       {/* Outbound section — Renewals */}
       {isOutbound && metrics.renewalTotal > 0 && (
-        <div style={{ background: '#161924', border: '1px solid #252A3A', borderRadius: 10, padding: 20 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 20 }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="p-1.5 bg-blue-900/20 rounded-lg">
               <CheckCircle className="w-4 h-4 text-blue-400" />
@@ -176,7 +176,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
 
       {/* Inbound section — Tracy's metrics */}
       {isInbound && metrics.inboundClosures > 0 && (
-        <div style={{ background: '#161924', border: '1px solid #252A3A', borderRadius: 10, padding: 20 }}>
+        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 10, padding: 20 }}>
           <div className="flex items-center gap-2 mb-4">
             <div className="p-1.5 bg-blue-900/20 rounded-lg">
               <CheckCircle className="w-4 h-4 text-blue-400" />

@@ -116,9 +116,9 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
   return (
     <div className="fixed inset-0 bg-black/70 z-50 flex items-end sm:items-center justify-center p-2">
       <div className="absolute inset-0" onClick={onClose} />
-      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7" style={{ background: '#161924' }}>
+      <div className="relative w-full rounded-2xl max-w-[98vw] h-[96vh] overflow-y-auto p-5 sm:p-7" style={{ background: 'var(--qs-card)' }}>
           {/* Header */}
-          <div className="sticky top-0 border-b border-qs-border pb-4 mb-4 z-10" style={{ background: '#161924' }}>
+          <div className="sticky top-0 border-b border-qs-border pb-4 mb-4 z-10" style={{ background: 'var(--qs-card)' }}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Target className="w-5 h-5 text-primary-600" />
@@ -171,7 +171,7 @@ export default function TargetsModal({ open, onClose, employeeName, employeeId, 
           </div>
 
           {/* Footer */}
-          <div className="sticky bottom-0 border-t border-qs-border pt-4 mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between" style={{ background: '#161924' }}>
+          <div className="sticky bottom-0 border-t border-qs-border pt-4 mt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between" style={{ background: 'var(--qs-card)' }}>
             <button
               onClick={handleReset}
               className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-qs-text bg-qs-elevated border border-qs-border rounded-lg hover:bg-qs-card transition-colors"

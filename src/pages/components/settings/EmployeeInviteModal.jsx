@@ -48,7 +48,7 @@ export default function EmployeeInviteModal({ employee, agencyId, onClose, onSuc
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{
-        background: '#161924', border: '1px solid var(--qs-border)',
+        background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
         borderRadius: 12, width: '100%', maxWidth: 440, padding: 24,
       }}>
         {/* Header */}

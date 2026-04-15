@@ -42,7 +42,7 @@ export default function UploadChecklistModal({
       onClick={(e) => { if (e.target === e.currentTarget) onDismiss(); }}
     >
       <div style={{
-        background: '#161924',
+        background: 'var(--qs-card)',
         border: `1px solid ${hasOverdue ? '#EF444433' : '#F59E0B33'}`,
         borderRadius: 14,
         width: '100%', maxWidth: 560,

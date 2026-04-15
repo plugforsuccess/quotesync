@@ -171,7 +171,7 @@ export default function WeekPickerCalendar({ weekStart, onChange, label }) {
       ref={popupRef}
       role="dialog"
       aria-label="Pick a week"
-      style={{ ...popupStyle, background: '#161924', width: 300, borderRadius: 12, border: '1px solid #252A3A', padding: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
+      style={{ ...popupStyle, background: 'var(--qs-card)', width: 300, borderRadius: 12, border: '1px solid var(--qs-border)', padding: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.4)' }}
     >
       {/* Month/Year header */}
       <div className="flex items-center justify-between mb-3">
