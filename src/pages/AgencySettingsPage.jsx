@@ -378,6 +378,82 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState(null);
 
+  // Logo upload state
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoError, setLogoError] = useState('');
+
+  function invalidateAgencyQueries() {
+    queryClient.invalidateQueries({ queryKey: ['agency', agencyId] });
+    queryClient.invalidateQueries({ queryKey: ['agency_detail', agencyId] });
+    queryClient.invalidateQueries({ queryKey: ['employee_agency', agencyId] });
+  }
+
+  async function handleLogoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input so the same file can be re-selected after an error
+    e.target.value = '';
+
+    if (file.size > 512000) {
+      setLogoError('Logo must be under 500KB.');
+      return;
+    }
+    if (!['image/png', 'image/jpeg', 'image/svg+xml', 'image/webp'].includes(file.type)) {
+      setLogoError('PNG, JPG, SVG, or WebP only.');
+      return;
+    }
+
+    setLogoUploading(true);
+    setLogoError('');
+
+    // Upload to storage: agency-logos/{agencyId}/logo.{ext}
+    const ext = file.name.split('.').pop();
+    const path = `${agencyId}/logo.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('agency-logos')
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (uploadError) {
+      setLogoError('Upload failed. Try again.');
+      setLogoUploading(false);
+      return;
+    }
+
+    // Cache-bust the public URL so the new logo shows immediately after upsert
+    const { data: { publicUrl } } = supabase.storage
+      .from('agency-logos')
+      .getPublicUrl(path);
+    const cacheBustedUrl = `${publicUrl}?v=${Date.now()}`;
+
+    const { error: updateError } = await supabase
+      .from('agencies')
+      .update({ logo_url: cacheBustedUrl })
+      .eq('id', agencyId);
+
+    if (updateError) {
+      setLogoError('Saved to storage but failed to update agency. Try again.');
+    } else {
+      invalidateAgencyQueries();
+    }
+
+    setLogoUploading(false);
+  }
+
+  async function handleLogoRemove() {
+    setLogoError('');
+    const { error } = await supabase
+      .from('agencies')
+      .update({ logo_url: null })
+      .eq('id', agencyId);
+    if (error) {
+      setLogoError('Failed to remove logo. Try again.');
+      return;
+    }
+    invalidateAgencyQueries();
+  }
+
   const startEditing = () => {
     setForm({
       brand_name: agency.brand_name || '',
@@ -408,7 +484,7 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
         .eq('id', agencyId);
       if (error) throw error;
       setEditing(false);
-      queryClient.invalidateQueries({ queryKey: ['agency', agencyId] });
+      invalidateAgencyQueries();
     } catch (err) {
       alert('Failed to save: ' + err.message);
     } finally {
@@ -425,6 +501,82 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
             Edit
           </button>
         )}
+      </div>
+
+      {/* Agency Logo — available to principals; shown in the employee sidebar. */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 8 }}>
+          Agency Logo
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Preview */}
+          <div style={{
+            width: 64, height: 64, borderRadius: 10,
+            background: 'var(--qs-elevated)',
+            border: '1px solid var(--qs-border)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden', flexShrink: 0,
+          }}>
+            {agency?.logo_url ? (
+              <img
+                src={agency.logo_url}
+                alt="Agency logo"
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+              />
+            ) : (
+              <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>No logo</span>
+            )}
+          </div>
+
+          <div>
+            {isAgent ? (
+              <>
+                <label style={{
+                  display: 'inline-block', padding: '8px 16px', borderRadius: 8,
+                  background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+                  color: 'var(--qs-dim)', fontSize: 13, fontWeight: 600,
+                  cursor: logoUploading ? 'not-allowed' : 'pointer',
+                  opacity: logoUploading ? 0.6 : 1,
+                }}>
+                  {logoUploading ? 'Uploading...' : 'Upload Logo'}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                    onChange={handleLogoUpload}
+                    style={{ display: 'none' }}
+                    disabled={logoUploading}
+                  />
+                </label>
+
+                {agency?.logo_url && (
+                  <button
+                    onClick={handleLogoRemove}
+                    style={{
+                      marginLeft: 8, fontSize: 12, color: 'var(--qs-muted)',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
+                Only the principal can change the agency logo.
+              </div>
+            )}
+
+            <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
+              PNG, JPG, SVG or WebP · max 500KB · appears in employee sidebar
+            </div>
+
+            {logoError && (
+              <div style={{ fontSize: 11, color: '#EF4444', marginTop: 4 }}>
+                {logoError}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
 
       {editing ? (
