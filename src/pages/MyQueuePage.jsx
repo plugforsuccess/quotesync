@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
@@ -73,10 +74,27 @@ export default function MyQueuePage() {
   // Stale refresh tracking
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
 
+  // Cancel filter bar — client-side filter of cancelCases
+  // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy' | 'snoozed'
+  const [cancelFilter, setCancelFilter] = useState('all');
+
+  // Callback scheduling popover
+  const [callbackTarget, setCallbackTarget] = useState(null); // { type, event }
+  const [callbackForm,   setCallbackForm]   = useState({ time: '', note: '' });
+  const [callbackSaving, setCallbackSaving] = useState(false);
+
+  // Loss reason popover
+  const [lostTarget, setLostTarget] = useState(null); // { type, event }
+  const [lostReason, setLostReason] = useState('');
+
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
 
-  // Pull cases assigned to this employee — RLS enforces they only see their own
+  // Fetch active employees for the Assigned To dropdown in the detail modals.
+  const { data: employees = [] } = useActiveEmployees(orgId);
+
+  // Pull cases assigned to this employee — RLS enforces they only see their own.
+  // Snoozed cases (snoozed_until in the future) are hidden from the default view.
   const { data: cancelCases = [], isLoading: cancelLoading } = useQuery({
     queryKey: ['my_cancel_cases', employeeId],
     queryFn: async () => {
@@ -86,6 +104,7 @@ export default function MyQueuePage() {
         .select('*')
         .eq('assigned_to_id', employeeId)
         .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)')
+        .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
         .order('cancel_effective_date', { ascending: true });
       if (error) throw error;
       return (data ?? []).map(e => ({
@@ -94,6 +113,25 @@ export default function MyQueuePage() {
       })).sort((a, b) => b._priority - a._priority);
     },
     enabled: !!employeeId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Snoozed cancel cases — only fetched when the Snoozed filter is active.
+  const { data: snoozedCancelCases = [] } = useQuery({
+    queryKey: ['my_cancel_cases_snoozed', employeeId],
+    queryFn: async () => {
+      if (!employeeId) return [];
+      const { data, error } = await supabase
+        .from('pending_cases')
+        .select('*')
+        .eq('assigned_to_id', employeeId)
+        .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)')
+        .gte('snoozed_until', new Date().toISOString())
+        .order('snoozed_until', { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!employeeId && cancelFilter === 'snoozed',
     staleTime: 2 * 60 * 1000,
   });
 
@@ -106,6 +144,7 @@ export default function MyQueuePage() {
         .select('*')
         .eq('assigned_to_id', employeeId)
         .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)')
+        .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
         .order('renewal_date', { ascending: true });
       if (error) throw error;
       return data ?? [];
@@ -140,12 +179,42 @@ export default function MyQueuePage() {
     return { criticalCount, totalPremiumAtRisk, attemptedToday, untouched };
   }, [cancelCases, renewalCases, todayStr]);
 
-  // Cancel priority buckets
+  // Multi-policy flag lookup — same customer appearing in >1 case
+  const customerPolicyCounts = useMemo(() => {
+    const counts = {};
+    for (const c of cancelCases) {
+      counts[c.customer_name] = (counts[c.customer_name] || 0) + 1;
+    }
+    for (const r of renewalCases) {
+      counts[r.customer_name] = (counts[r.customer_name] || 0) + 1;
+    }
+    return counts;
+  }, [cancelCases, renewalCases]);
+
+  // Client-side filter applied to cancel cases before bucketing
+  const filteredCancelCases = useMemo(() => {
+    switch (cancelFilter) {
+      case 'lapsed':
+        return cancelCases.filter(e => e.stage === 'cancelled');
+      case 'pending':
+        return cancelCases.filter(e => e.stage === 'pending_cancel');
+      case 'never_called':
+        return cancelCases.filter(e => !e.attempt_count || e.attempt_count === 0);
+      case 'multi_policy':
+        return cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1);
+      case 'snoozed':
+        return snoozedCancelCases;
+      default:
+        return cancelCases;
+    }
+  }, [cancelCases, cancelFilter, customerPolicyCounts, snoozedCancelCases]);
+
+  // Cancel priority buckets (built from filtered set)
   const cancelBuckets = useMemo(() => ({
-    critical: cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d <= 3; }),
-    thisWeek: cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d > 3 && d <= 7; }),
-    later:    cancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d === null || d > 7; }),
-  }), [cancelCases]);
+    critical: filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d <= 3; }),
+    thisWeek: filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d > 3 && d <= 7; }),
+    later:    filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d === null || d > 7; }),
+  }), [filteredCancelCases]);
 
   const BUCKETS = [
     { key: 'critical', label: '🔴 Act Today', color: '#F87171', cases: cancelBuckets.critical },
@@ -239,13 +308,102 @@ export default function MyQueuePage() {
     }
   }
 
-  function CancelCard({ event }) {
+  // Schedule a callback — logs an attempt as "reached" + records callback time
+  async function handleScheduleCallback() {
+    if (!callbackTarget || !callbackForm.time || callbackSaving) return;
+    setCallbackSaving(true);
+    const { type, event } = callbackTarget;
+    const callbackAt = new Date(callbackForm.time).toISOString();
+
+    if (type === 'cancel') {
+      await supabase.from('pending_cancel_attempts').insert({
+        pending_case_id: event.id,
+        agency_id:       orgId,
+        employee_id:     employeeId,
+        method:          'phone',
+        result:          'reached',
+        note:            `Callback scheduled: ${callbackForm.note || 'no details'}`,
+      });
+      await updateCancelCase(event.id, {
+        attempt_count:       (event.attempt_count || 0) + 1,
+        last_attempt_at:     new Date().toISOString(),
+        last_attempt_result: 'reached',
+        contacted_at:        event.contacted_at || new Date().toISOString(),
+        callback_at:         callbackAt,
+        callback_note:       callbackForm.note || null,
+        status: event.status === 'pending' ? 'contacted' : event.status,
+      });
+    } else {
+      await supabase.from('renewal_attempts').insert({
+        renewal_case_id: event.id,
+        agency_id:       orgId,
+        employee_id:     employeeId,
+        method:          'phone',
+        result:          'reached',
+        note:            `Callback scheduled: ${callbackForm.note || 'no details'}`,
+      });
+      await updateRenewalCase(event.id, {
+        attempt_count:       (event.attempt_count || 0) + 1,
+        last_attempt_at:     new Date().toISOString(),
+        last_attempt_result: 'reached',
+        contacted_at:        event.contacted_at || new Date().toISOString(),
+        callback_at:         callbackAt,
+        callback_note:       callbackForm.note || null,
+        status: event.status === 'pending' ? 'contacted' : event.status,
+      });
+    }
+
+    setCallbackSaving(false);
+    setCallbackTarget(null);
+    setCallbackForm({ time: '', note: '' });
+  }
+
+  // Snooze a case for N days — hides it from the default queue
+  async function handleSnooze(type, event, days, reason) {
+    const snoozeUntil = new Date();
+    snoozeUntil.setDate(snoozeUntil.getDate() + days);
+
+    if (type === 'cancel') {
+      await updateCancelCase(event.id, {
+        snoozed_until: snoozeUntil.toISOString(),
+        snooze_reason: reason,
+      });
+      queryClient.invalidateQueries({ queryKey: ['my_cancel_cases_snoozed', employeeId] });
+    } else {
+      await updateRenewalCase(event.id, {
+        snoozed_until: snoozeUntil.toISOString(),
+        snooze_reason: reason,
+      });
+    }
+  }
+
+  // Mark a case as lost — includes an optional reason
+  async function handleMarkLost() {
+    if (!lostTarget) return;
+    const { type, event } = lostTarget;
+    const updates = {
+      status:              'lost',
+      resolution_date:     new Date().toISOString().slice(0, 10),
+      closed_by_id:        employeeId,
+      termination_reason:  lostReason || null,
+    };
+    if (type === 'cancel') {
+      await updateCancelCase(event.id, updates);
+    } else {
+      await updateRenewalCase(event.id, updates);
+    }
+    setLostTarget(null);
+    setLostReason('');
+  }
+
+  function CancelCard({ event, policyCount = 1 }) {
     const days       = daysUntilCancel(event.cancel_effective_date);
     const urgent     = days !== null && days <= 3;
     const phone      = event.phone;
     const lastAtt    = lastAttemptSummary(event.last_attempt_result, event.last_attempt_at);
     const promisePast = event.promise_date && new Date(event.promise_date) < new Date();
     const promiseSoon = event.promise_date && !promisePast;
+    const isLapsed   = event.stage === 'cancelled';
 
     // Attempt density color
     const attColor = !event.attempt_count
@@ -254,11 +412,45 @@ export default function MyQueuePage() {
       ? 'var(--qs-dim)'
       : '#FBBF24';
 
+    // Talking-point script strip — primary purpose of the call.
+    // NOTE: the 120-day rewrite window is an internal agent/VC business rule.
+    // It must never appear in customer-facing call scripts.
+    const firstName = event.customer_name?.split(' ')[0] || 'there';
+    const scriptLine = isLapsed
+      ? `"Hi ${firstName} — this is [your name] from Wiley-Wilson. Your ${
+          event.product
+        } policy lapsed on ${event.cancel_effective_date}.${
+          event.amount_due
+            ? ` We can reinstate your coverage today — the amount due is $${Number(event.amount_due).toLocaleString()}.`
+            : ' I want to help you get your coverage reinstated.'
+        } Are you in a position to take care of that today?"`
+      : `"Hi ${firstName} — this is [your name] from Wiley-Wilson. I'm calling about your ${
+          event.product
+        } policy.${
+          event.amount_due
+            ? ` We're showing a payment of $${Number(event.amount_due).toLocaleString()} due by ${event.cancel_effective_date}.`
+            : ` Your payment is due by ${event.cancel_effective_date}.`
+        } I want to make sure you don't have a gap in coverage — can I help you take care of that today?"`;
+
     return (
       <div style={{
         background:  'var(--qs-card)',
-        border:      `1px solid ${urgent ? 'rgba(239,68,68,0.3)' : 'var(--qs-border)'}`,
-        borderLeft:  `3px solid ${urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-border)'}`,
+        border: `1px solid ${
+          isLapsed
+            ? 'rgba(239,68,68,0.4)'
+            : urgent
+            ? 'rgba(239,68,68,0.3)'
+            : 'var(--qs-border)'
+        }`,
+        borderLeft: `3px solid ${
+          isLapsed
+            ? '#EF4444'
+            : urgent
+            ? '#F87171'
+            : days <= 7
+            ? '#FBBF24'
+            : 'var(--qs-border)'
+        }`,
         borderRadius: 10,
         padding:     '18px 20px',
       }}>
@@ -295,6 +487,15 @@ export default function MyQueuePage() {
                   Lapsed
                 </span>
               )}
+
+              {policyCount > 1 && (
+                <span style={{
+                  fontSize: 10, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
+                  borderRadius: 4, padding: '1px 6px', fontWeight: 700, flexShrink: 0,
+                }}>
+                  ⚠ {policyCount} policies
+                </span>
+              )}
             </div>
 
             <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 3 }}>
@@ -302,19 +503,63 @@ export default function MyQueuePage() {
             </div>
           </div>
 
-          {/* Days + premium at risk */}
+          {/* Days + cancel date + amount due */}
           <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-            <div style={{ fontSize: 18, fontWeight: 700,
-              color: urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)' }}>
-              {days === null ? '—' : days === 0 ? 'Today' : `${days}d`}
+            {/* Days — large and color-coded */}
+            <div style={{
+              fontSize: 18, fontWeight: 800,
+              color: urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)',
+              fontFamily: "'DM Mono', monospace", lineHeight: 1,
+            }}>
+              {days === null ? '—'
+                : days === 0 ? 'TODAY'
+                : days < 0 ? `${Math.abs(days)}d AGO`
+                : `${days}d`}
             </div>
-            <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
-              {fmt$(event.premium_at_risk)}
+            {/* Cancel date — always visible */}
+            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>
+              {event.cancel_effective_date}
             </div>
+            {/* Amount due — if present */}
+            {event.amount_due > 0 && (
+              <div style={{
+                fontSize: 13, fontWeight: 700,
+                color: '#F87171',
+                fontFamily: "'DM Mono', monospace",
+                marginTop: 4,
+              }}>
+                ${Number(event.amount_due).toLocaleString()}
+              </div>
+            )}
+
+            {isLapsed && (
+              <div style={{
+                marginTop: 6, fontSize: 10, fontWeight: 700,
+                color: '#F87171',
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+              }}>
+                LAPSED
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Row 2: Promise / last attempt */}
+        {/* Talking point script — primary call purpose */}
+        <div style={{
+          background: 'rgba(59,130,246,0.06)',
+          border: '1px solid rgba(59,130,246,0.15)',
+          borderRadius: 6,
+          padding: '7px 10px',
+          marginBottom: 8,
+          fontSize: 12,
+          color: 'var(--qs-dim)',
+          fontStyle: 'italic',
+          lineHeight: 1.5,
+        }}>
+          {scriptLine}
+        </div>
+
+        {/* Row 2: Promise / last attempt / callback */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           {promisePast && (
             <span style={{ fontSize: 13, color: '#F87171', fontWeight: 600 }}>
@@ -336,6 +581,43 @@ export default function MyQueuePage() {
               {event.attempt_count || 0} attempts
             </span>
           )}
+
+          {/* Scheduled callback */}
+          {event.callback_at && new Date(event.callback_at) > new Date() && (
+            <span style={{
+              fontSize: 11, color: '#3B82F6', fontWeight: 600,
+              background: 'rgba(59,130,246,0.10)',
+              border: '1px solid rgba(59,130,246,0.25)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              📅 Call back {new Date(event.callback_at).toLocaleString('en-US', {
+                month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+              })}
+            </span>
+          )}
+          {event.callback_at && new Date(event.callback_at) <= new Date() && (
+            <span style={{
+              fontSize: 11, color: '#F59E0B', fontWeight: 700,
+              background: 'rgba(245,158,11,0.12)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏰ Callback overdue
+            </span>
+          )}
+
+          {/* Snoozed indicator */}
+          {event.snoozed_until && new Date(event.snoozed_until) > new Date() && (
+            <span style={{
+              fontSize: 11, color: 'var(--qs-muted)', fontWeight: 600,
+              background: 'var(--qs-elevated)',
+              border: '1px solid var(--qs-border)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
+            </span>
+          )}
         </div>
 
         {/* AI Transcript inline expand */}
@@ -354,39 +636,106 @@ export default function MyQueuePage() {
           </div>
         )}
 
-        {/* Row 3: Action buttons */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        {/* Row 3: Actions */}
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {phone && (
             <a href={`tel:${phone}`}
-              style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+              style={{
+                fontSize: 13, padding: '7px 12px', borderRadius: 7,
                 background: 'rgba(52,211,153,0.12)', color: '#34D399',
                 border: '1px solid rgba(52,211,153,0.25)', textDecoration: 'none',
-                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+              }}>
               📞 {fmtPhone(phone)}
             </a>
           )}
 
           <button
             onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600 }}>
+              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600,
+            }}>
             Log Call
+          </button>
+
+          {/* Schedule callback */}
+          <button
+            onClick={() => { setCallbackTarget({ type: 'cancel', event }); setCallbackForm({ time: '', note: '' }); }}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+              color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
+            }}>
+            📅 Callback
           </button>
 
           <button
             onClick={() => handleInlineResolve('cancel', event, 'saved')}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-              color: '#34D399', cursor: 'pointer', fontWeight: 600 }}>
+              color: '#34D399', cursor: 'pointer', fontWeight: 600,
+            }}>
             ✓ Saved
           </button>
 
+          {/* Lost quick action — prompts for reason */}
+          <button
+            onClick={() => { setLostTarget({ type: 'cancel', event }); setLostReason(''); }}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+            }}>
+            ✗ Lost
+          </button>
+
+          {/* Wants to cancel quick action */}
+          <button
+            onClick={() => handleInlineResolve('cancel', event, 'requested_cancellation')}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
+              color: '#F87171', cursor: 'pointer', fontWeight: 600,
+            }}>
+            Wants to Cancel
+          </button>
+
+          {/* Snooze — show only after 2+ attempts */}
+          {event.attempt_count >= 2 && (
+            <select
+              className="dark-select"
+              defaultValue=""
+              onChange={e => {
+                if (!e.target.value) return;
+                const [days, reason] = e.target.value.split('|');
+                handleSnooze('cancel', event, parseInt(days), reason);
+                e.target.value = '';
+              }}
+              style={{
+                fontSize: 12, padding: '5px 10px', borderRadius: 7,
+                cursor: 'pointer', color: 'var(--qs-muted)',
+                border: '1px solid var(--qs-border)',
+                background: 'var(--qs-elevated)',
+              }}
+            >
+              <option value="">⏸ Snooze</option>
+              <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
+              <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
+              <option value="7|retry_next_week">1 week — retry next week</option>
+            </select>
+          )}
+
           <button
             onClick={() => setSelectedEvent(event)}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'none',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600, marginLeft: 'auto' }}>
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+              marginLeft: 'auto',
+            }}>
             View →
           </button>
         </div>
@@ -394,7 +743,7 @@ export default function MyQueuePage() {
     );
   }
 
-  function RenewalCard({ event }) {
+  function RenewalCard({ event, policyCount = 1 }) {
     const daysUntil = (() => {
       const d = new Date(event.renewal_date);
       const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -461,6 +810,15 @@ export default function MyQueuePage() {
                   🤖 AI spoke
                 </button>
               )}
+
+              {policyCount > 1 && (
+                <span style={{
+                  fontSize: 10, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
+                  borderRadius: 4, padding: '1px 6px', fontWeight: 700, flexShrink: 0,
+                }}>
+                  ⚠ {policyCount} policies
+                </span>
+              )}
             </div>
 
             <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 3 }}>
@@ -477,6 +835,29 @@ export default function MyQueuePage() {
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>renewal</div>
           </div>
         </div>
+
+        {/* Talking point script — primary call purpose */}
+        {(() => {
+          const firstName = event.customer_name?.split(' ')[0] || 'there';
+          const scriptLine = rateShock
+            ? `"Hi ${firstName} — calling about your ${event.product} renewal on ${event.renewal_date}. Your premium is going up ${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%. Want to review options and make sure you're getting the best rate."`
+            : `"Hi ${firstName} — calling about your ${event.product} renewal on ${event.renewal_date}. Just making sure everything still looks good and answering any questions."`;
+          return (
+            <div style={{
+              background: 'rgba(59,130,246,0.06)',
+              border: '1px solid rgba(59,130,246,0.15)',
+              borderRadius: 6,
+              padding: '7px 10px',
+              marginBottom: 8,
+              fontSize: 12,
+              color: 'var(--qs-dim)',
+              fontStyle: 'italic',
+              lineHeight: 1.5,
+            }}>
+              {scriptLine}
+            </div>
+          );
+        })()}
 
         {/* Row 2: Premium + change + attempts */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -504,6 +885,43 @@ export default function MyQueuePage() {
               {event.attempt_count || 0} attempts
             </span>
           )}
+
+          {/* Scheduled callback */}
+          {event.callback_at && new Date(event.callback_at) > new Date() && (
+            <span style={{
+              fontSize: 11, color: '#3B82F6', fontWeight: 600,
+              background: 'rgba(59,130,246,0.10)',
+              border: '1px solid rgba(59,130,246,0.25)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              📅 Call back {new Date(event.callback_at).toLocaleString('en-US', {
+                month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+              })}
+            </span>
+          )}
+          {event.callback_at && new Date(event.callback_at) <= new Date() && (
+            <span style={{
+              fontSize: 11, color: '#F59E0B', fontWeight: 700,
+              background: 'rgba(245,158,11,0.12)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏰ Callback overdue
+            </span>
+          )}
+
+          {/* Snoozed indicator */}
+          {event.snoozed_until && new Date(event.snoozed_until) > new Date() && (
+            <span style={{
+              fontSize: 11, color: 'var(--qs-muted)', fontWeight: 600,
+              background: 'var(--qs-elevated)',
+              border: '1px solid var(--qs-border)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
+            </span>
+          )}
         </div>
 
         {/* AI Transcript inline expand */}
@@ -523,38 +941,94 @@ export default function MyQueuePage() {
         )}
 
         {/* Row 3: Actions */}
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {phone && (
             <a href={`tel:${phone}`}
-              style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+              style={{
+                fontSize: 13, padding: '7px 12px', borderRadius: 7,
                 background: 'rgba(52,211,153,0.12)', color: '#34D399',
                 border: '1px solid rgba(52,211,153,0.25)', textDecoration: 'none',
-                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+              }}>
               📞 {fmtPhone(phone)}
             </a>
           )}
 
           <button
             onClick={() => { setLogCallTarget({ type: 'renewal', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600 }}>
+              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600,
+            }}>
             Log Call
+          </button>
+
+          {/* Schedule callback */}
+          <button
+            onClick={() => { setCallbackTarget({ type: 'renewal', event }); setCallbackForm({ time: '', note: '' }); }}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+              color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
+            }}>
+            📅 Callback
           </button>
 
           <button
             onClick={() => handleInlineResolve('renewal', event, 'confirmed')}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-              color: '#34D399', cursor: 'pointer', fontWeight: 600 }}>
+              color: '#34D399', cursor: 'pointer', fontWeight: 600,
+            }}>
             ✓ Confirmed
           </button>
 
+          {/* Won't Renew quick action — prompts for reason */}
+          <button
+            onClick={() => { setLostTarget({ type: 'renewal', event }); setLostReason(''); }}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+            }}>
+            ✗ Won't Renew
+          </button>
+
+          {/* Snooze — show only after 2+ attempts */}
+          {event.attempt_count >= 2 && (
+            <select
+              className="dark-select"
+              defaultValue=""
+              onChange={e => {
+                if (!e.target.value) return;
+                const [days, reason] = e.target.value.split('|');
+                handleSnooze('renewal', event, parseInt(days), reason);
+                e.target.value = '';
+              }}
+              style={{
+                fontSize: 12, padding: '5px 10px', borderRadius: 7,
+                cursor: 'pointer', color: 'var(--qs-muted)',
+                border: '1px solid var(--qs-border)',
+                background: 'var(--qs-elevated)',
+              }}
+            >
+              <option value="">⏸ Snooze</option>
+              <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
+              <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
+              <option value="7|retry_next_week">1 week — retry next week</option>
+            </select>
+          )}
+
           <button
             onClick={() => setSelectedRenewal(event)}
-            style={{ fontSize: 14, padding: '8px 16px', borderRadius: 7,
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'none',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600, marginLeft: 'auto' }}>
+              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+              marginLeft: 'auto',
+            }}>
             View →
           </button>
         </div>
@@ -608,11 +1082,35 @@ export default function MyQueuePage() {
                 fontFamily: "'DM Mono', monospace" }}>{stat.value}</div>
             </div>
           ))}
-          <a href="/my/scorecard"
-            style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-info)',
-              textDecoration: 'none', fontWeight: 600 }}>
-            Full Scorecard →
-          </a>
+          {/* Daily call progress */}
+          {(() => {
+            const DAILY_TARGET = 8;
+            const progressPct = Math.min(100, Math.round((focusStats.attemptedToday / DAILY_TARGET) * 100));
+            return (
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 3 }}>
+                    Today: {focusStats.attemptedToday}/{DAILY_TARGET} calls
+                  </div>
+                  <div style={{
+                    width: 100, height: 6, background: 'var(--qs-elevated)',
+                    borderRadius: 3, overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      height: '100%', borderRadius: 3,
+                      width: `${progressPct}%`,
+                      background: progressPct >= 100 ? '#10B981' : progressPct >= 50 ? '#3B82F6' : '#F59E0B',
+                      transition: 'width 0.3s',
+                    }} />
+                  </div>
+                </div>
+                <a href="/my/scorecard"
+                  style={{ fontSize: 12, color: 'var(--qs-info)', textDecoration: 'none', fontWeight: 600 }}>
+                  Full Scorecard →
+                </a>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -728,6 +1226,36 @@ export default function MyQueuePage() {
             </div>
           )}
 
+          {/* Filter bar */}
+          {!cancelLoading && cancelCases.length > 0 && (
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
+              {[
+                { key: 'all',          label: `All (${cancelCases.length})` },
+                { key: 'lapsed',       label: `Lapsed (${cancelCases.filter(e => e.stage === 'cancelled').length})` },
+                { key: 'pending',      label: `Pending (${cancelCases.filter(e => e.stage === 'pending_cancel').length})` },
+                { key: 'never_called', label: `Untouched (${cancelCases.filter(e => !e.attempt_count).length})` },
+                { key: 'multi_policy', label: `Multi-policy (${cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1).length})` },
+                { key: 'snoozed',      label: `Snoozed${cancelFilter === 'snoozed' ? ` (${snoozedCancelCases.length})` : ''}` },
+              ].map(f => (
+                <button
+                  key={f.key}
+                  onClick={() => setCancelFilter(f.key)}
+                  style={{
+                    fontSize: 12, padding: '5px 12px', borderRadius: 20,
+                    border: '1px solid',
+                    borderColor: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-border)',
+                    background: cancelFilter === f.key ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
+                    color: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-dim)',
+                    cursor: 'pointer', fontWeight: 600,
+                    transition: 'all 0.15s',
+                  }}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          )}
+
           {/* Priority buckets */}
           {!cancelLoading && cancelCases.length > 0 && BUCKETS.map(bucket =>
             bucket.cases.length > 0 && (
@@ -752,7 +1280,11 @@ export default function MyQueuePage() {
                 {/* Cards */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   {bucket.cases.map(event => (
-                    <CancelCard key={event.id} event={event} />
+                    <CancelCard
+                      key={event.id}
+                      event={event}
+                      policyCount={customerPolicyCounts[event.customer_name] || 1}
+                    />
                   ))}
                 </div>
               </div>
@@ -785,7 +1317,11 @@ export default function MyQueuePage() {
           {!renewalLoading && renewalCases.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               {renewalCases.map(event => (
-                <RenewalCard key={event.id} event={event} />
+                <RenewalCard
+                  key={event.id}
+                  event={event}
+                  policyCount={customerPolicyCounts[event.customer_name] || 1}
+                />
               ))}
             </div>
           )}
@@ -800,7 +1336,7 @@ export default function MyQueuePage() {
           onUpdate={updateCancelCase}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
         />,
         document.body
       )}
@@ -811,7 +1347,7 @@ export default function MyQueuePage() {
           onUpdate={updateRenewalCase}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
         />,
         document.body
       )}
@@ -834,8 +1370,67 @@ export default function MyQueuePage() {
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 6 }}>
               Log Call — {logCallTarget.event.customer_name}
             </div>
-            <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 18 }}>
+            <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 14 }}>
               {logCallTarget.event.policy_no}
+            </div>
+
+            {/* Quick-dial link in the popover itself */}
+            {(() => {
+              const dialPhone = logCallTarget.event.phone || logCallTarget.event.customer_phone;
+              return dialPhone ? (
+                <a
+                  href={`tel:${dialPhone}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 12px', borderRadius: 8, marginBottom: 12,
+                    background: 'rgba(52,211,153,0.10)', border: '1px solid rgba(52,211,153,0.25)',
+                    color: '#34D399', textDecoration: 'none',
+                    fontSize: 15, fontWeight: 700,
+                  }}
+                >
+                  📞 {fmtPhone(dialPhone)}
+                  <span style={{ fontSize: 11, color: 'var(--qs-muted)', fontWeight: 400, marginLeft: 4 }}>
+                    tap to dial
+                  </span>
+                </a>
+              ) : null;
+            })()}
+
+            {/* Key facts for the call */}
+            <div style={{
+              background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+              borderRadius: 8, padding: '8px 12px', marginBottom: 12,
+              display: 'flex', gap: 16, flexWrap: 'wrap',
+            }}>
+              {logCallTarget.type === 'cancel' && logCallTarget.event.amount_due > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+                    letterSpacing: '0.05em', marginBottom: 2 }}>Owes</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#F87171',
+                    fontFamily: "'DM Mono', monospace" }}>
+                    ${Number(logCallTarget.event.amount_due).toLocaleString()}
+                  </div>
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+                  letterSpacing: '0.05em', marginBottom: 2 }}>
+                  {logCallTarget.type === 'cancel' ? 'Cancel Date' : 'Renewal Date'}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)',
+                  fontFamily: "'DM Mono', monospace" }}>
+                  {logCallTarget.type === 'cancel'
+                    ? logCallTarget.event.cancel_effective_date
+                    : logCallTarget.event.renewal_date}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+                  letterSpacing: '0.05em', marginBottom: 2 }}>Product</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>
+                  {logCallTarget.event.product?.toUpperCase()}
+                </div>
+              </div>
             </div>
 
             {/* 6-outcome grid */}
@@ -873,13 +1468,27 @@ export default function MyQueuePage() {
               style={{ marginBottom: 16, fontSize: 15, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }}
             />
 
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setLogCallTarget(null)}
                 style={{ fontSize: 15, padding: '9px 18px', borderRadius: 8,
                   border: '1px solid var(--qs-border)', background: 'none',
                   color: 'var(--qs-dim)', cursor: 'pointer' }}>
                 Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const target = logCallTarget;
+                  setLogCallTarget(null);
+                  setCallbackTarget({ type: target.type, event: target.event });
+                  setCallbackForm({ time: '', note: '' });
+                }}
+                style={{
+                  fontSize: 13, padding: '7px 12px', borderRadius: 8,
+                  border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+                  color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
+                }}>
+                📅 Callback
               </button>
               <button
                 onClick={handleInlineLogCall}
@@ -889,6 +1498,138 @@ export default function MyQueuePage() {
                   color: '#fff', fontWeight: 600, cursor: 'pointer',
                   opacity: logCallSaving ? 0.6 : 1 }}>
                 {logCallSaving ? 'Saving...' : 'Log Call'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Callback Popover ───────────────────────────────────────── */}
+      {callbackTarget && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setCallbackTarget(null); }}
+        >
+          <div style={{
+            background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+            borderRadius: 12, padding: 20, width: '100%', maxWidth: 340,
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
+              Schedule Callback
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16 }}>
+              {callbackTarget.event.customer_name} · {callbackTarget.event.policy_no}
+            </div>
+
+            <label className="dark-label">Callback time</label>
+            <input
+              className="dark-input"
+              type="datetime-local"
+              value={callbackForm.time}
+              onChange={e => setCallbackForm(f => ({ ...f, time: e.target.value }))}
+              style={{ marginBottom: 10 }}
+            />
+
+            <label className="dark-label">What to discuss (optional)</label>
+            <input
+              className="dark-input"
+              type="text"
+              placeholder="e.g. Confirm payment, discuss rate..."
+              value={callbackForm.note}
+              onChange={e => setCallbackForm(f => ({ ...f, note: e.target.value }))}
+              style={{ marginBottom: 14 }}
+            />
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setCallbackTarget(null)}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: '1px solid var(--qs-border)', background: 'none',
+                  color: 'var(--qs-dim)', cursor: 'pointer',
+                }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleScheduleCallback}
+                disabled={!callbackForm.time || callbackSaving}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: 'none', background: '#3B82F6',
+                  color: '#fff', fontWeight: 600, cursor: 'pointer',
+                  opacity: !callbackForm.time || callbackSaving ? 0.5 : 1,
+                }}>
+                {callbackSaving ? 'Saving...' : 'Schedule'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Mark Lost Popover ─────────────────────────────────────── */}
+      {lostTarget && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setLostTarget(null); }}
+        >
+          <div style={{
+            background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+            borderRadius: 12, padding: 20, width: '100%', maxWidth: 320,
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
+              Mark as Lost
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 14 }}>
+              {lostTarget.event.customer_name}
+            </div>
+
+            <label className="dark-label">Reason (optional but helpful)</label>
+            <select
+              className="dark-select"
+              value={lostReason}
+              onChange={e => setLostReason(e.target.value)}
+              style={{ marginBottom: 14 }}
+            >
+              <option value="">— Select reason —</option>
+              <option value="Price">Price / Too expensive</option>
+              <option value="Service">Service issue</option>
+              <option value="Claims">Claims experience</option>
+              <option value="Moving">Moving / Relocating</option>
+              <option value="Coverage no longer needed">Coverage no longer needed</option>
+              <option value="Switched carrier">Switched to another carrier</option>
+              <option value="No contact">Could not reach customer</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setLostTarget(null)}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: '1px solid var(--qs-border)', background: 'none',
+                  color: 'var(--qs-dim)', cursor: 'pointer',
+                }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkLost}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: 'none', background: '#475569',
+                  color: '#fff', fontWeight: 600, cursor: 'pointer',
+                }}>
+                Confirm Lost
               </button>
             </div>
           </div>

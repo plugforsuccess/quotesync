@@ -226,19 +226,19 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   const [loggingAttempt, setLoggingAttempt] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
   const [form, setForm] = useState({
-    status: event.status,
-    assigned_to_id: event.assigned_to_id || "",
-    contact_method: event.contact_method || "",
-    promise_date: event.promise_date || "",
-    termination_reason: event.termination_reason || "",
-    notes: event.notes || "",
+    status:              event.status,
+    assigned_to_id:      event.assigned_to_id || "",
+    contact_method:      event.contact_method || "",
+    promise_date:        event.promise_date || "",
+    termination_reason:  event.termination_reason || "",
+    notes:               event.notes || "",
   });
 
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
-    customerName: event.customer_name,
-    policyNo: event.policy_no,
-    excludeEventId: event.id,
+    customerName:     event.customer_name,
+    policyNo:         event.policy_no,
+    excludeEventId:   event.id,
     excludeRenewalId: null,
   });
 
@@ -259,20 +259,20 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     setLoggingAttempt(true);
     const { error } = await supabase.from("pending_cancel_attempts").insert({
       pending_case_id: event.id,
-      agency_id: agencyId,
-      employee_id: currentEmployeeId,
-      method: attemptForm.method,
-      result: attemptForm.result,
-      note: attemptForm.note || null,
+      agency_id:       agencyId,
+      employee_id:     currentEmployeeId,
+      method:          attemptForm.method,
+      result:          attemptForm.result,
+      note:            attemptForm.note || null,
     });
     if (!error) {
       await supabase.from("pending_cases").update({
-        attempt_count: (event.attempt_count || 0) + 1,
-        last_attempt_at: new Date().toISOString(),
+        attempt_count:       (event.attempt_count || 0) + 1,
+        last_attempt_at:     new Date().toISOString(),
         last_attempt_result: attemptForm.result,
-        ...(event.status === "pending" ? { status: "attempting" } : {}),
+        ...(event.status === "pending"              ? { status: "attempting"     } : {}),
         ...(attemptForm.result === "left_voicemail" ? { status: "left_voicemail" } : {}),
-        ...(attemptForm.result === "reached" ? { contacted_at: event.contacted_at || new Date().toISOString() } : {}),
+        ...(attemptForm.result === "reached"        ? { contacted_at: event.contacted_at || new Date().toISOString() } : {}),
       }).eq("id", event.id);
       // If this is the first attempt on the case, set opened_by_id
       if ((event.attempt_count === 0 || !event.opened_by_id) && currentEmployeeId) {
@@ -325,193 +325,390 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   }
 
   const ATTEMPT_RESULT_LABELS = {
-    no_answer: "No Answer", left_voicemail: "Left Voicemail",
-    reached: "Reached", wrong_number: "Wrong Number",
-    busy: "Busy", disconnected: "Disconnected",
+    no_answer:      "No Answer",
+    left_voicemail: "Left Voicemail",
+    reached:        "Reached",
+    wrong_number:   "Wrong Number",
+    busy:           "Busy",
+    disconnected:   "Disconnected",
   };
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
-      onClick={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
-      <div style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
+  const showOutcomePicker =
+    event.status === "contacted" ||
+    attemptForm.result === "reached" ||
+    ["contacted","payment_plan_requested","promise_to_pay",
+     "promise_broken","requested_cancellation"].includes(event.status);
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.75)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "24px 16px",
+      }}
+      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+    >
+      <div style={{
+        background: "var(--qs-card)",
+        border: "1px solid var(--qs-border)",
+        borderRadius: 14,
+        width: "100%",
+        maxWidth: 640,
+        maxHeight: "90vh",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+      }}>
+
+        {/* ── Header ─────────────────────────────────────────── */}
+        <div style={{
+          padding: "20px 24px 16px",
+          borderBottom: "1px solid var(--qs-border)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          flexShrink: 0,
+        }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--qs-bright)" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
-            <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
+              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--qs-subtle)", fontSize: 20, cursor: "pointer" }}>×</button>
+          <button
+            onClick={onClose}
+            style={{
+              background: "var(--qs-elevated)",
+              border: "1px solid var(--qs-border)",
+              color: "var(--qs-dim)",
+              borderRadius: 8,
+              width: 32, height: 32,
+              cursor: "pointer",
+              fontSize: 18,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            ×
+          </button>
         </div>
 
-        <OtherCasesWarning cases={otherCases} />
+        <div style={{ padding: "20px 24px", overflowY: "auto" }}>
 
-        {event.stage === 'cancelled' && (
-          <div style={{ background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)',
-            borderRadius: 8, padding: '10px 14px', marginBottom: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-danger)',
-              textTransform: 'uppercase', marginBottom: 6 }}>
-              🚫 Coverage Lapsed — Reinstatement Required
-            </div>
-            <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-              Amount to Reinstate:{' '}
-              <strong style={{ color: 'var(--qs-warning)', fontFamily: "'DM Mono', monospace" }}>
-                {event.amount_due ? `$${Number(event.amount_due).toLocaleString()}` : '—'}
-              </strong>
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 4 }}>
-              Customer must pay this amount to restore coverage before termination.
-            </div>
-          </div>
-        )}
+          {/* ── Other cases warning ─────────────────────────── */}
+          <OtherCasesWarning cases={otherCases} />
 
-        {/* Detail grid — color values used as inline style props */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 20 }}>
-          {[
-            { label: "Cancel Date", value: event.cancel_effective_date, color: urgencyColor(days) },
-            { label: "Days Left", value: days <= 0 ? "PAST DUE" : `${days} days`, color: urgencyColor(days) },
-            { label: "Premium", value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014", color: "var(--qs-text)" },
-            { label: "Attempts", value: event.attempt_count || 0, color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "var(--qs-dim)" },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
-              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 14, fontWeight: 700, color, fontFamily: "'DM Mono', monospace" }}>{value}</div>
+          {/* ── Lapsed banner ───────────────────────────────── */}
+          {event.stage === 'cancelled' && (
+            <div style={{
+              background: 'var(--qs-danger-subtle)',
+              border: '1px solid var(--qs-danger-border)',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+            }}>
+              <div style={{
+                fontSize: 12, fontWeight: 700, color: 'var(--qs-danger)',
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
+              }}>
+                🚫 Coverage Lapsed — Reinstatement Required
+              </div>
+              <div style={{ fontSize: 14, color: 'var(--qs-text)' }}>
+                Amount to reinstate:{' '}
+                <strong style={{ color: 'var(--qs-warning)', fontFamily: "'DM Mono', monospace" }}>
+                  {event.amount_due ? `$${Number(event.amount_due).toLocaleString()}` : '—'}
+                </strong>
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 4 }}>
+                Customer must pay this amount to restore coverage before termination.
+              </div>
             </div>
-          ))}
-        </div>
+          )}
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Attempt Log */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", marginBottom: 8 }}>
-              Attempt Log ({attempts.length})
-            </div>
-            <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: 12, marginBottom: 10 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                <div>
-                  <label>Method</label>
-                  <select value={attemptForm.method} onChange={e => setAttemptForm(p => ({ ...p, method: e.target.value }))}>
-                    <option value="phone">Phone</option>
-                    <option value="text">Text</option>
-                    <option value="email">Email</option>
-                    <option value="other">Other</option>
-                  </select>
+          {/* ── KPI strip ───────────────────────────────────── */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: 8,
+            marginBottom: 20,
+          }}>
+            {[
+              {
+                label: "Cancel Date",
+                value: event.cancel_effective_date || "\u2014",
+                color: urgencyColor(days),
+              },
+              {
+                label: "Days Left",
+                value: days <= 0 ? "PAST DUE" : `${days} days`,
+                color: urgencyColor(days),
+              },
+              {
+                label: "Premium",
+                value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014",
+                color: "var(--qs-bright)",
+              },
+              {
+                label: "Attempts",
+                value: String(event.attempt_count || 0),
+                color: (event.attempt_count || 0) >= 3 ? "#EF4444" : "var(--qs-dim)",
+              },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{
+                background: "var(--qs-elevated)",
+                border: "1px solid var(--qs-border)",
+                borderRadius: 10, padding: "12px 14px",
+              }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 600, color: "var(--qs-subtle)",
+                  textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
+                }}>
+                  {label}
                 </div>
-                <div>
-                  <label>Result</label>
-                  <select value={attemptForm.result} onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}>
-                    <option value="no_answer">No Answer</option>
-                    <option value="left_voicemail">Left Voicemail</option>
-                    <option value="reached">Reached Customer</option>
-                    <option value="wrong_number">Wrong Number</option>
-                    <option value="busy">Busy</option>
-                    <option value="disconnected">Disconnected</option>
-                  </select>
+                <div style={{
+                  fontSize: 16, fontWeight: 700, color,
+                  fontFamily: "'DM Mono', monospace", lineHeight: 1,
+                }}>
+                  {value}
                 </div>
               </div>
-              <input
-                type="text"
-                placeholder="Quick note (optional)"
-                value={attemptForm.note}
-                onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
-                style={{ width: "100%", marginBottom: 8 }}
-              />
-              <button
-                className="btn-primary"
-                onClick={logAttempt}
-                disabled={loggingAttempt || !currentEmployeeId}
-                title={!currentEmployeeId ? 'Employee record not loaded' : undefined}
-                style={{ width: "100%" }}
-              >
-                {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
-              </button>
+            ))}
+          </div>
+
+          {/* ── Section: Attempt Log ─────────────────────────── */}
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            marginBottom: 12,
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span>Attempt Log</span>
+            <span style={{
+              background: "var(--qs-elevated)",
+              border: "1px solid var(--qs-border)",
+              borderRadius: 20, padding: "1px 8px",
+              fontSize: 11, color: "var(--qs-dim)",
+              fontWeight: 600,
+            }}>
+              {attempts.length}
+            </span>
+          </div>
+
+          {/* Log attempt form */}
+          <div style={{
+            background: "var(--qs-elevated)",
+            border: "1px solid var(--qs-border)",
+            borderRadius: 10, padding: "14px 16px",
+            marginBottom: 12,
+          }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
+              <div>
+                <label className="dark-label">Method</label>
+                <select
+                  className="dark-select"
+                  value={attemptForm.method}
+                  onChange={e => setAttemptForm(p => ({ ...p, method: e.target.value }))}
+                >
+                  <option value="phone">Phone</option>
+                  <option value="text">Text</option>
+                  <option value="email">Email</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="dark-label">Result</label>
+                <select
+                  className="dark-select"
+                  value={attemptForm.result}
+                  onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}
+                >
+                  <option value="no_answer">No Answer</option>
+                  <option value="left_voicemail">Left Voicemail</option>
+                  <option value="reached">Reached Customer</option>
+                  <option value="wrong_number">Wrong Number</option>
+                  <option value="busy">Busy</option>
+                  <option value="disconnected">Disconnected</option>
+                </select>
+              </div>
             </div>
-            {attempts.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {attempts.map(a => {
-                  const empName = a.employees
-                    ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
-                    : "Unknown";
-                  const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
-                  // Dynamic color — used as style prop
-                  const resultColor = a.result === "reached" ? "#10B981" : "var(--qs-dim)";
-                  return (
-                    <div key={a.id} style={{ background: "var(--qs-elevated)", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: resultColor }}>{resultLabel}</span>
-                        <span style={{ fontSize: 11, color: "var(--qs-subtle)", marginLeft: 8 }}>via {a.method}</span>
-                        {a.note && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{a.note}</div>}
-                      </div>
-                      <div style={{ fontSize: 11, color: "var(--qs-subtle)", textAlign: "right" }}>
-                        <div>{empName}</div>
-                        <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
-                      </div>
+
+            <input
+              className="dark-input"
+              type="text"
+              placeholder="Quick note (optional)"
+              value={attemptForm.note}
+              onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
+              style={{ marginBottom: 10 }}
+            />
+
+            <button
+              onClick={logAttempt}
+              disabled={loggingAttempt || !currentEmployeeId}
+              title={!currentEmployeeId ? 'Employee record not loaded' : undefined}
+              style={{
+                width: "100%", padding: "10px",
+                borderRadius: 8, border: "none",
+                background: (loggingAttempt || !currentEmployeeId) ? "var(--qs-elevated)" : "#3B82F6",
+                color: (loggingAttempt || !currentEmployeeId) ? "var(--qs-muted)" : "#fff",
+                fontSize: 14, fontWeight: 600,
+                cursor: (loggingAttempt || !currentEmployeeId) ? "not-allowed" : "pointer",
+                transition: "background 0.15s",
+              }}
+            >
+              {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
+            </button>
+          </div>
+
+          {/* Past attempts */}
+          {attempts.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+              {attempts.map(a => {
+                const empName = a.employees
+                  ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
+                  : "Unknown";
+                const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
+                const resultColor = a.result === "reached" ? "#10B981"
+                  : a.result === "left_voicemail" ? "#F59E0B"
+                  : "var(--qs-dim)";
+                return (
+                  <div key={a.id} style={{
+                    background: "var(--qs-elevated)",
+                    border: "1px solid var(--qs-border)",
+                    borderRadius: 8, padding: "10px 14px",
+                    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                  }}>
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: resultColor }}>
+                        {resultLabel}
+                      </span>
+                      <span style={{ fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
+                        via {a.method}
+                      </span>
+                      {a.note && (
+                        <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
+                          {a.note}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                    <div style={{ fontSize: 11, color: "var(--qs-subtle)", textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                      <div style={{ fontWeight: 500 }}>{empName}</div>
+                      <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Divider ─────────────────────────────────────── */}
+          <div style={{ borderTop: "1px solid var(--qs-border)", margin: "4px 0 20px" }} />
+
+          {/* ── Section: Case Management ─────────────────────── */}
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
+            textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14,
+          }}>
+            Case Management
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* Outcome — only when customer has been reached */}
+            {showOutcomePicker && (
+              <div>
+                <label className="dark-label">Outcome (customer reached)</label>
+                <select
+                  className="dark-select"
+                  value={form.status}
+                  onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
+                >
+                  <option value="contacted">Contacted — no action yet</option>
+                  <option value="payment_plan_requested">Wants Payment Plan</option>
+                  <option value="promise_to_pay">Promised to Pay</option>
+                  <option value="saved">Saved ✓</option>
+                  <option value="requested_cancellation">Wants to Cancel</option>
+                  <option value="lost">Lost</option>
+                </select>
               </div>
             )}
+
+            {/* Assignment + Promise date */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <label className="dark-label">Assigned To</label>
+                <select
+                  className="dark-select"
+                  value={form.assigned_to_id}
+                  onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+                >
+                  <option value="">Unassigned</option>
+                  {producers.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="dark-label">Promise Date</label>
+                <input
+                  className="dark-input"
+                  type="date"
+                  value={form.promise_date}
+                  onChange={ev => setForm(p => ({ ...p, promise_date: ev.target.value }))}
+                />
+              </div>
+            </div>
+
+            {/* Termination reason — only when requesting cancellation */}
+            {form.status === "requested_cancellation" && (
+              <div>
+                <label className="dark-label">Termination Reason</label>
+                <select
+                  className="dark-select"
+                  value={form.termination_reason}
+                  onChange={ev => setForm(p => ({ ...p, termination_reason: ev.target.value }))}
+                >
+                  <option value="">— Select reason —</option>
+                  {TERMINATION_REASONS.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* Notes */}
+            <div>
+              <label className="dark-label">Notes</label>
+              <textarea
+                className="dark-input"
+                value={form.notes}
+                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
+                rows={3}
+                placeholder="Call notes, customer response..."
+                style={{ resize: "vertical", fontFamily: "inherit" }}
+              />
+            </div>
+
+            {/* Save */}
+            <button
+              onClick={save}
+              disabled={saving}
+              style={{
+                width: "100%", padding: "12px",
+                borderRadius: 10, border: "none",
+                background: saving ? "var(--qs-elevated)" : "#10B981",
+                color: saving ? "var(--qs-muted)" : "#fff",
+                fontSize: 15, fontWeight: 700,
+                cursor: saving ? "not-allowed" : "pointer",
+                transition: "background 0.15s",
+                marginTop: 4,
+              }}
+            >
+              {saving ? "Saving\u2026" : "Save Case"}
+            </button>
           </div>
-
-          {/* Only show status picker when customer has been reached */}
-          {(event.status === "contacted" || attemptForm.result === "reached" ||
-            ["contacted","payment_plan_requested","promise_to_pay","promise_broken","requested_cancellation"].includes(event.status)) && (
-            <div>
-              <label>Outcome (reached customer)</label>
-              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
-                <option value="contacted">Contacted — no action yet</option>
-                <option value="payment_plan_requested">Wants Payment Plan</option>
-                <option value="promise_to_pay">Promised to Pay</option>
-                <option value="saved">Saved ✓</option>
-                <option value="requested_cancellation">Wants to Cancel</option>
-                <option value="lost">Lost</option>
-              </select>
-            </div>
-          )}
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-            <div>
-              <label>Assigned To</label>
-              <select value={form.assigned_to_id} onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}>
-                <option value="">Unassigned</option>
-                {producers.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label>Promise Date</label>
-              <input type="date" value={form.promise_date}
-                onChange={ev => setForm(p => ({ ...p, promise_date: ev.target.value }))} />
-            </div>
-          </div>
-
-          {form.status === "requested_cancellation" && (
-            <div>
-              <label>Termination Reason</label>
-              <select value={form.termination_reason}
-                onChange={ev => setForm(p => ({ ...p, termination_reason: ev.target.value }))}>
-                <option value="">— Select reason —</option>
-                {TERMINATION_REASONS.map(r => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </div>
-          )}
-
-          <div>
-            <label>Notes</label>
-            <textarea value={form.notes}
-              onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-              rows={3}
-              style={{ width: "100%", background: "var(--qs-elevated)", color: "var(--qs-text)", border: "1px solid var(--qs-border)", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
-              placeholder="Call notes, customer response..." />
-          </div>
-
-          <button className="btn-primary" onClick={save} disabled={saving} style={{ width: "100%" }}>
-            {saving ? "Saving\u2026" : "Save"}
-          </button>
         </div>
       </div>
     </div>
@@ -657,204 +854,384 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   }
 
   const ATTEMPT_RESULT_LABELS = {
-    no_answer: "No Answer", left_voicemail: "Left Voicemail",
-    reached: "Reached", wrong_number: "Wrong Number",
-    busy: "Busy", disconnected: "Disconnected",
+    no_answer:      "No Answer",
+    left_voicemail: "Left Voicemail",
+    reached:        "Reached",
+    wrong_number:   "Wrong Number",
+    busy:           "Busy",
+    disconnected:   "Disconnected",
   };
 
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
-      onClick={(ev) => { if (ev.target === ev.currentTarget) onClose(); }}>
-      <div style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
+  const showOutcomePicker =
+    attemptForm.result === "reached" ||
+    ["review_requested","shopping","at_risk","escalated","confirmed"].includes(event.status);
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+  return (
+    <div
+      style={{
+        position: "fixed", inset: 0, zIndex: 1000,
+        background: "rgba(0,0,0,0.75)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        padding: "24px 16px",
+      }}
+      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+    >
+      <div style={{
+        background: "var(--qs-card)",
+        border: "1px solid var(--qs-border)",
+        borderRadius: 14,
+        width: "100%",
+        maxWidth: 640,
+        maxHeight: "90vh",
+        overflowY: "auto",
+        display: "flex",
+        flexDirection: "column",
+      }}>
+
+        {/* ── Header ─────────────────────────────────────────── */}
+        <div style={{
+          padding: "20px 24px 16px",
+          borderBottom: "1px solid var(--qs-border)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          flexShrink: 0,
+        }}>
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: "var(--qs-bright)" }}>{maskCustomerName(event.customer_name) || "Unknown Customer"}</div>
-            <div style={{ fontSize: 12, color: "var(--qs-subtle)", marginTop: 2 }}>
+            <div style={{ fontSize: 20, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
+              {maskCustomerName(event.customer_name) || "Unknown Customer"}
+            </div>
+            <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
               Policy {event.policy_no} · {event.product?.toUpperCase()}
             </div>
           </div>
-          <button onClick={onClose} style={{ background: "transparent", border: "none", color: "var(--qs-subtle)", fontSize: 20, cursor: "pointer" }}>×</button>
+          <button
+            onClick={onClose}
+            style={{
+              background: "var(--qs-elevated)",
+              border: "1px solid var(--qs-border)",
+              color: "var(--qs-dim)",
+              borderRadius: 8,
+              width: 32, height: 32,
+              cursor: "pointer",
+              fontSize: 18,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              flexShrink: 0,
+            }}
+          >
+            ×
+          </button>
         </div>
 
-        <OtherCasesWarning cases={otherCases} />
+        <div style={{ padding: "20px 24px", overflowY: "auto" }}>
 
-        {/* Detail grid — color values used as inline style props */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 8, marginBottom: 16 }}>
-          {[
-            { label: "Policy No",     value: event.policy_no },
-            { label: "Product",       value: event.product_raw || event.product?.toUpperCase() },
-            { label: "Renewal Date",  value: event.renewal_date, color: renewalUrgencyColor(days) },
-            { label: "Days Until",    value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
-            { label: "Premium",       value: event.premium ? fmtFull$(event.premium) : "\u2014" },
-            { label: "Prior Premium", value: event.premium_old ? fmtFull$(event.premium_old) : "\u2014" },
-            { label: "Premium \u0394",     value: event.premium_change != null
-                ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
-                : "\u2014",
-              color: event.premium_change == null ? "var(--qs-dim)"
-                : event.premium_change > 0 ? "#EF4444" : "#10B981" },
-            { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
-            { label: "Multi-Line",
-              value: event.multi_line === 'Yes' ? 'Yes — Bundled'
-                   : event.multi_line === 'No'  ? 'No — Monoline'
-                   : '—',
-              color: event.multi_line === 'Yes' ? '#10B981'
-                   : event.multi_line === 'No'  ? '#60A5FA'
-                   : 'var(--qs-subtle)' },
-            { label: "Tenure",        value: event.original_year
-                ? `${CURRENT_YEAR - event.original_year} yrs (${event.original_year})`
-                : "\u2014" },
-            { label: "Priority",      value: String(event._priority ?? calcRenewalPriority(event)) },
-          ].map(({ label, value, color }) => (
-            <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
-              <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4 }}>{label}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: color || "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>{value || "\u2014"}</div>
-            </div>
-          ))}
-        </div>
+          <OtherCasesWarning cases={otherCases} />
 
-        {/* Contact info */}
-        <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "12px 14px", marginBottom: 16, border: "1px solid var(--qs-border)" }}>
-          <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 8, fontWeight: 600, textTransform: "uppercase" }}>Contact</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            <div>
-              <div style={{ fontSize: 10, color: "var(--qs-subtle)" }}>Phone</div>
-              <div style={{ fontSize: 13, color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>{event.phone || "\u2014"}</div>
-            </div>
-            <div>
-              <div style={{ fontSize: 10, color: "var(--qs-subtle)" }}>Email</div>
-              <div style={{ fontSize: 13, color: "var(--qs-dim)" }}>{event.email || "\u2014"}</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-          {/* Attempt Log */}
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: "var(--qs-subtle)", textTransform: "uppercase", marginBottom: 8 }}>
-              Attempt Log ({attempts.length})
-            </div>
-            <div style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: 12, marginBottom: 10 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 8 }}>
-                <div>
-                  <label>Method</label>
-                  <select value={attemptForm.method} onChange={e => setAttemptForm(p => ({ ...p, method: e.target.value }))}>
-                    <option value="phone">Phone</option>
-                    <option value="text">Text</option>
-                    <option value="email">Email</option>
-                    <option value="other">Other</option>
-                  </select>
+          {/* ── KPI strip ───────────────────────────────────── */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+            gap: 8,
+            marginBottom: 16,
+          }}>
+            {[
+              { label: "Policy No",     value: event.policy_no },
+              { label: "Product",       value: event.product_raw || event.product?.toUpperCase() },
+              { label: "Renewal Date",  value: event.renewal_date, color: renewalUrgencyColor(days) },
+              { label: "Days Until",    value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
+              { label: "Premium",       value: event.premium ? fmtFull$(event.premium) : "\u2014" },
+              { label: "Prior Premium", value: event.premium_old ? fmtFull$(event.premium_old) : "\u2014" },
+              { label: "Premium \u0394",     value: event.premium_change != null
+                  ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
+                  : "\u2014",
+                color: event.premium_change == null ? "var(--qs-dim)"
+                  : event.premium_change > 0 ? "#EF4444" : "#10B981" },
+              { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
+              { label: "Multi-Line",
+                value: event.multi_line === 'Yes' ? 'Yes — Bundled'
+                     : event.multi_line === 'No'  ? 'No — Monoline'
+                     : '—',
+                color: event.multi_line === 'Yes' ? '#10B981'
+                     : event.multi_line === 'No'  ? '#60A5FA'
+                     : 'var(--qs-subtle)' },
+              { label: "Tenure",        value: event.original_year
+                  ? `${CURRENT_YEAR - event.original_year} yrs (${event.original_year})`
+                  : "\u2014" },
+              { label: "Priority",      value: String(event._priority ?? calcRenewalPriority(event)) },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{
+                background: "var(--qs-elevated)",
+                border: "1px solid var(--qs-border)",
+                borderRadius: 10, padding: "12px 14px",
+              }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 600, color: "var(--qs-subtle)",
+                  textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6,
+                }}>
+                  {label}
                 </div>
-                <div>
-                  <label>Result</label>
-                  <select value={attemptForm.result} onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}>
-                    <option value="no_answer">No Answer</option>
-                    <option value="left_voicemail">Left Voicemail</option>
-                    <option value="reached">Reached Customer</option>
-                    <option value="wrong_number">Wrong Number</option>
-                    <option value="busy">Busy</option>
-                    <option value="disconnected">Disconnected</option>
-                  </select>
+                <div style={{
+                  fontSize: 16, fontWeight: 700, color: color || "var(--qs-text)",
+                  fontFamily: "'DM Mono', monospace", lineHeight: 1,
+                }}>
+                  {value || "\u2014"}
                 </div>
               </div>
-              <input
-                type="text"
-                placeholder="Quick note (optional)"
-                value={attemptForm.note}
-                onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
-                style={{ width: "100%", marginBottom: 8 }}
-              />
-              <button
-                className="btn-primary"
-                onClick={logAttempt}
-                disabled={loggingAttempt || !currentEmployeeId}
-                title={!currentEmployeeId ? 'Employee record not loaded' : undefined}
-                style={{ width: "100%" }}
-              >
-                {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
-              </button>
+            ))}
+          </div>
+
+          {/* ── Contact info ────────────────────────────────── */}
+          <div style={{
+            background: "var(--qs-elevated)",
+            border: "1px solid var(--qs-border)",
+            borderRadius: 10, padding: "14px 16px", marginBottom: 20,
+          }}>
+            <div style={{
+              fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
+              textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10,
+            }}>
+              Contact
             </div>
-            {attempts.length > 0 && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {attempts.map(a => {
-                  const empName = a.employees
-                    ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
-                    : "Unknown";
-                  const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
-                  // Dynamic color — used as style prop
-                  const resultColor = a.result === "reached" ? "#10B981" : "var(--qs-dim)";
-                  return (
-                    <div key={a.id} style={{ background: "var(--qs-elevated)", borderRadius: 6, padding: "8px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: resultColor }}>{resultLabel}</span>
-                        <span style={{ fontSize: 11, color: "var(--qs-subtle)", marginLeft: 8 }}>via {a.method}</span>
-                        {a.note && <div style={{ fontSize: 11, color: "var(--qs-dim)", marginTop: 2 }}>{a.note}</div>}
-                      </div>
-                      <div style={{ fontSize: 11, color: "var(--qs-subtle)", textAlign: "right" }}>
-                        <div>{empName}</div>
-                        <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
-                      </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Phone</div>
+                <div style={{ fontSize: 14, color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>
+                  {event.phone || "\u2014"}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Email</div>
+                <div style={{ fontSize: 14, color: "var(--qs-dim)" }}>
+                  {event.email || "\u2014"}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Section: Attempt Log ─────────────────────────── */}
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+            marginBottom: 12,
+            display: "flex", alignItems: "center", gap: 8,
+          }}>
+            <span>Attempt Log</span>
+            <span style={{
+              background: "var(--qs-elevated)",
+              border: "1px solid var(--qs-border)",
+              borderRadius: 20, padding: "1px 8px",
+              fontSize: 11, color: "var(--qs-dim)",
+              fontWeight: 600,
+            }}>
+              {attempts.length}
+            </span>
+          </div>
+
+          {/* Log attempt form */}
+          <div style={{
+            background: "var(--qs-elevated)",
+            border: "1px solid var(--qs-border)",
+            borderRadius: 10, padding: "14px 16px",
+            marginBottom: 12,
+          }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
+              <div>
+                <label className="dark-label">Method</label>
+                <select
+                  className="dark-select"
+                  value={attemptForm.method}
+                  onChange={e => setAttemptForm(p => ({ ...p, method: e.target.value }))}
+                >
+                  <option value="phone">Phone</option>
+                  <option value="text">Text</option>
+                  <option value="email">Email</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="dark-label">Result</label>
+                <select
+                  className="dark-select"
+                  value={attemptForm.result}
+                  onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}
+                >
+                  <option value="no_answer">No Answer</option>
+                  <option value="left_voicemail">Left Voicemail</option>
+                  <option value="reached">Reached Customer</option>
+                  <option value="wrong_number">Wrong Number</option>
+                  <option value="busy">Busy</option>
+                  <option value="disconnected">Disconnected</option>
+                </select>
+              </div>
+            </div>
+
+            <input
+              className="dark-input"
+              type="text"
+              placeholder="Quick note (optional)"
+              value={attemptForm.note}
+              onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
+              style={{ marginBottom: 10 }}
+            />
+
+            <button
+              onClick={logAttempt}
+              disabled={loggingAttempt || !currentEmployeeId}
+              title={!currentEmployeeId ? 'Employee record not loaded' : undefined}
+              style={{
+                width: "100%", padding: "10px",
+                borderRadius: 8, border: "none",
+                background: (loggingAttempt || !currentEmployeeId) ? "var(--qs-elevated)" : "#3B82F6",
+                color: (loggingAttempt || !currentEmployeeId) ? "var(--qs-muted)" : "#fff",
+                fontSize: 14, fontWeight: 600,
+                cursor: (loggingAttempt || !currentEmployeeId) ? "not-allowed" : "pointer",
+                transition: "background 0.15s",
+              }}
+            >
+              {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
+            </button>
+          </div>
+
+          {/* Past attempts */}
+          {attempts.length > 0 && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
+              {attempts.map(a => {
+                const empName = a.employees
+                  ? `${a.employees.first_name || ""} ${a.employees.last_name || ""}`.trim()
+                  : "Unknown";
+                const resultLabel = ATTEMPT_RESULT_LABELS[a.result] || a.result;
+                const resultColor = a.result === "reached" ? "#10B981"
+                  : a.result === "left_voicemail" ? "#F59E0B"
+                  : "var(--qs-dim)";
+                return (
+                  <div key={a.id} style={{
+                    background: "var(--qs-elevated)",
+                    border: "1px solid var(--qs-border)",
+                    borderRadius: 8, padding: "10px 14px",
+                    display: "flex", justifyContent: "space-between", alignItems: "flex-start",
+                  }}>
+                    <div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: resultColor }}>
+                        {resultLabel}
+                      </span>
+                      <span style={{ fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
+                        via {a.method}
+                      </span>
+                      {a.note && (
+                        <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
+                          {a.note}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                    <div style={{ fontSize: 11, color: "var(--qs-subtle)", textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                      <div style={{ fontWeight: 500 }}>{empName}</div>
+                      <div>{new Date(a.attempted_at).toLocaleDateString()}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* ── Divider ─────────────────────────────────────── */}
+          <div style={{ borderTop: "1px solid var(--qs-border)", margin: "4px 0 20px" }} />
+
+          {/* ── Section: Case Management ─────────────────────── */}
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
+            textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 14,
+          }}>
+            Case Management
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+            {/* Outcome — only when customer has been reached */}
+            {showOutcomePicker && (
+              <div>
+                <label className="dark-label">Outcome (customer reached)</label>
+                <select
+                  className="dark-select"
+                  value={form.status}
+                  onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
+                >
+                  <option value="confirmed">Confirmed Renewal ✓</option>
+                  <option value="review_requested">Wants Policy Review</option>
+                  <option value="shopping">Shopping Competitors</option>
+                  <option value="at_risk">At Risk (payment/unhappy)</option>
+                  <option value="escalated">Escalate to Agent</option>
+                  <option value="lost">Lost — Won't Renew</option>
+                </select>
               </div>
             )}
-          </div>
 
-          {/* Outcome picker — only when reached */}
-          {(attemptForm.result === "reached" ||
-            ["review_requested","shopping","at_risk","escalated","confirmed"].includes(event.status)) && (
+            {/* Shopping reason — only when shopping */}
+            {form.status === "shopping" && (
+              <div>
+                <label className="dark-label">Shopping Reason</label>
+                <select
+                  className="dark-select"
+                  value={form.shopping_reason}
+                  onChange={ev => setForm(p => ({ ...p, shopping_reason: ev.target.value }))}
+                >
+                  <option value="">— Select —</option>
+                  <option value="price">Price too high</option>
+                  <option value="coverage">Coverage concerns</option>
+                  <option value="service">Service experience</option>
+                  <option value="life_event">Life event (moving, etc.)</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            )}
+
+            {/* Assigned To */}
             <div>
-              <label>Outcome (reached customer)</label>
-              <select value={form.status} onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}>
-                <option value="confirmed">Confirmed Renewal ✓</option>
-                <option value="review_requested">Wants Policy Review</option>
-                <option value="shopping">Shopping Competitors</option>
-                <option value="at_risk">At Risk (payment/unhappy)</option>
-                <option value="escalated">Escalate to Agent</option>
-                <option value="lost">Lost — Won't Renew</option>
+              <label className="dark-label">Assigned To</label>
+              <select
+                className="dark-select"
+                value={form.assigned_to_id}
+                onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+              >
+                <option value="">Unassigned</option>
+                {producers.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                  </option>
+                ))}
               </select>
             </div>
-          )}
 
-          {form.status === "shopping" && (
+            {/* Notes */}
             <div>
-              <label>Shopping Reason</label>
-              <select value={form.shopping_reason} onChange={ev => setForm(p => ({ ...p, shopping_reason: ev.target.value }))}>
-                <option value="">— Select —</option>
-                <option value="price">Price too high</option>
-                <option value="coverage">Coverage concerns</option>
-                <option value="service">Service experience</option>
-                <option value="life_event">Life event (moving, etc.)</option>
-                <option value="other">Other</option>
-              </select>
+              <label className="dark-label">Notes</label>
+              <textarea
+                className="dark-input"
+                value={form.notes}
+                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
+                rows={3}
+                placeholder="Call notes, customer response..."
+                style={{ resize: "vertical", fontFamily: "inherit" }}
+              />
             </div>
-          )}
 
-          <div>
-            <label>Assigned To</label>
-            <select value={form.assigned_to_id} onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}>
-              <option value="">Unassigned</option>
-              {producers.map(p => (
-                <option key={p.id} value={p.id}>
-                  {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                </option>
-              ))}
-            </select>
+            {/* Save */}
+            <button
+              onClick={save}
+              disabled={saving}
+              style={{
+                width: "100%", padding: "12px",
+                borderRadius: 10, border: "none",
+                background: saving ? "var(--qs-elevated)" : "#10B981",
+                color: saving ? "var(--qs-muted)" : "#fff",
+                fontSize: 15, fontWeight: 700,
+                cursor: saving ? "not-allowed" : "pointer",
+                transition: "background 0.15s",
+                marginTop: 4,
+              }}
+            >
+              {saving ? "Saving\u2026" : "Save Case"}
+            </button>
           </div>
-
-          <div>
-            <label>Notes</label>
-            <textarea value={form.notes}
-              onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-              rows={3}
-              style={{ width: "100%", background: "var(--qs-elevated)", color: "var(--qs-text)", border: "1px solid var(--qs-border)", borderRadius: 6, padding: "8px 10px", fontFamily: "inherit", fontSize: 13, resize: "vertical" }}
-              placeholder="Call notes, customer response..." />
-          </div>
-
-          <button className="btn-primary" onClick={save} disabled={saving} style={{ width: "100%" }}>
-            {saving ? "Saving\u2026" : "Save"}
-          </button>
         </div>
       </div>
     </div>
