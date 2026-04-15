@@ -8,6 +8,7 @@ import { useCurrentAgency } from "../../../hooks/useAgencyLeads";
 import { useAgencyCarrierConfig } from "../../../hooks/useAgencies";
 import { useAgencyProductConfig } from "../../../hooks/useAgencyProductConfig";
 import { supabase } from "../../../lib/supabase";
+import { useChartTheme } from "../../../lib/chartTheme";
 import * as XLSX from "xlsx";
 
 // ─── Commission Matrix ────────────────────────────────────────────────────────
@@ -26,14 +27,30 @@ const COMMISSION = {
   other:          { preferred: 0.26, bundled: 0.21, monoline: 0.15, label: "Other Personal Lines" },
 };
 const TIER_LABELS = { preferred: "Preferred", bundled: "Bundled", monoline: "Monoline" };
-const TIER_COLORS = { preferred: "#10B981", bundled: "#3B82F6", monoline: "#64748B" };
 
 const DEFAULT_COMMISSION_GOAL = 40000;  // fallback when no DB config exists
 const DEFAULT_PREMIUM_GOAL    = 160000; // fallback when no DB config exists
-const PRODUCT_COLORS = {
-  auto: "#3B82F6", ho: "#10B981", condo: "#34D399", renters: "#F59E0B", other: "#8B5CF6",
-  landlord: "#06B6D4", specialty_auto: "#8B5CF6", pup: "#EC4899", manufactured: "#F97316", boat: "#0EA5E9", motor_club: "#F43F5E",
-};
+
+// TIER_COLORS and PRODUCT_COLORS are defined inside each component using
+// the useChartTheme() hook — values vary per theme and Recharts needs hex.
+function buildTierColors(ct) {
+  return { preferred: ct.data.green, bundled: ct.data.blue, monoline: ct.data.slate };
+}
+function buildProductColors(ct) {
+  return {
+    auto:           ct.data.blue,
+    ho:             ct.data.green,
+    condo:          ct.data.teal,
+    renters:        ct.data.amber,
+    landlord:       ct.data.cyan,
+    specialty_auto: ct.data.purple,
+    pup:            ct.data.pink,
+    manufactured:   ct.data.orange,
+    boat:           ct.data.cyan,
+    motor_club:     ct.data.red,
+    other:          ct.data.purple,
+  };
+}
 const PRODUCT_LABELS = {
   auto: "Auto", ho: "Homeowners", condo: "Condo", renters: "Renters", landlord: "Landlord",
   specialty_auto: "Specialty Auto", pup: "Personal Umbrella",
@@ -311,6 +328,8 @@ function DrillDownModal({ title, onClose, children }) {
 
 // ─── Product Breakdown Rows ───────────────────────────────────────────────────
 function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
+  const ct = useChartTheme();
+  const PRODUCT_COLORS = buildProductColors(ct);
   const rows = Object.entries(byProduct)
     .filter(([, v]) => v.premium > 0)
     .sort(([, a], [, b]) => b.premium - a.premium);
@@ -355,7 +374,7 @@ function ProductBreakdownRows({ byProduct, totalPremium, totalCommission }) {
       })}
       <div style={{ display: "flex", gap: 16, fontSize: 10, color: "var(--qs-muted)", marginTop: 2 }}>
         <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ width: 20, height: 3, background: "#3B82F633", borderRadius: 2, display: "inline-block" }} />
+          <span style={{ width: 20, height: 3, background: `${ct.data.blue}33`, borderRadius: 2, display: "inline-block" }} />
           Premium share
         </span>
         <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
@@ -398,6 +417,9 @@ function friendlyUploadError(raw = "") {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function RevenueProjectionsDashboard() {
+  const ct = useChartTheme();
+  const TIER_COLORS = buildTierColors(ct);
+  const PRODUCT_COLORS = buildProductColors(ct);
   const { data: currentAgency } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
   const { data: carrierConfig } = useAgencyCarrierConfig(agencyId);
@@ -1115,7 +1137,7 @@ export default function RevenueProjectionsDashboard() {
                   max={customEnd || undefined}
                   onChange={e => setCustomStart(e.target.value)}
                   style={{
-                    background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
+                    background: ct.structural.tooltipBg, border: "1px solid var(--qs-muted)", borderRadius: 6,
                     color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
                   }}
                 />
@@ -1126,7 +1148,7 @@ export default function RevenueProjectionsDashboard() {
                   min={customStart || undefined}
                   onChange={e => setCustomEnd(e.target.value)}
                   style={{
-                    background: "#1E293B", border: "1px solid var(--qs-muted)", borderRadius: 6,
+                    background: ct.structural.tooltipBg, border: "1px solid var(--qs-muted)", borderRadius: 6,
                     color: "var(--qs-bright)", fontSize: 13, padding: "4px 8px", cursor: "pointer"
                   }}
                 />
@@ -1158,7 +1180,7 @@ export default function RevenueProjectionsDashboard() {
                   padding: "5px 12px", borderRadius: 6, fontSize: 12,
                   fontWeight: 600, cursor: "pointer", border: "none",
                   background: showingVCRates ? "var(--qs-card)" : "transparent",
-                  color: showingVCRates ? "#10B981" : "var(--qs-muted)",
+                  color: showingVCRates ? ct.data.green : "var(--qs-muted)",
                   boxShadow: showingVCRates ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
                 }}
               >
@@ -1368,8 +1390,8 @@ export default function RevenueProjectionsDashboard() {
           return (
             <div style={{
               padding: "16px 20px", borderRadius: 10,
-              background: baselineMet ? "#10B98111" : "#F59E0B11",
-              border: `1px solid ${baselineMet ? "#10B98133" : "#F59E0B33"}`,
+              background: baselineMet ? `${ct.data.green}11` : `${ct.data.amber}11`,
+              border: `1px solid ${baselineMet ? `${ct.data.green}33` : `${ct.data.amber}33`}`,
             }}>
               <div style={{ fontSize: 11, color: "var(--qs-subtle)", fontWeight: 600,
                 textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 6 }}>
@@ -1459,14 +1481,14 @@ export default function RevenueProjectionsDashboard() {
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--qs-dim)", marginBottom: 16 }}>Monthly Commission Earned vs {fmt$(COMMISSION_GOAL)} Goal</div>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={trendData} barSize={20}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
-                <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} labelStyle={{ color: "#94A3B8" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
-                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: fmt$(COMMISSION_GOAL), fill: "#10B981", fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={ct.structural.grid} />
+                <XAxis dataKey="name" tick={{ fill: ct.structural.axisTick, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmt$} tick={{ fill: ct.structural.axisTick, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={ct.tooltipStyle} labelStyle={ct.tooltipLabelStyle} itemStyle={ct.tooltipItemStyle} cursor={ct.tooltipCursor} formatter={(v) => [fmtFull$(v), "Commission"]} />
+                <ReferenceLine y={COMMISSION_GOAL} stroke={ct.data.green} strokeDasharray="4 4" label={{ value: fmt$(COMMISSION_GOAL), fill: ct.data.green, fontSize: 11 }} />
                 <Bar dataKey="commission" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (
-                    <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
+                    <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? ct.data.green : ct.data.blue} />
                   ))}
                 </Bar>
               </BarChart>
@@ -1578,7 +1600,7 @@ export default function RevenueProjectionsDashboard() {
                               {p.name}
                             </button>
                             {/* Commission share bar */}
-                            <div style={{ height: 3, borderRadius: 2, background: "#1E2130", width: "100%", maxWidth: 140 }}>
+                            <div style={{ height: 3, borderRadius: 2, background: ct.structural.grid, width: "100%", maxWidth: 140 }}>
                               <div style={{
                                 height: "100%",
                                 borderRadius: 2,
@@ -1997,7 +2019,7 @@ export default function RevenueProjectionsDashboard() {
               </thead>
               <tbody>
                 <tr>
-                  <td><span style={{ background: "#3B82F622", color: "var(--qs-info)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>Auto</span></td>
+                  <td><span style={{ background: `${ct.data.blue}22`, color: "var(--qs-info)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>Auto</span></td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>
                     {filtered.filter(e => e.product === "auto").length}
                   </td>
@@ -2005,7 +2027,7 @@ export default function RevenueProjectionsDashboard() {
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-success)" }}>✓</td>
                 </tr>
                 <tr>
-                  <td><span style={{ background: "#10B98122", color: "var(--qs-success)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>HO / Condo</span></td>
+                  <td><span style={{ background: `${ct.data.green}22`, color: "var(--qs-success)", padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600 }}>HO / Condo</span></td>
                   <td style={{ fontFamily: "'DM Mono', monospace", color: "var(--qs-text)" }}>
                     {filtered.filter(e => e.product === "ho").length}
                   </td>
@@ -2262,14 +2284,14 @@ export default function RevenueProjectionsDashboard() {
           <div style={{ flex: 1, minHeight: 0 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={trendData} barSize={24}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1E2130" />
-                <XAxis dataKey="name" tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <YAxis tickFormatter={fmt$} tick={{ fill: "#475569", fontSize: 11 }} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={{ background: "#1A1D27", border: "1px solid #252A3A", borderRadius: 8, fontSize: 12, color: "#E2E8F0" }} labelStyle={{ color: "#94A3B8" }} itemStyle={{ color: "#E2E8F0" }} cursor={{ fill: "rgba(255,255,255,0.04)" }} formatter={(v) => [fmtFull$(v), "Commission"]} />
-                <ReferenceLine y={COMMISSION_GOAL} stroke="#10B981" strokeDasharray="4 4" label={{ value: fmt$(COMMISSION_GOAL), fill: "#10B981", fontSize: 11 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke={ct.structural.grid} />
+                <XAxis dataKey="name" tick={{ fill: ct.structural.axisTick, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tickFormatter={fmt$} tick={{ fill: ct.structural.axisTick, fontSize: 11 }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={ct.tooltipStyle} labelStyle={ct.tooltipLabelStyle} itemStyle={ct.tooltipItemStyle} cursor={ct.tooltipCursor} formatter={(v) => [fmtFull$(v), "Commission"]} />
+                <ReferenceLine y={COMMISSION_GOAL} stroke={ct.data.green} strokeDasharray="4 4" label={{ value: fmt$(COMMISSION_GOAL), fill: ct.data.green, fontSize: 11 }} />
                 <Bar dataKey="commission" radius={[4,4,0,0]}>
                   {trendData.map((entry, i) => (
-                    <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? "#10B981" : "#3B82F6"} />
+                    <Cell key={i} fill={entry.commission >= COMMISSION_GOAL ? ct.data.green : ct.data.blue} />
                   ))}
                 </Bar>
               </BarChart>
@@ -2518,8 +2540,8 @@ export default function RevenueProjectionsDashboard() {
                         </td>
                         <td>
                           <span style={{
-                            background: (TIER_COLORS[entry.tier] ?? "#64748B") + "22",
-                            color: TIER_COLORS[entry.tier] ?? "#64748B",
+                            background: (TIER_COLORS[entry.tier] ?? ct.data.slate) + "22",
+                            color: TIER_COLORS[entry.tier] ?? ct.data.slate,
                             borderRadius: 4, padding: "2px 7px", fontSize: 11, fontWeight: 600
                           }}>
                             {TIER_LABELS[entry.tier] ?? entry.tier ?? "—"}

@@ -4,16 +4,7 @@
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
 } from 'recharts';
-
-const SCORE_COLORS = ['#ef4444', '#f59e0b', '#eab308', '#22c55e', '#16a34a'];
-
-const INTENT_COLORS = {
-  auto: '#3b82f6',
-  home: '#8b5cf6',
-  bundle: '#22c55e',
-  auto_renters: '#06b6d4',
-  unsure: '#9ca3af',
-};
+import { useChartTheme } from '../../../lib/chartTheme';
 
 const INTENT_LABELS = {
   auto: 'Auto',
@@ -26,6 +17,8 @@ const INTENT_LABELS = {
 // ─── Score Distribution Histogram ────────────────────────────────────────────
 
 function ScoreHistogram({ data }) {
+  const ct = useChartTheme();
+  const SCORE_COLORS = [ct.data.red, ct.data.amber, ct.data.amber, ct.data.green, ct.data.green];
   return (
     <div className="dark-card">
       <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--qs-bright)' }}>Score Distribution</h3>
@@ -43,7 +36,7 @@ function ScoreHistogram({ data }) {
             }}
             labelStyle={{ color: 'var(--qs-bright)', fontWeight: 600, fontSize: 13 }}
             itemStyle={{ color: 'var(--qs-dim)', fontSize: 12 }}
-            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            cursor={ct.tooltipCursor}
           />
           <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={36}>
             {data.map((entry, i) => (
@@ -98,6 +91,14 @@ function OwnerRenterCard({ owners, renters }) {
 // ─── Product Intent Mix ─────────────────────────────────────────────────────
 
 function IntentMixCard({ intentMix }) {
+  const ct = useChartTheme();
+  const INTENT_COLORS = {
+    auto:         ct.data.blue,
+    home:         ct.data.purple,
+    bundle:       ct.data.green,
+    auto_renters: ct.data.cyan,
+    unsure:       ct.data.slate,
+  };
   const total = Object.values(intentMix).reduce((a, b) => a + b, 0);
   if (total === 0) {
     return (
@@ -127,7 +128,7 @@ function IntentMixCard({ intentMix }) {
               <div className="h-2.5 rounded-full overflow-hidden" style={{ background: 'var(--qs-elevated)' }}>
                 <div
                   className="h-full rounded-full transition-all"
-                  style={{ width: `${pct}%`, backgroundColor: INTENT_COLORS[key] || '#9ca3af' }}
+                  style={{ width: `${pct}%`, backgroundColor: INTENT_COLORS[key] || ct.data.slate }}
                 />
               </div>
             </div>
@@ -141,14 +142,15 @@ function IntentMixCard({ intentMix }) {
 // ─── Risk Profile Card ──────────────────────────────────────────────────────
 
 function RiskProfileCard({ riskProfile }) {
+  const ct = useChartTheme();
   const { cleanDriving, incidents12, incidents3plus, claims01, claims2plus } = riskProfile;
   const totalDriving = cleanDriving + incidents12 + incidents3plus;
   const totalClaims = claims01 + claims2plus;
 
   const drivingData = totalDriving > 0 ? [
-    { name: 'Clean', value: cleanDriving, color: '#22c55e' },
-    { name: '1-2 Incidents', value: incidents12, color: '#f59e0b' },
-    { name: '3+ Incidents', value: incidents3plus, color: '#ef4444' },
+    { name: 'Clean', value: cleanDriving, color: ct.data.green },
+    { name: '1-2 Incidents', value: incidents12, color: ct.data.amber },
+    { name: '3+ Incidents', value: incidents3plus, color: ct.data.red },
   ].filter(d => d.value > 0) : [];
 
   return (
@@ -185,11 +187,11 @@ function RiskProfileCard({ riskProfile }) {
           <div className="flex items-center gap-2 h-4 rounded-full overflow-hidden" style={{ background: 'var(--qs-elevated)' }}>
             <div
               className="h-full rounded-l-full"
-              style={{ width: `${(claims01 / totalClaims) * 100}%`, backgroundColor: '#22c55e' }}
+              style={{ width: `${(claims01 / totalClaims) * 100}%`, backgroundColor: ct.data.green }}
             />
             <div
               className="h-full rounded-r-full"
-              style={{ width: `${(claims2plus / totalClaims) * 100}%`, backgroundColor: '#ef4444' }}
+              style={{ width: `${(claims2plus / totalClaims) * 100}%`, backgroundColor: ct.data.red }}
             />
           </div>
           <div className="flex justify-between text-xs mt-1" style={{ color: 'var(--qs-subtle)' }}>

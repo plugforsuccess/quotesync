@@ -7,6 +7,7 @@ import {
   ReferenceLine, ResponsiveContainer,
 } from 'recharts';
 import { calculateGrade, computeMetrics, GRADE_CONFIG, DEFAULT_TARGETS } from '../../../config/staffPerformanceDefaults';
+import { useChartTheme } from '../../../lib/chartTheme';
 
 function formatWeekLabel(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -14,32 +15,33 @@ function formatWeekLabel(dateStr) {
 }
 
 function TrendChart({ title, data, dataKey, targetValue, targetLabel, unit, domain, band }) {
+  const ct = useChartTheme();
   return (
     <div className="bg-qs-card rounded-lg border border-qs-border p-4">
       <h5 className="text-sm font-semibold text-qs-bright mb-3">{title}</h5>
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-          <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-          <YAxis domain={domain || ['auto', 'auto']} tick={{ fontSize: 11 }} />
+          <CartesianGrid strokeDasharray="3 3" stroke={ct.structural.grid} />
+          <XAxis dataKey="label" tick={{ fontSize: 11, fill: ct.structural.axisTick }} />
+          <YAxis domain={domain || ['auto', 'auto']} tick={{ fontSize: 11, fill: ct.structural.axisTick }} />
           <Tooltip
             formatter={(value) => [`${typeof value === 'number' ? value.toFixed(1) : value}${unit || ''}`, title]}
             labelStyle={{ fontWeight: 600 }}
           />
           {band ? (
             <>
-              <ReferenceLine y={band[0]} stroke="#ef4444" strokeDasharray="4 4" label={{ value: `${band[0]}`, position: 'right', fontSize: 10, fill: '#ef4444' }} />
-              <ReferenceLine y={band[1]} stroke="#ef4444" strokeDasharray="4 4" label={{ value: `${band[1]}`, position: 'right', fontSize: 10, fill: '#ef4444' }} />
+              <ReferenceLine y={band[0]} stroke={ct.data.red} strokeDasharray="4 4" label={{ value: `${band[0]}`, position: 'right', fontSize: 10, fill: ct.data.red }} />
+              <ReferenceLine y={band[1]} stroke={ct.data.red} strokeDasharray="4 4" label={{ value: `${band[1]}`, position: 'right', fontSize: 10, fill: ct.data.red }} />
             </>
           ) : targetValue != null ? (
-            <ReferenceLine y={targetValue} stroke="#ef4444" strokeDasharray="4 4" label={{ value: targetLabel || `${targetValue}`, position: 'right', fontSize: 10, fill: '#ef4444' }} />
+            <ReferenceLine y={targetValue} stroke={ct.data.red} strokeDasharray="4 4" label={{ value: targetLabel || `${targetValue}`, position: 'right', fontSize: 10, fill: ct.data.red }} />
           ) : null}
           <Line
             type="monotone"
             dataKey={dataKey}
-            stroke="#2563eb"
+            stroke={ct.data.blue}
             strokeWidth={2}
-            dot={{ fill: '#2563eb', r: 4 }}
+            dot={{ fill: ct.data.blue, r: 4 }}
             activeDot={{ r: 6 }}
           />
         </LineChart>

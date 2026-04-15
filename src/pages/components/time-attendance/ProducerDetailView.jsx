@@ -10,6 +10,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ReferenceLine, ResponsiveContainer,
 } from 'recharts';
+import { useChartTheme } from '../../../lib/chartTheme';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -70,6 +71,7 @@ function StatCard({ label, value, target, unit }) {
 // ── Component ───────────────────────────────────────────────────────────────
 
 export default function ProducerDetailView({ rcData, employeeName, weekStart, trendData, targets, producerId, ytdEntries, hireDate, currentYear }) {
+  const ct = useChartTheme();
   const [dailyExpanded, setDailyExpanded] = useState(true);
 
   if (!rcData) {
@@ -198,9 +200,9 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
           </div>
           <ResponsiveContainer width="100%" height={240}>
             <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
-              <YAxis domain={[0, 'auto']} tick={{ fontSize: 11 }} />
+              <CartesianGrid strokeDasharray="3 3" stroke={ct.structural.grid} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: ct.structural.axisTick }} />
+              <YAxis domain={[0, 'auto']} tick={{ fontSize: 11, fill: ct.structural.axisTick }} />
               <Tooltip
                 formatter={(value) => [value, 'Outbound']}
                 labelStyle={{ fontWeight: 600 }}
@@ -208,17 +210,17 @@ export default function ProducerDetailView({ rcData, employeeName, weekStart, tr
               {outboundTarget && (
                 <ReferenceLine
                   y={outboundTarget}
-                  stroke="#ef4444"
+                  stroke={ct.data.red}
                   strokeDasharray="4 4"
-                  label={{ value: `${outboundTarget}/wk`, position: 'right', fontSize: 10, fill: '#ef4444' }}
+                  label={{ value: `${outboundTarget}/wk`, position: 'right', fontSize: 10, fill: ct.data.red }}
                 />
               )}
               <Line
                 type="monotone"
                 dataKey="outbound"
-                stroke="#2563eb"
+                stroke={ct.data.blue}
                 strokeWidth={2}
-                dot={{ fill: '#2563eb', r: 4 }}
+                dot={{ fill: ct.data.blue, r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>

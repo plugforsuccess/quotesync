@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import { TerminationUploadZone } from './RetentionImport';
+import { useChartTheme } from '../../../lib/chartTheme';
 
 function friendlyUploadError(raw = "") {
   const msg = raw.toLowerCase();
@@ -113,21 +114,28 @@ function fmtFull$(n) {
   return "$" + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-const STATUS_CONFIG = {
-  pending:             { label: "New",             bg: "#1E293B", fg: "#F59E0B" },
-  attempting:          { label: "Attempting",       bg: "#1E293B", fg: "#F97316" },
-  left_voicemail:      { label: "Left VM",         bg: "#1E293B", fg: "#FB923C" },
-  contacted:           { label: "Contacted",        bg: "#1E293B", fg: "#38BDF8" },
-  payment_plan_requested: { label: "Pmt Plan Req",  bg: "#1E293B", fg: "#818CF8" },
-  promise_to_pay:      { label: "Promise-to-Pay",  bg: "#1E293B", fg: "#A78BFA" },
-  promise_broken:      { label: "Promise Broken",  bg: "#1E293B", fg: "#F87171" },
-  saved:               { label: "Saved",           bg: "#064E3B", fg: "#34D399" },
-  lost:                { label: "Lost",            bg: "#7F1D1D", fg: "#FCA5A5" },
-  auto_resolved:       { label: "Auto-Resolved",   bg: "#1E293B", fg: "#94A3B8" },
-  requested_cancellation: { label: "Termination",  bg: "#1E293B", fg: "#64748B" },
-};
+// STATUS_CONFIG is built per-component using the active theme — see
+// buildStatusConfig() called inside ResolvedTab. The bg values come from
+// the theme tokens so dark tooltip colors don't leak into light mode.
+function buildStatusConfig(ct) {
+  return {
+    pending:             { label: "New",             bg: ct.structural.tooltipBg, fg: ct.data.amber   },
+    attempting:          { label: "Attempting",      bg: ct.structural.tooltipBg, fg: ct.data.orange  },
+    left_voicemail:      { label: "Left VM",         bg: ct.structural.tooltipBg, fg: ct.data.orange  },
+    contacted:           { label: "Contacted",       bg: ct.structural.tooltipBg, fg: ct.data.blue    },
+    payment_plan_requested: { label: "Pmt Plan Req", bg: ct.structural.tooltipBg, fg: ct.data.purple  },
+    promise_to_pay:      { label: "Promise-to-Pay",  bg: ct.structural.tooltipBg, fg: ct.data.purple  },
+    promise_broken:      { label: "Promise Broken",  bg: ct.structural.tooltipBg, fg: ct.data.red     },
+    saved:               { label: "Saved",           bg: ct.status.saved.bg,      fg: ct.status.saved.fg },
+    lost:                { label: "Lost",            bg: ct.status.lost.bg,       fg: ct.status.lost.fg  },
+    auto_resolved:       { label: "Auto-Resolved",   bg: ct.structural.tooltipBg, fg: ct.data.slate   },
+    requested_cancellation: { label: "Termination",  bg: ct.structural.tooltipBg, fg: ct.data.slate   },
+  };
+}
 
 function ResolvedTab({ resolvedEvents }) {
+  const ct = useChartTheme();
+  const STATUS_CONFIG = buildStatusConfig(ct);
   return (
     <div>
       <div style={{ overflowX: "auto" }}>
@@ -181,6 +189,7 @@ function ResolvedTab({ resolvedEvents }) {
 }
 
 function TrendsTab({ trendsData }) {
+  const ct = useChartTheme();
   if (trendsData.length === 0) {
     return (
       <div style={{ textAlign: "center", color: "var(--qs-muted)", padding: "48px 0" }}>
@@ -195,18 +204,18 @@ function TrendsTab({ trendsData }) {
       <div className="card" style={{ padding: "20px 12px" }}>
         <ResponsiveContainer width="100%" height={300}>
           <ComposedChart data={trendsData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#252A3A" />{/* Recharts SVG attribute — hex required */}
-            <XAxis dataKey="month" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />{/* Recharts SVG attribute — hex required */}
-            <YAxis yAxisId="left" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} />{/* Recharts SVG attribute — hex required */}
-            <YAxis yAxisId="right" orientation="right" stroke="#64748B" tick={{ fill: "#64748B", fontSize: 11 }} domain={[0, 100]} unit="%" />{/* Recharts SVG attribute — hex required */}
+            <CartesianGrid strokeDasharray="3 3" stroke={ct.structural.grid} />
+            <XAxis dataKey="month" stroke={ct.structural.axisLine} tick={{ fill: ct.structural.axisTick, fontSize: 11 }} />
+            <YAxis yAxisId="left" stroke={ct.structural.axisLine} tick={{ fill: ct.structural.axisTick, fontSize: 11 }} />
+            <YAxis yAxisId="right" orientation="right" stroke={ct.structural.axisLine} tick={{ fill: ct.structural.axisTick, fontSize: 11 }} domain={[0, 100]} unit="%" />
             <Tooltip
               contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12, color: "var(--qs-text)" }}
               labelStyle={{ color: "var(--qs-dim)" }}
               itemStyle={{ color: "var(--qs-text)" }}
             />
-            <Bar yAxisId="left" dataKey="cancels" name="Cancels" fill="#EF4444" radius={[4, 4, 0, 0]} opacity={0.7} />{/* Recharts SVG attribute — hex required */}
-            <Bar yAxisId="left" dataKey="saves" name="Saves" fill="#10B981" radius={[4, 4, 0, 0]} />{/* Recharts SVG attribute — hex required */}
-            <Line yAxisId="right" type="monotone" dataKey="saveRate" name="Save Rate %" stroke="#F59E0B" strokeWidth={2} dot={{ fill: "#F59E0B", r: 3 }} />{/* Recharts SVG attribute — hex required */}
+            <Bar yAxisId="left" dataKey="cancels" name="Cancels" fill={ct.data.red} radius={[4, 4, 0, 0]} opacity={0.7} />
+            <Bar yAxisId="left" dataKey="saves" name="Saves" fill={ct.data.green} radius={[4, 4, 0, 0]} />
+            <Line yAxisId="right" type="monotone" dataKey="saveRate" name="Save Rate %" stroke={ct.data.amber} strokeWidth={2} dot={{ fill: ct.data.amber, r: 3 }} />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
@@ -373,6 +382,7 @@ const MONTH_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct"
 
 
 function NetGrowthTab({ agencyId }) {
+  const ct = useChartTheme();
   const { config: productConfig } = useAgencyProductConfig(agencyId);
   const { data: months = [], isLoading: loading } = useQuery({
     queryKey: ["net_growth", agencyId],
@@ -511,11 +521,11 @@ function NetGrowthTab({ agencyId }) {
               const [y, mo] = m.split("-");
               return `${MONTH_SHORT[parseInt(mo, 10) - 1]} '${y.slice(2)}`;
             }}
-            tick={{ fill: "#64748B", fontSize: 11 }} /* Recharts SVG attribute — hex required */
+            tick={{ fill: ct.structural.axisTick, fontSize: 11 }}
             axisLine={false}
             tickLine={false}
           />
-          <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+          <YAxis tick={{ fill: ct.structural.axisTick, fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
           <Tooltip
             labelFormatter={fmtMonth}
             contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12, color: "var(--qs-text)" }}
@@ -523,9 +533,9 @@ function NetGrowthTab({ agencyId }) {
             itemStyle={{ color: "var(--qs-text)" }}
             formatter={(value, name) => [value, name === "nb_points" ? "Points Gained" : name === "lapse_points" ? "Points Lost" : "Net"]}
           />
-          <ReferenceLine y={0} stroke="#334155" />{/* Recharts SVG attribute — hex required */}
-          <Bar dataKey="nb_points" name="nb_points" fill="#10B981" radius={[3,3,0,0]} maxBarSize={28} />{/* Recharts SVG attribute — hex required */}
-          <Bar dataKey="lapse_points" name="lapse_points" fill="#EF4444" radius={[3,3,0,0]} maxBarSize={28} />{/* Recharts SVG attribute — hex required */}
+          <ReferenceLine y={0} stroke={ct.structural.referenceLine} />
+          <Bar dataKey="nb_points" name="nb_points" fill={ct.data.green} radius={[3,3,0,0]} maxBarSize={28} />
+          <Bar dataKey="lapse_points" name="lapse_points" fill={ct.data.red} radius={[3,3,0,0]} maxBarSize={28} />
         </BarChart>
       </ResponsiveContainer>
 
@@ -534,8 +544,8 @@ function NetGrowthTab({ agencyId }) {
         <ResponsiveContainer width="100%" height={120}>
           <LineChart data={months} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <XAxis dataKey="month" hide />
-            <YAxis tick={{ fill: "#64748B", fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
-            <ReferenceLine y={0} stroke="#334155" strokeDasharray="4 4" />{/* Recharts SVG attribute — hex required */}
+            <YAxis tick={{ fill: ct.structural.axisTick, fontSize: 11 }} axisLine={false} tickLine={false} width={36} />
+            <ReferenceLine y={0} stroke={ct.structural.referenceLine} strokeDasharray="4 4" />
             <Tooltip
               labelFormatter={fmtMonth}
               contentStyle={{ background: "var(--qs-elevated)", border: "1px solid var(--qs-border)", borderRadius: 8, fontSize: 12, color: "var(--qs-text)" }}
@@ -546,11 +556,11 @@ function NetGrowthTab({ agencyId }) {
             <Line
               type="monotone"
               dataKey="net_points"
-              stroke="#3B82F6" // Recharts SVG attribute — hex required
+              stroke={ct.data.blue}
               strokeWidth={2}
               dot={({ cx, cy, payload }) => (
                 <circle key={payload.month} cx={cx} cy={cy} r={4}
-                  fill={payload.net_points >= 0 ? "#10B981" : "#EF4444"} // Recharts SVG attribute — hex required
+                  fill={payload.net_points >= 0 ? ct.data.green : ct.data.red}
                   stroke="none"
                 />
               )}

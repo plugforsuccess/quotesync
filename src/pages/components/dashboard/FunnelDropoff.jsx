@@ -3,11 +3,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer, LabelList } from 'recharts';
 import { AlertTriangle } from 'lucide-react';
-
-const STEP_COLORS = [
-  '#3b82f6', '#3b82f6', '#2563eb', '#2563eb', '#1d4ed8',
-  '#1e40af', '#1e3a8a', '#059669', '#047857', '#22c55e',
-];
+import { useChartTheme } from '../../../lib/chartTheme';
 
 const STEP_RECOMMENDATIONS = {
   'ZIP Code': 'Consider broadening your target ZIPs or improving ad landing page relevance.',
@@ -36,6 +32,9 @@ function CustomBarLabel({ x, y, width, value, index, data }) {
 }
 
 export default function FunnelDropoff({ funnel }) {
+  const ct = useChartTheme();
+  const STEP_COLORS = Array(10).fill(ct.data.blue);
+
   if (!funnel || !funnel.steps) return null;
 
   const { steps, worstStep } = funnel;
@@ -86,7 +85,7 @@ export default function FunnelDropoff({ funnel }) {
                 {chartData.map((entry, index) => (
                   <Cell
                     key={entry.name}
-                    fill={entry.dropOffPercent > 15 ? '#ef4444' : STEP_COLORS[index] || '#3b82f6'}
+                    fill={entry.dropOffPercent > 15 ? ct.data.red : STEP_COLORS[index] || ct.data.blue}
                     fillOpacity={entry.dropOffPercent > 15 ? 0.85 : 1}
                   />
                 ))}

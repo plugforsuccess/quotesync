@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { AreaChart, Area, Line, ComposedChart, XAxis, YAxis, CartesianGrid,
          Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useRevenueEntries } from '../../../hooks/useRevenueEntries';
+import { useChartTheme } from '../../../lib/chartTheme';
 
 const COMMISSION_GOAL = 40000;
 const fmt$ = (n) => n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n).toLocaleString()}`;
@@ -26,6 +27,7 @@ function calcCommission(premium, product, tier = 'monoline') {
 }
 
 export default function DailyEarningsTab({ agencyId }) {
+  const ct = useChartTheme();
   const today = new Date();
   const rangeStart = new Date(today.getFullYear(), today.getMonth(), 1);
   const rangeEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -128,8 +130,8 @@ export default function DailyEarningsTab({ agencyId }) {
           <ComposedChart data={dailyCumulative} margin={{ top: 8, right: 24, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id="dailyEarningsGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%"  stopColor="#10b981" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                <stop offset="5%"  stopColor={ct.data.green} stopOpacity={0.2} />
+                <stop offset="95%" stopColor={ct.data.green} stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--qs-border)" vertical={false} />
@@ -165,7 +167,7 @@ export default function DailyEarningsTab({ agencyId }) {
             <Line
               type="monotone"
               dataKey="idealPace"
-              stroke="rgba(255,255,255,0.5)"
+              stroke={ct.structural.referenceLine}
               strokeWidth={1.5}
               strokeDasharray="4 3"
               dot={false}
@@ -174,11 +176,11 @@ export default function DailyEarningsTab({ agencyId }) {
             <Area
               type="monotone"
               dataKey="cumulative"
-              stroke="#10b981"
+              stroke={ct.data.green}
               strokeWidth={2.5}
               fill="url(#dailyEarningsGrad)"
               dot={false}
-              activeDot={{ r: 4, fill: '#10b981' }}
+              activeDot={{ r: 4, fill: ct.data.green }}
               name="cumulative"
             />
             <ReferenceLine
@@ -194,8 +196,8 @@ export default function DailyEarningsTab({ agencyId }) {
         {/* Legend */}
         <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
           {[
-            { color: '#10b981', label: 'Actual MTD' },
-            { color: 'rgba(255,255,255,0.5)', label: 'Ideal pace', dashed: true },
+            { color: ct.data.green, label: 'Actual MTD' },
+            { color: ct.structural.referenceLine, label: 'Ideal pace', dashed: true },
             { color: 'var(--qs-info)', label: '$40k goal', dashed: true },
           ].map(({ color, label, dashed }) => (
             <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
