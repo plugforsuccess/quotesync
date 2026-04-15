@@ -6,7 +6,7 @@ const STATUS_CONFIG = {
   current:  { color: '#10B981', bg: '#10B98111', icon: CheckCircle, label: 'Done' },
   due:      { color: '#F59E0B', bg: '#F59E0B11', icon: Clock,        label: 'Due' },
   overdue:  { color: '#EF4444', bg: '#EF444411', icon: AlertTriangle, label: 'Overdue' },
-  upcoming: { color: '#64748B', bg: 'transparent', icon: null,        label: 'Upcoming' },
+  upcoming: { color: 'var(--qs-subtle)', bg: 'transparent', icon: null,        label: 'Upcoming' },
 };
 
 export default function UploadChecklistModal({
@@ -42,7 +42,7 @@ export default function UploadChecklistModal({
       onClick={(e) => { if (e.target === e.currentTarget) onDismiss(); }}
     >
       <div style={{
-        background: '#161924',
+        background: 'var(--qs-card)',
         border: `1px solid ${hasOverdue ? '#EF444433' : '#F59E0B33'}`,
         borderRadius: 14,
         width: '100%', maxWidth: 560,

@@ -1804,7 +1804,7 @@ export default function RevenueProjectionsDashboard() {
                             : `VC: ${fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS, true,  BASE_RATES))}`}
                         </span>
                       </td>
-                      <td><span className="tag" style={{ background: e.source==="upload" ? "#1E3A5F" : "#1E3348", color: e.source==="upload" ? "#60A5FA" : "var(--qs-dim)" }}>{e.source}</span></td>
+                      <td><span className="tag" style={{ background: e.source==="upload" ? "rgb(59 130 246 / 0.15)" : "var(--qs-elevated)", color: e.source==="upload" ? "var(--qs-info)" : "var(--qs-dim)" }}>{e.source}</span></td>
                       <td style={{ color: "var(--qs-subtle)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
                       <td><button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button></td>
                     </tr>

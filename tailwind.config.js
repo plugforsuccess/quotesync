@@ -67,18 +67,22 @@ export default {
           900: '#064e3b',
           950: '#022c22',
         },
-        // DARK THEME - Internal admin pages
+        // INTERNAL APP THEME PALETTE — theme-reactive via CSS variables.
+        // Each surface/text color is defined as `rgb(var(--qs-*-rgb) / <alpha-value>)`
+        // so Tailwind's alpha modifiers (e.g. `bg-qs-elevated/50`) still work
+        // AND the color repaints whenever [data-theme] on <html> changes.
+        // The -rgb channels are redefined in index.css under each [data-theme].
         qs: {
-          dark:     '#0F1117',   // page background
-          card:     '#161924',   // card/panel background
-          elevated: '#1A1D27',   // elevated surface (nested card, input bg)
-          border:   '#252A3A',   // border color
-          muted:    '#334155',   // muted text, disabled
-          subtle:   '#64748B',   // label, caption
-          dim:      '#94A3B8',   // placeholder, secondary
-          text:     '#E2E8F0',   // body text
-          bright:   '#F1F5F9',   // headings, strong text
-          // Semantic accent tokens
+          dark:     'rgb(var(--qs-dark-rgb) / <alpha-value>)',
+          card:     'rgb(var(--qs-card-rgb) / <alpha-value>)',
+          elevated: 'rgb(var(--qs-elevated-rgb) / <alpha-value>)',
+          border:   'rgb(var(--qs-border-rgb) / <alpha-value>)',
+          muted:    'rgb(var(--qs-muted-rgb) / <alpha-value>)',
+          subtle:   'rgb(var(--qs-subtle-rgb) / <alpha-value>)',
+          dim:      'rgb(var(--qs-dim-rgb) / <alpha-value>)',
+          text:     'rgb(var(--qs-text-rgb) / <alpha-value>)',
+          bright:   'rgb(var(--qs-bright-rgb) / <alpha-value>)',
+          // Semantic accent tokens — identical across themes by design.
           danger:   '#EF4444',
           success:  '#10B981',
           warning:  '#F59E0B',

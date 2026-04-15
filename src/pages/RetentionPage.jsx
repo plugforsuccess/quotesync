@@ -439,7 +439,7 @@ export default function RetentionPage() {
         <KpiCard label="Save Rate" value={kpis.saveRate !== null ? `${Math.round(kpis.saveRate * 100)}%` : "\u2014"} sub="saved / worked" color="#10B981" />
         <KpiCard label="Contact Rate" value={kpis.contactRate !== null ? `${Math.round(kpis.contactRate * 100)}%` : "\u2014"} sub="of active queue" color="#3B82F6" />
         <KpiCard label="Premium Saved" value={fmt$(kpis.premiumSaved)} sub="this period" color="#10B981" />
-        <KpiCard label="Terminations" value={kpis.terminations} sub="requested cancel" color="#64748B" />
+        <KpiCard label="Terminations" value={kpis.terminations} sub="requested cancel" color="var(--qs-subtle)" />
       </div>
 
       {/* Upload reminders — shown on all tabs */}

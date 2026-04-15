@@ -1082,7 +1082,7 @@ export default function CallLogUploadForm({ orgId, weekStart, employeeMap, onUpl
             onClick={() => setConfirmModal(null)}
           />
           <div className="flex min-h-full items-center justify-center p-4">
-            <div className="relative w-full max-w-md rounded-lg shadow-xl" style={{ background: '#161924' }}>
+            <div className="relative w-full max-w-md rounded-lg shadow-xl" style={{ background: 'var(--qs-card)' }}>
               <div className="border-b border-qs-border px-6 py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

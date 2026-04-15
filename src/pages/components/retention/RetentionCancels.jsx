@@ -9,7 +9,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 
 const STATUS_CONFIG = {
-  pending:                { label: "Pending",           color: "#94A3B8", bg: "#94A3B822" },
+  pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
   attempting:             { label: "Attempting",         color: "#F59E0B", bg: "#F59E0B22" },
   left_voicemail:         { label: "Left Voicemail",    color: "#F59E0B", bg: "#F59E0B22" },
   contacted:              { label: "Contacted",         color: "#3B82F6", bg: "#3B82F622" }, // legacy
@@ -18,8 +18,8 @@ const STATUS_CONFIG = {
   saved:                  { label: "Saved ✓",      color: "#10B981", bg: "#10B98122" },
   promise_broken:         { label: "Promise Broken",    color: "#EF4444", bg: "#EF444422" },
   requested_cancellation: { label: "Wants to Cancel",   color: "#EF4444", bg: "#EF444422" },
-  lost:                   { label: "Lost",              color: "#64748B", bg: "#64748B22" },
-  auto_resolved:          { label: "Auto-Resolved",     color: "#64748B", bg: "#47556922" },
+  lost:                   { label: "Lost",              color: "var(--qs-subtle)", bg: "#64748B22" },
+  auto_resolved:          { label: "Auto-Resolved",     color: "var(--qs-subtle)", bg: "#47556922" },
 };
 
 const TERMINATION_REASONS = ["Price", "Service", "Claims", "Moving", "Coverage no longer needed", "Other"];
@@ -134,20 +134,20 @@ function CustomerDrilldownModal({ event, onClose }) {
         {/* Detail grid — color values used as inline style props */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
           {[
-            { label: "Product",          value: event.product?.toUpperCase() || "\u2014",                              color: "#E2E8F0" },
+            { label: "Product",          value: event.product?.toUpperCase() || "\u2014",                              color: "var(--qs-text)" },
             { label: "Cancel Date",      value: event.cancel_effective_date || "\u2014",                               color: urgencyColor(days) },
             { label: "Days Left",        value: days <= 0 ? "PAST DUE" : `${days} days`,                         color: urgencyColor(days) },
-            { label: "Phone",            value: event.phone || "\u2014",                                               color: event.phone ? "#E2E8F0" : "#334155" },
-            { label: "Premium at Risk",  value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014",    color: "#E2E8F0" },
-            { label: "Prior Premium",    value: event.prior_premium ? fmtFull$(event.prior_premium) : "\u2014",        color: "#94A3B8" },
+            { label: "Phone",            value: event.phone || "\u2014",                                               color: event.phone ? "var(--qs-text)" : "var(--qs-muted)" },
+            { label: "Premium at Risk",  value: event.premium_at_risk ? fmtFull$(event.premium_at_risk) : "\u2014",    color: "var(--qs-text)" },
+            { label: "Prior Premium",    value: event.prior_premium ? fmtFull$(event.prior_premium) : "\u2014",        color: "var(--qs-dim)" },
             {
               label: "Premium Change",
               value: premiumChangePct !== null ? `${premiumChangePct >= 0 ? "+" : ""}${premiumChangePct.toFixed(1)}%` : "\u2014",
-              color: premiumChangePct === null ? "#334155" : premiumChangePct > 0 ? "#EF4444" : "#10B981",
+              color: premiumChangePct === null ? "var(--qs-muted)" : premiumChangePct > 0 ? "#EF4444" : "#10B981",
             },
-            { label: "Items at Risk",    value: event.item_count != null ? String(event.item_count) : "\u2014",        color: "#E2E8F0" },
+            { label: "Items at Risk",    value: event.item_count != null ? String(event.item_count) : "\u2014",        color: "var(--qs-text)" },
             { label: "Status",           value: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).label,     color: (STATUS_CONFIG[event.status] || STATUS_CONFIG.pending).color },
-            { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "#94A3B8" },
+            { label: "Assigned To",      value: event.assigned_to || "Unassigned",                                color: "var(--qs-dim)" },
           ].map(({ label, value, color }) => (
             <div key={label} style={{ background: "var(--qs-elevated)", borderRadius: 8, padding: "10px 12px", border: "1px solid var(--qs-border)" }}>
               <div style={{ fontSize: 10, color: "var(--qs-subtle)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>{label}</div>
@@ -719,7 +719,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
 // Status badge colors — used as style props
 const RENEWAL_STATUS_CONFIG = {
-  pending:          { label: "Pending",          color: "#94A3B8", bg: "#F1F5F9" },
+  pending:          { label: "Pending",          color: "var(--qs-dim)", bg: "#F1F5F9" },
   attempting:       { label: "Attempting",       color: "#F59E0B", bg: "#FEF3C7" },
   left_voicemail:   { label: "Left Voicemail",   color: "#F59E0B", bg: "#FEF3C7" },
   review_requested: { label: "Review Requested", color: "#3B82F6", bg: "#DBEAFE" },
@@ -728,8 +728,8 @@ const RENEWAL_STATUS_CONFIG = {
   at_risk:          { label: "At Risk",          color: "#EF4444", bg: "#FEE2E2" },
   escalated:        { label: "Escalated",        color: "#8B5CF6", bg: "#EDE9FE" },
   lost:             { label: "Lost",             color: "#6B7280", bg: "#F3F4F6" },
-  unreachable:      { label: "Unreachable",      color: "#64748B", bg: "#F1F5F9" },
-  auto_resolved:    { label: "Auto-Resolved",    color: "#94A3B8", bg: "#F1F5F9" },
+  unreachable:      { label: "Unreachable",      color: "var(--qs-subtle)", bg: "#F1F5F9" },
+  auto_resolved:    { label: "Auto-Resolved",    color: "var(--qs-dim)", bg: "#F1F5F9" },
 };
 
 const RENEWAL_CONTACT_METHODS = ["phone", "text", "email", "other"];
@@ -944,7 +944,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               { label: "Premium \u0394",     value: event.premium_change != null
                   ? `${event.premium_change > 0 ? "+" : ""}${fmtFull$(event.premium_change)}`
                   : "\u2014",
-                color: event.premium_change == null ? "#94A3B8"
+                color: event.premium_change == null ? "var(--qs-dim)"
                   : event.premium_change > 0 ? "#EF4444" : "#10B981" },
               { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
               { label: "Multi-Line",
@@ -953,7 +953,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                      : '—',
                 color: event.multi_line === 'Yes' ? '#10B981'
                      : event.multi_line === 'No'  ? '#60A5FA'
-                     : '#64748B' },
+                     : 'var(--qs-subtle)' },
               { label: "Tenure",        value: event.original_year
                   ? `${CURRENT_YEAR - event.original_year} yrs (${event.original_year})`
                   : "\u2014" },
@@ -1337,9 +1337,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                   value: STATUS_CONFIG[r.cancel_status]?.label || r.cancel_status || '—' },
                 { label: 'Promise Date', value: r.promise_date || '—',
                   color: (() => {
-                    if (!r.promise_date) return '#64748B';
+                    if (!r.promise_date) return 'var(--qs-subtle)';
                     const d = Math.ceil((new Date(r.promise_date) - new Date()) / 86400000);
-                    return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : '#94A3B8';
+                    return d <= 1 ? '#EF4444' : d <= 3 ? '#F59E0B' : 'var(--qs-dim)';
                   })() },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
@@ -1354,9 +1354,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
               {[
                 { label: 'Premium at Risk', value: r.premium_at_risk ? fmtFull$(r.premium_at_risk) : '—' },
                 { label: 'Cycle', value: `#${r.cycle || 1}`,
-                  color: (r.cycle || 1) >= 3 ? '#EF4444' : (r.cycle || 1) === 2 ? '#F59E0B' : '#94A3B8' },
+                  color: (r.cycle || 1) >= 3 ? '#EF4444' : (r.cycle || 1) === 2 ? '#F59E0B' : 'var(--qs-dim)' },
                 { label: 'Attempts', value: r.cancel_attempts || 0,
-                  color: (r.cancel_attempts || 0) >= 3 ? '#EF4444' : '#94A3B8' },
+                  color: (r.cancel_attempts || 0) >= 3 ? '#EF4444' : 'var(--qs-dim)' },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
                   <div style={{ fontSize: 10, color: 'var(--qs-subtle)', marginBottom: 3 }}>{label}</div>
@@ -1425,13 +1425,13 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                   value: r.premium_change != null
                     ? `${r.premium_change > 0 ? '+' : ''}${fmtFull$(r.premium_change)}`
                     : '—',
-                  color: r.premium_change == null ? '#94A3B8'
+                  color: r.premium_change == null ? 'var(--qs-dim)'
                        : r.premium_change > 0 ? '#EF4444' : '#10B981' },
                 { label: 'Δ%',
                   value: r.premium_change_pct != null
                     ? `${r.premium_change_pct > 0 ? '+' : ''}${r.premium_change_pct.toFixed(1)}%`
                     : '—',
-                  color: r.premium_change_pct == null ? '#94A3B8'
+                  color: r.premium_change_pct == null ? 'var(--qs-dim)'
                        : r.premium_change_pct > 0 ? '#EF4444' : '#10B981' },
                 { label: 'Tenure',
                   value: r.original_year
@@ -1445,7 +1445,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                        : '—',
                   color: r.multi_line === 'Yes' ? '#10B981'
                        : r.multi_line === 'No'  ? '#60A5FA'
-                       : '#64748B' },
+                       : 'var(--qs-subtle)' },
                 { label: 'Items',
                   value: r.renewal_item_count || 1 },
                 { label: 'Points',

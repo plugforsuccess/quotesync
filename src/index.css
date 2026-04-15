@@ -7,17 +7,34 @@
   font-display: swap;
 }
 
-/* ── Design-token CSS custom properties (enables var(--qs-*) fallback) ─── */
+/* ── Design-token CSS custom properties ──────────────────────
+   Two forms per surface/text color:
+     --qs-foo      — ready-to-use color for inline style consumers
+     --qs-foo-rgb  — space-separated RGB channels for Tailwind alpha
+                     (bg-qs-foo/50 → rgb(var(--qs-foo-rgb) / 0.5))
+   The -rgb form is what makes Tailwind's `bg-qs-*` classes
+   theme-responsive; without it Tailwind would bake in hex literals. */
 :root {
-  --qs-dark:     #0F1117;
-  --qs-card:     #161924;
-  --qs-elevated: #1A1D27;
-  --qs-border:   #252A3A;
-  --qs-muted:    #334155;
-  --qs-subtle:   #64748B;
-  --qs-dim:      #94A3B8;
-  --qs-text:     #E2E8F0;
-  --qs-bright:   #F1F5F9;
+  --qs-dark-rgb:     15 17 23;    /* #0F1117 */
+  --qs-card-rgb:     22 25 36;    /* #161924 */
+  --qs-elevated-rgb: 26 29 39;    /* #1A1D27 */
+  --qs-border-rgb:   37 42 58;    /* #252A3A */
+  --qs-muted-rgb:    51 65 85;    /* #334155 */
+  --qs-subtle-rgb:   100 116 139; /* #64748B */
+  --qs-dim-rgb:      148 163 184; /* #94A3B8 */
+  --qs-text-rgb:     226 232 240; /* #E2E8F0 */
+  --qs-bright-rgb:   241 245 249; /* #F1F5F9 */
+
+  --qs-dark:     rgb(var(--qs-dark-rgb));
+  --qs-card:     rgb(var(--qs-card-rgb));
+  --qs-elevated: rgb(var(--qs-elevated-rgb));
+  --qs-border:   rgb(var(--qs-border-rgb));
+  --qs-muted:    rgb(var(--qs-muted-rgb));
+  --qs-subtle:   rgb(var(--qs-subtle-rgb));
+  --qs-dim:      rgb(var(--qs-dim-rgb));
+  --qs-text:     rgb(var(--qs-text-rgb));
+  --qs-bright:   rgb(var(--qs-bright-rgb));
+
   --qs-danger:   #EF4444;
   --qs-success:  #10B981;
   --qs-warning:  #F59E0B;
@@ -42,18 +59,30 @@
    Applied via data-theme="light" on <html>
 ════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
-  --qs-dark:     #F8FAFC;
-  --qs-card:     #FFFFFF;
-  --qs-elevated: #F1F5F9;
-  --qs-border:   #E2E8F0;
+  /* Override both -rgb channels and derived vars so Tailwind's bg-qs-*
+     and text-qs-* classes repaint along with inline var() consumers. */
+  --qs-dark-rgb:     248 250 252; /* #F8FAFC */
+  --qs-card-rgb:     255 255 255; /* #FFFFFF */
+  --qs-elevated-rgb: 241 245 249; /* #F1F5F9 */
+  --qs-border-rgb:   226 232 240; /* #E2E8F0 */
   /* NOTE: slate-300/400 on white gives ~3:1 contrast — below WCAG AA for
-     body text. We bump the token scale one step darker in light mode so
-     every label/caption/placeholder stays legible on a white card. */
-  --qs-muted:    #94A3B8;  /* borders + disabled text */
-  --qs-subtle:   #64748B;  /* tertiary captions (passes AA) */
-  --qs-dim:      #475569;  /* secondary labels — high contrast */
-  --qs-text:     #1E293B;  /* body */
-  --qs-bright:   #0F172A;  /* headings */
+     body text. Light mode uses the darker half of the slate scale so every
+     label/caption/placeholder reads strong on a white card. */
+  --qs-muted-rgb:    100 116 139; /* slate-500 — borders + disabled text */
+  --qs-subtle-rgb:   71 85 105;   /* slate-600 — tertiary captions (~7:1) */
+  --qs-dim-rgb:      51 65 85;    /* slate-700 — secondary labels (~10:1) */
+  --qs-text-rgb:     30 41 59;    /* slate-800 — body */
+  --qs-bright-rgb:   15 23 42;    /* slate-900 — headings */
+
+  --qs-dark:     rgb(var(--qs-dark-rgb));
+  --qs-card:     rgb(var(--qs-card-rgb));
+  --qs-elevated: rgb(var(--qs-elevated-rgb));
+  --qs-border:   rgb(var(--qs-border-rgb));
+  --qs-muted:    rgb(var(--qs-muted-rgb));
+  --qs-subtle:   rgb(var(--qs-subtle-rgb));
+  --qs-dim:      rgb(var(--qs-dim-rgb));
+  --qs-text:     rgb(var(--qs-text-rgb));
+  --qs-bright:   rgb(var(--qs-bright-rgb));
 
   --qs-danger-subtle:  rgb(239 68 68 / 0.08);
   --qs-danger-border:  rgb(239 68 68 / 0.25);
@@ -238,15 +267,25 @@
    poor-calibration monitor readability.
 ════════════════════════════════════════════════════════════ */
 [data-theme="high_contrast"] {
-  --qs-dark:     #060810;
-  --qs-card:     #0C0F1A;
-  --qs-elevated: #0F1420;
-  --qs-border:   #1E3A5F;
-  --qs-muted:    #1E3A5F;
-  --qs-subtle:   #60A5FA;
-  --qs-dim:      #93C5FD;
-  --qs-text:     #E0EEFF;
-  --qs-bright:   #FFFFFF;
+  --qs-dark-rgb:     6 8 16;       /* #060810 */
+  --qs-card-rgb:     12 15 26;     /* #0C0F1A */
+  --qs-elevated-rgb: 15 20 32;     /* #0F1420 */
+  --qs-border-rgb:   30 58 95;     /* #1E3A5F */
+  --qs-muted-rgb:    30 58 95;     /* #1E3A5F */
+  --qs-subtle-rgb:   96 165 250;   /* #60A5FA */
+  --qs-dim-rgb:      147 197 253;  /* #93C5FD */
+  --qs-text-rgb:     224 238 255;  /* #E0EEFF */
+  --qs-bright-rgb:   255 255 255;  /* #FFFFFF */
+
+  --qs-dark:     rgb(var(--qs-dark-rgb));
+  --qs-card:     rgb(var(--qs-card-rgb));
+  --qs-elevated: rgb(var(--qs-elevated-rgb));
+  --qs-border:   rgb(var(--qs-border-rgb));
+  --qs-muted:    rgb(var(--qs-muted-rgb));
+  --qs-subtle:   rgb(var(--qs-subtle-rgb));
+  --qs-dim:      rgb(var(--qs-dim-rgb));
+  --qs-text:     rgb(var(--qs-text-rgb));
+  --qs-bright:   rgb(var(--qs-bright-rgb));
 
   --qs-danger-subtle:  rgb(248 113 113 / 0.15);
   --qs-danger-border:  rgb(248 113 113 / 0.40);
