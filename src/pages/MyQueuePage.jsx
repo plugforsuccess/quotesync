@@ -74,13 +74,23 @@ export default function MyQueuePage() {
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
 
   // Cancel filter bar — client-side filter of cancelCases
-  // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy'
+  // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy' | 'snoozed'
   const [cancelFilter, setCancelFilter] = useState('all');
+
+  // Callback scheduling popover
+  const [callbackTarget, setCallbackTarget] = useState(null); // { type, event }
+  const [callbackForm,   setCallbackForm]   = useState({ time: '', note: '' });
+  const [callbackSaving, setCallbackSaving] = useState(false);
+
+  // Loss reason popover
+  const [lostTarget, setLostTarget] = useState(null); // { type, event }
+  const [lostReason, setLostReason] = useState('');
 
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
 
-  // Pull cases assigned to this employee — RLS enforces they only see their own
+  // Pull cases assigned to this employee — RLS enforces they only see their own.
+  // Snoozed cases (snoozed_until in the future) are hidden from the default view.
   const { data: cancelCases = [], isLoading: cancelLoading } = useQuery({
     queryKey: ['my_cancel_cases', employeeId],
     queryFn: async () => {
@@ -90,6 +100,7 @@ export default function MyQueuePage() {
         .select('*')
         .eq('assigned_to_id', employeeId)
         .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)')
+        .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
         .order('cancel_effective_date', { ascending: true });
       if (error) throw error;
       return (data ?? []).map(e => ({
@@ -98,6 +109,25 @@ export default function MyQueuePage() {
       })).sort((a, b) => b._priority - a._priority);
     },
     enabled: !!employeeId,
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Snoozed cancel cases — only fetched when the Snoozed filter is active.
+  const { data: snoozedCancelCases = [] } = useQuery({
+    queryKey: ['my_cancel_cases_snoozed', employeeId],
+    queryFn: async () => {
+      if (!employeeId) return [];
+      const { data, error } = await supabase
+        .from('pending_cases')
+        .select('*')
+        .eq('assigned_to_id', employeeId)
+        .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)')
+        .gte('snoozed_until', new Date().toISOString())
+        .order('snoozed_until', { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    enabled: !!employeeId && cancelFilter === 'snoozed',
     staleTime: 2 * 60 * 1000,
   });
 
@@ -110,6 +140,7 @@ export default function MyQueuePage() {
         .select('*')
         .eq('assigned_to_id', employeeId)
         .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)')
+        .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
         .order('renewal_date', { ascending: true });
       if (error) throw error;
       return data ?? [];
@@ -167,10 +198,12 @@ export default function MyQueuePage() {
         return cancelCases.filter(e => !e.attempt_count || e.attempt_count === 0);
       case 'multi_policy':
         return cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1);
+      case 'snoozed':
+        return snoozedCancelCases;
       default:
         return cancelCases;
     }
-  }, [cancelCases, cancelFilter, customerPolicyCounts]);
+  }, [cancelCases, cancelFilter, customerPolicyCounts, snoozedCancelCases]);
 
   // Cancel priority buckets (built from filtered set)
   const cancelBuckets = useMemo(() => ({
@@ -269,6 +302,94 @@ export default function MyQueuePage() {
         closed_by_id:    employeeId,
       });
     }
+  }
+
+  // Schedule a callback — logs an attempt as "reached" + records callback time
+  async function handleScheduleCallback() {
+    if (!callbackTarget || !callbackForm.time || callbackSaving) return;
+    setCallbackSaving(true);
+    const { type, event } = callbackTarget;
+    const callbackAt = new Date(callbackForm.time).toISOString();
+
+    if (type === 'cancel') {
+      await supabase.from('pending_cancel_attempts').insert({
+        pending_case_id: event.id,
+        agency_id:       orgId,
+        employee_id:     employeeId,
+        method:          'phone',
+        result:          'reached',
+        note:            `Callback scheduled: ${callbackForm.note || 'no details'}`,
+      });
+      await updateCancelCase(event.id, {
+        attempt_count:       (event.attempt_count || 0) + 1,
+        last_attempt_at:     new Date().toISOString(),
+        last_attempt_result: 'reached',
+        contacted_at:        event.contacted_at || new Date().toISOString(),
+        callback_at:         callbackAt,
+        callback_note:       callbackForm.note || null,
+        status: event.status === 'pending' ? 'contacted' : event.status,
+      });
+    } else {
+      await supabase.from('renewal_attempts').insert({
+        renewal_case_id: event.id,
+        agency_id:       orgId,
+        employee_id:     employeeId,
+        method:          'phone',
+        result:          'reached',
+        note:            `Callback scheduled: ${callbackForm.note || 'no details'}`,
+      });
+      await updateRenewalCase(event.id, {
+        attempt_count:       (event.attempt_count || 0) + 1,
+        last_attempt_at:     new Date().toISOString(),
+        last_attempt_result: 'reached',
+        contacted_at:        event.contacted_at || new Date().toISOString(),
+        callback_at:         callbackAt,
+        callback_note:       callbackForm.note || null,
+        status: event.status === 'pending' ? 'contacted' : event.status,
+      });
+    }
+
+    setCallbackSaving(false);
+    setCallbackTarget(null);
+    setCallbackForm({ time: '', note: '' });
+  }
+
+  // Snooze a case for N days — hides it from the default queue
+  async function handleSnooze(type, event, days, reason) {
+    const snoozeUntil = new Date();
+    snoozeUntil.setDate(snoozeUntil.getDate() + days);
+
+    if (type === 'cancel') {
+      await updateCancelCase(event.id, {
+        snoozed_until: snoozeUntil.toISOString(),
+        snooze_reason: reason,
+      });
+      queryClient.invalidateQueries({ queryKey: ['my_cancel_cases_snoozed', employeeId] });
+    } else {
+      await updateRenewalCase(event.id, {
+        snoozed_until: snoozeUntil.toISOString(),
+        snooze_reason: reason,
+      });
+    }
+  }
+
+  // Mark a case as lost — includes an optional reason
+  async function handleMarkLost() {
+    if (!lostTarget) return;
+    const { type, event } = lostTarget;
+    const updates = {
+      status:              'lost',
+      resolution_date:     new Date().toISOString().slice(0, 10),
+      closed_by_id:        employeeId,
+      termination_reason:  lostReason || null,
+    };
+    if (type === 'cancel') {
+      await updateCancelCase(event.id, updates);
+    } else {
+      await updateRenewalCase(event.id, updates);
+    }
+    setLostTarget(null);
+    setLostReason('');
   }
 
   function CancelCard({ event, policyCount = 1 }) {
@@ -445,7 +566,7 @@ export default function MyQueuePage() {
           {scriptLine}
         </div>
 
-        {/* Row 2: Promise / last attempt */}
+        {/* Row 2: Promise / last attempt / callback */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
           {promisePast && (
             <span style={{ fontSize: 13, color: '#F87171', fontWeight: 600 }}>
@@ -465,6 +586,43 @@ export default function MyQueuePage() {
           {!lastAtt && !promisePast && (
             <span style={{ fontSize: 13, color: attColor }}>
               {event.attempt_count || 0} attempts
+            </span>
+          )}
+
+          {/* Scheduled callback */}
+          {event.callback_at && new Date(event.callback_at) > new Date() && (
+            <span style={{
+              fontSize: 11, color: '#3B82F6', fontWeight: 600,
+              background: 'rgba(59,130,246,0.10)',
+              border: '1px solid rgba(59,130,246,0.25)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              📅 Call back {new Date(event.callback_at).toLocaleString('en-US', {
+                month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+              })}
+            </span>
+          )}
+          {event.callback_at && new Date(event.callback_at) <= new Date() && (
+            <span style={{
+              fontSize: 11, color: '#F59E0B', fontWeight: 700,
+              background: 'rgba(245,158,11,0.12)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏰ Callback overdue
+            </span>
+          )}
+
+          {/* Snoozed indicator */}
+          {event.snoozed_until && new Date(event.snoozed_until) > new Date() && (
+            <span style={{
+              fontSize: 11, color: 'var(--qs-muted)', fontWeight: 600,
+              background: 'var(--qs-elevated)',
+              border: '1px solid var(--qs-border)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
             </span>
           )}
         </div>
@@ -509,6 +667,17 @@ export default function MyQueuePage() {
             Log Call
           </button>
 
+          {/* Schedule callback */}
+          <button
+            onClick={() => { setCallbackTarget({ type: 'cancel', event }); setCallbackForm({ time: '', note: '' }); }}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+              color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
+            }}>
+            📅 Callback
+          </button>
+
           <button
             onClick={() => handleInlineResolve('cancel', event, 'saved')}
             style={{
@@ -519,9 +688,9 @@ export default function MyQueuePage() {
             ✓ Saved
           </button>
 
-          {/* Lost quick action */}
+          {/* Lost quick action — prompts for reason */}
           <button
-            onClick={() => handleInlineResolve('cancel', event, 'lost')}
+            onClick={() => { setLostTarget({ type: 'cancel', event }); setLostReason(''); }}
             style={{
               fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
@@ -540,6 +709,31 @@ export default function MyQueuePage() {
             }}>
             Wants to Cancel
           </button>
+
+          {/* Snooze — show only after 2+ attempts */}
+          {event.attempt_count >= 2 && (
+            <select
+              className="dark-select"
+              defaultValue=""
+              onChange={e => {
+                if (!e.target.value) return;
+                const [days, reason] = e.target.value.split('|');
+                handleSnooze('cancel', event, parseInt(days), reason);
+                e.target.value = '';
+              }}
+              style={{
+                fontSize: 12, padding: '5px 10px', borderRadius: 7,
+                cursor: 'pointer', color: 'var(--qs-muted)',
+                border: '1px solid var(--qs-border)',
+                background: 'var(--qs-elevated)',
+              }}
+            >
+              <option value="">⏸ Snooze</option>
+              <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
+              <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
+              <option value="7|retry_next_week">1 week — retry next week</option>
+            </select>
+          )}
 
           <button
             onClick={() => setSelectedEvent(event)}
@@ -698,6 +892,43 @@ export default function MyQueuePage() {
               {event.attempt_count || 0} attempts
             </span>
           )}
+
+          {/* Scheduled callback */}
+          {event.callback_at && new Date(event.callback_at) > new Date() && (
+            <span style={{
+              fontSize: 11, color: '#3B82F6', fontWeight: 600,
+              background: 'rgba(59,130,246,0.10)',
+              border: '1px solid rgba(59,130,246,0.25)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              📅 Call back {new Date(event.callback_at).toLocaleString('en-US', {
+                month: 'short', day: 'numeric',
+                hour: 'numeric', minute: '2-digit',
+              })}
+            </span>
+          )}
+          {event.callback_at && new Date(event.callback_at) <= new Date() && (
+            <span style={{
+              fontSize: 11, color: '#F59E0B', fontWeight: 700,
+              background: 'rgba(245,158,11,0.12)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏰ Callback overdue
+            </span>
+          )}
+
+          {/* Snoozed indicator */}
+          {event.snoozed_until && new Date(event.snoozed_until) > new Date() && (
+            <span style={{
+              fontSize: 11, color: 'var(--qs-muted)', fontWeight: 600,
+              background: 'var(--qs-elevated)',
+              border: '1px solid var(--qs-border)',
+              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
+            }}>
+              ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
+            </span>
+          )}
         </div>
 
         {/* AI Transcript inline expand */}
@@ -740,6 +971,17 @@ export default function MyQueuePage() {
             Log Call
           </button>
 
+          {/* Schedule callback */}
+          <button
+            onClick={() => { setCallbackTarget({ type: 'renewal', event }); setCallbackForm({ time: '', note: '' }); }}
+            style={{
+              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+              color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
+            }}>
+            📅 Callback
+          </button>
+
           <button
             onClick={() => handleInlineResolve('renewal', event, 'confirmed')}
             style={{
@@ -750,9 +992,9 @@ export default function MyQueuePage() {
             ✓ Confirmed
           </button>
 
-          {/* Won't Renew quick action */}
+          {/* Won't Renew quick action — prompts for reason */}
           <button
-            onClick={() => handleInlineResolve('renewal', event, 'lost')}
+            onClick={() => { setLostTarget({ type: 'renewal', event }); setLostReason(''); }}
             style={{
               fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
@@ -760,6 +1002,31 @@ export default function MyQueuePage() {
             }}>
             ✗ Won't Renew
           </button>
+
+          {/* Snooze — show only after 2+ attempts */}
+          {event.attempt_count >= 2 && (
+            <select
+              className="dark-select"
+              defaultValue=""
+              onChange={e => {
+                if (!e.target.value) return;
+                const [days, reason] = e.target.value.split('|');
+                handleSnooze('renewal', event, parseInt(days), reason);
+                e.target.value = '';
+              }}
+              style={{
+                fontSize: 12, padding: '5px 10px', borderRadius: 7,
+                cursor: 'pointer', color: 'var(--qs-muted)',
+                border: '1px solid var(--qs-border)',
+                background: 'var(--qs-elevated)',
+              }}
+            >
+              <option value="">⏸ Snooze</option>
+              <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
+              <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
+              <option value="7|retry_next_week">1 week — retry next week</option>
+            </select>
+          )}
 
           <button
             onClick={() => setSelectedRenewal(event)}
@@ -975,6 +1242,7 @@ export default function MyQueuePage() {
                 { key: 'pending',      label: `Pending (${cancelCases.filter(e => e.stage === 'pending_cancel').length})` },
                 { key: 'never_called', label: `Untouched (${cancelCases.filter(e => !e.attempt_count).length})` },
                 { key: 'multi_policy', label: `Multi-policy (${cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1).length})` },
+                { key: 'snoozed',      label: `Snoozed${cancelFilter === 'snoozed' ? ` (${snoozedCancelCases.length})` : ''}` },
               ].map(f => (
                 <button
                   key={f.key}
@@ -1109,8 +1377,67 @@ export default function MyQueuePage() {
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 6 }}>
               Log Call — {logCallTarget.event.customer_name}
             </div>
-            <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 18 }}>
+            <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 14 }}>
               {logCallTarget.event.policy_no}
+            </div>
+
+            {/* Quick-dial link in the popover itself */}
+            {(() => {
+              const dialPhone = logCallTarget.event.phone || logCallTarget.event.customer_phone;
+              return dialPhone ? (
+                <a
+                  href={`tel:${dialPhone}`}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '8px 12px', borderRadius: 8, marginBottom: 12,
+                    background: 'rgba(52,211,153,0.10)', border: '1px solid rgba(52,211,153,0.25)',
+                    color: '#34D399', textDecoration: 'none',
+                    fontSize: 15, fontWeight: 700,
+                  }}
+                >
+                  📞 {fmtPhone(dialPhone)}
+                  <span style={{ fontSize: 11, color: 'var(--qs-muted)', fontWeight: 400, marginLeft: 4 }}>
+                    tap to dial
+                  </span>
+                </a>
+              ) : null;
+            })()}
+
+            {/* Key facts for the call */}
+            <div style={{
+              background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+              borderRadius: 8, padding: '8px 12px', marginBottom: 12,
+              display: 'flex', gap: 16, flexWrap: 'wrap',
+            }}>
+              {logCallTarget.type === 'cancel' && logCallTarget.event.amount_due > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+                    letterSpacing: '0.05em', marginBottom: 2 }}>Owes</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: '#F87171',
+                    fontFamily: "'DM Mono', monospace" }}>
+                    ${Number(logCallTarget.event.amount_due).toLocaleString()}
+                  </div>
+                </div>
+              )}
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+                  letterSpacing: '0.05em', marginBottom: 2 }}>
+                  {logCallTarget.type === 'cancel' ? 'Cancel Date' : 'Renewal Date'}
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)',
+                  fontFamily: "'DM Mono', monospace" }}>
+                  {logCallTarget.type === 'cancel'
+                    ? logCallTarget.event.cancel_effective_date
+                    : logCallTarget.event.renewal_date}
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+                  letterSpacing: '0.05em', marginBottom: 2 }}>Product</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>
+                  {logCallTarget.event.product?.toUpperCase()}
+                </div>
+              </div>
             </div>
 
             {/* 6-outcome grid */}
@@ -1148,13 +1475,27 @@ export default function MyQueuePage() {
               style={{ marginBottom: 16, fontSize: 15, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }}
             />
 
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
                 onClick={() => setLogCallTarget(null)}
                 style={{ fontSize: 15, padding: '9px 18px', borderRadius: 8,
                   border: '1px solid var(--qs-border)', background: 'none',
                   color: 'var(--qs-dim)', cursor: 'pointer' }}>
                 Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const target = logCallTarget;
+                  setLogCallTarget(null);
+                  setCallbackTarget({ type: target.type, event: target.event });
+                  setCallbackForm({ time: '', note: '' });
+                }}
+                style={{
+                  fontSize: 13, padding: '7px 12px', borderRadius: 8,
+                  border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+                  color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
+                }}>
+                📅 Callback
               </button>
               <button
                 onClick={handleInlineLogCall}
@@ -1164,6 +1505,138 @@ export default function MyQueuePage() {
                   color: '#fff', fontWeight: 600, cursor: 'pointer',
                   opacity: logCallSaving ? 0.6 : 1 }}>
                 {logCallSaving ? 'Saving...' : 'Log Call'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Callback Popover ───────────────────────────────────────── */}
+      {callbackTarget && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setCallbackTarget(null); }}
+        >
+          <div style={{
+            background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+            borderRadius: 12, padding: 20, width: '100%', maxWidth: 340,
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
+              Schedule Callback
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16 }}>
+              {callbackTarget.event.customer_name} · {callbackTarget.event.policy_no}
+            </div>
+
+            <label className="dark-label">Callback time</label>
+            <input
+              className="dark-input"
+              type="datetime-local"
+              value={callbackForm.time}
+              onChange={e => setCallbackForm(f => ({ ...f, time: e.target.value }))}
+              style={{ marginBottom: 10 }}
+            />
+
+            <label className="dark-label">What to discuss (optional)</label>
+            <input
+              className="dark-input"
+              type="text"
+              placeholder="e.g. Confirm payment, discuss rate..."
+              value={callbackForm.note}
+              onChange={e => setCallbackForm(f => ({ ...f, note: e.target.value }))}
+              style={{ marginBottom: 14 }}
+            />
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setCallbackTarget(null)}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: '1px solid var(--qs-border)', background: 'none',
+                  color: 'var(--qs-dim)', cursor: 'pointer',
+                }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleScheduleCallback}
+                disabled={!callbackForm.time || callbackSaving}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: 'none', background: '#3B82F6',
+                  color: '#fff', fontWeight: 600, cursor: 'pointer',
+                  opacity: !callbackForm.time || callbackSaving ? 0.5 : 1,
+                }}>
+                {callbackSaving ? 'Saving...' : 'Schedule'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Mark Lost Popover ─────────────────────────────────────── */}
+      {lostTarget && createPortal(
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}
+          onClick={e => { if (e.target === e.currentTarget) setLostTarget(null); }}
+        >
+          <div style={{
+            background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+            borderRadius: 12, padding: 20, width: '100%', maxWidth: 320,
+          }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
+              Mark as Lost
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 14 }}>
+              {lostTarget.event.customer_name}
+            </div>
+
+            <label className="dark-label">Reason (optional but helpful)</label>
+            <select
+              className="dark-select"
+              value={lostReason}
+              onChange={e => setLostReason(e.target.value)}
+              style={{ marginBottom: 14 }}
+            >
+              <option value="">— Select reason —</option>
+              <option value="Price">Price / Too expensive</option>
+              <option value="Service">Service issue</option>
+              <option value="Claims">Claims experience</option>
+              <option value="Moving">Moving / Relocating</option>
+              <option value="Coverage no longer needed">Coverage no longer needed</option>
+              <option value="Switched carrier">Switched to another carrier</option>
+              <option value="No contact">Could not reach customer</option>
+              <option value="Other">Other</option>
+            </select>
+
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setLostTarget(null)}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: '1px solid var(--qs-border)', background: 'none',
+                  color: 'var(--qs-dim)', cursor: 'pointer',
+                }}>
+                Cancel
+              </button>
+              <button
+                onClick={handleMarkLost}
+                style={{
+                  fontSize: 13, padding: '8px 14px', borderRadius: 8,
+                  border: 'none', background: '#475569',
+                  color: '#fff', fontWeight: 600, cursor: 'pointer',
+                }}>
+                Confirm Lost
               </button>
             </div>
           </div>
