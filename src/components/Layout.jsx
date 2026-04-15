@@ -10,6 +10,7 @@ import BottomTabBar from './BottomTabBar';
 import VerificationBanner from './VerificationBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import ThemeToggle from './ThemeToggle';
+import { useForceTheme } from '../contexts/ThemeContext';
 import UploadChecklistModal from '../pages/components/shared/UploadChecklistModal';
 import { useUploadChecklist } from '../hooks/useUploadChecklist';
 import { useManagementCadence } from '../hooks/useManagementCadence';
@@ -104,6 +105,17 @@ function Layout({ forcePlane = null }) {
   // Minimal funnel nav on /save routes
   const isFunnelRoute = location.pathname === '/save' || location.pathname.startsWith('/save/');
 
+  // Consumer-facing surfaces (public landing + funnel) are designed dark and
+  // don't benefit from light/high-contrast themes — force dark for the
+  // lifetime of this Layout render. Internal planes (agency / platform) keep
+  // the user's chosen theme. The user preference is NOT mutated.
+  const lockToDark = activePlane === PLANES.CONSUMER || isFunnelRoute;
+  useForceTheme(lockToDark ? 'dark' : null);
+
+  // Theme toggle is only meaningful on internal pages — hide it everywhere
+  // the theme is locked to dark.
+  const showThemeToggle = !lockToDark;
+
   // Throttled handler — blur effect only (non-funnel nav)
   const handleScroll = useCallback(() => {
     if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
@@ -194,7 +206,7 @@ function Layout({ forcePlane = null }) {
   }, [isFunnelRoute]);
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white flex flex-col">
+    <div className="qs-app-shell min-h-screen bg-[#0f172a] text-white flex flex-col">
       {isFunnelRoute ? (
         /* ── Minimal funnel nav — dark glass, logo + phone only ── */
         <header
@@ -321,8 +333,9 @@ function Layout({ forcePlane = null }) {
                 />
               )}
 
-              {/* Theme toggle — dark / light / high contrast */}
-              <ThemeToggle variant="pill" />
+              {/* Theme toggle — dark / light / high contrast. Only shown on
+                  internal planes (consumer/funnel stay dark) */}
+              {showThemeToggle && <ThemeToggle variant="pill" />}
 
               <UserMenu
                 activePlane={activePlane}
@@ -410,8 +423,8 @@ function Layout({ forcePlane = null }) {
             ))}
 
             <div className="mt-4 flex flex-col items-center gap-3">
-              {/* Theme toggle — mobile */}
-              <ThemeToggle variant="pill" />
+              {/* Theme toggle — mobile; hidden on consumer/funnel routes */}
+              {showThemeToggle && <ThemeToggle variant="pill" />}
               <UserMenu
                 activePlane={activePlane}
                 onTogglePlane={() => setPlaneOverride(p => {

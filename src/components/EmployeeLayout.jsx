@@ -129,7 +129,7 @@ export default function EmployeeLayout() {
   const sidebarWidth = collapsed ? 64 : 220;
 
   return (
-    <div style={{
+    <div className="qs-app-shell" style={{
       display: 'flex',
       minHeight: '100vh',
       background: 'var(--qs-dark)',

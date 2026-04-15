@@ -5,10 +5,16 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useForceTheme } from '../contexts/ThemeContext';
 import { getDefaultLanding } from '../config/navConfig';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 
 const LoginPage = () => {
+  // Login page is designed dark — force dark for all users regardless of
+  // their saved theme preference. Preference is restored once they navigate
+  // into an authenticated Layout.
+  useForceTheme('dark');
+
   const navigate = useNavigate();
   const { user, loading: authLoading, currentAgencyId, platformRole, currentAgencyRole, isPlatformUser } = useAuth();
   // Only query for employee record if the user is not a platform user — avoids
