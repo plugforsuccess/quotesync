@@ -103,7 +103,7 @@ export default function MyQueuePage() {
         .from('pending_cases')
         .select('*')
         .eq('assigned_to_id', employeeId)
-        .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)')
+        .not('status', 'in', '(saved,rewritten,lost,auto_resolved,cancelled,requested_cancellation)')
         .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
         .order('cancel_effective_date', { ascending: true });
       if (error) throw error;
@@ -125,7 +125,7 @@ export default function MyQueuePage() {
         .from('pending_cases')
         .select('*')
         .eq('assigned_to_id', employeeId)
-        .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation)')
+        .not('status', 'in', '(saved,rewritten,lost,auto_resolved,cancelled,requested_cancellation)')
         .gte('snoozed_until', new Date().toISOString())
         .order('snoozed_until', { ascending: true });
       if (error) throw error;
