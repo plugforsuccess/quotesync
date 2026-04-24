@@ -17,13 +17,14 @@ const logPerformance = (metric, data) => {
 
   console.log(`[PERF] ${metric}:`, logData);
 
-  // TODO: Send to Sentry or monitoring service
-  // if (window.Sentry) {
-  //   window.Sentry.captureMessage(`Performance: ${metric}`, {
-  //     level: 'info',
-  //     extra: logData
-  //   });
-  // }
+  if (typeof window !== 'undefined' && window.Sentry?.captureMessage) {
+    const level = metric.endsWith('_error') ? 'error' : 'info';
+    window.Sentry.captureMessage(`Performance: ${metric}`, {
+      level,
+      extra: logData,
+      tags: { metric }
+    });
+  }
 };
 
 /**
