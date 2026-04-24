@@ -84,13 +84,34 @@ export default function PunchPage() {
     }
   }
 
+  // Best-effort browser geolocation; resolves null on denial / timeout / no HTTPS.
+  function getLocation() {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      const timer = setTimeout(() => resolve(null), 3000);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timer);
+          resolve({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy_m: pos.coords.accuracy,
+          });
+        },
+        () => { clearTimeout(timer); resolve(null); },
+        { enableHighAccuracy: false, timeout: 2500, maximumAge: 60000 }
+      );
+    });
+  }
+
   async function submitAction(action) {
     setLoading(true);
     try {
+      const loc = await getLocation();
       const res = await fetch(EDGE_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json", "apikey": import.meta.env.VITE_SUPABASE_ANON_KEY },
-        body: JSON.stringify({ action, pin }),
+        body: JSON.stringify({ action, pin, ...(loc || {}) }),
       });
       const data = await res.json();
       if (data.error) { setErrorMsg(data.error); }

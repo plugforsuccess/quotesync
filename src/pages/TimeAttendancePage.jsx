@@ -16,6 +16,11 @@ import { buildAgencySlug, buildWeekLabel } from '../lib/exportFilename';
 import WeeklyTimeTable from './components/time-attendance/WeeklyTimeTable';
 import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
 import WeekPickerCalendar from './components/time-attendance/WeekPickerCalendar';
+import AttendanceFlagsBanner from './components/time-attendance/AttendanceFlagsBanner';
+import ErraticHoursPanel from './components/time-attendance/ErraticHoursPanel';
+import PunchNotifications from './components/time-attendance/PunchNotifications';
+import PunchAuditLog from './components/time-attendance/PunchAuditLog';
+import { computeAttendanceFlags } from '../lib/erraticHours';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -186,7 +191,7 @@ function buildWeeklySummarySheet(entries, getEmployeeName) {
 }
 
 // Sheet 3: Monthly Summary (cumulative hours per employee per month)
-function buildMonthlySummarySheet(ytdEntries, getEmployeeName, year) {
+function buildMonthlySummarySheet(ytdEntries, getEmployeeName) {
   const headers = ['Employee', ...MONTH_NAMES_SHORT.map((m) => `${m} Hours`), 'YTD Total', ...MONTH_NAMES_SHORT.map((m) => `${m} PTO`), 'YTD PTO', ...MONTH_NAMES_SHORT.map((m) => `${m} Sick`), 'YTD Sick'];
   const byEmployee = groupBy(ytdEntries, (e) => e.employee_user_id);
   const rows = [];
@@ -243,87 +248,15 @@ function buildYTDSheet(ytdEntries, getEmployeeName, year) {
   return [headers, ...rows];
 }
 
-// Sheet 5: Attendance Flags — highlights substandard patterns
+// Sheet 5: Attendance Flags — shares thresholds with AttendanceFlagsBanner
+// via lib/erraticHours.computeAttendanceFlags so export and UI can't drift.
 function buildAttendanceFlagsSheet(ytdEntries, getEmployeeName, year) {
   const headers = ['Employee', 'Flag', 'Severity', 'Detail'];
-  const byEmployee = groupBy(ytdEntries, (e) => e.employee_user_id);
-  const rows = [];
-
-  for (const [id, empEntries] of sortedEmployeeGroups(byEmployee, getEmployeeName)) {
-    const name = getEmployeeName(id);
-    const c = codeCounts(empEntries);
-    const weeksSet = new Set(empEntries.map((e) => e.week_start));
-    const weeksEntered = weeksSet.size;
-    const avgPerWeek = weeksEntered > 0 ? c.totalHours / weeksEntered : 0;
-    const totalDays = empEntries.length;
-
-    // Flag 1: Low weekly average hours (< 35h/week)
-    if (weeksEntered >= 2 && avgPerWeek < 35) {
-      rows.push([name, 'Low Avg Hours/Week', 'WARNING', `${r2(avgPerWeek)}h avg over ${weeksEntered} weeks (expected ~40h)`]);
-    }
-
-    // Flag 2: Excessive PTO (> 15 days YTD)
-    if (c.pto > 15) {
-      rows.push([name, 'High PTO Usage', 'INFO', `${c.pto} PTO days used YTD`]);
-    }
-
-    // Flag 3: Excessive sick days (> 10 days YTD)
-    if (c.sick > 10) {
-      rows.push([name, 'High Sick Usage', 'WARNING', `${c.sick} sick days used YTD`]);
-    }
-
-    // Flag 4: Frequent partial/early/appt (> 10 occurrences YTD)
-    if (c.other > 10) {
-      rows.push([name, 'Frequent Partial/Early/Appt', 'INFO', `${c.other} occurrences YTD`]);
-    }
-
-    // Flag 5: Sick + partial sick combined > 12
-    const sickPartial = empEntries.filter((e) => e.code === 'SICK' || e.code === 'SICK_PART').length;
-    if (sickPartial > 12) {
-      rows.push([name, 'High Combined Sick Usage', 'WARNING', `${sickPartial} sick + partial sick days YTD`]);
-    }
-
-    // Flag 6: Missing weeks — compare to expected weeks so far this year
-    const yearStart = new Date(`${year}-01-01T00:00:00`);
-    const now = new Date();
-    const endDate = now.getFullYear() === year ? now : new Date(`${year}-12-31T00:00:00`);
-    const expectedWeeks = Math.floor((endDate - yearStart) / (7 * 24 * 60 * 60 * 1000));
-    const missingWeeks = expectedWeeks - weeksEntered;
-    if (expectedWeeks > 4 && missingWeeks > 4) {
-      rows.push([name, 'Missing Time Entries', 'WARNING', `${missingWeeks} weeks missing out of ~${expectedWeeks} expected`]);
-    }
-
-    // Flag 7: Low attendance rate (days worked / total days entered < 80%)
-    if (totalDays >= 20) {
-      const attendanceRate = c.daysWorked / totalDays;
-      if (attendanceRate < 0.8) {
-        rows.push([name, 'Low Attendance Rate', 'CRITICAL', `${Math.round(attendanceRate * 100)}% attendance (${c.daysWorked}/${totalDays} days worked)`]);
-      }
-    }
-
-    // Flag 8: Short days pattern — check for weeks with consistently < 7h/day
-    const byWeek = groupBy(empEntries, (e) => e.week_start);
-    let shortWeeks = 0;
-    for (const [, weekEntries] of Object.entries(byWeek)) {
-      const workDays = weekEntries.filter((e) => !['PTO', 'SICK'].includes(e.code));
-      if (workDays.length >= 3) {
-        const avgDayHours = workDays.reduce((s, e) => s + getHours(e), 0) / workDays.length;
-        if (avgDayHours < 7) shortWeeks++;
-      }
-    }
-    if (shortWeeks >= 3) {
-      rows.push([name, 'Frequent Short Days', 'WARNING', `${shortWeeks} weeks with avg < 7h/day`]);
-    }
-  }
-
-  // Sort by severity: CRITICAL > WARNING > INFO
-  const severityOrder = { CRITICAL: 0, WARNING: 1, INFO: 2 };
-  rows.sort((a, b) => (severityOrder[a[2]] ?? 3) - (severityOrder[b[2]] ?? 3));
-
+  const flags = computeAttendanceFlags(ytdEntries, getEmployeeName, year);
+  const rows = flags.map((f) => [f.name, f.flag, f.severity, f.detail]);
   if (rows.length === 0) {
     rows.push(['—', 'No flags detected', '—', 'All employees within normal attendance parameters']);
   }
-
   return [headers, ...rows];
 }
 
@@ -353,7 +286,7 @@ function exportToXLSX(entries, weekStart, getEmployeeName, ytdEntries, year, age
 
   if (ytdEntries && ytdEntries.length > 0) {
     // Sheet 3: Monthly Summary (cumulative hours by month)
-    const monthlyData = buildMonthlySummarySheet(ytdEntries, getEmployeeName, year);
+    const monthlyData = buildMonthlySummarySheet(ytdEntries, getEmployeeName);
     const wsMonthly = XLSX.utils.aoa_to_sheet(monthlyData);
     const monthlyCols = [{ wch: 20 }];
     for (let i = 0; i < 12; i++) monthlyCols.push({ wch: 10 }); // hours
@@ -401,9 +334,10 @@ const TimeAttendancePage = () => {
   const [weekStart, setWeekStart] = useState(() => toMonday(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState('');
 
-  // Track whether YTD data should be fetched (on-demand when export clicked)
+  // YTD data fuels both the export and the in-page attendance flags banner,
+  // so we eagerly enable it (cached 5 min via react-query).
   const currentYear = new Date(weekStart + 'T00:00:00').getFullYear();
-  const [ytdRequested, setYtdRequested] = useState(false);
+  const ytdRequested = true;
 
   // ── Data hooks ────────────────────────────────────────────────────────────
 
@@ -516,12 +450,6 @@ const TimeAttendancePage = () => {
   const pendingExportRef = useRef(false);
 
   function handleExportClick() {
-    if (!ytdRequested) {
-      setYtdRequested(true);
-      setPendingExport(true);
-      pendingExportRef.current = true;
-      return;
-    }
     if (ytdLoading) {
       setPendingExport(true);
       pendingExportRef.current = true;
@@ -588,6 +516,7 @@ const TimeAttendancePage = () => {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <PunchNotifications employees={rosterEmployees} />
               <button
                 onClick={refetchAll}
                 disabled={isLoading}
@@ -665,6 +594,20 @@ const TimeAttendancePage = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-6">
         <div className="space-y-6">
+          {/* YTD Attendance Flags — surface CRITICAL/WARNING issues without needing export */}
+          {isCurrentWeek && ytdData?.entries && (
+            <AttendanceFlagsBanner
+              ytdEntries={ytdData.entries}
+              getEmployeeName={getEmployeeName}
+              year={currentYear}
+            />
+          )}
+
+          {/* Erratic Hours — rolling 14-day drift from default schedule */}
+          {isCurrentWeek && rosterEmployees.length > 0 && (
+            <ErraticHoursPanel employees={rosterEmployees} windowDays={14} />
+          )}
+
           {/* Today's Punch Status — only shown for the current week */}
           {isCurrentWeek && rosterEmployees.length > 0 && (() => {
             const nowET = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -791,14 +734,22 @@ const TimeAttendancePage = () => {
                     <p className="text-qs-dim text-sm">Loading entries...</p>
                   </div>
                 ) : (
-                  <WeeklyTimeTable
-                    weekStart={weekStart}
-                    employeeId={selectedEmployee}
-                    orgId={orgId}
-                    existingEntries={selectedEntries}
-                    onSaved={handleSaved}
-                    employeeDefaults={selectedEmployeeData}
-                  />
+                  <>
+                    <WeeklyTimeTable
+                      weekStart={weekStart}
+                      employeeId={selectedEmployee}
+                      orgId={orgId}
+                      existingEntries={selectedEntries}
+                      onSaved={handleSaved}
+                      employeeDefaults={selectedEmployeeData}
+                    />
+                    <div className="mt-4">
+                      <PunchAuditLog
+                        employeeId={selectedEmployee}
+                        employeeName={getEmployeeName(selectedEmployee)}
+                      />
+                    </div>
+                  </>
                 )}
               </div>
             </>

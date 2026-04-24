@@ -65,7 +65,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { action, pin } = await req.json();
+    const body = await req.json();
+    const { action, pin, lat, lng, accuracy_m } = body as {
+      action?: string;
+      pin?: string;
+      lat?: number | null;
+      lng?: number | null;
+      accuracy_m?: number | null;
+    };
+    const userAgent = req.headers.get("user-agent") ?? null;
+    // x-forwarded-for may be a comma-separated list — take the first entry
+    const sourceIp = (req.headers.get("x-forwarded-for") ?? "").split(",")[0].trim() || null;
 
     // ── Validate PIN ──────────────────────────────────────────────────────
     if (!pin || !/^\d{4}$/.test(pin)) {
@@ -202,6 +212,20 @@ Deno.serve(async (req) => {
       .eq("employee_user_id", employee.auth_user_id)
       .eq("work_date", today)
       .single();
+
+    // Log the punch event (best-effort; don't fail the punch if logging fails)
+    await supabase.from("punch_events").insert({
+      org_id: employee.org_id,
+      employee_user_id: employee.auth_user_id,
+      action,
+      work_date: today,
+      punch_time: nowTime,
+      source_ip: sourceIp,
+      user_agent: userAgent,
+      lat: typeof lat === "number" ? lat : null,
+      lng: typeof lng === "number" ? lng : null,
+      accuracy_m: typeof accuracy_m === "number" ? accuracy_m : null,
+    });
 
     return jsonResponse({
       success: true,
