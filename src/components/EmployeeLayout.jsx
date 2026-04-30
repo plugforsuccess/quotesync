@@ -43,6 +43,18 @@ const CROSS_SELL_ICON = (
 // the clock emoji in particular is nearly invisible at small sizes.
 const NAV_ITEMS = [
   {
+    to: '/my/today',
+    label: 'Today',
+    desc: 'What to dial next',
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="13 2 13 12 19 8" />
+        <circle cx="12" cy="14" r="8" />
+      </svg>
+    ),
+  },
+  {
     to: '/my/queue',
     label: 'My Queue',
     desc: 'Pending cancels & renewals',

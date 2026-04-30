@@ -100,6 +100,7 @@ const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagem
 
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
+const TodayPage = lazyWithRetry(() => import('./pages/TodayPage'));
 const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
 const ChangePasswordPage = lazyWithRetry(() => import('./pages/ChangePasswordPage'));
 
@@ -169,7 +170,8 @@ function App() {
                 <EmployeeLayout />
               </EmployeeRoute>
             }>
-              <Route index element={<Navigate to="/my/queue" replace />} />
+              <Route index element={<Navigate to="/my/today" replace />} />
+              <Route path="today" element={<Suspense fallback={<PageLoader />}><TodayPage /></Suspense>} />
               <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
             </Route>
