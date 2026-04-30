@@ -496,6 +496,27 @@ export default function MyQueuePage() {
                   ⚠ {policyCount} policies
                 </span>
               )}
+
+              {event.has_active_renewal && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+                  background: 'rgba(59,130,246,0.12)',
+                  border: '1px solid rgba(59,130,246,0.25)',
+                  color: '#60A5FA', flexShrink: 0,
+                }}>
+                  🔄 Also renewing
+                </span>
+              )}
+              {event.cross_sell_opportunity && !event.has_active_renewal && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+                  background: 'rgba(16,185,129,0.10)',
+                  border: '1px solid rgba(16,185,129,0.25)',
+                  color: '#34D399', flexShrink: 0,
+                }}>
+                  💡 X-sell: {event.cross_sell_product?.toUpperCase()}
+                </span>
+              )}
             </div>
 
             <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 3 }}>
@@ -817,6 +838,27 @@ export default function MyQueuePage() {
                   borderRadius: 4, padding: '1px 6px', fontWeight: 700, flexShrink: 0,
                 }}>
                   ⚠ {policyCount} policies
+                </span>
+              )}
+
+              {event.has_active_cancel && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+                  background: 'rgba(239,68,68,0.10)',
+                  border: '1px solid rgba(239,68,68,0.25)',
+                  color: '#F87171', flexShrink: 0,
+                }}>
+                  ⚠ Cancel active
+                </span>
+              )}
+              {event.cross_sell_opportunity && event.cross_sell_product && !event.has_active_cancel && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+                  background: 'rgba(16,185,129,0.10)',
+                  border: '1px solid rgba(16,185,129,0.25)',
+                  color: '#34D399', flexShrink: 0,
+                }}>
+                  💡 X-sell: {event.cross_sell_product?.toUpperCase()}
                 </span>
               )}
             </div>

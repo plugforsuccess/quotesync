@@ -25,6 +25,7 @@ const primaryItems = {
   staffPerformance: { to: '/agency/staff-performance', label: 'Performance', icon: '📈' },
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
   retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
+  crossSell:        { to: '/agency/cross-sell',        label: 'Cross-Sell',  icon: '💡' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
   // Platform admin primary items
   adminDashboard:   { to: '/admin',                    label: 'Overview',    icon: '🏠' },
@@ -108,6 +109,7 @@ export const agencyNav = {
       primaryItems.planning,
     ],
     secondary: [
+      primaryItems.crossSell,
       primaryItems.timeAttendance,
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
