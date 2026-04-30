@@ -10,6 +10,7 @@ import BottomTabBar from './BottomTabBar';
 import VerificationBanner from './VerificationBanner';
 import ImpersonationBanner from './ImpersonationBanner';
 import ThemeToggle from './ThemeToggle';
+import PersonaSwitcher from './PersonaSwitcher';
 import { useForceTheme } from '../contexts/ThemeContext';
 import UploadChecklistModal from '../pages/components/shared/UploadChecklistModal';
 import { useUploadChecklist } from '../hooks/useUploadChecklist';
@@ -324,6 +325,9 @@ function Layout({ forcePlane = null }) {
               {secondaryNav.length > 0 && (
                 <HamburgerMenu items={secondaryNav} />
               )}
+
+              {/* Persona switcher — principals only, hidden if only one persona is available */}
+              <PersonaSwitcher />
 
               {/* Checklist bell — principals only (desktop) */}
               {currentAgencyRole === 'principal' && (

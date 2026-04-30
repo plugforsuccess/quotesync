@@ -128,6 +128,48 @@ const TEAM_ROLE_CONFIG = {
   owner:     { label: 'Owner',      color: '#EF4444', bg: '#EF444411' },
 };
 
+function EmployeeCallTarget({ employee, agencyId }) {
+  const queryClient = useQueryClient();
+  const initial = employee.daily_call_target ?? 8;
+  const [target, setTarget] = useState(initial);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const next = parseInt(target) || 8;
+    if (next === (employee.daily_call_target ?? 8)) return;
+    setSaving(true);
+    await supabase
+      .from('employees')
+      .update({ daily_call_target: next })
+      .eq('id', employee.id);
+    queryClient.invalidateQueries({ queryKey: ['team_access_summary', agencyId] });
+    setSaving(false);
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <input
+        type="number"
+        min={1}
+        max={50}
+        value={target}
+        onChange={e => setTarget(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+        style={{
+          width: 60, textAlign: 'center', padding: '4px 8px',
+          background: 'var(--qs-elevated)', color: 'var(--qs-text)',
+          border: '1px solid var(--qs-border)', borderRadius: 6,
+          fontSize: 13, fontFamily: 'inherit',
+        }}
+      />
+      {saving && (
+        <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>Saving…</span>
+      )}
+    </div>
+  );
+}
+
 function TeamTab({ agencyId, isAgent }) {
   const [inviteTarget, setInviteTarget] = useState(null);
 
@@ -156,7 +198,7 @@ function TeamTab({ agencyId, isAgent }) {
       // For each member, check if they have an employee record
       const { data: employees } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, auth_user_id, roles, must_reset_password')
+        .select('id, first_name, last_name, auth_user_id, roles, must_reset_password, daily_call_target')
         .eq('org_id', agencyId);
 
       const empByAuthId = {};
@@ -209,7 +251,7 @@ function TeamTab({ agencyId, isAgent }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--qs-elevated)' }}>
-              {['Email', 'Agency Role', 'Employee Record', 'Login Status', ''].map(h => (
+              {['Email', 'Agency Role', 'Employee Record', 'Daily Calls', 'Login Status', ''].map(h => (
                 <th key={h} style={{
                   padding: '10px 14px', textAlign: 'left', fontSize: 11,
                   fontWeight: 600, color: 'var(--qs-subtle)',
@@ -269,6 +311,15 @@ function TeamTab({ agencyId, isAgent }) {
                       <span style={{ color: 'var(--qs-muted)', fontSize: 12 }}>
                         No employee record
                       </span>
+                    )}
+                  </td>
+
+                  {/* Daily Calls target */}
+                  <td style={{ padding: '12px 14px' }}>
+                    {emp ? (
+                      <EmployeeCallTarget employee={emp} agencyId={agencyId} />
+                    ) : (
+                      <span style={{ color: 'var(--qs-muted)', fontSize: 12 }}>—</span>
                     )}
                   </td>
 
@@ -366,6 +417,178 @@ function TeamTab({ agencyId, isAgent }) {
             refetch();
           }}
         />
+      )}
+    </div>
+  );
+}
+
+// ─── My Rep Workspace (principal opts into working cases as a rep) ────────────
+
+const REP_ROLE_OPTIONS = [
+  { key: 'service_outbound', label: 'Service · Outbound', desc: 'Pending cancel callbacks, save calls' },
+  { key: 'service_inbound',  label: 'Service · Inbound',  desc: 'Inbound service queue and transfers' },
+  { key: 'sales',            label: 'Sales',              desc: 'New business follow-ups and quotes' },
+];
+
+function MyRepWorkspace({ agencyId }) {
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const { data: emp, isLoading } = useQuery({
+    queryKey: ['my_employee_record', agencyId, user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from('employees')
+        .select('id, first_name, last_name, roles, employment_status, daily_call_target, auth_user_id')
+        .eq('org_id', agencyId)
+        .eq('auth_user_id', user.id)
+        .eq('employment_status', 'active')
+        .maybeSingle();
+      return data || null;
+    },
+    enabled: !!agencyId && !!user?.id,
+    staleTime: 30 * 1000,
+  });
+
+  const [setupForm, setSetupForm] = useState({ first_name: '', last_name: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: ['my_employee_record', agencyId, user?.id] });
+    queryClient.invalidateQueries({ queryKey: ['current_employee_self', user?.id] });
+  }
+
+  async function toggleRole(role, on) {
+    if (!emp) return;
+    setError('');
+    const next = on
+      ? Array.from(new Set([...(emp.roles || []), role]))
+      : (emp.roles || []).filter(r => r !== role);
+    setSaving(true);
+    const { error: err } = await supabase
+      .from('employees')
+      .update({ roles: next })
+      .eq('id', emp.id);
+    if (err) setError(err.message);
+    invalidate();
+    setSaving(false);
+  }
+
+  async function handleSetup() {
+    if (!setupForm.first_name.trim() || !setupForm.last_name.trim()) {
+      setError('Enter your first and last name.');
+      return;
+    }
+    setError('');
+    setSaving(true);
+    const { error: err } = await supabase.from('employees').insert({
+      org_id: agencyId,
+      auth_user_id: user.id,
+      first_name: setupForm.first_name.trim(),
+      last_name:  setupForm.last_name.trim(),
+      roles: ['service_outbound'],
+    });
+    if (err) setError(err.message);
+    invalidate();
+    setSaving(false);
+  }
+
+  return (
+    <div style={{
+      marginBottom: 24, padding: 16, borderRadius: 10,
+      background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 4 }}>
+        Work cases as a rep
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 14 }}>
+        Wearing more than one hat? Opt into rep roles to receive cases from the round-robin
+        and unlock the My Queue view for those cases.
+      </div>
+
+      {isLoading ? (
+        <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>Loading…</div>
+      ) : !emp ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>
+            You don't have a rep workspace yet. Set one up to start receiving assigned cases.
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <input
+              placeholder="First name"
+              value={setupForm.first_name}
+              onChange={e => setSetupForm(f => ({ ...f, first_name: e.target.value }))}
+              style={{
+                flex: '1 1 120px', padding: '6px 10px', fontSize: 13,
+                background: 'var(--qs-card)', color: 'var(--qs-text)',
+                border: '1px solid var(--qs-border)', borderRadius: 6,
+              }}
+            />
+            <input
+              placeholder="Last name"
+              value={setupForm.last_name}
+              onChange={e => setSetupForm(f => ({ ...f, last_name: e.target.value }))}
+              style={{
+                flex: '1 1 120px', padding: '6px 10px', fontSize: 13,
+                background: 'var(--qs-card)', color: 'var(--qs-text)',
+                border: '1px solid var(--qs-border)', borderRadius: 6,
+              }}
+            />
+            <button
+              onClick={handleSetup}
+              disabled={saving}
+              style={{
+                padding: '6px 14px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                background: '#3B82F6', color: '#fff', border: 'none',
+                cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1,
+              }}
+            >
+              {saving ? 'Setting up…' : 'Set up rep workspace'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 2 }}>
+            Linked to <strong style={{ color: 'var(--qs-text)' }}>{emp.first_name} {emp.last_name}</strong>
+            {' · '}daily call target {emp.daily_call_target}
+          </div>
+          {REP_ROLE_OPTIONS.map(opt => {
+            const on = (emp.roles || []).includes(opt.key);
+            return (
+              <label key={opt.key} style={{
+                display: 'flex', alignItems: 'flex-start', gap: 10,
+                padding: '8px 10px', borderRadius: 6,
+                background: on ? 'rgba(59,130,246,0.08)' : 'var(--qs-card)',
+                border: '1px solid',
+                borderColor: on ? '#3B82F633' : 'var(--qs-border)',
+                cursor: saving ? 'not-allowed' : 'pointer',
+              }}>
+                <input
+                  type="checkbox"
+                  checked={on}
+                  disabled={saving}
+                  onChange={e => toggleRole(opt.key, e.target.checked)}
+                  style={{ marginTop: 2 }}
+                />
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)' }}>
+                    {opt.label}
+                  </div>
+                  <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 1 }}>
+                    {opt.desc}
+                  </div>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      )}
+
+      {error && (
+        <div style={{ fontSize: 11, color: '#EF4444', marginTop: 10 }}>{error}</div>
       )}
     </div>
   );
@@ -502,6 +725,8 @@ function ProfileTab({ agency, agencyId, isAgent, queryClient }) {
           </button>
         )}
       </div>
+
+      {isAgent && <MyRepWorkspace agencyId={agencyId} />}
 
       {/* Agency Logo — available to principals; shown in the employee sidebar. */}
       <div style={{ marginBottom: 24 }}>

@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
-import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
+import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import AvailabilityToggle from '../components/AvailabilityToggle';
 
@@ -48,6 +48,33 @@ const RESULT_LABELS = {
   disconnected:   'Disconnected',
 };
 
+const PRIORITY_BUCKETS = [
+  {
+    key: 'P0',
+    label: '🔴 LAPSED — Coverage Gone',
+    sublabel: 'Policy terminated. Reinstatement call required.',
+    color: '#EF4444',
+  },
+  {
+    key: 'P1',
+    label: '🟠 HIGH PRIORITY',
+    sublabel: 'Past due or <7 days · Premium ≥$2,000',
+    color: '#F59E0B',
+  },
+  {
+    key: 'P2',
+    label: '🟡 STANDARD',
+    sublabel: 'Past due or <7 days · Premium <$2,000',
+    color: '#64748B',
+  },
+  {
+    key: 'P3',
+    label: '⚪ UPCOMING',
+    sublabel: 'More than 7 days until cancel date',
+    color: '#334155',
+  },
+];
+
 // Last attempt one-liner
 function lastAttemptSummary(result, attemptedAt) {
   if (!result && !attemptedAt) return null;
@@ -77,6 +104,19 @@ export default function MyQueuePage() {
   // Cancel filter bar — client-side filter of cancelCases
   // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy' | 'snoozed'
   const [cancelFilter, setCancelFilter] = useState('all');
+
+  // Focus mode — show only top N cases up to the employee's daily call target
+  const [focusMode, setFocusMode] = useState(() => {
+    try { return sessionStorage.getItem('qs_queue_focus') !== 'false'; }
+    catch { return true; }
+  });
+  function toggleFocusMode() {
+    setFocusMode(m => {
+      const next = !m;
+      try { sessionStorage.setItem('qs_queue_focus', String(next)); } catch { /* noop */ }
+      return next;
+    });
+  }
 
   // Callback scheduling popover
   const [callbackTarget, setCallbackTarget] = useState(null); // { type, event }
@@ -110,7 +150,7 @@ export default function MyQueuePage() {
       return (data ?? []).map(e => ({
         ...e,
         _priority: calcCancelPriority(e),
-      })).sort((a, b) => b._priority - a._priority);
+      })).sort(compareByTier);
     },
     enabled: !!employeeId,
     staleTime: 2 * 60 * 1000,
@@ -209,18 +249,48 @@ export default function MyQueuePage() {
     }
   }, [cancelCases, cancelFilter, customerPolicyCounts, snoozedCancelCases]);
 
-  // Cancel priority buckets (built from filtered set)
-  const cancelBuckets = useMemo(() => ({
-    critical: filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d <= 3; }),
-    thisWeek: filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d !== null && d > 3 && d <= 7; }),
-    later:    filteredCancelCases.filter(e => { const d = daysUntilCancel(e.cancel_effective_date); return d === null || d > 7; }),
-  }), [filteredCancelCases]);
+  // Daily call target from employee record
+  const dailyTarget = employee?.daily_call_target ?? 8;
 
-  const BUCKETS = [
-    { key: 'critical', label: '🔴 Act Today', color: '#F87171', cases: cancelBuckets.critical },
-    { key: 'thisWeek', label: '🟡 This Week', color: '#FBBF24', cases: cancelBuckets.thisWeek },
-    { key: 'later',    label: '🟢 Later',     color: '#34D399', cases: cancelBuckets.later    },
-  ];
+  // Calls logged today across both queues (cases touched today via last_attempt_at)
+  const callsToday = useMemo(() => {
+    const cancelToday = cancelCases.filter(c =>
+      c.last_attempt_at?.slice(0, 10) === todayStr
+    ).length;
+    const renewalToday = renewalCases.filter(c =>
+      c.last_attempt_at?.slice(0, 10) === todayStr
+    ).length;
+    return cancelToday + renewalToday;
+  }, [cancelCases, renewalCases, todayStr]);
+
+  const targetHit = callsToday >= dailyTarget;
+  const progressPct = Math.min(100, Math.round((callsToday / dailyTarget) * 100));
+
+  // Focus cases — top N from filteredCancelCases (touched today appear first
+  // so cards don't jump after logging a call), capped at dailyTarget.
+  const focusCases = useMemo(() => {
+    const touched = filteredCancelCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
+    const untouched = filteredCancelCases.filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr);
+    return [...touched, ...untouched].slice(0, dailyTarget);
+  }, [filteredCancelCases, dailyTarget, todayStr]);
+
+  // The cases the queue actually displays based on focus toggle.
+  const displayCancelCases = focusMode ? focusCases : filteredCancelCases;
+
+  // Bucket display cases by priority_tier (P0 → P3, plus an "other" fallback)
+  const cancelBuckets = useMemo(() => {
+    const groups = { P0: [], P1: [], P2: [], P3: [], other: [] };
+    for (const c of displayCancelCases) {
+      const tier = c.priority_tier;
+      if (tier && groups[tier]) groups[tier].push(c);
+      else groups.other.push(c);
+    }
+    return groups;
+  }, [displayCancelCases]);
+
+  const BUCKETS = PRIORITY_BUCKETS
+    .map(b => ({ ...b, cases: cancelBuckets[b.key] || [] }))
+    .filter(b => b.cases.length > 0);
 
   async function updateCancelCase(id, updates) {
     const { error } = await supabase
@@ -1247,6 +1317,84 @@ export default function MyQueuePage() {
         ))}
       </div>
 
+      {/* Daily progress + focus toggle (cancel tab only — renewals don't share the call target yet) */}
+      {activeTab === 'cancel' && !cancelLoading && cancelCases.length > 0 && (
+        <div style={{
+          background: 'var(--qs-elevated)',
+          border: '1px solid var(--qs-border)',
+          borderRadius: 10,
+          padding: '12px 16px',
+          marginBottom: 14,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 16,
+        }}>
+          <div style={{ flex: 1 }}>
+            <div style={{
+              display: 'flex', justifyContent: 'space-between',
+              alignItems: 'baseline', marginBottom: 6,
+            }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-dim)' }}>
+                Today's calls
+              </div>
+              <div style={{
+                fontSize: 16, fontWeight: 800,
+                fontFamily: "'DM Mono', monospace",
+                color: targetHit ? '#10B981' : 'var(--qs-bright)',
+              }}>
+                {callsToday}
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--qs-muted)', marginLeft: 2 }}>
+                  / {dailyTarget}
+                </span>
+              </div>
+            </div>
+            <div style={{
+              height: 6, borderRadius: 3,
+              background: 'var(--qs-card)',
+              overflow: 'hidden',
+            }}>
+              <div style={{
+                height: '100%',
+                width: `${progressPct}%`,
+                borderRadius: 3,
+                background: targetHit ? '#10B981'
+                  : progressPct >= 50 ? '#3B82F6'
+                  : '#F59E0B',
+                transition: 'width 0.4s ease',
+              }} />
+            </div>
+            {targetHit && (
+              <div style={{ fontSize: 11, color: '#10B981', marginTop: 4, fontWeight: 600 }}>
+                ✓ Daily target reached
+              </div>
+            )}
+          </div>
+
+          <div style={{ width: 1, height: 40, background: 'var(--qs-border)', flexShrink: 0 }} />
+
+          <div style={{ flexShrink: 0, textAlign: 'right' }}>
+            <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 6 }}>
+              {focusMode
+                ? `Focus: top ${Math.min(dailyTarget, filteredCancelCases.length)} cases`
+                : `Full queue: ${filteredCancelCases.length} cases`}
+            </div>
+            <button
+              onClick={toggleFocusMode}
+              style={{
+                padding: '5px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                cursor: 'pointer', border: '1px solid',
+                borderColor: focusMode ? '#3B82F6' : 'var(--qs-border)',
+                background: focusMode ? 'rgba(59,130,246,0.12)' : 'var(--qs-card)',
+                color: focusMode ? '#3B82F6' : 'var(--qs-subtle)',
+                transition: 'all 0.15s',
+              }}
+            >
+              {focusMode ? '⚡ Focus mode' : '☰ Full queue'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* ── Pending Cancel Tab ───────────────────────────────────────── */}
       {activeTab === 'cancel' && (
         <div>
@@ -1299,38 +1447,64 @@ export default function MyQueuePage() {
           )}
 
           {/* Priority buckets */}
-          {!cancelLoading && cancelCases.length > 0 && BUCKETS.map(bucket =>
-            bucket.cases.length > 0 && (
-              <div key={bucket.key} style={{ marginBottom: 24 }}>
-                {/* Bucket header */}
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 10,
-                  marginBottom: 12, paddingBottom: 8,
-                  borderBottom: `1px solid ${bucket.color}33`,
-                }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: bucket.color,
-                    textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {bucket.label}
+          {!cancelLoading && cancelCases.length > 0 && BUCKETS.map(bucket => (
+            <div key={bucket.key} style={{ marginBottom: 24 }}>
+              {/* Bucket header */}
+              <div style={{
+                display: 'flex', alignItems: 'baseline', gap: 10,
+                marginBottom: 12, paddingBottom: 8,
+                borderBottom: `1px solid ${bucket.color}33`,
+                flexWrap: 'wrap',
+              }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: bucket.color,
+                  textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  {bucket.label}
+                </span>
+                <span style={{ fontSize: 13, color: 'var(--qs-dim)',
+                  background: 'var(--qs-elevated)', padding: '2px 8px',
+                  borderRadius: 10, fontWeight: 600 }}>
+                  {bucket.cases.length}
+                </span>
+                {bucket.sublabel && (
+                  <span style={{ fontSize: 11, color: 'var(--qs-muted)', fontWeight: 500 }}>
+                    {bucket.sublabel}
                   </span>
-                  <span style={{ fontSize: 13, color: 'var(--qs-dim)',
-                    background: 'var(--qs-elevated)', padding: '2px 8px',
-                    borderRadius: 10, fontWeight: 600 }}>
-                    {bucket.cases.length}
-                  </span>
-                </div>
-
-                {/* Cards */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                  {bucket.cases.map(event => (
-                    <CancelCard
-                      key={event.id}
-                      event={event}
-                      policyCount={customerPolicyCounts[event.customer_name] || 1}
-                    />
-                  ))}
-                </div>
+                )}
               </div>
-            )
+
+              {/* Cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {bucket.cases.map(event => (
+                  <CancelCard
+                    key={event.id}
+                    event={event}
+                    policyCount={customerPolicyCounts[event.customer_name] || 1}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* "X more cases" banner — focus mode only, when queue extends past target */}
+          {!cancelLoading && focusMode && filteredCancelCases.length > dailyTarget && (
+            <div style={{
+              textAlign: 'center', padding: '14px',
+              fontSize: 13, color: 'var(--qs-muted)',
+              borderTop: '1px solid var(--qs-border)',
+              marginTop: 8,
+            }}>
+              {filteredCancelCases.length - dailyTarget} more cases in full queue
+              {' · '}
+              <button
+                onClick={toggleFocusMode}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
+                }}
+              >
+                View all
+              </button>
+            </div>
           )}
         </div>
       )}

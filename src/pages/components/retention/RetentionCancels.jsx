@@ -4,7 +4,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
-import { calcRenewalPriority, calcCancelPriority, CURRENT_YEAR } from '../../../lib/retentionPriority';
+import { calcRenewalPriority, calcCancelPriority, computePriorityTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
 import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 
@@ -1855,7 +1855,19 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFi
   }
 
   const filteredRows = useMemo(() => {
-    let list = rows.map(r => ({ ...r, _priority: calcUnifiedPriority(r) }));
+    let list = rows.map(r => ({
+      ...r,
+      _priority: calcUnifiedPriority(r),
+      // policy_retention_status doesn't expose priority_tier, so derive it
+      // client-side for cancel-side rows from the same inputs the DB uses.
+      _priority_tier: r.cancel_event_id
+        ? computePriorityTier({
+            stage: r.cancel_stage,
+            cancel_effective_date: r.cancel_effective_date,
+            premium_at_risk: r.premium_at_risk,
+          })
+        : null,
+    }));
 
     if (riskFilter !== 'all') {
       list = list.filter(r => r.risk_type === riskFilter);
@@ -1878,11 +1890,24 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFi
       });
     }
 
-    // Sort logic
+    // Sort logic — priority sorts by tier (P0→P3), then premium desc, then
+    // cancel date asc. Renewal-only rows lack a tier; fall back to numeric
+    // priority for those by ranking them after P3.
     if (sortCol === 'priority') {
-      return list.sort((a, b) =>
-        sortDir === 'asc' ? a._priority - b._priority : b._priority - a._priority
-      );
+      const dir = sortDir === 'asc' ? -1 : 1;
+      return list.sort((a, b) => {
+        const aTier = TIER_ORDER[a._priority_tier] ?? 4;
+        const bTier = TIER_ORDER[b._priority_tier] ?? 4;
+        if (aTier !== bTier) return (aTier - bTier) * dir;
+
+        const aPrem = parseFloat(a.premium_at_risk) || parseFloat(a.renewal_premium) || 0;
+        const bPrem = parseFloat(b.premium_at_risk) || parseFloat(b.renewal_premium) || 0;
+        if (aPrem !== bPrem) return (bPrem - aPrem) * dir;
+
+        const aDate = a.cancel_effective_date || a.renewal_date || '9999';
+        const bDate = b.cancel_effective_date || b.renewal_date || '9999';
+        return aDate.localeCompare(bDate) * dir;
+      });
     }
 
     return list.sort((a, b) => {
