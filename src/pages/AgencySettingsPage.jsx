@@ -128,6 +128,48 @@ const TEAM_ROLE_CONFIG = {
   owner:     { label: 'Owner',      color: '#EF4444', bg: '#EF444411' },
 };
 
+function EmployeeCallTarget({ employee, agencyId }) {
+  const queryClient = useQueryClient();
+  const initial = employee.daily_call_target ?? 8;
+  const [target, setTarget] = useState(initial);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const next = parseInt(target) || 8;
+    if (next === (employee.daily_call_target ?? 8)) return;
+    setSaving(true);
+    await supabase
+      .from('employees')
+      .update({ daily_call_target: next })
+      .eq('id', employee.id);
+    queryClient.invalidateQueries({ queryKey: ['team_access_summary', agencyId] });
+    setSaving(false);
+  }
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      <input
+        type="number"
+        min={1}
+        max={50}
+        value={target}
+        onChange={e => setTarget(e.target.value)}
+        onBlur={handleSave}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+        style={{
+          width: 60, textAlign: 'center', padding: '4px 8px',
+          background: 'var(--qs-elevated)', color: 'var(--qs-text)',
+          border: '1px solid var(--qs-border)', borderRadius: 6,
+          fontSize: 13, fontFamily: 'inherit',
+        }}
+      />
+      {saving && (
+        <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>Saving…</span>
+      )}
+    </div>
+  );
+}
+
 function TeamTab({ agencyId, isAgent }) {
   const [inviteTarget, setInviteTarget] = useState(null);
 
@@ -156,7 +198,7 @@ function TeamTab({ agencyId, isAgent }) {
       // For each member, check if they have an employee record
       const { data: employees } = await supabase
         .from('employees')
-        .select('id, first_name, last_name, auth_user_id, roles, must_reset_password')
+        .select('id, first_name, last_name, auth_user_id, roles, must_reset_password, daily_call_target')
         .eq('org_id', agencyId);
 
       const empByAuthId = {};
@@ -209,7 +251,7 @@ function TeamTab({ agencyId, isAgent }) {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ background: 'var(--qs-elevated)' }}>
-              {['Email', 'Agency Role', 'Employee Record', 'Login Status', ''].map(h => (
+              {['Email', 'Agency Role', 'Employee Record', 'Daily Calls', 'Login Status', ''].map(h => (
                 <th key={h} style={{
                   padding: '10px 14px', textAlign: 'left', fontSize: 11,
                   fontWeight: 600, color: 'var(--qs-subtle)',
@@ -269,6 +311,15 @@ function TeamTab({ agencyId, isAgent }) {
                       <span style={{ color: 'var(--qs-muted)', fontSize: 12 }}>
                         No employee record
                       </span>
+                    )}
+                  </td>
+
+                  {/* Daily Calls target */}
+                  <td style={{ padding: '12px 14px' }}>
+                    {emp ? (
+                      <EmployeeCallTarget employee={emp} agencyId={agencyId} />
+                    ) : (
+                      <span style={{ color: 'var(--qs-muted)', fontSize: 12 }}>—</span>
                     )}
                   </td>
 
