@@ -82,8 +82,8 @@ const NAV_ITEMS = [
   },
 ];
 
-// Cross-Sell is producer-gated — added to the sidebar only for employees
-// whose roles include 'producer' (matches the route gate on /agency/cross-sell).
+// Cross-Sell is sales-gated — a "producer" in this app is any employee with
+// 'sales' in their roles array. Pure service-only employees don't see it.
 const CROSS_SELL_ITEM = {
   to: '/agency/cross-sell',
   label: 'Cross-Sell',
@@ -218,7 +218,7 @@ export default function EmployeeLayout() {
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
           {[
             ...NAV_ITEMS,
-            ...(employee?.roles?.includes('producer') ? [CROSS_SELL_ITEM] : []),
+            ...(employee?.roles?.includes('sales') ? [CROSS_SELL_ITEM] : []),
           ].map(({ to, icon, label, desc }) => (
             <NavLink
               key={to}

@@ -406,7 +406,7 @@ function App() {
               </ProtectedRoute>
             } />
             <Route path="agency/cross-sell" element={
-              <ProtectedRoute requiredAgencyRole="producer">
+              <ProtectedRoute requiredAgencyRole="employee">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense>
                 </ErrorBoundary>
