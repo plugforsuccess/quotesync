@@ -16,6 +16,7 @@ const STATUS_CONFIG = {
   payment_plan_requested: { label: "Payment Plan",      color: "#8B5CF6", bg: "#8B5CF622" },
   promise_to_pay:         { label: "Promise to Pay",    color: "#8B5CF6", bg: "#8B5CF622" },
   saved:                  { label: "Saved ✓",      color: "#10B981", bg: "#10B98122" },
+  rewritten:              { label: "Rewritten ✓",  color: "#34D399", bg: "#34D39922" },
   promise_broken:         { label: "Promise Broken",    color: "#EF4444", bg: "#EF444422" },
   requested_cancellation: { label: "Wants to Cancel",   color: "#EF4444", bg: "#EF444422" },
   lost:                   { label: "Lost",              color: "var(--qs-subtle)", bg: "#64748B22" },
@@ -232,6 +233,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     promise_date:        event.promise_date || "",
     termination_reason:  event.termination_reason || "",
     notes:               event.notes || "",
+    rewrite_new_premium: event.rewrite_new_premium || "",
+    rewrite_reason:      event.rewrite_reason || "",
   });
 
   const { data: otherCases = [] } = useOtherActiveCases({
@@ -300,12 +303,21 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     if (["contacted","promise_to_pay","payment_plan_requested"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
-    if (["saved","lost","requested_cancellation"].includes(form.status) && !event.resolution_date) {
+    if (["saved","rewritten","lost","requested_cancellation"].includes(form.status) && !event.resolution_date) {
       updates.resolution_date = new Date().toISOString().slice(0,10);
     }
     // Set closed_by_id when resolving a case
-    if (["saved","lost","requested_cancellation","cancelled"].includes(form.status)) {
+    if (["saved","rewritten","lost","requested_cancellation","cancelled"].includes(form.status)) {
       updates.closed_by_id = currentEmployeeId;
+    }
+    // Strip rewrite fields if not a rewrite outcome
+    if (form.status !== "rewritten") {
+      updates.rewrite_new_premium = null;
+      updates.rewrite_reason      = null;
+    } else {
+      updates.rewrite_new_premium = form.rewrite_new_premium
+        ? parseFloat(String(form.rewrite_new_premium).replace(/[$,]/g, "")) || null
+        : null;
     }
     // Sync assigned_to (legacy text) with assigned_to_id (employee FK)
     // Treat empty string same as unset — use strict null check
@@ -626,10 +638,83 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   <option value="contacted">Contacted — no action yet</option>
                   <option value="payment_plan_requested">Wants Payment Plan</option>
                   <option value="promise_to_pay">Promised to Pay</option>
-                  <option value="saved">Saved ✓</option>
+                  <option value="saved">Saved ✓ — paid, policy continues</option>
+                  <option value="rewritten">Rewritten ✓ — new policy at lower rate</option>
                   <option value="requested_cancellation">Wants to Cancel</option>
                   <option value="lost">Lost</option>
                 </select>
+              </div>
+            )}
+
+            {/* Rewrite detail fields — only when Rewritten is selected */}
+            {form.status === "rewritten" && (
+              <div style={{
+                background: "rgba(52,211,153,0.06)",
+                border: "1px solid rgba(52,211,153,0.2)",
+                borderRadius: 10,
+                padding: "14px 16px",
+                marginTop: 4,
+              }}>
+                <div style={{
+                  fontSize: 11, fontWeight: 700, color: "#34D399",
+                  textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 12,
+                }}>
+                  Rewrite Details
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label className="dark-label">
+                      New Annual Premium
+                      <span style={{ color: "#F87171", marginLeft: 2 }}>*</span>
+                    </label>
+                    <input
+                      className="dark-input"
+                      type="number"
+                      placeholder="e.g. 1850"
+                      min="0"
+                      step="1"
+                      value={form.rewrite_new_premium}
+                      onChange={ev => setForm(p => ({ ...p, rewrite_new_premium: ev.target.value }))}
+                    />
+                    {form.rewrite_new_premium && event.premium_at_risk && (
+                      <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
+                        {(() => {
+                          const orig = parseFloat(event.premium_at_risk);
+                          const newPrem = parseFloat(form.rewrite_new_premium);
+                          if (!orig || !newPrem || newPrem >= orig) return null;
+                          const savings = orig - newPrem;
+                          const pct = ((savings / orig) * 100).toFixed(1);
+                          return `↓ $${savings.toLocaleString()} reduction (${pct}% off)`;
+                        })()}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="dark-label">Reason for Rate Reduction</label>
+                    <select
+                      className="dark-select"
+                      value={form.rewrite_reason}
+                      onChange={ev => setForm(p => ({ ...p, rewrite_reason: ev.target.value }))}
+                    >
+                      <option value="">— Select reason —</option>
+                      <option value="coverage_reduction">Coverage reduction</option>
+                      <option value="discount_applied">New discount applied</option>
+                      <option value="tier_change">Tier change</option>
+                      <option value="competitor_match">Matched competitor rate</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 10 }}>
+                  Original premium: <strong style={{ color: "var(--qs-dim)" }}>
+                    {event.premium_at_risk
+                      ? `$${Number(event.premium_at_risk).toLocaleString()}`
+                      : "—"}
+                  </strong>
+                </div>
               </div>
             )}
 

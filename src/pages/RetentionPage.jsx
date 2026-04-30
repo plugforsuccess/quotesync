@@ -233,13 +233,13 @@ export default function RetentionPage() {
 
   const kpis = useMemo(() => {
     const active = events.filter(e =>
-      !["saved", "lost", "auto_resolved", "requested_cancellation"].includes(e.status)
+      !["saved", "rewritten", "lost", "auto_resolved", "requested_cancellation"].includes(e.status)
     );
-    const saved = events.filter(e => e.status === "saved");
+    const saved = events.filter(e => ["saved", "rewritten"].includes(e.status));
     const lost = events.filter(e => ["lost", "promise_broken"].includes(e.status));
     const terminations = events.filter(e => e.status === "requested_cancellation");
     const contacted = events.filter(e =>
-      ["contacted", "payment_plan_requested", "promise_to_pay", "saved", "promise_broken", "requested_cancellation", "lost"].includes(e.status)
+      ["contacted", "payment_plan_requested", "promise_to_pay", "saved", "rewritten", "promise_broken", "requested_cancellation", "lost"].includes(e.status)
     );
 
     const premiumAtRisk = active.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
@@ -269,7 +269,7 @@ export default function RetentionPage() {
 
   const resolvedEvents = useMemo(() => {
     return events
-      .filter(e => ["saved", "lost", "auto_resolved", "requested_cancellation", "promise_broken"].includes(e.status))
+      .filter(e => ["saved", "rewritten", "lost", "auto_resolved", "requested_cancellation", "promise_broken"].includes(e.status))
       .sort((a, b) => (b.resolution_date || b.updated_at || "").localeCompare(a.resolution_date || a.updated_at || ""));
   }, [events]);
 
@@ -279,13 +279,15 @@ export default function RetentionPage() {
       const d = e.cancel_effective_date || e.created_at?.slice(0, 10);
       if (!d) continue;
       const key = d.slice(0, 7);
-      if (!months[key]) months[key] = { month: key, cancels: 0, saves: 0, saveRate: 0 };
+      if (!months[key]) months[key] = { month: key, cancels: 0, saves: 0, rewrites: 0, saveRate: 0 };
       months[key].cancels++;
       if (e.status === "saved") months[key].saves++;
+      if (e.status === "rewritten") months[key].rewrites++;
     }
     const sorted = Object.values(months).sort((a, b) => a.month.localeCompare(b.month));
     for (const m of sorted) {
-      m.saveRate = m.cancels > 0 ? Math.round((m.saves / m.cancels) * 100) : 0;
+      const totalSaves = m.saves + m.rewrites;
+      m.saveRate = m.cancels > 0 ? Math.round((totalSaves / m.cancels) * 100) : 0;
     }
     return sorted;
   }, [events]);

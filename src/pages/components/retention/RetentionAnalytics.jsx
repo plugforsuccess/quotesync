@@ -127,6 +127,7 @@ function buildStatusConfig(ct) {
     promise_to_pay:      { label: "Promise-to-Pay",  bg: ct.structural.tooltipBg, fg: ct.data.purple  },
     promise_broken:      { label: "Promise Broken",  bg: ct.structural.tooltipBg, fg: ct.data.red     },
     saved:               { label: "Saved",           bg: ct.status.saved.bg,      fg: ct.status.saved.fg },
+    rewritten:           { label: "Rewritten",       bg: "#065F46",               fg: "#6EE7B7"          },
     lost:                { label: "Lost",            bg: ct.status.lost.bg,       fg: ct.status.lost.fg  },
     auto_resolved:       { label: "Auto-Resolved",   bg: ct.structural.tooltipBg, fg: ct.data.slate   },
     requested_cancellation: { label: "Termination",  bg: ct.structural.tooltipBg, fg: ct.data.slate   },
@@ -214,7 +215,8 @@ function TrendsTab({ trendsData }) {
               itemStyle={{ color: "var(--qs-text)" }}
             />
             <Bar yAxisId="left" dataKey="cancels" name="Cancels" fill={ct.data.red} radius={[4, 4, 0, 0]} opacity={0.7} />
-            <Bar yAxisId="left" dataKey="saves" name="Saves" fill={ct.data.green} radius={[4, 4, 0, 0]} />
+            <Bar yAxisId="left" dataKey="saves" name="Saves (payment)" stackId="saves" fill={ct.data.green} radius={[0, 0, 0, 0]} />
+            <Bar yAxisId="left" dataKey="rewrites" name="Rewrites (rate cut)" stackId="saves" fill="#34D399" radius={[4, 4, 0, 0]} />
             <Line yAxisId="right" type="monotone" dataKey="saveRate" name="Save Rate %" stroke={ct.data.amber} strokeWidth={2} dot={{ fill: ct.data.amber, r: 3 }} />
           </ComposedChart>
         </ResponsiveContainer>
