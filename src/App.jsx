@@ -94,6 +94,7 @@ const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/componen
 const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
 const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
+const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
 
@@ -401,6 +402,13 @@ function App() {
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RetentionPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/cross-sell" element={
+              <ProtectedRoute requiredAgencyRole="employee">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />

@@ -54,6 +54,7 @@ export function useUploadChecklist(agencyId) {
         cancelAudit,
         pendingCancel,
         renewal,
+        crossSell,
         reviewResult,
       ] = await Promise.all([
         // Call log: which days have data this week?
@@ -115,6 +116,16 @@ export function useUploadChecklist(agencyId) {
         // Renewal: uploaded this month?
         supabase
           .from('renewal_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+
+        // Cross-sell: uploaded this month?
+        supabase
+          .from('cross_sell_uploads')
           .select('uploaded_at')
           .eq('agency_id', agencyId)
           .eq('committed', true)
@@ -292,6 +303,28 @@ export function useUploadChecklist(agencyId) {
         detail: null,
         link: '/agency/retention?tab=import',
         uploadOrder: 4,
+      });
+
+      // 8. Cross-Sell Audit — due 8th–12th, monthly cadence
+      const crossSellInWindow = dayOfMonth >= 8 && dayOfMonth <= 12;
+      const crossSellUploaded = !!crossSell.data?.length;
+      const crossSellDue = crossSellInWindow && !crossSellUploaded;
+      const crossSellOverdue = dayOfMonth > 12 && !crossSellUploaded;
+      items.push({
+        key: 'cross_sell_audit',
+        category: 'book_of_business',
+        label: 'Cross-Sell Audit Report',
+        description: crossSellUploaded
+          ? 'Uploaded this month'
+          : crossSellDue
+          ? 'Due 8th–12th — upload now'
+          : crossSellOverdue
+          ? 'Overdue — not uploaded this month'
+          : 'Not yet due (upload 8th–12th)',
+        status: crossSellUploaded ? 'current' : crossSellOverdue ? 'overdue' : crossSellDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=import',
+        uploadOrder: 5,
       });
 
       // ── Management cadence items ────────────────────────────────────────

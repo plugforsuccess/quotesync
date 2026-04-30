@@ -488,6 +488,46 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             ))}
           </div>
 
+          {/* ── Active renewal warning — customer also has an active renewal ── */}
+          {event.has_active_renewal && event.active_renewal_id && (
+            <div style={{
+              background: 'rgba(59,130,246,0.07)',
+              border: '1px solid rgba(59,130,246,0.25)',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: '#3B82F6',
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
+              }}>
+                ℹ This customer also has an active renewal
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
+                Resolve this payment issue first. Their renewal case is active —
+                resolving the cancel strengthens the renewal conversation.
+              </div>
+            </div>
+          )}
+
+          {/* ── Cross-sell opportunity ── */}
+          {event.cross_sell_opportunity && event.cross_sell_product && (
+            <div style={{
+              background: 'rgba(16,185,129,0.06)',
+              border: '1px solid rgba(16,185,129,0.2)',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: '#10B981',
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
+              }}>
+                💡 Cross-sell opportunity on file
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
+                Allstate flagged this customer for <strong>{event.cross_sell_product?.toUpperCase()}</strong>.
+                {' '}Resolve the cancel first — then pitch.
+              </div>
+            </div>
+          )}
+
           {/* ── Section: Attempt Log ─────────────────────────── */}
           <div style={{
             fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
@@ -1064,6 +1104,55 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             ))}
           </div>
+
+          {/* ── Active cancel warning — customer has an active pending cancel ── */}
+          {event.has_active_cancel && event.active_cancel_id && (
+            <div style={{
+              background: 'rgba(239,68,68,0.07)',
+              border: '1px solid rgba(239,68,68,0.25)',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: '#EF4444',
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6,
+              }}>
+                ⚠ This customer has an active pending cancel
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
+                Their <strong>{event.active_cancel?.product?.toUpperCase() || 'other'}</strong> policy
+                {' '}is in pending cancel. Address that first — do not lead with the renewal
+                or a cross-sell pitch until the cancel issue is resolved.
+              </div>
+            </div>
+          )}
+
+          {/* ── Cross-sell prompt — only when no active cancel ── */}
+          {event.cross_sell_opportunity && event.cross_sell_product && !event.has_active_cancel && (
+            <div style={{
+              background: 'rgba(16,185,129,0.06)',
+              border: '1px solid rgba(16,185,129,0.2)',
+              borderRadius: 10, padding: '12px 16px', marginBottom: 16,
+            }}>
+              <div style={{
+                fontSize: 11, fontWeight: 700, color: '#10B981',
+                textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
+              }}>
+                💡 Cross-sell opportunity
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
+                Allstate flagged this customer for{' '}
+                <strong style={{ color: '#10B981' }}>
+                  {event.cross_sell_product?.toUpperCase()}
+                </strong>.
+                {' '}After confirming the renewal, ask:
+                <em style={{ color: 'var(--qs-dim)', display: 'block', marginTop: 4 }}>
+                  "While I have you — I noticed you only have [current product] with us.
+                  I'd love to get you a quick quote on [pitch product] to see if we can
+                  save you some money by bundling."
+                </em>
+              </div>
+            </div>
+          )}
 
           {/* ── Contact info ────────────────────────────────── */}
           <div style={{
@@ -1706,6 +1795,24 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFi
       .update(updates)
       .eq('id', id);
     if (!error) {
+      // When a cancel resolves to a terminal state, clear the active-cancel
+      // cross-reference on any renewal case for the same customer so the
+      // renewal modal/card stops showing the warning.
+      if (updates?.status &&
+          ['saved', 'lost', 'rewritten', 'requested_cancellation'].includes(updates.status)) {
+        const { data: pc } = await supabase
+          .from('pending_cases')
+          .select('customer_name')
+          .eq('id', id)
+          .single();
+        if (pc?.customer_name) {
+          await supabase
+            .from('renewal_cases')
+            .update({ has_active_cancel: false, active_cancel_id: null })
+            .eq('agency_id', agencyId)
+            .ilike('customer_name', pc.customer_name);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
     }
     return error;
@@ -1717,6 +1824,22 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFi
       .update(updates)
       .eq('id', id);
     if (!error) {
+      // When a renewal is confirmed, clear the active-renewal cross-reference
+      // on any pending cancel for the same customer.
+      if (updates?.status === 'confirmed') {
+        const { data: rc } = await supabase
+          .from('renewal_cases')
+          .select('customer_name')
+          .eq('id', id)
+          .single();
+        if (rc?.customer_name) {
+          await supabase
+            .from('pending_cases')
+            .update({ has_active_renewal: false, active_renewal_id: null })
+            .eq('agency_id', agencyId)
+            .ilike('customer_name', rc.customer_name);
+        }
+      }
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
     }
     return error;

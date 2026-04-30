@@ -5,6 +5,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
+import CrossSellUploadModal from "../cross-sell/CrossSellUploadModal";
 
 async function syncRetentionQueue(supabase) {
   try {
@@ -1271,6 +1272,7 @@ function ImportTab({
             { step: '\u2461', label: 'Cancellation Audit', color: '#F59E0B', sublabel: 'advances staged cases' },
             { step: '\u2462', label: 'Pending Cancel',     color: '#F59E0B', sublabel: 'adds at-risk cases' },
             { step: '\u2463', label: 'Renewal',            color: '#3B82F6', sublabel: 'adds renewal queue' },
+            { step: '\u2464', label: 'Cross-Sell',         color: '#10B981', sublabel: 'pitch opportunities' },
           ].map((s, i, arr) => (
             <div key={s.step} style={{ display: 'flex', alignItems: 'center' }}>
               <div style={{ textAlign: 'center', padding: '0 12px' }}>
@@ -1376,6 +1378,53 @@ function ImportTab({
         </div>
 
       </div>
+
+      {/* ⑤ Cross-Sell Audit — full width below the side-by-side */}
+      <CrossSellUploadCard agencyId={agencyId} currentUserId={currentUserId} />
+
+    </div>
+  );
+}
+
+function CrossSellUploadCard({ agencyId, currentUserId }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{
+      marginTop: 16,
+      background: 'var(--qs-card)',
+      border: '1px solid #10B98133',
+      borderRadius: 12, padding: 20,
+    }}>
+      <div style={{
+        fontSize: 12, fontWeight: 600, color: '#10B981',
+        textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 16,
+      }}>
+        {'⑤'} Cross-Sell Audit
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 16 }}>
+        Upload the Allstate{' '}
+        <span style={{ fontFamily: "'DM Mono', monospace" }}>Cross-Sell Audit</span> report (XLSX).
+        Each row is matched against active renewals and pending cancels — overlap
+        customers are routed on hold, monoline matches surface on the renewal modal,
+        and unmatched rows become outbound leads.
+      </div>
+      <button
+        onClick={() => setOpen(true)}
+        style={{
+          padding: '10px 18px', borderRadius: 8, border: 'none',
+          background: '#10B981', color: '#fff',
+          fontSize: 14, fontWeight: 600, cursor: 'pointer',
+        }}
+      >
+        + Upload Cross-Sell Report
+      </button>
+      {open && (
+        <CrossSellUploadModal
+          agencyId={agencyId}
+          uploadedBy={currentUserId}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </div>
   );
 }
