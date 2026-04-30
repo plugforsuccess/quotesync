@@ -34,6 +34,43 @@ export function daysUntilCancel(dateStr) {
   return Math.ceil((d - today) / 86400000);
 }
 
+// Priority tier for pending cancels — coarse, premium-weighted urgency bucket.
+// P0: already lapsed.  P1: past due/≤7d AND ≥$2k premium.  P2: past due/≤7d AND <$2k.
+// P3: not yet urgent (>7 days out).
+// $2k threshold ≈ $468 in agency commission at ~23.4% blended.
+export function computePriorityTier(row, today = new Date()) {
+  const stage = row.stage || 'pending_cancel';
+  if (stage === 'cancelled') return 'P0';
+
+  const cancelDate = row.cancel_effective_date
+    ? new Date(row.cancel_effective_date)
+    : null;
+  if (!cancelDate || isNaN(cancelDate)) return 'P3';
+
+  const startOfToday = new Date(today);
+  startOfToday.setHours(0, 0, 0, 0);
+  const daysUntil = Math.ceil((cancelDate - startOfToday) / 86400000);
+
+  if (daysUntil <= 7) {
+    const premium = parseFloat(row.premium_at_risk) || 0;
+    return premium >= 2000 ? 'P1' : 'P2';
+  }
+  return 'P3';
+}
+
+export const TIER_ORDER = { P0: 0, P1: 1, P2: 2, P3: 3 };
+
+// Sort comparator: priority tier (P0 first), then premium desc, then cancel date asc.
+export function compareByTier(a, b) {
+  const tierDiff = (TIER_ORDER[a.priority_tier] ?? 4) - (TIER_ORDER[b.priority_tier] ?? 4);
+  if (tierDiff !== 0) return tierDiff;
+
+  const premDiff = (parseFloat(b.premium_at_risk) || 0) - (parseFloat(a.premium_at_risk) || 0);
+  if (premDiff !== 0) return premDiff;
+
+  return (a.cancel_effective_date || '').localeCompare(b.cancel_effective_date || '');
+}
+
 export function calcRenewalPriority(event) {
   const days        = daysUntilRenewal(event.renewal_date);
   const changePct   = event.premium_change_pct || 0;

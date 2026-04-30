@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
-import { calcCancelPriority, daysUntilCancel } from '../lib/retentionPriority';
+import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import AvailabilityToggle from '../components/AvailabilityToggle';
 
@@ -110,7 +110,7 @@ export default function MyQueuePage() {
       return (data ?? []).map(e => ({
         ...e,
         _priority: calcCancelPriority(e),
-      })).sort((a, b) => b._priority - a._priority);
+      })).sort(compareByTier);
     },
     enabled: !!employeeId,
     staleTime: 2 * 60 * 1000,

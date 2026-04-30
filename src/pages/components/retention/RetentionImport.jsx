@@ -5,6 +5,7 @@ import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
+import { computePriorityTier } from "../../../lib/retentionPriority";
 import CrossSellUploadModal from "../cross-sell/CrossSellUploadModal";
 
 async function syncRetentionQueue(supabase) {
@@ -167,7 +168,11 @@ function parseReport(file) {
 
           const item_count = itemsI >= 0 ? (parseInt(row[itemsI]) || 1) : null;
 
-          rows.push({
+          const stage = (cancelStatusI >= 0 && row[cancelStatusI]?.toString().trim() === 'Cancelled')
+            ? 'cancelled'
+            : 'pending_cancel';
+
+          const parsedRow = {
             policy_no:             policyNo,
             customer_name:         customerName,
             product:               normaliseProduct(pri >= 0 ? row[pri]?.toString() : ""),
@@ -178,10 +183,10 @@ function parseReport(file) {
             cancel_effective_date: cancelDate,
             amount_due:    amountDueI >= 0 ? (parseFloat(String(row[amountDueI]).replace(/[$,]/g, '')) || null) : null,
             original_year: origYearI >= 0 ? parseInt(row[origYearI]) || null : null,
-            stage: (cancelStatusI >= 0 && row[cancelStatusI]?.toString().trim() === 'Cancelled')
-              ? 'cancelled'
-              : 'pending_cancel',
-          });
+            stage,
+          };
+          parsedRow.priority_tier = computePriorityTier(parsedRow);
+          rows.push(parsedRow);
         }
 
         resolve(rows);
@@ -1635,6 +1640,13 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
       await supabase.from("pending_cancel_uploads").update({ committed: true }).eq("id", batchId);
 
+      // Re-evaluate priority_tier for all active cases — cases that were P3
+      // last upload may now be P1/P2 as the cancel date approaches.
+      await supabase.rpc('refresh_priority_tiers', {
+        p_agency_id: agencyId,
+        p_today: new Date().toISOString().slice(0, 10),
+      });
+
       const repNames = activeReps.map(r => r.preferred_name || `${r.first_name || ""} ${r.last_name || ""}`.trim());
       const assignmentSummary = activeReps.length === 0 ? "cases unassigned"
         : activeReps.length === 1 ? `assigned to ${repNames[0]}`
@@ -1786,6 +1798,12 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       }
 
       await supabase.from("cancellation_uploads").update({ committed: true, rows_added: rowsAdded, rows_updated: rowsUpdated }).eq("id", batchId);
+
+      // Re-evaluate priority_tier for all active cases after stage advances.
+      await supabase.rpc('refresh_priority_tiers', {
+        p_agency_id: agencyId,
+        p_today: new Date().toISOString().slice(0, 10),
+      });
 
       const repNames = activeReps.map(r => r.preferred_name || `${r.first_name || ""} ${r.last_name || ""}`.trim());
       const assignmentSummary = activeReps.length === 0 ? "cases unassigned"
