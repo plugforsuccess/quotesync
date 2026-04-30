@@ -58,6 +58,15 @@ const CADENCE = [
     midMonth: true,
     uploadOrder: 5,
   },
+  {
+    key: 'cross_sell_audit',
+    label: 'Cross-Sell Audit Report',
+    description: 'Pitch opportunities matched to renewals and outbound leads',
+    dueStart: 8,
+    dueEnd: 12,
+    midMonth: false,
+    uploadOrder: 6,
+  },
 ];
 
 function getStatus(lastUploadedAt, dueStart, dueEnd) {
@@ -87,6 +96,7 @@ export function useUploadReminders(agencyId) {
         { data: pendingCancel },
         { data: cancelAudit },
         { data: renewal },
+        { data: crossSell },
       ] = await Promise.all([
         supabase
           .from('lapse_uploads')
@@ -120,6 +130,14 @@ export function useUploadReminders(agencyId) {
           .order('uploaded_at', { ascending: false })
           .limit(1)
           .maybeSingle(),
+        supabase
+          .from('cross_sell_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .order('uploaded_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
       ]);
 
       const lastUploads = {
@@ -128,6 +146,7 @@ export function useUploadReminders(agencyId) {
         cancellation_audit: cancelAudit?.uploaded_at || null,
         renewal:           renewal?.uploaded_at || null,
         pending_cancel_mid: pendingCancel?.uploaded_at || null, // same table
+        cross_sell_audit:  crossSell?.uploaded_at || null,
       };
 
       return CADENCE.map(item => ({

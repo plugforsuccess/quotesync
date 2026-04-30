@@ -25,6 +25,20 @@ function PanelLeftIcon({ size = 18 }) {
   );
 }
 
+const CROSS_SELL_ICON = (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+    stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2v4"/>
+    <path d="M12 18v4"/>
+    <path d="M4.93 4.93l2.83 2.83"/>
+    <path d="M16.24 16.24l2.83 2.83"/>
+    <path d="M2 12h4"/>
+    <path d="M18 12h4"/>
+    <path d="M4.93 19.07l2.83-2.83"/>
+    <path d="M16.24 7.76l2.83-2.83"/>
+  </svg>
+);
+
 // Inline SVG nav icons — emoji rendering is unreliable across platforms, and
 // the clock emoji in particular is nearly invisible at small sizes.
 const NAV_ITEMS = [
@@ -66,25 +80,16 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    to: '/agency/cross-sell',
-    label: 'Cross-Sell',
-    desc: 'Pitch opportunities',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2v4"/>
-        <path d="M12 18v4"/>
-        <path d="M4.93 4.93l2.83 2.83"/>
-        <path d="M16.24 16.24l2.83 2.83"/>
-        <path d="M2 12h4"/>
-        <path d="M18 12h4"/>
-        <path d="M4.93 19.07l2.83-2.83"/>
-        <path d="M16.24 7.76l2.83-2.83"/>
-      </svg>
-    ),
-  },
 ];
+
+// Cross-Sell is producer-gated — added to the sidebar only for employees
+// whose roles include 'producer' (matches the route gate on /agency/cross-sell).
+const CROSS_SELL_ITEM = {
+  to: '/agency/cross-sell',
+  label: 'Cross-Sell',
+  desc: 'Pitch opportunities',
+  icon: CROSS_SELL_ICON,
+};
 
 export default function EmployeeLayout() {
   const { data: employee } = useCurrentEmployee();
@@ -211,7 +216,10 @@ export default function EmployeeLayout() {
 
         {/* Navigation links */}
         <nav style={{ flex: 1, padding: '12px 10px', overflowY: 'auto' }}>
-          {NAV_ITEMS.map(({ to, icon, label, desc }) => (
+          {[
+            ...NAV_ITEMS,
+            ...(employee?.roles?.includes('producer') ? [CROSS_SELL_ITEM] : []),
+          ].map(({ to, icon, label, desc }) => (
             <NavLink
               key={to}
               to={to}
