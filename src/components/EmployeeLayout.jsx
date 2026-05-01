@@ -158,9 +158,21 @@ export default function EmployeeLayout() {
   const initials = employee
     ? `${(employee.preferred_name || employee.first_name || '')[0] || ''}${(employee.last_name || '')[0] || ''}`
     : '\u2014';
-  const roleLabel = (employee?.roles || [])
-    .map(r => r.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
-    .join(', ') || 'Employee';
+  // Collapse the verbose role enums into short pills — "service_inbound" and
+  // "service_outbound" both fold into "Service" so the sidebar doesn't end up
+  // showing "Service Inbound, Service Outbound, Sales" in 11px text.
+  const ROLE_SHORT = {
+    service_inbound:  'Service',
+    service_outbound: 'Service',
+    service:          'Service',
+    sales:            'Sales',
+    principal:        'Principal',
+    admin:            'Admin',
+    manager:          'Manager',
+  };
+  const roleLabel = Array.from(new Set(
+    (employee?.roles || []).map(r => ROLE_SHORT[r] || r.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
+  )).join(' · ') || 'Employee';
 
   const sidebarWidth = collapsed ? 64 : 220;
 
