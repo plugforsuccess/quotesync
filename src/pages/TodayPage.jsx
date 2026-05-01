@@ -2,7 +2,7 @@
 // logged-in user. The single "what to dial next" view that ignores the
 // persona switcher (cross-role by design).
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -94,6 +94,63 @@ export default function TodayPage() {
     }
     return null;
   }
+
+  // Realtime: when something changes on a case assigned to me — a new
+  // assignment, a reassignment, a status flip from another tab/agent — refetch
+  // the relevant list so the queue stays in sync without a manual refresh.
+  // Mirrors the auto-reconnect pattern used in AgencyLeadDetailPage so a
+  // backgrounded tab heals on return instead of going silent.
+  useEffect(() => {
+    if (!employeeId) return;
+
+    let reconnectTimer = null;
+    let isReconnecting = false;
+    let currentChannel = null;
+
+    function subscribe() {
+      const channel = supabase
+        .channel(`today-cases-${employeeId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'pending_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'renewal_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            isReconnecting = false;
+          } else if ((status === 'CLOSED' || status === 'CHANNEL_ERROR') && !isReconnecting) {
+            isReconnecting = true;
+            reconnectTimer = setTimeout(() => {
+              supabase.removeChannel(channel);
+              currentChannel = null;
+              subscribe();
+            }, 5000);
+          }
+        });
+
+      currentChannel = channel;
+    }
+
+    subscribe();
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      if (currentChannel) {
+        supabase.removeChannel(currentChannel);
+      }
+    };
+  }, [employeeId, queryClient]);
 
   const { data: cancels = [], isLoading: cancelsLoading } = useQuery({
     queryKey: ['today_cancels', employeeId],
