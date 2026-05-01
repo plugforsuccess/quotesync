@@ -2,9 +2,9 @@
 // logged-in user. The single "what to dial next" view that ignores the
 // persona switcher (cross-role by design).
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { TIER_ORDER } from '../lib/retentionPriority';
@@ -57,9 +57,100 @@ export default function TodayPage() {
   const { data: employee } = useCurrentEmployee();
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
+  const queryClient = useQueryClient();
 
   const [selectedCancel,  setSelectedCancel]  = useState(null);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
+
+  // Persist outcomes from the detail modals and refresh the list — without
+  // these, the modal Save button silently no-ops, the case stays in the queue,
+  // and the principal can never clear "what to dial next".
+  async function updateCancel(id, updates) {
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from('pending_cases')
+        .update(updates)
+        .eq('id', id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
+    if (orgId) {
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
+    }
+    return null;
+  }
+
+  async function updateRenewal(id, updates) {
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from('renewal_cases')
+        .update(updates)
+        .eq('id', id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
+    if (orgId) {
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
+    }
+    return null;
+  }
+
+  // Realtime: when something changes on a case assigned to me — a new
+  // assignment, a reassignment, a status flip from another tab/agent — refetch
+  // the relevant list so the queue stays in sync without a manual refresh.
+  // Mirrors the auto-reconnect pattern used in AgencyLeadDetailPage so a
+  // backgrounded tab heals on return instead of going silent.
+  useEffect(() => {
+    if (!employeeId) return;
+
+    let reconnectTimer = null;
+    let isReconnecting = false;
+    let currentChannel = null;
+
+    function subscribe() {
+      const channel = supabase
+        .channel(`today-cases-${employeeId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'pending_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'renewal_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            isReconnecting = false;
+          } else if ((status === 'CLOSED' || status === 'CHANNEL_ERROR') && !isReconnecting) {
+            isReconnecting = true;
+            reconnectTimer = setTimeout(() => {
+              supabase.removeChannel(channel);
+              currentChannel = null;
+              subscribe();
+            }, 5000);
+          }
+        });
+
+      currentChannel = channel;
+    }
+
+    subscribe();
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      if (currentChannel) {
+        supabase.removeChannel(currentChannel);
+      }
+    };
+  }, [employeeId, queryClient]);
 
   const { data: cancels = [], isLoading: cancelsLoading } = useQuery({
     queryKey: ['today_cancels', employeeId],
@@ -245,7 +336,7 @@ export default function TodayPage() {
         <EventDetailModal
           event={selectedCancel}
           onClose={() => setSelectedCancel(null)}
-          onUpdate={() => {}}
+          onUpdate={updateCancel}
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={[]}
@@ -256,7 +347,7 @@ export default function TodayPage() {
         <RenewalDetailModal
           event={selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
-          onUpdate={() => {}}
+          onUpdate={updateRenewal}
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={[]}

@@ -15,7 +15,7 @@ const PERSONA_OPTIONS = [
   { key: 'sales',     label: 'Sales',     requiresRole: ['sales'] },
 ];
 
-export default function PersonaSwitcher() {
+export default function PersonaSwitcher({ compact = false, fullWidth = false }) {
   const { user, currentAgencyRole, currentAgencyId } = useAuth();
   const [persona, setPersona] = usePersona(currentAgencyRole === 'principal' ? 'principal' : 'service');
   const navigate = useNavigate();
@@ -63,7 +63,9 @@ export default function PersonaSwitcher() {
 
   return (
     <div style={{
-      display: 'inline-flex', alignItems: 'center',
+      display: fullWidth ? 'flex' : 'inline-flex',
+      width: fullWidth ? '100%' : undefined,
+      alignItems: 'center',
       background: 'rgba(255,255,255,0.06)',
       borderRadius: 999,
       padding: 3,
@@ -76,14 +78,17 @@ export default function PersonaSwitcher() {
             key={opt.key}
             onClick={() => handleSelect(opt.key)}
             style={{
-              padding: '4px 12px',
+              flex: fullWidth ? 1 : undefined,
+              padding: compact ? '4px 8px' : '4px 12px',
               borderRadius: 999,
-              fontSize: 12, fontWeight: 600,
+              fontSize: compact ? 11 : 12,
+              fontWeight: 600,
               border: 'none', cursor: 'pointer',
               background: active ? '#3B82F6' : 'transparent',
               color: active ? '#fff' : 'rgba(255,255,255,0.7)',
               transition: 'all 0.15s',
               fontFamily: 'inherit',
+              whiteSpace: 'nowrap',
             }}
           >
             {opt.label}
