@@ -25,6 +25,8 @@ const primaryItems = {
   staffPerformance: { to: '/agency/staff-performance', label: 'Performance', icon: '📈' },
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
   retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
+  // Principal-facing entry. Renders under Layout (top nav). The rep-workspace
+  // version /my/cross-sell renders the same component under EmployeeLayout.
   crossSell:        { to: '/agency/cross-sell',        label: 'Cross-Sell',  icon: '💡' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
   // Personal (rep-workspace) jumps — used by Sales/Service personas so a
@@ -130,39 +132,12 @@ export const agencyNav = {
   },
 };
 
-// ── Persona-specific nav for principals wearing a rep hat ────────────────────
-// A principal who is also opted into rep work can switch personas (Sales,
-// Service) via the PersonaSwitcher. Each persona reshapes the top nav so it
-// only shows the surfaces relevant to that hat — no more Dashboard/Leads/
-// Retention crowding the row when the principal is in Sales mode.
-//
-// Only consulted when agencyRole === 'principal'. Other roles (producer,
-// employee) keep their static nav above; they don't have personas.
-
-export const principalPersonaNav = {
-  principal: agencyNav.principal,
-  sales: {
-    primary: [
-      primaryItems.crossSell,
-      primaryItems.today,
-      primaryItems.myQueue,
-    ],
-    secondary: [
-      primaryItems.scorecard,
-      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
-    ],
-  },
-  service: {
-    primary: [
-      primaryItems.today,
-      primaryItems.myQueue,
-      primaryItems.scorecard,
-    ],
-    secondary: [
-      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
-    ],
-  },
-};
+// Sales and Service personas live in EmployeeLayout (sidebar shell), not the
+// top-nav Layout — clicking either pill redirects to /my/cross-sell or
+// /my/today. So the top nav itself only ever renders the Principal items.
+// If the user happens to land on a Layout page mid-persona-switch, the
+// useAutoSyncPersona hook flips persona back to "principal" on the next
+// render, which is what this fallback supports.
 
 // ── Employee plane navigation (service_inbound / service_outbound) ──────────
 // Employees see only their personal queue, scorecard, and punch clock.
@@ -189,9 +164,11 @@ export function getNavItems(plane, platformRole, agencyRole, persona = 'principa
     return platformNav.platform_editor;
   }
   if (plane === PLANES.AGENCY && agencyRole) {
-    if (agencyRole === 'principal') {
-      return principalPersonaNav[persona] || principalPersonaNav.principal;
-    }
+    // Principal Layout (top nav) is identical regardless of persona because
+    // Sales and Service personas now use EmployeeLayout. The persona arg is
+    // accepted for API parity but the fallback to agencyNav.principal is
+    // what actually renders.
+    if (agencyRole === 'principal') return agencyNav.principal;
     const nav = agencyNav[agencyRole];
     if (nav) return nav;
     return agencyNav.producer;
@@ -212,7 +189,7 @@ export function getAllNavItems(plane, platformRole, agencyRole, persona = 'princ
 // principals — other roles don't have personas.
 export function personaForPath(pathname) {
   if (!pathname) return null;
-  if (pathname.startsWith('/agency/cross-sell')) return 'sales';
+  if (pathname.startsWith('/my/cross-sell')) return 'sales';
   if (pathname.startsWith('/my/')) return 'service';
   if (pathname === '/punch' || pathname.startsWith('/punch/')) return 'service';
   if (pathname.startsWith('/agency/') || pathname.startsWith('/admin/')) return 'principal';

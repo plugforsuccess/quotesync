@@ -14,7 +14,7 @@ export const PERSONAS = ['principal', 'service', 'sales'];
 export const PERSONA_HOME = {
   principal: '/agency/retention',
   service:   '/my/today',
-  sales:     '/agency/cross-sell',
+  sales:     '/my/cross-sell',
 };
 
 function readStored() {

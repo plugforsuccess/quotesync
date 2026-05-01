@@ -100,7 +100,7 @@ const NAV_ITEMS = [
 // Cross-Sell is sales-gated — a "producer" in this app is any employee with
 // 'sales' in their roles array. Pure service-only employees don't see it.
 const CROSS_SELL_ITEM = {
-  to: '/agency/cross-sell',
+  to: '/my/cross-sell',
   label: 'Cross-Sell',
   desc: 'Pitch opportunities',
   icon: CROSS_SELL_ICON,

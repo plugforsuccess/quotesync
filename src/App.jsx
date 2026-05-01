@@ -174,6 +174,7 @@ function App() {
               <Route path="today" element={<Suspense fallback={<PageLoader />}><TodayPage /></Suspense>} />
               <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+              <Route path="cross-sell" element={<Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense>} />
             </Route>
           </Route>
 
@@ -407,6 +408,12 @@ function App() {
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
+            {/* Cross-Sell has two entry points by design:
+                  /agency/cross-sell — principal view (Layout / top nav).
+                  /my/cross-sell     — rep workspace (EmployeeLayout / sidebar).
+                Same component renders in both places; the shell differs based
+                on whether the principal is wearing their owner hat or their
+                Sales hat. */}
             <Route path="agency/cross-sell" element={
               <ProtectedRoute requiredAgencyRole="employee">
                 <ErrorBoundary fallback={<PageError />}>
