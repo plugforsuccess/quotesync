@@ -1,19 +1,42 @@
 // src/components/newsroom/UserMenu.jsx
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { LogOut, User, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase';
 import { roleDisplayNames } from '../../config/navConfig';
 
 const UserMenu = ({ activePlane, onTogglePlane }) => {
   const location = useLocation();
   const {
     user, role, profile, isPlatformUser, signOut,
-    currentAgencyRole, platformRole,
+    currentAgencyRole, platformRole, currentAgencyId,
   } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const menuRef = useRef(null);
   const buttonRef = useRef(null);
+
+  // Prefer the employee record's preferred_name so the top-nav button matches
+  // what the EmployeeLayout sidebar shows (e.g. "Cam Wiley") instead of the
+  // legal name on the auth profile ("Cameron Wiley").
+  const { data: employeeName } = useQuery({
+    queryKey: ['user_menu_employee_name', currentAgencyId, user?.id],
+    queryFn: async () => {
+      if (!user?.id || !currentAgencyId) return null;
+      const { data } = await supabase
+        .from('employees')
+        .select('preferred_name, first_name, last_name')
+        .eq('org_id', currentAgencyId)
+        .eq('auth_user_id', user.id)
+        .eq('employment_status', 'active')
+        .maybeSingle();
+      if (!data) return null;
+      return `${data.preferred_name || data.first_name || ''} ${data.last_name || ''}`.trim();
+    },
+    enabled: !!user?.id && !!currentAgencyId,
+    staleTime: 10 * 60 * 1000,
+  });
 
   // Close on route change
   useEffect(() => {
@@ -62,8 +85,9 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
     return null;
   }
 
-  // Display name: use full_name if available, otherwise fall back to email
-  const displayName = profile?.full_name || user?.email || 'User';
+  // Display name priority: employees.preferred_name (matches the sidebar) →
+  // profile.full_name (legal name fallback) → email.
+  const displayName = employeeName || profile?.full_name || user?.email || 'User';
 
   // Plane-aware role label: in the agency plane, prefer the agency role
   // (so a principal isn't mislabeled "Editor" from the legacy profiles.role
@@ -89,14 +113,14 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
       <button
         ref={buttonRef}
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors"
+        className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors max-w-[200px]"
       >
-        <User className="w-4 h-4 text-gray-300" />
-        <div className="text-left">
-          <div className="text-sm font-medium text-white">
+        <User className="w-4 h-4 text-gray-300 flex-shrink-0" />
+        <div className="text-left min-w-0">
+          <div className="text-sm font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis">
             {displayName}
           </div>
-          <div className="text-xs text-gray-400 capitalize">{roleText}</div>
+          <div className="text-xs text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis">{roleText}</div>
         </div>
       </button>
 
