@@ -531,8 +531,12 @@ function Layout({ forcePlane = null }) {
         </div>
       )}
 
-      {/* Spacer for fixed header */}
-      <div className="h-[73px] sm:h-[81px]"></div>
+      {/* Spacer for fixed header. Sized to clear the tallest nav row, which
+          is dominated by the two-line UserMenu button (name + role). The old
+          81px value was right at the edge and let the nav overlap page
+          headers (e.g. the "+ Upload Audit Report" button on /agency/cross-sell)
+          whenever the user button rendered slightly taller than expected. */}
+      <div className="h-[80px] sm:h-[96px]"></div>
 
       {/* Verification overdue banner — admin only */}
       {!isFunnelRoute && <VerificationBanner />}
