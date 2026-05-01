@@ -16,6 +16,7 @@ import UploadChecklistModal from '../pages/components/shared/UploadChecklistModa
 import { useUploadChecklist } from '../hooks/useUploadChecklist';
 import { useManagementCadence } from '../hooks/useManagementCadence';
 import { useAuth } from '../contexts/AuthContext';
+import { usePersona, useAutoSyncPersona } from '../hooks/usePersona';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 
 function Layout({ forcePlane = null }) {
@@ -77,9 +78,18 @@ function Layout({ forcePlane = null }) {
     setPlaneOverride(null);
   }, [authPlane]);
 
-  // Get navigation items based on active plane and role
-  // Now returns { primary: [...], secondary: [...] }
-  const { primary: primaryNav, secondary: secondaryNav } = getNavItems(activePlane, platformRole, currentAgencyRole);
+  // Persona is a UI lens for principals only — it reshapes the top nav so
+  // Sales mode shows Sales-relevant links, Service mode shows the rep
+  // workspace, etc. useAutoSyncPersona keeps the pill honest by snapping it
+  // to whatever URL is being viewed.
+  const [persona] = usePersona(currentAgencyRole === 'principal' ? 'principal' : 'service');
+  useAutoSyncPersona(currentAgencyRole === 'principal');
+
+  // Get navigation items based on active plane, role, and (for principals)
+  // the active persona. Returns { primary: [...], secondary: [...] }.
+  const { primary: primaryNav, secondary: secondaryNav } = getNavItems(
+    activePlane, platformRole, currentAgencyRole, persona,
+  );
   // Plane-aware role label: when browsing the agency plane the agency role
   // takes priority (so a platform_editor like Logan with a producer
   // membership shows 'Producer' instead of 'Editor'); platform plane always
@@ -543,8 +553,10 @@ function Layout({ forcePlane = null }) {
       {/* Impersonation mode banner — shown when platform admin is viewing as an agency */}
       {!isFunnelRoute && <ImpersonationBanner />}
 
-      {/* Main content — add bottom padding on mobile for tab bar clearance */}
-      <main className={`flex-1 ${showBottomTabs && !isFunnelRoute ? 'pb-20 md:pb-0' : ''}`}>
+      {/* Main content — top padding gives breathing room below the fixed
+          nav (pages were sitting flush against the border). Bottom padding
+          on mobile is for bottom-tab-bar clearance. */}
+      <main className={`flex-1 pt-4 sm:pt-6 ${showBottomTabs && !isFunnelRoute ? 'pb-20 md:pb-0' : ''}`}>
         <Outlet />
       </main>
 

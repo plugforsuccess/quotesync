@@ -27,6 +27,12 @@ const primaryItems = {
   retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
   crossSell:        { to: '/agency/cross-sell',        label: 'Cross-Sell',  icon: '💡' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
+  // Personal (rep-workspace) jumps — used by Sales/Service personas so a
+  // principal wearing a rep hat can hop into Today / Queue / Scorecard from
+  // the top nav without first switching back to Principal.
+  today:            { to: '/my/today',                 label: 'Today',       icon: '⏱️' },
+  myQueue:          { to: '/my/queue',                 label: 'My Queue',    icon: '⚡' },
+  scorecard:        { to: '/my/scorecard',             label: 'Scorecard',   icon: '📊' },
   // Platform admin primary items
   adminDashboard:   { to: '/admin',                    label: 'Overview',    icon: '🏠' },
   adminAgencies:    { to: '/admin/agencies',           label: 'Agencies',    icon: '🏢' },
@@ -124,6 +130,40 @@ export const agencyNav = {
   },
 };
 
+// ── Persona-specific nav for principals wearing a rep hat ────────────────────
+// A principal who is also opted into rep work can switch personas (Sales,
+// Service) via the PersonaSwitcher. Each persona reshapes the top nav so it
+// only shows the surfaces relevant to that hat — no more Dashboard/Leads/
+// Retention crowding the row when the principal is in Sales mode.
+//
+// Only consulted when agencyRole === 'principal'. Other roles (producer,
+// employee) keep their static nav above; they don't have personas.
+
+export const principalPersonaNav = {
+  principal: agencyNav.principal,
+  sales: {
+    primary: [
+      primaryItems.crossSell,
+      primaryItems.today,
+      primaryItems.myQueue,
+    ],
+    secondary: [
+      primaryItems.scorecard,
+      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
+    ],
+  },
+  service: {
+    primary: [
+      primaryItems.today,
+      primaryItems.myQueue,
+      primaryItems.scorecard,
+    ],
+    secondary: [
+      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
+    ],
+  },
+};
+
 // ── Employee plane navigation (service_inbound / service_outbound) ──────────
 // Employees see only their personal queue, scorecard, and punch clock.
 
@@ -138,8 +178,10 @@ export const employeeNav = {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-// Get structured nav { primary, secondary } based on plane and role
-export function getNavItems(plane, platformRole, agencyRole) {
+// Get structured nav { primary, secondary } based on plane, role, and (for
+// principals) the active persona. Persona only reshapes the principal nav —
+// other roles ignore it.
+export function getNavItems(plane, platformRole, agencyRole, persona = 'principal') {
   if (plane === PLANES.PLATFORM && platformRole) {
     const nav = platformNav[platformRole];
     if (nav) return nav;
@@ -147,6 +189,9 @@ export function getNavItems(plane, platformRole, agencyRole) {
     return platformNav.platform_editor;
   }
   if (plane === PLANES.AGENCY && agencyRole) {
+    if (agencyRole === 'principal') {
+      return principalPersonaNav[persona] || principalPersonaNav.principal;
+    }
     const nav = agencyNav[agencyRole];
     if (nav) return nav;
     return agencyNav.producer;
@@ -156,9 +201,22 @@ export function getNavItems(plane, platformRole, agencyRole) {
 }
 
 // Get flat list of all nav items (for mobile menu / backwards compat)
-export function getAllNavItems(plane, platformRole, agencyRole) {
-  const { primary, secondary } = getNavItems(plane, platformRole, agencyRole);
+export function getAllNavItems(plane, platformRole, agencyRole, persona = 'principal') {
+  const { primary, secondary } = getNavItems(plane, platformRole, agencyRole, persona);
   return [...primary, ...secondary];
+}
+
+// Map a URL path to the persona that owns it. Used to keep the persona pill
+// honest as the user navigates (so visiting /agency/retention while the pill
+// reads "Sales" auto-flips it back to Principal). Only relevant for
+// principals — other roles don't have personas.
+export function personaForPath(pathname) {
+  if (!pathname) return null;
+  if (pathname.startsWith('/agency/cross-sell')) return 'sales';
+  if (pathname.startsWith('/my/')) return 'service';
+  if (pathname === '/punch' || pathname.startsWith('/punch/')) return 'service';
+  if (pathname.startsWith('/agency/') || pathname.startsWith('/admin/')) return 'principal';
+  return null;
 }
 
 // Get default landing page after login

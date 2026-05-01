@@ -6,6 +6,8 @@ import { useState } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useAuth } from '../contexts/AuthContext';
+import { useAutoSyncPersona } from '../hooks/usePersona';
 import { supabase } from '../lib/supabase';
 import ThemeToggle from './ThemeToggle';
 import PersonaSwitcher from './PersonaSwitcher';
@@ -106,6 +108,12 @@ const CROSS_SELL_ITEM = {
 
 export default function EmployeeLayout() {
   const { data: employee } = useCurrentEmployee();
+  const { currentAgencyRole } = useAuth();
+
+  // Keep the persona pill in sync with the URL — landing on /my/today snaps
+  // a principal's persona to "service" so the sidebar's PersonaSwitcher
+  // doesn't lie about which hat is being worn.
+  useAutoSyncPersona(currentAgencyRole === 'principal');
 
   // Persist collapsed state so navigation/refresh doesn't reset the layout.
   const [collapsed, setCollapsed] = useState(() => {
