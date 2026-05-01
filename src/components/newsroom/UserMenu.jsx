@@ -2,10 +2,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { LogOut, User, ArrowLeftRight } from 'lucide-react';
+import { LogOut, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { roleDisplayNames } from '../../config/navConfig';
+
+function initialsFor(name) {
+  if (!name) return '?';
+  const cleaned = name.includes('@') ? name.split('@')[0] : name;
+  const parts = cleaned.trim().split(/[\s._-]+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 const UserMenu = ({ activePlane, onTogglePlane }) => {
   const location = useLocation();
@@ -108,27 +117,48 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
 
   const isAdminView = activePlane === 'platform';
 
+  const initials = initialsFor(displayName);
+
   return (
     <div className="relative">
       <button
         ref={buttonRef}
         onClick={() => setShowDropdown(!showDropdown)}
-        className="flex items-center gap-2 px-3 py-2 bg-white/10 hover:bg-white/20 rounded-lg transition-colors max-w-[200px]"
+        title={`${displayName} · ${roleText}`}
+        aria-label={`${displayName}, ${roleText}. Open user menu.`}
+        className="flex items-center gap-2 pl-1 pr-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition-colors max-w-[200px]"
       >
-        <User className="w-4 h-4 text-gray-300 flex-shrink-0" />
-        <div className="text-left min-w-0">
-          <div className="text-sm font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis">
-            {displayName}
-          </div>
-          <div className="text-xs text-gray-400 capitalize whitespace-nowrap overflow-hidden text-ellipsis">{roleText}</div>
-        </div>
+        <span
+          className="flex items-center justify-center rounded-full text-xs font-bold text-blue-400 flex-shrink-0"
+          style={{
+            width: 28, height: 28,
+            background: 'rgba(59,130,246,0.2)',
+            border: '1px solid rgba(59,130,246,0.3)',
+          }}
+        >
+          {initials}
+        </span>
+        <span className="text-sm font-medium text-white whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
+          {displayName}
+        </span>
       </button>
 
       {showDropdown && (
         <div
           ref={menuRef}
-          className="absolute right-0 mt-2 w-56 bg-[#1a1d28] rounded-lg shadow-lg border border-white/10 py-1 z-50"
+          className="absolute right-0 mt-2 w-64 bg-[#1a1d28] rounded-lg shadow-lg border border-white/10 py-1 z-50"
         >
+          {/* Identity header — name + role live here so the top-nav button
+              can stay tight (avatar + single-line name only). */}
+          <div className="px-4 py-3 border-b border-white/10">
+            <div className="text-sm font-semibold text-white truncate">
+              {displayName}
+            </div>
+            <div className="text-xs text-gray-400 capitalize truncate">
+              {roleText}
+            </div>
+          </div>
+
           {/* Plane Switch — only for platform users */}
           {isPlatformUser && onTogglePlane && (
             <>
