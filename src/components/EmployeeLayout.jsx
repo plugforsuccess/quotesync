@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { supabase } from '../lib/supabase';
 import ThemeToggle from './ThemeToggle';
+import PersonaSwitcher from './PersonaSwitcher';
 
 // Universal "toggle sidebar" icon — rectangle with a left panel divider.
 // Same glyph used in VS Code, Linear, Figma, Notion.
@@ -306,15 +307,17 @@ export default function EmployeeLayout() {
           <ThemeToggle variant="pill" />
         </div>
 
-        {/* User identity + sign out */}
+        {/* User identity + persona switcher + sign out */}
         <div style={{
           padding: collapsed ? '16px 10px 20px' : '16px 16px 20px',
           borderTop: '1px solid var(--qs-border)',
         }}>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            marginBottom: collapsed ? 0 : 10,
-            justifyContent: collapsed ? 'center' : 'flex-start',
+            display: 'flex',
+            flexDirection: collapsed ? 'row' : 'column',
+            alignItems: 'center',
+            gap: collapsed ? 0 : 6,
+            marginBottom: collapsed ? 0 : 12,
           }}>
             {/* Avatar */}
             <div style={{
@@ -327,17 +330,31 @@ export default function EmployeeLayout() {
               {initials}
             </div>
             {!collapsed && (
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <div style={{ minWidth: 0, width: '100%', textAlign: 'center', marginTop: 4 }}>
+                <div style={{
+                  fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
                   {fullName}
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 1 }}>
+                <div style={{
+                  fontSize: 11, color: 'var(--qs-dim)', marginTop: 2,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
                   {roleLabel}
                 </div>
               </div>
             )}
           </div>
+
+          {/* Persona switcher — lets a principal jump back from the rep
+              workspace to the agency dashboard without leaving the keyboard. */}
+          {!collapsed && (
+            <div style={{ marginBottom: 10 }}>
+              <PersonaSwitcher compact fullWidth />
+            </div>
+          )}
+
           {!collapsed && (
             <button
               onClick={handleSignOut}

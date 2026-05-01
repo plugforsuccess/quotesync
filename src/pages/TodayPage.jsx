@@ -4,7 +4,7 @@
 
 import { useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { TIER_ORDER } from '../lib/retentionPriority';
@@ -57,9 +57,43 @@ export default function TodayPage() {
   const { data: employee } = useCurrentEmployee();
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
+  const queryClient = useQueryClient();
 
   const [selectedCancel,  setSelectedCancel]  = useState(null);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
+
+  // Persist outcomes from the detail modals and refresh the list — without
+  // these, the modal Save button silently no-ops, the case stays in the queue,
+  // and the principal can never clear "what to dial next".
+  async function updateCancel(id, updates) {
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from('pending_cases')
+        .update(updates)
+        .eq('id', id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
+    if (orgId) {
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
+    }
+    return null;
+  }
+
+  async function updateRenewal(id, updates) {
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase
+        .from('renewal_cases')
+        .update(updates)
+        .eq('id', id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
+    if (orgId) {
+      queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
+    }
+    return null;
+  }
 
   const { data: cancels = [], isLoading: cancelsLoading } = useQuery({
     queryKey: ['today_cancels', employeeId],
@@ -245,7 +279,7 @@ export default function TodayPage() {
         <EventDetailModal
           event={selectedCancel}
           onClose={() => setSelectedCancel(null)}
-          onUpdate={() => {}}
+          onUpdate={updateCancel}
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={[]}
@@ -256,7 +290,7 @@ export default function TodayPage() {
         <RenewalDetailModal
           event={selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
-          onUpdate={() => {}}
+          onUpdate={updateRenewal}
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={[]}

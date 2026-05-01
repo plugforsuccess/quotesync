@@ -327,7 +327,7 @@ function Layout({ forcePlane = null }) {
               )}
 
               {/* Persona switcher — principals only, hidden if only one persona is available */}
-              <PersonaSwitcher />
+              <PersonaSwitcher compact />
 
               {/* Checklist bell — principals only (desktop) */}
               {currentAgencyRole === 'principal' && (
