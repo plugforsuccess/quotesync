@@ -555,6 +555,8 @@ async function handleInbound(
       bland_canopy_offered: parseBoolVar(variables, 'canopy_offered') || canopyAccepted,
       bland_canopy_accepted: canopyAccepted,
       bland_partial_capture: !fullCapture,
+      referred_by_name: parseVar(variables, 'referred_by_name'),
+      referred_by_phone: parseVar(variables, 'referred_by_phone'),
     }
 
     try {

@@ -394,6 +394,8 @@ Deno.serve(async (req) => {
           agency_id: finalAgencyId,
           ...sanitizedUtm,
           referral_code: body.referral_code || null,
+          referred_by_name: body.referred_by_name || null,
+          referred_by_phone: body.referred_by_phone || null,
           landing_page: body.landing_page || null,
           routing_rule_id: finalRoutingRuleId,
           routed_via_fallback: finalViaFallback,

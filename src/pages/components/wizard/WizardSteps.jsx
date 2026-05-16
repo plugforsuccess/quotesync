@@ -1172,7 +1172,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
 
 // ─── Step 10: Contact Information ───────────────────────────────────
 
-export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, errors, agentName, brandName }) {
+export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, referredByName, referredByPhone, onReferredByNameChange, onReferredByPhoneChange, errors, agentName, brandName }) {
   const handlePhoneChange = (e) => {
     onPhoneChange(formatPhoneInput(e.target.value));
   };
@@ -1220,6 +1220,36 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
           placeholder="you@example.com"
           error={errors?.email}
         />
+        <div className="pt-2 border-t border-gray-100">
+          <p className="text-sm font-medium text-gray-700 mb-2">
+            Were you referred by a friend or family member?{' '}
+            <span className="text-gray-400 font-normal">(optional)</span>
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <InputField
+              id="referredByName"
+              label="Their name"
+              value={referredByName || ''}
+              onChange={(e) => onReferredByNameChange?.(e.target.value)}
+              placeholder="Referrer's name"
+            />
+            <InputField
+              id="referredByPhone"
+              label="Their phone"
+              type="tel"
+              value={referredByPhone || ''}
+              onChange={(e) =>
+                onReferredByPhoneChange?.(formatPhoneInput(e.target.value))
+              }
+              placeholder="(555) 123-4567"
+              maxLength={14}
+            />
+          </div>
+          <p className="text-xs text-gray-400 mt-1">
+            If someone referred you, add them so they get credit in our
+            monthly giveaway.
+          </p>
+        </div>
         <p className="text-xs text-gray-500 leading-relaxed">
           By clicking &apos;Get My Free Quote&apos;, you agree to be contacted by {brandName || 'our agency'} regarding insurance quotes via phone, SMS, and email at the number provided,
           including through automated technology. Consent is not a condition of purchase. Msg

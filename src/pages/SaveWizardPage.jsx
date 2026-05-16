@@ -277,6 +277,17 @@ export default function SaveWizardPage() {
     }
   }, [funnelAgency]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Referrer prefill from URL (e.g. /save?refby=Jane%20Doe&refbyphone=...),
+  // so word-of-mouth cards / QR carry attribution with zero typing.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const rbName = params.get('refby');
+    const rbPhone = params.get('refbyphone');
+    if (rbName && !answers.referredByName) setAnswer('referredByName', rbName);
+    if (rbPhone && !answers.referredByPhone)
+      setAnswer('referredByPhone', rbPhone);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Trigger animation on step change
   useEffect(() => {
     setAnimKey(prev => prev + 1);
@@ -428,6 +439,8 @@ export default function SaveWizardPage() {
           square_footage: answers.squareFootage ?? null,
           stories: answers.stories || null,
           property_data_source: answers.propertyDataSource || null,
+          referred_by_name: answers.referredByName?.trim() || null,
+          referred_by_phone: answers.referredByPhone?.trim() || null,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('quotesync_session_id'),
@@ -846,6 +859,10 @@ export default function SaveWizardPage() {
             onLastNameChange={(v) => setAnswer('lastName', v)}
             onPhoneChange={(v) => setAnswer('phone', v)}
             onEmailChange={(v) => setAnswer('email', v)}
+            referredByName={answers.referredByName}
+            referredByPhone={answers.referredByPhone}
+            onReferredByNameChange={(v) => setAnswer('referredByName', v)}
+            onReferredByPhoneChange={(v) => setAnswer('referredByPhone', v)}
             errors={typeof error === 'object' ? error : undefined}
             agentName={funnelAgency?.agent_first_name}
             brandName={funnelAgency?.brand_name}
