@@ -19,6 +19,18 @@ function formatPeriod(period) {
   });
 }
 
+// The draw runs in the early hours of the 1st (ET); pin the displayed date
+// to America/New_York so every viewer sees the same drawing day.
+function formatDrawDate(date) {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/New_York',
+  });
+}
+
 function CountdownBlock({ deadline }) {
   const c = useCountdown(deadline);
   const cells = [
@@ -121,6 +133,9 @@ export default function ReferralGiveawayPage() {
           Next draw in
         </p>
         <CountdownBlock deadline={deadline} />
+        <p className="text-primary-100 text-sm mt-4">
+          Drawing held {formatDrawDate(deadline)}
+        </p>
 
         {/* Latest winner */}
         <div className="mt-12">
