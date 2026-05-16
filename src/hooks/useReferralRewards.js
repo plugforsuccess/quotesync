@@ -1,7 +1,9 @@
 // src/hooks/useReferralRewards.js
 // React Query hooks for the referral reward system.
-// Entry reads/writes are scoped to the active agency via RLS; the public
-// giveaway view is served by the get_referral_giveaway SECURITY DEFINER RPC.
+// Entries are materialized server-side from real quoted GA leads (one per
+// product line) and are read-only here; staff manage referrers and may log
+// a manual call-in referral. The public giveaway view is served by the
+// get_referral_giveaway SECURITY DEFINER RPC.
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -26,7 +28,11 @@ export function useReferralEntries(agencyId, period) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('referral_entries')
-        .select('id, referrer_name, referred_customer, note, created_at')
+        .select(
+          'id, product_line, note, created_at, ' +
+            'referrer:referral_referrers(id, name, state), ' +
+            'lead:leads(id, first_name, last_name)'
+        )
         .eq('agency_id', agencyId)
         .eq('draw_period', period)
         .order('created_at', { ascending: false });
@@ -43,7 +49,9 @@ export function useReferralDraws(agencyId) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('referral_draws')
-        .select('id, draw_period, status, winner_display_name, entry_count, drawn_at')
+        .select(
+          'id, draw_period, status, winner_display_name, entry_count, jackpot_cents, drawn_at'
+        )
         .eq('agency_id', agencyId)
         .order('draw_period', { ascending: false });
       if (error) throw error;
@@ -53,19 +61,53 @@ export function useReferralDraws(agencyId) {
   });
 }
 
-export function useAddReferralEntry(agencyId, period) {
+// Log a call-in referral: find-or-create the referrer, then add one manual
+// entry for the current period. Quoted-lead entries are materialized
+// server-side and should not be logged here.
+export function useLogReferral(agencyId, period) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ referrerName, referredCustomer, note }) => {
+    mutationFn: async ({ name, phone, state, note }) => {
+      const cleanName = name.trim();
+      const cleanState = (state || '').trim().toUpperCase() || null;
+
+      // Reuse an existing referrer with the same name (+ phone if given),
+      // otherwise create one.
+      let referrerId;
+      let query = supabase
+        .from('referral_referrers')
+        .select('id')
+        .eq('agency_id', agencyId)
+        .ilike('name', cleanName);
+      if (phone && phone.trim()) query = query.eq('phone', phone.trim());
+      const { data: existing, error: findErr } = await query.limit(1);
+      if (findErr) throw findErr;
+
+      if (existing && existing.length) {
+        referrerId = existing[0].id;
+      } else {
+        const { data: created, error: insErr } = await supabase
+          .from('referral_referrers')
+          .insert({
+            agency_id: agencyId,
+            name: cleanName,
+            phone: phone?.trim() || null,
+            state: cleanState,
+          })
+          .select('id')
+          .single();
+        if (insErr) throw insErr;
+        referrerId = created.id;
+      }
+
       const { data, error } = await supabase
         .from('referral_entries')
         .insert({
           agency_id: agencyId,
-          referrer_name: referrerName,
-          referred_customer: referredCustomer || null,
-          note: note || null,
+          referrer_id: referrerId,
+          note: note?.trim() || null,
         })
-        .select()
+        .select('id')
         .single();
       if (error) throw error;
       return data;
