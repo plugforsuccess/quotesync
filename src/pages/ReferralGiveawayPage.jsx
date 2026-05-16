@@ -63,7 +63,7 @@ function CountdownBlock({ deadline }) {
   );
 }
 
-function RulesModal({ brand, floor, ceiling, onClose }) {
+function RulesModal({ brand, floor, ceiling, rulesHref, onClose }) {
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') onClose();
@@ -147,6 +147,12 @@ function RulesModal({ brand, floor, ceiling, onClose }) {
               </div>
             ))}
           </dl>
+          <a
+            href={rulesHref}
+            className="inline-block text-sm font-medium text-primary-600 hover:text-primary-700 underline underline-offset-2"
+          >
+            Read the full official rules
+          </a>
         </div>
       </div>
     </div>
@@ -187,6 +193,9 @@ export default function ReferralGiveawayPage() {
   const floorCents = data.jackpot_floor_cents || 100000;
   const ceilingCents = data.jackpot_ceiling_cents || 500000;
   const lastWinner = data.last_winner;
+  const rulesHref = slug
+    ? `/giveaway/rules?agency=${encodeURIComponent(slug)}`
+    : '/giveaway/rules';
 
   return (
     <div className="bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800">
@@ -297,6 +306,7 @@ export default function ReferralGiveawayPage() {
           brand={brand}
           floor={floorCents}
           ceiling={ceilingCents}
+          rulesHref={rulesHref}
           onClose={() => setRulesOpen(false)}
         />
       )}

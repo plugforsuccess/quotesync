@@ -50,7 +50,10 @@ export function useReferralDraws(agencyId) {
       const { data, error } = await supabase
         .from('referral_draws')
         .select(
-          'id, draw_period, status, winner_display_name, entry_count, jackpot_cents, drawn_at'
+          'id, draw_period, status, winner_display_name, entry_count, ' +
+            'jackpot_cents, drawn_at, payout_status, payout_method, paid_at, ' +
+            'tax_doc_received, ' +
+            'winner_referrer:referral_referrers(name, phone, email, state)'
         )
         .eq('agency_id', agencyId)
         .order('draw_period', { ascending: false });
@@ -58,6 +61,77 @@ export function useReferralDraws(agencyId) {
       return data || [];
     },
     enabled: !!agencyId,
+  });
+}
+
+// Referrers that have a shareable code (the viral link path).
+export function useReferrerLinks(agencyId) {
+  return useQuery({
+    queryKey: ['referrals', 'links', agencyId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('referral_referrers')
+        .select('id, name, phone, state, referral_code, created_at')
+        .eq('agency_id', agencyId)
+        .not('referral_code', 'is', null)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+}
+
+// Create a referrer with a generated share code (gap 3: viral link path).
+export function useCreateReferrerLink(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ name, phone, state }) => {
+      const { data: code, error: codeErr } =
+        await supabase.rpc('gen_referral_code');
+      if (codeErr) throw codeErr;
+      const { data, error } = await supabase
+        .from('referral_referrers')
+        .insert({
+          agency_id: agencyId,
+          name: name.trim(),
+          phone: phone?.trim() || null,
+          state: (state || '').trim().toUpperCase() || null,
+          referral_code: code,
+        })
+        .select('id, name, phone, state, referral_code')
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ['referrals', 'links', agencyId],
+      });
+    },
+  });
+}
+
+// Mark a finalized draw's cash payout status (gap 6). Authorization is
+// enforced server-side by the set_referral_payout SECURITY DEFINER RPC.
+export function useSetReferralPayout(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ drawId, status, method, taxDoc }) => {
+      const { data, error } = await supabase.rpc('set_referral_payout', {
+        p_draw_id: drawId,
+        p_status: status,
+        p_method: method ?? null,
+        p_tax_doc: taxDoc ?? null,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.referrals.draws(agencyId),
+      });
+    },
   });
 }
 
@@ -135,6 +209,57 @@ export function useDeleteReferralEntry(agencyId, period) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.referrals.entries(agencyId, period),
       });
+    },
+  });
+}
+
+// Gap 2: link a called-in lead to its referrer (find-or-create), so the
+// server materializer attributes the quote correctly and dedups against
+// any later web lead from the same person.
+export function useSetLeadReferrer(leadId, agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ name, phone, state }) => {
+      const cleanName = name.trim();
+      const cleanState = (state || '').trim().toUpperCase() || null;
+
+      let referrerId;
+      let query = supabase
+        .from('referral_referrers')
+        .select('id')
+        .eq('agency_id', agencyId)
+        .ilike('name', cleanName);
+      if (phone && phone.trim()) query = query.eq('phone', phone.trim());
+      const { data: existing, error: findErr } = await query.limit(1);
+      if (findErr) throw findErr;
+
+      if (existing && existing.length) {
+        referrerId = existing[0].id;
+      } else {
+        const { data: created, error: insErr } = await supabase
+          .from('referral_referrers')
+          .insert({
+            agency_id: agencyId,
+            name: cleanName,
+            phone: phone?.trim() || null,
+            state: cleanState,
+          })
+          .select('id')
+          .single();
+        if (insErr) throw insErr;
+        referrerId = created.id;
+      }
+
+      const { error } = await supabase
+        .from('leads')
+        .update({ referred_by_referrer_id: referrerId })
+        .eq('id', leadId)
+        .eq('agency_id', agencyId);
+      if (error) throw error;
+      return referrerId;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lead_detail', leadId] });
     },
   });
 }

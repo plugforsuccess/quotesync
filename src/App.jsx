@@ -99,6 +99,7 @@ const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
 const ReferralRewardsPage = lazyWithRetry(() => import('./pages/ReferralRewardsPage'));
 const ReferralGiveawayPage = lazyWithRetry(() => import('./pages/ReferralGiveawayPage'));
+const ReferralRulesPage = lazyWithRetry(() => import('./pages/ReferralRulesPage'));
 
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
@@ -290,6 +291,7 @@ function App() {
 
             {/* Monthly Referral Giveaway — public, no auth */}
             <Route path="giveaway" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ReferralGiveawayPage /></Suspense></ErrorBoundary>} />
+            <Route path="giveaway/rules" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ReferralRulesPage /></Suspense></ErrorBoundary>} />
 
             {/* Agency Partnership - Public Application */}
             <Route path="partners/apply" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><AgencyApplyPage /></Suspense></ErrorBoundary>} />

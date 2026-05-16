@@ -140,6 +140,12 @@ export const useLeadDetail = (leadId, agencyId) => {
             has_documents,
             enrichment_status,
             enriched_at
+          ),
+          referred_by:referral_referrers (
+            id,
+            name,
+            state,
+            phone
           )
         `)
         .eq('id', leadId)

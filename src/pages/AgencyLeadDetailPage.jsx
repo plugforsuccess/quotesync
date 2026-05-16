@@ -24,6 +24,121 @@ import { getScoreColor, formatScoreFactors, RISK_FLAG_CONFIG } from '../lib/lead
 import { supabase } from '../lib/supabase';
 import PageSpinner from '../components/PageSpinner';
 import LeadMessageThread from './components/LeadMessageThread';
+import { useSetLeadReferrer } from '../hooks/useReferralRewards';
+
+// Gap 2: capture/replace the call-in referrer for this lead. Persists to
+// leads.referred_by_referrer_id so the server materializer attributes the
+// quote to the right referrer (and dedups against the share-link path).
+function ReferredByField({ lead, leadId, agencyId }) {
+  const setReferrer = useSetLeadReferrer(leadId, agencyId);
+  const linked = lead.referred_by;
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [state, setState] = useState('');
+  const [err, setErr] = useState(null);
+
+  const save = async () => {
+    setErr(null);
+    if (!name.trim()) {
+      setErr('Enter the referrer’s name.');
+      return;
+    }
+    if (state.trim() && !/^[A-Za-z]{2}$/.test(state.trim())) {
+      setErr('State must be 2 letters (e.g. GA).');
+      return;
+    }
+    try {
+      await setReferrer.mutateAsync({ name, phone, state });
+      setEditing(false);
+      setName('');
+      setPhone('');
+      setState('');
+    } catch (e) {
+      setErr(e.message || 'Could not save.');
+    }
+  };
+
+  return (
+    <div className="pt-3 border-t border-gray-100">
+      <div className="flex justify-between items-start">
+        <dt className="text-gray-500">Referred by</dt>
+        <dd className="text-gray-900 text-right">
+          {linked ? (
+            <span>
+              <span className="font-medium">{linked.name}</span>
+              {linked.state && (
+                <span
+                  className={`ml-2 text-[10px] px-1.5 py-0.5 rounded-full font-medium ${
+                    (linked.state || '').toUpperCase() === 'GA'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}
+                >
+                  {(linked.state || '').toUpperCase() === 'GA'
+                    ? 'GA · eligible'
+                    : 'not eligible to win'}
+                </span>
+              )}
+            </span>
+          ) : (
+            <span className="text-gray-400">Not linked</span>
+          )}
+          <button
+            type="button"
+            onClick={() => setEditing((v) => !v)}
+            className="ml-3 text-xs text-primary-600 hover:text-primary-700"
+          >
+            {editing ? 'Cancel' : linked ? 'Change' : 'Link referrer'}
+          </button>
+        </dd>
+      </div>
+      {editing && (
+        <div className="mt-3 space-y-2">
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Referrer’s name"
+            maxLength={120}
+            className="w-full px-2 py-1.5 border border-gray-300 rounded-md text-sm outline-none focus:ring-2 focus:ring-primary-500"
+          />
+          <div className="flex gap-2">
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Phone (optional)"
+              maxLength={32}
+              className="flex-1 px-2 py-1.5 border border-gray-300 rounded-md text-sm outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <input
+              type="text"
+              value={state}
+              onChange={(e) => setState(e.target.value)}
+              placeholder="ST"
+              maxLength={2}
+              className="w-16 px-2 py-1.5 border border-gray-300 rounded-md text-sm uppercase outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+          {err && <p className="text-xs text-red-600">{err}</p>}
+          <button
+            type="button"
+            onClick={save}
+            disabled={setReferrer.isPending}
+            className="w-full px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium rounded-md disabled:opacity-50"
+          >
+            {setReferrer.isPending ? 'Saving…' : 'Save referrer'}
+          </button>
+          <p className="text-[11px] text-gray-400">
+            Only Georgia-resident referrers are eligible to win; anyone may
+            refer.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 const CARRIER_LABELS = {
   state_farm: 'State Farm',
@@ -950,6 +1065,11 @@ const AgencyLeadDetailPage = () => {
                     {lead.referral_code || '-'}
                   </dd>
                 </div>
+                <ReferredByField
+                  lead={lead}
+                  leadId={leadId}
+                  agencyId={agencyId}
+                />
               </dl>
             </div>
           </div>
