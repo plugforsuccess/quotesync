@@ -199,6 +199,14 @@ export function computeStepSequence(answers) {
       'vehicleYear', 'vehicleMake', 'vehicleModel', 'vehicleUse',
       'coverageLapse', 'autoDrivingRecord'
     );
+  } else if (intent === 'landlord') {
+    // Capture-only rental path: collect enough property detail for an
+    // agent to work and route the lead. Dwelling fire isn't rated online.
+    steps.push(
+      'propertyDetails',
+      'roofReplacedRecently',
+      'homeClaimsHistory'
+    );
   }
   // 'unsure' or null → no carrier, no premium, no vehicle steps
 
@@ -264,7 +272,7 @@ export function useWizard() {
           next.vehicleModel = null;
           next.vehicleUse = [];
         }
-        if (value !== 'home' && value !== 'bundle') {
+        if (value !== 'home' && value !== 'bundle' && value !== 'landlord') {
           next.currentHomeCarrier = null;
           next.currentHomePremium = null;
           next.homeClaimsHistory = null;
@@ -282,6 +290,11 @@ export function useWizard() {
       // Rental occupancy → auto-route to landlord product intent
       if (field === 'homeOccupancyType' && value === 'rental') {
         next.productIntent = 'landlord';
+      }
+      // Landlord intent → flag the property as a rental so it routes and
+      // maps to a dwelling/landlord lead server-side.
+      if (field === 'productIntent' && value === 'landlord') {
+        next.homeOccupancyType = 'rental';
       }
 
       return next;
@@ -333,12 +346,14 @@ export function useWizard() {
       return [
         { label: 'Auto Only', value: 'auto', emoji: '🚗' },
         { label: 'Auto + Renters', value: 'auto_renters', emoji: '🚗🏠' },
+        { label: 'Landlord / Rental Property', value: 'landlord', emoji: '🔑' },
       ];
     }
     return [
       { label: 'Auto Only', value: 'auto', emoji: '🚗' },
       { label: 'Home Only', value: 'home', emoji: '🏠' },
       { label: 'Bundle', value: 'bundle', emoji: '🚗🏠' },
+      { label: 'Landlord / Rental Property', value: 'landlord', emoji: '🔑' },
       { label: 'Not Sure', value: 'unsure', emoji: '🤔' },
     ];
   }, [answers.ownsHome]);

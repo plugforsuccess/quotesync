@@ -56,6 +56,7 @@ function computeLeadScore(answers, utmParams) {
   if (answers.productIntent === 'bundle') score += 20;
   else if (answers.productIntent === 'auto_renters') score += 15;
   else if (answers.productIntent === 'auto' || answers.productIntent === 'home') score += 10;
+  else if (answers.productIntent === 'landlord') score += 10;
   else if (answers.productIntent === 'renters') score += 5; // legacy pre-v2.1 — kept for in-flight sessions
   if (answers.autoDrivingRecord === 'clean') score += 15;
   else if (answers.autoDrivingRecord === '1-2') score += 5;
