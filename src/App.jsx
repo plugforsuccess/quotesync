@@ -97,6 +97,8 @@ const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
 const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
+const ReferralRewardsPage = lazyWithRetry(() => import('./pages/ReferralRewardsPage'));
+const ReferralGiveawayPage = lazyWithRetry(() => import('./pages/ReferralGiveawayPage'));
 
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
@@ -286,6 +288,9 @@ function App() {
             <Route path="privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PrivacyPage /></Suspense></ErrorBoundary>} />
             <Route path="terms" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><TermsPage /></Suspense></ErrorBoundary>} />
 
+            {/* Monthly Referral Giveaway — public, no auth */}
+            <Route path="giveaway" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ReferralGiveawayPage /></Suspense></ErrorBoundary>} />
+
             {/* Agency Partnership - Public Application */}
             <Route path="partners/apply" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><AgencyApplyPage /></Suspense></ErrorBoundary>} />
 
@@ -411,6 +416,15 @@ function App() {
               <ProtectedRoute requiredAgencyRole="employee">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+
+            {/* Referral Rewards — any active agency member (principal + staff) */}
+            <Route path="agency/referrals" element={
+              <ProtectedRoute requireAgencyMembership>
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><ReferralRewardsPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />

@@ -14,6 +14,7 @@ export const consumerNav = [
   { to: '/news', label: 'Newsroom', icon: '📰' },
   { to: '/courses', label: 'Courses', icon: '🚗' },
   { to: '/store', label: 'Store', icon: '🛍️' },
+  { to: '/giveaway', label: 'Giveaway', icon: '🎁' },
 ];
 
 // ── Primary nav items (always visible in top bar) ────────────────────────────
@@ -26,6 +27,7 @@ const primaryItems = {
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
   retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
   crossSell:        { to: '/agency/cross-sell',        label: 'Cross-Sell',  icon: '💡' },
+  referrals:        { to: '/agency/referrals',         label: 'Referrals',   icon: '🎁' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
   // Personal (rep-workspace) jumps — used by Sales/Service personas so a
   // principal wearing a rep hat can hop into Today / Queue / Scorecard from
@@ -116,6 +118,7 @@ export const agencyNav = {
     ],
     secondary: [
       primaryItems.crossSell,
+      primaryItems.referrals,
       primaryItems.timeAttendance,
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
@@ -126,7 +129,9 @@ export const agencyNav = {
       primaryItems.leads,
       primaryItems.timeAttendance,
     ],
-    secondary: [],
+    secondary: [
+      primaryItems.referrals,
+    ],
   },
 };
 
@@ -149,6 +154,7 @@ export const principalPersonaNav = {
     ],
     secondary: [
       primaryItems.scorecard,
+      primaryItems.referrals,
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },
@@ -159,6 +165,7 @@ export const principalPersonaNav = {
       primaryItems.scorecard,
     ],
     secondary: [
+      primaryItems.referrals,
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },

@@ -87,6 +87,14 @@ export const queryKeys = {
     webhookHealth: (agencyId) => ['ai_call_log', 'webhook_health', agencyId],
   },
 
+  // ── Referral Rewards ───────────────────────────────────────────────────────
+  referrals: {
+    all: () => ['referrals'],
+    entries: (agencyId, period) => ['referrals', 'entries', agencyId, period],
+    draws: (agencyId) => ['referrals', 'draws', agencyId],
+    giveaway: (slug) => ['referrals', 'giveaway', slug || 'default'],
+  },
+
   // ── Compensation Model ─────────────────────────────────────────────────────
   compModel: {
     all: () => ['comp-model'],
