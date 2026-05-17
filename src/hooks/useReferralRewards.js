@@ -264,6 +264,23 @@ export function useSetLeadReferrer(leadId, agencyId) {
   });
 }
 
+// Program-health metrics for the staff page (membership-checked RPC).
+export function useReferralOps(agencyId, period) {
+  return useQuery({
+    queryKey: ['referrals', 'ops', agencyId, period],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('get_referral_ops', {
+        p_agency_id: agencyId,
+        p_period: period,
+      });
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!agencyId && !!period,
+    staleTime: 60 * 1000,
+  });
+}
+
 // Public, no-auth read for the /giveaway page. Slug mirrors the funnel
 // (?agency=slug); omitted → default agency.
 export function useReferralGiveaway(slug) {

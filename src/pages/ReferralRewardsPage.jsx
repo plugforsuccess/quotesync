@@ -30,6 +30,7 @@ import {
   useReferrerLinks,
   useCreateReferrerLink,
   useSetReferralPayout,
+  useReferralOps,
 } from '../hooks/useReferralRewards';
 import PageSpinner from '../components/PageSpinner';
 import { useCountdown } from '../hooks/useCountdown';
@@ -82,6 +83,7 @@ export default function ReferralRewardsPage() {
   const { data: draws = [] } = useReferralDraws(currentAgencyId);
   const logReferral = useLogReferral(currentAgencyId, period);
   const deleteEntry = useDeleteReferralEntry(currentAgencyId, period);
+  const { data: ops } = useReferralOps(currentAgencyId, period);
   const { data: links = [] } = useReferrerLinks(currentAgencyId);
   const createLink = useCreateReferrerLink(currentAgencyId);
   const setPayout = useSetReferralPayout(currentAgencyId);
@@ -261,6 +263,47 @@ export default function ReferralRewardsPage() {
           selected server-side at the start of next month.
         </p>
       </div>
+
+      {/* Program health */}
+      {ops && (
+        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+          <h2 className="font-semibold text-gray-900 mb-3">Program health</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
+            {[
+              ['Entries', ops.entries_total ?? 0],
+              ['From quotes', ops.entries_quoted ?? 0],
+              ['Inferred', ops.entries_inferred ?? 0],
+              ['Manual', ops.entries_manual ?? 0],
+              ['Referrers', ops.distinct_referrers ?? 0],
+              ['GA-eligible', ops.eligible_referrers ?? 0],
+              ['Missing state', ops.referrers_missing_state ?? 0],
+              ['Draw', ops.draw_status ?? 'open'],
+            ].map(([label, val]) => (
+              <div key={label}>
+                <div
+                  className={`text-2xl font-bold tabular-nums ${
+                    label === 'Missing state' && Number(val) > 0
+                      ? 'text-amber-600'
+                      : 'text-gray-900'
+                  }`}
+                >
+                  {val}
+                </div>
+                <div className="text-[11px] uppercase tracking-wide text-gray-400 mt-0.5">
+                  {label}
+                </div>
+              </div>
+            ))}
+          </div>
+          {Number(ops.referrers_missing_state) > 0 && (
+            <p className="text-xs text-amber-600 mt-3">
+              {ops.referrers_missing_state} referrer(s) have no state on file
+              and can&apos;t win until it&apos;s set — add it on their entry or
+              link.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Log a call-in referral */}

@@ -284,9 +284,12 @@ export default function SaveWizardPage() {
     const params = new URLSearchParams(window.location.search);
     const rbName = params.get('refby');
     const rbPhone = params.get('refbyphone');
+    const rbState = params.get('refbystate');
     if (rbName && !answers.referredByName) setAnswer('referredByName', rbName);
     if (rbPhone && !answers.referredByPhone)
       setAnswer('referredByPhone', rbPhone);
+    if (rbState && !answers.referredByState)
+      setAnswer('referredByState', rbState.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Trigger animation on step change
@@ -442,6 +445,9 @@ export default function SaveWizardPage() {
           property_data_source: answers.propertyDataSource || null,
           referred_by_name: answers.referredByName?.trim() || null,
           referred_by_phone: answers.referredByPhone?.trim() || null,
+          referred_by_state: answers.referredByName?.trim()
+            ? (answers.referredByState || 'GA')
+            : null,
           source: 'funnel',
           lead_score: leadScore,
           session_id: sessionStorage.getItem('quotesync_session_id'),
@@ -862,8 +868,10 @@ export default function SaveWizardPage() {
             onEmailChange={(v) => setAnswer('email', v)}
             referredByName={answers.referredByName}
             referredByPhone={answers.referredByPhone}
+            referredByState={answers.referredByState}
             onReferredByNameChange={(v) => setAnswer('referredByName', v)}
             onReferredByPhoneChange={(v) => setAnswer('referredByPhone', v)}
+            onReferredByStateChange={(v) => setAnswer('referredByState', v)}
             errors={typeof error === 'object' ? error : undefined}
             agentName={funnelAgency?.agent_first_name}
             brandName={funnelAgency?.brand_name}

@@ -1172,7 +1172,7 @@ export function AddressStep({ street, apt, city, zip, stateCode, onStreetChange,
 
 // ─── Step 10: Contact Information ───────────────────────────────────
 
-export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, referredByName, referredByPhone, onReferredByNameChange, onReferredByPhoneChange, errors, agentName, brandName }) {
+export function ContactStep({ firstName, lastName, phone, email, onFirstNameChange, onLastNameChange, onPhoneChange, onEmailChange, referredByName, referredByPhone, referredByState, onReferredByNameChange, onReferredByPhoneChange, onReferredByStateChange, errors, agentName, brandName }) {
   const handlePhoneChange = (e) => {
     onPhoneChange(formatPhoneInput(e.target.value));
   };
@@ -1225,26 +1225,44 @@ export function ContactStep({ firstName, lastName, phone, email, onFirstNameChan
             Were you referred by a friend or family member?{' '}
             <span className="text-gray-400 font-normal">(optional)</span>
           </p>
-          <div className="grid grid-cols-2 gap-3">
+          <InputField
+            id="referredByName"
+            label="Their name"
+            value={referredByName || ''}
+            onChange={(e) => onReferredByNameChange?.(e.target.value)}
+            placeholder="Referrer's name"
+          />
+          <div className="grid grid-cols-3 gap-3 mt-3">
+            <div className="col-span-2">
+              <InputField
+                id="referredByPhone"
+                label="Their phone"
+                type="tel"
+                value={referredByPhone || ''}
+                onChange={(e) =>
+                  onReferredByPhoneChange?.(formatPhoneInput(e.target.value))
+                }
+                placeholder="(555) 123-4567"
+                maxLength={14}
+              />
+            </div>
             <InputField
-              id="referredByName"
-              label="Their name"
-              value={referredByName || ''}
-              onChange={(e) => onReferredByNameChange?.(e.target.value)}
-              placeholder="Referrer's name"
-            />
-            <InputField
-              id="referredByPhone"
-              label="Their phone"
-              type="tel"
-              value={referredByPhone || ''}
+              id="referredByState"
+              label="Their state"
+              value={(referredByState ?? 'GA').toUpperCase()}
               onChange={(e) =>
-                onReferredByPhoneChange?.(formatPhoneInput(e.target.value))
+                onReferredByStateChange?.(
+                  e.target.value.replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase()
+                )
               }
-              placeholder="(555) 123-4567"
-              maxLength={14}
+              placeholder="GA"
+              maxLength={2}
             />
           </div>
+          <p className="text-[11px] text-gray-400 mt-1">
+            Only Georgia-resident referrers are eligible to win the prize —
+            anyone can still refer.
+          </p>
           <p className="text-xs text-gray-400 mt-1">
             If someone referred you, add them so they get credit in our
             monthly giveaway.

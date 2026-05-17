@@ -557,6 +557,7 @@ async function handleInbound(
       bland_partial_capture: !fullCapture,
       referred_by_name: parseVar(variables, 'referred_by_name'),
       referred_by_phone: parseVar(variables, 'referred_by_phone'),
+      referred_by_state: parseVar(variables, 'referred_by_state'),
     }
 
     try {

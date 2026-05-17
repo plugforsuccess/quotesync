@@ -396,6 +396,7 @@ Deno.serve(async (req) => {
           referral_code: body.referral_code || null,
           referred_by_name: body.referred_by_name || null,
           referred_by_phone: body.referred_by_phone || null,
+          referred_by_state: body.referred_by_state || null,
           landing_page: body.landing_page || null,
           routing_rule_id: finalRoutingRuleId,
           routed_via_fallback: finalViaFallback,
