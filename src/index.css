@@ -15,10 +15,10 @@
    The -rgb form is what makes Tailwind's `bg-qs-*` classes
    theme-responsive; without it Tailwind would bake in hex literals. */
 :root {
-  --qs-dark-rgb:     15 17 23;    /* #0F1117 */
-  --qs-card-rgb:     22 25 36;    /* #161924 */
-  --qs-elevated-rgb: 26 29 39;    /* #1A1D27 */
-  --qs-border-rgb:   37 42 58;    /* #252A3A */
+  --qs-dark-rgb:     11 18 32;    /* #0B1220 — Brand Navy base */
+  --qs-card-rgb:     17 26 46;    /* #111A2E — Brand Navy card */
+  --qs-elevated-rgb: 22 34 60;    /* #16223C — Brand Navy elevated */
+  --qs-border-rgb:   37 50 77;    /* #25324D — Brand Navy border */
   --qs-muted-rgb:    51 65 85;    /* #334155 */
   --qs-subtle-rgb:   100 116 139; /* #64748B */
   --qs-dim-rgb:      148 163 184; /* #94A3B8 */
@@ -55,16 +55,65 @@
 }
 
 /* ════════════════════════════════════════════════════════════
+   DARK (default) THEME — Brand-Navy shell chrome + rescue
+   Layout.jsx hardcodes bg-[#0f172a] / border-white-* for the app
+   chrome, and many internal pages use raw Tailwind slate/gray
+   surface utilities that don't read the qs-* tokens. Remap both to
+   the Brand-Navy ramp so every persona (principal / sales /
+   service) and the employee portal share one cohesive palette in
+   dark mode. Scoped to [data-theme="dark"] (ThemeContext always
+   sets the attribute) so light / high-contrast are untouched.
+════════════════════════════════════════════════════════════ */
+[data-theme="dark"] .qs-app-shell.bg-\[\#0f172a\],
+[data-theme="dark"] .qs-app-shell .bg-\[\#0f172a\],
+[data-theme="dark"] .qs-app-shell .bg-\[\#0f172a\]\/95 {
+  background-color: #0B1220;
+}
+[data-theme="dark"] .qs-app-shell header.bg-\[\#0f172a\]\/80,
+[data-theme="dark"] .qs-app-shell .bg-\[\#0f172a\]\/80 {
+  background-color: rgba(17, 26, 46, 0.80);
+}
+[data-theme="dark"] .qs-app-shell header.bg-\[\#0f172a\]\/50,
+[data-theme="dark"] .qs-app-shell .bg-\[\#0f172a\]\/50 {
+  background-color: rgba(17, 26, 46, 0.55);
+}
+[data-theme="dark"] .qs-app-shell .border-white\/10 { border-color: #25324D; }
+[data-theme="dark"] .qs-app-shell .border-white\/5  { border-color: rgba(143, 163, 192, 0.10); }
+
+/* Internal pages written single-theme (dark) use raw slate/gray
+   surface + border utilities. Pull them onto the Brand-Navy ramp
+   so dashboards match the chrome. (The LIGHT block rescues the
+   same utilities to its own palette further down.) */
+[data-theme="dark"] .qs-app-shell .bg-gray-900,
+[data-theme="dark"] .qs-app-shell .bg-gray-900\/50,
+[data-theme="dark"] .qs-app-shell .bg-slate-900,
+[data-theme="dark"] .qs-app-shell .bg-slate-900\/50 {
+  background-color: #111A2E;
+}
+[data-theme="dark"] .qs-app-shell .bg-gray-800,
+[data-theme="dark"] .qs-app-shell .bg-gray-800\/50,
+[data-theme="dark"] .qs-app-shell .bg-slate-800,
+[data-theme="dark"] .qs-app-shell .bg-slate-800\/50 {
+  background-color: #16223C;
+}
+[data-theme="dark"] .qs-app-shell .border-gray-700,
+[data-theme="dark"] .qs-app-shell .border-gray-800,
+[data-theme="dark"] .qs-app-shell .border-slate-700,
+[data-theme="dark"] .qs-app-shell .border-slate-800 {
+  border-color: #25324D;
+}
+
+/* ════════════════════════════════════════════════════════════
    LIGHT THEME
    Applied via data-theme="light" on <html>
 ════════════════════════════════════════════════════════════ */
 [data-theme="light"] {
   /* Override both -rgb channels and derived vars so Tailwind's bg-qs-*
      and text-qs-* classes repaint along with inline var() consumers. */
-  --qs-dark-rgb:     248 250 252; /* #F8FAFC */
-  --qs-card-rgb:     255 255 255; /* #FFFFFF */
-  --qs-elevated-rgb: 241 245 249; /* #F1F5F9 */
-  --qs-border-rgb:   226 232 240; /* #E2E8F0 */
+  --qs-dark-rgb:     244 247 251; /* #F4F7FB — Light Enterprise base */
+  --qs-card-rgb:     255 255 255; /* #FFFFFF — Light Enterprise card */
+  --qs-elevated-rgb: 238 242 248; /* #EEF2F8 — Light Enterprise elevated */
+  --qs-border-rgb:   220 227 238; /* #DCE3EE — Light Enterprise border */
   /* NOTE: slate-300/400 on white gives ~3:1 contrast — below WCAG AA for
      body text. Light mode uses the darker half of the slate scale so every
      label/caption/placeholder reads strong on a white card. */
@@ -73,6 +122,7 @@
   --qs-dim-rgb:      51 65 85;    /* slate-700 — secondary labels (~10:1) */
   --qs-text-rgb:     30 41 59;    /* slate-800 — body */
   --qs-bright-rgb:   15 23 42;    /* slate-900 — headings */
+  /* Option D — Light Enterprise: white cards on a faint cool wash */
 
   --qs-dark:     rgb(var(--qs-dark-rgb));
   --qs-card:     rgb(var(--qs-card-rgb));
@@ -104,7 +154,7 @@
    Tailwind compiles arbitrary-value + opacity as
    `.bg-\[\#0f172a\]\/80` (bracket before the slash). */
 [data-theme="light"] .qs-app-shell {
-  background-color: #F8FAFC;
+  background-color: #F4F7FB;
   color: var(--qs-text);
 }
 [data-theme="light"] .qs-app-shell.bg-\[\#0f172a\],
@@ -112,10 +162,10 @@
 [data-theme="light"] .qs-app-shell .bg-\[\#0f172a\]\/50,
 [data-theme="light"] .qs-app-shell .bg-\[\#0f172a\]\/80,
 [data-theme="light"] .qs-app-shell .bg-\[\#0f172a\]\/95 {
-  background-color: #F8FAFC !important;
+  background-color: #F4F7FB !important;
 }
 /* Hairline borders that were white-on-navy become slate-on-white */
-[data-theme="light"] .qs-app-shell .border-white\/10 { border-color: #E2E8F0 !important; }
+[data-theme="light"] .qs-app-shell .border-white\/10 { border-color: #DCE3EE !important; }
 [data-theme="light"] .qs-app-shell .border-white\/5  { border-color: rgba(15,23,42,0.06) !important; }
 
 /* Navigation header + mobile drawer text — scoped to the shell so primary
@@ -198,13 +248,13 @@
 [data-theme="light"] .qs-app-shell .bg-gray-900\/50,
 [data-theme="light"] .qs-app-shell .bg-slate-800,
 [data-theme="light"] .qs-app-shell .bg-slate-900 {
-  background-color: #F1F5F9 !important;
+  background-color: #EEF2F8 !important;
 }
 [data-theme="light"] .qs-app-shell .border-gray-700,
 [data-theme="light"] .qs-app-shell .border-gray-800,
 [data-theme="light"] .qs-app-shell .border-slate-700,
 [data-theme="light"] .qs-app-shell .border-slate-800 {
-  border-color: #E2E8F0 !important;
+  border-color: #DCE3EE !important;
 }
 
 /* Colored-tint alert / pill backgrounds — the 900/xx family renders as
