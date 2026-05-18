@@ -14,6 +14,7 @@ import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
 import { EventDetailModal } from "./components/retention/RetentionCancels";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
+import TerminationReasonTab from "./components/retention/TerminationReasonTab";
 import { useFireRenewalQueue, useFireCancelQueue } from '../hooks/useAiQueue';
 import { RefreshCw } from 'lucide-react';
 import RetentionRenewals      from './components/retention/RetentionRenewals';
@@ -449,13 +450,14 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "renewals", "ai_perf", "resolved", "attrition", "growth", "trends", "import"].map(t => (
+        {["at_risk", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "import"].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "at_risk"   ? "⚡ At Risk"        :
              t === "renewals"  ? "🔄 Renewals"       :
              t === "ai_perf"   ? "📊 AI Performance" :
              t === "resolved"  ? "✅ Outcomes"       :
              t === "attrition" ? "📉 Terminations"   :
+             t === "reasons"   ? "🔍 Reasons"        :
              t === "growth"    ? "📈 Net Growth"     :
              t === "trends"    ? "📋 Trends"         :
                                  "⬆ Import"}
@@ -489,6 +491,7 @@ export default function RetentionPage() {
           currentUserId={currentUserId}
         />
       )}
+      {activeTab === "reasons" && <TerminationReasonTab agencyId={agencyId} />}
       {activeTab === "growth" && <NetGrowthTab agencyId={agencyId} />}
       {activeTab === "import" && (
         <RetentionImport

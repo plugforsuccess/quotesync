@@ -96,6 +96,7 @@ const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompMo
 const CompScheduleAdminPage = lazyWithRetry(() => import('./pages/CompScheduleAdminPage'));
 const WeeklyOperatingReviewPage = lazyWithRetry(() => import('./pages/WeeklyOperatingReviewPage'));
 const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
+const TerminationAliasesPage = lazyWithRetry(() => import('./pages/TerminationAliasesPage'));
 const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
@@ -413,6 +414,13 @@ function App() {
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><RetentionPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/settings/termination-aliases" element={
+              <ProtectedRoute requiredAgencyRole="principal">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><TerminationAliasesPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
