@@ -103,6 +103,32 @@
   border-color: #25324D;
 }
 
+/* Dark parallel: raw muted text utilities are faint on navy too
+   (slate-500 ≈ 3.4:1). Pull them to a bright near-white so labels,
+   captions and ghost-button text are unmistakable. */
+[data-theme="dark"] .qs-app-shell .text-gray-300,
+[data-theme="dark"] .qs-app-shell .text-gray-400,
+[data-theme="dark"] .qs-app-shell .text-gray-500,
+[data-theme="dark"] .qs-app-shell .text-gray-600,
+[data-theme="dark"] .qs-app-shell .text-slate-300,
+[data-theme="dark"] .qs-app-shell .text-slate-400,
+[data-theme="dark"] .qs-app-shell .text-slate-500,
+[data-theme="dark"] .qs-app-shell .text-slate-600,
+[data-theme="dark"] .qs-app-shell .text-zinc-400,
+[data-theme="dark"] .qs-app-shell .text-zinc-500,
+[data-theme="dark"] .qs-app-shell .text-neutral-400,
+[data-theme="dark"] .qs-app-shell .text-neutral-500 { color: #EAF0F8 !important; }
+
+/* Ghost / outline buttons + dividers: faint light borders fail the
+   3:1 non-text contrast minimum. Force a clearly visible boundary
+   in each theme so buttons read as buttons. */
+[data-theme="dark"] .qs-app-shell .border-gray-200,
+[data-theme="dark"] .qs-app-shell .border-gray-300,
+[data-theme="dark"] .qs-app-shell .border-slate-200,
+[data-theme="dark"] .qs-app-shell .border-slate-300 {
+  border-color: #3A4A66 !important;
+}
+
 /* ════════════════════════════════════════════════════════════
    LIGHT THEME
    Applied via data-theme="light" on <html>
@@ -114,13 +140,13 @@
   --qs-card-rgb:     255 255 255; /* #FFFFFF — Light Enterprise card */
   --qs-elevated-rgb: 238 242 248; /* #EEF2F8 — Light Enterprise elevated */
   --qs-border-rgb:   220 227 238; /* #DCE3EE — Light Enterprise border */
-  /* Low-vision first: no faint greys. Every tier sits well past WCAG AA
-     on white — secondary text is slate-600+, body/headings near-black. */
-  --qs-muted-rgb:    71 85 105;   /* slate-600 — disabled/placeholder (~7.5:1) */
-  --qs-subtle-rgb:   51 65 85;    /* slate-700 — tertiary captions (~10:1) */
-  --qs-dim-rgb:      30 41 59;    /* slate-800 — secondary labels (~13:1) */
-  --qs-text-rgb:     15 23 42;    /* slate-900 — body (~16:1) */
-  --qs-bright-rgb:   2 6 23;      /* near-black — headings */
+  /* Low-vision first: NO grey/slate text. Every tier is near-black on
+     white. Hierarchy comes from weight/size, not faint colour. */
+  --qs-muted-rgb:    31 41 55;    /* #1F2937 — disabled/placeholder (~13:1) */
+  --qs-subtle-rgb:   17 24 39;    /* #111827 — tertiary text (~16:1) */
+  --qs-dim-rgb:      17 24 39;    /* #111827 — secondary labels (~16:1) */
+  --qs-text-rgb:     15 23 42;    /* #0F172A — body (~17:1) */
+  --qs-bright-rgb:   2 6 23;      /* #020617 — headings */
   /* Option D — Light Enterprise: white cards on a faint cool wash */
 
   --qs-dark:     rgb(var(--qs-dark-rgb));
@@ -192,7 +218,13 @@
 [data-theme="light"] .qs-app-shell .text-white\/75,
 [data-theme="light"] .qs-app-shell .text-white\/70,
 [data-theme="light"] .qs-app-shell .text-white\/60,
-[data-theme="light"] .qs-app-shell .text-white\/50 {
+[data-theme="light"] .qs-app-shell .text-white\/50,
+[data-theme="light"] .qs-app-shell .text-gray-100,
+[data-theme="light"] .qs-app-shell .text-gray-200,
+[data-theme="light"] .qs-app-shell .text-gray-300,
+[data-theme="light"] .qs-app-shell .text-slate-100,
+[data-theme="light"] .qs-app-shell .text-slate-200,
+[data-theme="light"] .qs-app-shell .text-slate-300 {
   color: #0F172A !important;
 }
 /* Restore white where the element (or an ancestor) is itself a colored
@@ -261,15 +293,29 @@
    utilities because they were written against a single (dark) theme.
    These would otherwise be unreadable on a light background. Scoped to
    the shell so consumer/funnel surfaces (locked dark) are untouched. */
-[data-theme="light"] .qs-app-shell .text-gray-100,
-[data-theme="light"] .qs-app-shell .text-gray-200,
-[data-theme="light"] .qs-app-shell .text-gray-300 { color: #1E293B !important; }
-[data-theme="light"] .qs-app-shell .text-gray-400 { color: #334155 !important; }
-[data-theme="light"] .qs-app-shell .text-gray-500 { color: #475569 !important; }
-[data-theme="light"] .qs-app-shell .text-slate-100,
-[data-theme="light"] .qs-app-shell .text-slate-200,
-[data-theme="light"] .qs-app-shell .text-slate-300 { color: #1E293B !important; }
-[data-theme="light"] .qs-app-shell .text-slate-400 { color: #334155 !important; }
+/* Muted body text (gray/slate 400-600) is dark-on-light by intent —
+   force it near-black, no exceptions. The lighter 100-300 tints are
+   handled with text-white below (they're light-on-colour by intent). */
+[data-theme="light"] .qs-app-shell .text-gray-400,
+[data-theme="light"] .qs-app-shell .text-gray-500,
+[data-theme="light"] .qs-app-shell .text-gray-600,
+[data-theme="light"] .qs-app-shell .text-slate-400,
+[data-theme="light"] .qs-app-shell .text-slate-500,
+[data-theme="light"] .qs-app-shell .text-slate-600,
+[data-theme="light"] .qs-app-shell .text-zinc-400,
+[data-theme="light"] .qs-app-shell .text-zinc-500,
+[data-theme="light"] .qs-app-shell .text-neutral-400,
+[data-theme="light"] .qs-app-shell .text-neutral-500 { color: #0F172A !important; }
+
+/* Ghost / outline buttons + dividers: faint light borders fail the
+   3:1 non-text contrast minimum and make buttons look like plain
+   text. Force a clearly visible boundary. */
+[data-theme="light"] .qs-app-shell .border-gray-200,
+[data-theme="light"] .qs-app-shell .border-gray-300,
+[data-theme="light"] .qs-app-shell .border-slate-200,
+[data-theme="light"] .qs-app-shell .border-slate-300 {
+  border-color: #475569 !important;
+}
 
 /* Dark panel backgrounds → light surface equivalents */
 [data-theme="light"] .qs-app-shell .bg-gray-800,
@@ -338,6 +384,23 @@
 [data-theme="high_contrast"] .qs-app-shell .border-gray-700,
 [data-theme="high_contrast"] .qs-app-shell .border-gray-800,
 [data-theme="high_contrast"] .qs-app-shell .border-slate-700 { border-color: #1E3A5F !important; }
+
+/* Component classes set faint borders via @apply (the element only
+   carries .btn-ghost / .input-base, not .border-gray-300), so the
+   utility rules above can't reach them. Override explicitly so every
+   button and input has a visible boundary + strong label. */
+[data-theme="light"] .qs-app-shell .btn-ghost,
+[data-theme="light"] .qs-app-shell .input-base,
+[data-theme="light"] .qs-app-shell .input-base:not(:focus) {
+  border-color: #475569 !important;
+}
+[data-theme="light"] .qs-app-shell .btn-ghost { color: #0F172A !important; }
+[data-theme="dark"] .qs-app-shell .btn-ghost,
+[data-theme="dark"] .qs-app-shell .input-base,
+[data-theme="dark"] .qs-app-shell .input-base:not(:focus) {
+  border-color: #3A4A66 !important;
+}
+[data-theme="dark"] .qs-app-shell .btn-ghost { color: #EAF0F8 !important; }
 
 /* ════════════════════════════════════════════════════════════
    HIGH CONTRAST THEME
