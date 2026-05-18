@@ -4,6 +4,7 @@ import ServiceStaffingTab from './components/planning/ServiceStaffingTab';
 import ProducerCompIndexTab from './components/planning/ProducerCompIndexTab';
 import CapacityPlanner from './components/dashboard/CapacityPlanner';
 import StaffingCapacity from './components/dashboard/StaffingCapacity';
+import CompScheduleAlertCard from './components/planning/CompScheduleAlertCard';
 import { useAgencyCommissionRates } from '../hooks/useAgencyCommissionRates';
 import { useYTDBlended } from '../hooks/useYTDBlended';
 import { useAllProducerConfigs } from '../hooks/useProducerCompModel';
@@ -171,6 +172,8 @@ export default function PlanningHubPage() {
           Revenue · Staffing · Compensation
         </div>
       </div>
+
+      <CompScheduleAlertCard />
 
       <div style={{ display: 'flex', gap: 4, marginBottom: 24 }}>
         {TABS.map(({ key, label }) => (

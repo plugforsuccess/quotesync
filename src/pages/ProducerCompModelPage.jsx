@@ -5,7 +5,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Settings, BarChart3, Check, Loader2, TrendingUp, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Settings, BarChart3, Check, Loader2, TrendingUp, FileSpreadsheet, GitCompare } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   useProducerInfo,
@@ -21,12 +21,14 @@ import {
 import PageSpinner from '../components/PageSpinner';
 import AssumptionsTab from './components/comp-model/AssumptionsTab';
 import ScenariosTab from './components/comp-model/ScenariosTab';
+import CompareSchedulesTab from './components/comp-model/CompareSchedulesTab';
 import ActualsSummaryCard from './components/comp-model/ActualsSummaryCard';
 import EntriesDetailTable from './components/comp-model/EntriesDetailTable';
 
 const PROJECTION_TABS = [
   { key: 'assumptions', label: 'Assumptions', icon: Settings },
   { key: 'scenarios', label: 'Scenarios', icon: BarChart3 },
+  { key: 'compare', label: 'Compare Schedules', icon: GitCompare },
 ];
 
 // ── Month picker helpers ────────────────────────────────────────────────────
@@ -342,6 +344,14 @@ export default function ProducerCompModelPage() {
             <ScenariosTab
               config={effectiveConfig}
               productMix={effectiveMix}
+            />
+          )}
+
+          {activeTab === 'compare' && (
+            <CompareSchedulesTab
+              config={effectiveConfig}
+              productMix={effectiveMix}
+              employeeId={employeeId}
             />
           )}
         </>

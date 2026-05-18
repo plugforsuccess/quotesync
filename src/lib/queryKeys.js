@@ -104,5 +104,9 @@ export const queryKeys = {
     carrier: (carrierId) => ['comp-model', 'carrier', carrierId],
     actuals: (agencyId, employeeId, month) => ['comp-model', 'actuals', agencyId, employeeId, month],
     vcProducts: (agencyId) => ['comp-model', 'vc-products', agencyId],
+    schedules: (agencyId) => ['comp-model', 'schedules', agencyId],
+    scheduleRates: (scheduleId) => ['comp-model', 'schedule-rates', scheduleId],
+    comparisonPair: (agencyId, stateCode, carrierName) =>
+      ['comp-model', 'comparison-pair', agencyId, stateCode, carrierName],
   },
 };

@@ -93,6 +93,7 @@ const EmployeeRosterPage = lazyWithRetry(() => import('./pages/EmployeeRosterPag
 const RevenueProjectionsDashboard = lazyWithRetry(() => import('./pages/components/revenue/RevenueProjectionsDashboard'));
 const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
+const CompScheduleAdminPage = lazyWithRetry(() => import('./pages/CompScheduleAdminPage'));
 const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
 const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
@@ -452,6 +453,13 @@ function App() {
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><ProducerCompModelPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/comp-schedules" element={
+              <ProtectedRoute requiredAgencyRole="principal">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><CompScheduleAdminPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />

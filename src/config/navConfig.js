@@ -120,6 +120,7 @@ export const agencyNav = {
       primaryItems.crossSell,
       primaryItems.referrals,
       primaryItems.timeAttendance,
+      { to: '/agency/comp-schedules', label: 'Comp Schedules', icon: '💰' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
     ],

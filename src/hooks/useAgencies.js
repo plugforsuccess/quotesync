@@ -417,15 +417,82 @@ export function useUpdateRevenueGoals(agencyId) {
   });
 }
 
-// MT-06: Fetch agency commission rates
+// Resolve the schedule the legacy Agency Settings commission editor operates on.
+// Comp-schedule versioning made agency_commission_rates.schedule_id NOT NULL, so
+// the settings editor (which predates versioning) must read/write a single
+// schedule. It targets the agency's default non-announced schedule — the same
+// one dashboards resolve — so Settings and dashboards stay consistent. When
+// `create` is set and no schedule exists yet (e.g. a brand-new agency in setup),
+// a "Default (Pre-Versioning)" schedule is created, mirroring the backfill in
+// migration 20260518120000_comp_schedule_versioning.sql.
+async function resolveDefaultScheduleId(agencyId, { create = false } = {}) {
+  const { data: schedules, error } = await supabase
+    .from('agency_comp_schedules')
+    .select('id, schedule_label, effective_from, effective_to')
+    .eq('agency_id', agencyId)
+    .eq('is_announced_only', false)
+    .order('effective_from', { ascending: false });
+  if (error) throw error;
+
+  const list = schedules || [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  const active = list.find(
+    (s) => s.effective_from <= today && (s.effective_to === null || s.effective_to > today)
+  );
+  const byLabel = list.find((s) => s.schedule_label === 'Default (Pre-Versioning)');
+  const resolved = active || byLabel || list[0] || null;
+  if (resolved) return resolved.id;
+  if (!create) return null;
+
+  const { data: carrierConfig } = await supabase
+    .from('agency_carrier_config')
+    .select('carrier_name')
+    .eq('agency_id', agencyId)
+    .single();
+
+  const { data: created, error: insertError } = await supabase
+    .from('agency_comp_schedules')
+    .insert({
+      agency_id: agencyId,
+      carrier_name: carrierConfig?.carrier_name || 'Allstate',
+      state_code: 'GA',
+      schedule_label: 'Default (Pre-Versioning)',
+      effective_from: '2025-01-01',
+      effective_to: null,
+      is_announced_only: false,
+      notes: 'Auto-created by the Agency Settings commission editor.',
+    })
+    .select('id')
+    .single();
+
+  if (insertError) {
+    // Lost a race (unique label constraint) — re-read and use the existing row.
+    const { data: existing } = await supabase
+      .from('agency_comp_schedules')
+      .select('id')
+      .eq('agency_id', agencyId)
+      .eq('is_announced_only', false)
+      .eq('schedule_label', 'Default (Pre-Versioning)')
+      .single();
+    if (existing) return existing.id;
+    throw insertError;
+  }
+  return created.id;
+}
+
+// MT-06: Fetch agency commission rates (scoped to the default schedule)
 export function useAgencyCommissionRatesRaw(agencyId) {
   return useQuery({
     queryKey: ['agency_commission_rates_raw', agencyId],
     queryFn: async () => {
+      const scheduleId = await resolveDefaultScheduleId(agencyId);
+      if (!scheduleId) return [];
       const { data, error } = await supabase
         .from('agency_commission_rates')
         .select('*')
-        .eq('agency_id', agencyId);
+        .eq('agency_id', agencyId)
+        .eq('schedule_id', scheduleId);
       if (error) throw error;
       return data || [];
     },
@@ -438,15 +505,20 @@ export function useUpsertCommissionRates(agencyId) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (rates) => {
-      // Delete existing and re-insert (simpler than individual upserts)
+      // Scope to the agency's default schedule (comp-schedule versioning made
+      // schedule_id NOT NULL). Create the default schedule if none exists yet.
+      const scheduleId = await resolveDefaultScheduleId(agencyId, { create: true });
+
+      // Delete existing and re-insert (simpler than individual upserts).
+      // Scoped to the default schedule so other schedules' rates are untouched.
       const { error: deleteError } = await supabase
         .from('agency_commission_rates')
         .delete()
-        .eq('agency_id', agencyId);
+        .eq('schedule_id', scheduleId);
       if (deleteError) throw deleteError;
 
       if (rates.length > 0) {
-        const rows = rates.map(r => ({ ...r, agency_id: agencyId }));
+        const rows = rates.map(r => ({ ...r, agency_id: agencyId, schedule_id: scheduleId }));
         const { error: insertError } = await supabase
           .from('agency_commission_rates')
           .insert(rows);
