@@ -66,10 +66,10 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
       display: fullWidth ? 'flex' : 'inline-flex',
       width: fullWidth ? '100%' : undefined,
       alignItems: 'center',
-      background: 'rgba(255,255,255,0.06)',
+      background: 'var(--qs-elevated)',
       borderRadius: 999,
       padding: 3,
-      border: '1px solid rgba(255,255,255,0.08)',
+      border: '1px solid var(--qs-border)',
     }}>
       {visibleOptions.map(opt => {
         const active = opt.key === persona;
@@ -84,8 +84,8 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
               fontSize: compact ? 11 : 12,
               fontWeight: 600,
               border: 'none', cursor: 'pointer',
-              background: active ? '#3B82F6' : 'transparent',
-              color: active ? '#fff' : 'rgba(255,255,255,0.7)',
+              background: active ? '#1d4ed8' : 'transparent',
+              color: active ? '#fff' : 'var(--qs-dim)',
               transition: 'all 0.15s',
               fontFamily: 'inherit',
               whiteSpace: 'nowrap',
