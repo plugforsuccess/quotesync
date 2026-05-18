@@ -122,6 +122,7 @@ export const agencyNav = {
       primaryItems.referrals,
       primaryItems.timeAttendance,
       { to: '/agency/comp-schedules', label: 'Comp Schedules', icon: '💰' },
+      { to: '/agency/settings/termination-aliases', label: 'Reason Aliases', icon: '🏷️' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
     ],

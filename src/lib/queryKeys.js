@@ -110,6 +110,16 @@ export const queryKeys = {
       ['comp-model', 'comparison-pair', agencyId, stateCode, carrierName],
   },
 
+  // ── Termination Reason Analysis ────────────────────────────────────────────
+  termination: {
+    all: () => ['termination'],
+    categories: () => ['termination', 'categories'],
+    aliases: (agencyId) => ['termination', 'aliases', agencyId],
+    byCategory: (agencyId, monthsBack) => ['termination', 'by-category', agencyId, monthsBack],
+    trendByCategory: (agencyId, monthsBack) => ['termination', 'trend-by-category', agencyId, monthsBack],
+    uncategorized: (agencyId) => ['termination', 'uncategorized', agencyId],
+  },
+
   // ── Weekly Operating Review ────────────────────────────────────────────────
   operatingReview: {
     all: () => ['operating-review'],
