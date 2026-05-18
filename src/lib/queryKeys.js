@@ -109,4 +109,18 @@ export const queryKeys = {
     comparisonPair: (agencyId, stateCode, carrierName) =>
       ['comp-model', 'comparison-pair', agencyId, stateCode, carrierName],
   },
+
+  // ── Weekly Operating Review ────────────────────────────────────────────────
+  operatingReview: {
+    all: () => ['operating-review'],
+    whereWeStand: (agencyId, weekStart) =>
+      ['operating-review', 'where-we-stand', agencyId, weekStart],
+    slips: (agencyId, weekStart) =>
+      ['operating-review', 'slips', agencyId, weekStart],
+    focus: (agencyId) => ['operating-review', 'focus', agencyId],
+    completions: (agencyId, monthsBack) =>
+      ['operating-review', 'completions', agencyId, monthsBack],
+    dismissedSlips: (agencyId, weekStart) =>
+      ['operating-review', 'dismissed-slips', agencyId, weekStart],
+  },
 };

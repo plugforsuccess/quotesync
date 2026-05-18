@@ -110,6 +110,7 @@ export const platformNav = {
 export const agencyNav = {
   principal: {
     primary: [
+      { to: '/agency/weekly-review', label: 'Weekly Review', icon: '📋' },
       primaryItems.funnel,
       primaryItems.leads,
       primaryItems.retention,
