@@ -19,11 +19,11 @@
   --qs-card-rgb:     17 26 46;    /* #111A2E — Brand Navy card */
   --qs-elevated-rgb: 22 34 60;    /* #16223C — Brand Navy elevated */
   --qs-border-rgb:   37 50 77;    /* #25324D — Brand Navy border */
-  --qs-muted-rgb:    51 65 85;    /* #334155 */
-  --qs-subtle-rgb:   100 116 139; /* #64748B */
-  --qs-dim-rgb:      148 163 184; /* #94A3B8 */
-  --qs-text-rgb:     226 232 240; /* #E2E8F0 */
-  --qs-bright-rgb:   241 245 249; /* #F1F5F9 */
+  --qs-muted-rgb:    148 163 184; /* slate-400 — was #334155 (~1.7:1, invisible on navy); now ~6.5:1 */
+  --qs-subtle-rgb:   186 199 217; /* ~9:1 — tertiary captions */
+  --qs-dim-rgb:      213 222 235; /* ~11:1 — secondary labels */
+  --qs-text-rgb:     237 241 247; /* ~14:1 — body */
+  --qs-bright-rgb:   248 250 252; /* headings */
 
   --qs-dark:     rgb(var(--qs-dark-rgb));
   --qs-card:     rgb(var(--qs-card-rgb));
@@ -114,14 +114,13 @@
   --qs-card-rgb:     255 255 255; /* #FFFFFF — Light Enterprise card */
   --qs-elevated-rgb: 238 242 248; /* #EEF2F8 — Light Enterprise elevated */
   --qs-border-rgb:   220 227 238; /* #DCE3EE — Light Enterprise border */
-  /* NOTE: slate-300/400 on white gives ~3:1 contrast — below WCAG AA for
-     body text. Light mode uses the darker half of the slate scale so every
-     label/caption/placeholder reads strong on a white card. */
-  --qs-muted-rgb:    100 116 139; /* slate-500 — borders + disabled text */
-  --qs-subtle-rgb:   71 85 105;   /* slate-600 — tertiary captions (~7:1) */
-  --qs-dim-rgb:      51 65 85;    /* slate-700 — secondary labels (~10:1) */
-  --qs-text-rgb:     30 41 59;    /* slate-800 — body */
-  --qs-bright-rgb:   15 23 42;    /* slate-900 — headings */
+  /* Low-vision first: no faint greys. Every tier sits well past WCAG AA
+     on white — secondary text is slate-600+, body/headings near-black. */
+  --qs-muted-rgb:    71 85 105;   /* slate-600 — disabled/placeholder (~7.5:1) */
+  --qs-subtle-rgb:   51 65 85;    /* slate-700 — tertiary captions (~10:1) */
+  --qs-dim-rgb:      30 41 59;    /* slate-800 — secondary labels (~13:1) */
+  --qs-text-rgb:     15 23 42;    /* slate-900 — body (~16:1) */
+  --qs-bright-rgb:   2 6 23;      /* near-black — headings */
   /* Option D — Light Enterprise: white cards on a faint cool wash */
 
   --qs-dark:     rgb(var(--qs-dark-rgb));
@@ -173,7 +172,7 @@
    Only the *chrome* text colors flip; colored backgrounds keep white text
    via :not() guards below. */
 [data-theme="light"] .qs-app-shell header .text-gray-300,
-[data-theme="light"] .qs-app-shell header .text-gray-400 { color: #475569 !important; }
+[data-theme="light"] .qs-app-shell header .text-gray-400 { color: #334155 !important; }
 
 /* The Layout root sets `text-white` for inherited color on the dark shell.
    In light theme, swap to a dark token so descendants that don't set their
@@ -182,28 +181,59 @@
 [data-theme="light"] .qs-app-shell.text-white,
 [data-theme="light"] .qs-app-shell > .text-white { color: #0F172A !important; }
 
-/* Within the Layout header/drawer, flip `text-white` to dark UNLESS the
-   element (or any ancestor up to the shell) has a colored background that
-   needs white ink. We detect this with attribute-prefix selectors matching
-   Tailwind's gradient / primary-button class families. */
-[data-theme="light"] .qs-app-shell header .text-white,
-[data-theme="light"] .qs-app-shell .bg-\[\#0f172a\] .text-white {
+/* White text anywhere in the light shell would vanish on the now-light
+   surfaces (the "white on white" bug). Flip ALL white text — including
+   opacity variants — to near-black. The restore list below re-whitens
+   only text that genuinely sits on a colored surface. */
+[data-theme="light"] .qs-app-shell .text-white,
+[data-theme="light"] .qs-app-shell .text-white\/95,
+[data-theme="light"] .qs-app-shell .text-white\/90,
+[data-theme="light"] .qs-app-shell .text-white\/80,
+[data-theme="light"] .qs-app-shell .text-white\/75,
+[data-theme="light"] .qs-app-shell .text-white\/70,
+[data-theme="light"] .qs-app-shell .text-white\/60,
+[data-theme="light"] .qs-app-shell .text-white\/50 {
   color: #0F172A !important;
 }
-/* Restore white on anything that is itself a colored pill/button/gradient */
+/* Restore white where the element (or an ancestor) is itself a colored
+   pill / button / gradient that needs white ink. Each colored family is
+   matched both as an ancestor and on the text node itself. */
 [data-theme="light"] .qs-app-shell [class*="bg-primary-"] .text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-primary-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-secondary-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-secondary-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-emerald-"] .text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-emerald-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-green-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-green-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-teal-"] .text-white,
-[data-theme="light"] .qs-app-shell [class*="bg-red-"] .text-white,
-[data-theme="light"] .qs-app-shell [class*="bg-rose-"] .text-white,
-[data-theme="light"] .qs-app-shell [class*="bg-amber-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-teal-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-cyan-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-cyan-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-sky-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-sky-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-blue-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-blue-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-indigo-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-indigo-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-violet-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-violet-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-purple-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-purple-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-fuchsia-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-fuchsia-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-pink-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-pink-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-rose-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-rose-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-red-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-red-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-orange-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-orange-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-amber-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-amber-"].text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-yellow-"] .text-white,
+[data-theme="light"] .qs-app-shell [class*="bg-yellow-"].text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-gradient-"] .text-white,
 [data-theme="light"] .qs-app-shell [class*="bg-gradient-"].text-white {
   color: #FFFFFF !important;
@@ -233,13 +263,13 @@
    the shell so consumer/funnel surfaces (locked dark) are untouched. */
 [data-theme="light"] .qs-app-shell .text-gray-100,
 [data-theme="light"] .qs-app-shell .text-gray-200,
-[data-theme="light"] .qs-app-shell .text-gray-300 { color: #334155 !important; }
-[data-theme="light"] .qs-app-shell .text-gray-400 { color: #475569 !important; }
-[data-theme="light"] .qs-app-shell .text-gray-500 { color: #64748B !important; }
+[data-theme="light"] .qs-app-shell .text-gray-300 { color: #1E293B !important; }
+[data-theme="light"] .qs-app-shell .text-gray-400 { color: #334155 !important; }
+[data-theme="light"] .qs-app-shell .text-gray-500 { color: #475569 !important; }
 [data-theme="light"] .qs-app-shell .text-slate-100,
 [data-theme="light"] .qs-app-shell .text-slate-200,
-[data-theme="light"] .qs-app-shell .text-slate-300 { color: #334155 !important; }
-[data-theme="light"] .qs-app-shell .text-slate-400 { color: #475569 !important; }
+[data-theme="light"] .qs-app-shell .text-slate-300 { color: #1E293B !important; }
+[data-theme="light"] .qs-app-shell .text-slate-400 { color: #334155 !important; }
 
 /* Dark panel backgrounds → light surface equivalents */
 [data-theme="light"] .qs-app-shell .bg-gray-800,
