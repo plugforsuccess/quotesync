@@ -114,10 +114,10 @@ export const agencyNav = {
       primaryItems.funnel,
       primaryItems.leads,
       primaryItems.retention,
-      primaryItems.staffPerformance,
       primaryItems.planning,
     ],
     secondary: [
+      primaryItems.staffPerformance,
       primaryItems.crossSell,
       primaryItems.referrals,
       primaryItems.timeAttendance,
