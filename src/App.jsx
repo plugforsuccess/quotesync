@@ -95,6 +95,7 @@ const PlanningHubPage = lazyWithRetry(() => import('./pages/PlanningHubPage'));
 const ProducerCompModelPage = lazyWithRetry(() => import('./pages/ProducerCompModelPage'));
 const CompScheduleAdminPage = lazyWithRetry(() => import('./pages/CompScheduleAdminPage'));
 const WeeklyOperatingReviewPage = lazyWithRetry(() => import('./pages/WeeklyOperatingReviewPage'));
+const BookCompositionPage = lazyWithRetry(() => import('./pages/BookCompositionPage'));
 const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
 const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
@@ -468,6 +469,13 @@ function App() {
               <ProtectedRoute requiredAgencyRole="principal">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><WeeklyOperatingReviewPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/book" element={
+              <ProtectedRoute requiredAgencyRole="principal">
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><BookCompositionPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />

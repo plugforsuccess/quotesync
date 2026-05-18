@@ -123,4 +123,14 @@ export const queryKeys = {
     dismissedSlips: (agencyId, weekStart) =>
       ['operating-review', 'dismissed-slips', agencyId, weekStart],
   },
+
+  // ── Book Composition ───────────────────────────────────────────────────────
+  book: {
+    all: () => ['book'],
+    carriers: () => ['book', 'carriers'],
+    snapshot: (agencyId) => ['book', 'snapshot', agencyId],
+    policies: (agencyId) => ['book', 'policies', agencyId],
+    buyoutTerms: () => ['book', 'buyout-terms'],
+    scenario: (agencyId, scenarioId) => ['book', 'scenario', agencyId, scenarioId],
+  },
 };
