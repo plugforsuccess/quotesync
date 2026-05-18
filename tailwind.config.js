@@ -124,6 +124,7 @@ export default {
       fontFamily: {
         // Unified font family across entire site
         sans: [
+          '"Inter"',
           'ui-sans-serif',
           'system-ui',
           '-apple-system',
@@ -137,10 +138,10 @@ export default {
       },
       fontSize: {
         // Standardized typography scale
-        'display': ['4rem', { lineHeight: '1.1', fontWeight: '900' }],      // Hero headlines
-        'h1': ['3rem', { lineHeight: '1.2', fontWeight: '800' }],           // Page titles
-        'h2': ['2.25rem', { lineHeight: '1.25', fontWeight: '700' }],       // Section headers
-        'h3': ['1.875rem', { lineHeight: '1.3', fontWeight: '700' }],       // Subsection headers
+        'display': ['4rem', { lineHeight: '1.1', fontWeight: '900', letterSpacing: '-0.022em' }], // Hero headlines
+        'h1': ['3rem', { lineHeight: '1.2', fontWeight: '800', letterSpacing: '-0.02em' }],       // Page titles
+        'h2': ['2.25rem', { lineHeight: '1.25', fontWeight: '700', letterSpacing: '-0.018em' }],  // Section headers
+        'h3': ['1.875rem', { lineHeight: '1.3', fontWeight: '700', letterSpacing: '-0.014em' }],  // Subsection headers
         'h4': ['1.5rem', { lineHeight: '1.4', fontWeight: '600' }],         // Card titles
         'body-lg': ['1.125rem', { lineHeight: '1.75', fontWeight: '400' }], // Large body text
         'body': ['1rem', { lineHeight: '1.625', fontWeight: '400' }],       // Default body
