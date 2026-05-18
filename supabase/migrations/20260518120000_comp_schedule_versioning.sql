@@ -119,7 +119,7 @@ BEGIN
   WHERE rel.relname = 'agency_commission_rates'
     AND con.contype = 'u'
     AND ARRAY['agency_id', 'product_key', 'tier_key']::text[] <@ (
-      SELECT array_agg(att.attname ORDER BY att.attnum)
+      SELECT array_agg(att.attname::text ORDER BY att.attnum)
       FROM pg_attribute att
       WHERE att.attrelid = con.conrelid
         AND att.attnum = ANY(con.conkey)
