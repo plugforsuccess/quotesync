@@ -3,3 +3,8 @@ verify_jwt = false
 
 [functions.canopy-webhook]
 verify_jwt = false
+
+# Invoked by a Supabase Database Webhook (premium delta > 8%); performs its own
+# service-role / shared-secret auth, so the gateway JWT check is disabled.
+[functions.trigger-rate-deflection]
+verify_jwt = false

@@ -6,7 +6,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
-import { checkRequiredEnvVars } from '../_shared/twilio.ts'
+import { checkRequiredEnvVars, sendSMS } from '../_shared/twilio.ts'
 
 type ContactOutcome = 'no_answer' | 'confirmed' | 'hesitant' | 'shopping' | 'escalated' | 'left_voicemail' | 'wrong_number' | 'third_party_answer'
 
@@ -298,6 +298,43 @@ Deno.serve(async (req) => {
         .eq('id', body.metadata.customer_group_id)
         .eq('agency_id', agency_id)
         .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] Group update error:', error) })
+    }
+
+    // 7. Retention state + producer escalation alert.
+    //    retention_status mirrors the renewal outcome for dashboards:
+    //      escalated → 'crisis_capture', shopping → 'at_risk', confirmed → 'stable'.
+    //    Done as a separate best-effort update so a missing column can never
+    //    break the critical renewal_cases write above.
+    const retentionStatus =
+      outcome === 'escalated' ? 'crisis_capture' :
+      outcome === 'shopping' ? 'at_risk' :
+      outcome === 'confirmed' ? 'stable' : null
+    if (retentionStatus) {
+      await supabase.from('renewal_cases')
+        .update({ retention_status: retentionStatus, updated_at: nowISO })
+        .eq('id', policy_id).eq('agency_id', agency_id)
+        .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] retention_status update error:', error) })
+    }
+
+    // Crisis capture → text the W-2 producer so a human can intervene now.
+    // Fully optional: only fires when both the outcome warrants it and the
+    // Twilio + producer-number config is present. Never throws.
+    if (outcome === 'escalated' || outcome === 'shopping') {
+      try {
+        const sid = Deno.env.get('TWILIO_ACCOUNT_SID')
+        const tok = Deno.env.get('TWILIO_AUTH_TOKEN')
+        const from = Deno.env.get('TWILIO_PHONE_NUMBER')
+        const producer = Deno.env.get('PRODUCER_MOBILE_NUMBER')
+        if (sid && tok && from && producer) {
+          const label = retentionStatus === 'crisis_capture' ? 'CRISIS CAPTURE' : 'AT-RISK'
+          const who = current.customer_name || 'a customer'
+          const res = await sendSMS(sid, tok, from, producer,
+            `${label} ALERT: AI retention call with ${who} flagged "${outcome}" (reason: ${followupReason || 'n/a'}). Action needed in QuoteSync — call ${body.call_id}.`)
+          if (!res.success) console.error('[BLAND_RENEWAL_WEBHOOK] Producer alert SMS failed:', res.error)
+        }
+      } catch (smsErr) {
+        console.error('[BLAND_RENEWAL_WEBHOOK] Producer alert SMS threw:', smsErr)
+      }
     }
 
     console.log(`[BLAND_RENEWAL_WEBHOOK] ${body.call_id} → ${outcome} | case: ${policy_id} | $${estimatedCost}`)
