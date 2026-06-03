@@ -9,8 +9,8 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useAuth } from '../contexts/AuthContext';
 import { useAutoSyncPersona } from '../hooks/usePersona';
 import { supabase } from '../lib/supabase';
-import ThemeToggle from './ThemeToggle';
 import PersonaSwitcher from './PersonaSwitcher';
+import { useForceTheme } from '../contexts/ThemeContext';
 
 // Universal "toggle sidebar" icon — rectangle with a left panel divider.
 // Same glyph used in VS Code, Linear, Figma, Notion.
@@ -84,6 +84,9 @@ const CROSS_SELL_ITEM = {
 export default function EmployeeLayout() {
   const { data: employee } = useCurrentEmployee();
   const { currentAgencyRole } = useAuth();
+
+  // Employees use the light theme by default across the whole employee app.
+  useForceTheme('light');
 
   // Keep the persona pill in sync with the URL — landing on /my/today snaps
   // a principal's persona to "service" so the sidebar's PersonaSwitcher
@@ -282,26 +285,6 @@ export default function EmployeeLayout() {
             </NavLink>
           ))}
         </nav>
-
-        {/* Theme toggle — dark / light / high contrast.
-            Uses the icon+dropdown variant, matching the top nav. */}
-        <div style={{
-          padding: '10px 16px 12px',
-          borderBottom: '1px solid var(--qs-border)',
-          marginBottom: 12,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          gap: 8,
-        }}>
-          <span style={{
-            fontSize: 11, fontWeight: 600,
-            color: 'var(--qs-subtle)',
-            textTransform: 'uppercase',
-            letterSpacing: '0.07em',
-          }}>
-            Theme
-          </span>
-          <ThemeToggle variant="pill" />
-        </div>
 
         {/* User identity + persona switcher + sign out */}
         <div style={{
