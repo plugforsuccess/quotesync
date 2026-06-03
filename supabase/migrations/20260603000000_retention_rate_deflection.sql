@@ -1,9 +1,11 @@
--- Retention Engine — Rate-Deflection Warm Transfer (Campaign B)
+-- Retention Engine — Pre-Renewal Outreach (single campaign)
 --
--- Adds the tracking columns the rate-deflection campaign needs, mapped onto the
--- live `renewal_cases` schema (the spec's `policies`/`clients`/`bland_calls`
+-- Adds the tracking columns the pre-renewal outreach sweep needs, mapped onto
+-- the live `renewal_cases` schema (the spec's `policies`/`clients`/`bland_calls`
 -- tables do not exist in this codebase — renewal_cases + customer_consent +
--- ai_call_log are the canonical retention tables).
+-- ai_call_log are the canonical retention tables), and schedules the daily
+-- 45→32 DTE sweep (renewal-outreach-sweep). There is one outreach campaign; the
+-- script branches on the rate change rather than running separate pipelines.
 --
 -- Every statement is guarded so this is safe to run against any environment,
 -- including ones where renewal_cases / ai_call_log were created directly via the
@@ -20,9 +22,9 @@ BEGIN
     ALTER TABLE public.renewal_cases
       ADD COLUMN IF NOT EXISTS retention_status text NOT NULL DEFAULT 'stable';
 
-    -- Idempotency / anti-over-dial lock. The dispatcher stamps this to
-    -- CURRENT_DATE at the start of a run so a retried DB webhook cannot
-    -- double-dial the same case in a single day.
+    -- Single-fire / anti-over-dial lock. The sweep stamps this to CURRENT_DATE
+    -- when it places a call, so a case is contacted at most once per renewal
+    -- cycle even if the daily sweep runs again.
     ALTER TABLE public.renewal_cases
       ADD COLUMN IF NOT EXISTS last_retention_call_date date;
 
@@ -44,70 +46,26 @@ BEGIN
   END IF;
 END $$;
 
--- ── Database Webhook: fire Campaign B when the premium delta crosses 8% ───────
--- Uses pg_net + the same app.* settings the existing Bland crons rely on. The
--- WHEN clause makes this fire only on the upward crossing, so routine row
--- updates never re-dial. The edge function re-validates every gate (consent,
--- call window, idempotency) before any call is placed.
-CREATE OR REPLACE FUNCTION public.fn_trigger_rate_deflection()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public, extensions
-AS $$
-DECLARE
-  v_url  text := current_setting('app.supabase_url', true);
-  v_key  text := current_setting('app.service_role_key', true);
-BEGIN
-  -- Fail safe: the renewal_cases write must succeed even if dispatch can't.
-  -- Missing config or a pg_net hiccup is logged, never propagated.
-  IF v_url IS NULL OR v_key IS NULL THEN
-    RAISE WARNING '[rate_deflection] app.supabase_url / service_role_key not set — skipping dispatch for %', NEW.id;
-    RETURN NEW;
-  END IF;
-
-  BEGIN
-    PERFORM net.http_post(
-      url     := v_url || '/functions/v1/trigger-rate-deflection',
+-- ── Daily pre-renewal outreach sweep (single campaign) ───────────────────────
+-- Replaces the old instant per-row trigger. Instant firing was wrong for this
+-- strategy: the renewal lands in the agency queue at 45 DTE but the customer
+-- isn't notified until 31 DTE, so contact must be *windowed* (45→32 DTE), not
+-- fired the moment the rate data arrives. A daily cron lets renewal-outreach-sweep
+-- pick up cases as they enter the window and fire once each.
+--
+-- 13:30 UTC ≈ 8:30/9:30am Eastern — inside the 8am–2pm window. The function
+-- re-checks the window + weekday itself, so the exact cron minute is not load-bearing.
+SELECT cron.schedule(
+  'renewal-outreach-sweep',
+  '30 13 * * 1-5',
+  $$
+    SELECT net.http_post(
+      url := current_setting('app.supabase_url') || '/functions/v1/renewal-outreach-sweep',
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
-        'Authorization', 'Bearer ' || v_key
+        'Authorization', 'Bearer ' || current_setting('app.service_role_key')
       ),
-      body    := jsonb_build_object(
-        'type', TG_OP,
-        'table', TG_TABLE_NAME,
-        'policy_id', NEW.id,
-        'record', row_to_json(NEW),
-        'old_record', CASE WHEN TG_OP = 'UPDATE' THEN row_to_json(OLD) ELSE NULL END
-      )
+      body := '{}'::jsonb
     );
-  EXCEPTION WHEN OTHERS THEN
-    RAISE WARNING '[rate_deflection] dispatch failed for %: %', NEW.id, SQLERRM;
-  END;
-
-  RETURN NEW;
-END $$;
-
--- Two separate triggers so the WHEN clause never references OLD on an INSERT
--- (OLD is not defined for INSERT events).
-DO $$
-BEGIN
-  IF to_regclass('public.renewal_cases') IS NOT NULL THEN
-    DROP TRIGGER IF EXISTS trg_rate_deflection_ins ON public.renewal_cases;
-    CREATE TRIGGER trg_rate_deflection_ins
-      AFTER INSERT ON public.renewal_cases
-      FOR EACH ROW
-      WHEN (NEW.premium_change_pct > 8)
-      EXECUTE FUNCTION public.fn_trigger_rate_deflection();
-
-    DROP TRIGGER IF EXISTS trg_rate_deflection_upd ON public.renewal_cases;
-    CREATE TRIGGER trg_rate_deflection_upd
-      AFTER UPDATE ON public.renewal_cases
-      FOR EACH ROW
-      WHEN (
-        NEW.premium_change_pct > 8
-        AND (OLD.premium_change_pct IS NULL OR OLD.premium_change_pct <= 8)
-      )
-      EXECUTE FUNCTION public.fn_trigger_rate_deflection();
-  END IF;
-END $$;
+  $$
+);

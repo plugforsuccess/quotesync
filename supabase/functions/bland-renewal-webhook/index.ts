@@ -34,6 +34,7 @@ interface BlandWebhookPayload {
     policy_number: string
     customer_phone?: string
     renewal_date?: string
+    campaign_type?: string
   }
   variables?: {
     autodial_consent?: string
@@ -170,8 +171,13 @@ Deno.serve(async (req) => {
     }
 
     const newAttempts = (current.attempt_count || 0) + 1
-    const needsFollowup = ['shopping', 'escalated', 'hesitant', 'wrong_number'].includes(outcome)
-    const followupReason = resolveFollowupReason(outcome, body)
+    // The pre-renewal sweep fires once per case and won't retry, so an
+    // unanswered call there must hand to a human to follow up before the
+    // customer is notified at 31 DTE.
+    const isSingleFireCampaign = body.metadata?.campaign_type === 'rate_deflection'
+    const noAnswerNeedsHuman = isSingleFireCampaign && ['no_answer', 'left_voicemail'].includes(outcome)
+    const needsFollowup = ['shopping', 'escalated', 'hesitant', 'wrong_number'].includes(outcome) || noAnswerNeedsHuman
+    const followupReason = noAnswerNeedsHuman ? 'no_response' : resolveFollowupReason(outcome, body)
     // assigned_to on renewal_cases is UUID type — resolveAssignment returns employee ID string
     const assignedTo = needsFollowup ? resolveAssignment(followupReason, envStaff) : null
     const followupDueBy = needsFollowup ? resolveFollowupDueBy(followupReason, current.renewal_date, now) : null
