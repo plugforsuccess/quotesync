@@ -8,7 +8,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
-import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import AvailabilityToggle from '../components/AvailabilityToggle';
@@ -193,11 +192,7 @@ export default function MyQueuePage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Scorecard metrics
-  const roles     = employee?.roles || [];
-  const scoreType = roles.includes('service_outbound') ? 'outbound'
-    : roles.includes('service_inbound') ? 'inbound' : 'both';
-  const { data: metrics } = useRetentionMetrics(employeeId, scoreType);
+  const roles = employee?.roles || [];
 
   // Track stale refresh
   useEffect(() => {
@@ -1170,61 +1165,6 @@ export default function MyQueuePage() {
 
       {/* ── Availability Toggle ───────────────────────────────────────── */}
       <AvailabilityToggle />
-
-      {/* ── Scorecard Preview Strip ───────────────────────────────────── */}
-      {metrics && (
-        <div style={{
-          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
-          borderRadius: 12, padding: '16px 20px', marginBottom: 16,
-          display: 'flex', alignItems: 'center', gap: 32, flexWrap: 'wrap',
-        }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
-            textTransform: 'uppercase', letterSpacing: '0.07em' }}>
-            This Month
-          </span>
-          {[
-            { label: 'Save Rate', value: metrics.cancelSaveRate != null ? `${Math.round(metrics.cancelSaveRate * 100)}%` : '—' },
-            { label: 'Saved',     value: metrics.cancelSaved     ?? '—' },
-            { label: 'Renewals ✓',value: metrics.renewalsConfirmed ?? '—' },
-            { label: 'Attempts',  value: metrics.totalCancelAttempts ?? '—' },
-          ].map(stat => (
-            <div key={stat.label}>
-              <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginBottom: 2 }}>{stat.label}</div>
-              <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--qs-bright)',
-                fontFamily: "'DM Mono', monospace" }}>{stat.value}</div>
-            </div>
-          ))}
-          {/* Daily call progress */}
-          {(() => {
-            const DAILY_TARGET = 8;
-            const progressPct = Math.min(100, Math.round((focusStats.attemptedToday / DAILY_TARGET) * 100));
-            return (
-              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div>
-                  <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 3 }}>
-                    Today: {focusStats.attemptedToday}/{DAILY_TARGET} calls
-                  </div>
-                  <div style={{
-                    width: 100, height: 6, background: 'var(--qs-elevated)',
-                    borderRadius: 3, overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      height: '100%', borderRadius: 3,
-                      width: `${progressPct}%`,
-                      background: progressPct >= 100 ? '#10B981' : progressPct >= 50 ? '#3B82F6' : '#F59E0B',
-                      transition: 'width 0.3s',
-                    }} />
-                  </div>
-                </div>
-                <a href="/my/scorecard"
-                  style={{ fontSize: 12, color: 'var(--qs-info)', textDecoration: 'none', fontWeight: 600 }}>
-                  Full Scorecard →
-                </a>
-              </div>
-            );
-          })()}
-        </div>
-      )}
 
       {/* ── Header: title + stale indicator ──────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
