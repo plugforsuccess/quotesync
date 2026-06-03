@@ -26,7 +26,9 @@ import { checkRequiredEnvVars, formatPhoneUS } from '../_shared/twilio.ts'
 const BLAND_API_URL = 'https://api.bland.ai/v1/calls'
 const PREMIUM_DELTA_THRESHOLD_PCT = 8
 
-// Restrict to 10:00 AM – 7:00 PM recipient-local time (per retention guardrails).
+// Restrict to 8:00 AM – 2:00 PM recipient-local time. The window ends at 2pm so
+// every warm transfer can complete before the licensed agent (Tracy) leaves at
+// 3pm — there's no point dialing a deflection call we can't hand off live.
 // This book is Georgia-based, so recipient-local == US Eastern.
 function isWithinCallWindowEastern(): boolean {
   const now = new Date()
@@ -42,7 +44,7 @@ function isWithinCallWindowEastern(): boolean {
   const easternHour = (now.getUTCHours() - offsetHours + 24) % 24
   const easternDay = now.getUTCDay()
   if (easternDay === 0 || easternDay === 6) return false // no weekend calls
-  return easternHour >= 10 && easternHour < 19
+  return easternHour >= 8 && easternHour < 14
 }
 
 // Compliant warm-transfer script. Honest, discloses it is automated, no false
