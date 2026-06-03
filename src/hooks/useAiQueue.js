@@ -1,5 +1,6 @@
 // src/hooks/useAiQueue.js
-// React Query hook for firing the renewal AI call queue via the fire-renewal-queue edge function.
+// React Query hook for firing the renewal AI call queue via the renewal-outreach-sweep
+// edge function (the consolidated pre-renewal campaign; same engine the daily cron runs).
 
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
@@ -12,7 +13,7 @@ async function fireRenewalQueue(overrideSuppression = false) {
 
   // agency_id is derived server-side from the JWT — not sent by the client.
   // This prevents a malicious client from firing calls against another agency.
-  const response = await supabase.functions.invoke('fire-renewal-queue', {
+  const response = await supabase.functions.invoke('renewal-outreach-sweep', {
     body: {
       override_suppression: overrideSuppression,
     },

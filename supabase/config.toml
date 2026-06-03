@@ -3,3 +3,8 @@ verify_jwt = false
 
 [functions.canopy-webhook]
 verify_jwt = false
+
+# Invoked by pg_cron (daily pre-renewal sweep); performs its own service-role /
+# shared-secret auth, so the gateway JWT check is disabled.
+[functions.renewal-outreach-sweep]
+verify_jwt = false

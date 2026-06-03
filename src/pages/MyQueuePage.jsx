@@ -187,7 +187,14 @@ export default function MyQueuePage() {
         .or(`snoozed_until.is.null,snoozed_until.lt.${new Date().toISOString()}`)
         .order('renewal_date', { ascending: true });
       if (error) throw error;
-      return data ?? [];
+      // Float retention escalations to the top: crisis_capture first, then
+      // at_risk, then everything else by renewal_date (the server order).
+      const rank = (s) => (s === 'crisis_capture' ? 0 : s === 'at_risk' ? 1 : 2);
+      return (data ?? []).slice().sort((a, b) => {
+        const r = rank(a.retention_status) - rank(b.retention_status);
+        if (r !== 0) return r;
+        return (a.renewal_date || '').localeCompare(b.renewal_date || '');
+      });
     },
     enabled: !!employeeId,
     staleTime: 2 * 60 * 1000,
@@ -843,14 +850,16 @@ export default function MyQueuePage() {
     const urgent    = daysUntil <= 14;
     const changePct = parseFloat(event.premium_change_pct) || 0;
     const rateShock = event.rate_shock_flag || changePct >= 15;
+    const crisis    = event.retention_status === 'crisis_capture';
+    const atRisk    = event.retention_status === 'at_risk';
     const phone     = event.phone || event.customer_phone;
     const lastAtt   = lastAttemptSummary(event.last_attempt_result, event.last_attempt_at);
 
     return (
       <div style={{
         background:   'var(--qs-card)',
-        border:       `1px solid ${urgent ? 'rgba(245,158,11,0.3)' : 'var(--qs-border)'}`,
-        borderLeft:   `3px solid ${urgent ? '#FBBF24' : 'var(--qs-border)'}`,
+        border:       `1px solid ${crisis ? 'rgba(239,68,68,0.45)' : urgent ? 'rgba(245,158,11,0.3)' : 'var(--qs-border)'}`,
+        borderLeft:   `3px solid ${crisis ? '#EF4444' : urgent ? '#FBBF24' : 'var(--qs-border)'}`,
         borderRadius: 10,
         padding:      '18px 20px',
       }}>
@@ -863,6 +872,20 @@ export default function MyQueuePage() {
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {event.customer_name}
               </span>
+
+              {crisis && (
+                <span style={{ fontSize: 13, background: 'rgba(239,68,68,0.18)', color: '#F87171',
+                  borderRadius: 4, padding: '2px 8px', fontWeight: 800, flexShrink: 0 }}>
+                  🚨 Crisis Capture
+                </span>
+              )}
+
+              {atRisk && !crisis && (
+                <span style={{ fontSize: 13, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
+                  borderRadius: 4, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
+                  ⚠ At Risk
+                </span>
+              )}
 
               {rateShock && (
                 <span style={{ fontSize: 13, background: 'rgba(239,68,68,0.15)', color: '#F87171',

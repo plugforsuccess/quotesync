@@ -34,6 +34,7 @@ interface BlandWebhookPayload {
     policy_number: string
     customer_phone?: string
     renewal_date?: string
+    campaign_type?: string
   }
   variables?: {
     autodial_consent?: string
@@ -170,8 +171,13 @@ Deno.serve(async (req) => {
     }
 
     const newAttempts = (current.attempt_count || 0) + 1
-    const needsFollowup = ['shopping', 'escalated', 'hesitant', 'wrong_number'].includes(outcome)
-    const followupReason = resolveFollowupReason(outcome, body)
+    // The pre-renewal sweep fires once per case and won't retry, so an
+    // unanswered call there must hand to a human to follow up before the
+    // customer is notified at 31 DTE.
+    const isSingleFireCampaign = body.metadata?.campaign_type === 'rate_deflection'
+    const noAnswerNeedsHuman = isSingleFireCampaign && ['no_answer', 'left_voicemail'].includes(outcome)
+    const needsFollowup = ['shopping', 'escalated', 'hesitant', 'wrong_number'].includes(outcome) || noAnswerNeedsHuman
+    const followupReason = noAnswerNeedsHuman ? 'no_response' : resolveFollowupReason(outcome, body)
     // assigned_to on renewal_cases is UUID type — resolveAssignment returns employee ID string
     const assignedTo = needsFollowup ? resolveAssignment(followupReason, envStaff) : null
     const followupDueBy = needsFollowup ? resolveFollowupDueBy(followupReason, current.renewal_date, now) : null
@@ -268,7 +274,8 @@ Deno.serve(async (req) => {
 
     // 5. Attempt cap — 3+ no-answer/voicemail → flag for human call on renewal_cases
     // Also update customer_renewal_groups if group exists
-    if (newAttempts >= 3 && ['no_answer', 'left_voicemail'].includes(outcome)) {
+    const attemptCapTriggered = newAttempts >= 3 && ['no_answer', 'left_voicemail'].includes(outcome)
+    if (attemptCapTriggered) {
       await supabase.from('renewal_cases').update({
         human_only: true,
         human_only_reason: 'ai_attempt_cap',
@@ -298,6 +305,37 @@ Deno.serve(async (req) => {
         .eq('id', body.metadata.customer_group_id)
         .eq('agency_id', agency_id)
         .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] Group update error:', error) })
+    }
+
+    // 7. In-app workspace surfacing (best-effort — never breaks the core write).
+    //    a) retention_status mirrors the outcome so the queue can float crisis
+    //       cases to the top (escalated → crisis_capture, shopping → at_risk).
+    //    b) assigned_to_id mirrors assigned_to. The producer queue (MyQueuePage),
+    //       the employee RLS policies, and the retention views all filter on
+    //       assigned_to_id — the canonical column — while the writes above set
+    //       the legacy assigned_to. Without this mirror, escalated cases are
+    //       assigned to a column the producer's queue never reads, so they
+    //       never surface. Done as a separate update so a missing column can't
+    //       fail the critical renewal_cases write.
+    const retentionStatus =
+      outcome === 'escalated' ? 'crisis_capture' :
+      outcome === 'shopping' ? 'at_risk' :
+      outcome === 'confirmed' ? 'stable' : null
+    // The assignee actually written above: attempt-cap reassigns to Tracy/Cameron,
+    // otherwise it's the resolved followup assignee.
+    const effectiveAssignee = attemptCapTriggered
+      ? (envStaff.TRACY_EMPLOYEE_ID || envStaff.CAMERON_EMPLOYEE_ID || null)
+      : (assignedTo || null)
+
+    const surfacePatch: Record<string, unknown> = {}
+    if (retentionStatus) surfacePatch.retention_status = retentionStatus
+    if (effectiveAssignee) surfacePatch.assigned_to_id = effectiveAssignee
+    if (Object.keys(surfacePatch).length > 0) {
+      surfacePatch.updated_at = nowISO
+      await supabase.from('renewal_cases')
+        .update(surfacePatch)
+        .eq('id', policy_id).eq('agency_id', agency_id)
+        .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] workspace surfacing update error:', error) })
     }
 
     console.log(`[BLAND_RENEWAL_WEBHOOK] ${body.call_id} → ${outcome} | case: ${policy_id} | $${estimatedCost}`)
