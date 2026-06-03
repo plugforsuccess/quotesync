@@ -10,7 +10,6 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
-import AvailabilityToggle from '../components/AvailabilityToggle';
 
 // Format relative time — "2d ago", "3h ago", "just now"
 function relativeTime(dateStr) {
@@ -1162,9 +1161,6 @@ export default function MyQueuePage() {
 
   return (
     <div>
-
-      {/* ── Availability Toggle ───────────────────────────────────────── */}
-      <AvailabilityToggle />
 
       {/* ── Header: title + stale indicator ──────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
