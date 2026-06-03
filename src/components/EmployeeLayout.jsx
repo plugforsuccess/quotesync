@@ -70,31 +70,6 @@ const NAV_ITEMS = [
       </svg>
     ),
   },
-  {
-    to: '/my/scorecard',
-    label: 'Scorecard',
-    desc: 'My performance metrics',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <line x1="18" y1="20" x2="18" y2="10"/>
-        <line x1="12" y1="20" x2="12" y2="4"/>
-        <line x1="6"  y1="20" x2="6"  y2="14"/>
-      </svg>
-    ),
-  },
-  {
-    to: '/punch',
-    label: 'Time Clock',
-    desc: 'Punch in / punch out',
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-    ),
-  },
 ];
 
 // Cross-Sell is sales-gated — a "producer" in this app is any employee with
