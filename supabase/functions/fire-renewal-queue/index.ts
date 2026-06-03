@@ -69,7 +69,7 @@ function isSuppressedDay(): { suppressed: boolean; reason?: string } {
 }
 
 // System prompt — unchanged from previous version
-const SYSTEM_PROMPT = `You are a courtesy outreach assistant calling on behalf of Wiley-Wilson Insurance Agency in Conyers, Georgia. Your role is to inform policyholders about their upcoming renewal, confirm key account details, capture their intent, and give them a reason to stay before making any decisions.
+const SYSTEM_PROMPT = `You are a courtesy outreach assistant calling on behalf of Wiley-Wilson Insurance Agency in Conyers, Georgia. Your role is to inform policyholders about their upcoming renewal, confirm key account details, capture their intent, and give them a reason to stay before making any decisions. You are reaching out proactively — ahead of their renewal bill — so they hear from their agency first and have time to review their options before any payment is due.
 
 STRICT RULES — follow these without exception:
 1. You are only permitted to discuss information explicitly provided in your metadata. Do not speculate about coverage details, claim history, discounts, vehicle specifics, driver history, or any information not provided to you.
@@ -208,11 +208,16 @@ Deno.serve(async (req) => {
   // - premium_sanity_flag = false
   // - claim_flag = 'none'
   // - fewer than 3 attempts
-  // - renewal date today or future (no point calling about past renewals)
-  // - within 60 days of renewal date
+  // - renewal date within the 21–45 day proactive pre-bill window.
+  //   Allstate posts cases at 45 days out; the insured is billed at 21 days
+  //   out. We call only in this window so the customer hears from us before the
+  //   bill. Inside 21 days the case is left to human retention.
   const cutoffDate = new Date()
-  cutoffDate.setDate(cutoffDate.getDate() + 60)
+  cutoffDate.setDate(cutoffDate.getDate() + 45)
   const cutoffStr = cutoffDate.toISOString().split('T')[0]
+  const windowFloorDate = new Date()
+  windowFloorDate.setDate(windowFloorDate.getDate() + 21)
+  const windowFloorStr = windowFloorDate.toISOString().split('T')[0]
 
   const { data: candidates, error: fetchError } = await supabase
     .from('renewal_cases')
@@ -233,7 +238,7 @@ Deno.serve(async (req) => {
     .lt('attempt_count', 3)
     .neq('last_contact_outcome', 'shopping')
     .neq('last_contact_outcome', 'escalated')
-    .gte('renewal_date', today)
+    .gte('renewal_date', windowFloorStr)
     .lte('renewal_date', cutoffStr)
     .order('renewal_date', { ascending: true })
     .limit(BATCH_LIMIT * 2)
@@ -276,11 +281,14 @@ Deno.serve(async (req) => {
       blocked.push({ policy_id: record.id, reason: 'no_consent_or_dnc' }); continue
     }
 
-    // Gate: contact window (15–60 days before renewal)
+    // Gate: proactive pre-bill window (21–45 days before renewal).
+    // Allstate posts at 45d; the bill reaches the insured at 21d. We call only
+    // in this window so the customer hears from us before the bill. Inside 21d
+    // the case is left to human retention (rate-shock saves need a licensed rep).
     const renewalDate = new Date(record.renewal_date)
     const daysUntil = Math.ceil((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-    if (daysUntil < 15 || daysUntil > 60) {
-      blocked.push({ policy_id: record.id, reason: 'outside_contact_window' }); continue
+    if (daysUntil < 21 || daysUntil > 45) {
+      blocked.push({ policy_id: record.id, reason: 'outside_proactive_window' }); continue
     }
 
     // Gate: attempt spacing (48h between attempts)

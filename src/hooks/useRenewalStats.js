@@ -68,7 +68,7 @@ export function useRenewalStats(policies) {
   return useMemo(() => {
     if (!Array.isArray(policies)) {
       return {
-        totalDue60Days: 0,
+        proactiveWindow: 0,
         escalated: 0,
         humanOnly: 0,
         needsHumanCall: 0,
@@ -76,7 +76,9 @@ export function useRenewalStats(policies) {
       };
     }
 
-    let totalDue60Days = 0;
+    // Proactive window = 21–45 days out: cases Allstate has posted but whose
+    // bill hasn't been sent yet — the window to retain before the bill lands.
+    let proactiveWindow = 0;
     let escalated = 0;
     let humanOnly = 0;
     let needsHumanCall = 0;
@@ -84,7 +86,7 @@ export function useRenewalStats(policies) {
 
     policies.forEach((p) => {
       const daysUntil = getDaysUntilRenewal(p.renewal_date);
-      if (daysUntil <= 60) totalDue60Days++;
+      if (daysUntil >= 21 && daysUntil <= 45) proactiveWindow++;
 
       const bucket = getTriageBucket(p);
       if (bucket === 'escalated') escalated++;
@@ -93,7 +95,7 @@ export function useRenewalStats(policies) {
       else if (bucket === 'automation_cleared') automationCleared++;
     });
 
-    return { totalDue60Days, escalated, humanOnly, needsHumanCall, automationCleared };
+    return { proactiveWindow, escalated, humanOnly, needsHumanCall, automationCleared };
   }, [policies]);
 }
 
