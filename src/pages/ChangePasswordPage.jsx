@@ -67,11 +67,19 @@ export default function ChangePasswordPage() {
         background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
         borderRadius: 14, padding: 32,
       }}>
-        {/* Logo */}
+        {/* Logo — matches the login page branding */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <img src="/logos/allstate.svg" alt="Allstate" style={{ height: 36 }}
-            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
-          <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 8 }}>
+          <div className="flex items-center justify-center gap-3" style={{ marginBottom: 8 }}>
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--qs-bright)' }}>
+              insuredbycam
+            </span>
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--qs-subtle)', margin: 0 }}>
             Wiley-Wilson Agency
           </p>
         </div>
