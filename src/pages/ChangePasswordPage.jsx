@@ -10,7 +10,7 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 
 export default function ChangePasswordPage() {
   const navigate = useNavigate();
-  const { data: employee, refetch } = useCurrentEmployee();
+  const { refetch } = useCurrentEmployee();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [saving, setSaving] = useState(false);
@@ -33,12 +33,18 @@ export default function ChangePasswordPage() {
       const { error: pwError } = await supabase.auth.updateUser({ password });
       if (pwError) throw pwError;
 
-      // Clear the must_reset_password flag
-      const { error: flagError } = await supabase
-        .from('employees')
-        .update({ must_reset_password: false })
-        .eq('id', employee.id);
+      // Clear the must_reset_password flag via a SECURITY DEFINER RPC.
+      // A plain employee has no UPDATE policy on their own employees row, so a
+      // direct table update silently affects 0 rows and traps them in a
+      // redirect loop. The RPC clears only this flag for the calling user.
+      const { data: cleared, error: flagError } = await supabase
+        .rpc('clear_my_must_reset_password');
       if (flagError) throw flagError;
+      if (!cleared) {
+        throw new Error(
+          "Your password was updated, but we couldn't finish setting up your account. Please contact your agency administrator."
+        );
+      }
 
       // Refetch employee record so EmployeeRoute sees the cleared flag
       await refetch();
@@ -63,7 +69,8 @@ export default function ChangePasswordPage() {
       }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <img src="/allstate-badge.svg" alt="Allstate" style={{ height: 36 }} />
+          <img src="/logos/allstate.svg" alt="Allstate" style={{ height: 36 }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           <p style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 8 }}>
             Wiley-Wilson Agency
           </p>

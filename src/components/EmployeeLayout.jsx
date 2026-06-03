@@ -225,8 +225,9 @@ export default function EmployeeLayout() {
             <img src={agencyLogoUrl} alt="Agency"
               style={{ height: 32, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
           ) : (
-            <img src="/allstate-badge.svg" alt="Allstate"
-              style={{ height: 32, flexShrink: 0 }} />
+            <img src="/logos/allstate.svg" alt="Allstate"
+              style={{ height: 32, flexShrink: 0 }}
+              onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           )}
           {!collapsed && (
             <div style={{ minWidth: 0, width: '100%', textAlign: 'center' }}>
