@@ -1,27 +1,26 @@
 // Supabase Edge Function: renewal-outreach-sweep
 // POST /functions/v1/renewal-outreach-sweep
 //
-// The single pre-renewal outreach campaign (replaces the old instant-trigger
-// "Campaign B"). Runs daily via pg_cron. Its job is to make first contact
-// BEFORE the customer is notified of their renewal.
+// The single pre-renewal outreach campaign. Two ways to trigger it, one engine:
+//   - CRON (service-role / shared secret) → sweeps ALL agencies, strict window.
+//   - BUTTON ("Run AI Queue", user JWT)   → sweeps the caller's agency only,
+//     with the suppressed/override banner the UI expects.
 //
-// Timing (Allstate GA): the renewal + new rate lands in the agency queue at
-// 45 DTE; the customer isn't notified until 31 DTE. That 45→31 gap is our
-// blackout window to reach them first. This sweep fires once per case at the
-// TOP of the window (45→32 DTE) so a no-answer still leaves the human ~13 days
-// to follow up before the notice goes out.
+// Its job is to make first contact BEFORE the customer is notified of their
+// renewal. Allstate (GA) drops the renewal + new rate into the agency queue at
+// 45 DTE but doesn't notify the customer until 31 DTE — so contact is windowed
+// to 45→32 DTE, fired once per case at the top of the window so a no-answer
+// still leaves the human ~13 days before the notice.
 //
 // Branch on rate change:
-//   - premium increase > 8%  → deflection call: honest "your rate moved, let's
-//     review", warm transfer to a licensed agent (8am–2pm, weekdays), and the
-//     outcome routes to a human (crisis flag or no-answer → Tracy's queue).
-//   - flat / decrease        → SHELVED. A friendly review/cross-sell touch is a
-//     growth play, not retention; enable later via CALL_FLAT_RENEWALS.
+//   - increase > 8%   → deflection call: honest "your renewal's coming, let's
+//     review", warm transfer to an available licensed agent, outcome routes to
+//     a human (crisis flag or no-answer → the producer's queue).
+//   - flat / decrease → SHELVED (CALL_FLAT_RENEWALS) — cross-sell is offense.
 //
 // Compliant: discloses it's an automated assistant, never quotes/binds, honors
-// opt-out. All pre-call gates apply (consent, DNC, call window, single-fire
-// lock, recent-contact de-dup). The call_ended callback is bland-renewal-webhook.
-// Auth: service-role bearer, or x-retention-secret == RETENTION_WEBHOOK_SECRET.
+// opt-out. Gates: consent, DNC, call window, single-fire lock, recent-contact
+// de-dup. The call_ended callback is bland-renewal-webhook.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { corsHeaders } from '../_shared/cors.ts'
@@ -37,14 +36,14 @@ const BATCH_LIMIT = 25
 const CALL_DELAY_MS = 4_000
 
 // Flat / non-increase renewals are intentionally NOT called (shelved). Flip to
-// true (and widen the query below) only to run a cross-sell / discount-review
-// touch — that's offense, not churn defense.
+// true (and the query widens) only to run a cross-sell / discount-review touch.
 const CALL_FLAT_RENEWALS = false
 
-// Restrict to 8:00 AM – 2:00 PM recipient-local time, weekdays only. Ends at 2pm
-// so every warm transfer can complete before the licensed agent leaves at 3pm.
-// This book is Georgia-based, so recipient-local == US Eastern.
-function isWithinCallWindowEastern(): boolean {
+// ── Calling-window logic (US Eastern; this book is Georgia-based) ────────────
+// Business rule: weekdays, 8:00 AM–2:00 PM, so every warm transfer can complete
+// before the licensed agent leaves at 3pm. A manual override (button only) can
+// bypass the weekday/holiday/2pm rules but never the TCPA 8am–9pm hard floor.
+function easternNow() {
   const now = new Date()
   const year = now.getUTCFullYear()
   const marchSecondSunday = new Date(Date.UTC(year, 2, 1))
@@ -54,11 +53,43 @@ function isWithinCallWindowEastern(): boolean {
   const dstStart = new Date(marchSecondSunday.getTime() + 7 * 60 * 60 * 1000)
   const dstEnd = new Date(novFirstSunday.getTime() + 6 * 60 * 60 * 1000)
   const isDST = now >= dstStart && now < dstEnd
-  const offsetHours = isDST ? 4 : 5
-  const easternHour = (now.getUTCHours() - offsetHours + 24) % 24
-  const easternDay = now.getUTCDay()
-  if (easternDay === 0 || easternDay === 6) return false // no weekend calls
-  return easternHour >= 8 && easternHour < 14
+  const offsetMs = (isDST ? 4 : 5) * 60 * 60 * 1000
+  const et = new Date(now.getTime() - offsetMs)
+  return { hour: et.getUTCHours(), day: et.getUTCDay(), dateStr: et.toISOString().split('T')[0] }
+}
+
+function holidayName(dateStr: string, year: number): string | null {
+  const fixed: Record<string, string> = {
+    [`${year}-01-01`]: "New Year's Day",
+    [`${year}-07-04`]: 'Independence Day',
+    [`${year}-12-25`]: 'Christmas',
+  }
+  if (fixed[dateStr]) return fixed[dateStr]
+  const mayLast = new Date(Date.UTC(year, 4, 31)); while (mayLast.getUTCDay() !== 1) mayLast.setUTCDate(mayLast.getUTCDate() - 1)
+  if (mayLast.toISOString().split('T')[0] === dateStr) return 'Memorial Day'
+  const sepFirst = new Date(Date.UTC(year, 8, 1)); while (sepFirst.getUTCDay() !== 1) sepFirst.setUTCDate(sepFirst.getUTCDate() + 1)
+  if (sepFirst.toISOString().split('T')[0] === dateStr) return 'Labor Day'
+  const nov = new Date(Date.UTC(year, 10, 1)); let t = 0
+  while (t < 4) { if (nov.getUTCDay() === 4) t++; if (t < 4) nov.setUTCDate(nov.getUTCDate() + 1) }
+  if (nov.toISOString().split('T')[0] === dateStr) return 'Thanksgiving'
+  return null
+}
+
+// Returns { ok } if clear to dial, else { suppressed, reason, message }.
+// `override` is honored only on the button path.
+function callWindowStatus(override: boolean): { ok: true } | { ok: false; reason: string; message: string } {
+  const { hour, day, dateStr } = easternNow()
+  const tcpaOk = hour >= 8 && hour < 21
+  if (override) {
+    // Manual run: allow off-hours/weekend/holiday, but never outside TCPA hours.
+    if (!tcpaOk) return { ok: false, reason: 'tcpa_hours', message: 'Outside legal calling hours (8:00 AM–9:00 PM Eastern). Cannot override.' }
+    return { ok: true }
+  }
+  if (day === 0 || day === 6) return { ok: false, reason: 'weekend', message: 'AI calls run weekdays only. Override to run now anyway.' }
+  const hol = holidayName(dateStr, Number(dateStr.slice(0, 4)))
+  if (hol) return { ok: false, reason: `holiday:${hol}`, message: `Today is ${hol}; AI calls are paused. Override to run now anyway.` }
+  if (!(hour >= 8 && hour < 14)) return { ok: false, reason: 'outside_hours', message: 'Outside the 8:00 AM–2:00 PM weekday calling window. Override to run now anyway.' }
+  return { ok: true }
 }
 
 // Compliant warm-transfer script. Honest, discloses it is automated, no false
@@ -98,38 +129,74 @@ const ANALYSIS_SCHEMA = {
 }
 
 function jsonResponse(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  })
+  return new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
 }
 
-function ymd(d: Date): string {
-  return d.toISOString().split('T')[0]
+function ymd(d: Date): string { return d.toISOString().split('T')[0] }
+
+// Resolve the trigger mode. CRON: service-role bearer or shared secret → all
+// agencies. BUTTON: a user JWT belonging to an active principal/producer → that
+// agency only. Anything else → null (forbidden).
+async function resolveCaller(req: Request, serviceRoleKey: string): Promise<
+  { mode: 'cron'; agencyId: null } | { mode: 'user'; agencyId: string } | null
+> {
+  const retentionSecret = Deno.env.get('RETENTION_WEBHOOK_SECRET') || ''
+  const authHeader = req.headers.get('Authorization') || ''
+  const bearer = authHeader.replace('Bearer ', '')
+  const providedSecret = req.headers.get('x-retention-secret') || ''
+  if ((serviceRoleKey && bearer === serviceRoleKey) || (retentionSecret && providedSecret === retentionSecret)) {
+    return { mode: 'cron', agencyId: null }
+  }
+  if (!bearer) return null
+  // User-JWT path: verify the token, then confirm an active principal/producer
+  // membership and scope the sweep to that agency.
+  const userClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY') || serviceRoleKey,
+    { global: { headers: { Authorization: authHeader } } },
+  )
+  const { data: { user }, error } = await userClient.auth.getUser()
+  if (error || !user) return null
+  const svc = createClient(Deno.env.get('SUPABASE_URL')!, serviceRoleKey)
+  const { data: membership } = await svc
+    .from('agency_memberships')
+    .select('agency_id, agency_role')
+    .eq('user_id', user.id)
+    .eq('status', 'active')
+    .in('agency_role', ['principal', 'producer'])
+    .limit(1)
+    .maybeSingle()
+  if (!membership?.agency_id) return null
+  return { mode: 'user', agencyId: membership.agency_id }
 }
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   if (req.method !== 'POST') return jsonResponse({ error: 'Method not allowed' }, 405)
 
-  // ── Auth: service-role bearer (cron) OR shared retention secret ────────────
-  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
-  const retentionSecret = Deno.env.get('RETENTION_WEBHOOK_SECRET') || ''
-  const bearer = (req.headers.get('Authorization') || '').replace('Bearer ', '')
-  const providedSecret = req.headers.get('x-retention-secret') || ''
-  if (!((serviceRoleKey && bearer === serviceRoleKey) || (retentionSecret && providedSecret === retentionSecret))) {
-    return jsonResponse({ error: 'Forbidden' }, 403)
-  }
-
   const missingVar = checkRequiredEnvVars(['SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'])
   if (missingVar) return jsonResponse({ error: `Missing config: ${missingVar}` }, 503)
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 
-  // Window guard up front — the cron may run any time; only dial in-window.
-  if (!isWithinCallWindowEastern()) {
-    return jsonResponse({ skipped: true, reason: 'outside_call_window' })
+  const caller = await resolveCaller(req, serviceRoleKey)
+  if (!caller) return jsonResponse({ error: 'Forbidden' }, 403)
+
+  let bodyIn: { override_suppression?: boolean } = {}
+  try { bodyIn = await req.json() } catch { /* defaults */ }
+  // Override is only meaningful for the manual button path.
+  const override = caller.mode === 'user' && bodyIn.override_suppression === true
+
+  // Window / suppression gate.
+  const win = callWindowStatus(override)
+  if (!win.ok) {
+    if (caller.mode === 'user') {
+      // Drives the UI's suppressed banner + Override button.
+      return jsonResponse({ suppressed: true, reason: win.reason, message: win.message })
+    }
+    return jsonResponse({ skipped: true, reason: win.reason })
   }
 
-  const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
   const blandKey = Deno.env.get('BLAND_AI_API_KEY') || Deno.env.get('BLAND_API_KEY')
   if (!blandKey) {
     console.error('[RENEWAL_SWEEP] BLAND_AI_API_KEY not set')
@@ -145,7 +212,6 @@ Deno.serve(async (req) => {
 
   try {
     // ── Candidates: rate-increase renewals entering the pre-notice window ────
-    // Flat renewals are excluded unless CALL_FLAT_RENEWALS is enabled.
     let query = supabase
       .from('renewal_cases')
       .select('id, agency_id, customer_name, phone, renewal_date, premium, current_premium, premium_change_pct, customer_group_id, status, human_only, claim_flag, last_retention_call_date, last_contact_date')
@@ -158,9 +224,8 @@ Deno.serve(async (req) => {
       .order('renewal_date', { ascending: true })
       .limit(BATCH_LIMIT * 3)
 
-    if (!CALL_FLAT_RENEWALS) {
-      query = query.gt('premium_change_pct', PREMIUM_DELTA_THRESHOLD_PCT)
-    }
+    if (caller.mode === 'user') query = query.eq('agency_id', caller.agencyId)
+    if (!CALL_FLAT_RENEWALS) query = query.gt('premium_change_pct', PREMIUM_DELTA_THRESHOLD_PCT)
 
     const { data: candidates, error: fetchErr } = await query
     if (fetchErr) {
@@ -177,9 +242,7 @@ Deno.serve(async (req) => {
         .select('customer_phone, autodial_consent, dnc, agency_id')
         .in('customer_phone', phones)
       for (const c of consents || []) {
-        consentMap.set(`${c.agency_id}:${c.customer_phone}`, {
-          autodial_consent: !!c.autodial_consent, dnc: !!c.dnc,
-        })
+        consentMap.set(`${c.agency_id}:${c.customer_phone}`, { autodial_consent: !!c.autodial_consent, dnc: !!c.dnc })
       }
     }
 
@@ -205,6 +268,7 @@ Deno.serve(async (req) => {
 
     const queued: string[] = []
     const blocked: Array<{ id: string; reason: string }> = []
+    const skipped: Array<{ id: string; reason: string }> = []
     let rateLimited = false
 
     for (const rc of (candidates || [])) {
@@ -221,7 +285,7 @@ Deno.serve(async (req) => {
       }
 
       const e164 = rc.phone ? formatPhoneUS(rc.phone) : null
-      if (!e164) { blocked.push({ id: rc.id, reason: 'invalid_phone' }); continue }
+      if (!e164) { skipped.push({ id: rc.id, reason: 'invalid_phone' }); continue }
 
       // Single-fire lock — claim atomically; only the first run this cycle wins.
       const { data: claimed, error: claimErr } = await supabase
@@ -278,25 +342,21 @@ Deno.serve(async (req) => {
         })
 
         if (res.status === 429 || res.status === 503) {
-          // Rate limited — release this lock and stop; remaining cases retry tomorrow.
           await supabase.from('renewal_cases').update({ last_retention_call_date: null }).eq('id', rc.id)
           rateLimited = true
           break
         }
         if (!res.ok) {
           const errText = (await res.text()).slice(0, 300)
-          if (res.status >= 500) {
-            await supabase.from('renewal_cases').update({ last_retention_call_date: null }).eq('id', rc.id)
-          }
+          if (res.status >= 500) await supabase.from('renewal_cases').update({ last_retention_call_date: null }).eq('id', rc.id)
           console.error(`[RENEWAL_SWEEP] Bland ${res.status} for ${rc.id}: ${errText}`)
-          blocked.push({ id: rc.id, reason: `bland_error_${res.status}` })
+          skipped.push({ id: rc.id, reason: `bland_error_${res.status}` })
           continue
         }
 
         const { call_id } = await res.json()
         queued.push(rc.id)
 
-        // Attribution + state (best-effort).
         await supabase.from('ai_call_log').upsert({
           agency_id: rc.agency_id, policy_id: rc.id, bland_call_id: call_id,
           campaign_type: 'rate_deflection', call_type: 'rate_deflection',
@@ -313,18 +373,20 @@ Deno.serve(async (req) => {
       } catch (netErr) {
         await supabase.from('renewal_cases').update({ last_retention_call_date: null }).eq('id', rc.id)
         console.error(`[RENEWAL_SWEEP] Network error for ${rc.id}:`, netErr)
-        blocked.push({ id: rc.id, reason: 'network_error' })
+        skipped.push({ id: rc.id, reason: 'network_error' })
       }
     }
 
-    console.log(`[RENEWAL_SWEEP] ${queued.length} queued, ${blocked.length} blocked, rate_limited=${rateLimited}`)
+    console.log(`[RENEWAL_SWEEP] mode=${caller.mode} ${queued.length} queued, ${blocked.length} blocked, ${skipped.length} skipped, rate_limited=${rateLimited}`)
     return jsonResponse({
       success: true,
+      mode: caller.mode,
       window: { from_dte: WINDOW_MIN_DTE, to_dte: WINDOW_MAX_DTE },
       queued: queued.length,
       blocked: blocked.length,
+      skipped: skipped.length,
       rate_limited: rateLimited,
-      details: { blocked },
+      details: { blocked, skipped },
     })
   } catch (err) {
     console.error('[RENEWAL_SWEEP] Unhandled error:', err)
