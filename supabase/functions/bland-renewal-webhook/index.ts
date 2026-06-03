@@ -268,7 +268,8 @@ Deno.serve(async (req) => {
 
     // 5. Attempt cap — 3+ no-answer/voicemail → flag for human call on renewal_cases
     // Also update customer_renewal_groups if group exists
-    if (newAttempts >= 3 && ['no_answer', 'left_voicemail'].includes(outcome)) {
+    const attemptCapTriggered = newAttempts >= 3 && ['no_answer', 'left_voicemail'].includes(outcome)
+    if (attemptCapTriggered) {
       await supabase.from('renewal_cases').update({
         human_only: true,
         human_only_reason: 'ai_attempt_cap',
@@ -300,23 +301,35 @@ Deno.serve(async (req) => {
         .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] Group update error:', error) })
     }
 
-    // 7. Retention state for the in-app workspace.
-    //    retention_status mirrors the renewal outcome so the dashboard can
-    //    surface crisis cases. Escalation reaches the producer IN-APP — the
-    //    case already carries human_followup_required + assigned_to +
-    //    followup_due_by (set above), which drive the workspace task queue.
-    //    No SMS is sent (intentionally — see escalation routing decision).
-    //    Done as a separate best-effort update so a missing column can never
-    //    break the critical renewal_cases write above.
+    // 7. In-app workspace surfacing (best-effort — never breaks the core write).
+    //    a) retention_status mirrors the outcome so the queue can float crisis
+    //       cases to the top (escalated → crisis_capture, shopping → at_risk).
+    //    b) assigned_to_id mirrors assigned_to. The producer queue (MyQueuePage),
+    //       the employee RLS policies, and the retention views all filter on
+    //       assigned_to_id — the canonical column — while the writes above set
+    //       the legacy assigned_to. Without this mirror, escalated cases are
+    //       assigned to a column the producer's queue never reads, so they
+    //       never surface. Done as a separate update so a missing column can't
+    //       fail the critical renewal_cases write.
     const retentionStatus =
       outcome === 'escalated' ? 'crisis_capture' :
       outcome === 'shopping' ? 'at_risk' :
       outcome === 'confirmed' ? 'stable' : null
-    if (retentionStatus) {
+    // The assignee actually written above: attempt-cap reassigns to Tracy/Cameron,
+    // otherwise it's the resolved followup assignee.
+    const effectiveAssignee = attemptCapTriggered
+      ? (envStaff.TRACY_EMPLOYEE_ID || envStaff.CAMERON_EMPLOYEE_ID || null)
+      : (assignedTo || null)
+
+    const surfacePatch: Record<string, unknown> = {}
+    if (retentionStatus) surfacePatch.retention_status = retentionStatus
+    if (effectiveAssignee) surfacePatch.assigned_to_id = effectiveAssignee
+    if (Object.keys(surfacePatch).length > 0) {
+      surfacePatch.updated_at = nowISO
       await supabase.from('renewal_cases')
-        .update({ retention_status: retentionStatus, updated_at: nowISO })
+        .update(surfacePatch)
         .eq('id', policy_id).eq('agency_id', agency_id)
-        .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] retention_status update error:', error) })
+        .then(({ error }) => { if (error) console.error('[BLAND_RENEWAL_WEBHOOK] workspace surfacing update error:', error) })
     }
 
     console.log(`[BLAND_RENEWAL_WEBHOOK] ${body.call_id} → ${outcome} | case: ${policy_id} | $${estimatedCost}`)
