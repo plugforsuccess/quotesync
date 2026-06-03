@@ -13,7 +13,7 @@
 // still leaves the human ~13 days before the notice.
 //
 // Branch on rate change:
-//   - increase > 8%   → deflection call: honest "your renewal's coming, let's
+//   - increase ≥ 5%   → deflection call: honest "your renewal's coming, let's
 //     review", warm transfer to an available licensed agent, outcome routes to
 //     a human (crisis flag or no-answer → the producer's queue).
 //   - flat / decrease → SHELVED (CALL_FLAT_RENEWALS) — cross-sell is offense.
@@ -27,7 +27,7 @@ import { corsHeaders } from '../_shared/cors.ts'
 import { checkRequiredEnvVars, formatPhoneUS } from '../_shared/twilio.ts'
 
 const BLAND_API_URL = 'https://api.bland.ai/v1/calls'
-const PREMIUM_DELTA_THRESHOLD_PCT = 8
+const PREMIUM_DELTA_THRESHOLD_PCT = 5 // call renewals with an increase of 5% or more
 const WINDOW_MIN_DTE = 32           // stop firing once the case is closer than this
 const WINDOW_MAX_DTE = 45           // start firing once the renewal lands in the queue
 const SINGLE_FIRE_LOOKBACK_DAYS = 20 // one bot call per renewal cycle
@@ -225,7 +225,7 @@ Deno.serve(async (req) => {
       .limit(BATCH_LIMIT * 3)
 
     if (caller.mode === 'user') query = query.eq('agency_id', caller.agencyId)
-    if (!CALL_FLAT_RENEWALS) query = query.gt('premium_change_pct', PREMIUM_DELTA_THRESHOLD_PCT)
+    if (!CALL_FLAT_RENEWALS) query = query.gte('premium_change_pct', PREMIUM_DELTA_THRESHOLD_PCT)
 
     const { data: candidates, error: fetchErr } = await query
     if (fetchErr) {
