@@ -78,13 +78,19 @@ export function calcRenewalPriority(event) {
   const itemCount   = event.item_count || 1;
   const product     = event.product || 'other';
 
-  // Time factor (0-100) — deadline is the dominant signal
+  // Time factor (0-100) — anchored to the Allstate renewal billing timeline.
+  // Cases are posted at 45 days out; the insured is billed at 21 days out,
+  // leaving a 24-day proactive window (45→21) to retain them before the bill.
+  // Priority ramps up across that window and peaks as the 21-day bill deadline
+  // approaches, stays high through the post-bill human save window, and is low
+  // before the case is even posted.
   const timeFactor =
-    days <= 0  ? 100 :
-    days <= 7  ? 95  :
-    days <= 14 ? 70  :
-    days <= 21 ? 40  :
-    days <= 30 ? 20  : 5;
+    days <= 0  ? 100 :  // renewed / lapsing now
+    days <= 21 ? 92  :  // bill is out — urgent human save window
+    days <= 30 ? 100 :  // 22–30d: prime proactive window, bill imminent — call now
+    days <= 38 ? 82  :  // 31–38d: mid proactive window
+    days <= 45 ? 68  :  // 39–45d: just posted — begin proactive outreach
+                 10;    // >45d: not yet posted by Allstate
 
   // Shopping propensity (0-100) — rate increase drives comparison shopping
   const shoppingFactor =

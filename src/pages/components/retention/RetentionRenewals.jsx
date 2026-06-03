@@ -164,7 +164,7 @@ function RenewalCard({ policy, onLogContact, onMarkComplete }) {
               <Clock className="w-3.5 h-3.5" />
               {formatDate(policy.renewal_date)}
               {daysUntil != null && (
-                <span style={{ fontWeight: 600, color: daysUntil <= 14 ? '#F87171' : daysUntil <= 30 ? '#FBBF24' : 'var(--qs-dim)' }}>
+                <span style={{ fontWeight: 600, color: daysUntil < 21 ? '#F87171' : daysUntil <= 45 ? '#FBBF24' : 'var(--qs-dim)' }} title={daysUntil < 21 ? 'Bill is out — human save window' : daysUntil <= 45 ? 'Proactive window — call before the bill' : 'Not yet posted'}>
                   ({daysUntil} days)
                 </span>
               )}
@@ -403,7 +403,7 @@ export default function RetentionRenewals({ agencyId }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Stat cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-        <StatCard label="Due in 60 Days"     value={stats.totalDue60Days}    color="blue"   />
+        <StatCard label="Proactive (21–45d)"  value={stats.proactiveWindow}   color="blue"   />
         <StatCard label="Escalated"           value={stats.escalated}         color="red"    />
         <StatCard label="Human Only"          value={stats.humanOnly}         color="orange" />
         <StatCard label="Needs Human Call"    value={stats.needsHumanCall}    color="yellow" />
