@@ -42,7 +42,9 @@ export default function WorkloadDistribution({ agencyId }) {
   const [sourceId, setSourceId] = useState('');
   const [targetId, setTargetId] = useState('');
   const [caseType, setCaseType] = useState('both'); // 'cancels' | 'renewals' | 'both'
+  const [mode, setMode] = useState('pct'); // 'pct' | 'count'
   const [pct, setPct] = useState(50);
+  const [count, setCount] = useState(10);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
@@ -91,22 +93,28 @@ export default function WorkloadDistribution({ agencyId }) {
   }, [employees, workload]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sourceCounts = byEmp[sourceId] || { cancels: 0, renewals: 0 };
-  const previewCancels = (caseType === 'cancels' || caseType === 'both')
-    ? Math.round(sourceCounts.cancels * pct / 100) : 0;
-  const previewRenewals = (caseType === 'renewals' || caseType === 'both')
-    ? Math.round(sourceCounts.renewals * pct / 100) : 0;
+  const wantCancels = caseType === 'cancels' || caseType === 'both';
+  const wantRenewals = caseType === 'renewals' || caseType === 'both';
+  // How many to move from a pool of `available`, given the current mode.
+  const kFor = (available) => mode === 'pct'
+    ? Math.round(available * pct / 100)
+    : Math.min(count, available);
+  const previewCancels = wantCancels ? kFor(sourceCounts.cancels) : 0;
+  const previewRenewals = wantRenewals ? kFor(sourceCounts.renewals) : 0;
 
   const targetEmp = useMemo(() => employees.find(e => e.id === targetId), [employees, targetId]);
 
-  async function moveCases(table, dateCol, excluded) {
-    const { data, error } = await supabase.from(table).select('id')
+  async function moveCases(table, dateCol, excluded, k) {
+    if (k <= 0) return 0;
+    let q = supabase.from(table).select('id')
       .eq('agency_id', agencyId)
-      .eq('assigned_to_id', sourceId)
       .not('status', 'in', `(${excluded.join(',')})`)
       .order(dateCol, { ascending: true });
+    q = sourceId === 'unassigned' ? q.is('assigned_to_id', null) : q.eq('assigned_to_id', sourceId);
+    const { data, error } = await q;
     if (error) throw error;
     const ids = (data || []).map(r => r.id);
-    const picked = stratifiedSample(ids, Math.round(ids.length * pct / 100));
+    const picked = stratifiedSample(ids, Math.min(k, ids.length));
     for (let i = 0; i < picked.length; i += 200) {
       const chunk = picked.slice(i, i + 200);
       const { error: upErr } = await supabase.from(table)
@@ -125,11 +133,11 @@ export default function WorkloadDistribution({ agencyId }) {
     try {
       let movedC = 0;
       let movedR = 0;
-      if (caseType === 'cancels' || caseType === 'both') {
-        movedC = await moveCases('pending_cases', 'cancel_effective_date', PENDING_EXCLUDED);
+      if (wantCancels) {
+        movedC = await moveCases('pending_cases', 'cancel_effective_date', PENDING_EXCLUDED, previewCancels);
       }
-      if (caseType === 'renewals' || caseType === 'both') {
-        movedR = await moveCases('renewal_cases', 'renewal_date', RENEWAL_EXCLUDED);
+      if (wantRenewals) {
+        movedR = await moveCases('renewal_cases', 'renewal_date', RENEWAL_EXCLUDED, previewRenewals);
       }
       setMsg(`Moved ${movedC} cancel case${movedC !== 1 ? 's' : ''} and ${movedR} renewal${movedR !== 1 ? 's' : ''} to ${empName(targetEmp)}.`);
       queryClient.invalidateQueries({ queryKey: ['workload_distribution', agencyId] });
@@ -190,6 +198,9 @@ export default function WorkloadDistribution({ agencyId }) {
             <label>From (source)</label>
             <select value={sourceId} onChange={e => setSourceId(e.target.value)} style={{ width: '100%' }}>
               <option value="">Select rep…</option>
+              {byEmp.unassigned && (byEmp.unassigned.cancels + byEmp.unassigned.renewals > 0) && (
+                <option value="unassigned">Unassigned ({byEmp.unassigned.cancels + byEmp.unassigned.renewals})</option>
+              )}
               {employees.map(e => (
                 <option key={e.id} value={e.id}>
                   {empName(e)} ({(byEmp[e.id]?.cancels || 0) + (byEmp[e.id]?.renewals || 0)})
@@ -217,11 +228,30 @@ export default function WorkloadDistribution({ agencyId }) {
             </select>
           </div>
 
+          <div style={{ minWidth: 130 }}>
+            <label>Amount by</label>
+            <select value={mode} onChange={e => setMode(e.target.value)} style={{ width: '100%' }}>
+              <option value="pct">Percentage</option>
+              <option value="count">Exact count</option>
+            </select>
+          </div>
+
           <div style={{ flex: 1, minWidth: 200 }}>
-            <label>Share to move: {pct}%</label>
-            <input type="range" min={0} max={100} step={5} value={pct}
-              onChange={e => setPct(Number(e.target.value))}
-              style={{ width: '100%', padding: 0, background: 'transparent' }} />
+            {mode === 'pct' ? (
+              <>
+                <label>Share to move: {pct}%</label>
+                <input type="range" min={0} max={100} step={5} value={pct}
+                  onChange={e => setPct(Number(e.target.value))}
+                  style={{ width: '100%', padding: 0, background: 'transparent' }} />
+              </>
+            ) : (
+              <>
+                <label>Cases to move (per type)</label>
+                <input type="number" min={0} value={count}
+                  onChange={e => setCount(Math.max(0, Number(e.target.value)))}
+                  style={{ width: '100%' }} />
+              </>
+            )}
           </div>
         </div>
 
