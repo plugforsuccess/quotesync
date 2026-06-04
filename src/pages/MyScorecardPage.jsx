@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { usePersona } from '../hooks/usePersona';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
@@ -53,17 +54,21 @@ export default function MyScorecardPage() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Derive scoreType from employee role.
-  // employees.roles describes the functional job — the scorecard rendered
-  // depends on whether the employee handles service work, sales work, or both.
+  // Which scorecard to show follows the active hat: a dual-role producer
+  // toggles between the production (sales) and retention (service) views with
+  // the persona pill; a single-role employee just gets their one view.
   const roles = employee?.roles || [];
-  const isService = roles.includes('service_inbound')
-    || roles.includes('service_outbound');
-  const isSales = roles.includes('sales');
-  const isSalesOnly = isSales && !isService;
-  const scoreType = isSalesOnly
-    ? 'sales'
-    : roles.includes('service_outbound') && roles.includes('service_inbound')
+  const hasService = roles.includes('service_inbound')
+    || roles.includes('service_outbound')
+    || roles.includes('service');
+  const hasSales = roles.includes('sales');
+  const [persona] = usePersona();
+  const hat = (hasSales && hasService)
+    ? (persona === 'service' ? 'service' : 'sales')
+    : (hasSales ? 'sales' : 'service');
+
+  // scoreType drives the retention (service) view's grading + bonus.
+  const scoreType = roles.includes('service_outbound') && roles.includes('service_inbound')
     ? 'both'
     : roles.includes('service_outbound')
     ? 'outbound'
@@ -97,25 +102,6 @@ export default function MyScorecardPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Sales-only employees don't have a retention scorecard yet. Show a
-  // placeholder until the new business / commission view is built. This
-  // sits below the hooks so React's hook order stays stable.
-  if (scoreType === 'sales') {
-    return (
-      <div>
-        <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--qs-bright)',
-          marginBottom: 6 }}>
-          My Scorecard
-        </div>
-        <div style={{ fontSize: 15, color: 'var(--qs-subtle)', marginBottom: 28 }}>
-          {employee?.preferred_name || employee?.first_name} · Sales Producer
-        </div>
-        <OpenCommitmentsStrip commitments={openCommitments} />
-        <ProducerGoalProgress orgId={employee?.org_id} employee={employee} />
-      </div>
-    );
-  }
-
   const bonusSaves  = verificationData?.verified ?? 0;
   const bonusAmount = Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD) * RETENTION_BONUS_PER_SAVE;
 
@@ -130,7 +116,8 @@ export default function MyScorecardPage() {
         </div>
         <div style={{ fontSize: 15, color: 'var(--qs-subtle)' }}>
           {employee?.preferred_name || employee?.first_name} &middot;{' '}
-          {scoreType === 'outbound' ? 'Outbound Retention'
+          {hat === 'sales' ? 'Sales Producer'
+            : scoreType === 'outbound' ? 'Outbound Retention'
             : scoreType === 'inbound' ? 'Inbound Service'
             : 'Service'}
         </div>
@@ -139,6 +126,11 @@ export default function MyScorecardPage() {
       {/* Open commitments from cadence meetings */}
       <OpenCommitmentsStrip commitments={openCommitments} />
 
+      {hat === 'sales' ? (
+        /* Sales hat — production goal tracker */
+        <ProducerGoalProgress orgId={employee?.org_id} employee={employee} />
+      ) : (
+      <>
       {/* Retention scorecard */}
       <RetentionScorecard
         metrics={metrics}
@@ -184,6 +176,8 @@ export default function MyScorecardPage() {
             month={selectedMonth}
           />
         </div>
+      )}
+      </>
       )}
     </div>
   );

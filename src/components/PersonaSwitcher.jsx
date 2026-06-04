@@ -3,7 +3,7 @@
 // (otherwise switching hats is meaningless). Selection persists in localStorage
 // and changes the default landing page; it does NOT change permissions.
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -19,6 +19,7 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
   const { user, currentAgencyRole, currentAgencyId } = useAuth();
   const [persona, setPersona] = usePersona(currentAgencyRole === 'principal' ? 'principal' : 'service');
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Only principals get a switcher — employees only have one hat by definition.
   const showSwitcher = currentAgencyRole === 'principal';
@@ -57,6 +58,9 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
   function handleSelect(next) {
     if (next === persona) return;
     setPersona(next);
+    // On a shared surface (the scorecard), stay put — the page re-renders for
+    // the new hat (sales ⇄ service view) instead of jumping to its home.
+    if (location.pathname.startsWith('/my/scorecard')) return;
     const home = PERSONA_HOME[next];
     if (home) navigate(home);
   }

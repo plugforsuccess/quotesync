@@ -44,7 +44,14 @@ const LoginPage = () => {
         || currentAgencyRole === 'manager'
         || currentAgencyRole === 'producer';
       if (employeeRecord && !isPlatformUser && !isAgencyMember) {
-        navigate('/my/queue', { replace: true });
+        // Sales-only employees have no retention queue — land them on their
+        // scorecard (the production goal home); service employees keep /my/queue.
+        const empRoles = employeeRecord.roles || [];
+        const isServiceEmp = empRoles.includes('service_inbound')
+          || empRoles.includes('service_outbound')
+          || empRoles.includes('service');
+        const salesOnly = empRoles.includes('sales') && !isServiceEmp;
+        navigate(salesOnly ? '/my/scorecard' : '/my/queue', { replace: true });
       } else {
         const agencyRoleVal = currentAgencyId ? currentAgencyRole : null;
         navigate(getDefaultLanding(platformRole, agencyRoleVal), { replace: true });
