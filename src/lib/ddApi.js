@@ -52,3 +52,50 @@ export function formatPrice(cents, currency = 'usd') {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() })
     .format((cents || 0) / 100);
 }
+
+// ---- Course engine (Phase 3) ----------------------------------------------
+
+/** Ordered modules for the course (RLS: readable by enrolled users). */
+export async function getModules(courseId) {
+  const { data, error } = await supabase
+    .from('dd_modules')
+    .select('id, ordinal, title, min_seconds, content_ref')
+    .eq('course_id', courseId)
+    .order('ordinal', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+/** The user's per-module progress rows for an enrollment. */
+export async function getProgress(enrollmentId) {
+  const { data, error } = await supabase
+    .from('dd_module_progress')
+    .select('module_id, seconds_spent, kc_passed, completed_at')
+    .eq('enrollment_id', enrollmentId);
+  if (error) throw error;
+  return data || [];
+}
+
+/** Server-accumulated seat time. Returns {seconds_spent, min_seconds, kc_passed, completed}. */
+export async function heartbeat(moduleId, seconds = 15) {
+  const { data, error } = await supabase.rpc('dd_heartbeat', { p_module_id: moduleId, p_seconds: seconds });
+  if (error) throw error;
+  return data;
+}
+
+/** Knowledge-check questions for a module (no answer keys). */
+export async function getModuleQuestions(moduleId) {
+  const { data, error } = await supabase.rpc('dd_get_module_questions', { p_module_id: moduleId });
+  if (error) throw error;
+  return data || [];
+}
+
+/** Submit knowledge-check answers ({questionId: key}). Scored server-side. */
+export async function submitKnowledgeCheck(moduleId, answers) {
+  const { data, error } = await supabase.rpc('dd_submit_knowledge_check', {
+    p_module_id: moduleId,
+    p_answers: answers,
+  });
+  if (error) throw error;
+  return data;
+}

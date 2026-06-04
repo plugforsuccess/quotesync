@@ -57,6 +57,7 @@ const ThankYouPage = lazyWithRetry(() => import('./pages/ThankYouPage'));
 const DriversEdPage = lazyWithRetry(() => import('./pages/DriversEdPage'));
 const DefensiveDrivingPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPage'));
 const DefensiveDrivingSuccessPage = lazyWithRetry(() => import('./pages/DefensiveDrivingSuccessPage'));
+const DefensiveDrivingPortalPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPortalPage'));
 const StorePage = lazyWithRetry(() => import('./pages/StorePage'));
 const ProductDetailPage = lazyWithRetry(() => import('./pages/ProductDetailPage'));
 const PurchaseSuccessPage = lazyWithRetry(() => import('./pages/PurchaseSuccessPage'));
@@ -200,6 +201,7 @@ function App() {
             {/* In-house Georgia 6-Hour Defensive Driving — enrollment + checkout */}
             <Route path="courses/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPage /></Suspense></ErrorBoundary>} />
             <Route path="courses/defensive-driving/success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingSuccessPage /></Suspense></ErrorBoundary>} />
+            <Route path="courses/defensive-driving/portal" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPortalPage /></Suspense></ErrorBoundary>} />
 
             {/* Newsroom - Insurance News Feed */}
             <Route path="news" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense></ErrorBoundary>} />
