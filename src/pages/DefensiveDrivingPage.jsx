@@ -214,10 +214,12 @@ function AuthPanel() {
       <Field label="Driver's last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
       <Field label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
       {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
-      <button type="submit" disabled={busy}
-        className="w-full rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
-        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Email me a sign-in link'}
-      </button>
+      <div className="pt-4 flex justify-center">
+        <button type="submit" disabled={busy}
+          className="px-8 rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Email me a sign-in link'}
+        </button>
+      </div>
     </form>
   );
 }
