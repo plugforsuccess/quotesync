@@ -30,6 +30,21 @@ function cors(req: Request): Record<string, string> {
 const AGENCY_NAME = Deno.env.get('DD_AGENCY_NAME') || 'Insured by Cam — Wiley-Wilson Agency'
 const BUCKET = 'dd-certificates'
 
+// Best-effort email via Resend (scaffolded behind env vars; no-op if unset).
+async function sendEmail(to: string[], subject: string, html: string) {
+  const key = Deno.env.get('RESEND_API_KEY')
+  const from = Deno.env.get('DD_EMAIL_FROM') || 'Insured by Cam <noreply@insuredbycam.com>'
+  if (!key || to.length === 0) return
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to, subject, html }),
+    })
+    if (!r.ok) console.error('resend email failed:', r.status, await r.text())
+  } catch (e) { console.error('email error:', e?.message || e) }
+}
+
 function makeCertUid(): string {
   const year = new Date().getUTCFullYear()
   const rand = crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()
@@ -147,6 +162,8 @@ Deno.serve(async (req) => {
 
     let certUid = existing?.certificate_uid as string | undefined
     let pdfPath = existing?.pdf_path as string | undefined
+    let created = false
+    const studentName = enr.student_name_snapshot || user.email || 'Student'
 
     if (!existing) {
       // Best passing score for the issued certificate.
@@ -159,7 +176,7 @@ Deno.serve(async (req) => {
       pdfPath = `${user.id}/${certUid}.pdf`
 
       const bytes = await buildPdf({
-        studentName: enr.student_name_snapshot || user.email || 'Student',
+        studentName,
         dln: enr.dln_snapshot,
         courseTitle: course.title,
         completionDate: new Date(enr.completed_at || Date.now()).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
@@ -190,6 +207,27 @@ Deno.serve(async (req) => {
           .from('dd_certificates').select('certificate_uid, pdf_path').eq('enrollment_id', enr.id).maybeSingle()
         if (!row) throw ins.error
         certUid = row.certificate_uid; pdfPath = row.pdf_path
+      } else {
+        created = true
+      }
+    }
+
+    // Notifications on first issuance only (best-effort, never block issuance).
+    if (created) {
+      const base = (Deno.env.get('SITE_URL') || 'https://insuredbycam.com').replace(/\/$/, '')
+      const portal = `${base}/courses/defensive-driving/portal`
+      if (user.email) {
+        await sendEmail([user.email], 'Your certificate is ready',
+          `<p>Hi ${studentName},</p>` +
+          `<p>Your <strong>${course.title}</strong> certificate of completion is ready. ` +
+          `<a href="${portal}">Download it here</a>.</p>` +
+          `<p>A copy has been forwarded to the agency for your insurance discount review.</p>`)
+      }
+      const staffTo = (Deno.env.get('DD_STAFF_NOTIFY_EMAILS') || '').split(',').map((s) => s.trim()).filter(Boolean)
+      if (staffTo.length) {
+        await sendEmail(staffTo, 'New defensive-driving certificate in the queue',
+          `<p>A new certificate (<strong>${certUid}</strong>) for ${studentName} has been added to the ` +
+          `Defensive Drivers Discount List.</p>`)
       }
     }
 

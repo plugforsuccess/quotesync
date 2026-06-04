@@ -500,18 +500,33 @@ function FinalExam({ course, enrollment }) {
 }
 
 function CertificateBlock({ courseSlug }) {
-  const [busy, setBusy] = useState(false);
+  const [preparing, setPreparing] = useState(true);
+  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState(null);
   const [uid, setUid] = useState(null);
 
+  // Generate the certificate as soon as this renders (fires the queue push +
+  // notifications). Idempotent server-side.
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      try {
+        const r = await issueCertificate(courseSlug);
+        if (live) setUid(r.certificate_uid);
+      } catch (err) { if (live) setError(err.message || 'Could not prepare certificate.'); }
+      finally { if (live) setPreparing(false); }
+    })();
+    return () => { live = false; };
+  }, [courseSlug]);
+
   const download = async () => {
-    setBusy(true); setError(null);
+    setDownloading(true); setError(null);
     try {
-      const { url, certificate_uid } = await issueCertificate(courseSlug);
-      setUid(certificate_uid);
-      if (url) window.open(url, '_blank', 'noopener');
+      const r = await issueCertificate(courseSlug); // refresh short-lived signed URL
+      setUid(r.certificate_uid);
+      if (r.url) window.open(r.url, '_blank', 'noopener');
     } catch (err) { setError(err.message || 'Could not download certificate.'); }
-    finally { setBusy(false); }
+    finally { setDownloading(false); }
   };
 
   return (
@@ -521,9 +536,11 @@ function CertificateBlock({ courseSlug }) {
         {uid && <> Certificate ID: <span className="font-mono text-gray-200">{uid}</span>.</>}
       </p>
       {error && <p className="text-sm text-red-300 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
-      <button onClick={download} disabled={busy}
+      <button onClick={download} disabled={preparing || downloading}
         className="rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
-        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</> : <><Download className="w-4 h-4" /> Download certificate</>}
+        {preparing ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</>
+          : downloading ? <><Loader2 className="w-4 h-4 animate-spin" /> Opening…</>
+          : <><Download className="w-4 h-4" /> Download certificate</>}
       </button>
     </div>
   );

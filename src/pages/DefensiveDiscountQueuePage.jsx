@@ -209,11 +209,12 @@ function QueueRow({ row, staff, canEdit, expanded, onToggle, onChanged }) {
           )}
         </td>
         <td className="px-4 py-3 text-right whitespace-nowrap">
-          <button onClick={download} disabled={busy} title="Download certificate"
+          <button onClick={download} disabled={busy} title="Download certificate" aria-label="Download certificate"
             className="inline-flex items-center gap-1 text-xs text-gray-300 hover:text-success-300 mr-3">
             <Download className="w-4 h-4" />
           </button>
-          <button onClick={onToggle} className="inline-flex items-center text-gray-400 hover:text-gray-100">
+          <button onClick={onToggle} aria-label={expanded ? 'Collapse details' : 'Expand details'} aria-expanded={expanded}
+            className="inline-flex items-center text-gray-400 hover:text-gray-100">
             {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </td>
