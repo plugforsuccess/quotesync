@@ -601,14 +601,14 @@ export default function MyQueuePage() {
       .filter(Boolean).join(' ') || '[your name]';
     const lapsedOn  = fmtDate(event.cancel_effective_date);
     const scriptLine = isLapsed
-      ? `"Hi ${firstName} — this is ${agentName} calling from your Allstate agency. Your ${
+      ? `"Hi ${firstName} — this is ${agentName} calling from your Allstate Insurance agency. Your ${
           event.product
         } policy lapsed on ${lapsedOn}.${
           event.amount_due
             ? ` We can reinstate your coverage today — the amount due is $${Number(event.amount_due).toLocaleString()}.`
             : ' I want to help you get your coverage reinstated.'
         } Are you in a position to take care of that today?"`
-      : `"Hi ${firstName} — this is ${agentName} calling from your Allstate agency. I'm calling about your ${
+      : `"Hi ${firstName} — this is ${agentName} calling from your Allstate Insurance agency. I'm calling about your ${
           event.product
         } policy.${
           event.amount_due
