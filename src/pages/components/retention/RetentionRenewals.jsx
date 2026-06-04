@@ -49,6 +49,7 @@ const OUTCOME_LABELS = {
 };
 
 const FOLLOWUP_LABELS = {
+  unreached_pre_bill: 'Call Before Bill',
   rate_shock: 'Rate Shock',
   shopping: 'Shopping',
   no_response: 'No Response',
@@ -95,6 +96,7 @@ function formatDate(dateStr) {
 }
 
 const COACHING_NOTES = {
+  unreached_pre_bill: 'AI could not reach this >5% increase before the bill. Call NOW, before they see it — lead with "wanted to reach you ahead of your renewal," then review options.',
   rate_shock: 'Customer received rate increase — they agreed to a callback. Lead with empathy, review options before pitching retention.',
   shopping: 'Customer mentioned shopping — they agreed to hear from us. Call today; window is open.',
   hesitant: 'Customer was uncertain — soft follow-up, no pressure. Confirm they are comfortable with the renewal.',
