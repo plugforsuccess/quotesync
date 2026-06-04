@@ -166,6 +166,9 @@ function App() {
           {/* Employee punch clock — public, no auth required */}
           <Route path="/punch" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PunchPage /></Suspense></ErrorBoundary>} />
 
+          {/* Defensive Driving course — full-screen, no consumer nav (its own chrome) */}
+          <Route path="/courses/defensive-driving/portal" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPortalPage /></Suspense></ErrorBoundary>} />
+
           {/* Employee-scoped routes — personal queue, scorecard.
               The /my/change-password route is registered OUTSIDE the
               EmployeeRoute gate so the gate's redirect to it doesn't
@@ -203,7 +206,6 @@ function App() {
             {/* In-house Georgia 6-Hour Defensive Driving — enrollment + checkout */}
             <Route path="courses/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPage /></Suspense></ErrorBoundary>} />
             <Route path="courses/defensive-driving/success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingSuccessPage /></Suspense></ErrorBoundary>} />
-            <Route path="courses/defensive-driving/portal" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPortalPage /></Suspense></ErrorBoundary>} />
             {/* Staff queue + principal overview (access gated in-page via dd_is_staff/principal) */}
             <Route path="defensive-driving/queue" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDiscountQueuePage /></Suspense></ErrorBoundary>} />
             <Route path="defensive-driving/overview" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveOverviewPage /></Suspense></ErrorBoundary>} />

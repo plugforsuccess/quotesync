@@ -1,24 +1,21 @@
 // src/pages/DefensiveDrivingPortalPage.jsx
-// Course portal: module overview + gated module player with server-validated
-// seat time and per-module knowledge checks. Final exam is gated here and
-// built in Phase 4.
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+// Full-screen course experience (no consumer nav): module overview + a rich
+// lesson reader with callouts and interactive scenario checks, a per-module
+// graded knowledge check that gates completion, the final exam, and the
+// certificate. Progression is content/quiz based — no seat-time gating.
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, CheckCircle2, Clock, Loader2, AlertCircle, ArrowLeft, ArrowRight, Award, Download } from 'lucide-react';
+import {
+  Lock, CheckCircle2, Circle, Loader2, AlertCircle, ArrowLeft, ArrowRight, Award, Download,
+  Scale, KeyRound, AlertTriangle, Lightbulb, ListChecks, X, BookOpen,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getDefensiveDrivingCourse, getMyEnrollment, getModules, getProgress,
-  heartbeat, getModuleQuestions, submitKnowledgeCheck,
+  getModuleQuestions, submitKnowledgeCheck,
   getExamAttempts, startExam, submitExam, issueCertificate,
 } from '../lib/ddApi';
 import { getModuleContent } from '../data/ddCourseContent';
-
-const fmt = (s) => {
-  s = Math.max(0, Math.floor(s || 0));
-  const m = Math.floor(s / 60);
-  const r = s % 60;
-  return `${m}:${String(r).padStart(2, '0')}`;
-};
 
 export default function DefensiveDrivingPortalPage() {
   const { user, loading: authLoading } = useAuth();
@@ -28,13 +25,12 @@ export default function DefensiveDrivingPortalPage() {
   const [course, setCourse] = useState(null);
   const [enrollment, setEnrollment] = useState(null);
   const [modules, setModules] = useState([]);
-  const [progress, setProgress] = useState([]); // [{module_id, seconds_spent, kc_passed, completed_at}]
+  const [progress, setProgress] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState(null);
 
   const reload = useCallback(async (enr) => {
-    const p = await getProgress(enr.id);
-    setProgress(p);
+    setProgress(await getProgress(enr.id));
   }, []);
 
   useEffect(() => {
@@ -71,15 +67,14 @@ export default function DefensiveDrivingPortalPage() {
     return <div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center p-6">{error}</div>;
   }
 
-  // Build view models with sequential unlocking.
   const byId = Object.fromEntries(progress.map((p) => [p.module_id, p]));
   const vms = modules.map((m, i) => {
-    const p = byId[m.id] || { seconds_spent: 0, kc_passed: false, completed_at: null };
-    const completed = !!p.completed_at;
-    return { ...m, ...p, completed, index: i };
+    const p = byId[m.id] || { kc_passed: false, completed_at: null };
+    return { ...m, ...p, completed: !!p.completed_at, index: i };
   });
   vms.forEach((vm, i) => { vm.unlocked = i === 0 || vms[i - 1].completed; });
   const allComplete = vms.length > 0 && vms.every((v) => v.completed);
+  const completedCount = vms.filter((v) => v.completed).length;
 
   if (activeId) {
     const vm = vms.find((v) => v.id === activeId);
@@ -87,192 +82,161 @@ export default function DefensiveDrivingPortalPage() {
       <ModulePlayer
         key={vm.id}
         module={vm}
+        total={vms.length}
+        onExit={() => navigate('/')}
         onBack={async () => { await reload(enrollment); setActiveId(null); }}
         onNext={async () => {
           await reload(enrollment);
           const next = vms.find((v) => v.index === vm.index + 1);
           setActiveId(next ? next.id : null);
+          window.scrollTo(0, 0);
         }}
       />
     );
   }
 
-  const completedCount = vms.filter((v) => v.completed).length;
-
   return (
     <div className="bg-gray-950 text-gray-50 min-h-screen">
-      <div className="max-w-3xl mx-auto px-4 py-12">
+      <CourseHeader onExit={() => navigate('/')} />
+      <div className="max-w-3xl mx-auto px-4 py-10">
         <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-2">Your course</p>
-        <h1 className="text-3xl font-black mb-2">{course.title}</h1>
-        <p className="text-sm text-gray-400 mb-6">{completedCount} of {vms.length} modules complete</p>
+        <h1 className="text-3xl font-black mb-4">{course.title}</h1>
+
+        {/* Overall progress */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+            <span>{completedCount} of {vms.length} modules complete</span>
+            <span>{Math.round((completedCount / vms.length) * 100)}%</span>
+          </div>
+          <div className="h-2 w-full rounded-full bg-gray-800 overflow-hidden">
+            <div className="h-full bg-success-500 transition-all" style={{ width: `${(completedCount / vms.length) * 100}%` }} />
+          </div>
+        </div>
 
         <div className="space-y-3">
           {vms.map((vm) => (
-            <ModuleRow key={vm.id} vm={vm} onOpen={() => setActiveId(vm.id)} />
+            <ModuleRow key={vm.id} vm={vm} onOpen={() => { setActiveId(vm.id); window.scrollTo(0, 0); }} />
           ))}
 
-          {/* Final exam — unlocks after all modules complete */}
           {allComplete ? (
             <FinalExam course={course} enrollment={enrollment} />
           ) : (
             <div className="rounded-xl border p-4 flex items-center gap-4 border-gray-800 bg-gray-900/40 opacity-70">
-              <div className="shrink-0"><Lock className="w-6 h-6 text-gray-500" /></div>
-              <div className="flex-1">
+              <Lock className="w-5 h-5 text-gray-500 shrink-0" />
+              <div>
                 <p className="font-semibold">Final Exam</p>
-                <p className="text-xs text-gray-400">Unlocks after all 6 modules are complete.</p>
+                <p className="text-xs text-gray-400">Unlocks after all {vms.length} modules are complete.</p>
               </div>
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CourseHeader({ onExit, label = 'Defensive Driving · Georgia' }) {
+  return (
+    <div className="sticky top-0 z-20 bg-gray-950/95 backdrop-blur border-b border-gray-800">
+      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+        <span className="flex items-center gap-2 text-sm font-semibold text-success-300">
+          <BookOpen className="w-4 h-4" /> {label}
+        </span>
+        <button onClick={onExit} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-100">
+          Exit course <X className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
 }
 
 function ModuleRow({ vm, onOpen }) {
-  const pct = Math.min(100, Math.round((vm.seconds_spent / vm.min_seconds) * 100));
   return (
     <div className={`rounded-xl border p-4 flex items-center gap-4 ${vm.unlocked ? 'border-gray-700 bg-gray-900/60' : 'border-gray-800 bg-gray-900/30 opacity-70'}`}>
       <div className="shrink-0">
         {vm.completed ? <CheckCircle2 className="w-6 h-6 text-success-400" />
-          : vm.unlocked ? <Clock className="w-6 h-6 text-success-300" />
+          : vm.unlocked ? <Circle className="w-6 h-6 text-success-300" />
           : <Lock className="w-6 h-6 text-gray-500" />}
       </div>
       <div className="flex-1 min-w-0">
         <p className="font-semibold truncate">Module {vm.ordinal}: {vm.title}</p>
-        {vm.unlocked && !vm.completed && (
-          <div className="mt-1.5 h-1.5 w-full rounded-full bg-gray-800 overflow-hidden">
-            <div className="h-full bg-success-500" style={{ width: `${pct}%` }} />
-          </div>
-        )}
-        <p className="text-xs text-gray-400 mt-1">
-          {vm.completed ? 'Completed'
-            : vm.unlocked ? `Time ${fmt(vm.seconds_spent)} / ${fmt(vm.min_seconds)}${vm.kc_passed ? ' · quiz passed' : ''}`
-            : 'Locked'}
+        <p className="text-xs text-gray-400 mt-0.5">
+          {vm.completed ? 'Completed' : vm.unlocked ? 'Ready' : 'Complete the previous module to unlock'}
         </p>
       </div>
       <button
         onClick={onOpen}
         disabled={!vm.unlocked}
         className={`text-xs font-semibold rounded-full px-4 py-2 transition ${vm.unlocked ? 'bg-success-400 hover:bg-success-300 text-gray-950' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}>
-        {vm.completed ? 'Review' : vm.seconds_spent > 0 ? 'Continue' : 'Start'}
+        {vm.completed ? 'Review' : 'Start'}
       </button>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Module player: content + server-validated seat time + knowledge check.
+// Lesson reader
 // ---------------------------------------------------------------------------
-function ModulePlayer({ module: mod, onBack, onNext }) {
+function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   const content = getModuleContent(mod.content_ref);
-  const [seconds, setSeconds] = useState(mod.seconds_spent || 0);
-  const [minSeconds, setMinSeconds] = useState(mod.min_seconds);
   const [kcPassed, setKcPassed] = useState(!!mod.kc_passed);
   const [completed, setCompleted] = useState(!!mod.completed);
-  const lastActivity = useRef(Date.now());
-
-  const seatMet = seconds >= minSeconds;
-
-  // Track activity for idle detection.
-  useEffect(() => {
-    const mark = () => { lastActivity.current = Date.now(); };
-    const evts = ['mousemove', 'keydown', 'scroll', 'click', 'touchstart'];
-    evts.forEach((e) => window.addEventListener(e, mark, { passive: true }));
-    return () => evts.forEach((e) => window.removeEventListener(e, mark));
-  }, []);
-
-  // Initialize server progress (creates the row, syncs truth) without adding time.
-  useEffect(() => {
-    let live = true;
-    heartbeat(mod.id, 0).then((r) => {
-      if (!live || !r) return;
-      setSeconds(r.seconds_spent); setMinSeconds(r.min_seconds);
-      setKcPassed(r.kc_passed); setCompleted(r.completed);
-    }).catch(() => {});
-    return () => { live = false; };
-  }, [mod.id]);
-
-  // Heartbeat loop — only while the tab is visible, the user is active, and
-  // the seat-time floor isn't met yet.
-  useEffect(() => {
-    if (seatMet) return;
-    const id = setInterval(async () => {
-      if (document.visibilityState !== 'visible') return;
-      if (Date.now() - lastActivity.current > 60000) return; // idle
-      try {
-        const r = await heartbeat(mod.id, 15);
-        if (r) {
-          setSeconds(r.seconds_spent); setMinSeconds(r.min_seconds);
-          setKcPassed(r.kc_passed); setCompleted(r.completed);
-        }
-      } catch { /* transient */ }
-    }, 15000);
-    return () => clearInterval(id);
-  }, [mod.id, seatMet]);
-
-  const pct = Math.min(100, Math.round((seconds / minSeconds) * 100));
+  const isLast = mod.index + 1 >= total;
 
   return (
     <div className="bg-gray-950 text-gray-50 min-h-screen">
-      {/* Sticky seat-time bar */}
-      <div className="sticky top-0 z-10 bg-gray-950/95 backdrop-blur border-b border-gray-800">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button onClick={onBack} className="text-gray-400 hover:text-gray-100 flex items-center gap-1 text-sm">
-            <ArrowLeft className="w-4 h-4" /> Overview
+      <div className="sticky top-0 z-20 bg-gray-950/95 backdrop-blur border-b border-gray-800">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <button onClick={onBack} className="text-gray-400 hover:text-gray-100 flex items-center gap-1.5 text-sm">
+            <ArrowLeft className="w-4 h-4" /> All modules
           </button>
-          <div className="flex-1">
-            <div className="h-1.5 w-full rounded-full bg-gray-800 overflow-hidden">
-              <div className="h-full bg-success-500 transition-all" style={{ width: `${pct}%` }} />
-            </div>
-          </div>
-          <span className="text-xs text-gray-400 tabular-nums whitespace-nowrap">
-            {seatMet ? 'Time complete' : `${fmt(seconds)} / ${fmt(minSeconds)}`}
-          </span>
+          <span className="text-xs text-gray-500">Module {mod.ordinal} of {total}</span>
+          <button onClick={onExit} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-100">
+            Exit <X className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
         <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-2">Module {mod.ordinal}</p>
-        <h1 className="text-2xl font-black mb-4">{mod.title}</h1>
+        <h1 className="text-2xl md:text-3xl font-black mb-4">{mod.title}</h1>
+        {content?.summary && (
+          <p className="text-base text-gray-300 leading-relaxed mb-8 border-l-2 border-success-500/40 pl-4">{content.summary}</p>
+        )}
 
-        {content?.intro && <p className="text-gray-300 mb-6 leading-relaxed">{content.intro}</p>}
-
-        <article className="space-y-8">
-          {(content?.sections || []).map((sec, i) => (
-            <section key={i}>
-              <h2 className="text-lg font-bold text-success-200 mb-2">{sec.heading}</h2>
-              <div className="space-y-3">
-                {sec.body.map((p, j) => (
-                  <p key={j} className="text-sm text-gray-300 leading-relaxed">{p}</p>
-                ))}
-              </div>
-            </section>
-          ))}
+        <article className="space-y-5">
+          {content?.blocks?.map((b, i) => <Block key={i} b={b} />)}
           {!content && <p className="text-gray-400">Content for this module is being prepared.</p>}
         </article>
 
+        {content?.takeaways?.length > 0 && (
+          <div className="mt-10 rounded-xl border border-success-500/30 bg-success-500/5 p-5">
+            <p className="flex items-center gap-2 text-sm font-bold text-success-200 mb-3">
+              <ListChecks className="w-5 h-5" /> Key takeaways
+            </p>
+            <ul className="space-y-2">
+              {content.takeaways.map((t, i) => (
+                <li key={i} className="flex gap-2.5 text-sm text-gray-200">
+                  <CheckCircle2 className="w-4 h-4 text-success-400 shrink-0 mt-0.5" /> {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         <div className="mt-10 border-t border-gray-800 pt-8">
-          {!seatMet ? (
-            <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5 text-center">
-              <Clock className="w-6 h-6 text-gray-500 mx-auto mb-2" />
-              <p className="text-sm text-gray-300">Keep reading — the knowledge check unlocks after the required time on this module.</p>
-              <p className="text-xs text-gray-500 mt-1">{fmt(minSeconds - seconds)} remaining</p>
-            </div>
-          ) : (
-            <KnowledgeCheck
-              module={mod}
-              alreadyPassed={kcPassed}
-              onPassed={() => { setKcPassed(true); setCompleted(true); }}
-            />
-          )}
+          <KnowledgeCheck
+            module={mod}
+            alreadyPassed={kcPassed}
+            onPassed={() => { setKcPassed(true); setCompleted(true); }}
+          />
 
           {(completed || kcPassed) && (
-            <div className="mt-6 flex items-center justify-between gap-3">
+            <div className="mt-8 flex items-center justify-between gap-3">
               <span className="text-sm text-success-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Module complete</span>
               <button onClick={onNext}
-                className="text-sm font-semibold rounded-full px-5 py-2.5 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
-                Next <ArrowRight className="w-4 h-4" />
+                className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
+                {isLast ? 'Finish' : 'Next module'} <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           )}
@@ -282,6 +246,102 @@ function ModulePlayer({ module: mod, onBack, onNext }) {
   );
 }
 
+// ---- Lesson block renderer -------------------------------------------------
+function Block({ b }) {
+  switch (b.type) {
+    case 'h':
+      return <h2 className="text-lg md:text-xl font-bold text-success-100 pt-3">{b.text}</h2>;
+    case 'p':
+      return <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed">{b.text}</p>;
+    case 'ul':
+      return (
+        <ul className="space-y-2">
+          {b.items.map((it, i) => (
+            <li key={i} className="flex gap-2.5 text-sm md:text-[15px] text-gray-300 leading-relaxed">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-success-400" />{it}
+            </li>
+          ))}
+        </ul>
+      );
+    case 'ol':
+      return (
+        <ol className="space-y-2">
+          {b.items.map((it, i) => (
+            <li key={i} className="flex gap-3 text-sm md:text-[15px] text-gray-300 leading-relaxed">
+              <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-success-500/20 text-[11px] font-bold text-success-200">{i + 1}</span>{it}
+            </li>
+          ))}
+        </ol>
+      );
+    case 'callout':
+      return <Callout {...b} />;
+    case 'scenario':
+      return <Scenario {...b} />;
+    default:
+      return null;
+  }
+}
+
+const CALLOUT = {
+  law: { icon: Scale, ring: 'border-sky-500/40 bg-sky-500/10', text: 'text-sky-200', label: 'Georgia law' },
+  key: { icon: KeyRound, ring: 'border-success-500/40 bg-success-500/10', text: 'text-success-200', label: 'Key point' },
+  warn: { icon: AlertTriangle, ring: 'border-amber-500/40 bg-amber-500/10', text: 'text-amber-200', label: 'Watch out' },
+  tip: { icon: Lightbulb, ring: 'border-teal-500/40 bg-teal-500/10', text: 'text-teal-200', label: 'Tip' },
+};
+
+function Callout({ variant = 'key', title, text, items }) {
+  const c = CALLOUT[variant] || CALLOUT.key;
+  const Icon = c.icon;
+  return (
+    <div className={`rounded-xl border p-4 ${c.ring}`}>
+      <p className={`flex items-center gap-2 text-sm font-semibold mb-1.5 ${c.text}`}>
+        <Icon className="w-4 h-4" /> {title || c.label}
+      </p>
+      {text && <p className="text-sm text-gray-200 leading-relaxed">{text}</p>}
+      {items && (
+        <ul className="mt-1 space-y-1.5">
+          {items.map((it, i) => (
+            <li key={i} className="flex gap-2.5 text-sm text-gray-200"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" />{it}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Scenario({ q, choices, explain }) {
+  const [picked, setPicked] = useState(null);
+  return (
+    <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-5">
+      <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Quick check</p>
+      <p className="text-sm md:text-[15px] font-medium text-gray-100 mb-3">{q}</p>
+      <div className="space-y-2">
+        {choices.map((c, i) => {
+          const isPicked = picked === i;
+          const show = picked !== null;
+          const state = show && c.correct ? 'border-success-500 bg-success-500/10 text-success-100'
+            : show && isPicked && !c.correct ? 'border-red-500/60 bg-red-500/10 text-red-200'
+            : 'border-gray-700 hover:border-gray-600 text-gray-200';
+          return (
+            <button key={i} type="button" onClick={() => setPicked(picked === null ? i : picked)}
+              disabled={show}
+              className={`w-full text-left flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${state} ${show ? 'cursor-default' : ''}`}>
+              {show && c.correct ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-success-400" />
+                : show && isPicked ? <X className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+                : <Circle className="w-4 h-4 shrink-0 mt-0.5 text-gray-500" />}
+              {c.t}
+            </button>
+          );
+        })}
+      </div>
+      {picked !== null && (
+        <p className="mt-3 text-sm text-gray-300 leading-relaxed border-l-2 border-success-500/40 pl-3">{explain}</p>
+      )}
+    </div>
+  );
+}
+
+// ---- Per-module knowledge check (graded, server-scored) --------------------
 function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
   const [questions, setQuestions] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -293,8 +353,7 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
   const load = useCallback(async () => {
     setError(null); setResult(null); setAnswers({});
     try {
-      const qs = await getModuleQuestions(mod.id);
-      setQuestions(qs);
+      setQuestions(await getModuleQuestions(mod.id));
     } catch (err) {
       setError(err.message || 'Could not load the quiz.');
     }
@@ -330,8 +389,8 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
 
   return (
     <div>
-      <h2 className="text-lg font-bold mb-1">Knowledge Check</h2>
-      <p className="text-xs text-gray-400 mb-5">Answer all questions to complete this module.</p>
+      <h2 className="text-lg font-bold mb-1">Module quiz</h2>
+      <p className="text-xs text-gray-400 mb-5">Answer all questions to complete this module. You can retake it if needed.</p>
       <div className="space-y-6">
         {questions.map((q, qi) => (
           <fieldset key={q.id}>
@@ -371,10 +430,10 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
 // Final exam + certificate
 // ---------------------------------------------------------------------------
 function FinalExam({ course, enrollment }) {
-  const [phase, setPhase] = useState('loading'); // loading | idle | exam | result
+  const [phase, setPhase] = useState('loading');
   const [attempts, setAttempts] = useState([]);
   const [passed, setPassed] = useState(enrollment.status === 'completed');
-  const [exam, setExam] = useState(null); // {attempt_id, questions}
+  const [exam, setExam] = useState(null);
   const [answers, setAnswers] = useState({});
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -414,6 +473,7 @@ function FinalExam({ course, enrollment }) {
     try {
       const e = await startExam(course.id);
       setExam(e); setAnswers({}); setPhase('exam');
+      window.scrollTo(0, 0);
     } catch (err) {
       const msg = err.message || '';
       if (msg.includes('cooldown')) setError('Please wait for the cooldown to end before trying again.');
@@ -469,7 +529,6 @@ function FinalExam({ course, enrollment }) {
     );
   }
 
-  // idle / result
   return (
     <div className="rounded-xl border border-success-500/40 bg-success-500/5 p-5">
       <div className="flex items-center gap-3 mb-2">
@@ -505,8 +564,6 @@ function CertificateBlock({ courseSlug }) {
   const [error, setError] = useState(null);
   const [uid, setUid] = useState(null);
 
-  // Generate the certificate as soon as this renders (fires the queue push +
-  // notifications). Idempotent server-side.
   useEffect(() => {
     let live = true;
     (async () => {
@@ -522,7 +579,7 @@ function CertificateBlock({ courseSlug }) {
   const download = async () => {
     setDownloading(true); setError(null);
     try {
-      const r = await issueCertificate(courseSlug); // refresh short-lived signed URL
+      const r = await issueCertificate(courseSlug);
       setUid(r.certificate_uid);
       if (r.url) window.open(r.url, '_blank', 'noopener');
     } catch (err) { setError(err.message || 'Could not download certificate.'); }
