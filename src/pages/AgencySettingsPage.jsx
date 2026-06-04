@@ -1,7 +1,8 @@
 // src/pages/AgencySettingsPage.jsx
 // MT-06: Agency settings with Profile / Notifications / Commission / Territory tabs
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Building2, Mail, Phone, Shield, Users, Save, AlertCircle, Bell, DollarSign, Map, PhoneCall, Target, ChevronDown, ChevronUp, Check, Activity } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useAgencyDetail, useAgencyCarrierConfig, useAgencyCommissionRatesRaw, useUpsertCommissionRates, useUpdateRevenueGoals, useAgencyRoutingRulesForAgent, useCreateAgencyRoutingRule } from '../hooks/useAgencies';
@@ -10,7 +11,7 @@ import { useAgencyProductConfig } from '../hooks/useAgencyProductConfig';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useTeamAvailability, useSetTransferPhone, validateE164 } from '../hooks/useAgentAvailability';
-import { useAllProducerTargets, useSaveProducerTargets, PRODUCER_DEFAULT_TARGETS } from '../hooks/useProducerTargets';
+import { useAllProducerTargets, PRODUCER_DEFAULT_TARGETS } from '../hooks/useProducerTargets';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import EmployeeInviteModal from './components/settings/EmployeeInviteModal';
 import CadenceSettingsTab from './components/settings/CadenceSettingsTab';
@@ -79,7 +80,7 @@ const AgencySettingsPage = () => {
 
         {/* Tab Navigation */}
         <div className="flex mb-6 overflow-x-auto" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-          {TABS.map(({ key, label, icon: Icon }) => (
+          {TABS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => setActiveTab(key)}
@@ -102,7 +103,7 @@ const AgencySettingsPage = () => {
         {activeTab === 'transfers' && <TransferPhoneTab agencyId={currentAgencyId} isAgent={isAgent} />}
         {activeTab === 'commission' && <CommissionTab agencyId={currentAgencyId} isAgent={isAgent} />}
         {activeTab === 'territory' && <TerritoryTab agency={agency} agencyId={currentAgencyId} isAgent={isAgent} queryClient={queryClient} />}
-        {activeTab === 'producer_goals' && <ProducerGoalsTab agencyId={currentAgencyId} isAgent={isAgent} />}
+        {activeTab === 'producer_goals' && <ProducerGoalsTab agencyId={currentAgencyId} />}
         {activeTab === 'cadence' && (
           <CadenceSettingsTab agencyId={currentAgencyId} isAgent={isAgent} />
         )}
@@ -1547,72 +1548,73 @@ const TARGET_FIELDS = [
   { key: 'grade_c_outbound',     label: 'Grade C Outbound Threshold',   type: 'number' },
 ];
 
-function ProducerGoalsTab({ agencyId, isAgent }) {
+// Read-only snapshot. Producer goals are now set in Planning → Production Goals
+// (effective-dated, with trailing context, suggestions, and agency-goal
+// reconciliation). Keeping a second editor here would mean two write paths
+// against the same effective-dated table, so this surface only displays the
+// current in-force goals and links out to the editor.
+function ProducerGoalsTab({ agencyId }) {
   const { data: employees = [] } = useActiveEmployees(agencyId);
   const { data: allTargets = [] } = useAllProducerTargets(agencyId);
-  const { mutate: saveTargets, isPending: savingTargets } = useSaveProducerTargets(agencyId);
 
-  // Filter to sales/producer role employees
   const producers = useMemo(() =>
     employees.filter(e => e.roles?.includes('sales') || e.roles?.includes('producer')),
     [employees]
   );
 
-  // Build targets map: employee auth_user_id → saved targets
   const targetsMap = useMemo(() => {
     const m = {};
-    for (const t of allTargets) {
-      m[t.employee_user_id] = t;
-    }
+    for (const t of allTargets) m[t.employee_user_id] = t;
     return m;
   }, [allTargets]);
-
-  if (!producers.length) {
-    return (
-      <div className="dark-card text-center py-8">
-        <Target className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
-        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--qs-bright)' }}>No Producers Found</h2>
-        <p style={{ color: 'var(--qs-dim)' }}>Add employees with the "sales" role to configure their performance goals.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">
       <div className="dark-card">
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="w-5 h-5 text-primary-600" />
-          <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Producer Performance Goals</h2>
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-primary-600" />
+            <div>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--qs-bright)' }}>Producer Performance Goals</h2>
+              <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
+                Goals are set in Planning → Production Goals, with trailing production, suggestions, and agency-goal reconciliation. This view is read-only.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/agency/planning?tab=goals"
+            className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg text-sm whitespace-nowrap"
+          >
+            Edit in Planning →
+          </Link>
         </div>
-        <p className="text-sm mb-6" style={{ color: 'var(--qs-subtle)' }}>
-          Configure performance targets for each producer. These thresholds determine the grade displayed on their scorecard.
-        </p>
       </div>
 
-      {producers.map(producer => {
-        const userId = producer.auth_user_id || producer.id;
-        const name = `${producer.preferred_name || producer.first_name} ${producer.last_name || ''}`.trim();
-        const saved = targetsMap[userId] || {};
-        return (
-          <ProducerGoalCard
-            key={userId}
-            producerName={name}
-            employeeUserId={userId}
-            savedTargets={saved}
-            onSave={(targets) => saveTargets({ employeeUserId: userId, targets })}
-            saving={savingTargets}
-            isAgent={isAgent}
-          />
-        );
-      })}
+      {!producers.length ? (
+        <div className="dark-card text-center py-8">
+          <Target className="w-12 h-12 mx-auto mb-3" style={{ color: 'var(--qs-muted)' }} />
+          <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--qs-bright)' }}>No Producers Found</h2>
+          <p style={{ color: 'var(--qs-dim)' }}>Add employees with the "sales" role to configure their performance goals.</p>
+        </div>
+      ) : (
+        producers.map(producer => {
+          const userId = producer.auth_user_id || producer.id;
+          const name = `${producer.preferred_name || producer.first_name} ${producer.last_name || ''}`.trim();
+          return (
+            <ProducerGoalCard
+              key={userId}
+              producerName={name}
+              savedTargets={targetsMap[userId] || {}}
+            />
+          );
+        })
+      )}
     </div>
   );
 }
 
-function ProducerGoalCard({ producerName, employeeUserId, savedTargets, onSave, saving, isAgent }) {
+function ProducerGoalCard({ producerName, savedTargets }) {
   const [expanded, setExpanded] = useState(false);
-  const [form, setForm] = useState(null);
-  const [justSaved, setJustSaved] = useState(false);
 
   const currentValues = useMemo(() => {
     const merged = { ...PRODUCER_DEFAULT_TARGETS };
@@ -1622,33 +1624,10 @@ function ProducerGoalCard({ producerName, employeeUserId, savedTargets, onSave, 
     return merged;
   }, [savedTargets]);
 
-  const startEditing = useCallback(() => {
-    setForm({ ...currentValues });
-    setExpanded(true);
-  }, [currentValues]);
-
-  const handleSave = useCallback(() => {
-    const targets = {};
-    for (const f of TARGET_FIELDS) {
-      targets[f.key] = parseFloat(form[f.key]) || 0;
-    }
-    onSave(targets);
-    setJustSaved(true);
-    setTimeout(() => setJustSaved(false), 2000);
-    setForm(null);
-  }, [form, onSave]);
-
-  const handleCancel = useCallback(() => {
-    setForm(null);
-    setExpanded(false);
-  }, []);
-
-  const isEditing = form !== null;
-
   return (
     <div className="dark-card">
       <button
-        onClick={() => isEditing ? null : setExpanded(e => !e)}
+        onClick={() => setExpanded(e => !e)}
         className="flex items-center justify-between w-full text-left"
       >
         <div className="flex items-center gap-3">
@@ -1660,24 +1639,17 @@ function ProducerGoalCard({ producerName, employeeUserId, savedTargets, onSave, 
           <div>
             <h3 className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{producerName}</h3>
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-              {savedTargets.updated_at
+              {savedTargets.premium_monthly > 0
+                ? `Premium goal $${Number(savedTargets.premium_monthly).toLocaleString()}/mo`
+                : savedTargets.updated_at
                 ? `Last updated ${new Date(savedTargets.updated_at).toLocaleDateString()}`
                 : 'Using defaults'}
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {justSaved && (
-            <span className="flex items-center gap-1 text-xs text-emerald-400">
-              <Check className="w-3 h-3" /> Saved
-            </span>
-          )}
-          {!isEditing && (
-            expanded
-              ? <ChevronUp className="w-4 h-4" style={{ color: 'var(--qs-subtle)' }} />
-              : <ChevronDown className="w-4 h-4" style={{ color: 'var(--qs-subtle)' }} />
-          )}
-        </div>
+        {expanded
+          ? <ChevronUp className="w-4 h-4" style={{ color: 'var(--qs-subtle)' }} />
+          : <ChevronDown className="w-4 h-4" style={{ color: 'var(--qs-subtle)' }} />}
       </button>
 
       {expanded && (
@@ -1688,55 +1660,16 @@ function ProducerGoalCard({ producerName, employeeUserId, savedTargets, onSave, 
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--qs-dim)' }}>
                   {f.label}
                 </label>
-                {isEditing ? (
-                  <div>
-                    <input
-                      type="number"
-                      min="0"
-                      step={f.key === 'avg_calls_per_day' ? '0.5' : '1'}
-                      value={form[f.key] ?? ''}
-                      onChange={(e) => setForm(prev => ({ ...prev, [f.key]: e.target.value }))}
-                      className="dark-input text-sm"
-                    />
-                    {f.hint && <p className="text-xs mt-0.5" style={{ color: 'var(--qs-muted)' }}>{f.hint}</p>}
-                  </div>
-                ) : (
-                  <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>
-                    {f.key === 'premium_monthly' && currentValues[f.key] > 0
-                      ? `$${currentValues[f.key].toLocaleString()}`
-                      : f.key === 'premium_monthly' && currentValues[f.key] === 0
-                      ? 'Not tracked'
-                      : currentValues[f.key]}
-                  </p>
-                )}
+                <p className="text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>
+                  {f.key === 'premium_monthly' && currentValues[f.key] > 0
+                    ? `$${currentValues[f.key].toLocaleString()}`
+                    : f.key === 'premium_monthly' && currentValues[f.key] === 0
+                    ? 'Not tracked'
+                    : currentValues[f.key]}
+                </p>
               </div>
             ))}
           </div>
-
-          {isAgent && (
-            <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
-              {isEditing ? (
-                <>
-                  <button
-                    onClick={handleSave}
-                    disabled={saving}
-                    className="flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium rounded-lg disabled:opacity-50 text-sm"
-                  >
-                    <Save className="w-3 h-3" />
-                    {saving ? 'Saving...' : 'Save Goals'}
-                  </button>
-                  <button onClick={handleCancel} className="btn-ghost text-sm">Cancel</button>
-                </>
-              ) : (
-                <button
-                  onClick={startEditing}
-                  className="px-4 py-2 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
-                >
-                  Edit Goals
-                </button>
-              )}
-            </div>
-          )}
         </div>
       )}
     </div>

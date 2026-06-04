@@ -43,6 +43,7 @@ import ProducerScorecard from './components/time-attendance/ProducerScorecard';
 import CallLogTable from './components/time-attendance/CallLogTable';
 import AgentAliasManager from './components/time-attendance/AgentAliasManager';
 import { useProducerTargets } from '../hooks/useProducerTargets';
+import { buildProducerMatcher } from '../utils/producerMatch';
 import { useRevenueEntries } from '../hooks/useRevenueEntries';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
@@ -213,28 +214,22 @@ const StaffPerformancePage = () => {
     rangeEnd: monthRangeEnd,
   });
 
-  // Compute monthly production for selected producer
+  // Compute monthly production for selected producer. Attribution goes through
+  // the shared producer matcher so these figures stay in lockstep with the
+  // Production Goals series.
+  const matchEntry = useMemo(() => buildProducerMatcher(rosterEmployees), [rosterEmployees]);
   const monthlyProduction = useMemo(() => {
     if (!singleEmployee || !revenueEntries.length) return { vcItems: 0, premium: 0, policies: 0 };
-    // producer_id maps to employees.id — resolve from roster
     const rosterEmp = rosterEmployees.find(e => (e.auth_user_id || e.id) === singleEmployee);
-    const rosterId = rosterEmp?.id;
-    const filtered = revenueEntries.filter(e => {
-      if (rosterId && e.producerId === rosterId) return true;
-      if (e.producerId === singleEmployee) return true;
-      // Fallback: match by producer name
-      if (!e.producerId && e.producerName && rosterEmp) {
-        const name = `${rosterEmp.preferred_name || rosterEmp.first_name} ${rosterEmp.last_name}`.trim().toLowerCase();
-        return e.producerName.toLowerCase() === name;
-      }
-      return false;
-    });
+    const targetId = rosterEmp?.id;
+    if (!targetId) return { vcItems: 0, premium: 0, policies: 0 };
+    const filtered = revenueEntries.filter(e => matchEntry(e)?.id === targetId);
     return {
       vcItems:  filtered.reduce((s, e) => s + (e.itemCount ?? 1), 0),
       premium:  filtered.reduce((s, e) => s + (parseFloat(e.premium) || 0), 0),
       policies: filtered.length,
     };
-  }, [revenueEntries, singleEmployee, rosterEmployees]);
+  }, [revenueEntries, singleEmployee, rosterEmployees, matchEntry]);
 
   // v3: Call log data
   const { data: callLogData = [], refetch: refetchCallLog } = useCallLogData(singleEmployee, weekStart);
@@ -763,6 +758,7 @@ const StaffPerformancePage = () => {
                       monthlyPolicies={monthlyProduction.policies}
                       weekLabel={`Week of ${weekStart}`}
                       monthLabel={currentMonthStr}
+                      goalHref={`/agency/planning?tab=goals&producer=${rosterEmp?.id || rc.employee_user_id}`}
                     />
 
                     {/* Producer detail view */}
