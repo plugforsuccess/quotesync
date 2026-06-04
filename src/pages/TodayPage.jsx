@@ -7,6 +7,8 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { usePersona } from '../hooks/usePersona';
+import { hatForRoles } from '../config/navConfig';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import { TIER_ORDER } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
@@ -58,6 +60,11 @@ export default function TodayPage() {
   const { data: employee } = useCurrentEmployee();
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
+  // The dial list is cross-role by design, but the production goal strip is a
+  // sales overlay — only show it when the sales hat is active (a dual-role
+  // producer wearing Service shouldn't see it).
+  const [persona] = usePersona();
+  const isSalesHat = hatForRoles(employee?.roles || [], persona) === 'sales';
   const queryClient = useQueryClient();
 
   const [selectedCancel,  setSelectedCancel]  = useState(null);
@@ -248,8 +255,8 @@ export default function TodayPage() {
         </div>
       </div>
 
-      {/* Sales producers: monthly premium goal progress at a glance */}
-      {employee?.roles?.includes('sales') && (
+      {/* Sales hat only: monthly premium goal progress at a glance */}
+      {isSalesHat && (
         <ProducerGoalProgress compact orgId={orgId} employee={employee} />
       )}
 
