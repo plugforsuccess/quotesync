@@ -190,16 +190,16 @@ function AuthPanel() {
 
   if (sent) {
     return (
-      <div className="text-center py-2">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-500/15">
+      <div className="text-center py-4">
+        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-success-500/15">
           <Mail className="h-6 w-6 text-success-300" />
         </div>
-        <h3 className="text-base font-semibold text-success-100 mb-1">Check your email</h3>
-        <p className="text-sm text-gray-400">We sent a secure sign-in link to</p>
-        <p className="my-1.5 text-sm font-semibold text-gray-100 break-words">{email}</p>
-        <p className="text-sm text-gray-400">Open it on this device to continue enrolling.</p>
+        <h3 className="text-base font-semibold text-success-100 mb-4">Check your email</h3>
+        <p className="text-sm text-gray-400 leading-relaxed">We sent a secure sign-in link to</p>
+        <p className="my-3 text-sm font-semibold text-gray-100 break-words">{email}</p>
+        <p className="text-sm text-gray-400 leading-relaxed">Open it on this device to continue enrolling.</p>
         <button type="button" onClick={() => setSent(false)}
-          className="mt-5 text-xs font-medium text-gray-400 underline-offset-2 hover:text-gray-200 hover:underline">
+          className="mt-7 text-xs font-medium text-gray-400 underline-offset-2 hover:text-gray-200 hover:underline">
           Use a different email
         </button>
       </div>
