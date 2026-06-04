@@ -1,18 +1,25 @@
-// Centered, max-width reading column for queue screens.
+// Width wrapper for queue screens.
 //
-// Constrains a list of cards to a comfortable single column (~768px / max-w-3xl)
-// so line length stays readable and related data groups by proximity instead of
-// scattering to opposite viewport edges. Built for the retention/cancellation
-// queue (older agents, larger text, higher contrast) but intentionally generic
-// so other queue screens — renewals, service follow-ups — can adopt the same
-// reading measure.
+// A single place to control the reading measure of a list of cards so other
+// queue screens (renewals, service follow-ups) can adopt a consistent width.
+// Choose a `size`:
+//   - 'reading' (default) — narrow centered column (~768px), tightest line length
+//   - 'wide'              — roomier centered column (~1024px)
+//   - 'full'              — full content width; let inner blocks cap their own
+//                           line length (e.g. the script) for readability
 //
-// Page chrome (headers, stat tiles, tab toggles) can stay full-width above this;
-// wrap only the card list. rem-based Tailwind sizing keeps the layout intact at
-// browser/OS zoom up to 200%.
-export default function ReadingColumn({ children, className = '', style }) {
+// Page chrome (the top nav, stat tiles, tab toggles) lives outside this. rem-
+// based Tailwind sizing keeps the layout intact at browser/OS zoom up to 200%.
+const MAX = {
+  reading: 'max-w-3xl',
+  wide:    'max-w-5xl',
+  full:    'max-w-none',
+};
+
+export default function ReadingColumn({ children, size = 'reading', className = '', style }) {
+  const max = MAX[size] || MAX.reading;
   return (
-    <div className={`mx-auto w-full max-w-3xl ${className}`.trim()} style={style}>
+    <div className={`mx-auto w-full ${max} ${className}`.trim()} style={style}>
       {children}
     </div>
   );

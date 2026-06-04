@@ -97,6 +97,9 @@ export default function MyQueuePage() {
   // Transcript expand
   const [expandedTranscript, setExpandedTranscript] = useState(null); // event.id
 
+  // Master-detail selection — which cancel lead is open in the right pane.
+  const [selectedCancelId, setSelectedCancelId] = useState(null);
+
   // Stale refresh tracking
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
 
@@ -287,6 +290,62 @@ export default function MyQueuePage() {
     .map(b => ({ ...b, cases: cancelBuckets[b.key] || [] }))
     .filter(b => b.cases.length > 0);
 
+  // Flattened, in-priority-order list backing the master-detail pane and
+  // keyboard navigation. "other" tier cases (no recognized tier) trail behind.
+  const flatCancelCases = useMemo(() => ([
+    ...PRIORITY_BUCKETS.flatMap(b => cancelBuckets[b.key] || []),
+    ...(cancelBuckets.other || []),
+  ]), [cancelBuckets]);
+  const selectedCancel =
+    flatCancelCases.find(c => c.id === selectedCancelId) || flatCancelCases[0] || null;
+  const selectedCancelIdx = selectedCancel
+    ? flatCancelCases.findIndex(c => c.id === selectedCancel.id)
+    : -1;
+
+  // Keep the selection valid as the list changes (filters, focus mode, a case
+  // resolving and dropping out). Falls back to the first lead.
+  useEffect(() => {
+    if (flatCancelCases.length === 0) {
+      if (selectedCancelId !== null) setSelectedCancelId(null);
+    } else if (!flatCancelCases.some(c => c.id === selectedCancelId)) {
+      setSelectedCancelId(flatCancelCases[0].id);
+    }
+  }, [flatCancelCases, selectedCancelId]);
+
+  // Keyboard call-through: ↑/↓ or j/k to move between leads, C to dial the
+  // selected lead. Ignored while typing or when a popover/modal is open.
+  useEffect(() => {
+    function onKey(e) {
+      if (activeTab !== 'cancel') return;
+      if (logCallTarget || callbackTarget || lostTarget || selectedEvent || selectedRenewal) return;
+      const tag = e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
+      if (!flatCancelCases.length) return;
+      const idx = flatCancelCases.findIndex(c => c.id === selectedCancel?.id);
+      if (e.key === 'ArrowDown' || e.key === 'j') {
+        e.preventDefault();
+        const next = flatCancelCases[Math.min(idx + 1, flatCancelCases.length - 1)];
+        if (next) setSelectedCancelId(next.id);
+      } else if (e.key === 'ArrowUp' || e.key === 'k') {
+        e.preventDefault();
+        const prev = flatCancelCases[Math.max(idx - 1, 0)];
+        if (prev) setSelectedCancelId(prev.id);
+      } else if ((e.key === 'c' || e.key === 'C') && selectedCancel?.phone) {
+        window.location.href = `tel:${selectedCancel.phone}`;
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [activeTab, flatCancelCases, selectedCancel, logCallTarget, callbackTarget, lostTarget, selectedEvent, selectedRenewal]);
+
+  // Keep the active row visible in the (independently scrolling) master list.
+  useEffect(() => {
+    if (!selectedCancel) return;
+    document.querySelector(`[data-cancel-row="${selectedCancel.id}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCancel?.id]);
+
   async function updateCancelCase(id, updates) {
     const { error } = await supabase
       .from('pending_cases')
@@ -461,7 +520,59 @@ export default function MyQueuePage() {
     setLostReason('');
   }
 
-  function CancelCard({ event, policyCount = 1 }) {
+  // Compact master-list row — dense and scannable, ~15-18 visible at once.
+  function CancelRow({ event, policyCount = 1, active, onSelect }) {
+    const days     = daysUntilCancel(event.cancel_effective_date);
+    const isLapsed = event.stage === 'cancelled';
+    const urgent   = days !== null && days <= 3;
+    const statusText = isLapsed ? 'Lapsed'
+      : days === null ? '—'
+      : days === 0 ? 'Today'
+      : days < 0 ? `${Math.abs(days)}d ago`
+      : `${days}d`;
+    const statusColor = (isLapsed || urgent) ? '#F87171'
+      : (days !== null && days <= 7) ? '#FBBF24'
+      : 'var(--qs-dim)';
+    const sub = [
+      event.product?.toUpperCase(),
+      event.amount_due > 0 ? `${fmt$(event.amount_due)} due` : null,
+      policyCount > 1 ? `${policyCount} policies` : `${event.attempt_count || 0} attempts`,
+    ].filter(Boolean).join(' · ');
+
+    return (
+      <button
+        type="button"
+        data-cancel-row={event.id}
+        onClick={onSelect}
+        className="qs-focusable qs-cancel-row"
+        aria-current={active ? 'true' : undefined}
+        style={{
+          display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
+          background: active ? 'rgba(59,130,246,0.14)' : undefined,
+          border: '1px solid',
+          borderColor: active ? 'rgba(59,130,246,0.45)' : 'transparent',
+          borderLeft: `3px solid ${active ? '#3B82F6' : isLapsed ? '#EF4444' : urgent ? '#F87171' : 'transparent'}`,
+          borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 2,
+        }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--qs-bright)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {event.customer_name}
+          </span>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: statusColor, flexShrink: 0 }}>
+            {statusText}
+          </span>
+        </div>
+        <div style={{ fontSize: '0.8125rem', color: 'var(--qs-dim)', marginTop: 2,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {sub}
+        </div>
+      </button>
+    );
+  }
+
+  // Right-pane detail for the active call — full script + actions.
+  function CancelDetail({ event, policyCount = 1, position }) {
     const days       = daysUntilCancel(event.cancel_effective_date);
     const urgent     = days !== null && days <= 3;
     const phone      = event.phone;
@@ -499,26 +610,32 @@ export default function MyQueuePage() {
 
     // Status / inline-badge chips. Bumped off text-xs so labels stay legible.
     const chip = {
-      fontSize: '0.8125rem', fontWeight: 700, borderRadius: 6,
-      padding: '0.125rem 0.5rem', flexShrink: 0,
+      fontSize: '0.875rem', fontWeight: 700, borderRadius: 6,
+      padding: '0.1875rem 0.5rem', flexShrink: 0,
       display: 'inline-flex', alignItems: 'center', gap: 4,
     };
     // Shared 44px-tall action control — meets the AA touch-target minimum.
+    // Fluid label so controls read larger on big monitors.
     const btnBase = {
-      minHeight: '2.75rem', padding: '0 1rem', borderRadius: 8,
-      fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer',
+      minHeight: '2.75rem', padding: '0 1.125rem', borderRadius: 8,
+      fontSize: 'clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem)',
+      fontWeight: 600, cursor: 'pointer',
       display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
     };
     // Compact "key facts" tile — amount due / days, grouped near the name.
+    // Capped so the cluster stays tight on a full-width card instead of
+    // stretching edge to edge.
     const factTile = {
-      flex: '1 1 9rem', minWidth: '9rem',
+      flex: '0 1 18rem', minWidth: '12rem',
       background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
-      borderRadius: 8, padding: '0.625rem 0.875rem',
+      borderRadius: 8, padding: '0.75rem 1rem',
     };
     const factLabel = {
-      fontSize: '0.75rem', fontWeight: 700, color: 'var(--qs-dim)',
+      fontSize: '0.8125rem', fontWeight: 700, color: 'var(--qs-dim)',
       textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem',
     };
+    // Fluid value size for the headline numbers (amount / days).
+    const factValueSize = 'clamp(1.625rem, 1.3rem + 1vw, 2.25rem)';
 
     return (
       <article style={{
@@ -547,7 +664,8 @@ export default function MyQueuePage() {
         {/* 1 ── Header: name + status badges ─────────────────────────── */}
         <header style={{ display: 'flex', alignItems: 'baseline', gap: '0.625rem', flexWrap: 'wrap' }}>
           <h3 style={{
-            fontSize: '1.25rem', fontWeight: 600, color: 'var(--qs-bright)',
+            fontSize: 'clamp(1.375rem, 1.15rem + 0.7vw, 1.75rem)',
+            fontWeight: 600, color: 'var(--qs-bright)',
             margin: 0, lineHeight: 1.2,
           }}>
             {event.customer_name}
@@ -596,7 +714,7 @@ export default function MyQueuePage() {
             <div style={factTile}>
               <div style={factLabel}>Amount due</div>
               <div style={{
-                fontSize: '1.5rem', fontWeight: 800, color: '#F87171',
+                fontSize: factValueSize, fontWeight: 800, color: '#F87171',
                 fontFamily: "'DM Mono', monospace", lineHeight: 1.1,
               }}>
                 ${Number(event.amount_due).toLocaleString()}
@@ -606,22 +724,32 @@ export default function MyQueuePage() {
           <div style={factTile}>
             <div style={factLabel}>{isLapsed ? 'Coverage' : days < 0 ? 'Overdue' : 'Cancels in'}</div>
             <div style={{
-              fontSize: '1.5rem', fontWeight: 800,
+              fontSize: factValueSize, fontWeight: 800,
               color: isLapsed ? '#F87171' : daysColor,
               fontFamily: "'DM Mono', monospace", lineHeight: 1.1,
             }}>
               {isLapsed ? '⚠ LAPSED' : daysLabel}
             </div>
-            <div style={{ fontSize: '0.875rem', color: 'var(--qs-dim)', marginTop: '0.25rem' }}>
+            <div style={{ fontSize: '0.9375rem', color: 'var(--qs-dim)', marginTop: '0.25rem' }}>
               {isLapsed ? 'since ' : ''}{event.cancel_effective_date}
             </div>
           </div>
         </div>
 
         {/* 3 ── Meta line: policy · type · phone (AA-contrast) ────────── */}
-        <div style={{ fontSize: '0.875rem', color: 'var(--qs-dim)', fontWeight: 500 }}>
-          {event.policy_no} · {event.product}
-          {phone && <> · {fmtPhone(phone)}</>}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
+          gap: '0.75rem', flexWrap: 'wrap',
+          fontSize: 'clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem)',
+          color: 'var(--qs-dim)', fontWeight: 500 }}>
+          <span>
+            {event.policy_no} · {event.product}
+            {phone && <> · {fmtPhone(phone)}</>}
+          </span>
+          {position && (
+            <span style={{ color: 'var(--qs-muted)', fontSize: '0.875rem', flexShrink: 0 }}>
+              {position}
+            </span>
+          )}
         </div>
 
         {/* 4 ── Call script — 16px, comfortable measure & line-height ── */}
@@ -632,13 +760,16 @@ export default function MyQueuePage() {
           padding: '1rem',
         }}>
           <div style={{
-            fontSize: '0.75rem', fontWeight: 700, color: 'var(--qs-dim)',
+            fontSize: '0.8125rem', fontWeight: 700, color: 'var(--qs-dim)',
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem',
           }}>
             {isLapsed ? 'Reinstatement script' : 'Call script'}
           </div>
+          {/* Line length capped (~70ch) so a full-width card still reads
+              comfortably for the older-agent audience. */}
           <p style={{
-            fontSize: '1rem', color: 'var(--qs-text)', lineHeight: 1.6, margin: 0,
+            fontSize: 'clamp(1rem, 0.95rem + 0.35vw, 1.1875rem)',
+            color: 'var(--qs-text)', lineHeight: 1.65, margin: 0, maxWidth: '70ch',
           }}>
             {scriptLine}
           </p>
@@ -657,12 +788,12 @@ export default function MyQueuePage() {
               </span>
             )}
             {lastAtt && !promisePast && (
-              <span style={{ fontSize: '0.875rem', color: 'var(--qs-dim)' }}>
+              <span style={{ fontSize: '0.9375rem', color: 'var(--qs-dim)' }}>
                 {event.attempt_count || 0} attempts · {lastAtt}
               </span>
             )}
             {!lastAtt && !promisePast && (
-              <span style={{ fontSize: '0.875rem', color: 'var(--qs-dim)', fontWeight: 600 }}>
+              <span style={{ fontSize: '0.9375rem', color: 'var(--qs-dim)', fontWeight: 600 }}>
                 {event.attempt_count || 0} attempts
               </span>
             )}
@@ -709,114 +840,122 @@ export default function MyQueuePage() {
           </div>
         )}
 
-        {/* 5 ── Action button row ─────────────────────────────────────── */}
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* 5 ── Actions: prominent Call, then disposition row ─────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
           {phone && (
             <a href={`tel:${phone}`}
               className="qs-focusable"
               style={{
-                ...btnBase,
-                background: 'rgba(52,211,153,0.12)', color: '#34D399',
-                border: '1px solid rgba(52,211,153,0.25)', textDecoration: 'none',
+                ...btnBase, minHeight: '3rem', width: '100%',
+                fontSize: 'clamp(1rem, 0.95rem + 0.3vw, 1.125rem)',
+                background: 'rgba(52,211,153,0.14)', color: '#34D399',
+                border: '1px solid rgba(52,211,153,0.3)', textDecoration: 'none',
               }}>
-              📞 {fmtPhone(phone)}
+              📞 Call {fmtPhone(phone)}
             </a>
           )}
 
-          <button
-            className="qs-focusable"
-            onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
-            style={{
-              ...btnBase,
-              border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-dim)',
-            }}>
-            Log Call
-          </button>
-
-          {/* Schedule callback */}
-          <button
-            className="qs-focusable"
-            onClick={() => { setCallbackTarget({ type: 'cancel', event }); setCallbackForm({ time: '', note: '' }); }}
-            style={{
-              ...btnBase,
-              border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
-              color: '#60A5FA',
-            }}>
-            📅 Callback
-          </button>
-
-          <button
-            className="qs-focusable"
-            onClick={() => handleInlineResolve('cancel', event, 'saved')}
-            style={{
-              ...btnBase,
-              border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-              color: '#34D399',
-            }}>
-            ✓ Saved
-          </button>
-
-          {/* Lost quick action — prompts for reason */}
-          <button
-            className="qs-focusable"
-            onClick={() => { setLostTarget({ type: 'cancel', event }); setLostReason(''); }}
-            style={{
-              ...btnBase,
-              border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
-              color: 'var(--qs-dim)',
-            }}>
-            ✗ Lost
-          </button>
-
-          {/* Wants to cancel quick action */}
-          <button
-            className="qs-focusable"
-            onClick={() => handleInlineResolve('cancel', event, 'requested_cancellation')}
-            style={{
-              ...btnBase,
-              border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
-              color: '#F87171',
-            }}>
-            Wants to Cancel
-          </button>
-
-          {/* Snooze — show only after 2+ attempts */}
-          {event.attempt_count >= 2 && (
-            <select
-              className="dark-select qs-focusable"
-              defaultValue=""
-              onChange={e => {
-                if (!e.target.value) return;
-                const [days, reason] = e.target.value.split('|');
-                handleSnooze('cancel', event, parseInt(days), reason);
-                e.target.value = '';
-              }}
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <button
+              className="qs-focusable"
+              onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
               style={{
-                ...btnBase, width: 'auto',
+                ...btnBase,
+                border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
                 color: 'var(--qs-dim)',
-                border: '1px solid var(--qs-border)',
-                background: 'var(--qs-elevated)',
-              }}
-            >
-              <option value="">⏸ Snooze</option>
-              <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
-              <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
-              <option value="7|retry_next_week">1 week — retry next week</option>
-            </select>
-          )}
+              }}>
+              Log Call
+            </button>
 
-          <button
-            className="qs-focusable"
-            onClick={() => setSelectedEvent(event)}
-            style={{
-              ...btnBase,
-              border: '1px solid var(--qs-border)', background: 'none',
-              color: 'var(--qs-dim)',
-              marginLeft: 'auto',
-            }}>
-            View →
-          </button>
+            {/* Schedule callback */}
+            <button
+              className="qs-focusable"
+              onClick={() => { setCallbackTarget({ type: 'cancel', event }); setCallbackForm({ time: '', note: '' }); }}
+              style={{
+                ...btnBase,
+                border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+                color: '#60A5FA',
+              }}>
+              📅 Callback
+            </button>
+
+            <button
+              className="qs-focusable"
+              onClick={() => handleInlineResolve('cancel', event, 'saved')}
+              style={{
+                ...btnBase,
+                border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
+                color: '#34D399',
+              }}>
+              ✓ Saved
+            </button>
+
+            {/* Lost quick action — prompts for reason */}
+            <button
+              className="qs-focusable"
+              onClick={() => { setLostTarget({ type: 'cancel', event }); setLostReason(''); }}
+              style={{
+                ...btnBase,
+                border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
+                color: 'var(--qs-dim)',
+              }}>
+              ✗ Lost
+            </button>
+
+            {/* Wants to cancel quick action */}
+            <button
+              className="qs-focusable"
+              onClick={() => handleInlineResolve('cancel', event, 'requested_cancellation')}
+              style={{
+                ...btnBase,
+                border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
+                color: '#F87171',
+              }}>
+              Wants to Cancel
+            </button>
+
+            {/* Snooze — show only after 2+ attempts */}
+            {event.attempt_count >= 2 && (
+              <select
+                className="dark-select qs-focusable"
+                defaultValue=""
+                onChange={e => {
+                  if (!e.target.value) return;
+                  const [days, reason] = e.target.value.split('|');
+                  handleSnooze('cancel', event, parseInt(days), reason);
+                  e.target.value = '';
+                }}
+                style={{
+                  ...btnBase, width: 'auto',
+                  color: 'var(--qs-dim)',
+                  border: '1px solid var(--qs-border)',
+                  background: 'var(--qs-elevated)',
+                }}
+              >
+                <option value="">⏸ Snooze</option>
+                <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
+                <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
+                <option value="7|retry_next_week">1 week — retry next week</option>
+              </select>
+            )}
+
+            <button
+              className="qs-focusable"
+              onClick={() => setSelectedEvent(event)}
+              style={{
+                ...btnBase,
+                border: '1px solid var(--qs-border)', background: 'none',
+                color: 'var(--qs-dim)',
+                marginLeft: 'auto',
+              }}>
+              Full details →
+            </button>
+          </div>
+
+          {/* Keyboard call-through hint */}
+          <div style={{ fontSize: '0.8125rem', color: 'var(--qs-muted)', marginTop: '0.125rem' }}>
+            <kbd>↑</kbd> <kbd>↓</kbd> move · <kbd>C</kbd> call · or click a lead
+          </div>
         </div>
       </article>
     );
@@ -1325,9 +1464,9 @@ export default function MyQueuePage() {
         </div>
       )}
 
-      {/* ── Pending Cancel Tab ───────────────────────────────────────── */}
+      {/* ── Pending Cancel Tab — master-detail dialer ────────────────── */}
       {activeTab === 'cancel' && (
-        <ReadingColumn>
+        <div>
           {cancelLoading && (
             <div style={{ color: 'var(--qs-subtle)', fontSize: 15 }}>Loading...</div>
           )}
@@ -1346,102 +1485,130 @@ export default function MyQueuePage() {
             </div>
           )}
 
-          {/* Filter bar */}
           {!cancelLoading && cancelCases.length > 0 && (
-            <div style={{ display: 'flex', gap: 6, marginBottom: 14, flexWrap: 'wrap' }}>
-              {[
-                { key: 'all',          label: `All (${cancelCases.length})` },
-                { key: 'lapsed',       label: `Lapsed (${cancelCases.filter(e => e.stage === 'cancelled').length})` },
-                { key: 'pending',      label: `Pending (${cancelCases.filter(e => e.stage === 'pending_cancel').length})` },
-                { key: 'never_called', label: `Untouched (${cancelCases.filter(e => !e.attempt_count).length})` },
-                { key: 'multi_policy', label: `Multi-policy (${cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1).length})` },
-                { key: 'snoozed',      label: `Snoozed${cancelFilter === 'snoozed' ? ` (${snoozedCancelCases.length})` : ''}` },
-              ].map(f => (
-                <button
-                  key={f.key}
-                  onClick={() => setCancelFilter(f.key)}
-                  style={{
-                    fontSize: 12, padding: '5px 12px', borderRadius: 20,
-                    border: '1px solid',
-                    borderColor: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-border)',
-                    background: cancelFilter === f.key ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
-                    color: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-dim)',
-                    cursor: 'pointer', fontWeight: 600,
-                    transition: 'all 0.15s',
-                  }}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          )}
+            <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 items-start">
 
-          {/* Priority buckets */}
-          {!cancelLoading && cancelCases.length > 0 && BUCKETS.map(bucket => (
-            <div key={bucket.key} style={{ marginBottom: 24 }}>
-              {/* Bucket header */}
-              <div style={{
-                display: 'flex', alignItems: 'baseline', gap: 10,
-                marginBottom: 12, paddingBottom: 8,
-                borderBottom: `1px solid ${bucket.color}33`,
-                flexWrap: 'wrap',
-              }}>
-                <span style={{ fontSize: 14, fontWeight: 700, color: bucket.color,
-                  textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                  {bucket.label}
-                </span>
-                <span style={{ fontSize: 13, color: 'var(--qs-dim)',
-                  background: 'var(--qs-elevated)', padding: '2px 8px',
-                  borderRadius: 10, fontWeight: 600 }}>
-                  {bucket.cases.length}
-                </span>
-                {bucket.sublabel && (
-                  <span style={{ fontSize: 11, color: 'var(--qs-muted)', fontWeight: 500 }}>
-                    {bucket.sublabel}
-                  </span>
-                )}
-              </div>
-
-              {/* Cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {bucket.cases.map(event => (
-                  <CancelCard
-                    key={event.id}
-                    event={event}
-                    policyCount={customerPolicyCounts[event.customer_name] || 1}
-                  />
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {/* "X more cases" banner — focus mode only, when queue extends past target */}
-          {!cancelLoading && focusMode && filteredCancelCases.length > dailyTarget && (
-            <div style={{
-              textAlign: 'center', padding: '14px',
-              fontSize: 13, color: 'var(--qs-muted)',
-              borderTop: '1px solid var(--qs-border)',
-              marginTop: 8,
-            }}>
-              {filteredCancelCases.length - dailyTarget} more cases in full queue
-              {' · '}
-              <button
-                onClick={toggleFocusMode}
+              {/* ── Master: dense lead list ───────────────────────────── */}
+              <aside
+                className="lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
                 style={{
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
-                }}
-              >
-                View all
-              </button>
+                  background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                  borderRadius: 12, padding: 10,
+                }}>
+                {/* Filter bar */}
+                <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'all',          label: `All (${cancelCases.length})` },
+                    { key: 'lapsed',       label: `Lapsed (${cancelCases.filter(e => e.stage === 'cancelled').length})` },
+                    { key: 'pending',      label: `Pending (${cancelCases.filter(e => e.stage === 'pending_cancel').length})` },
+                    { key: 'never_called', label: `Untouched (${cancelCases.filter(e => !e.attempt_count).length})` },
+                    { key: 'multi_policy', label: `Multi (${cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1).length})` },
+                    { key: 'snoozed',      label: `Snoozed${cancelFilter === 'snoozed' ? ` (${snoozedCancelCases.length})` : ''}` },
+                  ].map(f => (
+                    <button
+                      key={f.key}
+                      onClick={() => setCancelFilter(f.key)}
+                      className="qs-focusable"
+                      style={{
+                        fontSize: 12, padding: '4px 10px', borderRadius: 20,
+                        border: '1px solid',
+                        borderColor: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-border)',
+                        background: cancelFilter === f.key ? 'rgba(59,130,246,0.12)' : 'var(--qs-elevated)',
+                        color: cancelFilter === f.key ? '#3B82F6' : 'var(--qs-dim)',
+                        cursor: 'pointer', fontWeight: 600, transition: 'all 0.15s',
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Grouped rows */}
+                {BUCKETS.map(bucket => (
+                  <div key={bucket.key} style={{ marginBottom: 10 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '6px 2px 4px',
+                    }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: bucket.color,
+                        textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {bucket.label}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--qs-dim)',
+                        background: 'var(--qs-elevated)', padding: '1px 7px',
+                        borderRadius: 10, fontWeight: 600 }}>
+                        {bucket.cases.length}
+                      </span>
+                    </div>
+                    {bucket.cases.map(event => (
+                      <CancelRow
+                        key={event.id}
+                        event={event}
+                        policyCount={customerPolicyCounts[event.customer_name] || 1}
+                        active={selectedCancel?.id === event.id}
+                        onSelect={() => setSelectedCancelId(event.id)}
+                      />
+                    ))}
+                  </div>
+                ))}
+
+                {flatCancelCases.length === 0 && (
+                  <div style={{ padding: '24px 12px', textAlign: 'center',
+                    fontSize: 14, color: 'var(--qs-subtle)' }}>
+                    No leads match this filter.
+                  </div>
+                )}
+
+                {/* "X more cases" banner — focus mode only */}
+                {focusMode && filteredCancelCases.length > dailyTarget && (
+                  <div style={{
+                    textAlign: 'center', padding: '12px 8px',
+                    fontSize: 13, color: 'var(--qs-muted)',
+                    borderTop: '1px solid var(--qs-border)', marginTop: 4,
+                  }}>
+                    {filteredCancelCases.length - dailyTarget} more in full queue
+                    {' · '}
+                    <button
+                      onClick={toggleFocusMode}
+                      className="qs-focusable"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
+                      }}
+                    >
+                      View all
+                    </button>
+                  </div>
+                )}
+              </aside>
+
+              {/* ── Detail: active call ───────────────────────────────── */}
+              <section style={{ minWidth: 0 }}>
+                {selectedCancel ? (
+                  <CancelDetail
+                    key={selectedCancel.id}
+                    event={selectedCancel}
+                    policyCount={customerPolicyCounts[selectedCancel.customer_name] || 1}
+                    position={`${selectedCancelIdx + 1} of ${flatCancelCases.length}`}
+                  />
+                ) : (
+                  <div style={{
+                    background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                    borderRadius: 12, padding: '64px 24px', textAlign: 'center',
+                    color: 'var(--qs-subtle)', fontSize: 15,
+                  }}>
+                    Select a lead from the list to start the call.
+                  </div>
+                )}
+              </section>
             </div>
           )}
-        </ReadingColumn>
+        </div>
       )}
 
       {/* ── Renewals Tab ─────────────────────────────────────────────── */}
       {activeTab === 'renewal' && (
-        <ReadingColumn>
+        <ReadingColumn size="full">
           {renewalLoading && (
             <div style={{ color: 'var(--qs-subtle)', fontSize: 15 }}>Loading...</div>
           )}

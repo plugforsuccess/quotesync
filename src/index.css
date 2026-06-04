@@ -508,6 +508,12 @@
     outline-offset: 2px;
   }
 
+  /* Master-detail queue: hover affordance for non-active lead rows. Active
+     rows set an inline background that (being inline) wins over this. */
+  .qs-cancel-row:hover {
+    background: var(--qs-elevated);
+  }
+
   .dark-table {
     @apply w-full;
   }
