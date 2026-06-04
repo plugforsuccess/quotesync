@@ -208,7 +208,7 @@ function AuthPanel() {
       <p className="text-xs text-gray-400">New or returning, we’ll email you a secure sign-in link — no password needed.</p>
       <Field label="Driver's first name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
       <Field label="Driver's last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
-      <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
+      <Field label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
       {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
       <button type="submit" disabled={busy}
         className="w-full rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
