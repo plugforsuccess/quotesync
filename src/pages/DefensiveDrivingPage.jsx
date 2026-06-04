@@ -70,7 +70,7 @@ export default function DefensiveDrivingPage() {
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           {/* Left: details */}
           <div className="space-y-6">
-            <ul className="space-y-3 text-sm text-gray-300">
+            <ul className="space-y-4 text-sm text-gray-300">
               <li className="flex gap-3"><Clock className="w-5 h-5 text-success-400 shrink-0" /> 6 hours of instruction across 6 modules, at your own pace</li>
               <li className="flex gap-3"><ShieldCheck className="w-5 h-5 text-success-400 shrink-0" /> Pass the final exam at {course.pass_threshold_pct}% or higher</li>
               <li className="flex gap-3"><FileText className="w-5 h-5 text-success-400 shrink-0" /> Downloadable certificate, automatically forwarded to the agency</li>
@@ -137,7 +137,7 @@ function EnrollForm({ course, defaultName }) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <form onSubmit={onSubmit} className="space-y-4">
       <p className="text-xs text-gray-400">Enter your legal details exactly as they should appear on your certificate.</p>
       <Field label="Legal name" value={studentName} onChange={setStudentName} placeholder="First Middle Last" autoComplete="name" />
       <Field label="Driver license number" value={dln} onChange={(v) => setDln(v.toUpperCase())} placeholder="GA DLN" />
@@ -207,7 +207,7 @@ function AuthPanel() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-4">
       <p className="text-sm text-gray-200">Sign in to start or continue</p>
       <p className="text-xs text-gray-400">New or returning, we’ll email you a secure sign-in link — no password needed.</p>
       <Field label="Driver's first name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
