@@ -70,7 +70,6 @@ Deno.serve(async (req) => {
   const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || SERVICE_KEY
   const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY')
-  if (!STRIPE_SECRET_KEY) return json({ error: 'Payments are not configured' }, 503)
 
   // Identify the caller from their JWT.
   const authHeader = req.headers.get('Authorization') || ''
@@ -97,7 +96,7 @@ Deno.serve(async (req) => {
     // Course must exist and be active.
     const { data: course, error: courseErr } = await supabase
       .from('dd_courses')
-      .select('id, slug, title, price_cents, currency, is_active')
+      .select('id, slug, title, price_cents, currency, is_active, allow_test_bypass')
       .eq('slug', courseSlug)
       .maybeSingle()
     if (courseErr) throw courseErr
@@ -146,8 +145,22 @@ Deno.serve(async (req) => {
       enrollmentId = ins.id
     }
 
-    // Build success/cancel URLs.
     const base = (Deno.env.get('SITE_URL') || req.headers.get('origin') || 'https://insuredbycam.com').replace(/\/$/, '')
+
+    // TEST BYPASS: activate without payment when enabled on the course.
+    if (course.allow_test_bypass) {
+      await supabase
+        .from('dd_enrollments')
+        .update({ status: 'active', purchased_at: new Date().toISOString() })
+        .eq('id', enrollmentId)
+        .neq('status', 'completed')
+      console.warn(`dd-create-checkout: TEST BYPASS activated enrollment ${enrollmentId} (no payment)`)
+      return json({ url: `${base}/courses/defensive-driving/success?bypass=1`, enrollment_id: enrollmentId, bypass: true })
+    }
+
+    if (!STRIPE_SECRET_KEY) return json({ error: 'Payments are not configured' }, 503)
+
+    // Build success/cancel URLs.
     const successUrl = `${base}/courses/defensive-driving/success?session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = `${base}/courses/defensive-driving?canceled=1`
 
