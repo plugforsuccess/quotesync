@@ -58,6 +58,8 @@ const DriversEdPage = lazyWithRetry(() => import('./pages/DriversEdPage'));
 const DefensiveDrivingPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPage'));
 const DefensiveDrivingSuccessPage = lazyWithRetry(() => import('./pages/DefensiveDrivingSuccessPage'));
 const DefensiveDrivingPortalPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPortalPage'));
+const DefensiveDiscountQueuePage = lazyWithRetry(() => import('./pages/DefensiveDiscountQueuePage'));
+const DefensiveOverviewPage = lazyWithRetry(() => import('./pages/DefensiveOverviewPage'));
 const StorePage = lazyWithRetry(() => import('./pages/StorePage'));
 const ProductDetailPage = lazyWithRetry(() => import('./pages/ProductDetailPage'));
 const PurchaseSuccessPage = lazyWithRetry(() => import('./pages/PurchaseSuccessPage'));
@@ -202,6 +204,9 @@ function App() {
             <Route path="courses/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPage /></Suspense></ErrorBoundary>} />
             <Route path="courses/defensive-driving/success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingSuccessPage /></Suspense></ErrorBoundary>} />
             <Route path="courses/defensive-driving/portal" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPortalPage /></Suspense></ErrorBoundary>} />
+            {/* Staff queue + principal overview (access gated in-page via dd_is_staff/principal) */}
+            <Route path="defensive-driving/queue" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDiscountQueuePage /></Suspense></ErrorBoundary>} />
+            <Route path="defensive-driving/overview" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveOverviewPage /></Suspense></ErrorBoundary>} />
 
             {/* Newsroom - Insurance News Feed */}
             <Route path="news" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense></ErrorBoundary>} />

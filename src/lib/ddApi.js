@@ -130,6 +130,65 @@ export async function submitExam(attemptId, answers) {
   return data;
 }
 
+// ---- Discount queue: staff + principal (Phase 5/6) ------------------------
+
+/** Whether the current user has staff / principal access (RLS role helpers). */
+export async function getQueueAccess() {
+  const [staff, principal] = await Promise.all([
+    supabase.rpc('dd_is_staff'),
+    supabase.rpc('dd_is_principal'),
+  ]);
+  return { isStaff: !!staff.data, isPrincipal: !!principal.data };
+}
+
+/** Enriched discount-queue work list (staff + principal), oldest-new-first. */
+export async function getQueueList() {
+  const { data, error } = await supabase.rpc('dd_queue_list');
+  if (error) throw error;
+  return data || [];
+}
+
+/** Internal users a work item can be assigned to. */
+export async function getAssignableStaff() {
+  const { data, error } = await supabase.rpc('dd_assignable_staff');
+  if (error) throw error;
+  return data || [];
+}
+
+/** Staff-only mutation of a queue item. Pass only the fields you change. */
+export async function updateQueueItem(id, fields = {}) {
+  const { data, error } = await supabase.rpc('dd_queue_update', {
+    p_id: id,
+    p_status: fields.status ?? null,
+    p_assigned_to: fields.assignedTo ?? null,
+    p_notes: fields.notes ?? null,
+    p_policy_ref: fields.policyRef ?? null,
+    p_clear_assignee: fields.clearAssignee ?? false,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Signed URL for a certificate (staff/principal). */
+export async function getStaffCertUrl(certificateId) {
+  const { data, error } = await supabase.functions.invoke('dd-cert-download', {
+    body: { certificate_id: certificateId },
+  });
+  if (error) {
+    let message = error.message || 'Could not get the certificate.';
+    try { const b = await error.context?.json?.(); if (b?.error) message = b.error; } catch { /* ignore */ }
+    throw new Error(message);
+  }
+  return data.url;
+}
+
+/** Principal/staff overview aggregates for the dashboard. */
+export async function getQueueOverview() {
+  const { data, error } = await supabase.rpc('dd_queue_overview');
+  if (error) throw error;
+  return data;
+}
+
 /** Generate (once) and fetch a short-lived signed URL for the caller's certificate. */
 export async function issueCertificate(courseSlug = DD_COURSE_SLUG) {
   const { data, error } = await supabase.functions.invoke('dd-issue-certificate', {
