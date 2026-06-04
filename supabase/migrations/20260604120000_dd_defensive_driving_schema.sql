@@ -12,7 +12,7 @@
 --
 -- Role mapping (see dd_is_* helpers below) reuses the EXISTING two-plane RBAC:
 --   admin     -> is_platform_admin()              (platform_admin / master)
---   principal -> agency_role 'agent'              (the agency principal; read-only)
+--   principal -> agency_role 'principal'          (the agency principal; read-only)
 --   staff     -> agency_role producer/manager/owner/employee, or platform_support+
 --   insured   -> any authenticated user (ownership via user_id = auth.uid())
 -- The mapping lives ONLY in the three helper functions so it can be retuned in
@@ -40,7 +40,7 @@ AS $$
         SELECT 1 FROM agency_memberships m
         WHERE m.user_id = auth.uid()
           AND m.status = 'active'
-          AND m.agency_role = 'agent'   -- 'agent' = agency principal post-rename
+          AND m.agency_role = 'principal'
       );
 $$;
 COMMENT ON FUNCTION dd_is_principal() IS 'Defensive Driving: agency principal (read-only queue overview).';
