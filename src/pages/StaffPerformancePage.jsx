@@ -758,6 +758,7 @@ const StaffPerformancePage = () => {
                       monthlyPolicies={monthlyProduction.policies}
                       weekLabel={`Week of ${weekStart}`}
                       monthLabel={currentMonthStr}
+                      goalHref={`/agency/planning?tab=goals&producer=${rosterEmp?.id || rc.employee_user_id}`}
                     />
 
                     {/* Producer detail view */}

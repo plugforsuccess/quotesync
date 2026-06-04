@@ -8,7 +8,9 @@
 // (Phase 4 adds the agency-goal rollup band and "Apply suggested to all".)
 
 import { useMemo, useState, useEffect, useRef } from 'react';
-import { Target, ChevronDown, ChevronUp, Check, Sparkles } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Target, ChevronDown, ChevronUp, Check, Sparkles, Wand2 } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
 import {
   useAllProducerTargets,
@@ -343,6 +345,72 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
     return { premium: median(prem), items: median(items) };
   }, [series, producers]);
 
+  // Agency monthly new-business premium goal — the top-down anchor the producer
+  // goals are reconciled against. Same key/shape the auth prefetch warms.
+  const { data: carrierConfig } = useQuery({
+    queryKey: ['agency_carrier_config', agencyId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('agency_carrier_config')
+        .select('commissionable_factor, commission_goal, premium_goal, base_commission_floor')
+        .eq('agency_id', agencyId)
+        .single();
+      return data || null;
+    },
+    enabled: !!agencyId,
+    staleTime: 10 * 60 * 1000,
+  });
+  const agencyGoal = Number(carrierConfig?.premium_goal) || 0;
+
+  // Sum of currently-saved producer goals (unset producers contribute 0).
+  const allocated = useMemo(
+    () => producers.reduce((s, p) => s + (Number(targetsByUser[p.auth_user_id || p.id]?.premium_monthly) || 0), 0),
+    [producers, targetsByUser]
+  );
+  const gap = agencyGoal - allocated;
+
+  // Mode-B allocation: distribute the agency goal across producers proportional
+  // to ramp-weighted trailing run-rate, so the column sums to plan. New/no-data
+  // producers get a non-zero ramp weight; if nobody has data, split evenly.
+  function modeBAllocations() {
+    const byEmp = series?.byEmployee || {};
+    const weights = producers.map((p) => {
+      const stats = trailingStats(byEmp[p.id]);
+      const tenure = monthsSince(p.hire_date);
+      if (stats.hasData && tenure >= 3) return Math.max(stats.weightedPremium, 1);
+      const ramp = RAMP[Math.max(0, Math.floor(tenure))] ?? 1.0;
+      return Math.max(steady.premium * ramp, 1);
+    });
+    const total = weights.reduce((s, w) => s + w, 0) || 1;
+    return producers.map((_, i) => roundTo((agencyGoal * weights[i]) / total, 500));
+  }
+
+  const [applying, setApplying] = useState(false);
+  async function applyAllSuggested() {
+    if (!agencyGoal) return;
+    const ok = window.confirm(
+      `Distribute the agency goal of ${money(agencyGoal)}/mo across ${producers.length} ` +
+      `producer(s) for ${monthStr}? This overwrites each producer's premium goal for this month.`
+    );
+    if (!ok) return;
+    setApplying(true);
+    try {
+      const allocations = modeBAllocations();
+      for (let i = 0; i < producers.length; i++) {
+        const p = producers[i];
+        const userId = p.auth_user_id || p.id;
+        const saved = targetsByUser[userId];
+        const base = { ...PRODUCER_DEFAULT_TARGETS };
+        for (const k of ALL_FIELDS) if (saved?.[k] != null) base[k] = Number(saved[k]);
+        base.premium_monthly = allocations[i];
+        const targets = Object.fromEntries(ALL_FIELDS.map((k) => [k, Number(base[k]) || 0]));
+        await saveAsync({ employeeUserId: userId, targets, effectiveDate });
+      }
+    } finally {
+      setApplying(false);
+    }
+  }
+
   if (!producers.length) {
     return (
       <div className="card" style={{ textAlign: 'center', padding: 40 }}>
@@ -371,6 +439,60 @@ export default function ProductionGoalsTab({ agencyId, focusProducerId }) {
         <div>
           <label style={{ fontSize: 11 }}>Effective month</label>
           <input type="month" value={monthStr} onChange={(e) => setMonthStr(e.target.value)} />
+        </div>
+      </div>
+
+      {/* Rollup band — reconcile Σ producer goals against the agency NB goal */}
+      <div className="card" style={{
+        padding: 14, marginBottom: 14, display: 'flex', alignItems: 'center',
+        gap: 24, flexWrap: 'wrap',
+      }}>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>Agency goal / mo</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-bright)' }}>
+            {agencyGoal > 0 ? money(agencyGoal) : '—'}
+          </div>
+        </div>
+        <div style={{ color: 'var(--qs-muted)', fontSize: 18 }}>=</div>
+        <div>
+          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>Allocated</div>
+          <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--qs-text)' }}>{money(allocated)}</div>
+        </div>
+        {agencyGoal > 0 && (
+          <>
+            <div style={{ color: 'var(--qs-muted)', fontSize: 18 }}>·</div>
+            <div>
+              <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>Gap</div>
+              <div style={{
+                fontSize: 18, fontWeight: 700,
+                color: Math.abs(gap) < 1 ? 'var(--qs-success, #059669)'
+                  : gap > 0 ? 'var(--qs-warning, #D97706)' : 'var(--qs-danger, #DC2626)',
+              }}>
+                {gap > 0 ? '−' : gap < 0 ? '+' : ''}{money(Math.abs(gap))}
+                <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--qs-subtle)', marginLeft: 6 }}>
+                  {gap > 0 ? 'under' : gap < 0 ? 'over' : 'on plan'}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+        <div style={{ marginLeft: 'auto' }}>
+          {agencyGoal > 0 ? (
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={applyAllSuggested}
+              disabled={applying}
+              title="Distribute the agency goal across producers by run-rate"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+            >
+              <Wand2 size={14} /> {applying ? 'Applying…' : 'Apply suggested to all'}
+            </button>
+          ) : (
+            <span style={{ fontSize: 12, color: 'var(--qs-dim)' }}>
+              Set an agency premium goal in Settings to enable allocation.
+            </span>
+          )}
         </div>
       </div>
 
