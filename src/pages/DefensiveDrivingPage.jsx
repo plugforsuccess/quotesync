@@ -151,57 +151,59 @@ function EnrollForm({ course, defaultName }) {
   );
 }
 
-// --- Inline auth for new customers (role: 'insured') ------------------------
+// --- Passwordless magic-link auth for customers (role: 'insured') -----------
 function AuthPanel() {
-  const [mode, setMode] = useState('signup'); // 'signup' | 'signin'
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
+  const [sent, setSent] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
-    setError(null); setNotice(null); setBusy(true);
+    setError(null); setBusy(true);
     try {
-      if (mode === 'signup') {
-        const { data, error } = await supabase.auth.signUp({
-          email, password,
-          options: { data: { role: 'insured', full_name: fullName } },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          setNotice('Account created. Please check your email to confirm, then return to enroll.');
-        }
-        // If a session exists, useAuth will pick it up and the form swaps automatically.
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          // New users get the safe 'insured' role; existing users keep theirs.
+          data: { role: 'insured', full_name: fullName || undefined },
+          emailRedirectTo: `${window.location.origin}/courses/defensive-driving`,
+        },
+      });
+      if (error) throw error;
+      setSent(true);
     } catch (err) {
-      setError(err.message || 'Authentication failed.');
+      setError(err.message || 'Could not send the sign-in link.');
     } finally {
       setBusy(false);
     }
   };
 
+  if (sent) {
+    return (
+      <div className="space-y-2 text-sm">
+        <p className="text-success-200 font-medium">Check your email</p>
+        <p className="text-gray-300">
+          We sent a secure sign-in link to <span className="font-medium">{email}</span>.
+          Open it on this device to continue enrolling.
+        </p>
+        <button type="button" onClick={() => setSent(false)}
+          className="text-xs text-gray-400 hover:text-gray-200">Use a different email</button>
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={submit} className="space-y-3">
-      <p className="text-sm text-gray-200">{mode === 'signup' ? 'Create an account to enroll' : 'Sign in to enroll'}</p>
-      {mode === 'signup' && <Field label="Full name" value={fullName} onChange={setFullName} autoComplete="name" />}
+      <p className="text-sm text-gray-200">Sign in to enroll</p>
+      <p className="text-xs text-gray-400">We’ll email you a secure link — no password needed.</p>
+      <Field label="Full name" value={fullName} onChange={setFullName} autoComplete="name" />
       <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
-      <Field label="Password" type="password" value={password} onChange={setPassword}
-        autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />
       {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
-      {notice && <p className="text-xs text-success-200">{notice}</p>}
       <button type="submit" disabled={busy}
         className="w-full rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
-        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (mode === 'signup' ? 'Create account' : 'Sign in')}
-      </button>
-      <button type="button" onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setError(null); setNotice(null); }}
-        className="w-full text-xs text-gray-400 hover:text-gray-200">
-        {mode === 'signup' ? 'Already have an account? Sign in' : 'Need an account? Create one'}
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Email me a sign-in link'}
       </button>
     </form>
   );
