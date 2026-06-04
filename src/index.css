@@ -498,6 +498,16 @@
     @apply block text-sm font-medium text-qs-dim mb-1;
   }
 
+  /* Visible keyboard-focus ring for interactive queue elements that are
+     otherwise styled with inline styles (which can't express :focus-visible).
+     Radius-agnostic outline so it reads on buttons, links and selects of any
+     shape. Pointer users see nothing; keyboard users get a clear AA-visible
+     indicator. */
+  .qs-focusable:focus-visible {
+    outline: 2px solid var(--qs-info);
+    outline-offset: 2px;
+  }
+
   .dark-table {
     @apply w-full;
   }
