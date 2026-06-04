@@ -1,6 +1,6 @@
-// Three-way segmented switcher: Principal · Service · Sales.
-// Visible only to a principal who has linked an employee record with rep roles
-// (otherwise switching hats is meaningless). Selection persists in localStorage
+// Segmented switcher: Principal · Service · Sales.
+// Shown to anyone who wears more than one hat — a principal with rep roles, or
+// a dual-role (sales + service) employee. Selection persists in localStorage
 // and changes the default landing page; it does NOT change permissions.
 
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -9,24 +9,16 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePersona, PERSONA_HOME } from '../hooks/usePersona';
 
-const PERSONA_OPTIONS = [
-  { key: 'principal', label: 'Principal', requiresRole: null },
-  { key: 'service',   label: 'Service',   requiresRole: ['service_outbound', 'service_inbound', 'service'] },
-  { key: 'sales',     label: 'Sales',     requiresRole: ['sales'] },
-];
-
 export default function PersonaSwitcher({ compact = false, fullWidth = false }) {
   const { user, currentAgencyRole, currentAgencyId } = useAuth();
-  const [persona, setPersona] = usePersona(currentAgencyRole === 'principal' ? 'principal' : 'service');
+  const isPrincipal = currentAgencyRole === 'principal';
+  const [persona, setPersona] = usePersona(isPrincipal ? 'principal' : 'service');
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Only principals get a switcher — employees only have one hat by definition.
-  const showSwitcher = currentAgencyRole === 'principal';
-
-  // Fetch the principal's own employee record to determine which rep personas
-  // they're actually opted into. Employees without a rep workspace see only
-  // the Principal option.
+  // Fetch the user's own employee record to determine which rep hats they're
+  // opted into. Runs for any agency user (a principal checking their rep roles,
+  // or a rep employee).
   const { data: emp } = useQuery({
     queryKey: ['my_employee_record', currentAgencyId, user?.id],
     queryFn: async () => {
@@ -40,27 +32,32 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
         .maybeSingle();
       return data || null;
     },
-    enabled: !!user?.id && !!currentAgencyId && showSwitcher,
+    enabled: !!user?.id && !!currentAgencyId,
     staleTime: 60 * 1000,
   });
 
-  if (!showSwitcher) return null;
-
   const empRoles = emp?.roles || [];
-  const visibleOptions = PERSONA_OPTIONS.filter(opt =>
-    !opt.requiresRole || opt.requiresRole.some(r => empRoles.includes(r))
-  );
+  const hasService = empRoles.some(r => ['service_outbound', 'service_inbound', 'service'].includes(r));
+  const hasSales = empRoles.includes('sales');
 
-  // If only one option (just Principal — they haven't opted into rep work yet)
-  // hide the switcher entirely; it would just be a static label.
+  // Build the hats this user can wear. Principal is only for actual principals;
+  // Service / Sales come from rep roles.
+  const visibleOptions = [
+    ...(isPrincipal ? [{ key: 'principal', label: 'Principal' }] : []),
+    ...(hasService ? [{ key: 'service', label: 'Service' }] : []),
+    ...(hasSales ? [{ key: 'sales', label: 'Sales' }] : []),
+  ];
+
+  // Fewer than two hats — nothing to switch between, so hide the switcher.
   if (visibleOptions.length < 2) return null;
 
   function handleSelect(next) {
     if (next === persona) return;
     setPersona(next);
-    // On a shared surface (the scorecard), stay put — the page re-renders for
-    // the new hat (sales ⇄ service view) instead of jumping to its home.
-    if (location.pathname.startsWith('/my/scorecard')) return;
+    // The scorecard renders both the sales and service views, so toggling
+    // between those two hats there swaps the view in place. Switching to
+    // Principal (which has no scorecard view) always navigates to its home.
+    if (next !== 'principal' && location.pathname.startsWith('/my/scorecard')) return;
     const home = PERSONA_HOME[next];
     if (home) navigate(home);
   }

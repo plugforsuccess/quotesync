@@ -16,7 +16,8 @@ import UploadChecklistModal from '../pages/components/shared/UploadChecklistModa
 import { useUploadChecklist } from '../hooks/useUploadChecklist';
 import { useManagementCadence } from '../hooks/useManagementCadence';
 import { useAuth } from '../contexts/AuthContext';
-import { usePersona, useAutoSyncPersona } from '../hooks/usePersona';
+import { useAutoSyncPersona } from '../hooks/usePersona';
+import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 
 function Layout({ forcePlane = null }) {
@@ -81,14 +82,22 @@ function Layout({ forcePlane = null }) {
   // Persona is a UI lens for principals only — it reshapes the top nav so
   // Sales mode shows Sales-relevant links, Service mode shows the rep
   // workspace, etc. useAutoSyncPersona keeps the pill honest by snapping it
-  // to whatever URL is being viewed.
-  const [persona] = usePersona(currentAgencyRole === 'principal' ? 'principal' : 'service');
-  useAutoSyncPersona(currentAgencyRole === 'principal');
+  // to whatever URL is being viewed. Both a principal and a dual-role
+  // (sales + service) employee wear more than one hat, so both auto-sync and
+  // get the hat-based nav.
+  const { data: myEmployee } = useCurrentEmployee();
+  const repRoles = myEmployee?.roles || [];
+  const isPrincipal = currentAgencyRole === 'principal';
+  const hasService = repRoles.includes('service_inbound')
+    || repRoles.includes('service_outbound') || repRoles.includes('service');
+  const hasSales = repRoles.includes('sales');
+  const multiHat = isPrincipal || (hasSales && hasService);
+  const [persona] = useAutoSyncPersona(multiHat, isPrincipal ? 'principal' : 'service');
 
-  // Get navigation items based on active plane, role, and (for principals)
-  // the active persona. Returns { primary: [...], secondary: [...] }.
+  // Get navigation items based on active plane, role, the active persona, and
+  // (for rep employees) their roles. Returns { primary: [...], secondary: [...] }.
   const { primary: primaryNav, secondary: secondaryNav } = getNavItems(
-    activePlane, platformRole, currentAgencyRole, persona,
+    activePlane, platformRole, currentAgencyRole, persona, repRoles,
   );
   // Plane-aware role label: when browsing the agency plane the agency role
   // takes priority (so a platform_editor like Logan with a producer

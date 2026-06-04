@@ -50,10 +50,17 @@ export default function EmployeeLayout() {
   // Employees use the light theme by default across the whole employee app.
   useForceTheme('light');
 
-  // Keep the persona pill in sync with the URL — landing on /my/today snaps
-  // a principal's persona to "service" so the PersonaSwitcher doesn't lie
-  // about which hat is being worn. The returned persona shapes the nav below.
-  const [persona] = useAutoSyncPersona(currentAgencyRole === 'principal');
+  // A principal and a dual-role (sales + service) employee both wear more than
+  // one hat, so both auto-sync the pill to the URL. Single-role employees just
+  // get their one hat. The returned persona shapes the nav below.
+  const empRoles = employee?.roles || [];
+  const hasService = empRoles.includes('service_inbound')
+    || empRoles.includes('service_outbound')
+    || empRoles.includes('service');
+  const hasSales = empRoles.includes('sales');
+  const isPrincipal = currentAgencyRole === 'principal';
+  const multiHat = isPrincipal || (hasSales && hasService);
+  const [persona] = useAutoSyncPersona(multiHat, isPrincipal ? 'principal' : 'service');
 
   // Agency branding — pull name + logo for the nav header.
   const { data: agencyData } = useQuery({
@@ -104,13 +111,7 @@ export default function EmployeeLayout() {
     (employee?.roles || []).map(r => ROLE_SHORT[r] || r.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
   )).join(' · ') || 'Employee';
 
-  // Choose the hat: a dual-role producer follows the active persona pill; a
-  // single-role employee just gets their one hat.
-  const empRoles = employee?.roles || [];
-  const hasService = empRoles.includes('service_inbound')
-    || empRoles.includes('service_outbound')
-    || empRoles.includes('service');
-  const hasSales = empRoles.includes('sales');
+  // The active hat: dual-role follows the pill, single-role uses its one role.
   const hat = (hasSales && hasService)
     ? (persona === 'service' ? 'service' : 'sales')
     : (hasSales ? 'sales' : 'service');
