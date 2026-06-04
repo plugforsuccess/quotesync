@@ -12,7 +12,7 @@ export const PLANES = {
 export const consumerNav = [
   { to: '/quotes', label: 'Get Quote', icon: '🎯', isPrimary: true, scrollToQuote: true },
   { to: '/news', label: 'Newsroom', icon: '📰' },
-  { to: '/courses', label: 'Courses', icon: '🚗' },
+  { to: '/courses', label: 'Defensive Driving', icon: '🚗' },
   { to: '/store', label: 'Store', icon: '🛍️' },
   { to: '/giveaway', label: 'Giveaway', icon: '🎁' },
 ];
