@@ -3,6 +3,7 @@
 // Actuals: from revenue_entries (production) + RC call log (activity).
 // Targets: from producer_performance_targets, editable by principal.
 
+import { Link } from 'react-router-dom';
 import { TrendingUp, TrendingDown, Award, Phone, Target } from 'lucide-react';
 import { PRODUCER_DEFAULT_TARGETS } from '../../../hooks/useProducerTargets';
 
@@ -89,6 +90,8 @@ export default function ProducerScorecard({
   // Period labels
   weekLabel,
   monthLabel,
+  // Optional deep-link to set this producer's goal in the Planning workspace
+  goalHref,
 }) {
   const t = { ...PRODUCER_DEFAULT_TARGETS, ...targets };
   const grade = calcGrade(monthlyVcItems ?? 0, weeklyOutbound ?? 0, t);
@@ -121,9 +124,16 @@ export default function ProducerScorecard({
           <h4 className="text-sm font-semibold text-qs-bright uppercase tracking-wide">
             Section A — Production
           </h4>
-          {monthLabel && (
-            <span className="text-xs text-qs-muted ml-auto">{monthLabel}</span>
-          )}
+          <div className="ml-auto flex items-center gap-3">
+            {monthLabel && (
+              <span className="text-xs text-qs-muted">{monthLabel}</span>
+            )}
+            {goalHref && (
+              <Link to={goalHref} className="text-xs font-medium text-primary-400 hover:text-primary-300">
+                Set goal →
+              </Link>
+            )}
+          </div>
         </div>
         <table className="w-full">
           <thead className="bg-qs-elevated/50">
