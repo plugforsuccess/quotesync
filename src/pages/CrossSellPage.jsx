@@ -3,10 +3,13 @@ import { useState } from 'react';
 import { useCrossSellCases, useCrossSellUploads, useUpdateCrossSellCase } from '../hooks/useCrossSell';
 import CrossSellUploadModal from './components/cross-sell/CrossSellUploadModal';
 import CrossSellQueue from './components/cross-sell/CrossSellQueue';
+import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 
 export default function CrossSellPage() {
   const { currentAgencyId, user } = useAuth();
+  const { data: employee } = useCurrentEmployee();
   const [tab, setTab] = useState('renewal');
   const [showUpload, setShowUpload] = useState(false);
 
@@ -60,6 +63,11 @@ export default function CrossSellPage() {
           + Upload Audit Report
         </button>
       </div>
+
+      {/* Sales producers: monthly premium goal progress at a glance */}
+      {employee?.roles?.includes('sales') && (
+        <ProducerGoalProgress compact orgId={employee?.org_id} employee={employee} />
+      )}
 
       <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
         {tabs.map(t => (

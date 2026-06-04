@@ -92,7 +92,7 @@ function Sparkline({ values, width = 120, height = 28 }) {
   );
 }
 
-export default function ProducerGoalProgress({ orgId, employee }) {
+export default function ProducerGoalProgress({ orgId, employee, compact = false }) {
   const authUserId = employee?.auth_user_id || employee?.id;
   const { data: targets } = useProducerTargets(orgId, authUserId);
   const { data: series, isLoading } = useMyProduction(orgId, employee, { months: 6 });
@@ -118,6 +118,40 @@ export default function ProducerGoalProgress({ orgId, employee }) {
     background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
     borderRadius: 12, padding: 24,
   };
+
+  // Compact banner — a slim one-row progress strip for Today / Cross-Sell.
+  if (compact) {
+    return (
+      <div style={{ ...card, padding: '12px 16px', marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexShrink: 0 }}>
+            <Target className="w-4 h-4" style={{ color: 'var(--qs-info)' }} />
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>Production Goal</span>
+          </div>
+          {premiumGoal > 0 ? (
+            <>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                  <span style={{ color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace" }}>
+                    {money(mtd.premium)} of {money(premiumGoal)}
+                  </span>
+                  <span style={{ color: ringColor, fontWeight: 700 }}>{Math.round(pct * 100)}%</span>
+                </div>
+                <Bar pct={pct} color={ringColor} />
+              </div>
+              <span style={{ fontSize: 12, color: onPace ? 'var(--qs-success)' : 'var(--qs-warning)', fontWeight: 600, flexShrink: 0 }}>
+                {onPace ? 'On pace' : 'Behind'} · {remaining}d left
+              </span>
+            </>
+          ) : (
+            <span style={{ fontSize: 13, color: 'var(--qs-dim)', marginLeft: 'auto' }}>
+              {money(mtd.premium)} written this month · no goal set yet
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={card}>

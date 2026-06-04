@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import { TIER_ORDER } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
@@ -246,6 +247,11 @@ export default function TodayPage() {
           {' · '}what to dial next, ranked across cancels and renewals
         </div>
       </div>
+
+      {/* Sales producers: monthly premium goal progress at a glance */}
+      {employee?.roles?.includes('sales') && (
+        <ProducerGoalProgress compact orgId={orgId} employee={employee} />
+      )}
 
       {/* Progress */}
       <div style={{
