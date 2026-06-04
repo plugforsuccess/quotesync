@@ -8,6 +8,7 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useRetentionMetrics } from '../hooks/useRetentionMetrics';
 import { useRetentionCallVerification } from '../hooks/useRetentionCallVerification';
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
+import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import { BonusVerificationAlert } from './components/time-attendance/DiscrepancyAlerts';
 import { RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/staffPerformanceDefaults';
 
@@ -110,15 +111,7 @@ export default function MyScorecardPage() {
           {employee?.preferred_name || employee?.first_name} · Sales Producer
         </div>
         <OpenCommitmentsStrip commitments={openCommitments} />
-        <div style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
-          borderRadius: 12, padding: 40, textAlign: 'center' }}>
-          <p style={{ color: 'var(--qs-dim)', fontSize: 16 }}>
-            Sales producer scorecard coming soon.
-          </p>
-          <p style={{ color: 'var(--qs-subtle)', fontSize: 14, marginTop: 10 }}>
-            New business metrics and commission tracking will appear here.
-          </p>
-        </div>
+        <ProducerGoalProgress orgId={employee?.org_id} employee={employee} />
       </div>
     );
   }
