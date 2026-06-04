@@ -60,13 +60,20 @@ function median(nums) {
 function trailingStats(bucket) {
   const months = bucket?.months || [];
   const completed = months.slice(0, -1);
-  const last3 = completed.slice(-3);
-  const avg = (sel) => (last3.length ? last3.reduce((s, m) => s + sel(m), 0) / last3.length : 0);
-  // Recency-weighted (newest heaviest) for suggestions.
+
+  // Run-rate is based on the most recent months that actually had production.
+  // Empty/zero months — not-yet-reported recent months, or a single idle month —
+  // must not drag a producer's run-rate down (or, weighted by recency, invert
+  // the ranking so a veteran with an unreported recent month is suggested less
+  // than a brand-new hire). We estimate from demonstrated producing months.
+  const producing = completed.filter((m) => m.premium > 0 || m.items > 0).slice(-3);
+
+  const avg = (sel) => (producing.length ? producing.reduce((s, m) => s + sel(m), 0) / producing.length : 0);
+  // Recency-weighted (newest heaviest) across producing months.
   const weighted = (sel) => {
-    if (!last3.length) return 0;
+    if (!producing.length) return 0;
     let num = 0, den = 0;
-    last3.forEach((m, i) => { const w = i + 1; num += sel(m) * w; den += w; });
+    producing.forEach((m, i) => { const w = i + 1; num += sel(m) * w; den += w; });
     return den ? num / den : 0;
   };
   return {
@@ -74,8 +81,10 @@ function trailingStats(bucket) {
     avgItems: avg((m) => m.items),
     weightedPremium: weighted((m) => m.premium),
     weightedItems: weighted((m) => m.items),
+    // "Last month" stays the last completed calendar month — an empty recent
+    // month is honest signal in the row even though it doesn't drive the goal.
     lastMonth: completed[completed.length - 1] || null,
-    hasData: last3.some((m) => m.premium > 0 || m.items > 0),
+    hasData: producing.length > 0,
   };
 }
 
@@ -199,7 +208,7 @@ function ProducerGoalRow({ producer, userId, savedTargets, bucket, steady, effec
 
         {/* Trailing context */}
         <div style={{ minWidth: 90 }}>
-          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }}>3-mo avg</div>
+          <div style={{ fontSize: 11, color: 'var(--qs-subtle)' }} title="Average of recent producing months">Avg / mo</div>
           <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-text)' }}>{money(stats.avgPremium)}</div>
         </div>
         <div style={{ minWidth: 120 }}>
