@@ -4,6 +4,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
+import { Navigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
@@ -1294,21 +1295,12 @@ export default function MyQueuePage() {
     );
   }
 
-  // Sales-only employees don't have a retention queue. Send them to the
-  // scorecard rather than show an empty queue.
+  // Sales-only employees have no retention queue — send them to their
+  // scorecard (the sales home) instead of showing an empty queue.
   const isServiceRole = roles.includes('service_inbound')
     || roles.includes('service_outbound');
   if (employee && !isServiceRole) {
-    return (
-      <div style={{ textAlign: 'center', padding: 48 }}>
-        <p style={{ color: 'var(--qs-dim)', fontSize: 16 }}>
-          Your role doesn't include a retention queue.
-        </p>
-        <a href="/my/scorecard" style={{ color: '#3B82F6', fontSize: 15 }}>
-          Go to your scorecard →
-        </a>
-      </div>
-    );
+    return <Navigate to="/my/scorecard" replace />;
   }
 
   return (

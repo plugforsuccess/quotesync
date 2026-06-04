@@ -149,18 +149,19 @@ export const agencyNav = {
 
 export const principalPersonaNav = {
   principal: agencyNav.principal,
+  // Sales hat: cross-sell work + production scorecard + referrals + time clock.
+  // No retention surfaces (Today / My Queue) — those belong to the service hat.
   sales: {
     primary: [
       primaryItems.crossSell,
-      primaryItems.today,
-      primaryItems.myQueue,
-    ],
-    secondary: [
       primaryItems.scorecard,
       primaryItems.referrals,
+    ],
+    secondary: [
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },
+  // Service hat: retention queues + retention scorecard + time clock.
   service: {
     primary: [
       primaryItems.today,
@@ -168,7 +169,6 @@ export const principalPersonaNav = {
       primaryItems.scorecard,
     ],
     secondary: [
-      primaryItems.referrals,
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },
@@ -222,9 +222,15 @@ export function getAllNavItems(plane, platformRole, agencyRole, persona = 'princ
 // principals — other roles don't have personas.
 export function personaForPath(pathname) {
   if (!pathname) return null;
+  // Shared surfaces live in more than one hat's nav, so they must NOT flip the
+  // active persona — the pill stays whatever the user picked (this is what lets
+  // the scorecard render the sales OR service view based on the live persona).
+  if (pathname.startsWith('/my/scorecard')) return null;
+  if (pathname === '/punch' || pathname.startsWith('/punch/')) return null;
+  if (pathname.startsWith('/agency/referrals')) return null;
+
   if (pathname.startsWith('/agency/cross-sell')) return 'sales';
   if (pathname.startsWith('/my/')) return 'service';
-  if (pathname === '/punch' || pathname.startsWith('/punch/')) return 'service';
   if (pathname.startsWith('/agency/') || pathname.startsWith('/admin/')) return 'principal';
   return null;
 }

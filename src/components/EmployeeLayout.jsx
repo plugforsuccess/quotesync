@@ -14,15 +14,24 @@ import { supabase } from '../lib/supabase';
 import PersonaSwitcher from './PersonaSwitcher';
 import { useForceTheme } from '../contexts/ThemeContext';
 
-const NAV_ITEMS = [
-  { to: '/my/today',   label: 'Today' },
-  { to: '/my/queue',   label: 'My Queue' },
-  { to: '/my/scorecard', label: 'Scorecard' },
+// Nav tabs by hat. The active hat is the persona for a dual-role producer,
+// otherwise the employee's single role. Scorecard + Time Clock are shared.
+const SCORECARD_ITEM = { to: '/my/scorecard', label: 'Scorecard' };
+const PUNCH_ITEM     = { to: '/punch',        label: 'Time Clock' };
+
+const SERVICE_TABS = [
+  { to: '/my/today', label: 'Today' },
+  { to: '/my/queue', label: 'My Queue' },
+  SCORECARD_ITEM,
+  PUNCH_ITEM,
 ];
 
-// Cross-Sell is sales-gated — a "producer" is any employee with 'sales' in
-// their roles array. Pure service-only employees don't see it.
-const CROSS_SELL_ITEM = { to: '/agency/cross-sell', label: 'Cross-Sell' };
+const SALES_TABS = [
+  { to: '/agency/cross-sell', label: 'Cross-Sell' },
+  SCORECARD_ITEM,
+  { to: '/agency/referrals',  label: 'Referrals' },
+  PUNCH_ITEM,
+];
 
 // Shared pill styling for the top nav — matches the principal nav's pill feel.
 function navPillClass({ isActive }) {
@@ -43,8 +52,8 @@ export default function EmployeeLayout() {
 
   // Keep the persona pill in sync with the URL — landing on /my/today snaps
   // a principal's persona to "service" so the PersonaSwitcher doesn't lie
-  // about which hat is being worn.
-  useAutoSyncPersona(currentAgencyRole === 'principal');
+  // about which hat is being worn. The returned persona shapes the nav below.
+  const [persona] = useAutoSyncPersona(currentAgencyRole === 'principal');
 
   // Agency branding — pull name + logo for the nav header.
   const { data: agencyData } = useQuery({
@@ -95,10 +104,17 @@ export default function EmployeeLayout() {
     (employee?.roles || []).map(r => ROLE_SHORT[r] || r.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
   )).join(' · ') || 'Employee';
 
-  const navItems = [
-    ...NAV_ITEMS,
-    ...(employee?.roles?.includes('sales') ? [CROSS_SELL_ITEM] : []),
-  ];
+  // Choose the hat: a dual-role producer follows the active persona pill; a
+  // single-role employee just gets their one hat.
+  const empRoles = employee?.roles || [];
+  const hasService = empRoles.includes('service_inbound')
+    || empRoles.includes('service_outbound')
+    || empRoles.includes('service');
+  const hasSales = empRoles.includes('sales');
+  const hat = (hasSales && hasService)
+    ? (persona === 'service' ? 'service' : 'sales')
+    : (hasSales ? 'sales' : 'service');
+  const navItems = hat === 'sales' ? SALES_TABS : SERVICE_TABS;
 
   // Responsive side gutter shared by the nav bar and the content area so they
   // stay aligned while still letting content use the full viewport width.
