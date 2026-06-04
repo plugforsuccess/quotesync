@@ -188,10 +188,23 @@ export const employeeNav = {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// Resolve a rep employee's active "hat" from their roles + the persona pill.
+// A dual-role (sales + service) employee follows the pill; a single-role
+// employee uses their one role. Returns null for non-rep members (a manager or
+// producer with no rep roles) so they keep their normal nav.
+export function hatForRoles(roles = [], persona) {
+  const hasService = roles.some(r => ['service_inbound', 'service_outbound', 'service'].includes(r));
+  const hasSales = roles.includes('sales');
+  if (hasSales && hasService) return persona === 'service' ? 'service' : 'sales';
+  if (hasSales) return 'sales';
+  if (hasService) return 'service';
+  return null;
+}
+
 // Get structured nav { primary, secondary } based on plane, role, and (for
 // principals) the active persona. Persona only reshapes the principal nav —
 // other roles ignore it.
-export function getNavItems(plane, platformRole, agencyRole, persona = 'principal') {
+export function getNavItems(plane, platformRole, agencyRole, persona = 'principal', repRoles = []) {
   if (plane === PLANES.PLATFORM && platformRole) {
     const nav = platformNav[platformRole];
     if (nav) return nav;
@@ -202,6 +215,14 @@ export function getNavItems(plane, platformRole, agencyRole, persona = 'principa
     if (agencyRole === 'principal') {
       return principalPersonaNav[persona] || principalPersonaNav.principal;
     }
+    // A rep employee (agency_role 'employee') with sales/service roles gets the
+    // same hat-based nav a principal sees in that persona, so a sales employee
+    // on Cross-Sell / Referrals sees their sales tabs — not the producer
+    // fallback. Higher roles (manager/producer) keep their own nav.
+    if (agencyRole === 'employee') {
+      const hat = hatForRoles(repRoles, persona);
+      if (hat) return principalPersonaNav[hat];
+    }
     const nav = agencyNav[agencyRole];
     if (nav) return nav;
     return agencyNav.producer;
@@ -211,8 +232,8 @@ export function getNavItems(plane, platformRole, agencyRole, persona = 'principa
 }
 
 // Get flat list of all nav items (for mobile menu / backwards compat)
-export function getAllNavItems(plane, platformRole, agencyRole, persona = 'principal') {
-  const { primary, secondary } = getNavItems(plane, platformRole, agencyRole, persona);
+export function getAllNavItems(plane, platformRole, agencyRole, persona = 'principal', repRoles = []) {
+  const { primary, secondary } = getNavItems(plane, platformRole, agencyRole, persona, repRoles);
   return [...primary, ...secondary];
 }
 

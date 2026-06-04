@@ -65,20 +65,21 @@ export function usePersona(defaultPersona = 'principal') {
 // Mount this from any layout that hosts the persona pill. It watches the
 // URL and snaps the persona to the page being viewed so the pill never lies
 // (e.g. clicking "Retention" while in Sales auto-flips back to Principal).
-// Gated on isPrincipal because only principals have multiple personas; for
-// other roles the persona is a no-op and shouldn't be touched. Returns the
-// active [persona, setPersona] so the host can shape its nav by hat.
-export function useAutoSyncPersona(isPrincipal) {
+// `enabled` gates the syncing to users who actually wear more than one hat
+// (a principal, or a dual-role sales+service employee); `defaultPersona` is
+// the starting hat. Returns the active [persona, setPersona] so the host can
+// shape its nav by hat.
+export function useAutoSyncPersona(enabled, defaultPersona = 'principal') {
   const location = useLocation();
-  const [persona, setPersona] = usePersona(isPrincipal ? 'principal' : 'service');
+  const [persona, setPersona] = usePersona(defaultPersona);
 
   useEffect(() => {
-    if (!isPrincipal) return;
+    if (!enabled) return;
     const next = personaForPath(location.pathname);
     if (next && PERSONAS.includes(next) && next !== persona) {
       setPersona(next);
     }
-  }, [location.pathname, isPrincipal, persona, setPersona]);
+  }, [location.pathname, enabled, persona, setPersona]);
 
   return [persona, setPersona];
 }
