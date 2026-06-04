@@ -585,15 +585,18 @@ export default function MyQueuePage() {
     // NOTE: the 120-day rewrite window is an internal agent/VC business rule.
     // It must never appear in customer-facing call scripts.
     const firstName = event.customer_name?.split(' ')[0] || 'there';
+    // The rep reads the script verbatim, so fill in their own first name.
+    // Falls back to the "[your name]" placeholder if the employee isn't loaded.
+    const agentName = employee?.preferred_name || employee?.first_name || '[your name]';
     const scriptLine = isLapsed
-      ? `"Hi ${firstName} — this is [your name] from Wiley-Wilson. Your ${
+      ? `"Hi ${firstName} — this is ${agentName} from Wiley-Wilson. Your ${
           event.product
         } policy lapsed on ${event.cancel_effective_date}.${
           event.amount_due
             ? ` We can reinstate your coverage today — the amount due is $${Number(event.amount_due).toLocaleString()}.`
             : ' I want to help you get your coverage reinstated.'
         } Are you in a position to take care of that today?"`
-      : `"Hi ${firstName} — this is [your name] from Wiley-Wilson. I'm calling about your ${
+      : `"Hi ${firstName} — this is ${agentName} from Wiley-Wilson. I'm calling about your ${
           event.product
         } policy.${
           event.amount_due
