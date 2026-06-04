@@ -37,6 +37,16 @@ function fmtPhone(phone) {
 // Format currency
 const fmt$ = n => n == null ? '—' : n >= 1000 ? `$${(n/1000).toFixed(1)}k` : `$${Math.round(n)}`;
 
+// Normalize a date for display / scripts — "April 13, 2026". Date-only strings
+// (YYYY-MM-DD) are parsed as local time to avoid a timezone off-by-one.
+function fmtDate(d) {
+  if (!d) return '';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  const date = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
+  if (isNaN(date.getTime())) return d;
+  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
 // Attempt result labels
 const RESULT_LABELS = {
   no_answer:      'No Answer',
@@ -585,23 +595,25 @@ export default function MyQueuePage() {
     // NOTE: the 120-day rewrite window is an internal agent/VC business rule.
     // It must never appear in customer-facing call scripts.
     const firstName = event.customer_name?.split(' ')[0] || 'there';
-    // The rep reads the script verbatim, so fill in their own first name.
-    // Falls back to the "[your name]" placeholder if the employee isn't loaded.
-    const agentName = employee?.preferred_name || employee?.first_name || '[your name]';
+    // The rep reads the script verbatim — use their full name (first + last),
+    // falling back to the "[your name]" placeholder if the employee isn't loaded.
+    const agentName = [employee?.preferred_name || employee?.first_name, employee?.last_name]
+      .filter(Boolean).join(' ') || '[your name]';
+    const lapsedOn  = fmtDate(event.cancel_effective_date);
     const scriptLine = isLapsed
-      ? `"Hi ${firstName} — this is ${agentName} from Wiley-Wilson. Your ${
+      ? `"Hi ${firstName} — this is ${agentName} calling from your Allstate agency. Your ${
           event.product
-        } policy lapsed on ${event.cancel_effective_date}.${
+        } policy lapsed on ${lapsedOn}.${
           event.amount_due
             ? ` We can reinstate your coverage today — the amount due is $${Number(event.amount_due).toLocaleString()}.`
             : ' I want to help you get your coverage reinstated.'
         } Are you in a position to take care of that today?"`
-      : `"Hi ${firstName} — this is ${agentName} from Wiley-Wilson. I'm calling about your ${
+      : `"Hi ${firstName} — this is ${agentName} calling from your Allstate agency. I'm calling about your ${
           event.product
         } policy.${
           event.amount_due
-            ? ` We're showing a payment of $${Number(event.amount_due).toLocaleString()} due by ${event.cancel_effective_date}.`
-            : ` Your payment is due by ${event.cancel_effective_date}.`
+            ? ` We're showing a payment of $${Number(event.amount_due).toLocaleString()} due by ${lapsedOn}.`
+            : ` Your payment is due by ${lapsedOn}.`
         } I want to make sure you don't have a gap in coverage — can I help you take care of that today?"`;
 
     // Color-coded urgency for the "days until cancel" key fact.
@@ -664,7 +676,7 @@ export default function MyQueuePage() {
         display: 'flex', flexDirection: 'column', gap: '1rem',
       }}>
 
-        {/* 1 ── Header: name + status badges ─────────────────────────── */}
+        {/* 1 ── Header: name + policy number (status lives in the cards) ─ */}
         <header style={{ display: 'flex', alignItems: 'baseline', gap: '0.625rem', flexWrap: 'wrap' }}>
           <h3 style={{
             fontSize: 'clamp(1.375rem, 1.15rem + 0.7vw, 1.75rem)',
@@ -674,11 +686,15 @@ export default function MyQueuePage() {
             {event.customer_name}
           </h3>
 
-          {isLapsed && (
-            <span style={{ ...chip, background: 'rgba(239,68,68,0.15)', color: '#F87171' }}>
-              ⚠ Lapsed
+          {event.policy_no && (
+            <span style={{
+              fontSize: 'clamp(1.375rem, 1.15rem + 0.7vw, 1.75rem)',
+              fontWeight: 500, color: 'var(--qs-dim)', lineHeight: 1.2,
+            }}>
+              {event.policy_no}
             </span>
           )}
+
           {policyCount > 1 && (
             <span style={{ ...chip, background: 'rgba(245,158,11,0.15)', color: '#FBBF24' }}>
               ⚠ {policyCount} policies
@@ -725,7 +741,10 @@ export default function MyQueuePage() {
             </div>
           )}
           <div style={factTile}>
-            <div style={factLabel}>{isLapsed ? 'Coverage' : days < 0 ? 'Overdue' : 'Cancels in'}</div>
+            <div style={factLabel}>
+              {event.product ? `${event.product} ` : ''}
+              {isLapsed ? 'coverage' : days < 0 ? 'overdue' : 'cancels in'}
+            </div>
             <div style={{
               fontSize: factValueSize, fontWeight: 800,
               color: isLapsed ? '#F87171' : daysColor,
@@ -734,20 +753,17 @@ export default function MyQueuePage() {
               {isLapsed ? '⚠ LAPSED' : daysLabel}
             </div>
             <div style={{ fontSize: '0.9375rem', color: 'var(--qs-dim)', marginTop: '0.25rem' }}>
-              {isLapsed ? 'since ' : ''}{event.cancel_effective_date}
+              {isLapsed ? 'since ' : ''}{fmtDate(event.cancel_effective_date)}
             </div>
           </div>
         </div>
 
-        {/* 3 ── Meta line: policy · type · phone (AA-contrast) ────────── */}
+        {/* 3 ── Meta line: phone · position (policy # / type live above) ─ */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
           gap: '0.75rem', flexWrap: 'wrap',
           fontSize: 'clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem)',
           color: 'var(--qs-dim)', fontWeight: 500 }}>
-          <span>
-            {event.policy_no} · {event.product}
-            {phone && <> · {fmtPhone(phone)}</>}
-          </span>
+          <span>{phone ? fmtPhone(phone) : ''}</span>
           {position && (
             <span style={{ color: 'var(--qs-muted)', fontSize: '0.875rem', flexShrink: 0 }}>
               {position}
