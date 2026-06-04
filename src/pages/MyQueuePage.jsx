@@ -329,6 +329,8 @@ export default function MyQueuePage() {
     function onKey(e) {
       if (activeTab !== 'cancel') return;
       if (logCallTarget || callbackTarget || lostTarget || selectedEvent || selectedRenewal) return;
+      // Don't hijack browser/OS shortcuts — e.g. Ctrl/Cmd+C is copy, not "call".
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
       if (!flatCancelCases.length) return;
@@ -759,18 +761,13 @@ export default function MyQueuePage() {
           </div>
         </div>
 
-        {/* 3 ── Meta line: phone · position (policy # / type live above) ─ */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline',
-          gap: '0.75rem', flexWrap: 'wrap',
-          fontSize: 'clamp(0.9375rem, 0.9rem + 0.2vw, 1.0625rem)',
-          color: 'var(--qs-dim)', fontWeight: 500 }}>
-          <span>{phone ? fmtPhone(phone) : ''}</span>
-          {position && (
-            <span style={{ color: 'var(--qs-muted)', fontSize: '0.875rem', flexShrink: 0 }}>
-              {position}
-            </span>
-          )}
-        </div>
+        {/* 3 ── Meta line: position (phone lives on the Call button) ──── */}
+        {position && (
+          <div style={{ display: 'flex', justifyContent: 'flex-end',
+            fontSize: '0.875rem', color: 'var(--qs-muted)', fontWeight: 500 }}>
+            {position}
+          </div>
+        )}
 
         {/* 4 ── Call script — 16px, comfortable measure & line-height ── */}
         <div style={{
