@@ -70,7 +70,7 @@ export default function DefensiveDrivingPage() {
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           {/* Left: details */}
           <div className="space-y-6">
-            <ul className="space-y-3 text-sm text-gray-300">
+            <ul className="space-y-4 text-sm text-gray-300">
               <li className="flex gap-3"><Clock className="w-5 h-5 text-success-400 shrink-0" /> 6 hours of instruction across 6 modules, at your own pace</li>
               <li className="flex gap-3"><ShieldCheck className="w-5 h-5 text-success-400 shrink-0" /> Pass the final exam at {course.pass_threshold_pct}% or higher</li>
               <li className="flex gap-3"><FileText className="w-5 h-5 text-success-400 shrink-0" /> Downloadable certificate, automatically forwarded to the agency</li>
@@ -137,7 +137,7 @@ function EnrollForm({ course, defaultName }) {
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-3">
+    <form onSubmit={onSubmit} className="space-y-4">
       <p className="text-xs text-gray-400">Enter your legal details exactly as they should appear on your certificate.</p>
       <Field label="Legal name" value={studentName} onChange={setStudentName} placeholder="First Middle Last" autoComplete="name" />
       <Field label="Driver license number" value={dln} onChange={(v) => setDln(v.toUpperCase())} placeholder="GA DLN" />
@@ -190,16 +190,16 @@ function AuthPanel() {
 
   if (sent) {
     return (
-      <div className="text-center py-2">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-success-500/15">
+      <div className="text-center py-4">
+        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-success-500/15">
           <Mail className="h-6 w-6 text-success-300" />
         </div>
-        <h3 className="text-base font-semibold text-success-100 mb-1">Check your email</h3>
-        <p className="text-sm text-gray-400">We sent a secure sign-in link to</p>
-        <p className="my-1.5 text-sm font-semibold text-gray-100 break-words">{email}</p>
-        <p className="text-sm text-gray-400">Open it on this device to continue enrolling.</p>
+        <h3 className="text-base font-semibold text-success-100 mb-4">Check your email</h3>
+        <p className="text-sm text-gray-400 leading-relaxed">We sent a secure sign-in link to</p>
+        <p className="my-3 text-sm font-semibold text-gray-100 break-words">{email}</p>
+        <p className="text-sm text-gray-400 leading-relaxed">Open it on this device to continue enrolling.</p>
         <button type="button" onClick={() => setSent(false)}
-          className="mt-5 text-xs font-medium text-gray-400 underline-offset-2 hover:text-gray-200 hover:underline">
+          className="mt-7 text-xs font-medium text-gray-400 underline-offset-2 hover:text-gray-200 hover:underline">
           Use a different email
         </button>
       </div>
@@ -207,7 +207,7 @@ function AuthPanel() {
   }
 
   return (
-    <form onSubmit={submit} className="space-y-3">
+    <form onSubmit={submit} className="space-y-4">
       <p className="text-sm text-gray-200">Sign in to start or continue</p>
       <p className="text-xs text-gray-400">New or returning, we’ll email you a secure sign-in link — no password needed.</p>
       <Field label="Driver's first name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
