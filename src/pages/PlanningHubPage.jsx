@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import RevenueProjectionsDashboard from './components/revenue/RevenueProjectionsDashboard';
 import ServiceStaffingTab from './components/planning/ServiceStaffingTab';
 import ProducerCompIndexTab from './components/planning/ProducerCompIndexTab';
+import ProductionGoalsTab from './components/planning/ProductionGoalsTab';
 import CapacityPlanner from './components/dashboard/CapacityPlanner';
 import StaffingCapacity from './components/dashboard/StaffingCapacity';
 import CompScheduleAlertCard from './components/planning/CompScheduleAlertCard';
@@ -43,11 +45,12 @@ const PLANNING_STYLES = `
 `;
 
 const TABS = [
-  { key: 'revenue',         label: '💰 Revenue'          },
-  { key: 'daily_earnings',  label: '📈 Daily Earnings'   },
-  { key: 'capacity',        label: '📊 Sales Capacity'   },
-  { key: 'staffing',        label: '👥 Service Staffing' },
-  { key: 'producers',       label: '🏆 Producer Comp'    },
+  { key: 'revenue',         label: '💰 Revenue'           },
+  { key: 'daily_earnings',  label: '📈 Daily Earnings'    },
+  { key: 'capacity',        label: '📊 Sales Capacity'    },
+  { key: 'staffing',        label: '👥 Service Staffing'  },
+  { key: 'producers',       label: '🏆 Producer Comp'     },
+  { key: 'goals',           label: '🎯 Production Goals'  },
 ];
 
 // ── Sales Capacity tab constants ────────────────────────────────────────────────
@@ -82,7 +85,12 @@ const TIER_OPTIONS = [
 ];
 
 export default function PlanningHubPage() {
-  const [activeTab, setActiveTab] = useState('revenue');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const producerParam = searchParams.get('producer');
+  const [activeTab, setActiveTab] = useState(
+    () => (TABS.some((t) => t.key === tabParam) ? tabParam : 'revenue')
+  );
   const { currentAgencyId } = useAuth();
 
   // ── Sales Capacity tab state ────────────────────────────────────────────────
@@ -117,7 +125,7 @@ export default function PlanningHubPage() {
         planner: plannerInputs,
         staffing: staffingInputs,
       }));
-    } catch {}
+    } catch { /* localStorage unavailable — non-fatal */ }
   }, [plannerInputs, staffingInputs]);
 
   const handlePlannerChange = useCallback((key, value) => {
@@ -224,6 +232,7 @@ export default function PlanningHubPage() {
       )}
       {activeTab === 'staffing'  && <ServiceStaffingTab agencyId={currentAgencyId} />}
       {activeTab === 'producers' && <ProducerCompIndexTab agencyId={currentAgencyId} />}
+      {activeTab === 'goals'     && <ProductionGoalsTab agencyId={currentAgencyId} focusProducerId={producerParam} />}
     </div>
   );
 }
