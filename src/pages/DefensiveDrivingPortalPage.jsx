@@ -4,11 +4,12 @@
 // built in Phase 4.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, CheckCircle2, Clock, Loader2, AlertCircle, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Lock, CheckCircle2, Clock, Loader2, AlertCircle, ArrowLeft, ArrowRight, Award, Download } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
   getDefensiveDrivingCourse, getMyEnrollment, getModules, getProgress,
   heartbeat, getModuleQuestions, submitKnowledgeCheck,
+  getExamAttempts, startExam, submitExam, issueCertificate,
 } from '../lib/ddApi';
 import { getModuleContent } from '../data/ddCourseContent';
 
@@ -110,21 +111,18 @@ export default function DefensiveDrivingPortalPage() {
             <ModuleRow key={vm.id} vm={vm} onOpen={() => setActiveId(vm.id)} />
           ))}
 
-          {/* Final exam — gated; built in Phase 4 */}
-          <div className={`rounded-xl border p-4 flex items-center gap-4 ${allComplete ? 'border-success-500/40 bg-success-500/5' : 'border-gray-800 bg-gray-900/40 opacity-70'}`}>
-            <div className="shrink-0">
-              {allComplete ? <CheckCircle2 className="w-6 h-6 text-success-400" /> : <Lock className="w-6 h-6 text-gray-500" />}
+          {/* Final exam — unlocks after all modules complete */}
+          {allComplete ? (
+            <FinalExam course={course} enrollment={enrollment} />
+          ) : (
+            <div className="rounded-xl border p-4 flex items-center gap-4 border-gray-800 bg-gray-900/40 opacity-70">
+              <div className="shrink-0"><Lock className="w-6 h-6 text-gray-500" /></div>
+              <div className="flex-1">
+                <p className="font-semibold">Final Exam</p>
+                <p className="text-xs text-gray-400">Unlocks after all 6 modules are complete.</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <p className="font-semibold">Final Exam</p>
-              <p className="text-xs text-gray-400">
-                {allComplete ? 'Unlocked — the exam will be available here.' : 'Unlocks after all 6 modules are complete.'}
-              </p>
-            </div>
-            <button disabled className="text-xs rounded-full px-4 py-2 bg-gray-800 text-gray-400 cursor-not-allowed">
-              Coming soon
-            </button>
-          </div>
+          )}
         </div>
       </div>
     </div>
@@ -364,6 +362,168 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
       <button onClick={submit} disabled={!allAnswered || busy}
         className="mt-5 rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
         {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit answers'}
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Final exam + certificate
+// ---------------------------------------------------------------------------
+function FinalExam({ course, enrollment }) {
+  const [phase, setPhase] = useState('loading'); // loading | idle | exam | result
+  const [attempts, setAttempts] = useState([]);
+  const [passed, setPassed] = useState(enrollment.status === 'completed');
+  const [exam, setExam] = useState(null); // {attempt_id, questions}
+  const [answers, setAnswers] = useState({});
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const loadAttempts = useCallback(async () => {
+    try {
+      const a = await getExamAttempts(enrollment.id);
+      setAttempts(a);
+      if (enrollment.status === 'completed' || a.some((x) => x.passed)) setPassed(true);
+      setPhase('idle');
+    } catch (err) { setError(err.message); setPhase('idle'); }
+  }, [enrollment.id, enrollment.status]);
+
+  useEffect(() => { loadAttempts(); }, [loadAttempts]);
+
+  if (passed) {
+    return (
+      <div className="rounded-xl border border-success-500/40 bg-success-500/5 p-5">
+        <div className="flex items-center gap-3 mb-3">
+          <Award className="w-6 h-6 text-success-400" />
+          <p className="font-semibold">Final exam passed — course complete!</p>
+        </div>
+        <CertificateBlock courseSlug={course.slug} />
+      </div>
+    );
+  }
+
+  const attemptsUsed = attempts.length;
+  const remaining = Math.max(0, course.retake_limit - attemptsUsed);
+  const lastSubmit = attempts.reduce((m, a) => (a.submitted_at && (!m || a.submitted_at > m) ? a.submitted_at : m), null);
+  const cooldownUntil = lastSubmit ? new Date(new Date(lastSubmit).getTime() + course.retake_cooldown_seconds * 1000) : null;
+  const inCooldown = cooldownUntil && cooldownUntil > new Date();
+
+  const start = async () => {
+    setBusy(true); setError(null); setResult(null);
+    try {
+      const e = await startExam(course.id);
+      setExam(e); setAnswers({}); setPhase('exam');
+    } catch (err) {
+      const msg = err.message || '';
+      if (msg.includes('cooldown')) setError('Please wait for the cooldown to end before trying again.');
+      else if (msg.includes('no attempts')) setError('No attempts remaining. Please contact support.');
+      else if (msg.includes('locked')) setError('Finish all modules first.');
+      else setError(msg || 'Could not start the exam.');
+    } finally { setBusy(false); }
+  };
+
+  const doSubmit = async () => {
+    setBusy(true); setError(null);
+    try {
+      const r = await submitExam(exam.attempt_id, answers);
+      setResult(r); setPhase('result');
+      if (r.passed) setPassed(true);
+      else await loadAttempts();
+    } catch (err) { setError(err.message || 'Could not submit.'); }
+    finally { setBusy(false); }
+  };
+
+  if (phase === 'loading') {
+    return <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 text-sm text-gray-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading final exam…</div>;
+  }
+
+  if (phase === 'exam' && exam) {
+    const allAnswered = exam.questions.every((q) => answers[q.id]);
+    return (
+      <div className="rounded-xl border border-success-500/40 bg-gray-900/60 p-5">
+        <h3 className="text-lg font-bold mb-1">Final Exam</h3>
+        <p className="text-xs text-gray-400 mb-5">{exam.questions.length} questions · {course.pass_threshold_pct}% to pass</p>
+        <div className="space-y-6">
+          {exam.questions.map((q, qi) => (
+            <fieldset key={q.id}>
+              <legend className="text-sm font-medium text-gray-100 mb-2">{qi + 1}. {q.prompt}</legend>
+              <div className="space-y-2">
+                {(q.choices || []).map((c) => (
+                  <label key={c.key} className={`flex items-center gap-3 rounded-lg border px-3 py-2 cursor-pointer text-sm transition ${answers[q.id] === c.key ? 'border-success-500 bg-success-500/10' : 'border-gray-700 hover:border-gray-600'}`}>
+                    <input type="radio" name={q.id} value={c.key} checked={answers[q.id] === c.key}
+                      onChange={() => setAnswers((a) => ({ ...a, [q.id]: c.key }))} className="accent-success-500" />
+                    <span className="text-gray-200">{c.text}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ))}
+        </div>
+        {error && <p className="mt-4 text-sm text-red-300 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
+        <button onClick={doSubmit} disabled={!allAnswered || busy}
+          className="mt-5 rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
+          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit exam'}
+        </button>
+      </div>
+    );
+  }
+
+  // idle / result
+  return (
+    <div className="rounded-xl border border-success-500/40 bg-success-500/5 p-5">
+      <div className="flex items-center gap-3 mb-2">
+        <Award className="w-6 h-6 text-success-300" />
+        <p className="font-semibold">Final Exam</p>
+      </div>
+      {result && !result.passed && (
+        <p className="text-sm text-amber-300 mb-3">
+          You scored {result.score_pct}% — {result.threshold}% is required. {result.attempts_remaining > 0 ? `${result.attempts_remaining} attempt(s) remaining.` : 'No attempts remaining — please contact support.'}
+        </p>
+      )}
+      <p className="text-xs text-gray-400 mb-4">
+        {course.exam_question_count} questions · {course.pass_threshold_pct}% to pass · attempt {Math.min(attemptsUsed + 1, course.retake_limit)} of {course.retake_limit}
+      </p>
+      {error && <p className="text-sm text-red-300 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
+      {remaining <= 0 ? (
+        <p className="text-sm text-gray-300">No attempts remaining. Please contact support.</p>
+      ) : inCooldown ? (
+        <p className="text-sm text-gray-300">You can try again after {cooldownUntil.toLocaleTimeString()}.</p>
+      ) : (
+        <button onClick={start} disabled={busy}
+          className="rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
+          {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</> : 'Start Final Exam'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function CertificateBlock({ courseSlug }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+  const [uid, setUid] = useState(null);
+
+  const download = async () => {
+    setBusy(true); setError(null);
+    try {
+      const { url, certificate_uid } = await issueCertificate(courseSlug);
+      setUid(certificate_uid);
+      if (url) window.open(url, '_blank', 'noopener');
+    } catch (err) { setError(err.message || 'Could not download certificate.'); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div>
+      <p className="text-sm text-gray-300 mb-3">
+        Your certificate has been generated and forwarded to the agency for your insurance discount review.
+        {uid && <> Certificate ID: <span className="font-mono text-gray-200">{uid}</span>.</>}
+      </p>
+      {error && <p className="text-sm text-red-300 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
+      <button onClick={download} disabled={busy}
+        className="rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
+        {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</> : <><Download className="w-4 h-4" /> Download certificate</>}
       </button>
     </div>
   );

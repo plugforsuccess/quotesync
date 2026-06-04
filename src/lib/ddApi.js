@@ -7,7 +7,7 @@ export const DD_COURSE_SLUG = 'georgia-6hr-defensive-driving';
 export async function getDefensiveDrivingCourse() {
   const { data, error } = await supabase
     .from('dd_courses')
-    .select('id, slug, title, price_cents, currency, min_seat_seconds, pass_threshold_pct, is_active, is_dds_approved, compliance_label, dds_provider_no')
+    .select('id, slug, title, price_cents, currency, min_seat_seconds, pass_threshold_pct, retake_limit, retake_cooldown_seconds, exam_question_count, is_active, is_dds_approved, compliance_label, dds_provider_no')
     .eq('slug', DD_COURSE_SLUG)
     .maybeSingle();
   if (error) throw error;
@@ -98,4 +98,47 @@ export async function submitKnowledgeCheck(moduleId, answers) {
   });
   if (error) throw error;
   return data;
+}
+
+// ---- Final exam + certificate (Phase 4) -----------------------------------
+
+/** The user's exam attempts for an enrollment (RLS: own only). */
+export async function getExamAttempts(enrollmentId) {
+  const { data, error } = await supabase
+    .from('dd_exam_attempts')
+    .select('id, attempt_no, score_pct, passed, started_at, submitted_at')
+    .eq('enrollment_id', enrollmentId)
+    .order('attempt_no', { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+/** Start a final-exam attempt. Returns {attempt_id, questions:[...]} or throws if locked. */
+export async function startExam(courseId) {
+  const { data, error } = await supabase.rpc('dd_start_exam', { p_course_id: courseId });
+  if (error) throw error;
+  return data;
+}
+
+/** Submit a final-exam attempt. Scored server-side. */
+export async function submitExam(attemptId, answers) {
+  const { data, error } = await supabase.rpc('dd_submit_exam', {
+    p_attempt_id: attemptId,
+    p_answers: answers,
+  });
+  if (error) throw error;
+  return data;
+}
+
+/** Generate (once) and fetch a short-lived signed URL for the caller's certificate. */
+export async function issueCertificate(courseSlug = DD_COURSE_SLUG) {
+  const { data, error } = await supabase.functions.invoke('dd-issue-certificate', {
+    body: { course_slug: courseSlug },
+  });
+  if (error) {
+    let message = error.message || 'Could not issue certificate.';
+    try { const b = await error.context?.json?.(); if (b?.error) message = b.error; } catch { /* ignore */ }
+    throw new Error(message);
+  }
+  return data; // { certificate_uid, url }
 }
