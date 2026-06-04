@@ -3,3 +3,8 @@ verify_jwt = false
 
 [functions.canopy-webhook]
 verify_jwt = false
+
+# Stripe calls this server-to-server; it is authenticated by the
+# Stripe-Signature header, not a Supabase JWT.
+[functions.dd-stripe-webhook]
+verify_jwt = false
