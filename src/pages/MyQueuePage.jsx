@@ -10,6 +10,7 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
+import ReadingColumn from '../components/ReadingColumn';
 
 // Format relative time — "2d ago", "3h ago", "just now"
 function relativeTime(dateStr) {
@@ -469,13 +470,6 @@ export default function MyQueuePage() {
     const promiseSoon = event.promise_date && !promisePast;
     const isLapsed   = event.stage === 'cancelled';
 
-    // Attempt density color
-    const attColor = !event.attempt_count
-      ? (urgent ? '#F87171' : '#FBBF24')
-      : event.attempt_count >= 3
-      ? 'var(--qs-dim)'
-      : '#FBBF24';
-
     // Talking-point script strip — primary purpose of the call.
     // NOTE: the 120-day rewrite window is an internal agent/VC business rule.
     // It must never appear in customer-facing call scripts.
@@ -496,8 +490,38 @@ export default function MyQueuePage() {
             : ` Your payment is due by ${event.cancel_effective_date}.`
         } I want to make sure you don't have a gap in coverage — can I help you take care of that today?"`;
 
+    // Color-coded urgency for the "days until cancel" key fact.
+    const daysColor = urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)';
+    const daysLabel = days === null ? '—'
+      : days === 0 ? 'TODAY'
+      : days < 0 ? `${Math.abs(days)}d ago`
+      : `${days}d`;
+
+    // Status / inline-badge chips. Bumped off text-xs so labels stay legible.
+    const chip = {
+      fontSize: '0.8125rem', fontWeight: 700, borderRadius: 6,
+      padding: '0.125rem 0.5rem', flexShrink: 0,
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+    };
+    // Shared 44px-tall action control — meets the AA touch-target minimum.
+    const btnBase = {
+      minHeight: '2.75rem', padding: '0 1rem', borderRadius: 8,
+      fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer',
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+    };
+    // Compact "key facts" tile — amount due / days, grouped near the name.
+    const factTile = {
+      flex: '1 1 9rem', minWidth: '9rem',
+      background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+      borderRadius: 8, padding: '0.625rem 0.875rem',
+    };
+    const factLabel = {
+      fontSize: '0.75rem', fontWeight: 700, color: 'var(--qs-dim)',
+      textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem',
+    };
+
     return (
-      <div style={{
+      <article style={{
         background:  'var(--qs-card)',
         border: `1px solid ${
           isLapsed
@@ -506,7 +530,7 @@ export default function MyQueuePage() {
             ? 'rgba(239,68,68,0.3)'
             : 'var(--qs-border)'
         }`,
-        borderLeft: `3px solid ${
+        borderLeft: `4px solid ${
           isLapsed
             ? '#EF4444'
             : urgent
@@ -515,275 +539,244 @@ export default function MyQueuePage() {
             ? '#FBBF24'
             : 'var(--qs-border)'
         }`,
-        borderRadius: 10,
-        padding:     '18px 20px',
+        borderRadius: 12,
+        padding: '1.5rem',
+        display: 'flex', flexDirection: 'column', gap: '1rem',
       }}>
 
-        {/* Row 1: Name / badges / days */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--qs-bright)',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {event.customer_name}
-              </span>
+        {/* 1 ── Header: name + status badges ─────────────────────────── */}
+        <header style={{ display: 'flex', alignItems: 'baseline', gap: '0.625rem', flexWrap: 'wrap' }}>
+          <h3 style={{
+            fontSize: '1.25rem', fontWeight: 600, color: 'var(--qs-bright)',
+            margin: 0, lineHeight: 1.2,
+          }}>
+            {event.customer_name}
+          </h3>
 
-              {event.ai_transcript && (
-                <button
-                  onClick={() => setExpandedTranscript(prev => prev === event.id ? null : event.id)}
-                  style={{ fontSize: 13, background: 'rgba(99,102,241,0.15)', color: '#818CF8',
-                    border: 'none', borderRadius: 4, padding: '2px 8px', cursor: 'pointer',
-                    fontWeight: 600, flexShrink: 0 }}>
-                  🤖 AI spoke
-                </button>
-              )}
-
-              {event.amount_due > 0 && (
-                <span style={{ fontSize: 13, background: 'rgba(239,68,68,0.15)', color: '#F87171',
-                  borderRadius: 4, padding: '2px 8px', fontWeight: 700, flexShrink: 0 }}>
-                  Owes {fmt$(event.amount_due)}
-                </span>
-              )}
-
-              {event.stage === 'cancelled' && (
-                <span style={{ fontSize: 13, background: 'rgba(239,68,68,0.15)', color: '#F87171',
-                  borderRadius: 4, padding: '2px 8px', fontWeight: 700 }}>
-                  Lapsed
-                </span>
-              )}
-
-              {policyCount > 1 && (
-                <span style={{
-                  fontSize: 10, background: 'rgba(245,158,11,0.15)', color: '#FBBF24',
-                  borderRadius: 4, padding: '1px 6px', fontWeight: 700, flexShrink: 0,
-                }}>
-                  ⚠ {policyCount} policies
-                </span>
-              )}
-
-              {event.has_active_renewal && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                  background: 'rgba(59,130,246,0.12)',
-                  border: '1px solid rgba(59,130,246,0.25)',
-                  color: '#60A5FA', flexShrink: 0,
-                }}>
-                  🔄 Also renewing
-                </span>
-              )}
-              {event.cross_sell_opportunity && !event.has_active_renewal && (
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                  background: 'rgba(16,185,129,0.10)',
-                  border: '1px solid rgba(16,185,129,0.25)',
-                  color: '#34D399', flexShrink: 0,
-                }}>
-                  💡 X-sell: {event.cross_sell_product?.toUpperCase()}
-                </span>
-              )}
-            </div>
-
-            <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 3 }}>
-              {event.policy_no} · {event.product}
-            </div>
-          </div>
-
-          {/* Days + cancel date + amount due */}
-          <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
-            {/* Days — large and color-coded */}
-            <div style={{
-              fontSize: 18, fontWeight: 800,
-              color: urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)',
-              fontFamily: "'DM Mono', monospace", lineHeight: 1,
+          {isLapsed && (
+            <span style={{ ...chip, background: 'rgba(239,68,68,0.15)', color: '#F87171' }}>
+              ⚠ Lapsed
+            </span>
+          )}
+          {policyCount > 1 && (
+            <span style={{ ...chip, background: 'rgba(245,158,11,0.15)', color: '#FBBF24' }}>
+              ⚠ {policyCount} policies
+            </span>
+          )}
+          {event.has_active_renewal && (
+            <span style={{
+              ...chip, background: 'rgba(59,130,246,0.12)',
+              border: '1px solid rgba(59,130,246,0.25)', color: '#60A5FA',
             }}>
-              {days === null ? '—'
-                : days === 0 ? 'TODAY'
-                : days < 0 ? `${Math.abs(days)}d AGO`
-                : `${days}d`}
-            </div>
-            {/* Cancel date — always visible */}
-            <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 2 }}>
-              {event.cancel_effective_date}
-            </div>
-            {/* Amount due — if present */}
-            {event.amount_due > 0 && (
+              🔄 Also renewing
+            </span>
+          )}
+          {event.cross_sell_opportunity && !event.has_active_renewal && (
+            <span style={{
+              ...chip, background: 'rgba(16,185,129,0.10)',
+              border: '1px solid rgba(16,185,129,0.25)', color: '#34D399',
+            }}>
+              💡 X-sell: {event.cross_sell_product?.toUpperCase()}
+            </span>
+          )}
+          {event.ai_transcript && (
+            <button
+              className="qs-focusable"
+              onClick={() => setExpandedTranscript(prev => prev === event.id ? null : event.id)}
+              style={{ ...chip, background: 'rgba(99,102,241,0.15)', color: '#818CF8',
+                border: 'none', cursor: 'pointer' }}>
+              🤖 AI spoke
+            </button>
+          )}
+        </header>
+
+        {/* 2 ── Key facts: amount due + days, grouped near the name ───── */}
+        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+          {event.amount_due > 0 && (
+            <div style={factTile}>
+              <div style={factLabel}>Amount due</div>
               <div style={{
-                fontSize: 13, fontWeight: 700,
-                color: '#F87171',
-                fontFamily: "'DM Mono', monospace",
-                marginTop: 4,
+                fontSize: '1.5rem', fontWeight: 800, color: '#F87171',
+                fontFamily: "'DM Mono', monospace", lineHeight: 1.1,
               }}>
                 ${Number(event.amount_due).toLocaleString()}
               </div>
-            )}
-
-            {isLapsed && (
-              <div style={{
-                marginTop: 6, fontSize: 10, fontWeight: 700,
-                color: '#F87171',
-                textTransform: 'uppercase', letterSpacing: '0.05em',
-              }}>
-                LAPSED
-              </div>
-            )}
+            </div>
+          )}
+          <div style={factTile}>
+            <div style={factLabel}>{isLapsed ? 'Coverage' : days < 0 ? 'Overdue' : 'Cancels in'}</div>
+            <div style={{
+              fontSize: '1.5rem', fontWeight: 800,
+              color: isLapsed ? '#F87171' : daysColor,
+              fontFamily: "'DM Mono', monospace", lineHeight: 1.1,
+            }}>
+              {isLapsed ? '⚠ LAPSED' : daysLabel}
+            </div>
+            <div style={{ fontSize: '0.875rem', color: 'var(--qs-dim)', marginTop: '0.25rem' }}>
+              {isLapsed ? 'since ' : ''}{event.cancel_effective_date}
+            </div>
           </div>
         </div>
 
-        {/* Talking point script — primary call purpose */}
-        <div style={{
-          background: 'rgba(59,130,246,0.06)',
-          border: '1px solid rgba(59,130,246,0.15)',
-          borderRadius: 6,
-          padding: '7px 10px',
-          marginBottom: 8,
-          fontSize: 12,
-          color: 'var(--qs-dim)',
-          fontStyle: 'italic',
-          lineHeight: 1.5,
-        }}>
-          {scriptLine}
+        {/* 3 ── Meta line: policy · type · phone (AA-contrast) ────────── */}
+        <div style={{ fontSize: '0.875rem', color: 'var(--qs-dim)', fontWeight: 500 }}>
+          {event.policy_no} · {event.product}
+          {phone && <> · {fmtPhone(phone)}</>}
         </div>
 
-        {/* Row 2: Promise / last attempt / callback */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
-          {promisePast && (
-            <span style={{ fontSize: 13, color: '#F87171', fontWeight: 600 }}>
-              ⚠ Promise broken · {new Date(event.promise_date).toLocaleDateString()}
-            </span>
-          )}
-          {promiseSoon && (
-            <span style={{ fontSize: 13, color: '#FBBF24', fontWeight: 600 }}>
-              Promised {new Date(event.promise_date).toLocaleDateString()}
-            </span>
-          )}
-          {lastAtt && !promisePast && (
-            <span style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>
-              {event.attempt_count || 0} attempts · {lastAtt}
-            </span>
-          )}
-          {!lastAtt && !promisePast && (
-            <span style={{ fontSize: 13, color: attColor }}>
-              {event.attempt_count || 0} attempts
-            </span>
-          )}
+        {/* 4 ── Call script — 16px, comfortable measure & line-height ── */}
+        <div style={{
+          background: 'rgba(59,130,246,0.06)',
+          border: '1px solid rgba(59,130,246,0.20)',
+          borderRadius: 8,
+          padding: '1rem',
+        }}>
+          <div style={{
+            fontSize: '0.75rem', fontWeight: 700, color: 'var(--qs-dim)',
+            textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem',
+          }}>
+            {isLapsed ? 'Reinstatement script' : 'Call script'}
+          </div>
+          <p style={{
+            fontSize: '1rem', color: 'var(--qs-text)', lineHeight: 1.6, margin: 0,
+          }}>
+            {scriptLine}
+          </p>
+        </div>
 
-          {/* Scheduled callback */}
-          {event.callback_at && new Date(event.callback_at) > new Date() && (
-            <span style={{
-              fontSize: 11, color: '#3B82F6', fontWeight: 600,
-              background: 'rgba(59,130,246,0.10)',
-              border: '1px solid rgba(59,130,246,0.25)',
-              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
-            }}>
-              📅 Call back {new Date(event.callback_at).toLocaleString('en-US', {
-                month: 'short', day: 'numeric',
-                hour: 'numeric', minute: '2-digit',
-              })}
-            </span>
-          )}
-          {event.callback_at && new Date(event.callback_at) <= new Date() && (
-            <span style={{
-              fontSize: 11, color: '#F59E0B', fontWeight: 700,
-              background: 'rgba(245,158,11,0.12)',
-              border: '1px solid rgba(245,158,11,0.3)',
-              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
-            }}>
-              ⏰ Callback overdue
-            </span>
-          )}
+        {/* Status line: promise / last attempt / callback ────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            {promisePast && (
+              <span style={{ fontSize: '0.875rem', color: '#F87171', fontWeight: 600 }}>
+                ⚠ Promise broken · {new Date(event.promise_date).toLocaleDateString()}
+              </span>
+            )}
+            {promiseSoon && (
+              <span style={{ fontSize: '0.875rem', color: '#FBBF24', fontWeight: 600 }}>
+                Promised {new Date(event.promise_date).toLocaleDateString()}
+              </span>
+            )}
+            {lastAtt && !promisePast && (
+              <span style={{ fontSize: '0.875rem', color: 'var(--qs-dim)' }}>
+                {event.attempt_count || 0} attempts · {lastAtt}
+              </span>
+            )}
+            {!lastAtt && !promisePast && (
+              <span style={{ fontSize: '0.875rem', color: 'var(--qs-dim)', fontWeight: 600 }}>
+                {event.attempt_count || 0} attempts
+              </span>
+            )}
 
-          {/* Snoozed indicator */}
-          {event.snoozed_until && new Date(event.snoozed_until) > new Date() && (
-            <span style={{
-              fontSize: 11, color: 'var(--qs-muted)', fontWeight: 600,
-              background: 'var(--qs-elevated)',
-              border: '1px solid var(--qs-border)',
-              borderRadius: 4, padding: '1px 7px', flexShrink: 0,
-            }}>
-              ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
-            </span>
-          )}
+            {/* Scheduled callback */}
+            {event.callback_at && new Date(event.callback_at) > new Date() && (
+              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 600, color: '#60A5FA',
+                background: 'rgba(59,130,246,0.10)', border: '1px solid rgba(59,130,246,0.25)' }}>
+                📅 Call back {new Date(event.callback_at).toLocaleString('en-US', {
+                  month: 'short', day: 'numeric',
+                  hour: 'numeric', minute: '2-digit',
+                })}
+              </span>
+            )}
+            {event.callback_at && new Date(event.callback_at) <= new Date() && (
+              <span style={{ ...chip, fontSize: '0.8125rem', color: '#FBBF24',
+                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                ⏰ Callback overdue
+              </span>
+            )}
+
+            {/* Snoozed indicator */}
+            {event.snoozed_until && new Date(event.snoozed_until) > new Date() && (
+              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 600, color: 'var(--qs-dim)',
+                background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+                ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
+              </span>
+            )}
         </div>
 
         {/* AI Transcript inline expand */}
         {expandedTranscript === event.id && event.ai_transcript && (
           <div style={{
-            marginBottom: 10, padding: '10px 12px', borderRadius: 6,
+            padding: '0.75rem 1rem', borderRadius: 8,
             background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
-            fontSize: 14, color: 'var(--qs-dim)', lineHeight: 1.5,
-            maxHeight: 160, overflowY: 'auto',
+            fontSize: '1rem', color: 'var(--qs-text)', lineHeight: 1.6,
+            maxHeight: 200, overflowY: 'auto',
           }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#818CF8',
-              textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>
+            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818CF8',
+              textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: '0.25rem' }}>
               AI Transcript
             </span>
             {event.ai_transcript}
           </div>
         )}
 
-        {/* Row 3: Actions */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+        {/* 5 ── Action button row ─────────────────────────────────────── */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {phone && (
             <a href={`tel:${phone}`}
+              className="qs-focusable"
               style={{
-                fontSize: 13, padding: '7px 12px', borderRadius: 7,
+                ...btnBase,
                 background: 'rgba(52,211,153,0.12)', color: '#34D399',
                 border: '1px solid rgba(52,211,153,0.25)', textDecoration: 'none',
-                fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
               }}>
               📞 {fmtPhone(phone)}
             </a>
           )}
 
           <button
+            className="qs-focusable"
             onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
             style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              ...btnBase,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600,
+              color: 'var(--qs-dim)',
             }}>
             Log Call
           </button>
 
           {/* Schedule callback */}
           <button
+            className="qs-focusable"
             onClick={() => { setCallbackTarget({ type: 'cancel', event }); setCallbackForm({ time: '', note: '' }); }}
             style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              ...btnBase,
               border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
-              color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
+              color: '#60A5FA',
             }}>
             📅 Callback
           </button>
 
           <button
+            className="qs-focusable"
             onClick={() => handleInlineResolve('cancel', event, 'saved')}
             style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              ...btnBase,
               border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-              color: '#34D399', cursor: 'pointer', fontWeight: 600,
+              color: '#34D399',
             }}>
             ✓ Saved
           </button>
 
           {/* Lost quick action — prompts for reason */}
           <button
+            className="qs-focusable"
             onClick={() => { setLostTarget({ type: 'cancel', event }); setLostReason(''); }}
             style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              ...btnBase,
               border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+              color: 'var(--qs-dim)',
             }}>
             ✗ Lost
           </button>
 
           {/* Wants to cancel quick action */}
           <button
+            className="qs-focusable"
             onClick={() => handleInlineResolve('cancel', event, 'requested_cancellation')}
             style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              ...btnBase,
               border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
-              color: '#F87171', cursor: 'pointer', fontWeight: 600,
+              color: '#F87171',
             }}>
             Wants to Cancel
           </button>
@@ -791,7 +784,7 @@ export default function MyQueuePage() {
           {/* Snooze — show only after 2+ attempts */}
           {event.attempt_count >= 2 && (
             <select
-              className="dark-select"
+              className="dark-select qs-focusable"
               defaultValue=""
               onChange={e => {
                 if (!e.target.value) return;
@@ -800,8 +793,8 @@ export default function MyQueuePage() {
                 e.target.value = '';
               }}
               style={{
-                fontSize: 12, padding: '5px 10px', borderRadius: 7,
-                cursor: 'pointer', color: 'var(--qs-muted)',
+                ...btnBase, width: 'auto',
+                color: 'var(--qs-dim)',
                 border: '1px solid var(--qs-border)',
                 background: 'var(--qs-elevated)',
               }}
@@ -814,17 +807,18 @@ export default function MyQueuePage() {
           )}
 
           <button
+            className="qs-focusable"
             onClick={() => setSelectedEvent(event)}
             style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
+              ...btnBase,
               border: '1px solid var(--qs-border)', background: 'none',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+              color: 'var(--qs-dim)',
               marginLeft: 'auto',
             }}>
             View →
           </button>
         </div>
-      </div>
+      </article>
     );
   }
 
@@ -1333,7 +1327,7 @@ export default function MyQueuePage() {
 
       {/* ── Pending Cancel Tab ───────────────────────────────────────── */}
       {activeTab === 'cancel' && (
-        <div>
+        <ReadingColumn>
           {cancelLoading && (
             <div style={{ color: 'var(--qs-subtle)', fontSize: 15 }}>Loading...</div>
           )}
@@ -1442,12 +1436,12 @@ export default function MyQueuePage() {
               </button>
             </div>
           )}
-        </div>
+        </ReadingColumn>
       )}
 
       {/* ── Renewals Tab ─────────────────────────────────────────────── */}
       {activeTab === 'renewal' && (
-        <div>
+        <ReadingColumn>
           {renewalLoading && (
             <div style={{ color: 'var(--qs-subtle)', fontSize: 15 }}>Loading...</div>
           )}
@@ -1477,7 +1471,7 @@ export default function MyQueuePage() {
               ))}
             </div>
           )}
-        </div>
+        </ReadingColumn>
       )}
 
       {/* ── Detail Modals (existing — unchanged) ─────────────────────── */}
