@@ -3,7 +3,7 @@
 // lesson reader with callouts and interactive scenario checks, a per-module
 // graded knowledge check that gates completion, the final exam, and the
 // certificate. Progression is content/quiz based — no seat-time gating.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock, CheckCircle2, Circle, Loader2, AlertCircle, ArrowLeft, ArrowRight, Award, Download,
@@ -177,11 +177,35 @@ function ModuleRow({ vm, onOpen }) {
 // ---------------------------------------------------------------------------
 // Lesson reader
 // ---------------------------------------------------------------------------
+// Split a flat block list into sections at each heading ('h') block.
+function splitSections(blocks) {
+  const sections = [];
+  let cur = null;
+  for (const b of blocks) {
+    if (b.type === 'h') { cur = { heading: b.text, blocks: [] }; sections.push(cur); }
+    else { if (!cur) { cur = { heading: null, blocks: [] }; sections.push(cur); } cur.blocks.push(b); }
+  }
+  return sections;
+}
+
 function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   const content = getModuleContent(mod.content_ref);
   const [kcPassed, setKcPassed] = useState(!!mod.kc_passed);
   const [completed, setCompleted] = useState(!!mod.completed);
   const isLast = mod.index + 1 >= total;
+
+  const sections = useMemo(() => splitSections(content?.blocks || []), [content]);
+  // Steps: Introduction -> each section -> Quiz.
+  const steps = useMemo(
+    () => ['intro', ...sections.map(() => 'section'), 'quiz'],
+    [sections],
+  );
+  const [step, setStep] = useState(0);
+  const go = (n) => { setStep(n); window.scrollTo(0, 0); };
+
+  const kind = steps[step];
+  const sectionIdx = kind === 'section' ? step - 1 : -1;
+  const section = sectionIdx >= 0 ? sections[sectionIdx] : null;
 
   return (
     <div className="bg-gray-950 text-gray-50 min-h-screen">
@@ -195,50 +219,98 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
             Exit <X className="w-4 h-4" />
           </button>
         </div>
+        <div className="max-w-3xl mx-auto px-4 pb-3">
+          <div className="h-1.5 w-full rounded-full bg-gray-800 overflow-hidden">
+            <div className="h-full bg-success-500 transition-all" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+          </div>
+        </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-2">Module {mod.ordinal}</p>
-        <h1 className="text-2xl md:text-3xl font-black mb-4">{mod.title}</h1>
-        {content?.summary && (
-          <p className="text-base text-gray-300 leading-relaxed mb-8 border-l-2 border-success-500/40 pl-4">{content.summary}</p>
-        )}
+        <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-2">
+          Module {mod.ordinal}
+          {kind === 'section' && ` · Section ${sectionIdx + 1} of ${sections.length}`}
+          {kind === 'quiz' && ' · Module quiz'}
+          {kind === 'intro' && ' · Introduction'}
+        </p>
+        <h1 className="text-2xl md:text-3xl font-black mb-6">{mod.title}</h1>
 
-        <article className="space-y-5">
-          {content?.blocks?.map((b, i) => <Block key={i} b={b} />)}
-          {!content && <p className="text-gray-400">Content for this module is being prepared.</p>}
-        </article>
-
-        {content?.takeaways?.length > 0 && (
-          <div className="mt-10 rounded-xl border border-success-500/30 bg-success-500/5 p-5">
-            <p className="flex items-center gap-2 text-sm font-bold text-success-200 mb-3">
-              <ListChecks className="w-5 h-5" /> Key takeaways
-            </p>
-            <ul className="space-y-2">
-              {content.takeaways.map((t, i) => (
-                <li key={i} className="flex gap-2.5 text-sm text-gray-200">
-                  <CheckCircle2 className="w-4 h-4 text-success-400 shrink-0 mt-0.5" /> {t}
-                </li>
-              ))}
-            </ul>
+        {/* Introduction */}
+        {kind === 'intro' && (
+          <div>
+            {content?.summary && (
+              <p className="text-base text-gray-300 leading-relaxed border-l-2 border-success-500/40 pl-4">{content.summary}</p>
+            )}
+            {sections.length > 0 && (
+              <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/50 p-5">
+                <p className="text-sm font-semibold text-gray-200 mb-3">In this module</p>
+                <ol className="space-y-2.5">
+                  {sections.map((s, i) => (
+                    <li key={i} className="flex gap-3 text-sm text-gray-300">
+                      <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-success-500/20 text-[11px] font-bold text-success-200">{i + 1}</span>
+                      {s.heading || `Section ${i + 1}`}
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            )}
+            {!content && <p className="text-gray-400">Content for this module is being prepared.</p>}
           </div>
         )}
 
-        <div className="mt-10 border-t border-gray-800 pt-8">
-          <KnowledgeCheck
-            module={mod}
-            alreadyPassed={kcPassed}
-            onPassed={() => { setKcPassed(true); setCompleted(true); }}
-          />
+        {/* A single section */}
+        {kind === 'section' && section && (
+          <article className="space-y-5">
+            {section.heading && <h2 className="text-xl md:text-2xl font-bold text-success-100">{section.heading}</h2>}
+            {section.blocks.map((b, i) => <Block key={i} b={b} />)}
+          </article>
+        )}
 
-          {(completed || kcPassed) && (
-            <div className="mt-8 flex items-center justify-between gap-3">
-              <span className="text-sm text-success-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Module complete</span>
-              <button onClick={onNext}
-                className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
-                {isLast ? 'Finish' : 'Next module'} <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+        {/* Takeaways + graded quiz */}
+        {kind === 'quiz' && (
+          <div>
+            {content?.takeaways?.length > 0 && (
+              <div className="mb-8 rounded-xl border border-success-500/30 bg-success-500/5 p-5">
+                <p className="flex items-center gap-2 text-sm font-bold text-success-200 mb-3">
+                  <ListChecks className="w-5 h-5" /> Key takeaways
+                </p>
+                <ul className="space-y-2">
+                  {content.takeaways.map((t, i) => (
+                    <li key={i} className="flex gap-2.5 text-sm text-gray-200">
+                      <CheckCircle2 className="w-4 h-4 text-success-400 shrink-0 mt-0.5" /> {t}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <KnowledgeCheck
+              module={mod}
+              alreadyPassed={kcPassed}
+              onPassed={() => { setKcPassed(true); setCompleted(true); }}
+            />
+          </div>
+        )}
+
+        {/* Step navigation */}
+        <div className="mt-10 flex items-center justify-between gap-3 border-t border-gray-800 pt-6">
+          <button
+            onClick={() => (step === 0 ? onBack() : go(step - 1))}
+            className="text-sm text-gray-400 hover:text-gray-100 flex items-center gap-1.5">
+            <ArrowLeft className="w-4 h-4" /> {step === 0 ? 'All modules' : 'Back'}
+          </button>
+
+          {kind !== 'quiz' ? (
+            <button onClick={() => go(step + 1)}
+              className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
+              Continue <ArrowRight className="w-4 h-4" />
+            </button>
+          ) : (completed || kcPassed) ? (
+            <button onClick={onNext}
+              className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
+              {isLast ? 'Finish' : 'Next module'} <ArrowRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <span className="text-xs text-gray-500">Pass the quiz to continue</span>
           )}
         </div>
       </div>
