@@ -1,18 +1,13 @@
 // src/pages/GeorgiaDriverEducationPage.jsx
 import React from "react";
+import { Link } from "react-router-dom";
 
-const DEFENSIVE_DRIVING_LINK =
-  "https://insuredbycam.nationaldrivered.com/dc/100057";
 const JOSHUAS_LAW_LINK =
   "https://insuredbycam.nationaldrivered.com/dc/100038";
 const RETURNING_CUSTOMER_LINK =
   "https://insuredbycam.nationaldrivered.com/login?returnUrl=/CourseInfo";
 
 export default function GeorgiaDriverEducationPage() {
-  const handleDefensiveDrivingClick = () => {
-    window.open(DEFENSIVE_DRIVING_LINK, "_blank");
-  };
-
   const handleJoshuasLawClick = () => {
     window.open(JOSHUAS_LAW_LINK, "_blank");
   };
@@ -95,16 +90,15 @@ export default function GeorgiaDriverEducationPage() {
             </div>
 
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-xs line-through text-gray-500">$59.95</span>
-              <span className="text-2xl font-bold text-success-300">$37.00*</span>
+              <span className="text-2xl font-bold text-success-300">$24.95</span>
             </div>
 
-            <button
-              onClick={handleDefensiveDrivingClick}
-              className="w-full rounded-full py-3.5 text-sm font-semibold bg-success-400 hover:bg-success-300 text-gray-950 transition-all shadow-lg hover:shadow-success-400/20"
+            <Link
+              to="/courses/defensive-driving"
+              className="block text-center w-full rounded-full py-3.5 text-sm font-semibold bg-success-400 hover:bg-success-300 text-gray-950 transition-all shadow-lg hover:shadow-success-400/20"
             >
               Start Defensive Driving Course
-            </button>
+            </Link>
           </div>
 
           {/* Joshua's Law Card */}

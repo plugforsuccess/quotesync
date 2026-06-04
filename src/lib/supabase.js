@@ -69,7 +69,10 @@ export const AGENCY_ROLE_HIERARCHY = {
 };
 
 // Legacy role hierarchy (for backward compatibility)
+// 'insured' = a course customer; level 0 so it can never satisfy an
+// editor/admin requiredRole gate.
 const LEGACY_ROLE_HIERARCHY = {
+  insured: 0,
   viewer: 0,
   editor: 1,
   admin: 2

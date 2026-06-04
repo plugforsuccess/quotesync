@@ -55,6 +55,8 @@ function lazyWithRetry(importFn) {
 // All other pages — lazy loaded for code splitting
 const ThankYouPage = lazyWithRetry(() => import('./pages/ThankYouPage'));
 const DriversEdPage = lazyWithRetry(() => import('./pages/DriversEdPage'));
+const DefensiveDrivingPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPage'));
+const DefensiveDrivingSuccessPage = lazyWithRetry(() => import('./pages/DefensiveDrivingSuccessPage'));
 const StorePage = lazyWithRetry(() => import('./pages/StorePage'));
 const ProductDetailPage = lazyWithRetry(() => import('./pages/ProductDetailPage'));
 const PurchaseSuccessPage = lazyWithRetry(() => import('./pages/PurchaseSuccessPage'));
@@ -194,6 +196,10 @@ function App() {
 
             {/* Keep your old route working too if it's already linked */}
             <Route path="defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
+
+            {/* In-house Georgia 6-Hour Defensive Driving — enrollment + checkout */}
+            <Route path="courses/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPage /></Suspense></ErrorBoundary>} />
+            <Route path="courses/defensive-driving/success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingSuccessPage /></Suspense></ErrorBoundary>} />
 
             {/* Newsroom - Insurance News Feed */}
             <Route path="news" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense></ErrorBoundary>} />
