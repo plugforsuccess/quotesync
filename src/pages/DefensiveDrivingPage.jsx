@@ -2,7 +2,7 @@
 // In-house Georgia 6-Hour Defensive Driving — landing + enrollment + checkout.
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ShieldCheck, Clock, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Clock, FileText, Loader2, AlertCircle, RefreshCw } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getDefensiveDrivingCourse, getMyEnrollment, createCheckout, formatPrice } from '../lib/ddApi';
@@ -74,6 +74,7 @@ export default function DefensiveDrivingPage() {
               <li className="flex gap-3"><Clock className="w-5 h-5 text-success-400 shrink-0" /> 6 hours of instruction across 6 modules, at your own pace</li>
               <li className="flex gap-3"><ShieldCheck className="w-5 h-5 text-success-400 shrink-0" /> Pass the final exam at {course.pass_threshold_pct}% or higher</li>
               <li className="flex gap-3"><FileText className="w-5 h-5 text-success-400 shrink-0" /> Downloadable certificate, automatically forwarded to the agency</li>
+              <li className="flex gap-3"><RefreshCw className="w-5 h-5 text-success-400 shrink-0" /> Complete the course once every three years — your discount stays on your auto policy for the full three years</li>
             </ul>
 
             {/* Compliance copy — pulled from config, never hardcoded (§3) */}
@@ -153,7 +154,8 @@ function EnrollForm({ course, defaultName }) {
 
 // --- Passwordless magic-link auth for customers (role: 'insured') -----------
 function AuthPanel() {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
@@ -163,11 +165,17 @@ function AuthPanel() {
     e.preventDefault();
     setError(null); setBusy(true);
     try {
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
           // New users get the safe 'insured' role; existing users keep theirs.
-          data: { role: 'insured', full_name: fullName || undefined },
+          data: {
+            role: 'insured',
+            full_name: fullName || undefined,
+            first_name: firstName.trim() || undefined,
+            last_name: lastName.trim() || undefined,
+          },
           emailRedirectTo: `${window.location.origin}/courses/defensive-driving`,
         },
       });
@@ -198,7 +206,8 @@ function AuthPanel() {
     <form onSubmit={submit} className="space-y-3">
       <p className="text-sm text-gray-200">Sign in to start or continue</p>
       <p className="text-xs text-gray-400">New or returning, we’ll email you a secure sign-in link — no password needed.</p>
-      <Field label="Full name" value={fullName} onChange={setFullName} autoComplete="name" />
+      <Field label="Driver's first name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
+      <Field label="Driver's last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
       <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
       {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
       <button type="submit" disabled={busy}
