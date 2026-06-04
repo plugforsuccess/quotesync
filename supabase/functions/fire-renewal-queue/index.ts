@@ -208,6 +208,7 @@ Deno.serve(async (req) => {
   // - premium_sanity_flag = false
   // - claim_flag = 'none'
   // - fewer than 3 attempts
+  // - premium increase greater than 5% (no proactive call for flat/decreasing renewals)
   // - renewal date within the 21–45 day proactive pre-bill window.
   //   Allstate posts cases at 45 days out; the insured is billed at 21 days
   //   out. We call only in this window so the customer hears from us before the
@@ -235,6 +236,7 @@ Deno.serve(async (req) => {
     .eq('human_only', false)
     .eq('premium_sanity_flag', false)
     .eq('claim_flag', 'none')
+    .gt('premium_change_pct', 5)
     .lt('attempt_count', 3)
     .neq('last_contact_outcome', 'shopping')
     .neq('last_contact_outcome', 'escalated')
@@ -289,6 +291,13 @@ Deno.serve(async (req) => {
     const daysUntil = Math.ceil((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
     if (daysUntil < 21 || daysUntil > 45) {
       blocked.push({ policy_id: record.id, reason: 'outside_proactive_window' }); continue
+    }
+
+    // Gate: rate-increase threshold — only proactively call meaningful increases
+    // (>5%). Flat or decreasing renewals carry no rate-shock risk, so a courtesy
+    // call there is noise and risks reminding a happy customer to shop.
+    if (!(Number(record.premium_change_pct) > 5)) {
+      blocked.push({ policy_id: record.id, reason: 'below_rate_threshold' }); continue
     }
 
     // Gate: attempt spacing (48h between attempts)
