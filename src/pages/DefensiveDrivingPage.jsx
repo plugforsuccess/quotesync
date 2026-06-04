@@ -196,8 +196,8 @@ function AuthPanel() {
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <p className="text-sm text-gray-200">Sign in to enroll</p>
-      <p className="text-xs text-gray-400">We’ll email you a secure link — no password needed.</p>
+      <p className="text-sm text-gray-200">Sign in to start or continue</p>
+      <p className="text-xs text-gray-400">New or returning, we’ll email you a secure sign-in link — no password needed.</p>
       <Field label="Full name" value={fullName} onChange={setFullName} autoComplete="name" />
       <Field label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" />
       {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
