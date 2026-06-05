@@ -3,9 +3,9 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Defensive Driving Certificate — Preview v2 (ornate)</title>
+<title>Defensive Driving Certificate — Preview v3</title>
 <style>
-  :root{ --ink:#15321f; --green:#1a8c5c; --green-d:#0f5e3c; --gray:#5b6b60; }
+  :root{ --ink:#15321f; --green:#1a8c5c; --green-d:#0f5e3c; --gray:#5b6b60; --outline:#0c241a; }
   *{ box-sizing:border-box; }
   body{ margin:0; padding:28px; background:#eef1ee;
     font-family: Georgia, 'Times New Roman', serif; color:var(--ink);
@@ -13,53 +13,54 @@
   .note{ max-width:1040px; margin:0 auto 16px; color:#475569; font-size:13px; font-family:Arial, sans-serif; }
 
   .cert{ width:1040px; max-width:100%; aspect-ratio:11/8.5; margin:0 auto; position:relative;
-    background:#ffffff; box-shadow:0 12px 44px rgba(0,0,0,.18); }
+    background:#fff; box-shadow:0 12px 44px rgba(0,0,0,.18); }
 
-  /* Ornate green frame: a patterned band created by an inset white panel
-     over a tiled SVG filigree background. */
+  /* Dark outer outline, with the ornate green pattern band held INSIDE it. */
   .frame{ position:absolute; inset:0;
+    border:4px solid var(--outline);                 /* outer dark outline */
     background-color:#f3faf6;
+    background-clip:padding-box;                      /* keep pattern inside the outline */
     background-image:
       url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'><g fill='none' stroke='%231a8c5c' stroke-width='1'><path d='M15 2 L28 15 L15 28 L2 15 Z'/><path d='M15 8 L22 15 L15 22 L8 15 Z'/><circle cx='15' cy='15' r='1.6' fill='%231a8c5c' stroke='none'/></g></svg>");
     background-repeat:repeat;
   }
-  .frame::before{ content:""; position:absolute; inset:6px; border:2px solid var(--green-d); }
-  .panel{ position:absolute; inset:46px; background:#fff; border:1px solid #cfe3d8;
-    box-shadow:0 0 0 6px #fff; }
+  /* Thin dark inner line that bounds the pattern band. */
+  .frame::before{ content:""; position:absolute; inset:30px; border:2px solid var(--outline); }
+  /* White content panel just inside the inner line. */
+  .panel{ position:absolute; inset:32px; background:#fff; }
 
-  .content{ position:absolute; inset:46px; display:flex; flex-direction:column;
-    align-items:center; text-align:center; padding:6% 9% 0; }
-  .title{ font-size:3.2em; letter-spacing:2px; color:#0e1b13; margin-top:2%; }
-  .rule{ width:200px; height:2px; background:var(--green); margin:1.4% 0 0; opacity:.7; }
-  .lead{ font-size:1.4em; color:var(--gray); margin-top:4.6%; }
+  .content{ position:absolute; inset:32px; display:flex; flex-direction:column;
+    align-items:center; text-align:center; padding:6.5% 10% 0; }
+  .title{ font-size:3.1em; letter-spacing:2px; color:#0e1b13; }
+  .rule{ width:200px; height:2px; background:var(--green); margin:1.6% 0 0; opacity:.7; }
+  .lead{ font-size:1.4em; color:var(--gray); margin-top:4.4%; }
   .name{ font-size:2.7em; font-weight:bold; color:#0e1b13; margin-top:2.2%; letter-spacing:.5px; }
-  .lead2{ font-size:1.4em; color:var(--gray); margin-top:3.2%; }
+  .lead2{ font-size:1.4em; color:var(--gray); margin-top:3%; }
   .course{ font-size:1.95em; font-weight:bold; color:#0e1b13; margin-top:1.8%; }
 
-  .footer{ position:absolute; left:9%; right:9%; bottom:11%;
+  .footer{ position:absolute; left:10%; right:10%; bottom:14%;
     display:flex; align-items:flex-end; justify-content:space-between; }
   .date{ font-size:1.1em; color:#0e1b13; }
   .date small{ color:var(--gray); }
-  .agency{ font-size:.85em; color:var(--gray); margin-top:6px; max-width:360px; }
+  .agency{ font-size:.85em; color:var(--gray); margin-top:6px; }
+  .certid{ font-family:Arial, sans-serif; font-size:.72em; color:var(--gray); margin-top:4px; }
 
-  /* Seal */
-  .seal{ width:118px; height:118px; border-radius:50%;
-    border:3px solid var(--green); display:flex; align-items:center; justify-content:center;
-    position:relative; background:radial-gradient(circle at 50% 40%, #ffffff, #eafaf2); }
-  .seal::after{ content:""; position:absolute; inset:8px; border-radius:50%; border:1px solid var(--green); opacity:.5; }
-  .seal .badge{ width:54px; height:54px; border-radius:14px;
-    background:linear-gradient(135deg,#34d399,#0d9488); display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(13,148,136,.35); }
-  .seal .badge svg{ width:30px; height:30px; }
-  .sealcap{ text-align:center; }
-  .sealcap .t{ font-family:Arial, sans-serif; font-weight:800; font-size:.72em; letter-spacing:1px; color:var(--green-d); margin-top:8px; }
-  .compliance{ position:absolute; left:9%; right:9%; bottom:5.4%; text-align:center;
+  .compliance{ position:absolute; left:11%; right:11%; bottom:7%; text-align:center;
     font-family:Arial, sans-serif; font-size:.78em; color:var(--gray); line-height:1.45; }
-  .certid{ position:absolute; left:9%; bottom:3%; font-family:Arial, sans-serif; font-size:.74em; color:var(--gray); }
+
+  /* insuredbycam digital brand lockup */
+  .brandmark{ display:flex; align-items:center; gap:11px; }
+  .badge{ width:58px; height:58px; border-radius:15px;
+    background:linear-gradient(135deg,#34d399,#0d9488); display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 12px rgba(13,148,136,.35); }
+  .badge svg{ width:32px; height:32px; }
+  .word{ font-family:Arial, Helvetica, sans-serif; font-weight:800; font-size:1.5em; color:#0e1b13; letter-spacing:-.3px; }
+
   @media print{ body{ background:#fff; padding:0;} .note{ display:none;} .cert{ box-shadow:none;} }
 </style>
 </head>
 <body>
-  <p class="note">Preview v2 — ornate frame + Insured by Cam seal, matching the NHSA-style template. Sample data. (The live certificate is a PDF; this shows the intended look.)</p>
+  <p class="note">Preview v3 — ornate green band now held inside a dark outer outline (and a dark inner keyline). Sample data.</p>
 
   <div class="cert">
     <div class="frame"></div>
@@ -78,21 +79,19 @@
       <div>
         <div class="date"><small>Completion Date:</small> &nbsp;12/30/2025</div>
         <div class="agency">Insured by Cam — Wiley-Wilson Agency</div>
+        <div class="certid">Certificate ID: GA-DD-2025-7F3A9C21 &nbsp;·&nbsp; DL: GA-123456789</div>
       </div>
-      <div class="sealcap">
-        <div class="seal">
-          <div class="badge">
-            <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-          </div>
+      <div class="brandmark">
+        <div class="badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
         </div>
-        <div class="t">INSURED BY CAM</div>
+        <div class="word">insuredbycam</div>
       </div>
     </div>
 
     <div class="compliance">
       Certificate of Completion — Defensive Driving. Insurance premium discounts are determined by your insurer; this course is not represented as DDS-certified.
     </div>
-    <div class="certid">Certificate ID: GA-DD-2025-7F3A9C21 &nbsp;·&nbsp; DL: GA-123456789</div>
   </div>
 </body>
 </html>
