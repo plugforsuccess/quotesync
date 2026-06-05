@@ -525,6 +525,112 @@ export const ddModuleContent = {
       'After a crash in Georgia: stop, aid, report/exchange, document, and notify your insurer.',
     ],
   },
+
+  // ===================================================================== M7
+  'm7-georgia-laws': {
+    summary:
+      'This module pulls Georgia’s key driving laws into one place for review. You met each of these in context earlier; here they are together so you can see how the points system, phone law, DUI rules, speed law, road-sharing duties, and crash obligations fit as one body of law.',
+    sections: [
+      {
+        heading: 'Points & your driving record',
+        blocks: [
+          { type: 'p', text: 'The Georgia Department of Driver Services (DDS) adds points to your record when you are convicted of a moving violation. The points are a running total over time, and too many in a short window costs you your license.' },
+          { type: 'callout', variant: 'law', title: 'The 15-point rule', text: 'Accumulating 15 points within any 24-month period results in a license suspension. A certified defensive driving course can remove up to 7 points — but only once every 5 years. Drivers under 18 and 21 face stricter thresholds.' },
+        ],
+        quiz: [
+          { q: 'How many points within 24 months suspend a Georgia license?', choices: [
+            { t: '10', correct: false }, { t: '15', correct: true }, { t: '20', correct: false },
+          ], explain: '15 points within any 24-month period triggers suspension; a course can remove up to 7 points once every 5 years.' },
+        ],
+      },
+      {
+        heading: 'The Hands-Free Act',
+        blocks: [
+          { type: 'callout', variant: 'law', title: 'Phones while driving', text: 'You may not hold or support a phone with any part of your body while driving. No writing, sending, or reading texts/emails; no watching or recording video. Voice or a single touch, hands-free only — with stricter rules in work and school zones.' },
+          { type: 'p', text: 'The law applies whenever you are operating in traffic, including while stopped at a red light. If you must handle your phone, pull over and park first.' },
+        ],
+        quiz: [
+          { q: 'Holding your phone to text while stopped at a red light is:', choices: [
+            { t: 'Legal because the car is stopped.', correct: false },
+            { t: 'Illegal — you are still operating in traffic.', correct: true },
+            { t: 'Legal if you finish before the light turns green.', correct: false },
+          ], explain: 'The Hands-Free Act applies in traffic, including at red lights. Holding the phone to text is prohibited.' },
+        ],
+      },
+      {
+        heading: 'DUI & implied consent',
+        blocks: [
+          { type: 'callout', variant: 'law', title: 'Per se BAC limits', items: [
+            '0.08% — drivers age 21 and older',
+            '0.04% — commercial drivers',
+            '0.02% — drivers under 21',
+          ] },
+          { type: 'p', text: 'By driving in Georgia you give implied consent to chemical testing if lawfully arrested for DUI; refusing the test carries its own automatic license suspension. Georgia’s DUI law also covers being "less safe" due to drugs or any combination of substances — legal or not.' },
+        ],
+        quiz: [
+          { q: 'Georgia’s per se BAC limit for a driver under 21 is:', choices: [
+            { t: '0.08%', correct: false }, { t: '0.04%', correct: false }, { t: '0.02%', correct: true },
+          ], explain: 'Under-21 drivers are held to a near-zero-tolerance 0.02%. It is 0.08% for 21+ and 0.04% for commercial drivers.' },
+        ],
+      },
+      {
+        heading: 'Speed law & Super Speeder',
+        blocks: [
+          { type: 'callout', variant: 'law', title: 'Reasonable speed + Super Speeder', text: 'Never drive faster than is reasonable and prudent for conditions, regardless of the posted limit. The Super Speeder law adds a $200 state fee — on top of local fines — for driving 75+ mph on a two-lane road or 85+ mph anywhere in Georgia. Failing to pay it leads to suspension and a reinstatement fee.' },
+        ],
+        quiz: [
+          { q: 'Georgia’s Super Speeder fee applies to driving:', choices: [
+            { t: 'Any speed over the posted limit.', correct: false },
+            { t: '85+ mph anywhere, or 75+ mph on a two-lane road.', correct: true },
+            { t: 'Only in marked school zones.', correct: false },
+          ], explain: 'The Super Speeder law adds a $200 state fee for 85+ mph anywhere, or 75+ mph on a two-lane road — on top of local fines.' },
+        ],
+      },
+      {
+        heading: 'Sharing the road: Move Over, buses & restraints',
+        blocks: [
+          { type: 'callout', variant: 'law', title: 'Move Over law', text: 'When passing a stationary emergency, law-enforcement, utility, or recovery vehicle displaying flashing lights, move over one lane if you safely can. If you cannot, slow below the speed limit and be prepared to stop.' },
+          { type: 'ul', items: [
+            'School bus with red flashing lights and stop arm out: stop and stay stopped until it withdraws.',
+            'Emergency vehicles in motion with lights/siren: yield and pull to the right.',
+            'Seat belts are required; children must be restrained for age and size, and are safest in the back seat under 13.',
+          ] },
+        ],
+        quiz: [
+          { q: 'Georgia’s Move Over law requires you to:', choices: [
+            { t: 'Speed up past stopped responders.', correct: false },
+            { t: 'Move over one lane (or slow down if you can’t) for stationary responders with flashing lights.', correct: true },
+            { t: 'Come to a complete stop in your lane.', correct: false },
+          ], explain: 'Move over one lane away from stationary responders with flashing lights; if you can’t move over safely, slow below the limit and be ready to stop.' },
+        ],
+      },
+      {
+        heading: 'After a crash: your legal duties',
+        blocks: [
+          { type: 'p', text: 'Georgia law imposes specific duties after a crash. Leaving the scene of a crash involving injury is a serious crime.' },
+          { type: 'ol', items: [
+            'Stop and secure the scene; turn on hazards.',
+            'Render aid and call 911 for any injury.',
+            'Report crashes involving injury, death, or property damage at or above the statutory threshold, and exchange information.',
+            'Document the scene and notify your insurer promptly.',
+          ] },
+        ],
+        quiz: [
+          { q: 'Leaving the scene of a crash involving injury in Georgia is:', choices: [
+            { t: 'Allowed if you exchange info later.', correct: false },
+            { t: 'A serious crime — you must stop, aid, and report.', correct: true },
+            { t: 'Only a problem if the damage is severe.', correct: false },
+          ], explain: 'Leaving the scene of an injury crash is a serious offense. You must stop, secure the scene, render aid, report, and exchange information.' },
+        ],
+      },
+    ],
+    takeaways: [
+      'Points: 15 in 24 months suspends your license; a course removes up to 7 once every 5 years.',
+      'Hands-Free Act: no holding a phone while driving — including at a red light.',
+      'DUI per se limits: 0.08% (21+), 0.04% (commercial), 0.02% (under 21); refusal = suspension.',
+      'Super Speeder: $200 fee for 75+ (two-lane) or 85+ mph; Move Over for stationary responders; stop for school buses; leaving an injury crash is a crime.',
+    ],
+  },
 };
 
 export function getModuleContent(contentRef) {

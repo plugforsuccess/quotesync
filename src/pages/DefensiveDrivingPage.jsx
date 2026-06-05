@@ -127,7 +127,7 @@ export default function DefensiveDrivingPage() {
           <SectionHeading eyebrow="How it works" title="From sign-in to certificate in four steps" />
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Step n={1} icon={Mail} title="Sign in" body="No password — we email you a secure sign-in link." />
-            <Step n={2} icon={GraduationCap} title="Complete the modules" body="Six short modules with quick section checks." />
+            <Step n={2} icon={GraduationCap} title="Complete the modules" body="Seven short modules with quick section checks." />
             <Step n={3} icon={BadgeCheck} title="Pass the final exam" body={`${course.exam_question_count} questions · ${course.pass_threshold_pct}% to pass.`} />
             <Step n={4} icon={FileText} title="Get your certificate" body="Download it instantly — and it’s forwarded to the agency." />
           </div>
@@ -156,7 +156,7 @@ export default function DefensiveDrivingPage() {
             </div>
             <ul className="space-y-2.5 text-left max-w-sm mx-auto mb-7">
               {[
-                'All 6 modules and the final exam',
+                'All 7 modules and the final exam',
                 'Instant, downloadable certificate of completion',
                 'Certificate automatically forwarded to the agency',
                 'Valid for three years',
@@ -194,11 +194,12 @@ export default function DefensiveDrivingPage() {
 
 const FALLBACK_MODULES = [
   { ordinal: 1, title: 'Foundations of Defensive Driving', content_ref: 'm1-foundations' },
-  { ordinal: 2, title: 'Human Factors: Vision, Distraction & Fatigue', content_ref: 'm2-human-factors' },
-  { ordinal: 3, title: 'Impairment: Alcohol, Drugs & Medications', content_ref: 'm3-impairment' },
-  { ordinal: 4, title: 'Space & Speed Management', content_ref: 'm4-space-speed' },
-  { ordinal: 5, title: 'Sharing the Road', content_ref: 'm5-sharing-road' },
-  { ordinal: 6, title: 'Adverse Conditions & Emergencies', content_ref: 'm6-emergencies' },
+  { ordinal: 2, title: 'The Driver — Human Factors', content_ref: 'm2-human-factors' },
+  { ordinal: 3, title: 'Impairment — Alcohol & Drugs', content_ref: 'm3-impairment' },
+  { ordinal: 4, title: 'Space, Speed & Vehicle Control', content_ref: 'm4-space-speed' },
+  { ordinal: 5, title: 'Sharing the Road & Georgia Traffic Law', content_ref: 'm5-sharing-road' },
+  { ordinal: 6, title: 'Conditions, Emergencies & Crash Response', content_ref: 'm6-emergencies' },
+  { ordinal: 7, title: 'Georgia Traffic Laws', content_ref: 'm7-georgia-laws' },
 ];
 
 // Expandable curriculum card — reveals the module's description on tap.
