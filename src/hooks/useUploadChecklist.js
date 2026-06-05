@@ -377,11 +377,13 @@ export function useUploadChecklist(agencyId) {
         uploadOrder: 6,
       });
 
-      // 10. Policy Audit — monthly per-policy census. Same ~1-month lag.
-      const paInWindow = dayOfMonth >= 15 && dayOfMonth <= 25;
+      // 10. Policy Audit — monthly per-policy census. Posts EARLIER than P&P:
+      // the prior month's audit is available in the first days of the month
+      // (e.g. May's audit is ready by ~June 5), so the window is 5th–15th.
+      const paInWindow = dayOfMonth >= 5 && dayOfMonth <= 15;
       const paUploaded = !!policyAudit.data?.length;
       const paDue = paInWindow && !paUploaded;
-      const paOverdue = dayOfMonth > 25 && !paUploaded;
+      const paOverdue = dayOfMonth > 15 && !paUploaded;
       items.push({
         key: 'policy_audit',
         category: 'book_of_business',
@@ -389,10 +391,10 @@ export function useUploadChecklist(agencyId) {
         description: paUploaded
           ? 'Uploaded this month'
           : paDue
-          ? 'Due 15th–25th — this month’s report has posted'
+          ? 'Due 5th–15th — last month’s audit has posted'
           : paOverdue
           ? 'Overdue — not uploaded this month'
-          : 'Not yet due (Allstate posts ~mid-month)',
+          : 'Not yet due (posts early month)',
         status: paUploaded ? 'current' : paOverdue ? 'overdue' : paDue ? 'due' : 'upcoming',
         detail: null,
         link: '/agency/retention?tab=book',
