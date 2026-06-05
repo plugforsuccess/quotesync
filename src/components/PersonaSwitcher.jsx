@@ -3,18 +3,17 @@
 // a dual-role (sales + service) employee. Selection persists in localStorage
 // and changes the default landing page; it does NOT change permissions.
 
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { usePersona, PERSONA_HOME } from '../hooks/usePersona';
+import { usePersona, personaLanding } from '../hooks/usePersona';
 
 export default function PersonaSwitcher({ compact = false, fullWidth = false }) {
   const { user, currentAgencyRole, currentAgencyId } = useAuth();
   const isPrincipal = currentAgencyRole === 'principal';
   const [persona, setPersona] = usePersona(isPrincipal ? 'principal' : 'service');
   const navigate = useNavigate();
-  const location = useLocation();
 
   // Fetch the user's own employee record to determine which rep hats they're
   // opted into. Runs for any agency user (a principal checking their rep roles,
@@ -54,12 +53,8 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
   function handleSelect(next) {
     if (next === persona) return;
     setPersona(next);
-    // The scorecard renders both the sales and service views, so toggling
-    // between those two hats there swaps the view in place. Switching to
-    // Principal (which has no scorecard view) always navigates to its home.
-    if (next !== 'principal' && location.pathname.startsWith('/my/scorecard')) return;
-    const home = PERSONA_HOME[next];
-    if (home) navigate(home);
+    // Return to where this hat was last left off (its home the first time).
+    navigate(personaLanding(next));
   }
 
   return (

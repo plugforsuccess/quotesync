@@ -51,7 +51,7 @@ const LoginPage = () => {
           || empRoles.includes('service_outbound')
           || empRoles.includes('service');
         const salesOnly = empRoles.includes('sales') && !isServiceEmp;
-        navigate(salesOnly ? '/my/scorecard' : '/my/queue', { replace: true });
+        navigate(salesOnly ? '/my/scorecard' : '/my/today', { replace: true });
       } else {
         const agencyRoleVal = currentAgencyId ? currentAgencyRole : null;
         navigate(getDefaultLanding(platformRole, agencyRoleVal), { replace: true });

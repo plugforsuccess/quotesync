@@ -20,6 +20,21 @@ export const PERSONA_HOME = {
   sales:     '/my/scorecard',
 };
 
+// Per-hat "last visited path" memory (in-session). Lets the persona switcher
+// return you to where you left off in a hat instead of always its home, so a
+// dual-role user toggling back and forth resumes each hat where they left it.
+const personaLastPath = {};
+
+export function recordPersonaPath(persona, pathname) {
+  if (PERSONAS.includes(persona) && pathname) personaLastPath[persona] = pathname;
+}
+
+// Where toggling INTO `persona` should land: the last page seen in that hat,
+// or the hat's home the first time it's worn.
+export function personaLanding(persona) {
+  return personaLastPath[persona] || PERSONA_HOME[persona];
+}
+
 function readStored() {
   try {
     const v = localStorage.getItem(STORAGE_KEY);
@@ -80,6 +95,13 @@ export function useAutoSyncPersona(enabled, defaultPersona = 'principal') {
       setPersona(next);
     }
   }, [location.pathname, enabled, persona, setPersona]);
+
+  // Remember where we are in each hat so the switcher can return here. A page
+  // owned by a specific hat (personaForPath) is filed under that hat; a shared
+  // page (scorecard / punch) is filed under the hat currently worn.
+  useEffect(() => {
+    recordPersonaPath(personaForPath(location.pathname) || persona, location.pathname);
+  }, [location.pathname, persona]);
 
   return [persona, setPersona];
 }
