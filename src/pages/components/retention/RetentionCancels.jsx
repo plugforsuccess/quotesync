@@ -7,6 +7,8 @@ import { supabase } from "../../../lib/supabase";
 import { calcRenewalPriority, calcCancelPriority, computePriorityTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
 import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
+import InterventionPicker from '../../../components/InterventionPicker';
+import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -225,7 +227,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
-  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
   const [form, setForm] = useState({
     status:              event.status,
     assigned_to_id:      event.assigned_to_id || "",
@@ -267,6 +269,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       method:          attemptForm.method,
       result:          attemptForm.result,
       note:            attemptForm.note || null,
+      ...interventionInsertFields(attemptForm.intervention),
     });
     if (!error) {
       await supabase.from("pending_cases").update({
@@ -291,7 +294,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
-      setAttemptForm({ method: "phone", result: "no_answer", note: "" });
+      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
@@ -594,6 +597,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               style={{ marginBottom: 10 }}
             />
 
+            {attemptForm.result === 'reached' && (
+              <InterventionPicker
+                value={attemptForm.intervention}
+                onChange={(iv) => setAttemptForm(p => ({ ...p, intervention: iv }))}
+              />
+            )}
+
             <button
               onClick={logAttempt}
               disabled={loggingAttempt || !currentEmployeeId}
@@ -880,7 +890,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
-  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
   const [form, setForm] = useState({
     status: event.status,
     assigned_to_id: event.assigned_to_id || "",
@@ -913,12 +923,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     }
     setLoggingAttempt(true);
     const { error } = await supabase.from("renewal_attempts").insert({
-      renewal_event_id: event.id,
+      renewal_case_id: event.id,
       agency_id: agencyId,
       employee_id: currentEmployeeId,
       method: attemptForm.method,
       result: attemptForm.result,
       note: attemptForm.note || null,
+      ...interventionInsertFields(attemptForm.intervention),
     });
     if (!error) {
       const newCount = (event.attempt_count || 0) + 1;
@@ -949,10 +960,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const { data } = await supabase
         .from("renewal_attempts")
         .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-        .eq("renewal_event_id", event.id)
+        .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
-      setAttemptForm({ method: "phone", result: "no_answer", note: "" });
+      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
@@ -1247,6 +1258,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
               style={{ marginBottom: 10 }}
             />
+
+            {attemptForm.result === 'reached' && (
+              <InterventionPicker
+                value={attemptForm.intervention}
+                onChange={(iv) => setAttemptForm(p => ({ ...p, intervention: iv }))}
+              />
+            )}
 
             <button
               onClick={logAttempt}
