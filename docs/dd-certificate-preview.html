@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Defensive Driving Certificate — Preview</title>
+<style>
+  :root{
+    --ink:#171c26; --green:#1a8c5c; --gray:#666f80; --inner:#d9e0db;
+  }
+  * { box-sizing: border-box; }
+  body{
+    margin:0; padding:28px; background:#e9edf1;
+    font-family: Helvetica, Arial, sans-serif; color:var(--ink);
+    -webkit-print-color-adjust: exact; print-color-adjust: exact;
+  }
+  .note{ max-width:1040px; margin:0 auto 16px; color:#475569; font-size:13px; }
+  /* US Letter landscape ratio (11 x 8.5) */
+  .cert{
+    width:1040px; max-width:100%; aspect-ratio: 11 / 8.5;
+    margin:0 auto; background:#fff; position:relative;
+    box-shadow:0 10px 40px rgba(0,0,0,.18);
+  }
+  .border-outer{ position:absolute; inset:3.1%; border:3px solid var(--green); }
+  .border-inner{ position:absolute; inset:4.4%; border:1px solid var(--inner); }
+  .content{ position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; text-align:center; }
+  .agency{ color:var(--green); font-weight:800; font-size:1.7em; margin-top:11%; letter-spacing:.2px; }
+  .title{ font-weight:800; font-size:3.1em; letter-spacing:1px; margin-top:3.2%; }
+  .subtitle{ color:var(--gray); font-size:1.45em; margin-top:1.2%; }
+  .lead{ color:var(--gray); font-size:1.35em; margin-top:5.5%; }
+  .name{ font-weight:800; font-size:2.9em; margin-top:2.4%; }
+  .lead2{ color:var(--gray); font-size:1.35em; margin-top:3.2%; }
+  .course{ font-weight:800; font-size:1.9em; margin-top:2.2%; }
+  .hours{ color:var(--gray); font-size:1.25em; margin-top:1.4%; }
+  .detail{ font-size:1.25em; margin-top:4.2%; }
+  .compliance{ position:absolute; left:8%; right:8%; bottom:12%;
+    color:var(--gray); font-size:.95em; line-height:1.5; text-align:center; }
+  .meta{ position:absolute; bottom:6.4%; left:6%; right:6%;
+    display:flex; justify-content:space-between; color:var(--gray); font-size:.95em; }
+  @media print{ body{ background:#fff; padding:0; } .note{ display:none; } .cert{ box-shadow:none; } }
+</style>
+</head>
+<body>
+  <p class="note">Preview only — the live certificate is generated as a PDF (US&nbsp;Letter, landscape). Sample data shown. Use your browser’s Print&nbsp;→&nbsp;Save&nbsp;as&nbsp;PDF to see it on a page.</p>
+
+  <div class="cert">
+    <div class="border-outer"></div>
+    <div class="border-inner"></div>
+    <div class="content">
+      <div class="agency">Insured by Cam — Wiley-Wilson Agency</div>
+      <div class="title">CERTIFICATE OF COMPLETION</div>
+      <div class="subtitle">Defensive Driving</div>
+
+      <div class="lead">This certifies that</div>
+      <div class="name">Jordan A. Driver</div>
+      <div class="lead2">has successfully completed</div>
+      <div class="course">Georgia 6-Hour Defensive Driving</div>
+      <div class="hours">6.0 hours of instruction</div>
+
+      <div class="detail">Completion date: June 5, 2026&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Final score: 96%</div>
+    </div>
+
+    <div class="compliance">
+      Certificate of Completion — Defensive Driving. Insurance premium discounts are determined
+      by your insurer; this course is not represented as DDS-certified.
+    </div>
+
+    <div class="meta">
+      <span>Certificate ID: GA-DD-2026-7F3A9C21</span>
+      <span>DL: GA-123456789</span>
+    </div>
+  </div>
+</body>
+</html>
