@@ -98,7 +98,17 @@ function UploadZone({ agencyId, currentUserId, reportType }) {
 
       await supabase.from('book_metric_uploads').update({ committed: true }).eq('id', upload.id);
       queryClient.invalidateQueries({ queryKey: ['book_snapshots', agencyId] });
-      setMsg(`${records.length} rows imported for ${fmtMonth(productionMonth)}.`);
+
+      // Policy Audit is the observed in-force census — reconcile renewal
+      // outcomes against it, replacing the inferred easy_pay guesses.
+      let reconciledMsg = '';
+      if (reportType === 'policy_audit') {
+        const { data: n, error: rErr } = await supabase.rpc('reconcile_renewal_outcomes', { p_agency_id: agencyId });
+        if (!rErr && n > 0) reconciledMsg = ` · ${n} renewal outcome${n === 1 ? '' : 's'} reconciled from observed data`;
+        queryClient.invalidateQueries({ queryKey: ['elasticity_renewals', agencyId] });
+        queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
+      }
+      setMsg(`${records.length} rows imported for ${fmtMonth(productionMonth)}.${reconciledMsg}`);
     } catch (e) {
       console.error('[book metric upload]', e.message);
       setErr(e.message || 'Upload failed.');
