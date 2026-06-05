@@ -28,7 +28,8 @@ const RESULTS = [
 
 function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
   const due = lead.next_followup_at && new Date(lead.next_followup_at).getTime() <= Date.now();
-  const enrichment = lead.lead_quotes?.[0]?.enrichment_status;
+  const enrichment = lead.enrichment_status;
+  const name = [lead.first_name, lead.last_name].filter(Boolean).join(' ').trim();
   return (
     <div style={{
       background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
@@ -38,11 +39,16 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright, #fff)' }}>
-            {(lead.product_intent || 'New business').toString()}
+            {name || (lead.product_intent ? `${lead.product_intent} lead` : 'New lead')}
             <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--qs-dim)', marginLeft: 8 }}>
-              {[lead.state, lead.zip].filter(Boolean).join(' · ')}
+              {[lead.product_intent, lead.state, lead.zip].filter(Boolean).join(' · ')}
             </span>
           </div>
+          {lead.phone && (
+            <a href={`tel:${lead.phone}`} style={{ fontSize: 12, color: 'var(--qs-info, #3B82F6)', textDecoration: 'none' }}>
+              📞 {lead.phone}
+            </a>
+          )}
           <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             <span style={{ textTransform: 'capitalize' }}>{(lead.status || 'new').replace('_', ' ')}</span>
             {lead.attempt_count > 0 && <span>· {lead.attempt_count} attempt{lead.attempt_count !== 1 ? 's' : ''}{lead.last_attempt_result ? ` (${lead.last_attempt_result.replace('_', ' ')})` : ''}</span>}

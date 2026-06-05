@@ -2,20 +2,17 @@
 -- Producer New-Business Queue
 -- ============================================================================
 -- Gives sales producers the same daily-queue accountability the retention team
--- already has — so the one role that can currently run its whole day without
--- QuoteSync (new-business producers) gets a "work these next" list too.
+-- already has — closing the gap where producers could run their whole day
+-- without QuoteSync. Mirrors the retention pattern on the leads side.
 --
--- Mirrors the battle-tested retention pattern (attempt tracking + callback +
--- snooze) on the leads table, plus a lead_attempts log paralleling
--- pending_cancel_attempts / renewal_attempts.
---
--- Assignment reuses the EXISTING leads.assigned_to_user_id (auth.users) set by
--- lead routing — no new assignment plumbing required; the queue scopes to the
--- signed-in producer.
+-- The live leads table has no per-producer assignment column, so we add one
+-- (assigned_to_id → employees). For a single-agent captive the queue shows the
+-- agency's open leads (assigned-to-me OR unassigned); the column makes
+-- multi-producer assignment possible later.
 -- ============================================================================
 
--- ─── Follow-up / activity tracking on leads ──────────────────────────────────
 ALTER TABLE public.leads
+  ADD COLUMN IF NOT EXISTS assigned_to_id      UUID REFERENCES public.employees(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS attempt_count       INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS last_attempt_at     TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS last_attempt_result TEXT,
@@ -24,9 +21,11 @@ ALTER TABLE public.leads
   ADD COLUMN IF NOT EXISTS snoozed_until       TIMESTAMPTZ,
   ADD COLUMN IF NOT EXISTS snooze_reason       TEXT;
 
--- Queue lookup: the producer's open, non-snoozed leads, soonest follow-up first.
+-- Queue lookup: the agency's open, non-snoozed leads, soonest follow-up first.
 CREATE INDEX IF NOT EXISTS leads_producer_queue_idx
-  ON public.leads (assigned_to_user_id, status, next_followup_at);
+  ON public.leads (agency_id, status, next_followup_at);
+CREATE INDEX IF NOT EXISTS leads_assigned_to_idx
+  ON public.leads (assigned_to_id);
 
 -- ─── lead_attempts (per-touch log, mirrors pending_cancel_attempts) ───────────
 CREATE TABLE IF NOT EXISTS public.lead_attempts (

@@ -31,27 +31,30 @@ function sortQueue(leads) {
 
 export function useProducerQueue() {
   const { data: employee } = useCurrentEmployee();
-  const authUserId = employee?.auth_user_id;
+  const employeeId = employee?.id;
   const agencyId = employee?.org_id;
 
   const query = useQuery({
-    queryKey: ['producer_queue', authUserId],
-    enabled: !!authUserId,
+    queryKey: ['producer_queue', employeeId],
+    enabled: !!employeeId && !!agencyId,
     staleTime: 60 * 1000,
     queryFn: async () => {
       const nowIso = new Date().toISOString();
+      // Single-agent captive: show the agency's open leads assigned to me OR
+      // still unassigned (the pool). RLS already scopes to the agency.
       const { data, error } = await supabase
         .from('leads')
         .select(`
-          id, status, product_intent, state, zip, lead_score, score_factors,
+          id, status, first_name, last_name, phone, email,
+          product_intent, state, zip, lead_score, score_factors, enrichment_status,
           risk_flag, current_auto_carrier, current_home_carrier,
           attempt_count, last_attempt_at, last_attempt_result,
-          next_followup_at, callback_note, created_at,
-          lead_quotes ( quote_summary, enrichment_status )
+          next_followup_at, callback_note, created_at
         `)
-        .eq('assigned_to_user_id', authUserId)
+        .eq('agency_id', agencyId)
         .not('status', 'in', `(${OPEN_EXCLUDED.join(',')})`)
         .or(`snoozed_until.is.null,snoozed_until.lte.${nowIso}`)
+        .or(`assigned_to_id.eq.${employeeId},assigned_to_id.is.null`)
         .limit(500);
       if (error) throw error;
       return sortQueue(data || []);
@@ -102,7 +105,7 @@ export function useLogLeadTouch() {
       const { error } = await supabase.from('leads').update(updates).eq('id', lead.id);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer_queue', employee?.auth_user_id] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer_queue', employee?.id] }),
   });
 }
 
@@ -117,7 +120,7 @@ export function useScheduleLeadFollowup() {
         .eq('id', leadId);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer_queue', employee?.auth_user_id] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer_queue', employee?.id] }),
   });
 }
 
@@ -134,6 +137,6 @@ export function useSnoozeLead() {
         .eq('id', leadId);
       if (error) throw error;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer_queue', employee?.auth_user_id] }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['producer_queue', employee?.id] }),
   });
 }
