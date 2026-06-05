@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getDefensiveDrivingCourse, getMyEnrollment, getModules, createCheckout, formatPrice } from '../lib/ddApi';
+import { getModuleContent } from '../data/ddCourseContent';
 
 export default function DefensiveDrivingPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -136,14 +137,12 @@ export default function DefensiveDrivingPage() {
       {/* ── What you'll learn ──────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 py-16">
         <SectionHeading eyebrow="The curriculum" title="What you’ll learn" />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
           {(modules.length ? modules : FALLBACK_MODULES).map((m, i) => (
-            <div key={m.id || i} className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-              <p className="text-xs font-semibold text-success-300 mb-1">Module {m.ordinal || i + 1}</p>
-              <p className="font-semibold text-gray-100">{m.title}</p>
-            </div>
+            <ModuleCard key={m.id || i} m={m} index={i} />
           ))}
         </div>
+        <p className="mt-4 text-xs text-gray-500">Tap a module to see what it covers.</p>
       </section>
 
       {/* ── Pricing ────────────────────────────────────────── */}
@@ -194,13 +193,32 @@ export default function DefensiveDrivingPage() {
 }
 
 const FALLBACK_MODULES = [
-  { ordinal: 1, title: 'Foundations of Defensive Driving' },
-  { ordinal: 2, title: 'Human Factors: Vision, Distraction & Fatigue' },
-  { ordinal: 3, title: 'Impairment: Alcohol, Drugs & Medications' },
-  { ordinal: 4, title: 'Space & Speed Management' },
-  { ordinal: 5, title: 'Sharing the Road' },
-  { ordinal: 6, title: 'Adverse Conditions & Emergencies' },
+  { ordinal: 1, title: 'Foundations of Defensive Driving', content_ref: 'm1-foundations' },
+  { ordinal: 2, title: 'Human Factors: Vision, Distraction & Fatigue', content_ref: 'm2-human-factors' },
+  { ordinal: 3, title: 'Impairment: Alcohol, Drugs & Medications', content_ref: 'm3-impairment' },
+  { ordinal: 4, title: 'Space & Speed Management', content_ref: 'm4-space-speed' },
+  { ordinal: 5, title: 'Sharing the Road', content_ref: 'm5-sharing-road' },
+  { ordinal: 6, title: 'Adverse Conditions & Emergencies', content_ref: 'm6-emergencies' },
 ];
+
+// Expandable curriculum card — reveals the module's description on tap.
+function ModuleCard({ m, index }) {
+  const [open, setOpen] = useState(false);
+  const desc = getModuleContent(m.content_ref)?.summary;
+  return (
+    <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
+      className="text-left w-full rounded-xl border border-gray-800 bg-gray-900/50 p-5 transition hover:border-gray-700">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold text-success-300 mb-1">Module {m.ordinal || index + 1}</p>
+          <p className="font-semibold text-gray-100">{m.title}</p>
+        </div>
+        {desc && <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 mt-1 transition-transform ${open ? 'rotate-180' : ''}`} />}
+      </div>
+      {open && desc && <p className="mt-3 text-sm text-gray-400 leading-relaxed">{desc}</p>}
+    </button>
+  );
+}
 
 const FAQ_ITEMS = [
   { q: 'Who is this course for?', a: 'Georgia drivers who want to earn an auto-insurance premium discount and brush up on safe-driving skills. Check with your insurer about discount eligibility.' },
