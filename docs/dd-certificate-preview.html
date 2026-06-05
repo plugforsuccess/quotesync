@@ -3,64 +3,58 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Defensive Driving Certificate — Preview v3</title>
+<title>Defensive Driving Certificate — Preview v4 (NHSA match)</title>
 <style>
-  :root{ --ink:#15321f; --green:#1a8c5c; --green-d:#0f5e3c; --gray:#5b6b60; --outline:#0c241a; }
+  :root{ --keyline:#2b4636; --green:#1f9e68; --gray:#555; }
   *{ box-sizing:border-box; }
   body{ margin:0; padding:28px; background:#eef1ee;
-    font-family: Georgia, 'Times New Roman', serif; color:var(--ink);
+    font-family: Georgia, 'Times New Roman', serif; color:#1a1a1a;
     -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   .note{ max-width:1040px; margin:0 auto 16px; color:#475569; font-size:13px; font-family:Arial, sans-serif; }
 
   .cert{ width:1040px; max-width:100%; aspect-ratio:11/8.5; margin:0 auto; position:relative;
     background:#fff; box-shadow:0 12px 44px rgba(0,0,0,.18); }
 
-  /* Dark outer outline, with the ornate green pattern band held INSIDE it. */
+  /* Ornate green band to the very edge (like NHSA), bounded by a thin dark keyline. */
   .frame{ position:absolute; inset:0;
-    border:4px solid var(--outline);                 /* outer dark outline */
-    background-color:#f3faf6;
-    background-clip:padding-box;                      /* keep pattern inside the outline */
+    background-color:#f4fbf7;
     background-image:
-      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'><g fill='none' stroke='%231a8c5c' stroke-width='1'><path d='M15 2 L28 15 L15 28 L2 15 Z'/><path d='M15 8 L22 15 L15 22 L8 15 Z'/><circle cx='15' cy='15' r='1.6' fill='%231a8c5c' stroke='none'/></g></svg>");
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='34' height='34' viewBox='0 0 34 34'><g fill='none' stroke='%231f9e68' stroke-width='1'><path d='M17 2 L32 17 L17 32 L2 17 Z'/><path d='M17 8 L26 17 L17 26 L8 17 Z'/><path d='M17 13 L21 17 L17 21 L13 17 Z'/><circle cx='17' cy='17' r='1.2' fill='%231f9e68' stroke='none'/><path d='M0 17 L4 17 M30 17 L34 17 M17 0 L17 4 M17 30 L17 34' stroke='%2349b985'/></g></svg>");
     background-repeat:repeat;
+    border:1px solid #3f9d6f;                     /* crisp outer edge */
   }
-  /* Thin dark inner line that bounds the pattern band. */
-  .frame::before{ content:""; position:absolute; inset:30px; border:2px solid var(--outline); }
-  /* White content panel just inside the inner line. */
-  .panel{ position:absolute; inset:32px; background:#fff; }
+  .frame::before{ content:""; position:absolute; inset:28px; border:1.5px solid var(--keyline); }
+  .panel{ position:absolute; inset:30px; background:#fff; }
 
-  .content{ position:absolute; inset:32px; display:flex; flex-direction:column;
-    align-items:center; text-align:center; padding:6.5% 10% 0; }
-  .title{ font-size:3.1em; letter-spacing:2px; color:#0e1b13; }
-  .rule{ width:200px; height:2px; background:var(--green); margin:1.6% 0 0; opacity:.7; }
-  .lead{ font-size:1.4em; color:var(--gray); margin-top:4.4%; }
-  .name{ font-size:2.7em; font-weight:bold; color:#0e1b13; margin-top:2.2%; letter-spacing:.5px; }
-  .lead2{ font-size:1.4em; color:var(--gray); margin-top:3%; }
-  .course{ font-size:1.95em; font-weight:bold; color:#0e1b13; margin-top:1.8%; }
+  .content{ position:absolute; inset:30px; display:flex; flex-direction:column;
+    align-items:center; text-align:center; padding:7% 11% 0; }
+  .title{ font-size:3.0em; letter-spacing:1px; color:#1a1a1a; }
+  .lead{ font-size:1.35em; color:#333; margin-top:5%; }
+  .name{ font-size:2.0em; font-weight:bold; color:#111; margin-top:2.8%; letter-spacing:.5px; }
+  .lead2{ font-size:1.35em; color:#333; margin-top:3.4%; }
+  .course{ font-size:1.55em; font-weight:bold; color:#111; margin-top:2.4%; }
 
-  .footer{ position:absolute; left:10%; right:10%; bottom:14%;
-    display:flex; align-items:flex-end; justify-content:space-between; }
-  .date{ font-size:1.1em; color:#0e1b13; }
-  .date small{ color:var(--gray); }
-  .agency{ font-size:.85em; color:var(--gray); margin-top:6px; }
-  .certid{ font-family:Arial, sans-serif; font-size:.72em; color:var(--gray); margin-top:4px; }
+  .date{ position:absolute; left:9%; bottom:17%; font-size:1.05em; color:#222; }
+  .date small{ color:#444; }
 
-  .compliance{ position:absolute; left:11%; right:11%; bottom:7%; text-align:center;
-    font-family:Arial, sans-serif; font-size:.78em; color:var(--gray); line-height:1.45; }
-
-  /* insuredbycam digital brand lockup */
-  .brandmark{ display:flex; align-items:center; gap:11px; }
-  .badge{ width:58px; height:58px; border-radius:15px;
+  /* insuredbycam brand lockup, bottom-right (NHSA logo position) */
+  .brand{ position:absolute; right:9%; bottom:14.5%; display:flex; align-items:center; gap:11px; }
+  .badge{ width:56px; height:56px; border-radius:14px;
     background:linear-gradient(135deg,#34d399,#0d9488); display:flex; align-items:center; justify-content:center;
-    box-shadow:0 4px 12px rgba(13,148,136,.35); }
-  .badge svg{ width:32px; height:32px; }
-  .word{ font-family:Arial, Helvetica, sans-serif; font-weight:800; font-size:1.5em; color:#0e1b13; letter-spacing:-.3px; }
+    box-shadow:0 3px 9px rgba(13,148,136,.35); }
+  .badge svg{ width:31px; height:31px; }
+  .word{ font-family:Arial, Helvetica, sans-serif; font-weight:800; font-size:1.55em; color:#111; letter-spacing:-.3px; }
+
+  /* Small compliance + id strip (not on NHSA, but needed for a real cert). */
+  .meta{ position:absolute; left:9%; right:9%; bottom:6.5%; text-align:center;
+    font-family:Arial, sans-serif; font-size:.72em; color:#6b7280; line-height:1.4; }
+  .meta .id{ margin-top:3px; }
 
   @media print{ body{ background:#fff; padding:0;} .note{ display:none;} .cert{ box-shadow:none;} }
 </style>
 </head>
 <body>
-  <p class="note">Preview v3 — ornate green band now held inside a dark outer outline (and a dark inner keyline). Sample data.</p>
+  <p class="note">Preview v4 — NHSA layout matched, with the insuredbycam brand replacing the NHSA logo. Sample data. (Small compliance + certificate-ID line added at the very bottom — flag me if you want it removed.)</p>
 
   <div class="cert">
     <div class="frame"></div>
@@ -68,29 +62,24 @@
 
     <div class="content">
       <div class="title">CERTIFICATE OF COMPLETION</div>
-      <div class="rule"></div>
       <div class="lead">This certifies that</div>
       <div class="name">Sidney Scheck</div>
       <div class="lead2">has completed the course for</div>
-      <div class="course">Georgia 6-Hour Defensive Driving</div>
+      <div class="course">Georgia Defensive Driving Course (6 hours)</div>
     </div>
 
-    <div class="footer">
-      <div>
-        <div class="date"><small>Completion Date:</small> &nbsp;12/30/2025</div>
-        <div class="agency">Insured by Cam — Wiley-Wilson Agency</div>
-        <div class="certid">Certificate ID: GA-DD-2025-7F3A9C21 &nbsp;·&nbsp; DL: GA-123456789</div>
+    <div class="date"><small>Completion Date:</small>&nbsp;&nbsp;12/30/2025</div>
+
+    <div class="brand">
+      <div class="badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
       </div>
-      <div class="brandmark">
-        <div class="badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-        </div>
-        <div class="word">insuredbycam</div>
-      </div>
+      <div class="word">insuredbycam</div>
     </div>
 
-    <div class="compliance">
-      Certificate of Completion — Defensive Driving. Insurance premium discounts are determined by your insurer; this course is not represented as DDS-certified.
+    <div class="meta">
+      Insurance premium discounts are determined by your insurer; this course is not represented as DDS-certified.
+      <div class="id">Certificate ID: GA-DD-2025-7F3A9C21 &nbsp;·&nbsp; DL: GA-123456789</div>
     </div>
   </div>
 </body>
