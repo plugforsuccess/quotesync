@@ -7,7 +7,6 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
-import { calcCancelPriority } from "../lib/retentionPriority";
 
 // Extracted tab components
 import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
@@ -22,6 +21,7 @@ import RetentionAIPerformance from './components/retention/RetentionAIPerformanc
 import { useUploadReminders } from '../hooks/useUploadReminders';
 import UploadReminderBanner from './components/retention/UploadReminderBanner';
 import WorkloadDistribution from './components/retention/WorkloadDistribution';
+import BookMetricsPanel from './components/retention/BookMetricsPanel';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -29,13 +29,6 @@ import { useAuth } from '../contexts/AuthContext';
 function fmt$(n) {
   if (n == null || isNaN(n)) return "$0";
   return "$" + Math.round(n).toLocaleString();
-}
-
-function daysUntilCancel(dateStr) {
-  if (!dateStr) return 999;
-  const d = new Date(dateStr);
-  const now = new Date();
-  return Math.ceil((d - now) / 86400000);
 }
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
@@ -455,7 +448,7 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "import", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["at_risk", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "book", "import", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "at_risk"    ? "⚡ At Risk"        :
              t === "renewals"   ? "🔄 Renewals"       :
@@ -465,6 +458,7 @@ export default function RetentionPage() {
              t === "reasons"    ? "🔍 Reasons"        :
              t === "growth"     ? "📈 Net Growth"     :
              t === "trends"     ? "📋 Trends"         :
+             t === "book"       ? "📖 Book Metrics"   :
              t === "distribute" ? "⚖️ Distribute"     :
                                   "⬆ Import"}
           </button>
@@ -499,6 +493,9 @@ export default function RetentionPage() {
       )}
       {activeTab === "reasons" && <TerminationReasonTab agencyId={agencyId} />}
       {activeTab === "growth" && <NetGrowthTab agencyId={agencyId} />}
+      {activeTab === "book" && (
+        <BookMetricsPanel agencyId={agencyId} currentUserId={currentUserId} />
+      )}
       {activeTab === "import" && (
         <RetentionImport
           agencyId={agencyId}
