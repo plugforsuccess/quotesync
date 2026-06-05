@@ -16,6 +16,7 @@ export default function DefensiveDrivingPage() {
   const [enrollment, setEnrollment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sentEmail, setSentEmail] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -47,6 +48,12 @@ export default function DefensiveDrivingPage() {
     return <div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center p-6">
       <p>This course isn’t available right now. {error}</p>
     </div>;
+  }
+
+  // After a magic link is sent, take over the whole screen with a branded
+  // confirmation page (large centered logo).
+  if (sentEmail) {
+    return <CheckEmail email={sentEmail} onReset={() => setSentEmail(null)} />;
   }
 
   const hasAccess = enrollment && (enrollment.status === 'active' || enrollment.status === 'completed');
@@ -105,7 +112,7 @@ export default function DefensiveDrivingPage() {
             ) : user ? (
               <EnrollForm course={course} defaultName={profile?.full_name || ''} />
             ) : (
-              <AuthPanel />
+              <AuthPanel onSent={setSentEmail} />
             )}
           </div>
         </div>
@@ -152,14 +159,60 @@ function EnrollForm({ course, defaultName }) {
   );
 }
 
+// --- Large centered brand mark (matches the nav logo) -----------------------
+function BrandLogo() {
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <div className="relative">
+        <div className="absolute -inset-1.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl opacity-70 blur-md" />
+        <div className="relative w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl">
+          <svg className="w-11 h-11 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+      </div>
+      <div className="text-center">
+        <div className="font-black text-3xl tracking-tight text-white">insuredbycam</div>
+        <div className="text-sm text-gray-400">Insurance shopping, simplified</div>
+      </div>
+    </div>
+  );
+}
+
+// --- Full-page confirmation shown after a magic link is sent ----------------
+function CheckEmail({ email, onReset }) {
+  return (
+    <div className="min-h-screen bg-gray-950 text-gray-50 flex flex-col items-center justify-center px-4 py-16">
+      <BrandLogo />
+      <div className="mt-12 w-full max-w-md text-center">
+        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-success-500/15">
+          <Mail className="h-7 w-7 text-success-300" />
+        </div>
+        <h1 className="text-2xl font-bold text-success-100 mb-4">Check your email</h1>
+        <p className="text-gray-300 leading-relaxed">We sent a secure sign-in link to</p>
+        <p className="my-3 text-lg font-semibold text-white break-words">{email}</p>
+        <p className="text-gray-400 leading-relaxed">
+          Open it on this device to continue enrolling. The link expires shortly for your security.
+        </p>
+        <div className="mt-10 flex flex-col items-center gap-4">
+          <button type="button" onClick={onReset}
+            className="text-sm font-medium text-gray-300 hover:text-white underline underline-offset-2">
+            Use a different email
+          </button>
+          <Link to="/" className="text-xs text-gray-500 hover:text-gray-300">Back to insuredbycam.com</Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // --- Passwordless magic-link auth for customers (role: 'insured') -----------
-function AuthPanel() {
+function AuthPanel({ onSent }) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
-  const [sent, setSent] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -180,31 +233,13 @@ function AuthPanel() {
         },
       });
       if (error) throw error;
-      setSent(true);
+      onSent(email);
     } catch (err) {
       setError(err.message || 'Could not send the sign-in link.');
     } finally {
       setBusy(false);
     }
   };
-
-  if (sent) {
-    return (
-      <div className="text-center py-4">
-        <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-success-500/15">
-          <Mail className="h-6 w-6 text-success-300" />
-        </div>
-        <h3 className="text-base font-semibold text-success-100 mb-4">Check your email</h3>
-        <p className="text-sm text-gray-400 leading-relaxed">We sent a secure sign-in link to</p>
-        <p className="my-3 text-sm font-semibold text-gray-100 break-words">{email}</p>
-        <p className="text-sm text-gray-400 leading-relaxed">Open it on this device to continue enrolling.</p>
-        <button type="button" onClick={() => setSent(false)}
-          className="mt-7 text-xs font-medium text-gray-400 underline-offset-2 hover:text-gray-200 hover:underline">
-          Use a different email
-        </button>
-      </div>
-    );
-  }
 
   return (
     <form onSubmit={submit} className="space-y-4">
