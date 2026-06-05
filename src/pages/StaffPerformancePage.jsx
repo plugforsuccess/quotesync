@@ -10,7 +10,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   BarChart3, Users, RefreshCw, ShieldOff, AlertCircle, ChevronLeft, ChevronRight,
-  Filter, Target, Download, ArrowLeft, Shield, DollarSign,
+  Filter, Target, Download, ArrowLeft, Shield,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -24,13 +24,14 @@ import {
   useCallLogData, useInvalidateCallLog,
   useQueueData, useInvalidateQueueData,
 } from '../hooks/useStaffPerformance';
-import { computeCallLogMetrics, RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/staffPerformanceDefaults';
+import { computeCallLogMetrics } from '../config/staffPerformanceDefaults';
 import CallLogUploadForm from './components/time-attendance/CallLogUploadForm';
 import WeekPickerCalendar from './components/time-attendance/WeekPickerCalendar';
 import QueueUploadForm from './components/time-attendance/QueueUploadForm';
 import RCUploadForm from './components/time-attendance/RCUploadForm';
 import StaffScorecard from './components/time-attendance/StaffScorecard';
-import DiscrepancyAlerts, { BonusVerificationAlert } from './components/time-attendance/DiscrepancyAlerts';
+import DiscrepancyAlerts from './components/time-attendance/DiscrepancyAlerts';
+import BonusPlanEditor from './components/time-attendance/BonusPlanEditor';
 import CoverageAlerts from './components/time-attendance/CoverageAlerts';
 import QueueSummaryCard from './components/time-attendance/QueueSummaryCard';
 import TargetsModal from './components/time-attendance/TargetsModal';
@@ -317,9 +318,6 @@ const StaffPerformancePage = () => {
     agencyId: currentAgencyId,
     month: selectedMonth,
   });
-
-  const bonusSaves  = verificationData?.verified ?? 0;
-  const bonusAmount = Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD) * RETENTION_BONUS_PER_SAVE;
 
   function refetchAll() {
     refetchEntries();
@@ -1034,14 +1032,9 @@ const StaffPerformancePage = () => {
               </div>
             )}
 
-            {/* Monthly Bonus Verification — service_outbound only */}
+            {/* Retention Bonus — plan config + freeze-to-ledger (service_outbound only) */}
             {selectedEmployeeRoles.includes('service_outbound') && selectedMonth && (
               <div className="mt-6">
-                <h3 className="text-sm font-semibold text-qs-subtle uppercase tracking-wider mb-3 flex items-center gap-2">
-                  <DollarSign className="w-4 h-4" />
-                  Monthly Bonus Verification — {selectedMonth}
-                </h3>
-
                 <div className="mb-3">
                   <input
                     type="month"
@@ -1051,35 +1044,13 @@ const StaffPerformancePage = () => {
                   />
                 </div>
 
-                <div className="bg-qs-card rounded-lg border border-qs-border p-5 mb-3">
-                  <div className="grid grid-cols-3 gap-4 mb-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-qs-bright">
-                        {bonusSaves}
-                      </div>
-                      <div className="text-xs text-qs-subtle mt-1">Verified saves</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-emerald-400">
-                        {Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD)} &times; $25
-                      </div>
-                      <div className="text-xs text-qs-subtle mt-1">
-                        saves above {RETENTION_BONUS_THRESHOLD} threshold
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className={`text-2xl font-bold ${bonusAmount > 0 ? 'text-emerald-400' : 'text-qs-muted'}`}>
-                        ${bonusAmount.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-qs-subtle mt-1">bonus earned</div>
-                    </div>
-                  </div>
-
-                  <BonusVerificationAlert
-                    verificationData={verificationData}
-                    month={selectedMonth}
-                  />
-                </div>
+                <BonusPlanEditor
+                  employeeRecord={selectedEmployeeRecord}
+                  agencyId={currentAgencyId}
+                  month={selectedMonth}
+                  verificationData={verificationData}
+                  userId={user?.id}
+                />
               </div>
             )}
           </div>

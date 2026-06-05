@@ -11,7 +11,9 @@ import { useRetentionCallVerification } from '../hooks/useRetentionCallVerificat
 import RetentionScorecard from './components/time-attendance/RetentionScorecard';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import { BonusVerificationAlert } from './components/time-attendance/DiscrepancyAlerts';
-import { RETENTION_BONUS_THRESHOLD, RETENTION_BONUS_PER_SAVE } from '../config/staffPerformanceDefaults';
+import { useEmployeeBonusPlan } from '../hooks/useEmployeeBonusPlan';
+import { useRetentionBonusLedger } from '../hooks/useRetentionBonusLedger';
+import { unitMeta, computeBonus } from '../config/bonusPlan';
 
 // Strip showing this employee's open commitments from cadence meetings.
 // Renders above the scorecard so they see pending follow-ups at a glance.
@@ -102,10 +104,27 @@ export default function MyScorecardPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  const bonusSaves  = verificationData?.verified ?? 0;
-  const bonusAmount = Math.max(0, bonusSaves - RETENTION_BONUS_THRESHOLD) * RETENTION_BONUS_PER_SAVE;
+  // Live, editable plan terms + any frozen ledger row for the selected month.
+  const { data: bonusPlan } = useEmployeeBonusPlan(employee?.id);
+  const { data: bonusLedger } = useRetentionBonusLedger(employee?.id, selectedMonth);
 
-  const isOutbound = scoreType === 'outbound' || scoreType === 'both';
+  // Once a month is frozen to the ledger we show those numbers (and label the
+  // month Finalized/Paid); otherwise we show the live estimate from the plan.
+  const isFrozen = !!bonusLedger
+    && (bonusLedger.status === 'finalized' || bonusLedger.status === 'paid');
+  const verifiedCount = verificationData?.verified ?? 0;
+  const liveBonus = computeBonus(bonusPlan, verifiedCount);
+
+  const bonusUnitMeta = unitMeta(isFrozen ? bonusLedger.bonus_unit : bonusPlan?.bonus_unit);
+  const bonusThreshold = isFrozen ? bonusLedger.threshold : (bonusPlan?.threshold ?? 0);
+  const bonusPerUnit   = isFrozen
+    ? Number(bonusLedger.per_unit_amount)
+    : Number(bonusPlan?.per_unit_amount ?? 0);
+  const bonusCount   = isFrozen ? bonusLedger.verified_count : verifiedCount;
+  const bonusAmount  = isFrozen ? Number(bonusLedger.bonus_amount) : liveBonus.bonusAmount;
+  const bonusStatusLabel = isFrozen
+    ? (bonusLedger.status === 'paid' ? 'Paid' : 'Finalized')
+    : 'Estimated';
 
   return (
     <div>
@@ -137,13 +156,22 @@ export default function MyScorecardPage() {
         isLoading={metricsLoading}
       />
 
-      {/* Bonus verification — outbound only */}
-      {isOutbound && (
+      {/* Monthly bonus — only shown when a principal has enabled a plan */}
+      {bonusPlan?.enabled && (
         <div style={{ marginTop: 28 }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-subtle)',
             textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 14,
             display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>Monthly Bonus</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              Monthly Bonus
+              <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '0.04em',
+                padding: '2px 8px', borderRadius: 999,
+                color: isFrozen ? 'var(--qs-success)' : 'var(--qs-subtle)',
+                background: isFrozen ? '#10B98122' : 'var(--qs-elevated)',
+                border: `1px solid ${isFrozen ? '#10B98144' : 'var(--qs-border)'}` }}>
+                {bonusStatusLabel}
+              </span>
+            </span>
             <input type="month" value={selectedMonth}
               onChange={e => setSelectedMonth(e.target.value)}
               style={{ fontSize: 14, background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
@@ -156,9 +184,9 @@ export default function MyScorecardPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
               {/* Bonus stat colors — used as inline style props */}
               {[
-                ['Verified Saves',   bonusSaves,    'var(--qs-text)'],
-                [`Above ${RETENTION_BONUS_THRESHOLD} threshold`, `\u00D7$${RETENTION_BONUS_PER_SAVE}`, 'var(--qs-dim)'],
-                ['Bonus Earned',     `$${bonusAmount.toLocaleString()}`, bonusAmount > 0 ? 'var(--qs-success)' : 'var(--qs-subtle)'],
+                [bonusUnitMeta.verifiedLabel, bonusCount, 'var(--qs-text)'],
+                [`Above ${bonusThreshold} threshold`, `\u00D7$${bonusPerUnit.toLocaleString()}`, 'var(--qs-dim)'],
+                [isFrozen ? `Bonus ${bonusStatusLabel}` : 'Bonus (est.)', `$${bonusAmount.toLocaleString()}`, bonusAmount > 0 ? 'var(--qs-success)' : 'var(--qs-subtle)'],
               ].map(([label, value, color]) => (
                 <div key={label} style={{ background: 'var(--qs-elevated)', borderRadius: 8,
                   padding: '20px 24px', border: '1px solid var(--qs-border)', textAlign: 'center' }}>
