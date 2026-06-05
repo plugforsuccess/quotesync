@@ -25,30 +25,44 @@ export function useBookSnapshots(agencyId) {
         .order('production_month', { ascending: false });
       if (error) throw error;
       const rows = data || [];
-      if (rows.length === 0) return { latestMonth: null, products: [], totals: null, months: [] };
+      if (rows.length === 0) return { latestMonth: null, products: [], totals: null, months: [], trend: [] };
 
       const months = [...new Set(rows.map((r) => r.production_month))]; // desc
       const latestMonth = months[0];
       const latest = rows.filter((r) => r.production_month === latestMonth);
+
+      // PIF-weighted blended retention for a set of product rows (rollup excluded).
+      const blendedFor = (rowsForMonth) => {
+        const real = rowsForMonth.filter((r) => !ROLLUP_KEYS.has(r.product_key));
+        const pif = real.reduce((s, r) => s + (r.pif_current || 0), 0);
+        if (pif <= 0) return { pif: 0, retention: null, retentionPy: null };
+        const wRet = real.reduce((s, r) => s + (r.pif_current || 0) * (r.policy_retention_pct || 0), 0);
+        const wRetPy = real.reduce((s, r) => s + (r.pif_current || 0) * (r.retention_py_pct || 0), 0);
+        return { pif, retention: wRet / pif, retentionPy: wRetPy / pif };
+      };
+
+      // Longitudinal trend — one point per uploaded month, ascending for charting.
+      const trend = [...months].reverse().map((m) => {
+        const b = blendedFor(rows.filter((r) => r.production_month === m));
+        return { month: m, retention: b.retention, retentionPy: b.retentionPy, pif: b.pif };
+      });
 
       // Per-product lines for the latest month (rollup row kept but flagged).
       const products = latest
         .map((r) => ({ ...r, is_rollup: ROLLUP_KEYS.has(r.product_key) }))
         .sort((a, b) => (b.pif_current || 0) - (a.pif_current || 0));
 
-      // Book totals exclude rollup rows to avoid double-counting auto.
+      const latestBlended = blendedFor(latest);
       const real = latest.filter((r) => !ROLLUP_KEYS.has(r.product_key));
       const pifCurrent = real.reduce((s, r) => s + (r.pif_current || 0), 0);
       const pifPye = real.reduce((s, r) => s + (r.pif_pye || 0), 0);
-      // PIF-weighted blended retention (and prior-year, for the delta).
-      const wRet = real.reduce((s, r) => s + (r.pif_current || 0) * (r.policy_retention_pct || 0), 0);
-      const wRetPy = real.reduce((s, r) => s + (r.pif_current || 0) * (r.retention_py_pct || 0), 0);
-      const blendedRetention = pifCurrent > 0 ? wRet / pifCurrent : null;
-      const blendedRetentionPy = pifCurrent > 0 ? wRetPy / pifCurrent : null;
+      const blendedRetention = latestBlended.retention;
+      const blendedRetentionPy = latestBlended.retentionPy;
 
       return {
         latestMonth,
         months,
+        trend,
         products,
         totals: {
           pifCurrent,

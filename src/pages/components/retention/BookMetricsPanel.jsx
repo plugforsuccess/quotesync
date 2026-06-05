@@ -11,7 +11,10 @@ import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useBookSnapshots } from '../../../hooks/useBookMetrics';
+import { useSopGoLiveDate } from '../../../hooks/useSopGoLiveDate';
+import { useChartTheme } from '../../../lib/chartTheme';
 import { parsePremiumProfitability, parsePolicyAudit } from '../../../lib/bookMetricsParser';
 
 function fmtPct(n) {
@@ -124,8 +127,11 @@ function UploadZone({ agencyId, currentUserId, reportType }) {
 
 export default function BookMetricsPanel({ agencyId, currentUserId }) {
   const { data, isLoading } = useBookSnapshots(agencyId);
+  const { data: goLive } = useSopGoLiveDate(agencyId);
+  const ct = useChartTheme();
   const totals = data?.totals;
   const products = data?.products || [];
+  const trend = data?.trend || [];
 
   const deltaColor = (v) => (v == null ? 'var(--qs-dim)' : v < 0 ? '#EF4444' : '#10B981');
 
@@ -184,6 +190,34 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
               <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>baseline</div>
             </div>
           </div>
+
+          {/* Book retention trend — the "is it improving?" line */}
+          {trend.length >= 2 ? (
+            <div className="card" style={{ marginBottom: 24 }}>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 10 }}>
+                Book retention trend{goLive ? ' · SOP launch marked' : ''}
+              </div>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={trend} margin={{ top: 8, right: 16, bottom: 4, left: -8 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={ct.structural.grid} />
+                  <XAxis dataKey="month" tickFormatter={fmtMonth} tick={{ fontSize: 11, fill: ct.structural.axisTick }} />
+                  <YAxis domain={['auto', 'auto']} tick={{ fontSize: 11, fill: ct.structural.axisTick }} tickFormatter={(v) => `${Math.round(v)}%`} />
+                  <Tooltip contentStyle={ct.tooltipStyle} labelStyle={ct.tooltipLabelStyle} labelFormatter={fmtMonth}
+                    formatter={(v, n) => [v == null ? '—' : `${Number(v).toFixed(1)}%`, n]} />
+                  <Line type="monotone" dataKey="retentionPy" name="Prior year" stroke={ct.structural.axisTick} strokeDasharray="4 4" dot={false} />
+                  <Line type="monotone" dataKey="retention" name="Retention" stroke={ct.data.blue} strokeWidth={2} dot={{ r: 3 }} />
+                  {goLive && trend.some((t) => t.month === goLive) && (
+                    <ReferenceLine x={goLive} stroke={ct.data.green} strokeDasharray="3 3"
+                      label={{ value: 'SOP', fontSize: 10, fill: ct.data.green, position: 'top' }} />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="card" style={{ marginBottom: 24, fontSize: 12, color: 'var(--qs-subtle)' }}>
+              Book-retention trend builds as you upload Premium &amp; Profitability monthly — needs at least 2 months.
+            </div>
+          )}
 
           {/* Per-product leak table */}
           <div className="scroll-hint-container" style={{ overflowX: 'auto' }}>
