@@ -177,35 +177,30 @@ function ModuleRow({ vm, onOpen }) {
 // ---------------------------------------------------------------------------
 // Lesson reader
 // ---------------------------------------------------------------------------
-// Split a flat block list into sections at each heading ('h') block.
-function splitSections(blocks) {
-  const sections = [];
-  let cur = null;
-  for (const b of blocks) {
-    if (b.type === 'h') { cur = { heading: b.text, blocks: [] }; sections.push(cur); }
-    else { if (!cur) { cur = { heading: null, blocks: [] }; sections.push(cur); } cur.blocks.push(b); }
-  }
-  return sections;
-}
-
 function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   const content = getModuleContent(mod.content_ref);
   const [kcPassed, setKcPassed] = useState(!!mod.kc_passed);
   const [completed, setCompleted] = useState(!!mod.completed);
   const isLast = mod.index + 1 >= total;
 
-  const sections = useMemo(() => splitSections(content?.blocks || []), [content]);
-  // Steps: Introduction -> each section -> Quiz.
+  const sections = useMemo(() => content?.sections || [], [content]);
+  // Steps: Introduction -> each section (with its own check) -> module quiz.
   const steps = useMemo(
     () => ['intro', ...sections.map(() => 'section'), 'quiz'],
     [sections],
   );
   const [step, setStep] = useState(0);
+  const [passedSections, setPassedSections] = useState(() => new Set());
   const go = (n) => { setStep(n); window.scrollTo(0, 0); };
 
   const kind = steps[step];
   const sectionIdx = kind === 'section' ? step - 1 : -1;
   const section = sectionIdx >= 0 ? sections[sectionIdx] : null;
+  // A section's "Continue" is gated on passing its check (skipped on review or
+  // when a section has no check).
+  const sectionGateOk = kind !== 'section'
+    ? true
+    : completed || !section?.quiz?.length || passedSections.has(sectionIdx);
 
   return (
     <div className="bg-gray-950 text-gray-50 min-h-screen">
@@ -258,12 +253,24 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
           </div>
         )}
 
-        {/* A single section */}
+        {/* A single section + its check */}
         {kind === 'section' && section && (
-          <article className="space-y-5">
-            {section.heading && <h2 className="text-xl md:text-2xl font-bold text-success-100">{section.heading}</h2>}
-            {section.blocks.map((b, i) => <Block key={i} b={b} />)}
-          </article>
+          <div>
+            <article className="space-y-5">
+              {section.heading && <h2 className="text-xl md:text-2xl font-bold text-success-100">{section.heading}</h2>}
+              {section.blocks.map((b, i) => <Block key={i} b={b} />)}
+            </article>
+            {section.quiz?.length > 0 && (
+              <div className="mt-8">
+                <SectionQuiz
+                  key={sectionIdx}
+                  quiz={section.quiz}
+                  defaultPassed={completed}
+                  onPass={() => setPassedSections((p) => new Set(p).add(sectionIdx))}
+                />
+              </div>
+            )}
+          </div>
         )}
 
         {/* Takeaways + graded quiz */}
@@ -300,10 +307,15 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
           </button>
 
           {kind !== 'quiz' ? (
-            <button onClick={() => go(step + 1)}
-              className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
-              Continue <ArrowRight className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-3">
+              {kind === 'section' && !sectionGateOk && (
+                <span className="text-xs text-gray-500 hidden sm:inline">Pass the section check</span>
+              )}
+              <button onClick={() => go(step + 1)} disabled={!sectionGateOk}
+                className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 transition flex items-center gap-2">
+                Continue <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           ) : (completed || kcPassed) ? (
             <button onClick={onNext}
               className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
@@ -321,8 +333,6 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
 // ---- Lesson block renderer -------------------------------------------------
 function Block({ b }) {
   switch (b.type) {
-    case 'h':
-      return <h2 className="text-lg md:text-xl font-bold text-success-100 pt-3">{b.text}</h2>;
     case 'p':
       return <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed">{b.text}</p>;
     case 'ul':
@@ -347,8 +357,6 @@ function Block({ b }) {
       );
     case 'callout':
       return <Callout {...b} />;
-    case 'scenario':
-      return <Scenario {...b} />;
     default:
       return null;
   }
@@ -381,33 +389,62 @@ function Callout({ variant = 'key', title, text, items }) {
   );
 }
 
-function Scenario({ q, choices, explain }) {
-  const [picked, setPicked] = useState(null);
+// Per-section formative check: answer all questions correctly to continue.
+function SectionQuiz({ quiz, defaultPassed, onPass }) {
+  const [answers, setAnswers] = useState({});
+  const [checked, setChecked] = useState(false);
+  const [passed, setPassed] = useState(!!defaultPassed);
+
+  const allAnswered = quiz.every((_, i) => answers[i] != null);
+  const pick = (qi, ci) => { if (passed) return; setAnswers((a) => ({ ...a, [qi]: ci })); setChecked(false); };
+  const check = () => {
+    setChecked(true);
+    if (quiz.every((qq, i) => qq.choices[answers[i]]?.correct)) { setPassed(true); onPass(); }
+  };
+
   return (
     <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-5">
-      <p className="text-xs uppercase tracking-wider text-gray-500 mb-2">Quick check</p>
-      <p className="text-sm md:text-[15px] font-medium text-gray-100 mb-3">{q}</p>
-      <div className="space-y-2">
-        {choices.map((c, i) => {
-          const isPicked = picked === i;
-          const show = picked !== null;
-          const state = show && c.correct ? 'border-success-500 bg-success-500/10 text-success-100'
-            : show && isPicked && !c.correct ? 'border-red-500/60 bg-red-500/10 text-red-200'
-            : 'border-gray-700 hover:border-gray-600 text-gray-200';
-          return (
-            <button key={i} type="button" onClick={() => setPicked(picked === null ? i : picked)}
-              disabled={show}
-              className={`w-full text-left flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${state} ${show ? 'cursor-default' : ''}`}>
-              {show && c.correct ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-success-400" />
-                : show && isPicked ? <X className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
-                : <Circle className="w-4 h-4 shrink-0 mt-0.5 text-gray-500" />}
-              {c.t}
-            </button>
-          );
-        })}
+      <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Section check</p>
+      <div className="space-y-5">
+        {quiz.map((qq, qi) => (
+          <div key={qi}>
+            <p className="text-sm md:text-[15px] font-medium text-gray-100 mb-2">{qi + 1}. {qq.q}</p>
+            <div className="space-y-2">
+              {qq.choices.map((c, ci) => {
+                const isPicked = answers[qi] === ci;
+                const reveal = checked || passed;
+                const state = reveal && c.correct ? 'border-success-500 bg-success-500/10 text-success-100'
+                  : reveal && isPicked && !c.correct ? 'border-red-500/60 bg-red-500/10 text-red-200'
+                  : isPicked ? 'border-success-500/70 bg-success-500/5 text-gray-100'
+                  : 'border-gray-700 hover:border-gray-600 text-gray-200';
+                return (
+                  <button key={ci} type="button" onClick={() => pick(qi, ci)} disabled={passed}
+                    className={`w-full text-left flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${state}`}>
+                    {reveal && c.correct ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-success-400" />
+                      : reveal && isPicked ? <X className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
+                      : <Circle className="w-4 h-4 shrink-0 mt-0.5 text-gray-500" />}
+                    {c.t}
+                  </button>
+                );
+              })}
+            </div>
+            {(checked || passed) && answers[qi] != null && qq.explain && (
+              <p className="mt-2 text-sm text-gray-400 leading-relaxed border-l-2 border-success-500/40 pl-3">{qq.explain}</p>
+            )}
+          </div>
+        ))}
       </div>
-      {picked !== null && (
-        <p className="mt-3 text-sm text-gray-300 leading-relaxed border-l-2 border-success-500/40 pl-3">{explain}</p>
+
+      {passed ? (
+        <p className="mt-4 text-sm text-success-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Section check passed.</p>
+      ) : (
+        <>
+          {checked && <p className="mt-3 text-sm text-amber-300">Not quite — review the highlighted answers and try again.</p>}
+          <button type="button" onClick={check} disabled={!allAnswered}
+            className="mt-4 rounded-full px-5 py-2.5 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition">
+            Check answers
+          </button>
+        </>
       )}
     </div>
   );
