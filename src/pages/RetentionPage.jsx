@@ -22,6 +22,7 @@ import { useUploadReminders } from '../hooks/useUploadReminders';
 import UploadReminderBanner from './components/retention/UploadReminderBanner';
 import WorkloadDistribution from './components/retention/WorkloadDistribution';
 import BookMetricsPanel from './components/retention/BookMetricsPanel';
+import SaveablePremiumTargeting from './components/retention/SaveablePremiumTargeting';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -448,9 +449,10 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "book", "import", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["at_risk", "targeting", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "book", "import", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "at_risk"    ? "⚡ At Risk"        :
+             t === "targeting"  ? "🎯 Targeting"      :
              t === "renewals"   ? "🔄 Renewals"       :
              t === "ai_perf"    ? "📊 AI Performance" :
              t === "resolved"   ? "✅ Outcomes"       :
@@ -474,6 +476,9 @@ export default function RetentionPage() {
           urgentFilter={urgentFilter}
           onClearUrgentFilter={() => setUrgentFilter(false)}
         />
+      )}
+      {activeTab === "targeting" && (
+        <SaveablePremiumTargeting agencyId={agencyId} />
       )}
       {activeTab === "renewals" && (
         <RetentionRenewals agencyId={agencyId} />
