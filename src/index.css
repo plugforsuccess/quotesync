@@ -634,3 +634,82 @@ gmp-placeautocomplete input:focus {
     font-size: 16px !important;
   }
 }
+
+/* ════════════════════════════════════════════════════════════
+   DEFENSIVE DRIVING COURSE — accessible light/dark reading theme
+   Scoped to `.ddc`. Light is the default (best for older / low-vision
+   users); a toggle switches to dark. `data-size` scales the whole
+   reading column via an em-based font-size. All text meets WCAG AA.
+   ════════════════════════════════════════════════════════════ */
+.ddc {
+  --ddc-fs: 16.5px;
+  --ddc-bg:#ffffff; --ddc-surface:#f6f8fb; --ddc-surface-2:#eef2f6;
+  --ddc-text:#1f2937; --ddc-heading:#0b1220; --ddc-muted:#46505e; --ddc-faint:#5b6671;
+  --ddc-border:#d6dde4; --ddc-bar-bg:rgba(255,255,255,.92);
+  --ddc-accent:#046c4e; --ddc-accent-solid:#059669; --ddc-track:#e5e7eb;
+  --ddc-btn-bg:#047857; --ddc-btn-fg:#ffffff;
+  --law-c:#036aa1; --law-bg:#eef6fd; --law-bd:#bae0f5;
+  --key-c:#046c4e; --key-bg:#eafaf2; --key-bd:#a7e8c8;
+  --warn-c:#a85a07; --warn-bg:#fdf6e9; --warn-bd:#f5dca0;
+  --tip-c:#0e7468; --tip-bg:#ecfbf7; --tip-bd:#9be8da;
+  --ok-c:#046c4e; --ok-bg:#eafaf2; --ok-bd:#34d399;
+  --no-c:#b3261e; --no-bg:#fdf0ef; --no-bd:#f3a8a3;
+  font-size: var(--ddc-fs);
+}
+.ddc[data-theme="dark"] {
+  --ddc-bg:#030712; --ddc-surface:rgba(17,24,39,.6); --ddc-surface-2:#0f172a;
+  --ddc-text:#d6dbe2; --ddc-heading:#f9fafb; --ddc-muted:#9aa4b2; --ddc-faint:#7b8694;
+  --ddc-border:#1f2937; --ddc-bar-bg:rgba(3,7,18,.95);
+  --ddc-accent:#6ee7b7; --ddc-accent-solid:#10b981; --ddc-track:#1f2937;
+  --ddc-btn-bg:#34d399; --ddc-btn-fg:#04210f;
+  --law-c:#7dd3fc; --law-bg:rgba(56,189,248,.12); --law-bd:rgba(56,189,248,.4);
+  --key-c:#6ee7b7; --key-bg:rgba(16,185,129,.12); --key-bd:rgba(16,185,129,.4);
+  --warn-c:#fcd34d; --warn-bg:rgba(245,158,11,.12); --warn-bd:rgba(245,158,11,.4);
+  --tip-c:#5eead4; --tip-bg:rgba(20,184,166,.12); --tip-bd:rgba(20,184,166,.4);
+  --ok-c:#6ee7b7; --ok-bg:rgba(16,185,129,.12); --ok-bd:rgba(16,185,129,.5);
+  --no-c:#fca5a5; --no-bg:rgba(248,113,113,.12); --no-bd:rgba(248,113,113,.5);
+}
+.ddc[data-size="large"]  { --ddc-fs: 18.5px; }
+.ddc[data-size="larger"] { --ddc-fs: 21px; }
+
+.ddc-page { background: var(--ddc-bg); color: var(--ddc-text); }
+.ddc-bar  { background: var(--ddc-bar-bg); border-color: var(--ddc-border); }
+.ddc-card { background: var(--ddc-surface); border-color: var(--ddc-border); }
+.ddc-soft { background: var(--ddc-surface-2); }
+.ddc-heading { color: var(--ddc-heading); }
+.ddc-accent  { color: var(--ddc-accent); }
+.ddc-text  { color: var(--ddc-text); }
+.ddc-muted { color: var(--ddc-muted); }
+.ddc-faint { color: var(--ddc-faint); }
+.ddc-bd { border-color: var(--ddc-border); }
+.ddc-track { background: var(--ddc-track); }
+.ddc-fill  { background: var(--ddc-accent-solid); }
+
+.ddc-eyebrow { font-size:.72em; letter-spacing:.18em; text-transform:uppercase; color:var(--ddc-accent); font-weight:600; }
+.ddc-xs { font-size:.8em; } .ddc-sm { font-size:.92em; } .ddc-base { font-size:1em; }
+.ddc-lg { font-size:1.15em; } .ddc-h2 { font-size:1.4em; } .ddc-h1 { font-size:1.85em; }
+
+.ddc-btn { background: var(--ddc-btn-bg); color: var(--ddc-btn-fg); font-weight:600; }
+.ddc-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.ddc-btn:disabled { opacity:.5; cursor:not-allowed; }
+.ddc-link { color: var(--ddc-muted); }
+.ddc-link:hover { color: var(--ddc-heading); }
+
+.ddc-cal { border:1px solid; }
+.ddc-cal-law { background:var(--law-bg); border-color:var(--law-bd); --ic:var(--law-c); }
+.ddc-cal-key { background:var(--key-bg); border-color:var(--key-bd); --ic:var(--key-c); }
+.ddc-cal-warn{ background:var(--warn-bg);border-color:var(--warn-bd);--ic:var(--warn-c); }
+.ddc-cal-tip { background:var(--tip-bg); border-color:var(--tip-bd); --ic:var(--tip-c); }
+.ddc-cal-title { color: var(--ic); }
+
+.ddc-opt { border:1px solid var(--ddc-border); color:var(--ddc-text); background:transparent; }
+.ddc-opt:hover:not(:disabled) { border-color: var(--ddc-accent); }
+.ddc-opt.is-sel { border-color: var(--ddc-accent); background: var(--key-bg); }
+.ddc-opt.is-ok  { border-color: var(--ok-bd); background: var(--ok-bg); color: var(--ok-c); }
+.ddc-opt.is-no  { border-color: var(--no-bd); background: var(--no-bg); color: var(--no-c); }
+
+.ddc-good { color: var(--ok-c); } .ddc-bad { color: var(--no-c); } .ddc-warn { color: var(--warn-c); }
+
+.ddc a:focus-visible, .ddc button:focus-visible, .ddc input:focus-visible, .ddc label:focus-within {
+  outline: 2px solid var(--ddc-accent-solid); outline-offset: 2px; border-radius: 8px;
+}
