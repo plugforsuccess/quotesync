@@ -1,7 +1,7 @@
 // src/pages/components/retention/RetentionCancels.jsx
 // Extracted from BookHealthPage.jsx — UnifiedAtRiskTab + all modal dependencies.
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { calcRenewalPriority, calcCancelPriority, computePriorityTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
@@ -1432,9 +1432,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
 // ─── Unified Detail Modal ───────────────────────────────────────────────────
 
-function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [], onReassign }) {
+function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign }) {
   const [saving, setSaving] = useState(false);
   const [localRow, setLocalRow] = useState(row);
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
 
   // Use localRow for display so reassignment reflects immediately without closing modal
   const r = localRow;
@@ -1724,7 +1725,7 @@ function calcUnifiedPriority(row) {
   return row.risk_type === 'dual_risk' ? Math.min(base + 15, 100) : base;
 }
 
-function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFilter = false, onClearUrgentFilter }) {
+function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, onClearUrgentFilter }) {
   const { config: productConfig } = useAgencyProductConfig(agencyId);
   const queryClient = useQueryClient();
 
@@ -1770,7 +1771,6 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFi
   const [myCasesOnly, setMyCasesOnly] = useState(false);
   const [sortCol, setSortCol] = useState('priority');
   const [sortDir, setSortDir] = useState('desc');
-  const [selectedUnified, setSelectedUnified] = useState(null);
   // Drilldown: { event, side: 'cancel'|'renewal' } — opens the full detail modal with logging
   const [drilldown, setDrilldown] = useState(null);
 
