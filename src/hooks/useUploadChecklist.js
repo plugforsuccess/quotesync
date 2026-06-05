@@ -351,13 +351,15 @@ export function useUploadChecklist(agencyId) {
         uploadOrder: 5,
       });
 
-      // 9. Premium & Profitability — monthly book scoreboard, due 8th–15th.
-      // Grounds the Targeting churn model in observed retention; no write-order
-      // dependency with Policy Audit (independent tables).
-      const ppInWindow = dayOfMonth >= 8 && dayOfMonth <= 15;
+      // 9. Premium & Profitability — monthly book scoreboard. Allstate Business
+      // Metrics post on a ~1-month lag (the production month finalizes
+      // mid-following-month), so the upload window is 15th–25th — uploading
+      // earlier would flag a report that hasn't posted yet. Grounds the
+      // Targeting churn model; no write-order dependency with Policy Audit.
+      const ppInWindow = dayOfMonth >= 15 && dayOfMonth <= 25;
       const ppUploaded = !!premiumProfit.data?.length;
       const ppDue = ppInWindow && !ppUploaded;
-      const ppOverdue = dayOfMonth > 15 && !ppUploaded;
+      const ppOverdue = dayOfMonth > 25 && !ppUploaded;
       items.push({
         key: 'premium_profitability',
         category: 'book_of_business',
@@ -365,21 +367,21 @@ export function useUploadChecklist(agencyId) {
         description: ppUploaded
           ? 'Uploaded this month'
           : ppDue
-          ? 'Due 8th–15th — upload now'
+          ? 'Due 15th–25th — this month’s report has posted'
           : ppOverdue
           ? 'Overdue — not uploaded this month'
-          : 'Not yet due (upload 8th–15th)',
+          : 'Not yet due (Allstate posts ~mid-month)',
         status: ppUploaded ? 'current' : ppOverdue ? 'overdue' : ppDue ? 'due' : 'upcoming',
         detail: null,
         link: '/agency/retention?tab=book',
         uploadOrder: 6,
       });
 
-      // 10. Policy Audit — monthly per-policy census, due 8th–15th.
-      const paInWindow = dayOfMonth >= 8 && dayOfMonth <= 15;
+      // 10. Policy Audit — monthly per-policy census. Same ~1-month lag.
+      const paInWindow = dayOfMonth >= 15 && dayOfMonth <= 25;
       const paUploaded = !!policyAudit.data?.length;
       const paDue = paInWindow && !paUploaded;
-      const paOverdue = dayOfMonth > 15 && !paUploaded;
+      const paOverdue = dayOfMonth > 25 && !paUploaded;
       items.push({
         key: 'policy_audit',
         category: 'book_of_business',
@@ -387,10 +389,10 @@ export function useUploadChecklist(agencyId) {
         description: paUploaded
           ? 'Uploaded this month'
           : paDue
-          ? 'Due 8th–15th — upload now'
+          ? 'Due 15th–25th — this month’s report has posted'
           : paOverdue
           ? 'Overdue — not uploaded this month'
-          : 'Not yet due (upload 8th–15th)',
+          : 'Not yet due (Allstate posts ~mid-month)',
         status: paUploaded ? 'current' : paOverdue ? 'overdue' : paDue ? 'due' : 'upcoming',
         detail: null,
         link: '/agency/retention?tab=book',

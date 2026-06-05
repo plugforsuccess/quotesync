@@ -136,9 +136,11 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
         fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12,
         background: 'var(--qs-elevated)', borderRadius: 8, padding: '10px 14px',
       }}>
-        Upload <strong>monthly</strong>, after your Renewal / Cancellation / Termination
-        reports (these measure the outcome). Order between the two below doesn't matter —
-        they write to independent tables.
+        Upload <strong>monthly, around the 15th–25th</strong> — Allstate posts these on a
+        ~1-month lag (the production month finalizes mid-following-month), so they reflect
+        a book that's about a month behind. They measure the outcome of the work the
+        operating reports drive. Order between the two below doesn't matter — they write
+        to independent tables.
       </div>
 
       {/* Upload */}
