@@ -25,7 +25,7 @@ import InsuranceQuotesPage from './pages/InsuranceQuotesPage';
 // previous reload and we don't clear it here, lazyWithRetry will see it and
 // re-throw on the next chunk error instead of reloading again.
 // useEffect is too late — lazyWithRetry runs during import, before React mounts.
-try { sessionStorage.removeItem('qs_chunk_error_reloaded'); } catch (_) {}
+try { sessionStorage.removeItem('qs_chunk_error_reloaded'); } catch { /* best-effort flag clear */ }
 
 // Retry wrapper for lazy imports — handles chunk load failures after deploys.
 // On first chunk error: reload the page (new assets will be fetched).
@@ -111,6 +111,7 @@ const ReferralRulesPage = lazyWithRetry(() => import('./pages/ReferralRulesPage'
 
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
+const MyLeadsPage = lazyWithRetry(() => import('./pages/MyLeadsPage'));
 const TodayPage = lazyWithRetry(() => import('./pages/TodayPage'));
 const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
 const ChangePasswordPage = lazyWithRetry(() => import('./pages/ChangePasswordPage'));
@@ -187,6 +188,7 @@ function App() {
               <Route index element={<Navigate to="/my/today" replace />} />
               <Route path="today" element={<Suspense fallback={<PageLoader />}><TodayPage /></Suspense>} />
               <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
+              <Route path="leads" element={<Suspense fallback={<PageLoader />}><MyLeadsPage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
             </Route>
           </Route>

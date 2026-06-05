@@ -34,6 +34,7 @@ const primaryItems = {
   // the top nav without first switching back to Principal.
   today:            { to: '/my/today',                 label: 'Today',       icon: '⏱️' },
   myQueue:          { to: '/my/queue',                 label: 'My Queue',    icon: '⚡' },
+  myLeads:          { to: '/my/leads',                 label: 'My Leads',    icon: '🎯' },
   scorecard:        { to: '/my/scorecard',             label: 'Scorecard',   icon: '📊' },
   // Platform admin primary items
   adminDashboard:   { to: '/admin',                    label: 'Overview',    icon: '🏠' },
@@ -153,6 +154,7 @@ export const principalPersonaNav = {
   // No retention surfaces (Today / My Queue) — those belong to the service hat.
   sales: {
     primary: [
+      primaryItems.myLeads,
       primaryItems.crossSell,
       primaryItems.scorecard,
       primaryItems.referrals,
@@ -180,6 +182,7 @@ export const principalPersonaNav = {
 export const employeeNav = {
   primary: [
     { to: '/my/queue',     label: 'Queue',     icon: '\u26A1', isPrimary: true },
+    { to: '/my/leads',     label: 'Leads',     icon: '\uD83C\uDFAF', isPrimary: true },
     { to: '/my/scorecard', label: 'Scorecard', icon: '\uD83D\uDCCA', isPrimary: true },
     { to: '/punch',        label: 'Punch',     icon: '\u23F1\uFE0F', isPrimary: true },
   ],
