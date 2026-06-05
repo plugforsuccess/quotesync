@@ -449,7 +449,7 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "targeting", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "book", "import", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["at_risk", "targeting", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "at_risk"    ? "⚡ At Risk"        :
              t === "targeting"  ? "🎯 Targeting"      :

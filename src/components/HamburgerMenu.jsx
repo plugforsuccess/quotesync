@@ -101,9 +101,11 @@ function HamburgerMenu({ items }) {
       {isOpen && (
         <div
           ref={menuRef}
-          className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] bg-[#1a1d28] rounded-lg shadow-lg border border-white/10 py-1 z-50 animate-fadeIn"
+          className="absolute right-0 top-full mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-lg shadow-lg py-1 z-50 animate-fadeIn"
           style={{
             animation: 'hamburgerIn 150ms ease-out',
+            background: 'var(--qs-card)',
+            border: '1px solid var(--qs-border)',
           }}
           role="menu"
         >
@@ -114,10 +116,8 @@ function HamburgerMenu({ items }) {
               role="menuitem"
               className={({ isActive }) =>
                 [
-                  'flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-400'
-                    : 'text-gray-300 hover:bg-white/10 hover:text-white',
+                  'qs-hamburger-item flex items-center gap-3 px-4 py-3 text-sm font-medium transition-colors',
+                  isActive ? 'qs-hamburger-item--active' : '',
                 ].join(' ')
               }
             >
@@ -128,7 +128,7 @@ function HamburgerMenu({ items }) {
         </div>
       )}
 
-      {/* Inline keyframes for the dropdown animation */}
+      {/* Inline keyframes + theme-aware item styling for the dropdown */}
       <style>{`
         @keyframes hamburgerIn {
           from {
@@ -139,6 +139,19 @@ function HamburgerMenu({ items }) {
             opacity: 1;
             transform: translateY(0) scale(1);
           }
+        }
+        .qs-hamburger-item {
+          color: var(--qs-dim);
+          border-left: 2px solid transparent;
+        }
+        .qs-hamburger-item:hover {
+          background: var(--qs-elevated);
+          color: var(--qs-text);
+        }
+        .qs-hamburger-item--active {
+          color: var(--qs-success);
+          background: var(--qs-elevated);
+          border-left-color: var(--qs-success);
         }
       `}</style>
     </div>
