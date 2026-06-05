@@ -8,6 +8,7 @@ import { toMonday, toPriorMonday, formatWeekLabel } from '../lib/weekUtils';
 
 // Sub-section components
 import WhereWeStandSection from './components/operating-review/WhereWeStandSection';
+import DataQualitySection from './components/operating-review/DataQualitySection';
 import WhatSlippedSection from './components/operating-review/WhatSlippedSection';
 import ThisWeeksFocusSection from './components/operating-review/ThisWeeksFocusSection';
 import MarkReviewedBar from './components/operating-review/MarkReviewedBar';
@@ -68,6 +69,8 @@ export default function WeeklyOperatingReviewPage() {
           reviewWeekStart={reviewWeekStart}
           priorWeekStart={priorWeekStart}
         />
+
+        <DataQualitySection agencyId={currentAgencyId} />
 
         <WhatSlippedSection
           agencyId={currentAgencyId}
