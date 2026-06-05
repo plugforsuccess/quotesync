@@ -131,6 +131,16 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
 
   return (
     <div>
+      {/* Cadence guidance */}
+      <div style={{
+        fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12,
+        background: 'var(--qs-elevated)', borderRadius: 8, padding: '10px 14px',
+      }}>
+        Upload <strong>monthly</strong>, after your Renewal / Cancellation / Termination
+        reports (these measure the outcome). Order between the two below doesn't matter —
+        they write to independent tables.
+      </div>
+
       {/* Upload */}
       <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 24 }}>
         <UploadZone agencyId={agencyId} currentUserId={currentUserId} reportType="premium_profitability" />

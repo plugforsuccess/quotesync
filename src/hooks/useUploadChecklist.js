@@ -55,6 +55,8 @@ export function useUploadChecklist(agencyId) {
         pendingCancel,
         renewal,
         crossSell,
+        premiumProfit,
+        policyAudit,
         reviewResult,
       ] = await Promise.all([
         // Call log: which days have data this week?
@@ -128,6 +130,28 @@ export function useUploadChecklist(agencyId) {
           .from('cross_sell_uploads')
           .select('uploaded_at')
           .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+
+        // Premium & Profitability: uploaded this month?
+        supabase
+          .from('book_metric_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('report_type', 'premium_profitability')
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+
+        // Policy Audit: uploaded this month?
+        supabase
+          .from('book_metric_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('report_type', 'policy_audit')
           .eq('committed', true)
           .gte('uploaded_at', currentMonthStart)
           .order('uploaded_at', { ascending: false })
@@ -325,6 +349,52 @@ export function useUploadChecklist(agencyId) {
         detail: null,
         link: '/agency/retention?tab=import',
         uploadOrder: 5,
+      });
+
+      // 9. Premium & Profitability — monthly book scoreboard, due 8th–15th.
+      // Grounds the Targeting churn model in observed retention; no write-order
+      // dependency with Policy Audit (independent tables).
+      const ppInWindow = dayOfMonth >= 8 && dayOfMonth <= 15;
+      const ppUploaded = !!premiumProfit.data?.length;
+      const ppDue = ppInWindow && !ppUploaded;
+      const ppOverdue = dayOfMonth > 15 && !ppUploaded;
+      items.push({
+        key: 'premium_profitability',
+        category: 'book_of_business',
+        label: 'Premium & Profitability Report',
+        description: ppUploaded
+          ? 'Uploaded this month'
+          : ppDue
+          ? 'Due 8th–15th — upload now'
+          : ppOverdue
+          ? 'Overdue — not uploaded this month'
+          : 'Not yet due (upload 8th–15th)',
+        status: ppUploaded ? 'current' : ppOverdue ? 'overdue' : ppDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=book',
+        uploadOrder: 6,
+      });
+
+      // 10. Policy Audit — monthly per-policy census, due 8th–15th.
+      const paInWindow = dayOfMonth >= 8 && dayOfMonth <= 15;
+      const paUploaded = !!policyAudit.data?.length;
+      const paDue = paInWindow && !paUploaded;
+      const paOverdue = dayOfMonth > 15 && !paUploaded;
+      items.push({
+        key: 'policy_audit',
+        category: 'book_of_business',
+        label: 'Policy Audit Report',
+        description: paUploaded
+          ? 'Uploaded this month'
+          : paDue
+          ? 'Due 8th–15th — upload now'
+          : paOverdue
+          ? 'Overdue — not uploaded this month'
+          : 'Not yet due (upload 8th–15th)',
+        status: paUploaded ? 'current' : paOverdue ? 'overdue' : paDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=book',
+        uploadOrder: 7,
       });
 
       // ── Management cadence items ────────────────────────────────────────
