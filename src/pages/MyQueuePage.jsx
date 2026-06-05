@@ -12,6 +12,8 @@ import { useActiveEmployees } from '../hooks/useEmployees';
 import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import ReadingColumn from '../components/ReadingColumn';
+import InterventionPicker from '../components/InterventionPicker';
+import { EMPTY_INTERVENTION, interventionInsertFields } from '../lib/interventions';
 
 // Format relative time — "2d ago", "3h ago", "just now"
 function relativeTime(dateStr) {
@@ -102,7 +104,7 @@ export default function MyQueuePage() {
 
   // Inline log-call popover
   const [logCallTarget, setLogCallTarget] = useState(null); // { type: 'cancel'|'renewal', event }
-  const [logCallForm,   setLogCallForm]   = useState({ result: 'no_answer', note: '' });
+  const [logCallForm,   setLogCallForm]   = useState({ result: 'no_answer', note: '', intervention: EMPTY_INTERVENTION });
   const [logCallSaving, setLogCallSaving] = useState(false);
 
   // Transcript expand
@@ -394,6 +396,7 @@ export default function MyQueuePage() {
         method:          'phone',
         result:          logCallForm.result,
         note:            logCallForm.note || null,
+        ...interventionInsertFields(logCallForm.intervention),
       });
       await supabase.from('pending_cases').update({
         attempt_count:       (event.attempt_count || 0) + 1,
@@ -412,6 +415,7 @@ export default function MyQueuePage() {
         method:          'phone',
         result:          logCallForm.result,
         note:            logCallForm.note || null,
+        ...interventionInsertFields(logCallForm.intervention),
       });
       await supabase.from('renewal_cases').update({
         attempt_count:       (event.attempt_count || 0) + 1,
@@ -426,7 +430,7 @@ export default function MyQueuePage() {
 
     setLogCallSaving(false);
     setLogCallTarget(null);
-    setLogCallForm({ result: 'no_answer', note: '' });
+    setLogCallForm({ result: 'no_answer', note: '', intervention: EMPTY_INTERVENTION });
   }
 
   async function handleInlineResolve(type, event, resolution) {
@@ -875,7 +879,7 @@ export default function MyQueuePage() {
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
             <button
               className="qs-focusable"
-              onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
+              onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '', intervention: EMPTY_INTERVENTION }); }}
               style={{
                 ...btnBase,
                 border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
@@ -1211,7 +1215,7 @@ export default function MyQueuePage() {
           )}
 
           <button
-            onClick={() => { setLogCallTarget({ type: 'renewal', event }); setLogCallForm({ result: 'no_answer', note: '' }); }}
+            onClick={() => { setLogCallTarget({ type: 'renewal', event }); setLogCallForm({ result: 'no_answer', note: '', intervention: EMPTY_INTERVENTION }); }}
             style={{
               fontSize: 13, padding: '7px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
@@ -1788,6 +1792,14 @@ export default function MyQueuePage() {
               onKeyDown={e => { if (e.key === 'Enter') handleInlineLogCall(); }}
               style={{ marginBottom: 16, fontSize: 15, padding: '10px 12px', width: '100%', boxSizing: 'border-box' }}
             />
+
+            {/* Intervention capture — only meaningful once we've reached the customer */}
+            {logCallForm.result === 'reached' && (
+              <InterventionPicker
+                value={logCallForm.intervention}
+                onChange={(iv) => setLogCallForm(f => ({ ...f, intervention: iv }))}
+              />
+            )}
 
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
               <button
