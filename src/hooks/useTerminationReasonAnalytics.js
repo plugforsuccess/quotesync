@@ -33,15 +33,23 @@ export function useTerminationCategories() {
  * @param {string} agencyId
  * @param {number} monthsBack  How many months of history (default 12)
  */
-export function useTrendByCategory(agencyId, monthsBack = 12) {
+// `cutoffOverride` (a 'YYYY-MM-DD' date) takes precedence over monthsBack — used
+// by the "Since SOP launch" view to bound the window to the go-live date.
+export function useTrendByCategory(agencyId, monthsBack = 12, cutoffOverride = null) {
   return useQuery({
-    queryKey: queryKeys.termination.trendByCategory(agencyId, monthsBack),
+    queryKey: [...queryKeys.termination.trendByCategory(agencyId, monthsBack), cutoffOverride],
     queryFn: async () => {
-      // Compute cutoff: first day of (current month - monthsBack + 1).
-      // report_month is a DATE column, so the bound must be a full ISO date.
-      const today = new Date();
-      const cutoff = new Date(today.getFullYear(), today.getMonth() - monthsBack + 1, 1);
-      const cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-01`;
+      // Compute cutoff: first day of (current month - monthsBack + 1), unless an
+      // explicit cutoff date is supplied. report_month is a DATE column, so the
+      // bound must be a full ISO date.
+      let cutoffStr;
+      if (cutoffOverride) {
+        cutoffStr = String(cutoffOverride).slice(0, 10);
+      } else {
+        const today = new Date();
+        const cutoff = new Date(today.getFullYear(), today.getMonth() - monthsBack + 1, 1);
+        cutoffStr = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-01`;
+      }
 
       // Single join query: lapse_events + categories
       const { data, error } = await supabase

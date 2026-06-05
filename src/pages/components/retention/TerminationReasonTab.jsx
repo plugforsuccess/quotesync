@@ -7,6 +7,7 @@ import { PDFDownloadLink } from '@react-pdf/renderer';
 import { Download } from 'lucide-react';
 import { useChartTheme } from '../../../lib/chartTheme';
 import { useAgencyDetail } from '../../../hooks/useAgencies';
+import { useSopGoLiveDate } from '../../../hooks/useSopGoLiveDate';
 import {
   useTerminationCategories,
   useTrendByCategory,
@@ -25,12 +26,14 @@ const fmt$ = (n) => '$' + Math.round(n || 0).toLocaleString();
 
 export default function TerminationReasonTab({ agencyId }) {
   const [windowMonths, setWindowMonths] = useState(12);
+  const [sinceLaunch, setSinceLaunch] = useState(false);
   const theme = useChartTheme();
+  const { data: goLive } = useSopGoLiveDate(agencyId);
 
   const { data: agency } = useAgencyDetail(agencyId);
   const { data: categories = [] } = useTerminationCategories();
-  const { data: currentRows = [], isLoading: loadingCurrent } = useTrendByCategory(agencyId, windowMonths);
-  const { data: priorRows = [], isLoading: loadingPrior } = useTrendByCategory(agencyId, windowMonths * 2);
+  const { data: currentRows = [], isLoading: loadingCurrent } = useTrendByCategory(agencyId, windowMonths, sinceLaunch ? goLive : null);
+  const { data: priorRowsRaw = [], isLoading: loadingPrior } = useTrendByCategory(agencyId, windowMonths * 2);
 
   // Build series for current and prior windows
   const currentSeries = useMemo(
@@ -40,11 +43,13 @@ export default function TerminationReasonTab({ agencyId }) {
 
   // Prior period = the older half of (windowMonths * 2). Slice the series.
   const priorSeries = useMemo(() => {
-    const fullSeries = buildMonthlySeries(priorRows, categories);
+    // No meaningful "prior period" in since-launch mode — drop the comparison.
+    const rows = sinceLaunch ? [] : priorRowsRaw;
+    const fullSeries = buildMonthlySeries(rows, categories);
     // fullSeries covers 2× the window. Take the first half (older).
     const half = Math.floor(fullSeries.length / 2);
     return fullSeries.slice(0, half);
-  }, [priorRows, categories]);
+  }, [priorRowsRaw, sinceLaunch, categories]);
 
   const currentAgg = useMemo(() => aggregateByCategory(currentSeries, categories), [currentSeries, categories]);
   const priorAgg   = useMemo(() => aggregateByCategory(priorSeries, categories),   [priorSeries, categories]);
@@ -113,11 +118,11 @@ export default function TerminationReasonTab({ agencyId }) {
           {[3, 6, 12, 24].map(m => (
             <button
               key={m} type="button"
-              onClick={() => setWindowMonths(m)}
+              onClick={() => { setSinceLaunch(false); setWindowMonths(m); }}
               style={{
                 padding: '6px 12px',
-                background: windowMonths === m ? 'var(--qs-info)' : 'transparent',
-                color: windowMonths === m ? 'white' : 'var(--qs-text)',
+                background: (!sinceLaunch && windowMonths === m) ? 'var(--qs-info)' : 'transparent',
+                color: (!sinceLaunch && windowMonths === m) ? 'white' : 'var(--qs-text)',
                 fontSize: 13, fontWeight: 500,
                 border: '1px solid var(--qs-border)', borderRadius: 6, cursor: 'pointer',
               }}
@@ -125,6 +130,22 @@ export default function TerminationReasonTab({ agencyId }) {
               {m === 24 ? '2 years' : `${m} months`}
             </button>
           ))}
+          {goLive && (
+            <button
+              type="button"
+              onClick={() => setSinceLaunch(v => !v)}
+              title={`Clean SOP era — terminations on/after ${goLive}`}
+              style={{
+                padding: '6px 12px',
+                background: sinceLaunch ? 'var(--qs-info)' : 'transparent',
+                color: sinceLaunch ? 'white' : 'var(--qs-text)',
+                fontSize: 13, fontWeight: 500,
+                border: '1px solid var(--qs-border)', borderRadius: 6, cursor: 'pointer',
+              }}
+            >
+              Since SOP launch
+            </button>
+          )}
         </div>
       </div>
 
