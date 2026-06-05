@@ -1,13 +1,14 @@
 // src/pages/DefensiveDrivingPortalPage.jsx
-// Full-screen course experience (no consumer nav): module overview + a rich
-// lesson reader with callouts and interactive scenario checks, a per-module
-// graded knowledge check that gates completion, the final exam, and the
-// certificate. Progression is content/quiz based — no seat-time gating.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+// Full-screen course experience (no consumer nav) with an accessible,
+// theme-aware reader: light default + dark toggle + text-size control
+// (scoped via the `.ddc` token layer in index.css). Module overview, a
+// paginated lesson reader with per-section checks, the graded module quiz,
+// the final exam, and the certificate. No seat-time gating.
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Lock, CheckCircle2, Circle, Loader2, AlertCircle, ArrowLeft, ArrowRight, Award, Download,
-  Scale, KeyRound, AlertTriangle, Lightbulb, ListChecks, X, BookOpen,
+  Scale, KeyRound, AlertTriangle, Lightbulb, ListChecks, X, BookOpen, Sun, Moon,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -17,9 +18,47 @@ import {
 } from '../lib/ddApi';
 import { getModuleContent } from '../data/ddCourseContent';
 
+// ---- Accessibility (theme + text size), persisted -------------------------
+const A11yCtx = createContext(null);
+const useA11y = () => useContext(A11yCtx);
+
+function AccessibilityControls() {
+  const { theme, setTheme, size, setSize } = useA11y();
+  const sizes = [
+    ['normal', 'A', 'Normal text', 'text-xs'],
+    ['large', 'A', 'Large text', 'text-sm'],
+    ['larger', 'A', 'Larger text', 'text-base'],
+  ];
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+        title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+        className="ddc-link p-2 rounded-lg ddc-bd border">
+        {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+      </button>
+      <div className="flex items-center rounded-lg ddc-soft border ddc-bd p-0.5" role="group" aria-label="Text size">
+        {sizes.map(([val, , aria, cls]) => (
+          <button key={val} onClick={() => setSize(val)} aria-label={aria} aria-pressed={size === val}
+            className={`px-2.5 py-1 rounded-md leading-none ${cls} font-bold ${size === val ? 'ddc-btn' : 'ddc-muted'}`}>
+            A
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function DefensiveDrivingPortalPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  const [theme, setTheme] = useState(() => localStorage.getItem('dd-theme') || 'light');
+  const [size, setSize] = useState(() => localStorage.getItem('dd-size') || 'large');
+  useEffect(() => { localStorage.setItem('dd-theme', theme); }, [theme]);
+  useEffect(() => { localStorage.setItem('dd-size', size); }, [size]);
+  const a11y = useMemo(() => ({ theme, setTheme, size, setSize }), [theme, size]);
 
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState(null);
@@ -29,9 +68,7 @@ export default function DefensiveDrivingPortalPage() {
   const [activeId, setActiveId] = useState(null);
   const [error, setError] = useState(null);
 
-  const reload = useCallback(async (enr) => {
-    setProgress(await getProgress(enr.id));
-  }, []);
+  const reload = useCallback(async (enr) => { setProgress(await getProgress(enr.id)); }, []);
 
   useEffect(() => {
     if (authLoading) return;
@@ -58,13 +95,17 @@ export default function DefensiveDrivingPortalPage() {
     return () => { active = false; };
   }, [user, authLoading, navigate]);
 
+  const shell = (inner) => (
+    <A11yCtx.Provider value={a11y}>
+      <div className="ddc ddc-page min-h-screen" data-theme={theme} data-size={size}>{inner}</div>
+    </A11yCtx.Provider>
+  );
+
   if (loading || authLoading) {
-    return <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <Loader2 className="w-8 h-8 text-success-400 animate-spin" />
-    </div>;
+    return shell(<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-8 h-8 ddc-accent animate-spin" /></div>);
   }
   if (error) {
-    return <div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center p-6">{error}</div>;
+    return shell(<div className="min-h-screen flex items-center justify-center p-6 ddc-text">{error}</div>);
   }
 
   const byId = Object.fromEntries(progress.map((p) => [p.module_id, p]));
@@ -78,7 +119,7 @@ export default function DefensiveDrivingPortalPage() {
 
   if (activeId) {
     const vm = vms.find((v) => v.id === activeId);
-    return (
+    return shell(
       <ModulePlayer
         key={vm.id}
         module={vm}
@@ -91,83 +132,76 @@ export default function DefensiveDrivingPortalPage() {
           setActiveId(next ? next.id : null);
           window.scrollTo(0, 0);
         }}
-      />
+      />,
     );
   }
 
-  return (
-    <div className="bg-gray-950 text-gray-50 min-h-screen">
-      <CourseHeader onExit={() => navigate('/')} />
-      <div className="max-w-3xl mx-auto px-4 py-10">
-        <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-2">Your course</p>
-        <h1 className="text-3xl font-black mb-4">{course.title}</h1>
+  return shell(
+    <>
+      <div className="sticky top-0 z-20 ddc-bar backdrop-blur border-b">
+        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 ddc-sm font-semibold ddc-accent">
+            <BookOpen className="w-4 h-4" /> Defensive Driving · Georgia
+          </span>
+          <div className="flex items-center gap-3">
+            <AccessibilityControls />
+            <button onClick={() => navigate('/')} className="flex items-center gap-1 ddc-xs ddc-link">
+              Exit <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </div>
 
-        {/* Overall progress */}
+      <div className="max-w-3xl mx-auto px-4 py-10">
+        <p className="ddc-eyebrow mb-2">Your course</p>
+        <h1 className="ddc-h1 font-black ddc-heading mb-4">{course.title}</h1>
+
         <div className="mb-8">
-          <div className="flex items-center justify-between text-xs text-gray-400 mb-1.5">
+          <div className="flex items-center justify-between ddc-xs ddc-muted mb-1.5">
             <span>{completedCount} of {vms.length} modules complete</span>
             <span>{Math.round((completedCount / vms.length) * 100)}%</span>
           </div>
-          <div className="h-2 w-full rounded-full bg-gray-800 overflow-hidden">
-            <div className="h-full bg-success-500 transition-all" style={{ width: `${(completedCount / vms.length) * 100}%` }} />
+          <div className="h-2 w-full rounded-full ddc-track overflow-hidden">
+            <div className="h-full ddc-fill transition-all" style={{ width: `${(completedCount / vms.length) * 100}%` }} />
           </div>
         </div>
 
         <div className="space-y-3">
-          {vms.map((vm) => (
-            <ModuleRow key={vm.id} vm={vm} onOpen={() => { setActiveId(vm.id); window.scrollTo(0, 0); }} />
-          ))}
+          {vms.map((vm) => <ModuleRow key={vm.id} vm={vm} onOpen={() => { setActiveId(vm.id); window.scrollTo(0, 0); }} />)}
 
           {allComplete ? (
             <FinalExam course={course} enrollment={enrollment} />
           ) : (
-            <div className="rounded-xl border p-4 flex items-center gap-4 border-gray-800 bg-gray-900/40 opacity-70">
-              <Lock className="w-5 h-5 text-gray-500 shrink-0" />
+            <div className="rounded-xl border ddc-bd ddc-card p-4 flex items-center gap-4 opacity-70">
+              <Lock className="w-5 h-5 ddc-faint shrink-0" />
               <div>
-                <p className="font-semibold">Final Exam</p>
-                <p className="text-xs text-gray-400">Unlocks after all {vms.length} modules are complete.</p>
+                <p className="font-semibold ddc-heading ddc-base">Final Exam</p>
+                <p className="ddc-xs ddc-muted">Unlocks after all {vms.length} modules are complete.</p>
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function CourseHeader({ onExit, label = 'Defensive Driving · Georgia' }) {
-  return (
-    <div className="sticky top-0 z-20 bg-gray-950/95 backdrop-blur border-b border-gray-800">
-      <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-        <span className="flex items-center gap-2 text-sm font-semibold text-success-300">
-          <BookOpen className="w-4 h-4" /> {label}
-        </span>
-        <button onClick={onExit} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-100">
-          Exit course <X className="w-4 h-4" />
-        </button>
-      </div>
-    </div>
+    </>,
   );
 }
 
 function ModuleRow({ vm, onOpen }) {
   return (
-    <div className={`rounded-xl border p-4 flex items-center gap-4 ${vm.unlocked ? 'border-gray-700 bg-gray-900/60' : 'border-gray-800 bg-gray-900/30 opacity-70'}`}>
+    <div className={`rounded-xl border p-4 flex items-center gap-4 ddc-card ${vm.unlocked ? 'ddc-bd' : 'ddc-bd opacity-70'}`}>
       <div className="shrink-0">
-        {vm.completed ? <CheckCircle2 className="w-6 h-6 text-success-400" />
-          : vm.unlocked ? <Circle className="w-6 h-6 text-success-300" />
-          : <Lock className="w-6 h-6 text-gray-500" />}
+        {vm.completed ? <CheckCircle2 className="w-6 h-6 ddc-good" />
+          : vm.unlocked ? <Circle className="w-6 h-6 ddc-accent" />
+          : <Lock className="w-6 h-6 ddc-faint" />}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold truncate">Module {vm.ordinal}: {vm.title}</p>
-        <p className="text-xs text-gray-400 mt-0.5">
+        <p className="font-semibold ddc-heading ddc-base truncate">Module {vm.ordinal}: {vm.title}</p>
+        <p className="ddc-xs ddc-muted mt-0.5">
           {vm.completed ? 'Completed' : vm.unlocked ? 'Ready' : 'Complete the previous module to unlock'}
         </p>
       </div>
-      <button
-        onClick={onOpen}
-        disabled={!vm.unlocked}
-        className={`text-xs font-semibold rounded-full px-4 py-2 transition ${vm.unlocked ? 'bg-success-400 hover:bg-success-300 text-gray-950' : 'bg-gray-800 text-gray-500 cursor-not-allowed'}`}>
+      <button onClick={onOpen} disabled={!vm.unlocked}
+        className={`ddc-xs font-semibold rounded-full px-4 py-2 transition ${vm.unlocked ? 'ddc-btn' : 'ddc-soft ddc-faint cursor-not-allowed'}`}>
         {vm.completed ? 'Review' : 'Start'}
       </button>
     </div>
@@ -175,7 +209,7 @@ function ModuleRow({ vm, onOpen }) {
 }
 
 // ---------------------------------------------------------------------------
-// Lesson reader
+// Lesson reader (paginated: intro -> sections w/ checks -> module quiz)
 // ---------------------------------------------------------------------------
 function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   const content = getModuleContent(mod.content_ref);
@@ -184,11 +218,7 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   const isLast = mod.index + 1 >= total;
 
   const sections = useMemo(() => content?.sections || [], [content]);
-  // Steps: Introduction -> each section (with its own check) -> module quiz.
-  const steps = useMemo(
-    () => ['intro', ...sections.map(() => 'section'), 'quiz'],
-    [sections],
-  );
+  const steps = useMemo(() => ['intro', ...sections.map(() => 'section'), 'quiz'], [sections]);
   const [step, setStep] = useState(0);
   const [passedSections, setPassedSections] = useState(() => new Set());
   const go = (n) => { setStep(n); window.scrollTo(0, 0); };
@@ -196,137 +226,118 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
   const kind = steps[step];
   const sectionIdx = kind === 'section' ? step - 1 : -1;
   const section = sectionIdx >= 0 ? sections[sectionIdx] : null;
-  // A section's "Continue" is gated on passing its check (skipped on review or
-  // when a section has no check).
   const sectionGateOk = kind !== 'section'
     ? true
     : completed || !section?.quiz?.length || passedSections.has(sectionIdx);
 
   return (
-    <div className="bg-gray-950 text-gray-50 min-h-screen">
-      <div className="sticky top-0 z-20 bg-gray-950/95 backdrop-blur border-b border-gray-800">
+    <>
+      <div className="sticky top-0 z-20 ddc-bar backdrop-blur border-b">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <button onClick={onBack} className="text-gray-400 hover:text-gray-100 flex items-center gap-1.5 text-sm">
-            <ArrowLeft className="w-4 h-4" /> All modules
+          <button onClick={onBack} className="ddc-link flex items-center gap-1.5 ddc-sm">
+            <ArrowLeft className="w-4 h-4" /> <span className="hidden sm:inline">All modules</span>
           </button>
-          <span className="text-xs text-gray-500">Module {mod.ordinal} of {total}</span>
-          <button onClick={onExit} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-100">
-            Exit <X className="w-4 h-4" />
-          </button>
+          <span className="ddc-xs ddc-faint">Module {mod.ordinal} of {total}</span>
+          <div className="flex items-center gap-3">
+            <AccessibilityControls />
+            <button onClick={onExit} className="flex items-center gap-1 ddc-xs ddc-link">
+              Exit <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div className="max-w-3xl mx-auto px-4 pb-3">
-          <div className="h-1.5 w-full rounded-full bg-gray-800 overflow-hidden">
-            <div className="h-full bg-success-500 transition-all" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
+          <div className="h-1.5 w-full rounded-full ddc-track overflow-hidden">
+            <div className="h-full ddc-fill transition-all" style={{ width: `${((step + 1) / steps.length) * 100}%` }} />
           </div>
         </div>
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8">
-        <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-2">
+        <p className="ddc-eyebrow mb-2">
           Module {mod.ordinal}
           {kind === 'section' && ` · Section ${sectionIdx + 1} of ${sections.length}`}
           {kind === 'quiz' && ' · Module quiz'}
           {kind === 'intro' && ' · Introduction'}
         </p>
-        <h1 className="text-2xl md:text-3xl font-black mb-6">{mod.title}</h1>
+        <h1 className="ddc-h1 font-black ddc-heading mb-6">{mod.title}</h1>
 
-        {/* Introduction */}
         {kind === 'intro' && (
           <div>
             {content?.summary && (
-              <p className="text-base text-gray-300 leading-relaxed border-l-2 border-success-500/40 pl-4">{content.summary}</p>
+              <p className="ddc-lg ddc-text leading-relaxed border-l-2 pl-4" style={{ borderColor: 'var(--ddc-accent-solid)' }}>{content.summary}</p>
             )}
             {sections.length > 0 && (
-              <div className="mt-6 rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-                <p className="text-sm font-semibold text-gray-200 mb-3">In this module</p>
+              <div className="mt-6 rounded-xl border ddc-bd ddc-soft p-5">
+                <p className="ddc-base font-semibold ddc-heading mb-3">In this module</p>
                 <ol className="space-y-2.5">
                   {sections.map((s, i) => (
-                    <li key={i} className="flex gap-3 text-sm text-gray-300">
-                      <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-success-500/20 text-[11px] font-bold text-success-200">{i + 1}</span>
+                    <li key={i} className="flex gap-3 ddc-sm ddc-text">
+                      <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full ddc-btn text-[11px] font-bold">{i + 1}</span>
                       {s.heading || `Section ${i + 1}`}
                     </li>
                   ))}
                 </ol>
               </div>
             )}
-            {!content && <p className="text-gray-400">Content for this module is being prepared.</p>}
+            {!content && <p className="ddc-muted">Content for this module is being prepared.</p>}
           </div>
         )}
 
-        {/* A single section + its check */}
         {kind === 'section' && section && (
           <div>
             <article className="space-y-5">
-              {section.heading && <h2 className="text-xl md:text-2xl font-bold text-success-100">{section.heading}</h2>}
+              {section.heading && <h2 className="ddc-h2 font-bold ddc-heading">{section.heading}</h2>}
               {section.blocks.map((b, i) => <Block key={i} b={b} />)}
             </article>
             {section.quiz?.length > 0 && (
               <div className="mt-8">
-                <SectionQuiz
-                  key={sectionIdx}
-                  quiz={section.quiz}
-                  defaultPassed={completed}
-                  onPass={() => setPassedSections((p) => new Set(p).add(sectionIdx))}
-                />
+                <SectionQuiz key={sectionIdx} quiz={section.quiz} defaultPassed={completed}
+                  onPass={() => setPassedSections((p) => new Set(p).add(sectionIdx))} />
               </div>
             )}
           </div>
         )}
 
-        {/* Takeaways + graded quiz */}
         {kind === 'quiz' && (
           <div>
             {content?.takeaways?.length > 0 && (
-              <div className="mb-8 rounded-xl border border-success-500/30 bg-success-500/5 p-5">
-                <p className="flex items-center gap-2 text-sm font-bold text-success-200 mb-3">
-                  <ListChecks className="w-5 h-5" /> Key takeaways
-                </p>
+              <div className="mb-8 rounded-xl border ddc-cal ddc-cal-key p-5">
+                <p className="flex items-center gap-2 ddc-base font-bold ddc-cal-title mb-3"><ListChecks className="w-5 h-5" /> Key takeaways</p>
                 <ul className="space-y-2">
                   {content.takeaways.map((t, i) => (
-                    <li key={i} className="flex gap-2.5 text-sm text-gray-200">
-                      <CheckCircle2 className="w-4 h-4 text-success-400 shrink-0 mt-0.5" /> {t}
-                    </li>
+                    <li key={i} className="flex gap-2.5 ddc-sm ddc-text"><CheckCircle2 className="w-4 h-4 ddc-good shrink-0 mt-0.5" /> {t}</li>
                   ))}
                 </ul>
               </div>
             )}
-            <KnowledgeCheck
-              module={mod}
-              alreadyPassed={kcPassed}
-              onPassed={() => { setKcPassed(true); setCompleted(true); }}
-            />
+            <KnowledgeCheck module={mod} alreadyPassed={kcPassed}
+              onPassed={() => { setKcPassed(true); setCompleted(true); }} />
           </div>
         )}
 
-        {/* Step navigation */}
-        <div className="mt-10 flex items-center justify-between gap-3 border-t border-gray-800 pt-6">
-          <button
-            onClick={() => (step === 0 ? onBack() : go(step - 1))}
-            className="text-sm text-gray-400 hover:text-gray-100 flex items-center gap-1.5">
+        <div className="mt-10 flex items-center justify-between gap-3 border-t ddc-bd pt-6">
+          <button onClick={() => (step === 0 ? onBack() : go(step - 1))} className="ddc-sm ddc-link flex items-center gap-1.5">
             <ArrowLeft className="w-4 h-4" /> {step === 0 ? 'All modules' : 'Back'}
           </button>
 
           {kind !== 'quiz' ? (
             <div className="flex items-center gap-3">
-              {kind === 'section' && !sectionGateOk && (
-                <span className="text-xs text-gray-500 hidden sm:inline">Pass the section check</span>
-              )}
+              {kind === 'section' && !sectionGateOk && <span className="ddc-xs ddc-faint hidden sm:inline">Pass the section check</span>}
               <button onClick={() => go(step + 1)} disabled={!sectionGateOk}
-                className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 disabled:opacity-50 disabled:cursor-not-allowed text-gray-950 transition flex items-center gap-2">
+                className="ddc-sm ddc-btn rounded-full px-6 py-3 transition flex items-center gap-2">
                 Continue <ArrowRight className="w-4 h-4" />
               </button>
             </div>
           ) : (completed || kcPassed) ? (
-            <button onClick={onNext}
-              className="text-sm font-semibold rounded-full px-6 py-3 bg-success-400 hover:bg-success-300 text-gray-950 transition flex items-center gap-2">
+            <button onClick={onNext} className="ddc-sm ddc-btn rounded-full px-6 py-3 transition flex items-center gap-2">
               {isLast ? 'Finish' : 'Next module'} <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
-            <span className="text-xs text-gray-500">Pass the quiz to continue</span>
+            <span className="ddc-xs ddc-faint">Pass the quiz to continue</span>
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -334,13 +345,13 @@ function ModulePlayer({ module: mod, total, onBack, onNext, onExit }) {
 function Block({ b }) {
   switch (b.type) {
     case 'p':
-      return <p className="text-sm md:text-[15px] text-gray-300 leading-relaxed">{b.text}</p>;
+      return <p className="ddc-base ddc-text leading-relaxed">{b.text}</p>;
     case 'ul':
       return (
         <ul className="space-y-2">
           {b.items.map((it, i) => (
-            <li key={i} className="flex gap-2.5 text-sm md:text-[15px] text-gray-300 leading-relaxed">
-              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-success-400" />{it}
+            <li key={i} className="flex gap-2.5 ddc-base ddc-text leading-relaxed">
+              <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full ddc-fill" />{it}
             </li>
           ))}
         </ul>
@@ -349,8 +360,8 @@ function Block({ b }) {
       return (
         <ol className="space-y-2">
           {b.items.map((it, i) => (
-            <li key={i} className="flex gap-3 text-sm md:text-[15px] text-gray-300 leading-relaxed">
-              <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full bg-success-500/20 text-[11px] font-bold text-success-200">{i + 1}</span>{it}
+            <li key={i} className="flex gap-3 ddc-base ddc-text leading-relaxed">
+              <span className="shrink-0 flex h-5 w-5 items-center justify-center rounded-full ddc-btn text-[11px] font-bold">{i + 1}</span>{it}
             </li>
           ))}
         </ol>
@@ -363,33 +374,29 @@ function Block({ b }) {
 }
 
 const CALLOUT = {
-  law: { icon: Scale, ring: 'border-sky-500/40 bg-sky-500/10', text: 'text-sky-200', label: 'Georgia law' },
-  key: { icon: KeyRound, ring: 'border-success-500/40 bg-success-500/10', text: 'text-success-200', label: 'Key point' },
-  warn: { icon: AlertTriangle, ring: 'border-amber-500/40 bg-amber-500/10', text: 'text-amber-200', label: 'Watch out' },
-  tip: { icon: Lightbulb, ring: 'border-teal-500/40 bg-teal-500/10', text: 'text-teal-200', label: 'Tip' },
+  law: { icon: Scale, cls: 'ddc-cal-law', label: 'Georgia law' },
+  key: { icon: KeyRound, cls: 'ddc-cal-key', label: 'Key point' },
+  warn: { icon: AlertTriangle, cls: 'ddc-cal-warn', label: 'Watch out' },
+  tip: { icon: Lightbulb, cls: 'ddc-cal-tip', label: 'Tip' },
 };
 
 function Callout({ variant = 'key', title, text, items }) {
   const c = CALLOUT[variant] || CALLOUT.key;
   const Icon = c.icon;
   return (
-    <div className={`rounded-xl border p-4 ${c.ring}`}>
-      <p className={`flex items-center gap-2 text-sm font-semibold mb-1.5 ${c.text}`}>
-        <Icon className="w-4 h-4" /> {title || c.label}
-      </p>
-      {text && <p className="text-sm text-gray-200 leading-relaxed">{text}</p>}
+    <div className={`rounded-xl p-4 ddc-cal ${c.cls}`}>
+      <p className="flex items-center gap-2 ddc-sm font-semibold mb-1.5 ddc-cal-title"><Icon className="w-4 h-4" /> {title || c.label}</p>
+      {text && <p className="ddc-sm ddc-text leading-relaxed">{text}</p>}
       {items && (
         <ul className="mt-1 space-y-1.5">
-          {items.map((it, i) => (
-            <li key={i} className="flex gap-2.5 text-sm text-gray-200"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-current opacity-60" />{it}</li>
-          ))}
+          {items.map((it, i) => <li key={i} className="flex gap-2.5 ddc-sm ddc-text"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full ddc-fill" />{it}</li>)}
         </ul>
       )}
     </div>
   );
 }
 
-// Per-section formative check: answer all questions correctly to continue.
+// ---- Per-section formative check ------------------------------------------
 function SectionQuiz({ quiz, defaultPassed, onPass }) {
   const [answers, setAnswers] = useState({});
   const [checked, setChecked] = useState(false);
@@ -403,54 +410,49 @@ function SectionQuiz({ quiz, defaultPassed, onPass }) {
   };
 
   return (
-    <div className="rounded-xl border border-gray-700 bg-gray-900/60 p-5">
-      <p className="text-xs uppercase tracking-wider text-gray-500 mb-3">Section check</p>
+    <div className="rounded-xl border ddc-bd ddc-card p-5">
+      <p className="ddc-xs uppercase tracking-wider ddc-faint mb-3">Section check</p>
       <div className="space-y-5">
         {quiz.map((qq, qi) => (
           <div key={qi}>
-            <p className="text-sm md:text-[15px] font-medium text-gray-100 mb-2">{qi + 1}. {qq.q}</p>
+            <p className="ddc-base font-medium ddc-heading mb-2">{qi + 1}. {qq.q}</p>
             <div className="space-y-2">
               {qq.choices.map((c, ci) => {
                 const isPicked = answers[qi] === ci;
                 const reveal = checked || passed;
-                const state = reveal && c.correct ? 'border-success-500 bg-success-500/10 text-success-100'
-                  : reveal && isPicked && !c.correct ? 'border-red-500/60 bg-red-500/10 text-red-200'
-                  : isPicked ? 'border-success-500/70 bg-success-500/5 text-gray-100'
-                  : 'border-gray-700 hover:border-gray-600 text-gray-200';
+                const mod = reveal && c.correct ? 'is-ok' : reveal && isPicked && !c.correct ? 'is-no' : isPicked ? 'is-sel' : '';
                 return (
                   <button key={ci} type="button" onClick={() => pick(qi, ci)} disabled={passed}
-                    className={`w-full text-left flex items-start gap-2.5 rounded-lg border px-3 py-2 text-sm transition ${state}`}>
-                    {reveal && c.correct ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-success-400" />
-                      : reveal && isPicked ? <X className="w-4 h-4 shrink-0 mt-0.5 text-red-400" />
-                      : <Circle className="w-4 h-4 shrink-0 mt-0.5 text-gray-500" />}
+                    className={`ddc-opt w-full text-left flex items-start gap-2.5 rounded-lg px-3 py-2 ddc-sm transition ${mod}`}>
+                    {reveal && c.correct ? <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 ddc-good" />
+                      : reveal && isPicked ? <X className="w-4 h-4 shrink-0 mt-0.5 ddc-bad" />
+                      : <Circle className="w-4 h-4 shrink-0 mt-0.5 ddc-faint" />}
                     {c.t}
                   </button>
                 );
               })}
             </div>
             {(checked || passed) && answers[qi] != null && qq.explain && (
-              <p className="mt-2 text-sm text-gray-400 leading-relaxed border-l-2 border-success-500/40 pl-3">{qq.explain}</p>
+              <p className="mt-2 ddc-sm ddc-muted leading-relaxed border-l-2 pl-3" style={{ borderColor: 'var(--ddc-accent-solid)' }}>{qq.explain}</p>
             )}
           </div>
         ))}
       </div>
 
       {passed ? (
-        <p className="mt-4 text-sm text-success-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Section check passed.</p>
+        <p className="mt-4 ddc-sm ddc-good flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Section check passed.</p>
       ) : (
         <>
-          {checked && <p className="mt-3 text-sm text-amber-300">Not quite — review the highlighted answers and try again.</p>}
+          {checked && <p className="mt-3 ddc-sm ddc-warn">Not quite — review the highlighted answers and try again.</p>}
           <button type="button" onClick={check} disabled={!allAnswered}
-            className="mt-4 rounded-full px-5 py-2.5 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition">
-            Check answers
-          </button>
+            className="mt-4 ddc-btn rounded-full px-5 py-2.5 ddc-sm transition">Check answers</button>
         </>
       )}
     </div>
   );
 }
 
-// ---- Per-module knowledge check (graded, server-scored) --------------------
+// ---- Per-module graded knowledge check (server-scored) ---------------------
 function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
   const [questions, setQuestions] = useState(null);
   const [answers, setAnswers] = useState({});
@@ -461,57 +463,42 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
 
   const load = useCallback(async () => {
     setError(null); setResult(null); setAnswers({});
-    try {
-      setQuestions(await getModuleQuestions(mod.id));
-    } catch (err) {
-      setError(err.message || 'Could not load the quiz.');
-    }
+    try { setQuestions(await getModuleQuestions(mod.id)); }
+    catch (err) { setError(err.message || 'Could not load the quiz.'); }
   }, [mod.id]);
 
   useEffect(() => { if (!alreadyPassed) load(); }, [alreadyPassed, load]);
 
-  if (passed) {
-    return <p className="text-sm text-success-300 flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Knowledge check passed.</p>;
-  }
-  if (error) {
-    return <div className="text-sm text-red-300 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}
-      <button onClick={load} className="underline ml-2">Retry</button></div>;
-  }
-  if (!questions) {
-    return <div className="text-sm text-gray-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading knowledge check…</div>;
-  }
+  if (passed) return <p className="ddc-sm ddc-good flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Knowledge check passed.</p>;
+  if (error) return <div className="ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}<button onClick={load} className="underline ml-2">Retry</button></div>;
+  if (!questions) return <div className="ddc-sm ddc-muted flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading knowledge check…</div>;
 
   const allAnswered = questions.length > 0 && questions.every((q) => answers[q.id]);
-
   const submit = async () => {
     setBusy(true); setError(null);
     try {
       const r = await submitKnowledgeCheck(mod.id, answers);
       setResult(r);
       if (r.passed) { setPassed(true); onPassed(); }
-    } catch (err) {
-      setError(err.message || 'Could not submit.');
-    } finally {
-      setBusy(false);
-    }
+    } catch (err) { setError(err.message || 'Could not submit.'); }
+    finally { setBusy(false); }
   };
 
   return (
     <div>
-      <h2 className="text-lg font-bold mb-1">Module quiz</h2>
-      <p className="text-xs text-gray-400 mb-5">Answer all questions to complete this module. You can retake it if needed.</p>
+      <h2 className="ddc-lg font-bold ddc-heading mb-1">Module quiz</h2>
+      <p className="ddc-xs ddc-muted mb-5">Answer all questions to complete this module. You can retake it if needed.</p>
       <div className="space-y-6">
         {questions.map((q, qi) => (
           <fieldset key={q.id}>
-            <legend className="text-sm font-medium text-gray-100 mb-2">{qi + 1}. {q.prompt}</legend>
+            <legend className="ddc-base font-medium ddc-heading mb-2">{qi + 1}. {q.prompt}</legend>
             <div className="space-y-2">
               {(q.choices || []).map((c) => (
-                <label key={c.key} className={`flex items-center gap-3 rounded-lg border px-3 py-2 cursor-pointer text-sm transition ${answers[q.id] === c.key ? 'border-success-500 bg-success-500/10' : 'border-gray-700 hover:border-gray-600'}`}>
-                  <input type="radio" name={q.id} value={c.key}
-                    checked={answers[q.id] === c.key}
+                <label key={c.key} className={`ddc-opt flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer ddc-sm transition ${answers[q.id] === c.key ? 'is-sel' : ''}`}>
+                  <input type="radio" name={q.id} value={c.key} checked={answers[q.id] === c.key}
                     onChange={() => setAnswers((a) => ({ ...a, [q.id]: c.key }))}
-                    className="accent-success-500" />
-                  <span className="text-gray-200">{c.text}</span>
+                    style={{ accentColor: 'var(--ddc-accent-solid)' }} />
+                  <span>{c.text}</span>
                 </label>
               ))}
             </div>
@@ -520,15 +507,13 @@ function KnowledgeCheck({ module: mod, alreadyPassed, onPassed }) {
       </div>
 
       {result && !result.passed && (
-        <p className="mt-4 text-sm text-amber-300">
-          You scored {result.score_pct}% — {result.threshold}% is required to pass. Review the material and try again.
-          <button onClick={load} className="underline ml-2">New attempt</button>
-        </p>
+        <p className="mt-4 ddc-sm ddc-warn">You scored {result.score_pct}% — {result.threshold}% is required to pass. Review the material and try again.
+          <button onClick={load} className="underline ml-2">New attempt</button></p>
       )}
-      {error && <p className="mt-4 text-sm text-red-300 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
+      {error && <p className="mt-4 ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
 
       <button onClick={submit} disabled={!allAnswered || busy}
-        className="mt-5 rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
+        className="mt-5 ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
         {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit answers'}
       </button>
     </div>
@@ -561,11 +546,8 @@ function FinalExam({ course, enrollment }) {
 
   if (passed) {
     return (
-      <div className="rounded-xl border border-success-500/40 bg-success-500/5 p-5">
-        <div className="flex items-center gap-3 mb-3">
-          <Award className="w-6 h-6 text-success-400" />
-          <p className="font-semibold">Final exam passed — course complete!</p>
-        </div>
+      <div className="rounded-xl ddc-cal ddc-cal-key p-5">
+        <div className="flex items-center gap-3 mb-3"><Award className="w-6 h-6 ddc-good" /><p className="font-semibold ddc-heading ddc-base">Final exam passed — course complete!</p></div>
         <CertificateBlock courseSlug={course.slug} />
       </div>
     );
@@ -581,8 +563,7 @@ function FinalExam({ course, enrollment }) {
     setBusy(true); setError(null); setResult(null);
     try {
       const e = await startExam(course.id);
-      setExam(e); setAnswers({}); setPhase('exam');
-      window.scrollTo(0, 0);
+      setExam(e); setAnswers({}); setPhase('exam'); window.scrollTo(0, 0);
     } catch (err) {
       const msg = err.message || '';
       if (msg.includes('cooldown')) setError('Please wait for the cooldown to end before trying again.');
@@ -597,41 +578,40 @@ function FinalExam({ course, enrollment }) {
     try {
       const r = await submitExam(exam.attempt_id, answers);
       setResult(r); setPhase('result');
-      if (r.passed) setPassed(true);
-      else await loadAttempts();
+      if (r.passed) setPassed(true); else await loadAttempts();
     } catch (err) { setError(err.message || 'Could not submit.'); }
     finally { setBusy(false); }
   };
 
   if (phase === 'loading') {
-    return <div className="rounded-xl border border-gray-800 bg-gray-900/40 p-5 text-sm text-gray-400 flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading final exam…</div>;
+    return <div className="rounded-xl border ddc-bd ddc-card p-5 ddc-sm ddc-muted flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> Loading final exam…</div>;
   }
 
   if (phase === 'exam' && exam) {
     const allAnswered = exam.questions.every((q) => answers[q.id]);
     return (
-      <div className="rounded-xl border border-success-500/40 bg-gray-900/60 p-5">
-        <h3 className="text-lg font-bold mb-1">Final Exam</h3>
-        <p className="text-xs text-gray-400 mb-5">{exam.questions.length} questions · {course.pass_threshold_pct}% to pass</p>
+      <div className="rounded-xl border ddc-bd ddc-card p-5">
+        <h3 className="ddc-lg font-bold ddc-heading mb-1">Final Exam</h3>
+        <p className="ddc-xs ddc-muted mb-5">{exam.questions.length} questions · {course.pass_threshold_pct}% to pass</p>
         <div className="space-y-6">
           {exam.questions.map((q, qi) => (
             <fieldset key={q.id}>
-              <legend className="text-sm font-medium text-gray-100 mb-2">{qi + 1}. {q.prompt}</legend>
+              <legend className="ddc-base font-medium ddc-heading mb-2">{qi + 1}. {q.prompt}</legend>
               <div className="space-y-2">
                 {(q.choices || []).map((c) => (
-                  <label key={c.key} className={`flex items-center gap-3 rounded-lg border px-3 py-2 cursor-pointer text-sm transition ${answers[q.id] === c.key ? 'border-success-500 bg-success-500/10' : 'border-gray-700 hover:border-gray-600'}`}>
+                  <label key={c.key} className={`ddc-opt flex items-center gap-3 rounded-lg px-3 py-2 cursor-pointer ddc-sm transition ${answers[q.id] === c.key ? 'is-sel' : ''}`}>
                     <input type="radio" name={q.id} value={c.key} checked={answers[q.id] === c.key}
-                      onChange={() => setAnswers((a) => ({ ...a, [q.id]: c.key }))} className="accent-success-500" />
-                    <span className="text-gray-200">{c.text}</span>
+                      onChange={() => setAnswers((a) => ({ ...a, [q.id]: c.key }))} style={{ accentColor: 'var(--ddc-accent-solid)' }} />
+                    <span>{c.text}</span>
                   </label>
                 ))}
               </div>
             </fieldset>
           ))}
         </div>
-        {error && <p className="mt-4 text-sm text-red-300 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
+        {error && <p className="mt-4 ddc-sm ddc-bad flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
         <button onClick={doSubmit} disabled={!allAnswered || busy}
-          className="mt-5 rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
+          className="mt-5 ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
           {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Submitting…</> : 'Submit exam'}
         </button>
       </div>
@@ -639,27 +619,19 @@ function FinalExam({ course, enrollment }) {
   }
 
   return (
-    <div className="rounded-xl border border-success-500/40 bg-success-500/5 p-5">
-      <div className="flex items-center gap-3 mb-2">
-        <Award className="w-6 h-6 text-success-300" />
-        <p className="font-semibold">Final Exam</p>
-      </div>
+    <div className="rounded-xl ddc-cal ddc-cal-key p-5">
+      <div className="flex items-center gap-3 mb-2"><Award className="w-6 h-6 ddc-good" /><p className="font-semibold ddc-heading ddc-base">Final Exam</p></div>
       {result && !result.passed && (
-        <p className="text-sm text-amber-300 mb-3">
-          You scored {result.score_pct}% — {result.threshold}% is required. {result.attempts_remaining > 0 ? `${result.attempts_remaining} attempt(s) remaining.` : 'No attempts remaining — please contact support.'}
-        </p>
+        <p className="ddc-sm ddc-warn mb-3">You scored {result.score_pct}% — {result.threshold}% is required. {result.attempts_remaining > 0 ? `${result.attempts_remaining} attempt(s) remaining.` : 'No attempts remaining — please contact support.'}</p>
       )}
-      <p className="text-xs text-gray-400 mb-4">
-        {course.exam_question_count} questions · {course.pass_threshold_pct}% to pass · attempt {Math.min(attemptsUsed + 1, course.retake_limit)} of {course.retake_limit}
-      </p>
-      {error && <p className="text-sm text-red-300 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
+      <p className="ddc-xs ddc-muted mb-4">{course.exam_question_count} questions · {course.pass_threshold_pct}% to pass · attempt {Math.min(attemptsUsed + 1, course.retake_limit)} of {course.retake_limit}</p>
+      {error && <p className="ddc-sm ddc-bad mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
       {remaining <= 0 ? (
-        <p className="text-sm text-gray-300">No attempts remaining. Please contact support.</p>
+        <p className="ddc-sm ddc-text">No attempts remaining. Please contact support.</p>
       ) : inCooldown ? (
-        <p className="text-sm text-gray-300">You can try again after {cooldownUntil.toLocaleTimeString()}.</p>
+        <p className="ddc-sm ddc-text">You can try again after {cooldownUntil.toLocaleTimeString()}.</p>
       ) : (
-        <button onClick={start} disabled={busy}
-          className="rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
+        <button onClick={start} disabled={busy} className="ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
           {busy ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</> : 'Start Final Exam'}
         </button>
       )}
@@ -676,10 +648,8 @@ function CertificateBlock({ courseSlug }) {
   useEffect(() => {
     let live = true;
     (async () => {
-      try {
-        const r = await issueCertificate(courseSlug);
-        if (live) setUid(r.certificate_uid);
-      } catch (err) { if (live) setError(err.message || 'Could not prepare certificate.'); }
+      try { const r = await issueCertificate(courseSlug); if (live) setUid(r.certificate_uid); }
+      catch (err) { if (live) setError(err.message || 'Could not prepare certificate.'); }
       finally { if (live) setPreparing(false); }
     })();
     return () => { live = false; };
@@ -697,13 +667,12 @@ function CertificateBlock({ courseSlug }) {
 
   return (
     <div>
-      <p className="text-sm text-gray-300 mb-3">
+      <p className="ddc-sm ddc-text mb-3">
         Your certificate has been generated and forwarded to the agency for your insurance discount review.
-        {uid && <> Certificate ID: <span className="font-mono text-gray-200">{uid}</span>.</>}
+        {uid && <> Certificate ID: <span className="font-mono ddc-heading">{uid}</span>.</>}
       </p>
-      {error && <p className="text-sm text-red-300 mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
-      <button onClick={download} disabled={preparing || downloading}
-        className="rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition flex items-center gap-2">
+      {error && <p className="ddc-sm ddc-bad mb-3 flex items-center gap-2"><AlertCircle className="w-4 h-4" />{error}</p>}
+      <button onClick={download} disabled={preparing || downloading} className="ddc-btn rounded-full px-6 py-3 ddc-sm transition flex items-center gap-2">
         {preparing ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparing…</>
           : downloading ? <><Loader2 className="w-4 h-4 animate-spin" /> Opening…</>
           : <><Download className="w-4 h-4" /> Download certificate</>}
