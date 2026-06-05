@@ -6,12 +6,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useBookSnapshots } from './useBookMetrics';
+import { useInterventionEffectiveness } from './useInterventionEffectiveness';
 import {
   buildChurnModel,
   churnProbability,
   expectedSaveablePremium,
   modelIsObserved,
-  SAVE_LIFT_DEFAULT,
 } from '../lib/retentionElasticity';
 
 const RENEWAL_TERMINAL = ['confirmed', 'lost', 'auto_resolved', 'unreachable'];
@@ -20,6 +20,9 @@ export function useRetentionElasticity(agencyId) {
   const { data: book } = useBookSnapshots(agencyId);
   const model = buildChurnModel(book?.products || []);
   const observed = modelIsObserved(model);
+
+  // Learned save-lift from captured tactic→outcome data (falls back to prior).
+  const { effectiveSaveLift, observed: saveLiftObserved } = useInterventionEffectiveness(agencyId);
 
   const casesQuery = useQuery({
     queryKey: ['elasticity_renewals', agencyId],
@@ -42,7 +45,7 @@ export function useRetentionElasticity(agencyId) {
     .map((c) => ({
       ...c,
       churn: churnProbability(c, model),
-      saveable: expectedSaveablePremium(c, model, SAVE_LIFT_DEFAULT),
+      saveable: expectedSaveablePremium(c, model, effectiveSaveLift),
     }))
     .filter((c) => c.saveable > 0)
     .sort((a, b) => b.saveable - a.saveable);
@@ -54,7 +57,8 @@ export function useRetentionElasticity(agencyId) {
     error: casesQuery.error,
     model,
     observed,                 // true once a P&P report is ingested
-    saveLift: SAVE_LIFT_DEFAULT,
+    saveLift: effectiveSaveLift,
+    saveLiftObserved,         // true once enough tactic→outcome data is captured
     ranked,
     totalSaveable,
     asOfMonth: book?.latestMonth || null,

@@ -6,6 +6,7 @@
 
 import { Link } from 'react-router-dom';
 import { useRetentionElasticity } from '../../../hooks/useRetentionElasticity';
+import { useInterventionEffectiveness } from '../../../hooks/useInterventionEffectiveness';
 
 function money(n) {
   if (n == null || isNaN(n)) return '$0';
@@ -18,8 +19,9 @@ function fmtMonth(d) {
 }
 
 export default function SaveablePremiumTargeting({ agencyId }) {
-  const { isLoading, error, ranked, totalSaveable, observed, saveLift, asOfMonth } =
+  const { isLoading, error, ranked, totalSaveable, observed, saveLift, saveLiftObserved, asOfMonth } =
     useRetentionElasticity(agencyId);
+  const { tactics } = useInterventionEffectiveness(agencyId);
 
   if (isLoading) return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Computing saveable premium…</div>;
   if (error) return <div style={{ color: '#EF4444', fontSize: 13 }}>{error.message}</div>;
@@ -39,8 +41,44 @@ export default function SaveablePremiumTargeting({ agencyId }) {
         ) : (
           <>Churn risk is using <strong>default priors</strong> — upload the Premium &amp; Profitability report to ground it in your real retention.</>
         )}{' '}
-        Save rate is a {Math.round(saveLift * 100)}% prior until intervention data refines it.
+        Save rate is {saveLiftObserved
+          ? <><strong>{Math.round(saveLift * 100)}%</strong> — learned from your captured interventions.</>
+          : <>a <strong>{Math.round(saveLift * 100)}% prior</strong> until enough interventions are captured to learn it.</>}
       </div>
+
+      {/* What's working — per-tactic save rate (the moat dataset) */}
+      {tactics.length > 0 && (
+        <div className="card" style={{ marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 10 }}>
+            What's working — save rate by tactic
+          </div>
+          <div className="scroll-hint-container" style={{ overflowX: 'auto' }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Tactic</th>
+                  <th style={{ textAlign: 'right' }}>Save rate</th>
+                  <th style={{ textAlign: 'right' }}>Saved / Resolved</th>
+                  <th style={{ textAlign: 'right' }}>Used</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tactics.map((t) => (
+                  <tr key={t.tactic}>
+                    <td>{t.label}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 700, color: t.sufficient ? '#10B981' : 'var(--qs-dim)' }}>
+                      {t.saveRate == null ? '—' : `${Math.round(t.saveRate * 100)}%`}
+                      {!t.sufficient && <span style={{ fontSize: 10, color: 'var(--qs-subtle)' }}> (low n)</span>}
+                    </td>
+                    <td style={{ textAlign: 'right', fontFamily: "'DM Mono', monospace" }}>{t.saved}/{t.resolved}</td>
+                    <td style={{ textAlign: 'right', fontFamily: "'DM Mono', monospace", color: 'var(--qs-dim)' }}>{t.used}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Headline */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 20 }}>
