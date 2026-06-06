@@ -16,7 +16,7 @@ async function fetchRenewalPolicies(agencyId, filters = {}) {
 
   // Apply filters
   if (filters.status) {
-    query = query.eq('renewal_status', filters.status);
+    query = query.eq('status', filters.status);
   }
   if (filters.priorityTier) {
     query = query.eq('priority_tier', filters.priorityTier);
@@ -181,13 +181,13 @@ export function useLogContact() {
       if (escalate) {
         updates.human_followup_required = true;
         updates.followup_reason = followupReason || 'manual';
-        updates.renewal_status = 'escalated';
+        updates.status = 'escalated';
       }
       if (assignedTo) {
         updates.assigned_to_id = assignedTo;
       }
       if (outcome === 'confirmed') {
-        updates.renewal_status = 'confirmed';
+        updates.status = 'confirmed';
       }
       if (outcome === 'wrong_number') {
         updates.human_followup_required = true;
@@ -215,7 +215,9 @@ export function useUpdateRenewalStatus() {
 
   return useMutation({
     mutationFn: async ({ policyId, status, followupCompleted }) => {
-      const updates = { renewal_status: status };
+      // 'renewed' (legacy renewal-status vocab) maps to the workflow 'confirmed'.
+      const mapped = status === 'renewed' ? 'confirmed' : status;
+      const updates = { status: mapped };
       if (followupCompleted) {
         updates.followup_completed_at = new Date().toISOString();
       }

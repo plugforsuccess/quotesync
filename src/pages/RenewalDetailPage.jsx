@@ -112,7 +112,7 @@ export default function RenewalDetailPage() {
     try {
       await updateStatus.mutateAsync({ policyId: policy.id, status, followupCompleted });
       refetch();
-    } catch (_) { /* error handled by mutation */ }
+    } catch { /* error handled by mutation */ }
   };
 
   const handleAssignFollowup = async () => {
@@ -125,7 +125,7 @@ export default function RenewalDetailPage() {
       });
       refetch();
       setFollowupNotes('');
-    } catch (_) { /* error handled by mutation */ }
+    } catch { /* error handled by mutation */ }
   };
 
   return (
@@ -142,8 +142,8 @@ export default function RenewalDetailPage() {
             <p className="text-sm text-gray-500 font-mono">{policy.policy_no}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`px-2.5 py-1 rounded text-xs font-semibold capitalize ${STATUS_COLORS[policy.renewal_status] || STATUS_COLORS.pending}`}>
-              {policy.renewal_status}
+            <span className={`px-2.5 py-1 rounded text-xs font-semibold capitalize ${STATUS_COLORS[policy.status] || STATUS_COLORS.pending}`}>
+              {policy.status}
             </span>
             <span className={`px-2.5 py-1 rounded text-xs font-semibold capitalize ${PRIORITY_COLORS[policy.priority_tier] || PRIORITY_COLORS.standard}`}>
               {policy.priority_tier}
@@ -408,7 +408,7 @@ export default function RenewalDetailPage() {
           </button>
           {policy.human_followup_required && !policy.followup_completed_at && (
             <button
-              onClick={() => handleStatusChange(policy.renewal_status, true)}
+              onClick={() => handleStatusChange(policy.status, true)}
               disabled={updateStatus.isPending}
               className="px-4 py-2 text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg disabled:opacity-50"
             >

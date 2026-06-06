@@ -1599,7 +1599,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   value: (() => { const d = daysUntilRenewal(r.renewal_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
                   color: renewalUrgencyColor(daysUntilRenewal(r.renewal_date)) },
                 { label: 'Status',
-                  value: RENEWAL_STATUS_CONFIG[r.renewal_status]?.label || r.renewal_status || '—' },
+                  value: RENEWAL_STATUS_CONFIG[r.status]?.label || r.status || '—' },
                 { label: 'Attempts', value: r.renewal_attempts || 0 },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
