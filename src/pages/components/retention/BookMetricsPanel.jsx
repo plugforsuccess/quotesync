@@ -188,8 +188,13 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
               </div>
             </div>
             <div className="card">
-              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}>Book Retention (blended)</div>
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{fmtPct(totals.blendedRetention)}</div>
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}>Net Retention (blended)</div>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{fmtPct(totals.blendedNetRetention)}</div>
+              <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 2 }}>counts rewrites/transfers as kept</div>
+            </div>
+            <div className="card">
+              <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 6 }}>Policy Retention (blended)</div>
+              <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--qs-dim)' }}>{fmtPct(totals.blendedRetention)}</div>
               <div style={{ fontSize: 11, color: deltaColor(totals.retentionPointVariance), marginTop: 2 }}>
                 {totals.retentionPointVariance >= 0 ? '+' : ''}{totals.retentionPointVariance?.toFixed(1)} pts vs prior year
               </div>
@@ -215,7 +220,8 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
                   <Tooltip contentStyle={ct.tooltipStyle} labelStyle={ct.tooltipLabelStyle} labelFormatter={fmtMonth}
                     formatter={(v, n) => [v == null ? '—' : `${Number(v).toFixed(1)}%`, n]} />
                   <Line type="monotone" dataKey="retentionPy" name="Prior year" stroke={ct.structural.axisTick} strokeDasharray="4 4" dot={false} />
-                  <Line type="monotone" dataKey="retention" name="Retention" stroke={ct.data.blue} strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="retention" name="Policy retention" stroke={ct.data.blue} strokeWidth={2} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="netRetention" name="Net retention" stroke={ct.data.green} strokeWidth={2} dot={{ r: 3 }} />
                   {goLive && trend.some((t) => t.month === goLive) && (
                     <ReferenceLine x={goLive} stroke={ct.data.green} strokeDasharray="3 3"
                       label={{ value: 'SOP', fontSize: 10, fill: ct.data.green, position: 'top' }} />
@@ -237,7 +243,8 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
                   <th>Product</th>
                   <th style={{ textAlign: 'right' }}>PIF</th>
                   <th style={{ textAlign: 'right' }}>Δ PY</th>
-                  <th style={{ textAlign: 'right' }}>Retention</th>
+                  <th style={{ textAlign: 'right' }}>Net Ret</th>
+                  <th style={{ textAlign: 'right' }}>Policy Ret</th>
                   <th style={{ textAlign: 'right' }}>Prior Yr</th>
                   <th style={{ textAlign: 'right' }}>Δ pts</th>
                   <th style={{ textAlign: 'right' }}>New (0–2 yr)</th>
@@ -251,7 +258,8 @@ export default function BookMetricsPanel({ agencyId, currentUserId }) {
                     <td style={{ textAlign: 'right', color: deltaColor(p.pif_variance) }}>
                       {p.pif_variance == null ? '—' : `${p.pif_variance >= 0 ? '+' : ''}${p.pif_variance}`}
                     </td>
-                    <td style={{ textAlign: 'right', fontWeight: 600 }}>{fmtPct(p.policy_retention_pct)}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 600 }}>{fmtPct(p.net_retention_pct)}</td>
+                    <td style={{ textAlign: 'right', color: 'var(--qs-dim)' }}>{fmtPct(p.policy_retention_pct)}</td>
                     <td style={{ textAlign: 'right', color: 'var(--qs-dim)' }}>{fmtPct(p.retention_py_pct)}</td>
                     <td style={{ textAlign: 'right', color: deltaColor(p.retention_point_variance) }}>
                       {p.retention_point_variance == null ? '—' : `${p.retention_point_variance >= 0 ? '+' : ''}${Number(p.retention_point_variance).toFixed(1)}`}

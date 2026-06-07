@@ -6,6 +6,7 @@ import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { computePriorityTier } from "../../../lib/retentionPriority";
+import { isRewriteReason } from "../../../lib/retentionRewrite";
 import CrossSellUploadModal from "../cross-sell/CrossSellUploadModal";
 
 async function syncRetentionQueue(supabase) {
@@ -218,7 +219,8 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
   const toAdd = [];
   const toUpdate = [];
   const duplicates = [];
-  const autoLost = [];   // confirmed in lapse_events — auto-closed
+  const autoLost = [];      // confirmed lost in lapse_events — auto-closed
+  const autoRewritten = []; // cancelled only to rewrite/transfer — RETAINED, not lost
   const toReview = [];   // absent from report, no lapse record — verify in Allstate
 
   for (const row of parsed) {
@@ -259,8 +261,10 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
     const lapseRecord = lapseMap.get(e.policy_no);
 
     if (lapseRecord) {
-      // Authoritative — confirmed in termination report. Auto-close as lost.
-      autoLost.push({
+      // Authoritative — confirmed in termination report. But a "Cancel/Rewrite"
+      // termination means the customer was KEPT on a new policy number, not
+      // lost — route those to the retained (rewritten) bucket instead.
+      const record = {
         id: e.id,
         policy_no: e.policy_no,
         customer_name: e.customer_name,
@@ -270,7 +274,12 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
         lapse_date: lapseRecord.lapse_date,
         termination_reason: lapseRecord.termination_reason,
         resolution_date: lapseRecord.lapse_date || today,
-      });
+      };
+      if (isRewriteReason(lapseRecord.termination_reason)) {
+        autoRewritten.push(record);
+      } else {
+        autoLost.push(record);
+      }
     } else if (daysPastCancel <= 0) {
       // Cancel date is today or future — still in active window.
       // Do nothing — leave status unchanged, don't surface in review.
@@ -292,7 +301,7 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
     }
   }
 
-  return { toAdd, toUpdate, duplicates, autoLost, toReview };
+  return { toAdd, toUpdate, duplicates, autoLost, autoRewritten, toReview };
 }
 
 // ─── Auto-Resolve Review Panel ──────────────────────────────────────────────
@@ -452,6 +461,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               { label: 'New Policies',    value: diffResult.toAdd.length,    color: '#10B981' },
               { label: 'Updated',         value: diffResult.toUpdate.length,  color: '#3B82F6' },
               { label: 'Confirmed Lost',  value: diffResult.autoLost.length,  color: '#EF4444' },
+              { label: 'Rewritten',       value: diffResult.autoRewritten?.length ?? 0, color: '#34D399' },
               { label: 'Needs Review',    value: diffResult.toReview.length,  color: '#F59E0B' },
             ].filter(item => item.value > 0).map(({ label, value, color }) => (
               <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
@@ -479,6 +489,24 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               {' '}— matched termination report. Marked lost automatically.
               <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoLost.map(c => (
+                  <span key={c.id} style={{ marginRight: 12 }}>
+                    {c.customer_name} ({c.product?.toUpperCase()})
+                    {c.termination_reason ? ` — ${c.termination_reason}` : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {diffResult.autoRewritten?.length > 0 && (
+            <div style={{ fontSize: 12, background: '#34D39911', border: '1px solid #34D39933',
+              borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
+              <span style={{ color: '#34D399', fontWeight: 600 }}>
+                ✓ {diffResult.autoRewritten.length} rewritten / transferred
+              </span>
+              {' '}— cancelled only to move to a new policy. Counted as retained, not lost.
+              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
+                {diffResult.autoRewritten.map(c => (
                   <span key={c.id} style={{ marginRight: 12 }}>
                     {c.customer_name} ({c.product?.toUpperCase()})
                     {c.termination_reason ? ` — ${c.termination_reason}` : ''}
@@ -853,28 +881,38 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)');
 
       if (pastDueCases && pastDueCases.length > 0) {
-        // Fetch policy numbers from pending_cases (active cancel cases)
+        // Fetch policy numbers from pending_cases (active cancel cases).
+        // Exclude retained terminal outcomes (saved/rewritten) — those were
+        // kept, not "still in the cancel cycle".
         const { data: cancelCases } = await supabase
           .from('pending_cases')
           .select('policy_no')
           .eq('agency_id', agencyId)
-          .not('status', 'in', '(lost,auto_resolved,cancelled,requested_cancellation)');
+          .not('status', 'in', '(saved,rewritten,lost,auto_resolved,cancelled,requested_cancellation)');
 
         const cancelPolicies = new Set((cancelCases || []).map(c => c.policy_no));
 
-        // Fetch policy numbers from lapse_events (terminated)
+        // Fetch lapse_events (terminated) with reason so rewrites/transfers
+        // (cancelled only to move to a new policy number) count as retained.
         const { data: lapseData } = await supabase
           .from('lapse_events')
-          .select('policy_no')
+          .select('policy_no, termination_reason')
           .eq('agency_id', agencyId);
 
         const lapsedPolicies = new Set((lapseData || []).map(l => l.policy_no));
+        const rewrittenPolicies = new Set(
+          (lapseData || []).filter(l => isRewriteReason(l.termination_reason)).map(l => l.policy_no)
+        );
 
         const toLost = [];
+        const toRetained = [];
         const toAutoResolve = [];
 
         for (const rc of pastDueCases) {
-          if (cancelPolicies.has(rc.policy_no) || lapsedPolicies.has(rc.policy_no)) {
+          if (rewrittenPolicies.has(rc.policy_no)) {
+            // Rewritten/transferred to a new policy number — retained, not lost.
+            toRetained.push(rc.id);
+          } else if (cancelPolicies.has(rc.policy_no) || lapsedPolicies.has(rc.policy_no)) {
             // On pending cancel or termination report — didn't renew
             toLost.push(rc.id);
           } else if (rc.easy_pay && rc.renewal_date < tenDaysAgoStr) {
@@ -894,6 +932,19 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
             .in('id', toLost);
         }
 
+        if (toRetained.length > 0) {
+          await supabase
+            .from('renewal_cases')
+            .update({
+              status: 'confirmed',
+              final_outcome: 'renewed',
+              final_outcome_set_at: new Date().toISOString(),
+              outcome_source: 'observed',
+              resolution_date: today,
+            })
+            .in('id', toRetained);
+        }
+
         if (toAutoResolve.length > 0) {
           await supabase
             .from('renewal_cases')
@@ -903,6 +954,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
         crossRefMsg = [
           toLost.length > 0 && `${toLost.length} renewal${toLost.length > 1 ? 's' : ''} closed (entered cancel cycle)`,
+          toRetained.length > 0 && `${toRetained.length} retained (rewritten)`,
           toAutoResolve.length > 0 && `${toAutoResolve.length} auto-resolved`,
         ].filter(Boolean).join(' \u00b7 ');
       }
@@ -1156,12 +1208,16 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
 
           for (const c of matchedCases) {
             const lapseRow = parsedRows.find(r => r.policy_no === c.policy_no);
+            // A "Cancel/Rewrite" termination means the customer was kept on a
+            // new policy number — close as retained (rewritten), not lost.
+            const rewritten = isRewriteReason(lapseRow?.termination_reason);
             await supabase
               .from('pending_cases')
               .update({
-                status: 'lost',
+                status: rewritten ? 'rewritten' : 'lost',
                 resolution_date: lapseRow?.lapse_date || today,
                 termination_reason: lapseRow?.termination_reason || null,
+                ...(rewritten ? { rewrite_reason: lapseRow?.termination_reason || null } : {}),
               })
               .eq('id', c.id);
           }
@@ -1588,7 +1644,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
           filename: uploadFile?.name,
           rows_added: diffResult.toAdd.length,
           rows_updated: diffResult.toUpdate.length,
-          rows_auto_resolved: diffResult.autoLost.length + diffResult.toReview.length,
+          rows_auto_resolved: diffResult.autoLost.length + (diffResult.autoRewritten?.length ?? 0) + diffResult.toReview.length,
           committed: false,
         })
         .select().single();
@@ -1630,6 +1686,20 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         }
       }
 
+      // Auto-close rewrites/transfers as RETAINED (not lost) — the customer
+      // moved to a new policy number, so this is a save, not a loss.
+      if (diffResult.autoRewritten?.length > 0) {
+        for (const c of diffResult.autoRewritten) {
+          await supabase.from('pending_cases').update({
+            status: 'rewritten',
+            resolution_date: c.resolution_date,
+            termination_reason: c.termination_reason || null,
+            rewrite_reason: c.termination_reason || null,
+            lapse_date: c.lapse_date || null,
+          }).eq('id', c.id);
+        }
+      }
+
       // Stage ambiguous absent cases for human review
       if (diffResult.toReview.length > 0) {
         await supabase
@@ -1656,6 +1726,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         diffResult.toAdd.length > 0     && `${diffResult.toAdd.length} added`,
         diffResult.toUpdate.length > 0   && `${diffResult.toUpdate.length} updated`,
         diffResult.autoLost.length > 0   && `${diffResult.autoLost.length} confirmed lost`,
+        diffResult.autoRewritten?.length > 0 && `${diffResult.autoRewritten.length} rewritten`,
         diffResult.toReview.length > 0   && `${diffResult.toReview.length} need review`,
       ].filter(Boolean).join(' · ');
 

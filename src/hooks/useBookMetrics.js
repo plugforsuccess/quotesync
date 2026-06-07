@@ -32,19 +32,32 @@ export function useBookSnapshots(agencyId) {
       const latest = rows.filter((r) => r.production_month === latestMonth);
 
       // PIF-weighted blended retention for a set of product rows (rollup excluded).
+      // `retention`    = Policy Retention (excludes rewrites/transfers).
+      // `netRetention` = Net Retention (counts rewrites/transfers as kept) — the
+      //                  headline number, matching how Allstate scores the book.
       const blendedFor = (rowsForMonth) => {
         const real = rowsForMonth.filter((r) => !ROLLUP_KEYS.has(r.product_key));
         const pif = real.reduce((s, r) => s + (r.pif_current || 0), 0);
-        if (pif <= 0) return { pif: 0, retention: null, retentionPy: null };
+        if (pif <= 0) return { pif: 0, retention: null, retentionPy: null, netRetention: null };
         const wRet = real.reduce((s, r) => s + (r.pif_current || 0) * (r.policy_retention_pct || 0), 0);
         const wRetPy = real.reduce((s, r) => s + (r.pif_current || 0) * (r.retention_py_pct || 0), 0);
-        return { pif, retention: wRet / pif, retentionPy: wRetPy / pif };
+        // Net retention can be missing on some product rows — weight only the
+        // PIF of rows that report it, so the blend isn't diluted toward zero.
+        const netRows = real.filter((r) => r.net_retention_pct != null);
+        const netPif = netRows.reduce((s, r) => s + (r.pif_current || 0), 0);
+        const wNet = netRows.reduce((s, r) => s + (r.pif_current || 0) * (r.net_retention_pct || 0), 0);
+        return {
+          pif,
+          retention: wRet / pif,
+          retentionPy: wRetPy / pif,
+          netRetention: netPif > 0 ? wNet / netPif : null,
+        };
       };
 
       // Longitudinal trend — one point per uploaded month, ascending for charting.
       const trend = [...months].reverse().map((m) => {
         const b = blendedFor(rows.filter((r) => r.production_month === m));
-        return { month: m, retention: b.retention, retentionPy: b.retentionPy, pif: b.pif };
+        return { month: m, retention: b.retention, retentionPy: b.retentionPy, netRetention: b.netRetention, pif: b.pif };
       });
 
       // Per-product lines for the latest month (rollup row kept but flagged).
@@ -58,6 +71,7 @@ export function useBookSnapshots(agencyId) {
       const pifPye = real.reduce((s, r) => s + (r.pif_pye || 0), 0);
       const blendedRetention = latestBlended.retention;
       const blendedRetentionPy = latestBlended.retentionPy;
+      const blendedNetRetention = latestBlended.netRetention;
 
       return {
         latestMonth,
@@ -70,6 +84,7 @@ export function useBookSnapshots(agencyId) {
           pifVariance: pifCurrent - pifPye,
           blendedRetention,
           blendedRetentionPy,
+          blendedNetRetention,
           retentionPointVariance:
             blendedRetention != null && blendedRetentionPy != null
               ? blendedRetention - blendedRetentionPy
