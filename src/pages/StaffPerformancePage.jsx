@@ -224,7 +224,7 @@ const StaffPerformancePage = () => {
     const rosterEmp = rosterEmployees.find(e => (e.auth_user_id || e.id) === singleEmployee);
     const targetId = rosterEmp?.id;
     if (!targetId) return { vcItems: 0, premium: 0, policies: 0 };
-    const filtered = revenueEntries.filter(e => matchEntry(e)?.id === targetId);
+    const filtered = revenueEntries.filter(e => !e.chargedBackAt && matchEntry(e)?.id === targetId);
     return {
       vcItems:  filtered.reduce((s, e) => s + (e.itemCount ?? 1), 0),
       premium:  filtered.reduce((s, e) => s + (parseFloat(e.premium) || 0), 0),

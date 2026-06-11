@@ -1231,13 +1231,19 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       // usually has its commission charged back, and the revenue dashboard
       // has no other signal for this. The flag survives daily NB re-uploads
       // because the upsert only touches the columns it supplies.
+      // Rewrites are skipped: the household stays on a new policy number and
+      // rewrites generate no new-business entry, so the original entry is the
+      // only production record and must keep counting.
       let chargebacksFlagged = 0;
-      if (terminatedPolicyNos.length > 0) {
+      const flagCandidatePolicyNos = parsedRows
+        .filter(r => r.policy_no && !isRewriteReason(r.termination_reason))
+        .map(r => r.policy_no);
+      if (flagCandidatePolicyNos.length > 0) {
         const { data: nbMatches } = await supabase
           .from('revenue_entries')
           .select('id, policy_no')
           .eq('agency_id', agencyId)
-          .in('policy_no', terminatedPolicyNos)
+          .in('policy_no', flagCandidatePolicyNos)
           .is('chargeback_flagged_at', null);
 
         for (const entry of (nbMatches ?? [])) {

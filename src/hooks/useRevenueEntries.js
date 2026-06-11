@@ -21,6 +21,7 @@ export function mapRow(r) {
     note:         r.note ?? "",
     chargebackFlaggedAt: r.chargeback_flagged_at ?? null,
     chargebackReason:    r.chargeback_reason ?? null,
+    chargedBackAt:       r.charged_back_at ?? null,
   };
 }
 
@@ -138,6 +139,19 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
     return { count: totalCount, error: null };
   };
 
+  // Confirm (or undo) a commission chargeback. The entry is retained as the
+  // running chargeback record; aggregations exclude it while charged_back_at
+  // is set. Never deleted, so daily NB re-uploads can't resurrect it.
+  const setChargeback = async (id, on) => {
+    const { error } = await supabase
+      .from("revenue_entries")
+      .update({ charged_back_at: on ? new Date().toISOString() : null })
+      .eq("id", id);
+    if (error) return { error: error.message };
+    invalidate();
+    return { error: null };
+  };
+
   const deleteEntry = async (id) => {
     const { error } = await supabase
       .from("revenue_entries")
@@ -152,5 +166,5 @@ export function useRevenueEntries({ agencyId, rangeStart, rangeEnd }) {
     }
   };
 
-  return { entries, loading, error, addEntry, addEntries, deleteEntry, refetch: invalidate };
+  return { entries, loading, error, addEntry, addEntries, deleteEntry, setChargeback, refetch: invalidate };
 }
