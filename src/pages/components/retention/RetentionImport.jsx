@@ -1153,6 +1153,8 @@ function parseLapseXLSX(data) {
   const iDate     = findLapseCol(["termination effective", "lapse date", "cancel date", "cancellation date", "eff date", "effective date"]);
   const iReason   = findLapseCol(["termination reason", "cancel reason", "reason"]);
   const iItems    = findLapseCol(["number of items", "no. of items", "item count", "items"]);
+  const iPhone    = findLapseCol(["phone number", "insured phone", "phone", "mobile", "cell"]);
+  const iEmail    = findLapseCol(["insured email", "email address", "email"]);
 
   const SINGLE_ITEM_PRODUCTS = ["ho", "condo", "renters", "landlord", "pup", "manufactured", "boat", "motor_club"];
 
@@ -1188,6 +1190,8 @@ function parseLapseXLSX(data) {
       item_count,
       lapse_date:         lapseDate,
       termination_reason: iReason >= 0   ? r[iReason]?.toString().trim() ?? "" : "",
+      phone:              iPhone >= 0    ? r[iPhone]?.toString().trim() || null : null,
+      email:              iEmail >= 0    ? r[iEmail]?.toString().trim() || null : null,
     };
   }).filter(r => r.policy_no);
 }
@@ -1205,6 +1209,9 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitMsg, setCommitMsg] = useState("");
   const [parseError, setParseError] = useState("");
+  // Historical bulk load for winback: excluded from growth/attrition charts and
+  // skips the live-cycle side-effects (pending-case closeout, chargeback flags).
+  const [isBackfill, setIsBackfill] = useState(false);
   const lapseFileRef = useRef(null);
 
   async function handleFileSelect(e) {
@@ -1253,6 +1260,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
           rows_added: newCount,
           rows_updated: existingCount,
           committed: false,
+          backfill: isBackfill,
         })
         .select("id")
         .single();
@@ -1262,6 +1270,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
         agency_id: agencyId,
         report_month: reportMonth,
         upload_batch_id: upload.id,
+        backfill: isBackfill,
         ...r,
       }));
 
@@ -1274,7 +1283,10 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       const terminatedPolicyNos = parsedRows.map(r => r.policy_no).filter(Boolean);
       let crossResolved = 0;
 
-      if (terminatedPolicyNos.length > 0) {
+      // A historical backfill is winback raw material only — skip every
+      // live-cycle side-effect (pending-case closeout, chargeback flagging,
+      // queue resync). Those reconcile the current month, not 2023-2025.
+      if (!isBackfill && terminatedPolicyNos.length > 0) {
         const { data: matchedCases } = await supabase
           .from('pending_cases')
           .select('id, policy_no, lapse_date')
@@ -1314,7 +1326,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       // rewrites generate no new-business entry, so the original entry is the
       // only production record and must keep counting.
       let chargebacksFlagged = 0;
-      const flagCandidatePolicyNos = parsedRows
+      const flagCandidatePolicyNos = isBackfill ? [] : parsedRows
         .filter(r => r.policy_no && !isRewriteReason(r.termination_reason))
         .map(r => r.policy_no);
       if (flagCandidatePolicyNos.length > 0) {
@@ -1347,10 +1359,12 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       const chargebackMsg = chargebacksFlagged > 0
         ? ` \u00b7 ${chargebacksFlagged} new-business entr${chargebacksFlagged > 1 ? 'ies' : 'y'} flagged as possible chargeback`
         : '';
-      setCommitMsg(`${parsedRows.length} terminations recorded${crossMsg}${chargebackMsg}`);
+      setCommitMsg(isBackfill
+        ? `${parsedRows.length} historical terminations ingested for winback (excluded from growth trend).`
+        : `${parsedRows.length} terminations recorded${crossMsg}${chargebackMsg}`);
       setParsedRows(null);
       setLapseFile(null);
-      await syncRetentionQueue(supabase);
+      if (!isBackfill) await syncRetentionQueue(supabase);
       queryClient.invalidateQueries({ queryKey: ["lapse_events_summary", agencyId] });
       queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
@@ -1382,6 +1396,14 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
             {lapseFile ? `\uD83D\uDCC4 ${lapseFile.name}` : "Choose File"}
           </button>
         </div>
+        <label style={{
+          marginTop: 16, display: "flex", alignItems: "center", gap: 6,
+          fontSize: 12, color: "var(--qs-subtle)", cursor: "pointer",
+        }}
+        title="For a one-time historical bulk load (e.g. 2023-2025) used to generate winback leads. Excluded from the Net Portfolio Growth trend and skips live-cycle reconciliation.">
+          <input type="checkbox" checked={isBackfill} onChange={e => setIsBackfill(e.target.checked)} />
+          Historical backfill (winback only)
+        </label>
       </div>
 
       {parseError && (
