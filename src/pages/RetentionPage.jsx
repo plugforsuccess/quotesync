@@ -238,17 +238,21 @@ export default function RetentionPage() {
     const saved = events.filter(e => ["saved", "rewritten"].includes(e.status));
     const lost = events.filter(e => ["lost", "promise_broken"].includes(e.status));
     const terminations = events.filter(e => e.status === "requested_cancellation");
-    const contacted = events.filter(e =>
-      ["contacted", "payment_plan_requested", "promise_to_pay", "saved", "rewritten", "promise_broken", "requested_cancellation", "lost"].includes(e.status)
-    );
 
     const premiumAtRisk = active.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
     const premiumSaved = saved.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
 
     const workable = saved.length + lost.length;
     const saveRate = workable > 0 ? saved.length / workable : null;
-    const contactRate = (active.length + contacted.length) > 0
-      ? contacted.length / (active.length + contacted.length) : null;
+    // Contact rate = of the cases currently in the active queue, the share a
+    // human has actually worked (≥1 outreach attempt). The old formula counted
+    // auto-closed 'lost' cases (closed by the termination import, never
+    // contacted) as contacts and double-mixed active+contacted in the
+    // denominator — e.g. 12 auto-closed losses surfaced as a 32% contact rate
+    // when no case had been touched.
+    const contactedActive = active.filter(e => (e.attempt_count || 0) > 0);
+    const contactRate = active.length > 0
+      ? contactedActive.length / active.length : null;
 
     const today = new Date();
     const urgent = active.filter(e => {
