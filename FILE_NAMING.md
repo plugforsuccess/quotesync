@@ -18,6 +18,7 @@ covers**, zero-padded so files sort by type then date.
 | Cross-Sell Audit | Monthly, 8th–12th | `XSELL_YYYY_MM` | `XSELL_2026_06` |
 | Policy Audit | Monthly, 5th–15th, covers prior month | `POLAUDIT_YYYY_MM` | `POLAUDIT_2026_05` |
 | Premium & Profitability | Monthly, 15th–25th, covers prior production month | `PREMPROF_YYYY_MM` | `PREMPROF_2026_05` |
+| New Business Details | Monthly, 1st–5th, covers prior month (Revenue dashboard, not on portal checklist) | `NEWBIZ_YYYY_MM` | `NEWBIZ_2026_05` |
 | Daily Call Log | Daily, by call date | `CALLLOG_YYYY_MM_DD` | `CALLLOG_2026_06_10` |
 | Daily Queue Report | Daily/weekly, by report date | `QUEUE_YYYY_MM_DD` | `QUEUE_2026_06_10` |
 | Weekly User Summary | Weekly, Friday+, by week's Monday | `WEEKSUM_YYYY_MM_DD` | `WEEKSUM_2026_06_08` |
@@ -47,6 +48,11 @@ covers**, zero-padded so files sort by type then date.
 6. **Rename at download time**, before the file lands in the folder —
    raw portal names (`BOB Termination Audit Report_05_01_2026 - ...`)
    are where disorder creeps in.
+7. **New Business Details: always include Policy Number and Bind ID
+   columns.** Rows with a policy number de-duplicate on re-upload;
+   rows without one duplicate. Bind ID drives producer attribution.
+   Mid-month refresh pulls are safe (overlap upserts) — label the
+   partial `NEWBIZ_YYYY_MM_DD` and replace it with the month-end file.
 
 ## Folder layout
 
