@@ -177,7 +177,15 @@ export function parsePolicyAudit(rows) {
   if (headerIdx < 0) throw new Error('Could not find the "Policy Status" header row — check the report format.');
 
   const headers = rows[headerIdx].map((h) => (h ?? '').toString().toLowerCase().trim());
-  const find = (...cands) => headers.findIndex((h) => cands.some((c) => h.includes(c)));
+  // Candidate-priority match: earlier candidates win over later ones, so
+  // specific header names beat generic fallbacks regardless of column order.
+  const find = (...cands) => {
+    for (const c of cands) {
+      const i = headers.findIndex((h) => h.includes(c));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
   const idx = {
     status:      find('policy status'),
     policy_no:   find('policy number', 'policy no'),
