@@ -22,6 +22,7 @@ export function mapRow(r) {
     chargebackFlaggedAt: r.chargeback_flagged_at ?? null,
     chargebackReason:    r.chargeback_reason ?? null,
     chargedBackAt:       r.charged_back_at ?? null,
+    chargebackLapseDate: r.chargeback_lapse_date ?? null,
   };
 }
 

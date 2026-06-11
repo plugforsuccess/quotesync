@@ -150,6 +150,26 @@ const emptyEntry = () => ({
   note: "",
 });
 
+// ─── Chargeback clawback estimate ────────────────────────────────────────────
+// Pro-rata model: clawback ≈ the unearned fraction of the term at termination.
+// Auto products run 6-month terms; everything else 12. This is an estimate —
+// the Allstate compensation statement remains the source of truth.
+const SIX_MONTH_TERM_PRODUCTS = ["auto", "specialty_auto"];
+
+function estimateClawback(entry) {
+  if (!entry.chargebackLapseDate || !entry.issuedDate) return null;
+  const issued = new Date(entry.issuedDate + "T00:00:00");
+  const lapsed = new Date(entry.chargebackLapseDate + "T00:00:00");
+  if (isNaN(issued) || isNaN(lapsed)) return null;
+  const daysInForce = Math.max(0, Math.round((lapsed - issued) / 86400000));
+  const termDays = SIX_MONTH_TERM_PRODUCTS.includes(entry.product) ? 182 : 365;
+  const fraction = Math.min(1, Math.max(0, 1 - daysInForce / termDays));
+  const label = daysInForce >= 30
+    ? `${Math.round(daysInForce / 30.44)} month${Math.round(daysInForce / 30.44) !== 1 ? "s" : ""}`
+    : `${daysInForce} day${daysInForce !== 1 ? "s" : ""}`;
+  return { daysInForce, fraction, label };
+}
+
 // ─── Parse uploaded Allstate CSV/XLSX rows ───────────────────────────────────
 function parseAllstateRows(rows) {
   // Best-effort mapping for common Allstate export column names
@@ -540,6 +560,7 @@ export default function RevenueProjectionsDashboard() {
         chargebackFlaggedAt: r.chargeback_flagged_at ?? null,
         chargebackReason:    r.chargeback_reason ?? null,
         chargedBackAt:       r.charged_back_at ?? null,
+        chargebackLapseDate: r.chargeback_lapse_date ?? null,
       }));
     },
     enabled: !!agencyId,
@@ -1767,8 +1788,11 @@ export default function RevenueProjectionsDashboard() {
           {/* Running chargeback record (YTD) */}
           {(chargebackRecord.count > 0 || chargebackRecord.pendingReview > 0) && (() => {
             const cbRows = allYearEntries.filter(e => e.chargedBackAt);
-            const lostCommission = cbRows.reduce((s, e) =>
-              s + calcCommission(e.premium || 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES), 0);
+            const lostCommission = cbRows.reduce((s, e) => {
+              const full = calcCommission(e.premium || 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
+              const cb = estimateClawback(e);
+              return s + full * (cb ? cb.fraction : 1); // pro-rated when the lapse date is known
+            }, 0);
             return (
               <div style={{
                 display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap',
@@ -1812,6 +1836,7 @@ export default function RevenueProjectionsDashboard() {
               <tbody>
                 {sortedEntries.map(e => {
                   const tier = e.tier ?? "monoline";
+                  const cb = estimateClawback(e);
                   return (
                     <tr key={e.id}>
                       <td style={{ color: "var(--qs-subtle)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
@@ -1836,18 +1861,18 @@ export default function RevenueProjectionsDashboard() {
                           )}
                           {e.chargedBackAt ? (
                             <span
-                              title={`Chargeback confirmed${e.chargebackReason ? ` (${e.chargebackReason})` : ''} — kept as record, excluded from totals.`}
+                              title={`Chargeback confirmed${e.chargebackReason ? ` (${e.chargebackReason})` : ''}${cb ? ` — in force ${cb.label}, ~${Math.round(cb.fraction * 100)}% of commission clawed back (est.)` : ''} — kept as record, excluded from totals.`}
                               style={{
                                 fontSize: 9, fontWeight: 700, padding: '1px 5px',
                                 borderRadius: 3, letterSpacing: '0.04em',
                                 background: '#EF4444', color: '#fff',
                                 cursor: 'help',
                               }}>
-                              CB
+                              CB{cb ? ` ~${Math.round(cb.fraction * 100)}%` : ''}
                             </span>
                           ) : e.chargebackFlaggedAt && (
                             <span
-                              title={`On termination report${e.chargebackReason ? ` (${e.chargebackReason})` : ''} — review your commission statement, then confirm with the CB button if charged back.`}
+                              title={`On termination report${e.chargebackReason ? ` (${e.chargebackReason})` : ''}${cb ? ` — in force ${cb.label} → ~${Math.round(cb.fraction * 100)}% clawback if confirmed (est.)` : ''}. Review your commission statement, then confirm with the CB button if charged back.`}
                               style={{
                                 fontSize: 9, fontWeight: 700, padding: '1px 5px',
                                 borderRadius: 3, letterSpacing: '0.04em',
@@ -1855,7 +1880,7 @@ export default function RevenueProjectionsDashboard() {
                                 border: '1px solid #EF444433',
                                 cursor: 'help',
                               }}>
-                              CHGBK?
+                              CHGBK?{cb ? ` ${cb.label} → ~${Math.round(cb.fraction * 100)}%` : ''}
                             </span>
                           )}
                         </span>

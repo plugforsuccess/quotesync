@@ -1253,6 +1253,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
             .update({
               chargeback_flagged_at: new Date().toISOString(),
               chargeback_reason: lapseRow?.termination_reason || null,
+              chargeback_lapse_date: lapseRow?.lapse_date || null,
             })
             .eq('id', entry.id);
         }
