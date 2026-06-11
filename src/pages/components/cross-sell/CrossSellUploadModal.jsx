@@ -34,14 +34,26 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
       }
 
       const matched = await runMatchEngine(parsed, agencyId);
-      setRows(matched);
+      // Drop opportunities already live or won in the queue — only genuinely
+      // new ones get committed, so monthly re-uploads don't pile up duplicates.
+      const fresh = matched.filter(r => !r.duplicate);
+      const skipped = matched.length - fresh.length;
+      setRows(fresh);
       setMatchSummary({
-        total:        matched.length,
-        renewal_only: matched.filter(r => r.match_type === 'renewal_only').length,
-        cancel_only:  matched.filter(r => r.match_type === 'cancel_only').length,
-        both:         matched.filter(r => r.match_type === 'both').length,
-        new_lead:     matched.filter(r => r.match_type === 'new_lead').length,
+        total:        fresh.length,
+        renewal_only: fresh.filter(r => r.match_type === 'renewal_only').length,
+        cancel_only:  fresh.filter(r => r.match_type === 'cancel_only').length,
+        both:         fresh.filter(r => r.match_type === 'both').length,
+        new_lead:     fresh.filter(r => r.match_type === 'new_lead').length,
+        skipped,
       });
+      if (fresh.length === 0) {
+        setErrorMsg(skipped > 0
+          ? `All ${skipped} rows are already in the cross-sell queue — nothing new to add.`
+          : 'No valid rows found in file.');
+        setStage('error');
+        return;
+      }
       setStage('preview');
     } catch (err) {
       setErrorMsg(err.message);
@@ -50,7 +62,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
   }
 
   async function runMatchEngine(parsedRows, agencyId) {
-    const [{ data: renewals }, { data: cancels }] = await Promise.all([
+    const [{ data: renewals }, { data: cancels }, { data: existingXs }] = await Promise.all([
       supabase
         .from('renewal_cases')
         .select('id, customer_name, policy_no, product, renewal_date, status, multi_line, multi_policy')
@@ -61,7 +73,23 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         .select('id, customer_name, policy_no, product, cancel_effective_date, status, amount_due, stage')
         .eq('agency_id', agencyId)
         .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation,rewritten)'),
+      // Existing cross-sell cases still open or already won — used to skip
+      // re-adding the same opportunity on each monthly upload. Declined/closed
+      // cases are NOT in this set, so a previously-declined customer can be
+      // re-pitched in a later cycle.
+      supabase
+        .from('cross_sell_cases')
+        .select('policy_no, customer_name, recommended_product, status')
+        .eq('agency_id', agencyId)
+        .not('status', 'in', '(declined,closed)'),
     ]);
+
+    // Skip keys: a customer already has a live or won pitch for this product.
+    const xsKey = (policyNo, name, product) =>
+      `${(policyNo || name || '').toString().toLowerCase().trim()}|${product || ''}`;
+    const existingXsKeys = new Set(
+      (existingXs || []).map(x => xsKey(x.policy_no, x.customer_name, x.recommended_product))
+    );
 
     const renewalByPolicy = {};
     const renewalByName = {};
@@ -104,6 +132,10 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         status = 'hold';
       }
 
+      const duplicate = existingXsKeys.has(
+        xsKey(row.policy_no, row.customer_name, row.recommended_product)
+      );
+
       return {
         ...row,
         renewal_case_id: renewalMatch?.id || null,
@@ -112,6 +144,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         cancel_case:     cancelMatch,
         match_type,
         status,
+        duplicate,
       };
     });
   }
@@ -339,6 +372,15 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                   </div>
                 ))}
               </div>
+
+              {matchSummary.skipped > 0 && (
+                <div style={{
+                  fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16,
+                  background: 'var(--qs-elevated)', borderRadius: 6, padding: '8px 12px',
+                }}>
+                  {matchSummary.skipped} already in the queue (open or won) — skipped, not re-added.
+                </div>
+              )}
 
               <div style={{
                 border: '1px solid var(--qs-border)', borderRadius: 8,

@@ -12,14 +12,32 @@ export default function CrossSellPage() {
   const { data: employee } = useCurrentEmployee();
   const [tab, setTab] = useState('renewal');
   const [showUpload, setShowUpload] = useState(false);
+  const [showWorked, setShowWorked] = useState(false);
 
   const { data: allCases = [], isLoading } = useCrossSellCases(currentAgencyId);
   const { data: uploads = [] } = useCrossSellUploads(currentAgencyId);
   const updateCase = useUpdateCrossSellCase(currentAgencyId);
 
-  const renewalCases  = allCases.filter(c => c.match_type === 'renewal_only' && c.status !== 'hold');
-  const onHoldCases   = allCases.filter(c => c.status === 'hold');
-  const outboundCases = allCases.filter(c => c.match_type === 'new_lead');
+  // Closed outcomes — hidden from the active tabs unless "show worked" is on.
+  // 'not_reached' stays active (it needs another attempt).
+  const TERMINAL = ['sold', 'declined', 'converted', 'closed'];
+  const isActive = c => showWorked || !TERMINAL.includes(c.status);
+
+  // Soonest-deadline first, so reps work the most time-sensitive call in each
+  // tab before the rest. Outbound has no deadline — newest upload first.
+  const byRenewalDate = (a, b) =>
+    (a.renewal_cases?.renewal_date || '9999').localeCompare(b.renewal_cases?.renewal_date || '9999');
+  const byCancelDate = (a, b) =>
+    (a.pending_cases?.cancel_effective_date || '9999').localeCompare(b.pending_cases?.cancel_effective_date || '9999');
+
+  const renewalCases  = allCases
+    .filter(c => c.match_type === 'renewal_only' && c.status !== 'hold' && isActive(c))
+    .sort(byRenewalDate);
+  const onHoldCases   = allCases
+    .filter(c => c.status === 'hold')
+    .sort(byCancelDate);
+  const outboundCases = allCases
+    .filter(c => c.match_type === 'new_lead' && isActive(c));
 
   const tabs = [
     { key: 'renewal',  label: `Renewal Matches (${renewalCases.length})` },
@@ -69,7 +87,7 @@ export default function CrossSellPage() {
         <ProducerGoalProgress compact orgId={employee?.org_id} employee={employee} />
       )}
 
-      <div style={{ display: 'flex', gap: 6, marginBottom: 20 }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 20, alignItems: 'center' }}>
         {tabs.map(t => (
           <button key={t.key} onClick={() => setTab(t.key)} style={{
             padding: '7px 14px', borderRadius: 20, fontSize: 13,
@@ -81,6 +99,13 @@ export default function CrossSellPage() {
             {t.label}
           </button>
         ))}
+        <label style={{
+          marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6,
+          fontSize: 12, color: 'var(--qs-subtle)', cursor: 'pointer',
+        }}>
+          <input type="checkbox" checked={showWorked} onChange={e => setShowWorked(e.target.checked)} />
+          Show worked (sold / declined)
+        </label>
       </div>
 
       {tab === 'hold' && (
