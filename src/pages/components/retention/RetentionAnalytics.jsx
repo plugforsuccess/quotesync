@@ -255,6 +255,7 @@ function AttritionTab({ agencyId, currentUserId }) {
         .from("lapse_events")
         .select("report_month, product, premium, item_count")
         .eq("agency_id", agencyId)
+        .eq("backfill", false) // exclude one-time historical winback backfill
         .order("report_month", { ascending: false });
 
       if (error) throw error;
@@ -417,7 +418,8 @@ function NetGrowthTab({ agencyId }) {
         supabase
           .from("lapse_events")
           .select("report_month, product, item_count, premium")
-          .eq("agency_id", agencyId),
+          .eq("agency_id", agencyId)
+          .eq("backfill", false), // exclude one-time historical winback backfill
       ]);
 
       const monthMap = {};

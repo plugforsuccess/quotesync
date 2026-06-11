@@ -397,6 +397,7 @@ export const AuthProvider = ({ children }) => {
                 .from('lapse_events')
                 .select('report_month, product, premium, item_count')
                 .eq('agency_id', resolvedAgencyId)
+                .eq('backfill', false) // exclude one-time historical winback backfill
                 .order('report_month', { ascending: false });
               const byMonth = {};
               (data ?? []).forEach(r => {
