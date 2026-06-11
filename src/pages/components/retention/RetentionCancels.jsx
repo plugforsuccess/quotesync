@@ -522,11 +522,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 fontSize: 11, fontWeight: 700, color: '#10B981',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
-                💡 Cross-sell opportunity on file
+                💡 Bundle to save — {event.cross_sell_product?.toUpperCase()}
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Allstate flagged this customer for <strong>{event.cross_sell_product?.toUpperCase()}</strong>.
-                {' '}Resolve the cancel first — then pitch.
+                Quote <strong>{event.cross_sell_product?.toUpperCase()}</strong> as part of the save: a
+                multi-policy bundle adds a discount that <strong>lowers this premium</strong> — often the
+                fix for a payment-driven cancellation. If they bundle, the cancel resolves and this
+                cross-sell auto-releases as a follow-through opportunity.
               </div>
             </div>
           )}
