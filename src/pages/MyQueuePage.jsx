@@ -288,6 +288,17 @@ export default function MyQueuePage() {
   // The cases the queue actually displays based on focus toggle.
   const displayCancelCases = focusMode ? focusCases : filteredCancelCases;
 
+  // Renewal focus — same daily-target cap as the cancel queue. Renewals arrive
+  // soonest-first, so working top-down hits cases about to slip below the
+  // 21-day ideal-contact window first; touched-today float up so cards don't
+  // jump after a call.
+  const focusRenewalCases = useMemo(() => {
+    const touched = renewalCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
+    const untouched = renewalCases.filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr);
+    return [...touched, ...untouched].slice(0, dailyTarget);
+  }, [renewalCases, dailyTarget, todayStr]);
+  const displayRenewalCases = focusMode ? focusRenewalCases : renewalCases;
+
   // Bucket display cases by priority_tier (P0 → P3, plus an "other" fallback)
   const cancelBuckets = useMemo(() => {
     const groups = { P0: [], P1: [], P2: [], P3: [], other: [] };
@@ -1459,9 +1470,12 @@ export default function MyQueuePage() {
 
           <div style={{ flexShrink: 0, textAlign: 'right' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 6 }}>
-              {focusMode
-                ? `Focus: top ${Math.min(dailyTarget, filteredCancelCases.length)} cases`
-                : `Full queue: ${filteredCancelCases.length} cases`}
+              {(() => {
+                const tabTotal = activeTab === 'renewal' ? renewalCases.length : filteredCancelCases.length;
+                return focusMode
+                  ? `Focus: top ${Math.min(dailyTarget, tabTotal)} ${activeTab === 'renewal' ? 'renewals' : 'cases'}`
+                  : `Full queue: ${tabTotal} ${activeTab === 'renewal' ? 'renewals' : 'cases'}`;
+              })()}
             </div>
             <button
               onClick={toggleFocusMode}
@@ -1645,13 +1659,35 @@ export default function MyQueuePage() {
           {/* Renewal cards */}
           {!renewalLoading && renewalCases.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {renewalCases.map(event => (
+              {displayRenewalCases.map(event => (
                 <RenewalCard
                   key={event.id}
                   event={event}
                   policyCount={customerPolicyCounts[event.customer_name] || 1}
                 />
               ))}
+
+              {/* "X more renewals" banner — focus mode only */}
+              {focusMode && renewalCases.length > dailyTarget && (
+                <div style={{
+                  textAlign: 'center', padding: '12px 8px',
+                  fontSize: 13, color: 'var(--qs-muted)',
+                  borderTop: '1px solid var(--qs-border)', marginTop: 4,
+                }}>
+                  {renewalCases.length - dailyTarget} more in full queue
+                  {' · '}
+                  <button
+                    onClick={toggleFocusMode}
+                    className="qs-focusable"
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
+                    }}
+                  >
+                    View all
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </ReadingColumn>
