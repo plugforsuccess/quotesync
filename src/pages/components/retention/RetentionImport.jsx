@@ -597,8 +597,15 @@ function parseRenewalXLSX(data) {
 
   const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
   const rows = allRows.slice(headerIdx + 1);
-  const findRenewalCol = (candidates) =>
-    headers.findIndex(h => candidates.some(c => h?.includes(c)));
+  // Candidate-priority match (see findLapseCol) — first candidate that hits
+  // any header wins, so specific names beat generic ones like "effective date".
+  const findRenewalCol = (candidates) => {
+    for (const c of candidates) {
+      const i = headers.findIndex(h => h?.includes(c));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
 
   const iPolicy    = findRenewalCol(["policy number", "policy no", "policy #", "pol no"]);
   const iCustomer  = findRenewalCol(["customer name", "insured name", "insured", "name", "customer"]);
@@ -1108,10 +1115,21 @@ function parseLapseXLSX(data) {
 
   const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
   const rows = allRows.slice(headerIdx);
-  const findLapseCol = (candidates) => headers.findIndex(h => candidates.some(c => h?.includes(c)));
+  // Candidate-priority match: try each candidate in order across all headers.
+  // Header-order matching picked "Renewal Effective Date" over "Termination
+  // Effective Date" because it appears first in the BOB export.
+  const findLapseCol = (candidates) => {
+    for (const c of candidates) {
+      const i = headers.findIndex(h => h?.includes(c));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
 
-  const iPolicy   = findLapseCol(["policy", "policy no", "policy number"]);
-  const iCustomer = findLapseCol(["customer", "insured", "name"]);
+  const iPolicy   = findLapseCol(["policy number", "policy no", "policy"]);
+  const iFirst    = findLapseCol(["insured first name", "first name"]);
+  const iLast     = findLapseCol(["insured last name", "last name"]);
+  const iCustomer = findLapseCol(["customer name", "insured name", "customer", "insured", "name"]);
   const iProduct  = findLapseCol(["product name", "line code", "product code", "product", "line of business", "lob"]);
   const iPremium  = findLapseCol(["premium new", "written premium", "annual premium", "premium"]);
   const iDate     = findLapseCol(["termination effective", "lapse date", "cancel date", "cancellation date", "eff date", "effective date"]);
@@ -1123,6 +1141,15 @@ function parseLapseXLSX(data) {
   return rows.slice(1).filter(r => r.some(Boolean)).map(r => {
     const productRaw = iProduct >= 0 ? r[iProduct]?.toString() ?? "" : "";
     const product = normaliseProduct(productRaw);
+
+    // BOB exports split the name into First/Last columns — combine when present
+    let customerName = "";
+    if (iFirst >= 0 && iLast >= 0) {
+      customerName = `${r[iFirst]?.toString().trim() ?? ""} ${r[iLast]?.toString().trim() ?? ""}`.trim();
+    }
+    if (!customerName && iCustomer >= 0) {
+      customerName = r[iCustomer]?.toString().trim() ?? "";
+    }
 
     const rawDate = iDate >= 0 ? r[iDate] : null;
     let lapseDate = null;
@@ -1136,7 +1163,7 @@ function parseLapseXLSX(data) {
 
     return {
       policy_no:          iPolicy >= 0   ? r[iPolicy]?.toString().trim() ?? "" : "",
-      customer_name:      iCustomer >= 0 ? r[iCustomer]?.toString().trim() ?? "" : "",
+      customer_name:      customerName,
       product,
       product_raw:        productRaw,
       premium:            iPremium >= 0  ? parseFloat(r[iPremium]?.toString().replace(/[$,]/g, "")) || null : null,

@@ -65,10 +65,20 @@ function parseLapseXLSX(data) {
 
   const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
   const rows = allRows.slice(headerIdx);
-  const findLapseCol = (candidates) => headers.findIndex(h => candidates.some(c => h?.includes(c)));
+  // Candidate-priority match: specific names ("termination effective") must
+  // beat generic ones ("effective date") regardless of header order.
+  const findLapseCol = (candidates) => {
+    for (const c of candidates) {
+      const i = headers.findIndex(h => h?.includes(c));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
 
-  const iPolicy   = findLapseCol(["policy", "policy no", "policy number"]);
-  const iCustomer = findLapseCol(["customer", "insured", "name"]);
+  const iPolicy   = findLapseCol(["policy number", "policy no", "policy"]);
+  const iFirst    = findLapseCol(["insured first name", "first name"]);
+  const iLast     = findLapseCol(["insured last name", "last name"]);
+  const iCustomer = findLapseCol(["customer name", "insured name", "customer", "insured", "name"]);
   const iProduct  = findLapseCol(["product name", "line code", "product code", "product", "line of business", "lob"]);
   const iPremium  = findLapseCol(["premium new", "written premium", "annual premium", "premium"]);
   const iDate     = findLapseCol(["termination effective", "lapse date", "cancel date", "cancellation date", "eff date", "effective date"]);
@@ -91,9 +101,18 @@ function parseLapseXLSX(data) {
     const rawItemCount = iItems >= 0 ? parseInt(r[iItems]) || 1 : 1;
     const item_count = SINGLE_ITEM_PRODUCTS.includes(product) ? 1 : rawItemCount;
 
+    // BOB exports split the name into First/Last columns — combine when present
+    let customerName = "";
+    if (iFirst >= 0 && iLast >= 0) {
+      customerName = `${r[iFirst]?.toString().trim() ?? ""} ${r[iLast]?.toString().trim() ?? ""}`.trim();
+    }
+    if (!customerName && iCustomer >= 0) {
+      customerName = r[iCustomer]?.toString().trim() ?? "";
+    }
+
     return {
       policy_no:          iPolicy >= 0   ? r[iPolicy]?.toString().trim() ?? "" : "",
-      customer_name:      iCustomer >= 0 ? r[iCustomer]?.toString().trim() ?? "" : "",
+      customer_name:      customerName,
       product,
       product_raw:        productRaw,
       premium:            iPremium >= 0  ? parseFloat(r[iPremium]?.toString().replace(/[$,]/g, "")) || null : null,
