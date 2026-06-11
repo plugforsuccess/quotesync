@@ -345,8 +345,10 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
         fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16,
         background: 'var(--qs-elevated)', borderRadius: 6, padding: '8px 12px'
       }}>
-        These policies were active but absent from this report. Confirm whether
-        they paid, mark as lost, or keep active for follow-up.
+        These cases were being worked but are absent from this report. Confirm
+        whether they paid, mark as lost, or keep in the call queue for follow-up.
+        {/* "Active" deliberately avoided here — at Allstate it means coverage
+            in force / current on payments, which these policies are not. */}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -356,7 +358,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
         </button>
         <button className="btn-ghost" style={{ fontSize: 12 }}
           onClick={() => cases.forEach(c => onDecide(c.id, 'keep'))}>
-          Keep All Active
+          Keep All in Queue
         </button>
       </div>
 
@@ -399,7 +401,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
                 {[
                   { value: 'auto_resolved', label: 'Paid ✓', color: '#10B981' },
                   { value: 'lost',          label: 'Lost',   color: '#EF4444' },
-                  { value: 'keep',          label: 'Keep',   color: '#3B82F6' },
+                  { value: 'keep',          label: 'Keep in Queue', color: '#3B82F6' },
                 ].map(opt => (
                   <button key={opt.value} onClick={() => onDecide(c.id, opt.value)}
                     style={{
@@ -422,13 +424,16 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
         <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
           {counts.paid > 0 && <span style={{ color: '#10B981', marginRight: 12 }}>✓ {counts.paid} marked paid</span>}
           {counts.lost > 0 && <span style={{ color: '#EF4444', marginRight: 12 }}>✗ {counts.lost} marked lost</span>}
-          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} kept active</span>}
+          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} kept in queue</span>}
         </div>
       )}
 
-      <button className="btn-primary" disabled={!allDecided} onClick={onConfirmAll}
-        style={{ opacity: allDecided ? 1 : 0.4 }}>
-        Confirm {cases.length} decisions
+      <button className="btn-ghost" disabled={!allDecided} onClick={onConfirmAll}
+        style={{
+          opacity: allDecided ? 1 : 0.4,
+          color: '#3B82F6', borderColor: '#3B82F655', fontWeight: 600,
+        }}>
+        Save {cases.length} review decision{cases.length !== 1 ? 's' : ''}
       </button>
       {!allDecided && (
         <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
@@ -562,13 +567,23 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             />
           )}
 
-          <div style={{ display: "flex", gap: 10 }}>
+          {/* Commit row \u2014 visually separated from the review panel above so the
+              scoped "Save review decisions" action isn't confused with the
+              whole-upload commit. */}
+          <div style={{
+            display: "flex", gap: 10, alignItems: "center",
+            marginTop: 24, paddingTop: 16,
+            borderTop: "1px solid var(--qs-border)",
+          }}>
             <button className="btn-primary" onClick={onCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+              {isCommitting ? "Committing\u2026" : "Commit Upload"}
             </button>
             <button className="btn-ghost" onClick={onCancel}>
               Cancel
             </button>
+            <span style={{ fontSize: 11, color: "var(--qs-muted)" }}>
+              Applies everything above \u2014 adds, updates, and auto-closures.
+            </span>
           </div>
         </div>
       )}
