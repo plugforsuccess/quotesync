@@ -1,0 +1,112 @@
+// src/pages/CustomerSearchPage.jsx
+// Producer customer lookup — type a name, see the household's full picture:
+// active lines, lost lines (winback openings), open cancel/renewal work, contact.
+import { useState } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { useCustomerSearch } from '../hooks/useCustomerSearch';
+
+const PRODUCT_LABELS = {
+  auto: 'Auto', ho: 'HO', renters: 'Renters', condo: 'Condo', landlord: 'Landlord',
+  pup: 'Umbrella', boat: 'Boat', specialty_auto: 'Specialty Auto', life: 'Life',
+  manufactured: 'Manufactured',
+};
+const label = p => PRODUCT_LABELS[p] || (p ? p.toUpperCase() : '—');
+
+function Chip({ children, color }) {
+  return (
+    <span style={{
+      fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+      background: `${color}1a`, border: `1px solid ${color}40`, color,
+    }}>{children}</span>
+  );
+}
+
+export default function CustomerSearchPage() {
+  const { currentAgencyId } = useAuth();
+  const [term, setTerm] = useState('');
+  const { data: results = [], isLoading, isError } = useCustomerSearch(currentAgencyId, term);
+  const ready = term.trim().length >= 2;
+
+  return (
+    <div style={{ maxWidth: 820, margin: '0 auto', padding: '8px 0' }}>
+      <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)', marginBottom: 4 }}>
+        Customer Search
+      </div>
+      <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 16 }}>
+        Look up any customer across active, pending, and lapsed policies.
+      </div>
+
+      <input
+        autoFocus
+        value={term}
+        onChange={e => setTerm(e.target.value)}
+        placeholder="Search by customer name…"
+        style={{
+          width: '100%', padding: '12px 16px', fontSize: 15,
+          borderRadius: 10, border: '1px solid var(--qs-border)',
+          background: 'var(--qs-card)', color: 'var(--qs-text)', marginBottom: 20,
+        }}
+      />
+
+      {!ready && (
+        <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+          Type at least 2 characters to search.
+        </div>
+      )}
+      {ready && isLoading && (
+        <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Searching…</div>
+      )}
+      {ready && isError && (
+        <div style={{ color: 'var(--qs-danger)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>Search failed — try again.</div>
+      )}
+      {ready && !isLoading && results.length === 0 && (
+        <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
+          No customers match “{term}”.
+        </div>
+      )}
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {results.map(c => {
+          const winback = (c.active_policies > 0) && (c.lost_products?.length > 0);
+          return (
+            <div key={c.name_key} style={{
+              background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+              borderRadius: 10, padding: '14px 16px',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>
+                    {c.display_name}
+                    {winback && <span style={{ marginLeft: 8 }}><Chip color="#34D399">♻ Win-back opening</Chip></span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 3 }}>
+                    {[c.phone, c.email, c.zip].filter(Boolean).join(' · ') || 'No contact on file'}
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
+                  {c.cancel_open > 0 && <Chip color="#EF4444">⚠ {c.cancel_open} cancel</Chip>}
+                  {c.renewal_open > 0 && <Chip color="#FBBF24">🔄 {c.renewal_open} renewal</Chip>}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 18, marginTop: 10, flexWrap: 'wrap', fontSize: 12 }}>
+                <div>
+                  <span style={{ color: 'var(--qs-muted)' }}>Active: </span>
+                  {c.active_products?.length
+                    ? c.active_products.map(label).join(', ')
+                    : <span style={{ color: 'var(--qs-muted)' }}>none</span>}
+                </div>
+                {c.lost_products?.length > 0 && (
+                  <div>
+                    <span style={{ color: 'var(--qs-muted)' }}>Lost: </span>
+                    <span style={{ color: '#F87171' }}>{c.lost_products.map(label).join(', ')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

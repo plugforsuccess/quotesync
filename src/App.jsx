@@ -103,6 +103,7 @@ const WeeklyOperatingReviewPage = lazyWithRetry(() => import('./pages/WeeklyOper
 const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
 const TerminationAliasesPage = lazyWithRetry(() => import('./pages/TerminationAliasesPage'));
 const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
+const CustomerSearchPage = lazyWithRetry(() => import('./pages/CustomerSearchPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
 const ReferralRewardsPage = lazyWithRetry(() => import('./pages/ReferralRewardsPage'));
@@ -445,6 +446,15 @@ function App() {
               <ProtectedRoute requiredAgencyRole="employee">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+
+            {/* Customer Search — any active agency member */}
+            <Route path="agency/customers" element={
+              <ProtectedRoute requireAgencyMembership>
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><CustomerSearchPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />
