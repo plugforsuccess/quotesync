@@ -743,12 +743,13 @@ export default function MyQueuePage() {
               🔄 Also renewing
             </span>
           )}
-          {event.cross_sell_opportunity && !event.has_active_renewal && (
+          {event.cross_sell_opportunity && event.cross_sell_product && (
             <span style={{
               ...chip, background: 'rgba(16,185,129,0.10)',
               border: '1px solid rgba(16,185,129,0.25)', color: '#34D399',
-            }}>
-              💡 X-sell: {event.cross_sell_product?.toUpperCase()}
+            }}
+            title="Quoting this line adds a multi-policy discount that lowers their current premium — a save lever, not just an upsell.">
+              💡 Bundle {event.cross_sell_product?.toUpperCase()} → lower premium
             </span>
           )}
           {event.ai_transcript && (
