@@ -66,6 +66,18 @@ function CrossSellCard({ cs, tab, onUpdate }) {
             }}>
               Pitch: {PRODUCT_LABELS[cs.recommended_product] || cs.recommended_product}
             </span>
+            {cs.lostLine && (
+              <span
+                title={`Active customer who lost their ${PRODUCT_LABELS[cs.lostLine.product] || cs.lostLine.product} ${cs.lostLine.months} month(s) ago${cs.lostLine.reason ? ` (${cs.lostLine.reason})` : ''}. Warm re-add — the bundle discount lowers their remaining premium.`}
+                style={{
+                  marginLeft: 6, fontSize: 11, fontWeight: 700,
+                  background: 'rgba(16,185,129,0.14)',
+                  border: '1px solid rgba(16,185,129,0.35)',
+                  color: '#34D399', borderRadius: 4, padding: '1px 6px', cursor: 'help',
+                }}>
+                ♻ Win back {PRODUCT_LABELS[cs.lostLine.product] || cs.lostLine.product} · lost {cs.lostLine.months}mo ago
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
             Has: {PRODUCT_LABELS[cs.current_product] || cs.current_product || '—'}

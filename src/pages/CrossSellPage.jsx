@@ -1,11 +1,21 @@
 // src/pages/CrossSellPage.jsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
 import { useCrossSellCases, useCrossSellUploads, useUpdateCrossSellCase } from '../hooks/useCrossSell';
 import CrossSellUploadModal from './components/cross-sell/CrossSellUploadModal';
 import CrossSellQueue from './components/cross-sell/CrossSellQueue';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+
+// Household key for matching a customer across policies (no customer ID yet):
+// normalized name + 5-digit ZIP. ZIP disambiguates common names.
+const householdKey = (name, zip) =>
+  `${(name || '').toLowerCase().replace(/[^a-z\s]/g, '').replace(/\s+/g, ' ').trim()}|${(zip || '').slice(0, 5)}`;
+
+// Terminations we would NOT try to win back (no asset / out of territory).
+const NON_WINNABLE_RX = /\b(moved|sold|deceased|death|total loss|no longer|relocat)\b/i;
 
 export default function CrossSellPage() {
   const { currentAgencyId, user } = useAuth();
@@ -14,9 +24,51 @@ export default function CrossSellPage() {
   const [showUpload, setShowUpload] = useState(false);
   const [showWorked, setShowWorked] = useState(false);
 
-  const { data: allCases = [], isLoading } = useCrossSellCases(currentAgencyId);
+  const { data: rawCases = [], isLoading } = useCrossSellCases(currentAgencyId);
   const { data: uploads = [] } = useCrossSellUploads(currentAgencyId);
   const updateCase = useUpdateCrossSellCase(currentAgencyId);
+
+  // Recent terminations (last 18 months) — used to flag a cross-sell customer
+  // who is still active on one line but LOST another. That's a warm re-add (the
+  // bundle discount lowers their remaining premium), so it ranks above cold
+  // cross-sells. Matched by household key on a line different from what they hold.
+  const { data: recentLapses = [] } = useQuery({
+    queryKey: ['winback_lapses', currentAgencyId],
+    enabled: !!currentAgencyId,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const since = new Date(); since.setMonth(since.getMonth() - 18);
+      const { data, error } = await supabase
+        .from('lapse_events')
+        .select('customer_name, zip, product, lapse_date, termination_reason')
+        .eq('agency_id', currentAgencyId)
+        .gte('lapse_date', since.toISOString().slice(0, 10));
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const lapseByHousehold = useMemo(() => {
+    const m = new Map();
+    for (const l of recentLapses) {
+      if (l.termination_reason && NON_WINNABLE_RX.test(l.termination_reason)) continue;
+      const k = householdKey(l.customer_name, l.zip);
+      const prev = m.get(k);
+      if (!prev || (l.lapse_date || '') > (prev.lapse_date || '')) m.set(k, l);
+    }
+    return m;
+  }, [recentLapses]);
+
+  // Annotate each case with a lost-line winback flag (different product, recent).
+  const allCases = useMemo(() => rawCases.map(c => {
+    const lost = lapseByHousehold.get(householdKey(c.customer_name, c.zip));
+    const isLostLine = lost && lost.product && lost.product !== c.current_product;
+    if (!isLostLine) return c;
+    const months = Math.max(0, Math.round(
+      (Date.now() - new Date(lost.lapse_date + 'T00:00:00')) / (1000 * 60 * 60 * 24 * 30.44)
+    ));
+    return { ...c, lostLine: { product: lost.product, months, reason: lost.termination_reason } };
+  }), [rawCases, lapseByHousehold]);
 
   // Closed outcomes — hidden from the active tabs unless "show worked" is on.
   // 'not_reached' stays active (it needs another attempt).
@@ -30,14 +82,22 @@ export default function CrossSellPage() {
   const byCancelDate = (a, b) =>
     (a.pending_cases?.cancel_effective_date || '9999').localeCompare(b.pending_cases?.cancel_effective_date || '9999');
 
+  // Warm re-adds (customer still active, lost another line) rank first in every
+  // tab — they convert best and the bundle discount is a live lever.
+  const warmFirst = (sortFn) => (a, b) => {
+    if (!!a.lostLine !== !!b.lostLine) return a.lostLine ? -1 : 1;
+    return sortFn ? sortFn(a, b) : 0;
+  };
+
   const renewalCases  = allCases
     .filter(c => c.match_type === 'renewal_only' && c.status !== 'hold' && isActive(c))
-    .sort(byRenewalDate);
+    .sort(warmFirst(byRenewalDate));
   const onHoldCases   = allCases
     .filter(c => c.status === 'hold')
-    .sort(byCancelDate);
+    .sort(warmFirst(byCancelDate));
   const outboundCases = allCases
-    .filter(c => c.match_type === 'new_lead' && isActive(c));
+    .filter(c => c.match_type === 'new_lead' && isActive(c))
+    .sort(warmFirst());
 
   const tabs = [
     { key: 'renewal',  label: `Renewal Matches (${renewalCases.length})` },

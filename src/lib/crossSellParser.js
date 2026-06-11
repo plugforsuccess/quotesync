@@ -24,6 +24,7 @@ const COL_MAP = {
   last_name:           ['insured last name', 'last name'],
   customer_name:       ['customer name', 'insured name', 'name'], // fallback: single-column formats
   policy_no:           ['policy number', 'policy no', 'policy #'],
+  zip:                 ['zip code', 'zip', 'postal'],
   product_name:        ['product name'],
   product_code:        ['product code', 'line code', 'line of business', 'lob'],
   associated_product:  ['associated product name'],
@@ -159,6 +160,7 @@ export function parseCrossSellReport(file) {
           parsed.push({
             customer_name:       name.toUpperCase(),
             policy_no:           cell(row, col.policy_no) || null,
+            zip:                 cell(row, col.zip).slice(0, 5) || null,
             current_product:     currentProduct,
             recommended_product: recommendedProduct,
             opportunity_tier:    cell(row, col.opportunity_tier) || null,

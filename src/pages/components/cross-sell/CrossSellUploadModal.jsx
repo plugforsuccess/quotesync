@@ -176,6 +176,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
       upload_batch_id:     batchId,
       customer_name:       r.customer_name,
       policy_no:           r.policy_no,
+      zip:                 r.zip,
       current_product:     r.current_product,
       recommended_product: r.recommended_product,
       opportunity_tier:    r.opportunity_tier,
