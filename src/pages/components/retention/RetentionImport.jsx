@@ -504,13 +504,13 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
                 ✗ {diffResult.autoLost.length} confirmed lost
               </span>
               {' '}— matched termination report. Marked lost automatically.
-              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoLost.map(c => (
-                  <span key={c.id} style={{ marginRight: 12 }}>
+                  <div key={c.id} title={c.termination_reason || undefined} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {c.customer_name} ({c.product?.toUpperCase()}){' '}
                     <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
                     {c.termination_reason ? ` — ${c.termination_reason}` : ''}
-                  </span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -523,13 +523,13 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
                 ✓ {diffResult.autoRewritten.length} rewritten / transferred
               </span>
               {' '}— cancelled only to move to a new policy. Counted as retained, not lost.
-              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoRewritten.map(c => (
-                  <span key={c.id} style={{ marginRight: 12 }}>
+                  <div key={c.id} title={c.termination_reason || undefined} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {c.customer_name} ({c.product?.toUpperCase()}){' '}
                     <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
                     {c.termination_reason ? ` — ${c.termination_reason}` : ''}
-                  </span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -542,12 +542,12 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
                 ✓ {diffResult.autoPaid.length} cleared as paid
               </span>
               {' '}— absent from this snapshot and not on the committed termination report covering their cancel month. Closed automatically.
-              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoPaid.map(c => (
-                  <span key={c.id} style={{ marginRight: 12 }}>
+                  <div key={c.id} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {c.customer_name} ({c.product?.toUpperCase()}){' '}
                     <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
-                  </span>
+                  </div>
                 ))}
               </div>
             </div>
