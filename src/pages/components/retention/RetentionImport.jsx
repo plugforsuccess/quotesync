@@ -507,7 +507,8 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoLost.map(c => (
                   <span key={c.id} style={{ marginRight: 12 }}>
-                    {c.customer_name} ({c.product?.toUpperCase()})
+                    {c.customer_name} ({c.product?.toUpperCase()}){' '}
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
                     {c.termination_reason ? ` — ${c.termination_reason}` : ''}
                   </span>
                 ))}
@@ -525,7 +526,8 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoRewritten.map(c => (
                   <span key={c.id} style={{ marginRight: 12 }}>
-                    {c.customer_name} ({c.product?.toUpperCase()})
+                    {c.customer_name} ({c.product?.toUpperCase()}){' '}
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
                     {c.termination_reason ? ` — ${c.termination_reason}` : ''}
                   </span>
                 ))}
@@ -543,7 +545,8 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoPaid.map(c => (
                   <span key={c.id} style={{ marginRight: 12 }}>
-                    {c.customer_name} ({c.product?.toUpperCase()})
+                    {c.customer_name} ({c.product?.toUpperCase()}){' '}
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
                   </span>
                 ))}
               </div>
