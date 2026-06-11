@@ -67,25 +67,27 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
     const renewalByName = {};
     (renewals || []).forEach(r => {
       if (r.policy_no) renewalByPolicy[r.policy_no] = r;
-      renewalByName[r.customer_name.toLowerCase().trim()] = r;
+      const nameKey = r.customer_name?.toLowerCase().trim();
+      if (nameKey) renewalByName[nameKey] = r;
     });
 
     const cancelByPolicy = {};
     const cancelByName = {};
     (cancels || []).forEach(p => {
       if (p.policy_no) cancelByPolicy[p.policy_no] = p;
-      cancelByName[p.customer_name.toLowerCase().trim()] = p;
+      const nameKey = p.customer_name?.toLowerCase().trim();
+      if (nameKey) cancelByName[nameKey] = p;
     });
 
     return parsedRows.map(row => {
-      const nameKey = row.customer_name.toLowerCase().trim();
+      const nameKey = row.customer_name?.toLowerCase().trim() || null;
 
       const renewalMatch = (row.policy_no && renewalByPolicy[row.policy_no])
-        || renewalByName[nameKey]
+        || (nameKey && renewalByName[nameKey])
         || null;
 
       const cancelMatch = (row.policy_no && cancelByPolicy[row.policy_no])
-        || cancelByName[nameKey]
+        || (nameKey && cancelByName[nameKey])
         || null;
 
       let match_type = 'new_lead';

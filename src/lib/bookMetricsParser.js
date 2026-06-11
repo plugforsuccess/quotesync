@@ -170,6 +170,16 @@ export function parsePremiumProfitability(rows) {
 export function parsePolicyAudit(rows) {
   const productionMonth = parseProductionMonth(findMeta(rows, 'production month'));
 
+  // Allstate emits a "* No data is available ..." line when the report is run
+  // for a month/agent combination with nothing to return — surface that plainly
+  // rather than the generic header-not-found error.
+  const hasNoDataNotice = rows.some(r =>
+    (r?.[0] ?? '').toString().toLowerCase().includes('no data is available')
+  );
+  if (hasNoDataNotice) {
+    throw new Error('This Policy Audit export contains no data. The production month may not have posted yet, or the export was run with a filter that returned nothing. Re-pull for the prior month with Agent = ALL.');
+  }
+
   let headerIdx = -1;
   for (let i = 0; i < Math.min(15, rows.length); i++) {
     if ((rows[i]?.[0] ?? '').toString().trim().toLowerCase() === 'policy status') { headerIdx = i; break; }

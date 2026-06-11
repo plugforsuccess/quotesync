@@ -1086,10 +1086,14 @@ export default function MyQueuePage() {
             </div>
           </div>
 
-          {/* Days */}
+          {/* Days — green ≥21d (ideal proactive-contact window), amber/red as
+              renewal nears and the save window closes. */}
           <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: 12 }}>
             <div style={{ fontSize: 18, fontWeight: 700,
-              color: daysUntil <= 7 ? '#F87171' : daysUntil <= 14 ? '#FBBF24' : 'var(--qs-dim)' }}>
+              color: daysUntil <= 7 ? '#F87171'
+                : daysUntil <= 14 ? '#FBBF24'
+                : daysUntil >= 21 ? '#34D399'
+                : 'var(--qs-dim)' }}>
               {daysUntil === 0 ? 'Today' : daysUntil < 0 ? 'Overdue' : `${daysUntil}d`}
             </div>
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>renewal</div>
