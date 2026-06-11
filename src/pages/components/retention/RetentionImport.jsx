@@ -202,7 +202,7 @@ function parseReport(file) {
 
 // ─── Diff Engine ───────────────────────────────────────────────────────────────
 
-function diffReport(parsed, existing, lapseMap = new Map()) {
+function diffReport(parsed, existing, lapseMap = new Map(), coveredTermMonths = new Set()) {
   const today = new Date().toISOString().slice(0, 10);
   const makeKey = (pno, cdate) => `${pno.toLowerCase()}|${cdate}`;
   const parsedKeys = new Set(parsed.map(r => makeKey(r.policy_no, r.cancel_effective_date)));
@@ -221,6 +221,7 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
   const duplicates = [];
   const autoLost = [];      // confirmed lost in lapse_events — auto-closed
   const autoRewritten = []; // cancelled only to rewrite/transfer — RETAINED, not lost
+  const autoPaid = [];   // absent + cancel month covered by a committed termination report it isn't on → paid
   const toReview = [];   // absent from report, no lapse record — verify in Allstate
 
   for (const row of parsed) {
@@ -283,8 +284,23 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
     } else if (daysPastCancel <= 0) {
       // Cancel date is today or future — still in active window.
       // Do nothing — leave status unchanged, don't surface in review.
+    } else if (coveredTermMonths.has(e.cancel_effective_date?.slice(0, 7))) {
+      // Cancel date passed, no lapse record, AND a committed termination
+      // report fully covers the cancel month without listing this policy.
+      // If it had lapsed it would be on that report — so the customer paid.
+      // Clear automatically instead of burning a human review on it.
+      autoPaid.push({
+        id: e.id,
+        policy_no: e.policy_no,
+        customer_name: e.customer_name,
+        product: e.product,
+        premium_at_risk: e.premium_at_risk,
+        cancel_effective_date: e.cancel_effective_date,
+        resolution_date: today,
+      });
     } else {
-      // Cancel date has passed but no lapse record.
+      // Cancel date has passed but no lapse record, and the cancel month
+      // isn't covered by a committed termination report yet.
       // Absence = ambiguous (paid OR lapsed). Must verify in Allstate.
       toReview.push({
         id: e.id,
@@ -301,7 +317,7 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
     }
   }
 
-  return { toAdd, toUpdate, duplicates, autoLost, autoRewritten, toReview };
+  return { toAdd, toUpdate, duplicates, autoLost, autoRewritten, autoPaid, toReview };
 }
 
 // ─── Auto-Resolve Review Panel ──────────────────────────────────────────────
@@ -462,6 +478,7 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               { label: 'Updated',         value: diffResult.toUpdate.length,  color: '#3B82F6' },
               { label: 'Confirmed Lost',  value: diffResult.autoLost.length,  color: '#EF4444' },
               { label: 'Rewritten',       value: diffResult.autoRewritten?.length ?? 0, color: '#34D399' },
+              { label: 'Cleared (Paid)',  value: diffResult.autoPaid?.length ?? 0, color: '#10B981' },
               { label: 'Needs Review',    value: diffResult.toReview.length,  color: '#F59E0B' },
             ].filter(item => item.value > 0).map(({ label, value, color }) => (
               <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
@@ -510,6 +527,23 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
                   <span key={c.id} style={{ marginRight: 12 }}>
                     {c.customer_name} ({c.product?.toUpperCase()})
                     {c.termination_reason ? ` — ${c.termination_reason}` : ''}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {diffResult.autoPaid?.length > 0 && (
+            <div style={{ fontSize: 12, background: '#10B98111', border: '1px solid #10B98133',
+              borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
+              <span style={{ color: '#10B981', fontWeight: 600 }}>
+                ✓ {diffResult.autoPaid.length} cleared as paid
+              </span>
+              {' '}— absent from this snapshot and not on the committed termination report covering their cancel month. Closed automatically.
+              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
+                {diffResult.autoPaid.map(c => (
+                  <span key={c.id} style={{ marginRight: 12 }}>
+                    {c.customer_name} ({c.product?.toUpperCase()})
                   </span>
                 ))}
               </div>
@@ -1555,6 +1589,9 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
   // Auto-resolve review state
   const [autoResolveDecisions, setAutoResolveDecisions] = useState({});
+  // Review cases whose decisions were already written via "Confirm N decisions" —
+  // commit must NOT park these back to pending_review.
+  const [resolvedReviewIds, setResolvedReviewIds] = useState([]);
 
   // Fetch pending_cases for diff engine
   const { data: events = [] } = useQuery({
@@ -1592,6 +1629,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       const [
         { data: freshEvents, error: fetchErr },
         { data: lapseEvents, error: lapseErr },
+        { data: termUploads },
       ] = await Promise.all([
         supabase
           .from('pending_cases')
@@ -1602,13 +1640,34 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
           .from('lapse_events')
           .select('policy_no, lapse_date, termination_reason')
           .eq('agency_id', agencyId),
+        supabase
+          .from('lapse_uploads')
+          .select('report_month, created_at')
+          .eq('agency_id', agencyId)
+          .eq('committed', true),
       ]);
       if (fetchErr) throw new Error(fetchErr.message);
 
       const lapseMap = new Map((lapseEvents || []).map(l => [l.policy_no, l]));
-      const diff = diffReport(parsed, freshEvents || [], lapseMap);
+
+      // Months fully covered by a committed termination report: the upload
+      // must postdate the month's end, otherwise a partial-month export could
+      // be missing late-month terminations and absence proves nothing.
+      const coveredTermMonths = new Set(
+        (termUploads || [])
+          .filter(u => {
+            if (!u.report_month) return false;
+            const [y, m] = u.report_month.slice(0, 7).split('-').map(Number);
+            const monthEnd = new Date(y, m, 1); // first day of following month
+            return new Date(u.created_at) >= monthEnd;
+          })
+          .map(u => u.report_month.slice(0, 7))
+      );
+
+      const diff = diffReport(parsed, freshEvents || [], lapseMap, coveredTermMonths);
       setDiffResult(diff);
       setAutoResolveDecisions({});
+      setResolvedReviewIds([]);
     } catch (err) {
       console.error('[triage upload error]', err.message);
       setUploadError(`❌ ${friendlyUploadError(err.message)}`);
@@ -1634,6 +1693,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
     if (keep.length > 0)
       await supabase.from('pending_cases').update({ status: 'pending' }).in('id', keep);
 
+    setResolvedReviewIds(prev => [...prev, ...paid, ...lost, ...keep]);
     setAutoResolveDecisions({});
     queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
     queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
@@ -1682,7 +1742,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
           filename: uploadFile?.name,
           rows_added: diffResult.toAdd.length,
           rows_updated: diffResult.toUpdate.length,
-          rows_auto_resolved: diffResult.autoLost.length + (diffResult.autoRewritten?.length ?? 0) + diffResult.toReview.length,
+          rows_auto_resolved: diffResult.autoLost.length + (diffResult.autoRewritten?.length ?? 0) + (diffResult.autoPaid?.length ?? 0) + diffResult.toReview.length,
           committed: false,
         })
         .select().single();
@@ -1724,6 +1784,15 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         }
       }
 
+      // Auto-clear paid cases — absent from the snapshot and proven absent
+      // from a committed termination report covering their cancel month.
+      if (diffResult.autoPaid?.length > 0) {
+        await supabase
+          .from('pending_cases')
+          .update({ status: 'auto_resolved', resolution_date: new Date().toISOString().slice(0, 10) })
+          .in('id', diffResult.autoPaid.map(c => c.id));
+      }
+
       // Auto-close rewrites/transfers as RETAINED (not lost) — the customer
       // moved to a new policy number, so this is a save, not a loss.
       if (diffResult.autoRewritten?.length > 0) {
@@ -1738,12 +1807,17 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         }
       }
 
-      // Stage ambiguous absent cases for human review
-      if (diffResult.toReview.length > 0) {
+      // Stage ambiguous absent cases for human review — but never overwrite
+      // cases whose review decisions were already written via "Confirm N
+      // decisions" (paid/lost/keep would silently revert to pending_review).
+      const reviewIdsToPark = diffResult.toReview
+        .map(c => c.id)
+        .filter(id => !resolvedReviewIds.includes(id));
+      if (reviewIdsToPark.length > 0) {
         await supabase
           .from('pending_cases')
           .update({ status: 'pending_review' })
-          .in('id', diffResult.toReview.map(c => c.id));
+          .in('id', reviewIdsToPark);
       }
 
       await supabase.from("pending_cancel_uploads").update({ committed: true }).eq("id", batchId);
@@ -1765,7 +1839,8 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         diffResult.toUpdate.length > 0   && `${diffResult.toUpdate.length} updated`,
         diffResult.autoLost.length > 0   && `${diffResult.autoLost.length} confirmed lost`,
         diffResult.autoRewritten?.length > 0 && `${diffResult.autoRewritten.length} rewritten`,
-        diffResult.toReview.length > 0   && `${diffResult.toReview.length} need review`,
+        diffResult.autoPaid?.length > 0  && `${diffResult.autoPaid.length} cleared as paid`,
+        reviewIdsToPark.length > 0       && `${reviewIdsToPark.length} need review`,
       ].filter(Boolean).join(' · ');
 
       setUploadMsg(`${parts} · ${assignmentSummary}`);
