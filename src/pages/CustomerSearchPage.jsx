@@ -3,7 +3,8 @@
 // active lines, lost lines (winback openings), open cancel/renewal work, contact.
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useCustomerSearch } from '../hooks/useCustomerSearch';
+import { usePermissions } from '../hooks/usePermissions';
+import { useCustomerSearch, useReconcileHouseholds, useMergeHouseholds } from '../hooks/useCustomerSearch';
 
 const PRODUCT_LABELS = {
   auto: 'Auto', ho: 'HO', renters: 'Renters', condo: 'Condo', landlord: 'Landlord',
@@ -23,18 +24,68 @@ function Chip({ children, color }) {
 
 export default function CustomerSearchPage() {
   const { currentAgencyId } = useAuth();
+  const { agency } = usePermissions();
+  const canManage = !!agency?.isPrincipal;
   const [term, setTerm] = useState('');
+  const [selected, setSelected] = useState([]); // household_ids picked to merge
   const { data: results = [], isLoading, isError } = useCustomerSearch(currentAgencyId, term);
+  const reconcile = useReconcileHouseholds(currentAgencyId);
+  const merge = useMergeHouseholds(currentAgencyId);
   const ready = term.trim().length >= 2;
+
+  function toggle(id) {
+    setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
+  }
+  async function mergeSelected() {
+    if (selected.length < 2) return;
+    const [target, ...sources] = selected; // first stays, rest fold in
+    for (const source of sources) await merge.mutateAsync({ source, target });
+    setSelected([]);
+  }
 
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '8px 0' }}>
-      <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)', marginBottom: 4 }}>
-        Customer Search
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)', marginBottom: 4 }}>
+            Customer Search
+          </div>
+          <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 16 }}>
+            Look up any customer across active, pending, and lapsed policies.
+          </div>
+        </div>
+        {canManage && (
+          <button
+            onClick={() => reconcile.mutate()}
+            disabled={reconcile.isPending}
+            title="Rebuild the customer directory from the latest uploads."
+            style={{
+              padding: '8px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600,
+              cursor: 'pointer', border: '1px solid var(--qs-border)',
+              background: 'var(--qs-elevated)', color: 'var(--qs-dim)',
+            }}>
+            {reconcile.isPending ? 'Rebuilding…' : '↻ Rebuild directory'}
+          </button>
+        )}
       </div>
-      <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-        Look up any customer across active, pending, and lapsed policies.
-      </div>
+
+      {canManage && selected.length >= 2 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12,
+          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
+          borderRadius: 8, padding: '8px 14px', fontSize: 13, color: 'var(--qs-dim)',
+        }}>
+          {selected.length} selected — merge into one customer?
+          <button onClick={mergeSelected} disabled={merge.isPending} style={{
+            padding: '5px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+            background: '#3B82F6', color: '#fff', fontSize: 12, fontWeight: 600,
+          }}>{merge.isPending ? 'Merging…' : 'Merge'}</button>
+          <button onClick={() => setSelected([])} style={{
+            padding: '5px 12px', borderRadius: 6, cursor: 'pointer',
+            border: '1px solid var(--qs-border)', background: 'transparent', color: 'var(--qs-subtle)', fontSize: 12,
+          }}>Cancel</button>
+        </div>
+      )}
 
       <input
         autoFocus
@@ -68,19 +119,27 @@ export default function CustomerSearchPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {results.map(c => {
           const winback = (c.active_policies > 0) && (c.lost_products?.length > 0);
+          const picked = selected.includes(c.household_id);
           return (
-            <div key={c.name_key} style={{
-              background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+            <div key={c.household_id} style={{
+              background: 'var(--qs-card)',
+              border: `1px solid ${picked ? '#3B82F6' : 'var(--qs-border)'}`,
               borderRadius: 10, padding: '14px 16px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, display: 'flex', gap: 10 }}>
+                  {canManage && (
+                    <input type="checkbox" checked={picked} onChange={() => toggle(c.household_id)}
+                      title="Select to merge duplicate customers" style={{ marginTop: 3 }} />
+                  )}
+                  <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>
                     {c.display_name}
                     {winback && <span style={{ marginLeft: 8 }}><Chip color="#34D399">♻ Win-back opening</Chip></span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 3 }}>
                     {[c.phone, c.email, c.zip].filter(Boolean).join(' · ') || 'No contact on file'}
+                  </div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0 }}>
