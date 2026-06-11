@@ -19,6 +19,8 @@ export function mapRow(r) {
     customerName: r.customer_name ?? null,
     source:       r.source,
     note:         r.note ?? "",
+    chargebackFlaggedAt: r.chargeback_flagged_at ?? null,
+    chargebackReason:    r.chargeback_reason ?? null,
   };
 }
 

@@ -1790,6 +1790,19 @@ export default function RevenueProjectionsDashboard() {
                               EXCL
                             </span>
                           )}
+                          {e.chargebackFlaggedAt && (
+                            <span
+                              title={`On termination report${e.chargebackReason ? ` (${e.chargebackReason})` : ''} — commission likely charged back. Delete with × to remove from production totals.`}
+                              style={{
+                                fontSize: 9, fontWeight: 700, padding: '1px 5px',
+                                borderRadius: 3, letterSpacing: '0.04em',
+                                background: '#EF444418', color: '#EF4444',
+                                border: '1px solid #EF444433',
+                                cursor: 'help',
+                              }}>
+                              CHGBK
+                            </span>
+                          )}
                         </span>
                       </td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
