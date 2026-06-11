@@ -461,12 +461,15 @@ export default function MyQueuePage() {
     setLogCallForm({ result: 'no_answer', note: '', intervention: EMPTY_INTERVENTION });
   }
 
-  async function handleInlineResolve(type, event, resolution) {
+  async function handleInlineResolve(type, event, resolution, savedViaBundle = false) {
     if (type === 'cancel') {
       await updateCancelCase(event.id, {
         status:          resolution, // 'saved' or 'lost'
         resolution_date: new Date().toISOString().slice(0, 10),
         closed_by_id:    employeeId,
+        // Bundle-save closes the linked cross-sell as converted (the bundle was
+        // the save); a plain save releases it as a fresh outbound opportunity.
+        ...(resolution === 'saved' ? { saved_via_bundle: savedViaBundle } : {}),
       });
     } else {
       await updateRenewalCase(event.id, {
@@ -939,6 +942,22 @@ export default function MyQueuePage() {
               }}>
               ✓ Saved
             </button>
+
+            {/* Saved by selling the bundle — closes the cross-sell as converted
+                (it was the save) instead of releasing it as a new outbound. */}
+            {event.cross_sell_opportunity && event.cross_sell_product && (
+              <button
+                className="qs-focusable"
+                onClick={() => handleInlineResolve('cancel', event, 'saved', true)}
+                title={`Saved by bundling ${event.cross_sell_product?.toUpperCase()} — counts the cross-sell as converted.`}
+                style={{
+                  ...btnBase,
+                  border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.14)',
+                  color: '#34D399',
+                }}>
+                ✓ Saved + bundled {event.cross_sell_product?.toUpperCase()}
+              </button>
+            )}
 
             {/* Lost quick action — prompts for reason */}
             <button
