@@ -220,7 +220,7 @@ export function parsePolicyAudit(rows) {
       production_month: productionMonth,
       policy_no:        policyNo,
       policy_status:    (at(row, idx.status) ?? '').toString().trim() || null,
-      product:          product || null,
+      product:          product || '',   // NOT NULL — part of the unique key
       product_key:      product ? normalizeProductKey(product) : null,
       zip:              (at(row, idx.zip) ?? '').toString().trim() || null,
       pif_current:           intOrNull(at(row, idx.pif_cur)),
