@@ -27,6 +27,7 @@ const primaryItems = {
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
   retention:        { to: '/agency/retention',         label: 'Retention',   icon: '📈' },
   crossSell:        { to: '/agency/cross-sell',        label: 'Cross-Sell',  icon: '💡' },
+  customers:        { to: '/agency/customers',          label: 'Customers',   icon: '🔎' },
   referrals:        { to: '/agency/referrals',         label: 'Referrals',   icon: '🎁' },
   newsroom:         { to: '/news/dashboard',           label: 'Newsroom',    icon: '📰' },
   // Personal (rep-workspace) jumps — used by Sales/Service personas so a
@@ -120,6 +121,7 @@ export const agencyNav = {
     secondary: [
       primaryItems.staffPerformance,
       primaryItems.crossSell,
+      primaryItems.customers,
       primaryItems.referrals,
       primaryItems.timeAttendance,
       { to: '/agency/comp-schedules', label: 'Comp Schedules', icon: '💰' },
@@ -160,6 +162,7 @@ export const principalPersonaNav = {
       primaryItems.referrals,
     ],
     secondary: [
+      primaryItems.customers,
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },
@@ -171,6 +174,7 @@ export const principalPersonaNav = {
       primaryItems.scorecard,
     ],
     secondary: [
+      primaryItems.customers,
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },
