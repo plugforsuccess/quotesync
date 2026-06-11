@@ -1226,12 +1226,49 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
         }
       }
 
+      // Flag matching new-business revenue entries as potential chargebacks \u2014
+      // a policy that appears on a termination report after being written
+      // usually has its commission charged back, and the revenue dashboard
+      // has no other signal for this. The flag survives daily NB re-uploads
+      // because the upsert only touches the columns it supplies.
+      // Rewrites are skipped: the household stays on a new policy number and
+      // rewrites generate no new-business entry, so the original entry is the
+      // only production record and must keep counting.
+      let chargebacksFlagged = 0;
+      const flagCandidatePolicyNos = parsedRows
+        .filter(r => r.policy_no && !isRewriteReason(r.termination_reason))
+        .map(r => r.policy_no);
+      if (flagCandidatePolicyNos.length > 0) {
+        const { data: nbMatches } = await supabase
+          .from('revenue_entries')
+          .select('id, policy_no')
+          .eq('agency_id', agencyId)
+          .in('policy_no', flagCandidatePolicyNos)
+          .is('chargeback_flagged_at', null);
+
+        for (const entry of (nbMatches ?? [])) {
+          const lapseRow = parsedRows.find(r => r.policy_no === entry.policy_no);
+          await supabase
+            .from('revenue_entries')
+            .update({
+              chargeback_flagged_at: new Date().toISOString(),
+              chargeback_reason: lapseRow?.termination_reason || null,
+              chargeback_lapse_date: lapseRow?.lapse_date || null,
+            })
+            .eq('id', entry.id);
+        }
+        chargebacksFlagged = (nbMatches ?? []).length;
+      }
+
       await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
 
       const crossMsg = crossResolved > 0
         ? ` \u00b7 ${crossResolved} pending case${crossResolved > 1 ? 's' : ''} closed from termination report`
         : '';
-      setCommitMsg(`${parsedRows.length} terminations recorded${crossMsg}`);
+      const chargebackMsg = chargebacksFlagged > 0
+        ? ` \u00b7 ${chargebacksFlagged} new-business entr${chargebacksFlagged > 1 ? 'ies' : 'y'} flagged as possible chargeback`
+        : '';
+      setCommitMsg(`${parsedRows.length} terminations recorded${crossMsg}${chargebackMsg}`);
       setParsedRows(null);
       setLapseFile(null);
       await syncRetentionQueue(supabase);
@@ -1239,6 +1276,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['revenue_entries', agencyId] });
     } catch (err) {
       console.error("[termination commit error]", err.message);
       setParseError(friendlyUploadError(err.message));

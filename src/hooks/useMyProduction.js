@@ -40,6 +40,7 @@ export function useMyProduction(orgId, employee, { months = 6 } = {}) {
         .from('revenue_entries')
         .select('producer_id, producer_name, premium, item_count, policy_count, issued_date')
         .eq('agency_id', orgId)
+        .is('charged_back_at', null)
         .gte('issued_date', startStr)
         .lte('issued_date', endStr);
       if (qErr) throw qErr;
