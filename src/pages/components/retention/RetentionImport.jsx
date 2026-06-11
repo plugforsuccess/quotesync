@@ -1155,6 +1155,7 @@ function parseLapseXLSX(data) {
   const iItems    = findLapseCol(["number of items", "no. of items", "item count", "items"]);
   const iPhone    = findLapseCol(["phone number", "insured phone", "phone", "mobile", "cell"]);
   const iEmail    = findLapseCol(["insured email", "email address", "email"]);
+  const iZip      = findLapseCol(["zip code", "zip", "postal"]);
 
   const SINGLE_ITEM_PRODUCTS = ["ho", "condo", "renters", "landlord", "pup", "manufactured", "boat", "motor_club"];
 
@@ -1192,6 +1193,7 @@ function parseLapseXLSX(data) {
       termination_reason: iReason >= 0   ? r[iReason]?.toString().trim() ?? "" : "",
       phone:              iPhone >= 0    ? r[iPhone]?.toString().trim() || null : null,
       email:              iEmail >= 0    ? r[iEmail]?.toString().trim() || null : null,
+      zip:                iZip >= 0      ? r[iZip]?.toString().trim().slice(0, 5) || null : null,
     };
   }).filter(r => r.policy_no);
 }
