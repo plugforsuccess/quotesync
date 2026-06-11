@@ -16,7 +16,7 @@ const LoginPage = () => {
   useForceTheme('dark');
 
   const navigate = useNavigate();
-  const { user, loading: authLoading, currentAgencyId, platformRole, currentAgencyRole, isPlatformUser } = useAuth();
+  const { user, loading: authLoading, authzResolved, currentAgencyId, platformRole, currentAgencyRole, isPlatformUser } = useAuth();
   // Only query for employee record if the user is not a platform user — avoids
   // an unnecessary DB round trip on every platform admin login.
   const { data: employeeRecord, isLoading: empLoading } = useCurrentEmployee();
@@ -35,7 +35,10 @@ const LoginPage = () => {
   // Employees (non-platform users) go to /my/queue; platform/agency users
   // go to their role-based landing page.
   useEffect(() => {
-    if (!authLoading && empResolved && user) {
+    // authzResolved gates on role/membership resolution — routing on `user`
+    // alone races it and sends real members to the public home page when
+    // localStorage has no cached role (e.g. right after clearing site data).
+    if (!authLoading && authzResolved && empResolved && user) {
       // Employee (not platform admin, not principal/manager/producer) →
       // send to their queue. 'producer' is treated as an agency member so
       // they land via getDefaultLanding; only the new 'employee' agency
@@ -57,7 +60,7 @@ const LoginPage = () => {
         navigate(getDefaultLanding(platformRole, agencyRoleVal), { replace: true });
       }
     }
-  }, [authLoading, empResolved, user, employeeRecord, isPlatformUser, platformRole, currentAgencyRole, currentAgencyId, navigate]);
+  }, [authLoading, authzResolved, empResolved, user, employeeRecord, isPlatformUser, platformRole, currentAgencyRole, currentAgencyId, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
