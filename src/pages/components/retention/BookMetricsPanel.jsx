@@ -40,7 +40,7 @@ const REPORTS = {
     sheet: null, // first sheet
     parser: parsePolicyAudit,
     table: 'policy_audit_snapshots',
-    conflict: 'agency_id,production_month,policy_no',
+    conflict: 'agency_id,production_month,policy_no,product',
   },
 };
 
@@ -88,11 +88,25 @@ function UploadZone({ agencyId, currentUserId, reportType }) {
         upload_batch_id: upload.id,
         raw: r,
       }));
+
+      // De-dupe by the conflict key (last-wins) — Postgres rejects a batch that
+      // would update the same row twice ("ON CONFLICT DO UPDATE command cannot
+      // affect row a second time"). Allstate can repeat an exact policy/product
+      // line; collapse those before the upsert.
+      const conflictCols = cfg.conflict.split(',');
+      const deduped = Array.from(
+        withMeta.reduce((map, row) => {
+          const key = conflictCols.map((c) => row[c] ?? '').join('');
+          map.set(key, row);
+          return map;
+        }, new Map()).values()
+      );
+
       const CHUNK = 500;
-      for (let i = 0; i < withMeta.length; i += CHUNK) {
+      for (let i = 0; i < deduped.length; i += CHUNK) {
         const { error: insErr } = await supabase
           .from(cfg.table)
-          .upsert(withMeta.slice(i, i + CHUNK), { onConflict: cfg.conflict });
+          .upsert(deduped.slice(i, i + CHUNK), { onConflict: cfg.conflict });
         if (insErr) throw new Error(insErr.message);
       }
 
