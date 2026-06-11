@@ -10,6 +10,9 @@ import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
+import { buildChurnModel, expectedSaveablePremium } from '../lib/retentionElasticity';
+import { useBookSnapshots } from '../hooks/useBookMetrics';
+import { useInterventionEffectiveness } from '../hooks/useInterventionEffectiveness';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import ReadingColumn from '../components/ReadingColumn';
 import InterventionPicker from '../components/InterventionPicker';
@@ -288,15 +291,29 @@ export default function MyQueuePage() {
   // The cases the queue actually displays based on focus toggle.
   const displayCancelCases = focusMode ? focusCases : filteredCancelCases;
 
-  // Renewal focus — same daily-target cap as the cancel queue. Renewals arrive
-  // soonest-first, so working top-down hits cases about to slip below the
-  // 21-day ideal-contact window first; touched-today float up so cards don't
-  // jump after a call.
+  // Saveable-premium ranking — same model the principal's Targeting tab uses:
+  // premium × churn (observed retention by product/tenure, rate-shock adjusted)
+  // × save lift. Falls back to product priors when book metrics aren't
+  // readable in this context, which still ranks far better than date order.
+  const { data: book } = useBookSnapshots(orgId);
+  const { effectiveSaveLift } = useInterventionEffectiveness(orgId);
+  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
+
+  // Renewal focus — same daily-target cap as the cancel queue, but ordered by
+  // expected saveable premium so reps work the highest-value calls first.
+  // Touched-today float up so cards don't jump after a call. The full-queue
+  // view keeps its soonest-first order for browsing.
   const focusRenewalCases = useMemo(() => {
+    const bySaveable = (a, b) =>
+      expectedSaveablePremium(b, churnModel, effectiveSaveLift)
+      - expectedSaveablePremium(a, churnModel, effectiveSaveLift);
     const touched = renewalCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
-    const untouched = renewalCases.filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr);
+    const untouched = renewalCases
+      .filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr)
+      .slice()
+      .sort(bySaveable);
     return [...touched, ...untouched].slice(0, dailyTarget);
-  }, [renewalCases, dailyTarget, todayStr]);
+  }, [renewalCases, dailyTarget, todayStr, churnModel, effectiveSaveLift]);
   const displayRenewalCases = focusMode ? focusRenewalCases : renewalCases;
 
   // Bucket display cases by priority_tier (P0 → P3, plus an "other" fallback)
@@ -1108,6 +1125,16 @@ export default function MyQueuePage() {
               {daysUntil === 0 ? 'Today' : daysUntil < 0 ? 'Overdue' : `${daysUntil}d`}
             </div>
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)' }}>renewal</div>
+            {(() => {
+              // Why this card ranks where it does in focus mode.
+              const saveable = expectedSaveablePremium(event, churnModel, effectiveSaveLift);
+              return saveable > 0 ? (
+                <div style={{ fontSize: 10, color: 'var(--qs-muted)', marginTop: 2 }}
+                  title="Expected saveable premium = premium × churn risk × save rate. Drives focus-mode order.">
+                  ~{fmt$(saveable)} saveable
+                </div>
+              ) : null;
+            })()}
           </div>
         </div>
 
