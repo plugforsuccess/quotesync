@@ -44,7 +44,7 @@ export default function CrossSellPage() {
 
   const { data: rawCases = [], isLoading } = useCrossSellCases(currentAgencyId);
   const { data: uploads = [] } = useCrossSellUploads(currentAgencyId);
-  const updateCase = useUpdateCrossSellCase(currentAgencyId);
+  const updateCase = useUpdateCrossSellCase(currentAgencyId, employee?.id ?? null);
 
   // Recent terminations (last 18 months) — used to flag a cross-sell customer
   // who is still active on one line but LOST another. That's a warm re-add (the
