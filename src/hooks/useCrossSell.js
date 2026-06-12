@@ -50,7 +50,7 @@ export function useCrossSellUploads(agencyId) {
   });
 }
 
-export function useUpdateCrossSellCase(agencyId) {
+export function useUpdateCrossSellCase(agencyId, employeeId = null) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, updates }) => {
@@ -59,6 +59,20 @@ export function useUpdateCrossSellCase(agencyId) {
         .update({ ...updates, updated_at: new Date().toISOString() })
         .eq('id', id);
       if (error) throw error;
+
+      // Every outcome change is a touch — log it like the retention queues do
+      // (pending_cancel_attempts / renewal_attempts). Feeds the household
+      // touch history and, eventually, pitch-effectiveness learning.
+      if (updates.status && updates.status !== 'new') {
+        const { error: attErr } = await supabase.from('cross_sell_attempts').insert({
+          cross_sell_case_id: id,
+          agency_id: agencyId,
+          employee_id: employeeId,
+          method: 'phone',
+          result: updates.status,
+        });
+        if (attErr) console.error('[cross_sell_attempts] log failed:', attErr.message);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cross_sell_cases', agencyId] });
