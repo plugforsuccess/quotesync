@@ -115,6 +115,7 @@ export default function MyQueuePage() {
 
   // Master-detail selection — which cancel lead is open in the right pane.
   const [selectedCancelId, setSelectedCancelId] = useState(null);
+  const [selectedRenewalCaseId, setSelectedRenewalCaseId] = useState(null);
 
   // Stale refresh tracking
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
@@ -316,6 +317,13 @@ export default function MyQueuePage() {
   }, [renewalCases, dailyTarget, todayStr, churnModel, effectiveSaveLift]);
   const displayRenewalCases = focusMode ? focusRenewalCases : renewalCases;
 
+  // Master-detail selection for the renewal dialer (mirrors the cancel tab).
+  const selectedRenewalCase =
+    displayRenewalCases.find(c => c.id === selectedRenewalCaseId) || displayRenewalCases[0] || null;
+  const selectedRenewalIdx = selectedRenewalCase
+    ? displayRenewalCases.findIndex(c => c.id === selectedRenewalCase.id)
+    : -1;
+
   // Bucket display cases by priority_tier (P0 → P3, plus an "other" fallback)
   const cancelBuckets = useMemo(() => {
     const groups = { P0: [], P1: [], P2: [], P3: [], other: [] };
@@ -353,33 +361,47 @@ export default function MyQueuePage() {
     }
   }, [flatCancelCases, selectedCancelId]);
 
+  useEffect(() => {
+    if (displayRenewalCases.length === 0) {
+      if (selectedRenewalCaseId !== null) setSelectedRenewalCaseId(null);
+    } else if (!displayRenewalCases.some(c => c.id === selectedRenewalCaseId)) {
+      setSelectedRenewalCaseId(displayRenewalCases[0].id);
+    }
+  }, [displayRenewalCases, selectedRenewalCaseId]);
+
   // Keyboard call-through: ↑/↓ or j/k to move between leads, C to dial the
   // selected lead. Ignored while typing or when a popover/modal is open.
   useEffect(() => {
     function onKey(e) {
-      if (activeTab !== 'cancel') return;
+      if (activeTab !== 'cancel' && activeTab !== 'renewal') return;
       if (logCallTarget || callbackTarget || lostTarget || selectedEvent || selectedRenewal) return;
       // Don't hijack browser/OS shortcuts — e.g. Ctrl/Cmd+C is copy, not "call".
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return;
-      if (!flatCancelCases.length) return;
-      const idx = flatCancelCases.findIndex(c => c.id === selectedCancel?.id);
+
+      const isCancel = activeTab === 'cancel';
+      const list = isCancel ? flatCancelCases : displayRenewalCases;
+      const current = isCancel ? selectedCancel : selectedRenewalCase;
+      const select = isCancel ? setSelectedCancelId : setSelectedRenewalCaseId;
+      if (!list.length) return;
+      const idx = list.findIndex(c => c.id === current?.id);
       if (e.key === 'ArrowDown' || e.key === 'j') {
         e.preventDefault();
-        const next = flatCancelCases[Math.min(idx + 1, flatCancelCases.length - 1)];
-        if (next) setSelectedCancelId(next.id);
+        const next = list[Math.min(idx + 1, list.length - 1)];
+        if (next) select(next.id);
       } else if (e.key === 'ArrowUp' || e.key === 'k') {
         e.preventDefault();
-        const prev = flatCancelCases[Math.max(idx - 1, 0)];
-        if (prev) setSelectedCancelId(prev.id);
-      } else if ((e.key === 'c' || e.key === 'C') && selectedCancel?.phone) {
-        window.location.href = `tel:${selectedCancel.phone}`;
+        const prev = list[Math.max(idx - 1, 0)];
+        if (prev) select(prev.id);
+      } else if (e.key === 'c' || e.key === 'C') {
+        const dial = current?.phone || current?.customer_phone;
+        if (dial) window.location.href = `tel:${dial}`;
       }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [activeTab, flatCancelCases, selectedCancel, logCallTarget, callbackTarget, lostTarget, selectedEvent, selectedRenewal]);
+  }, [activeTab, flatCancelCases, displayRenewalCases, selectedCancel, selectedRenewalCase, logCallTarget, callbackTarget, lostTarget, selectedEvent, selectedRenewal]);
 
   // Keep the active row visible in the (independently scrolling) master list.
   useEffect(() => {
@@ -388,6 +410,13 @@ export default function MyQueuePage() {
       ?.scrollIntoView({ block: 'nearest' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCancel?.id]);
+
+  useEffect(() => {
+    if (!selectedRenewalCase) return;
+    document.querySelector(`[data-renewal-row="${selectedRenewalCase.id}"]`)
+      ?.scrollIntoView({ block: 'nearest' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRenewalCase?.id]);
 
   async function updateCancelCase(id, updates) {
     const { error } = await supabase
@@ -600,6 +629,56 @@ export default function MyQueuePage() {
           border: '1px solid',
           borderColor: active ? 'rgba(59,130,246,0.45)' : 'transparent',
           borderLeft: `3px solid ${active ? '#3B82F6' : isLapsed ? '#EF4444' : urgent ? '#F87171' : 'transparent'}`,
+          borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 2,
+        }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--qs-bright)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {event.customer_name}
+          </span>
+          <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: statusColor, flexShrink: 0 }}>
+            {statusText}
+          </span>
+        </div>
+        <div style={{ fontSize: '0.8125rem', color: 'var(--qs-dim)', marginTop: 2,
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {sub}
+        </div>
+      </button>
+    );
+  }
+
+  // Compact master-list row for the renewal dialer (mirrors CancelRow).
+  function RenewalRow({ event, active, onSelect }) {
+    const d = (() => {
+      const date = new Date(event.renewal_date);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return Math.ceil((date - today) / 86400000);
+    })();
+    const statusText = isNaN(d) ? '—' : d === 0 ? 'Today' : d < 0 ? 'Overdue' : `${d}d`;
+    const statusColor = d <= 7 ? '#F87171' : d <= 14 ? '#FBBF24' : d >= 21 ? '#34D399' : 'var(--qs-dim)';
+    const changePct = parseFloat(event.premium_change_pct) || 0;
+    const saveable = expectedSaveablePremium(event, churnModel, effectiveSaveLift);
+    const sub = [
+      event.product?.toUpperCase(),
+      event.premium != null ? fmt$(event.premium) : null,
+      changePct >= 15 ? `⚠ +${changePct.toFixed(0)}%` : null,
+      saveable > 0 ? `~${fmt$(saveable)} saveable` : null,
+    ].filter(Boolean).join(' · ');
+
+    return (
+      <button
+        type="button"
+        data-renewal-row={event.id}
+        onClick={onSelect}
+        className="qs-focusable qs-cancel-row"
+        aria-current={active ? 'true' : undefined}
+        style={{
+          display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
+          background: active ? 'rgba(59,130,246,0.14)' : undefined,
+          border: '1px solid',
+          borderColor: active ? 'rgba(59,130,246,0.45)' : 'transparent',
+          borderLeft: `3px solid ${active ? '#3B82F6' : changePct >= 15 ? '#F87171' : 'transparent'}`,
           borderRadius: 8, padding: '0.5rem 0.75rem', marginBottom: 2,
         }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -1707,38 +1786,81 @@ export default function MyQueuePage() {
             </div>
           )}
 
-          {/* Renewal cards */}
+          {/* Master-detail dialer — same layout as the cancel tab */}
           {!renewalLoading && renewalCases.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {displayRenewalCases.map(event => (
-                <RenewalCard
-                  key={event.id}
-                  event={event}
-                  policyCount={customerPolicyCounts[event.customer_name] || 1}
-                />
-              ))}
+            <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 items-start">
 
-              {/* "X more renewals" banner — focus mode only */}
-              {focusMode && renewalCases.length > dailyTarget && (
-                <div style={{
-                  textAlign: 'center', padding: '12px 8px',
-                  fontSize: 13, color: 'var(--qs-muted)',
-                  borderTop: '1px solid var(--qs-border)', marginTop: 4,
+              {/* ── Master: dense renewal list ─────────────────────────── */}
+              <aside
+                className="lg:sticky lg:top-[5.5rem] lg:max-h-[calc(100vh-6.5rem)] lg:overflow-y-auto"
+                style={{
+                  background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                  borderRadius: 12, padding: 10,
                 }}>
-                  {renewalCases.length - dailyTarget} more in full queue
-                  {' · '}
-                  <button
-                    onClick={toggleFocusMode}
-                    className="qs-focusable"
-                    style={{
-                      background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
-                    }}
-                  >
-                    View all
-                  </button>
+                <div style={{
+                  fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)',
+                  textTransform: 'uppercase', letterSpacing: '0.05em', padding: '6px 2px 6px',
+                }}>
+                  {focusMode ? 'Focus — highest saveable first' : 'Full queue — soonest first'}
                 </div>
-              )}
+                {displayRenewalCases.map(event => (
+                  <RenewalRow
+                    key={event.id}
+                    event={event}
+                    active={selectedRenewalCase?.id === event.id}
+                    onSelect={() => setSelectedRenewalCaseId(event.id)}
+                  />
+                ))}
+
+                {/* "X more renewals" banner — focus mode only */}
+                {focusMode && renewalCases.length > dailyTarget && (
+                  <div style={{
+                    textAlign: 'center', padding: '12px 8px',
+                    fontSize: 13, color: 'var(--qs-muted)',
+                    borderTop: '1px solid var(--qs-border)', marginTop: 4,
+                  }}>
+                    {renewalCases.length - dailyTarget} more in full queue
+                    {' · '}
+                    <button
+                      onClick={toggleFocusMode}
+                      className="qs-focusable"
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        color: '#3B82F6', fontSize: 13, fontWeight: 600, padding: 0,
+                      }}
+                    >
+                      View all
+                    </button>
+                  </div>
+                )}
+              </aside>
+
+              {/* ── Detail: active call ────────────────────────────────── */}
+              <section style={{ minWidth: 0 }}>
+                {selectedRenewalCase ? (
+                  <div key={selectedRenewalCase.id}>
+                    <div style={{
+                      fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 8,
+                      display: 'flex', justifyContent: 'space-between',
+                    }}>
+                      <span>{selectedRenewalIdx + 1} of {displayRenewalCases.length}</span>
+                      <span>↑↓ or j/k to move · C to call</span>
+                    </div>
+                    <RenewalCard
+                      event={selectedRenewalCase}
+                      policyCount={customerPolicyCounts[selectedRenewalCase.customer_name] || 1}
+                    />
+                  </div>
+                ) : (
+                  <div style={{
+                    background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                    borderRadius: 12, padding: '64px 24px', textAlign: 'center',
+                    color: 'var(--qs-subtle)', fontSize: 15,
+                  }}>
+                    Select a renewal from the list to start the call.
+                  </div>
+                )}
+              </section>
             </div>
           )}
         </ReadingColumn>
