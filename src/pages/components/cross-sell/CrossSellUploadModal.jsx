@@ -218,34 +218,12 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         .eq('id', c.pending_case_id);
     }
 
-    const newLeadRows = rows.filter(r => r.match_type === 'new_lead');
-    if (newLeadRows.length > 0) {
-      const leadInserts = newLeadRows.map(r => ({
-        agency_id:      agencyId,
-        first_name:     r.customer_name.split(' ')[0] || '',
-        last_name:      r.customer_name.split(' ').slice(1).join(' ') || '',
-        source:         'cross_sell_audit',
-        product_intent: r.recommended_product,
-        status:         'new',
-      }));
-
-      const { data: createdLeads } = await supabase
-        .from('leads')
-        .insert(leadInserts)
-        .select('id');
-
-      if (createdLeads) {
-        const newLeadCases = insertedCases.filter(c => c.match_type === 'new_lead');
-        for (let i = 0; i < newLeadCases.length; i++) {
-          if (createdLeads[i]) {
-            await supabase
-              .from('cross_sell_cases')
-              .update({ lead_id: createdLeads[i].id })
-              .eq('id', newLeadCases[i].id);
-          }
-        }
-      }
-    }
+    // NOTE: outbound (new_lead) cross-sell rows are deliberately NOT pushed
+    // into Lead Manager. These customers are ACTIVE BOOK (the audit only lists
+    // customers the agency holds) — relationship selling, worked in the
+    // Outbound tab here. Creating twin leads gave every customer two
+    // unsynced work items and pointed stranger-pipeline machinery (SLA, drips)
+    // at existing customers.
 
     queryClient.invalidateQueries({ queryKey: ['cross_sell_cases', agencyId] });
     queryClient.invalidateQueries({ queryKey: ['cross_sell_uploads', agencyId] });
@@ -259,7 +237,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
     renewal_only: { label: 'Renewal match',    color: '#3B82F6', note: 'Pitch during renewal call' },
     cancel_only:  { label: 'Cancel match',     color: '#F59E0B', note: 'On hold — resolve cancel first' },
     both:         { label: 'Renewal + Cancel', color: '#EF4444', note: 'On hold — cancel takes priority' },
-    new_lead:     { label: 'New outbound lead',color: '#10B981', note: 'Will be created in Lead Manager' },
+    new_lead:     { label: 'Outbound pitch',   color: '#10B981', note: 'Active customer — worked in the Outbound tab' },
   };
 
   return (
@@ -455,7 +433,6 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                 }}
               >
                 Commit {rows.length} rows
-                {matchSummary.new_lead > 0 && ` · create ${matchSummary.new_lead} leads`}
               </button>
             </div>
           )}
@@ -463,7 +440,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
           {stage === 'committing' && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--qs-dim)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>💾</div>
-              <div style={{ fontSize: 14 }}>Saving cross-sell cases and creating leads…</div>
+              <div style={{ fontSize: 14 }}>Saving cross-sell cases…</div>
             </div>
           )}
 
@@ -475,7 +452,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 20, lineHeight: 1.6 }}>
                 {matchSummary.renewal_only + matchSummary.both} renewal cases flagged
-                · {matchSummary.new_lead} leads created in Lead Manager
+                · {matchSummary.new_lead} outbound pitches in the queue
               </div>
               <button onClick={onClose} style={{
                 padding: '10px 24px', borderRadius: 8, border: 'none',

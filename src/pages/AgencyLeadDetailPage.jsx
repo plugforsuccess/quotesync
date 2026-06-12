@@ -970,6 +970,10 @@ const AgencyLeadDetailPage = () => {
                   <dd className="text-xl font-bold text-gray-900">
                     {lead.first_contact_at ? (
                       formatDuration(lead.created_at, lead.first_contact_at)
+                    ) : lead.source === 'winback' ? (
+                      // Winbacks are batch work, not interrupt work — a 2024
+                      // termination doesn't decay by the hour. No SLA pressure.
+                      <span className="text-gray-500">Batch lead — no SLA</span>
                     ) : (
                       <span className="text-orange-600">Not contacted</span>
                     )}
