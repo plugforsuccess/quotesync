@@ -104,6 +104,7 @@ const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
 const TerminationAliasesPage = lazyWithRetry(() => import('./pages/TerminationAliasesPage'));
 const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
 const CustomerSearchPage = lazyWithRetry(() => import('./pages/CustomerSearchPage'));
+const HouseholdDetailPage = lazyWithRetry(() => import('./pages/HouseholdDetailPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
 const ReferralRewardsPage = lazyWithRetry(() => import('./pages/ReferralRewardsPage'));
@@ -455,6 +456,13 @@ function App() {
               <ProtectedRoute requireAgencyMembership>
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><CustomerSearchPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/customers/:householdId" element={
+              <ProtectedRoute requireAgencyMembership>
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><HouseholdDetailPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />

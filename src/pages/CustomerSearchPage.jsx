@@ -2,6 +2,7 @@
 // Producer customer lookup — type a name, see the household's full picture:
 // active lines, lost lines (winback openings), open cancel/renewal work, contact.
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useCustomerSearch, useReconcileHouseholds, useMergeHouseholds } from '../hooks/useCustomerSearch';
@@ -133,8 +134,12 @@ export default function CustomerSearchPage() {
                       title="Select to merge duplicate customers" style={{ marginTop: 3 }} />
                   )}
                   <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>
-                    {c.display_name}
+                  <div style={{ fontSize: 15, fontWeight: 700 }}>
+                    <Link to={`/agency/customers/${c.household_id}`} style={{ color: 'var(--qs-bright)', textDecoration: 'none' }}
+                      onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                      onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
+                      {c.display_name}
+                    </Link>
                     {winback && <span style={{ marginLeft: 8 }}><Chip color="#34D399">♻ Win-back opening</Chip></span>}
                   </div>
                   <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 3 }}>
