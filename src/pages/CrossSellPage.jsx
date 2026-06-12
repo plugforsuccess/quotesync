@@ -8,6 +8,7 @@ import CrossSellQueue from './components/cross-sell/CrossSellQueue';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { usePermissions } from '../hooks/usePermissions';
 
 // Household key for matching a customer across policies (no customer ID yet):
 // normalized name + 5-digit ZIP. ZIP disambiguates common names.
@@ -20,9 +21,26 @@ const NON_WINNABLE_RX = /\b(moved|sold|deceased|death|total loss|no longer|reloc
 export default function CrossSellPage() {
   const { currentAgencyId, user } = useAuth();
   const { data: employee } = useCurrentEmployee();
+  const { agency } = usePermissions();
+  const isPrincipal = !!agency?.isPrincipal;
   const [tab, setTab] = useState('renewal');
   const [showUpload, setShowUpload] = useState(false);
   const [showWorked, setShowWorked] = useState(false);
+  const [winbackMsg, setWinbackMsg] = useState('');
+  const [winbackBusy, setWinbackBusy] = useState(false);
+
+  async function generateWinbacks() {
+    setWinbackBusy(true); setWinbackMsg('');
+    const { data, error } = await supabase.rpc('generate_winback_leads', {
+      p_agency: currentAgencyId, p_limit: 25,
+    });
+    setWinbackBusy(false);
+    setWinbackMsg(error
+      ? `Winback generation failed: ${error.message}`
+      : data > 0
+        ? `${data} winback lead${data !== 1 ? 's' : ''} created in Lead Manager.`
+        : 'No new winback candidates — all eligible terminations already have leads.');
+  }
 
   const { data: rawCases = [], isLoading } = useCrossSellCases(currentAgencyId);
   const { data: uploads = [] } = useCrossSellUploads(currentAgencyId);
@@ -52,16 +70,22 @@ export default function CrossSellPage() {
     const m = new Map();
     for (const l of recentLapses) {
       if (l.termination_reason && NON_WINNABLE_RX.test(l.termination_reason)) continue;
-      const k = householdKey(l.customer_name, l.zip);
-      const prev = m.get(k);
-      if (!prev || (l.lapse_date || '') > (prev.lapse_date || '')) m.set(k, l);
+      // Index under BOTH the full name+zip key and a name-only key: cross-sell
+      // cases committed before ZIP capture have null zip, so requiring zip on
+      // both sides would silently miss every match against newer lapse rows.
+      const keys = [householdKey(l.customer_name, l.zip), householdKey(l.customer_name, null)];
+      for (const k of keys) {
+        const prev = m.get(k);
+        if (!prev || (l.lapse_date || '') > (prev.lapse_date || '')) m.set(k, l);
+      }
     }
     return m;
   }, [recentLapses]);
 
   // Annotate each case with a lost-line winback flag (different product, recent).
   const allCases = useMemo(() => rawCases.map(c => {
-    const lost = lapseByHousehold.get(householdKey(c.customer_name, c.zip));
+    const lost = lapseByHousehold.get(householdKey(c.customer_name, c.zip))
+      || lapseByHousehold.get(householdKey(c.customer_name, null));
     const isLostLine = lost && lost.product && lost.product !== c.current_product;
     if (!isLostLine) return c;
     const months = Math.max(0, Math.round(
@@ -130,17 +154,45 @@ export default function CrossSellPage() {
             {allCases.length} opportunities from {uploads.length} upload{uploads.length !== 1 ? 's' : ''}
           </div>
         </div>
-        <button
-          onClick={() => setShowUpload(true)}
-          style={{
-            padding: '10px 18px', borderRadius: 8, border: 'none',
-            background: '#3B82F6', color: '#fff',
-            fontSize: 14, fontWeight: 600, cursor: 'pointer',
-          }}
-        >
-          + Upload Audit Report
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {isPrincipal && (
+            <button
+              onClick={generateWinbacks}
+              disabled={winbackBusy}
+              title="Create the next batch of cold winback leads (25 max) — terminated 120+ days ago, winnable reason, no active line, not already in Lead Manager."
+              style={{
+                padding: '10px 18px', borderRadius: 8,
+                border: '1px solid rgba(16,185,129,0.4)',
+                background: 'rgba(16,185,129,0.12)', color: '#34D399',
+                fontSize: 14, fontWeight: 600, cursor: 'pointer',
+              }}
+            >
+              {winbackBusy ? 'Generating…' : '♻ Generate winback leads'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowUpload(true)}
+            style={{
+              padding: '10px 18px', borderRadius: 8, border: 'none',
+              background: '#3B82F6', color: '#fff',
+              fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            + Upload Audit Report
+          </button>
+        </div>
       </div>
+
+      {winbackMsg && (
+        <div style={{
+          marginBottom: 16, padding: '10px 14px', borderRadius: 8, fontSize: 13,
+          background: winbackMsg.includes('failed') ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)',
+          border: `1px solid ${winbackMsg.includes('failed') ? 'rgba(239,68,68,0.25)' : 'rgba(16,185,129,0.25)'}`,
+          color: winbackMsg.includes('failed') ? '#F87171' : '#34D399',
+        }}>
+          {winbackMsg}
+        </div>
+      )}
 
       {/* Sales producers: monthly premium goal progress at a glance */}
       {employee?.roles?.includes('sales') && (
