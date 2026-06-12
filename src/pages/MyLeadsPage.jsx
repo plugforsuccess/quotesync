@@ -40,6 +40,15 @@ function LeadCard({ lead, onLog, onFollowup, onSnooze }) {
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright, #fff)' }}>
             {name || (lead.product_intent ? `${lead.product_intent} lead` : 'New lead')}
+            {lead.source === 'winback' && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4, marginLeft: 8,
+                background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#34D399',
+              }}
+              title="Former customer — generated from termination history. Batch work, no SLA clock.">
+                ♻ Winback
+              </span>
+            )}
             <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--qs-dim)', marginLeft: 8 }}>
               {[lead.product_intent, lead.state, lead.zip].filter(Boolean).join(' · ')}
             </span>

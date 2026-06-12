@@ -399,6 +399,10 @@ export function useFunnelMetrics(agencyId, timeRange) {
           session_id, created_at, first_contact_at
         `)
         .eq('agency_id', agencyId)
+        // Remarketing sources (winback batches, legacy cross-sell twins) are a
+        // different population — including them poisons inbound conversion and
+        // SLA KPIs. They have their own surfaces; the funnel measures inbound.
+        .not('source', 'in', '(winback,cross_sell_audit)')
         .gte('created_at', startDate)
         .lte('created_at', endDate)
         .order('created_at', { ascending: false });
@@ -417,6 +421,7 @@ export function useFunnelMetrics(agencyId, timeRange) {
             utm_source, referral_code, created_at
           `)
           .eq('agency_id', agencyId)
+          .not('source', 'in', '(winback,cross_sell_audit)')
           .gte('created_at', priorRange.startDate)
           .lte('created_at', priorRange.endDate);
 

@@ -45,7 +45,7 @@ export function useProducerQueue() {
       const { data, error } = await supabase
         .from('leads')
         .select(`
-          id, status, first_name, last_name, phone, email,
+          id, status, source, first_name, last_name, phone, email,
           product_intent, state, zip, lead_score, score_factors, enrichment_status,
           risk_flag, current_auto_carrier, current_home_carrier,
           attempt_count, last_attempt_at, last_attempt_result,
