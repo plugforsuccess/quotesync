@@ -6,12 +6,16 @@ export function useCrossSellCases(agencyId, filters = {}) {
   return useQuery({
     queryKey: ['cross_sell_cases', agencyId, filters],
     queryFn: async () => {
+      // FK hints required: cross_sell_cases and the case tables reference each
+      // other in BOTH directions (renewal_case_id here, cross_sell_case_id
+      // there), so an unhinted embed is ambiguous and PostgREST rejects the
+      // whole query — the page silently showed 0 opportunities.
       let q = supabase
         .from('cross_sell_cases')
         .select(`
           *,
-          renewal_cases ( id, customer_name, product, renewal_date, status, premium ),
-          pending_cases  ( id, customer_name, product, cancel_effective_date, status, amount_due, stage )
+          renewal_cases!cross_sell_cases_renewal_case_id_fkey ( id, customer_name, product, renewal_date, status, premium ),
+          pending_cases!cross_sell_cases_pending_case_id_fkey ( id, customer_name, product, cancel_effective_date, status, amount_due, stage )
         `)
         .eq('agency_id', agencyId)
         .order('created_at', { ascending: false });
