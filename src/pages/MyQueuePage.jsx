@@ -1461,7 +1461,11 @@ export default function MyQueuePage() {
       </div>
 
       {/* Daily progress + focus toggle (cancel tab only — renewals don't share the call target yet) */}
-      {activeTab === 'cancel' && !cancelLoading && cancelCases.length > 0 && (
+      {/* Progress + focus toggle — both queues. callsToday and the toggle
+          label are already tab-aware; gating this to the cancel tab left
+          renewals with no daily progress and no focus control. */}
+      {((activeTab === 'cancel' && !cancelLoading && cancelCases.length > 0)
+        || (activeTab === 'renewal' && !renewalLoading && renewalCases.length > 0)) && (
         <div style={{
           background: 'var(--qs-elevated)',
           border: '1px solid var(--qs-border)',

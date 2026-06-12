@@ -1074,7 +1074,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           }}>
             {[
               { label: "Policy No",     value: event.policy_no },
-              { label: "Product",       value: event.product_raw || event.product?.toUpperCase() },
+              // Normalized product first ("AUTO"), raw Allstate text only as a
+              // fallback — product_raw is the unreadable "Auto - Private
+              // Passenger Voluntary" form.
+              { label: "Product",       value: event.product?.toUpperCase() || event.product_raw },
               { label: "Renewal Date",  value: event.renewal_date, color: renewalUrgencyColor(days) },
               { label: "Days Until",    value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
               { label: "Premium",       value: event.premium ? fmtFull$(event.premium) : "\u2014" },
