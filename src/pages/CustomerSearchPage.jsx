@@ -2,7 +2,7 @@
 // Producer customer lookup — type a name, see the household's full picture:
 // active lines, lost lines (winback openings), open cancel/renewal work, contact.
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useCustomerSearch, useReconcileHouseholds, useMergeHouseholds } from '../hooks/useCustomerSearch';
@@ -27,7 +27,10 @@ export default function CustomerSearchPage() {
   const { currentAgencyId } = useAuth();
   const { agency } = usePermissions();
   const canManage = !!agency?.isPrincipal;
-  const [term, setTerm] = useState('');
+  // ?q= lets other surfaces (cross-sell cards, queue links) deep-link straight
+  // into a pre-run search for a specific customer.
+  const [searchParams] = useSearchParams();
+  const [term, setTerm] = useState(() => searchParams.get('q') || '');
   const [selected, setSelected] = useState([]); // household_ids picked to merge
   const { data: results = [], isLoading, isError } = useCustomerSearch(currentAgencyId, term);
   const reconcile = useReconcileHouseholds(currentAgencyId);

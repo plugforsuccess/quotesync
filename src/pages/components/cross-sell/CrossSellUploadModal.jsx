@@ -36,7 +36,16 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
       const matched = await runMatchEngine(parsed, agencyId);
       // Drop opportunities already live or won in the queue — only genuinely
       // new ones get committed, so monthly re-uploads don't pile up duplicates.
-      const fresh = matched.filter(r => !r.duplicate);
+      // Also de-dupe WITHIN the file: Allstate can list the same policy twice
+      // (e.g. one row per dwelling on a multi-location customer).
+      const seen = new Set();
+      const fresh = matched.filter(r => {
+        if (r.duplicate) return false;
+        const key = `${r.policy_no || r.customer_name}|${r.recommended_product}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       const skipped = matched.length - fresh.length;
       setRows(fresh);
       setMatchSummary({
