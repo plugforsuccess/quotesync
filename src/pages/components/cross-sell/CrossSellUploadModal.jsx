@@ -74,12 +74,12 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
     const [{ data: renewals }, { data: cancels }, { data: existingXs }] = await Promise.all([
       supabase
         .from('renewal_cases')
-        .select('id, customer_name, policy_no, product, renewal_date, status, multi_line, multi_policy')
+        .select('id, customer_name, policy_no, product, renewal_date, status, multi_line, multi_policy, assigned_to_id')
         .eq('agency_id', agencyId)
         .not('status', 'in', '(confirmed,lost,auto_resolved)'),
       supabase
         .from('pending_cases')
-        .select('id, customer_name, policy_no, product, cancel_effective_date, status, amount_due, stage')
+        .select('id, customer_name, policy_no, product, cancel_effective_date, status, amount_due, stage, assigned_to_id')
         .eq('agency_id', agencyId)
         .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation,rewritten)'),
       // Existing cross-sell cases still open or already won — used to skip
@@ -194,6 +194,12 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
       pending_case_id:     r.pending_case_id,
       match_type:          r.match_type,
       status:              r.status,
+      // One customer, one owner: a cross-sell that rides an existing renewal
+      // or cancel case belongs to that case's rep — the pitch happens on the
+      // call they're already making, not as a second dial by someone else.
+      assigned_to_id:      r.renewal_case?.assigned_to_id
+                        ?? r.cancel_case?.assigned_to_id
+                        ?? null,
     }));
 
     const { data: insertedCases, error: casesError } = await supabase
