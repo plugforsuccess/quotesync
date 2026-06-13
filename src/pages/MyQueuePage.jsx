@@ -234,6 +234,28 @@ export default function MyQueuePage() {
     return { criticalCount, totalPremiumAtRisk, attemptedToday, untouched };
   }, [cancelCases, renewalCases, todayStr]);
 
+  // Renewal-tab KPI stats — the renewal queue's working model: urgency
+  // (window closing), risk (rate shocks), value (expected saveable), backlog.
+  const renewalStats = useMemo(() => {
+    const daysOf = (r) => {
+      const d = new Date(r.renewal_date);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return Math.ceil((d - today) / 86400000);
+    };
+    const closingCount = renewalCases.filter(r => {
+      const d = daysOf(r);
+      return !isNaN(d) && d <= 14;
+    }).length;
+    const rateShockCount = renewalCases.filter(r =>
+      r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15
+    ).length;
+    const totalSaveable = renewalCases.reduce(
+      (s, r) => s + expectedSaveablePremium(r, churnModel, effectiveSaveLift), 0
+    );
+    const untouched = renewalCases.filter(r => !r.attempt_count).length;
+    return { closingCount, rateShockCount, totalSaveable, untouched };
+  }, [renewalCases, churnModel, effectiveSaveLift]);
+
   // Multi-policy flag lookup — same customer appearing in >1 case
   const customerPolicyCounts = useMemo(() => {
     const counts = {};
@@ -1475,13 +1497,13 @@ export default function MyQueuePage() {
         </div>
       </div>
 
-      {/* ── Today's Focus ────────────────────────────────────────────── */}
+      {/* ── Today's Focus — KPI cards scoped to the active tab ───────── */}
       <div style={{
         background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
         borderRadius: 12, padding: '20px 24px', marginBottom: 20,
         display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16,
       }}>
-        {[
+        {(activeTab === 'cancel' ? [
           {
             label: 'Critical',
             value: focusStats.criticalCount,
@@ -1506,7 +1528,32 @@ export default function MyQueuePage() {
             color: focusStats.untouched > 5 ? '#FBBF24' : 'var(--qs-dim)',
             sub:   'never called',
           },
-        ].map(stat => (
+        ] : [
+          {
+            label: 'Closing Window',
+            value: renewalStats.closingCount,
+            color: renewalStats.closingCount > 0 ? '#FBBF24' : '#34D399',
+            sub:   '≤ 14 days to renewal',
+          },
+          {
+            label: 'Rate Shocks',
+            value: renewalStats.rateShockCount,
+            color: renewalStats.rateShockCount > 0 ? '#F87171' : 'var(--qs-dim)',
+            sub:   '+15% or more',
+          },
+          {
+            label: 'Saveable',
+            value: fmt$(renewalStats.totalSaveable),
+            color: 'var(--qs-bright)',
+            sub:   'expected premium',
+          },
+          {
+            label: 'Untouched',
+            value: renewalStats.untouched,
+            color: renewalStats.untouched > 5 ? '#FBBF24' : 'var(--qs-dim)',
+            sub:   'never called',
+          },
+        ]).map(stat => (
           <div key={stat.label} style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 6,
               textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
