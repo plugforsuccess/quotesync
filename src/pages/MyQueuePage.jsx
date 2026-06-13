@@ -221,6 +221,16 @@ export default function MyQueuePage() {
 
   // Today's Focus stats
   const todayStr = new Date().toISOString().slice(0, 10);
+
+  // Saveable-premium ranking — same model the principal's Targeting tab uses:
+  // premium × churn (observed retention by product/tenure, rate-shock adjusted)
+  // × save lift. Falls back to product priors when book metrics aren't
+  // readable in this context. Declared here (above renewalStats/focusRenewal,
+  // which depend on it) to avoid a temporal-dead-zone reference error.
+  const { data: book } = useBookSnapshots(orgId);
+  const { effectiveSaveLift } = useInterventionEffectiveness(orgId);
+  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
+
   const focusStats = useMemo(() => {
     const criticalCount    = cancelCases.filter(e => {
       const d = daysUntilCancel(e.cancel_effective_date);
@@ -319,13 +329,25 @@ export default function MyQueuePage() {
   // The cases the queue actually displays based on focus toggle.
   const displayCancelCases = focusMode ? focusCases : filteredCancelCases;
 
-  // Saveable-premium ranking — same model the principal's Targeting tab uses:
-  // premium × churn (observed retention by product/tenure, rate-shock adjusted)
-  // × save lift. Falls back to product priors when book metrics aren't
-  // readable in this context, which still ranks far better than date order.
-  const { data: book } = useBookSnapshots(orgId);
-  const { effectiveSaveLift } = useInterventionEffectiveness(orgId);
-  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
+  // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
+  const [renewalFilter, setRenewalFilter] = useState('all');
+  const filteredRenewalCases = useMemo(() => {
+    const daysOf = (r) => {
+      const d = new Date(r.renewal_date);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return Math.ceil((d - today) / 86400000);
+    };
+    switch (renewalFilter) {
+      case 'closing':
+        return renewalCases.filter(r => { const d = daysOf(r); return !isNaN(d) && d <= 14; });
+      case 'rate_shock':
+        return renewalCases.filter(r => r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15);
+      case 'untouched':
+        return renewalCases.filter(r => !r.attempt_count);
+      default:
+        return renewalCases;
+    }
+  }, [renewalCases, renewalFilter]);
 
   // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
   const [renewalFilter, setRenewalFilter] = useState('all');
