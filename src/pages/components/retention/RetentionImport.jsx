@@ -928,7 +928,13 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         if (toLost.length > 0) {
           await supabase
             .from('renewal_cases')
-            .update({ status: 'lost', resolution_date: today })
+            .update({
+              status: 'lost',
+              resolution_date: today,
+              final_outcome: 'lost',          // dataset label
+              outcome_source: 'observed',     // confirmed on a report
+              final_outcome_set_at: new Date().toISOString(),
+            })
             .in('id', toLost);
         }
 
@@ -948,7 +954,13 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         if (toAutoResolve.length > 0) {
           await supabase
             .from('renewal_cases')
-            .update({ status: 'auto_resolved', resolution_date: today })
+            .update({
+              status: 'auto_resolved',
+              resolution_date: today,
+              final_outcome: 'renewed',       // not on any cancel/term report → renewed
+              outcome_source: 'inferred',      // inferred from easy-pay / age, not observed
+              final_outcome_set_at: new Date().toISOString(),
+            })
             .in('id', toAutoResolve);
         }
 

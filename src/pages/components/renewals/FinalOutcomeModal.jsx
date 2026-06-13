@@ -33,6 +33,9 @@ function useSetFinalOutcome() {
         final_outcome_set_by: employeeId,
         final_outcome_set_at: now,
         followup_completed_at: now,
+        // Human-verified outcome — tag provenance so the elasticity dataset can
+        // separate rep-confirmed from inferred/observed labels.
+        ...(finalOutcome !== 'unknown' ? { outcome_source: 'rep' } : {}),
       };
 
       if (workflowStatus) {

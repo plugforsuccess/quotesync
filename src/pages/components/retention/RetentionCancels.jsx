@@ -911,7 +911,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     supabase
       .from("renewal_attempts")
       .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-      .eq("renewal_event_id", event.id)
+      .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
   }, [event.id]);
@@ -981,6 +981,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     // Set closed_by_id when resolving a case
     if (["confirmed","lost","unreachable"].includes(form.status)) {
       updates.closed_by_id = currentEmployeeId;
+    }
+    // Stamp the rep-confirmed elasticity label (outcome + provenance), so every
+    // resolved renewal carries a trustworthy final_outcome for the retention dataset.
+    if (["confirmed","lost"].includes(form.status)) {
+      updates.final_outcome        = form.status === "confirmed" ? "renewed" : "lost";
+      updates.outcome_source       = "rep";
+      updates.final_outcome_set_by = currentEmployeeId;
+      updates.final_outcome_set_at = new Date().toISOString();
     }
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
