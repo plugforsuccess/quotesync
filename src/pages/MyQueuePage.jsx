@@ -221,6 +221,16 @@ export default function MyQueuePage() {
 
   // Today's Focus stats
   const todayStr = new Date().toISOString().slice(0, 10);
+
+  // Saveable-premium ranking — same model the principal's Targeting tab uses:
+  // premium × churn (observed retention by product/tenure, rate-shock adjusted)
+  // × save lift. Falls back to product priors when book metrics aren't
+  // readable in this context. Declared here (above renewalStats/focusRenewal,
+  // which depend on it) to avoid a temporal-dead-zone reference error.
+  const { data: book } = useBookSnapshots(orgId);
+  const { effectiveSaveLift } = useInterventionEffectiveness(orgId);
+  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
+
   const focusStats = useMemo(() => {
     const criticalCount    = cancelCases.filter(e => {
       const d = daysUntilCancel(e.cancel_effective_date);
@@ -318,14 +328,6 @@ export default function MyQueuePage() {
 
   // The cases the queue actually displays based on focus toggle.
   const displayCancelCases = focusMode ? focusCases : filteredCancelCases;
-
-  // Saveable-premium ranking — same model the principal's Targeting tab uses:
-  // premium × churn (observed retention by product/tenure, rate-shock adjusted)
-  // × save lift. Falls back to product priors when book metrics aren't
-  // readable in this context, which still ranks far better than date order.
-  const { data: book } = useBookSnapshots(orgId);
-  const { effectiveSaveLift } = useInterventionEffectiveness(orgId);
-  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
 
   // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
   const [renewalFilter, setRenewalFilter] = useState('all');
