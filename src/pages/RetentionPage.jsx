@@ -23,6 +23,7 @@ import UploadReminderBanner from './components/retention/UploadReminderBanner';
 import WorkloadDistribution from './components/retention/WorkloadDistribution';
 import BookMetricsPanel from './components/retention/BookMetricsPanel';
 import SaveablePremiumTargeting from './components/retention/SaveablePremiumTargeting';
+import ElasticityCurveChart from './components/retention/ElasticityCurveChart';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -478,7 +479,10 @@ export default function RetentionPage() {
         />
       )}
       {activeTab === "targeting" && (
-        <SaveablePremiumTargeting agencyId={agencyId} />
+        <>
+          <ElasticityCurveChart agencyId={agencyId} />
+          <SaveablePremiumTargeting agencyId={agencyId} />
+        </>
       )}
       {activeTab === "renewals" && (
         <RetentionRenewals agencyId={agencyId} />
