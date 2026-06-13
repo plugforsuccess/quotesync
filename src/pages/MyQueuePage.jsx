@@ -349,26 +349,6 @@ export default function MyQueuePage() {
     }
   }, [renewalCases, renewalFilter]);
 
-  // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
-  const [renewalFilter, setRenewalFilter] = useState('all');
-  const filteredRenewalCases = useMemo(() => {
-    const daysOf = (r) => {
-      const d = new Date(r.renewal_date);
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      return Math.ceil((d - today) / 86400000);
-    };
-    switch (renewalFilter) {
-      case 'closing':
-        return renewalCases.filter(r => { const d = daysOf(r); return !isNaN(d) && d <= 14; });
-      case 'rate_shock':
-        return renewalCases.filter(r => r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15);
-      case 'untouched':
-        return renewalCases.filter(r => !r.attempt_count);
-      default:
-        return renewalCases;
-    }
-  }, [renewalCases, renewalFilter]);
-
   // Renewal focus — same daily-target cap as the cancel queue, but ordered by
   // expected saveable premium so reps work the highest-value calls first.
   // Touched-today float up so cards don't jump after a call. The full-queue
