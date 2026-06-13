@@ -271,6 +271,11 @@ export default function MyQueuePage() {
   // Client-side filter applied to cancel cases before bucketing
   const filteredCancelCases = useMemo(() => {
     switch (cancelFilter) {
+      case 'critical':
+        return cancelCases.filter(e => {
+          const d = daysUntilCancel(e.cancel_effective_date);
+          return d !== null && d <= 3;
+        });
       case 'lapsed':
         return cancelCases.filter(e => e.stage === 'cancelled');
       case 'pending':
@@ -322,6 +327,26 @@ export default function MyQueuePage() {
   const { effectiveSaveLift } = useInterventionEffectiveness(orgId);
   const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
 
+  // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
+  const [renewalFilter, setRenewalFilter] = useState('all');
+  const filteredRenewalCases = useMemo(() => {
+    const daysOf = (r) => {
+      const d = new Date(r.renewal_date);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return Math.ceil((d - today) / 86400000);
+    };
+    switch (renewalFilter) {
+      case 'closing':
+        return renewalCases.filter(r => { const d = daysOf(r); return !isNaN(d) && d <= 14; });
+      case 'rate_shock':
+        return renewalCases.filter(r => r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15);
+      case 'untouched':
+        return renewalCases.filter(r => !r.attempt_count);
+      default:
+        return renewalCases;
+    }
+  }, [renewalCases, renewalFilter]);
+
   // Renewal focus — same daily-target cap as the cancel queue, but ordered by
   // expected saveable premium so reps work the highest-value calls first.
   // Touched-today float up so cards don't jump after a call. The full-queue
@@ -330,14 +355,14 @@ export default function MyQueuePage() {
     const bySaveable = (a, b) =>
       expectedSaveablePremium(b, churnModel, effectiveSaveLift)
       - expectedSaveablePremium(a, churnModel, effectiveSaveLift);
-    const touched = renewalCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
-    const untouched = renewalCases
+    const touched = filteredRenewalCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
+    const untouched = filteredRenewalCases
       .filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr)
       .slice()
       .sort(bySaveable);
     return [...touched, ...untouched].slice(0, dailyTarget);
-  }, [renewalCases, dailyTarget, todayStr, churnModel, effectiveSaveLift]);
-  const displayRenewalCases = focusMode ? focusRenewalCases : renewalCases;
+  }, [filteredRenewalCases, dailyTarget, todayStr, churnModel, effectiveSaveLift]);
+  const displayRenewalCases = focusMode ? focusRenewalCases : filteredRenewalCases;
 
   // Master-detail selection for the renewal dialer (mirrors the cancel tab).
   const selectedRenewalCase =
@@ -1509,6 +1534,8 @@ export default function MyQueuePage() {
             value: focusStats.criticalCount,
             color: focusStats.criticalCount > 0 ? '#F87171' : '#34D399',
             sub:   '≤ 3 days',
+            filter: 'critical', isOn: cancelFilter === 'critical',
+            apply: () => setCancelFilter(f => f === 'critical' ? 'all' : 'critical'),
           },
           {
             label: 'At Risk',
@@ -1527,6 +1554,8 @@ export default function MyQueuePage() {
             value: focusStats.untouched,
             color: focusStats.untouched > 5 ? '#FBBF24' : 'var(--qs-dim)',
             sub:   'never called',
+            filter: 'never_called', isOn: cancelFilter === 'never_called',
+            apply: () => setCancelFilter(f => f === 'never_called' ? 'all' : 'never_called'),
           },
         ] : [
           {
@@ -1534,12 +1563,16 @@ export default function MyQueuePage() {
             value: renewalStats.closingCount,
             color: renewalStats.closingCount > 0 ? '#FBBF24' : '#34D399',
             sub:   '≤ 14 days to renewal',
+            filter: 'closing', isOn: renewalFilter === 'closing',
+            apply: () => setRenewalFilter(f => f === 'closing' ? 'all' : 'closing'),
           },
           {
             label: 'Rate Shocks',
             value: renewalStats.rateShockCount,
             color: renewalStats.rateShockCount > 0 ? '#F87171' : 'var(--qs-dim)',
             sub:   '+15% or more',
+            filter: 'rate_shock', isOn: renewalFilter === 'rate_shock',
+            apply: () => setRenewalFilter(f => f === 'rate_shock' ? 'all' : 'rate_shock'),
           },
           {
             label: 'Saveable',
@@ -1552,19 +1585,36 @@ export default function MyQueuePage() {
             value: renewalStats.untouched,
             color: renewalStats.untouched > 5 ? '#FBBF24' : 'var(--qs-dim)',
             sub:   'never called',
+            filter: 'untouched', isOn: renewalFilter === 'untouched',
+            apply: () => setRenewalFilter(f => f === 'untouched' ? 'all' : 'untouched'),
           },
-        ]).map(stat => (
-          <div key={stat.label} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 6,
-              textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
-              {stat.label}
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 700, color: stat.color, lineHeight: 1 }}>
-              {stat.value}
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{stat.sub}</div>
-          </div>
-        ))}
+        ]).map(stat => {
+          const clickable = !!stat.apply;
+          const Tag = clickable ? 'button' : 'div';
+          return (
+            <Tag
+              key={stat.label}
+              type={clickable ? 'button' : undefined}
+              onClick={stat.apply}
+              className={clickable ? 'qs-focusable' : undefined}
+              title={clickable ? (stat.isOn ? 'Clear filter' : `Filter the list to ${stat.label.toLowerCase()}`) : undefined}
+              style={{
+                textAlign: 'center', background: stat.isOn ? 'rgba(59,130,246,0.10)' : 'transparent',
+                border: '1px solid', borderColor: stat.isOn ? 'rgba(59,130,246,0.45)' : 'transparent',
+                borderRadius: 10, padding: '6px 4px',
+                cursor: clickable ? 'pointer' : 'default',
+              }}>
+              <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginBottom: 6,
+                textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>
+                {stat.label}{stat.isOn ? ' ✕' : ''}
+              </div>
+              <div style={{ fontSize: 28, fontWeight: 700, color: stat.color, lineHeight: 1 }}>
+                {stat.value}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{stat.sub}</div>
+            </Tag>
+          );
+        })}
       </div>
 
       {/* ── Tab Toggle ───────────────────────────────────────────────── */}
@@ -1648,7 +1698,7 @@ export default function MyQueuePage() {
           <div style={{ flexShrink: 0, textAlign: 'right' }}>
             <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginBottom: 6 }}>
               {(() => {
-                const tabTotal = activeTab === 'renewal' ? renewalCases.length : filteredCancelCases.length;
+                const tabTotal = activeTab === 'renewal' ? filteredRenewalCases.length : filteredCancelCases.length;
                 return focusMode
                   ? `Focus: top ${Math.min(dailyTarget, tabTotal)} ${activeTab === 'renewal' ? 'renewals' : 'cases'}`
                   : `Full queue: ${tabTotal} ${activeTab === 'renewal' ? 'renewals' : 'cases'}`;
@@ -1860,13 +1910,13 @@ export default function MyQueuePage() {
                 ))}
 
                 {/* "X more renewals" banner — focus mode only */}
-                {focusMode && renewalCases.length > dailyTarget && (
+                {focusMode && filteredRenewalCases.length > dailyTarget && (
                   <div style={{
                     textAlign: 'center', padding: '12px 8px',
                     fontSize: 13, color: 'var(--qs-muted)',
                     borderTop: '1px solid var(--qs-border)', marginTop: 4,
                   }}>
-                    {renewalCases.length - dailyTarget} more in full queue
+                    {filteredRenewalCases.length - dailyTarget} more in full queue
                     {' · '}
                     <button
                       onClick={toggleFocusMode}
