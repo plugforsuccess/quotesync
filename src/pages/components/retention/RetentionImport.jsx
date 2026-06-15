@@ -870,11 +870,6 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       // 5. Insert new rows (with assignment) and update existing rows separately
       //    Mixing them in a single upsert causes PostgREST to normalize columns,
       //    which either drops assigned_to_id on new rows or nullifies it on existing rows.
-      // Write the human-readable assignee name alongside the id so name-based
-      // displays don't read "Unassigned" (the cancel importer already does this).
-      const repNameById = Object.fromEntries(
-        activeReps.map(r => [r.id, r.preferred_name || `${r.first_name || ''} ${r.last_name || ''}`.trim()])
-      );
       const newRecords = toAdd.map(r => {
         const assignedId = pickNextRep();
         return {
@@ -882,7 +877,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           upload_batch_id: upload.id,
           first_seen_on: today,
           last_seen_on: today,
-          ...(assignedId ? { assigned_to_id: assignedId, assigned_to: repNameById[assignedId] || null } : {}),
+          ...(assignedId ? { assigned_to_id: assignedId } : {}),
           ...r,
         };
       });
