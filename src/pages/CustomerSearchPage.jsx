@@ -55,6 +55,20 @@ export default function CustomerSearchPage() {
     });
   }
 
+  // Last 8 customers opened — jump straight back to someone you just worked.
+  const VIEWED_KEY = 'qs_recent_viewed_customers';
+  const [viewed, setViewed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(VIEWED_KEY) || '[]'); } catch { return []; }
+  });
+  function recordViewed(id, name) {
+    if (!id) return;
+    setViewed(prev => {
+      const next = [{ id, name: name || '—' }, ...prev.filter(x => x.id !== id)].slice(0, 8);
+      try { localStorage.setItem(VIEWED_KEY, JSON.stringify(next)); } catch { /* noop */ }
+      return next;
+    });
+  }
+
   function toggle(id) {
     setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   }
@@ -123,21 +137,42 @@ export default function CustomerSearchPage() {
       />
 
       {!ready && (
-        recent.length > 0 ? (
-          <div style={{ padding: '8px 0 24px' }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
-              textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
-              Recent searches
-            </div>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {recent.map(t => (
-                <button key={t} onClick={() => setTerm(t)} style={{
-                  padding: '6px 12px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
-                  fontFamily: 'inherit', border: '1px solid var(--qs-border)',
-                  background: 'var(--qs-elevated)', color: 'var(--qs-dim)',
-                }}>🔎 {t}</button>
-              ))}
-            </div>
+        (viewed.length > 0 || recent.length > 0) ? (
+          <div style={{ padding: '8px 0 24px', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            {viewed.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
+                  textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+                  Recently viewed
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {viewed.map(v => (
+                    <Link key={v.id} to={`${detailBase}/${v.id}`} style={{
+                      padding: '6px 12px', borderRadius: 999, fontSize: 13, textDecoration: 'none',
+                      border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
+                      color: '#60A5FA', fontWeight: 600,
+                    }}>👤 {v.name}</Link>
+                  ))}
+                </div>
+              </div>
+            )}
+            {recent.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
+                  textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10 }}>
+                  Recent searches
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {recent.map(t => (
+                    <button key={t} onClick={() => setTerm(t)} style={{
+                      padding: '6px 12px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
+                      fontFamily: 'inherit', border: '1px solid var(--qs-border)',
+                      background: 'var(--qs-elevated)', color: 'var(--qs-dim)',
+                    }}>🔎 {t}</button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ color: 'var(--qs-muted)', fontSize: 13, textAlign: 'center', padding: '32px 0' }}>
@@ -176,7 +211,7 @@ export default function CustomerSearchPage() {
                   <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>
                     <Link to={`${detailBase}/${c.household_id}`} style={{ color: 'var(--qs-bright)', textDecoration: 'none' }}
-                      onClick={() => recordSearch(term)}
+                      onClick={() => { recordSearch(term); recordViewed(c.household_id, c.display_name); }}
                       onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
                       onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                       {c.display_name}
