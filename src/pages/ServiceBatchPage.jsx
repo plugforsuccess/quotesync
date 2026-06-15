@@ -156,11 +156,6 @@ export default function ServiceBatchPage() {
             <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'DM Mono', monospace", color: 'var(--qs-bright)', marginTop: 4 }}>
               {laneCounts[lane.value]}
             </div>
-            {/* Plain who-does-it line so any employee can tell at a glance */}
-            <div style={{ marginTop: 6, fontSize: 10, fontWeight: 700,
-              color: lane.licensed ? '#C4B5FD' : '#34D399' }}>
-              {lane.licensed ? '🔒 Licensed agent' : '✅ Front desk OK'}
-            </div>
           </div>
         ))}
       </div>
@@ -195,7 +190,7 @@ export default function ServiceBatchPage() {
                 <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>· {group.tasks.length}</span>
                 {LANE_MAP[group.lane]?.licensed && (
                   <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                    background: '#8B5CF622', color: '#C4B5FD', letterSpacing: '0.05em' }}>🔒 LICENSED AGENT</span>
+                    background: '#8B5CF622', color: '#C4B5FD', letterSpacing: '0.05em' }}>LICENSED</span>
                 )}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
