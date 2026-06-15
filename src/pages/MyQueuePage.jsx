@@ -17,6 +17,40 @@ import { EventDetailModal, RenewalDetailModal } from './components/retention/Ret
 import ReadingColumn from '../components/ReadingColumn';
 import InterventionPicker from '../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../lib/interventions';
+import CopyButton from '../components/CopyButton';
+
+// The rep reads scripts verbatim — full name, or a clear placeholder if the
+// employee record hasn't loaded.
+function agentNameFor(employee) {
+  return [employee?.preferred_name || employee?.first_name, employee?.last_name]
+    .filter(Boolean).join(' ') || '[your name]';
+}
+
+// Voicemail script shown on the call card. Deliberately generic — no premium or
+// coverage detail, since a voicemail can be overheard. Tells the customer to
+// call the agency back (the front desk fields it and routes via the callback
+// intake). Copyable for consistency.
+function VoicemailScript({ firstName, agentName }) {
+  const text = `Hi ${firstName}, this is ${agentName} with your Allstate agency. `
+    + `I'm reaching out about your account — nothing urgent. When you get a moment, `
+    + `please give our office a call back and we'll take care of everything. Thanks, talk soon!`;
+  return (
+    <div style={{
+      background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
+      borderRadius: 6, padding: '7px 10px', marginBottom: 8,
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#F59E0B', textTransform: 'uppercase' }}>
+          📞 Voicemail — if no answer
+        </span>
+        <CopyButton getText={() => text} label="Copy" style={{ padding: '3px 8px', fontSize: 11 }} />
+      </div>
+      <div style={{ fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
+        “{text}”
+      </div>
+    </div>
+  );
+}
 
 // Format relative time — "2d ago", "3h ago", "just now"
 function relativeTime(dateStr) {
@@ -509,8 +543,8 @@ export default function MyQueuePage() {
         last_attempt_at:     new Date().toISOString(),
         last_attempt_result: logCallForm.result,
         ...(event.status === 'pending'           ? { status: 'attempting'    } : {}),
-        ...(logCallForm.result === 'left_voicemail' ? { status: 'left_voicemail' } : {}),
-        ...(logCallForm.result === 'reached'     ? { contacted_at: new Date().toISOString() } : {}),
+        ...(logCallForm.result === 'left_voicemail' ? { status: 'left_voicemail', awaiting_callback: true } : {}),
+        ...(logCallForm.result === 'reached'     ? { contacted_at: new Date().toISOString(), awaiting_callback: false } : {}),
       }).eq('id', event.id);
       queryClient.invalidateQueries({ queryKey: ['my_cancel_cases', employeeId] });
     } else {
@@ -528,8 +562,8 @@ export default function MyQueuePage() {
         last_attempt_at:     new Date().toISOString(),
         last_attempt_result: logCallForm.result,
         ...(event.status === 'pending'           ? { status: 'attempting'    } : {}),
-        ...(logCallForm.result === 'left_voicemail' ? { status: 'left_voicemail' } : {}),
-        ...(logCallForm.result === 'reached'     ? { contacted_at: new Date().toISOString() } : {}),
+        ...(logCallForm.result === 'left_voicemail' ? { status: 'left_voicemail', awaiting_callback: true } : {}),
+        ...(logCallForm.result === 'reached'     ? { contacted_at: new Date().toISOString(), awaiting_callback: false } : {}),
       }).eq('id', event.id);
       queryClient.invalidateQueries({ queryKey: ['my_renewal_cases', employeeId] });
     }
@@ -961,6 +995,9 @@ export default function MyQueuePage() {
           </p>
         </div>
 
+        {/* Voicemail script — read if no answer (generic, no balance/coverage). */}
+        <VoicemailScript firstName={firstName} agentName={agentName} />
+
         {/* Status line: promise / last attempt / callback ────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             {promisePast && (
@@ -1314,6 +1351,10 @@ export default function MyQueuePage() {
           );
         })()}
 
+        {/* Voicemail script — read if no answer. Deliberately generic (no
+            premium/coverage), since a voicemail can be overheard. */}
+        <VoicemailScript firstName={event.customer_name?.split(' ')[0] || 'there'} agentName={agentNameFor(employee)} />
+
         {/* Row 2: Premium + change + attempts */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
           {event.premium != null && (
@@ -1328,7 +1369,8 @@ export default function MyQueuePage() {
           )}
           {event.premium_change != null && event.premium_change !== 0 && (
             <span style={{ fontSize: 13, color: 'var(--qs-dim)' }}>
-              ({changePct > 0 ? '+' : ''}{fmt$(event.premium_change)}/yr)
+              {/* Auto renews on a 6-month term, not annually — label the delta by term. */}
+              ({changePct > 0 ? '+' : ''}{fmt$(event.premium_change)}/{/auto/i.test(event.product || '') ? '6 mo' : 'yr'})
             </span>
           )}
           {lastAtt ? (

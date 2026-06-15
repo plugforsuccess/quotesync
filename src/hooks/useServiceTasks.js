@@ -140,3 +140,37 @@ export function useUpdateServiceTask() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['service_tasks'] }),
   });
 }
+
+// Front-desk callback intake. Reads a compliance-safe projection (name, phone,
+// rep, coarse reason — no premium/coverage) via a SECURITY DEFINER function, so
+// even the unlicensed front desk can identify an inbound caller and route them.
+export function useExpectedCallbacks(agencyId) {
+  return useQuery({
+    queryKey: ['expected_callbacks', agencyId],
+    enabled: !!agencyId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('fd_expected_callbacks');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+// Log a returned call → routes a high-priority callback task to the rep who left
+// the voicemail and clears the awaiting-callback flag (all definer-side).
+export function useLogCallback() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ caseType, caseId, note }) => {
+      const { error } = await supabase.rpc('fd_log_callback', {
+        p_case_type: caseType, p_case_id: caseId, p_note: note ?? null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['expected_callbacks'] });
+      qc.invalidateQueries({ queryKey: ['service_tasks'] });
+    },
+  });
+}

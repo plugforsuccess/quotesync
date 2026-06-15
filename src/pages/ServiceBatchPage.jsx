@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
+  useExpectedCallbacks, useLogCallback,
   TASK_TYPES, TASK_TYPE_MAP, LANES, SCOPES,
 } from '../hooks/useServiceTasks';
 import CopyButton from '../components/CopyButton';
@@ -131,6 +132,8 @@ export default function ServiceBatchPage() {
           onSubmit={(t) => createTask.mutate({ agencyId, ...t }, { onSuccess: () => setShowAdd(false) })}
         />
       )}
+
+      <ExpectedCallbacks agencyId={agencyId} />
 
       {/* Scope filter — route the licensed lane to the rep it's assigned to */}
       <div style={{ display: 'flex', gap: 6, margin: '14px 0 0' }}>
@@ -290,6 +293,59 @@ function btnStyle(bg, color) {
     cursor: 'pointer', border: '1px solid var(--qs-border)', background: bg, color,
     borderRadius: 8, padding: '6px 12px', fontSize: 12, fontWeight: 700, fontFamily: 'inherit',
   };
+}
+
+// Front-desk callback intake. When a rep leaves a voicemail, the customer is
+// flagged "awaiting callback"; when they ring the main line, the front desk
+// matches them here (name/phone/rep/reason only — no coverage) and routes a
+// callback task to the rep with one click.
+function ExpectedCallbacks({ agencyId }) {
+  const { data: callbacks = [] } = useExpectedCallbacks(agencyId);
+  const logCallback = useLogCallback();
+  if (!callbacks.length) return null;
+
+  return (
+    <div style={{
+      marginTop: 16, border: '1px solid #F59E0B33', borderRadius: 10,
+      background: '#F59E0B0D', padding: 14,
+    }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#FBBF24', marginBottom: 10 }}>
+        📞 Expected callbacks · {callbacks.length}
+        <span style={{ fontWeight: 400, color: 'var(--qs-muted)', marginLeft: 6 }}>
+          customers a rep is waiting to hear back from
+        </span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {callbacks.map(cb => (
+          <div key={`${cb.case_type}-${cb.case_id}`} style={{
+            display: 'flex', alignItems: 'center', gap: 12,
+            background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+            borderRadius: 8, padding: '10px 12px',
+          }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
+                {cb.customer_name || '—'}
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
+                {cb.customer_phone || 'no phone'} · {cb.reason}
+                {cb.rep_name ? ` · ask for ${cb.rep_name}` : ''}
+              </div>
+            </div>
+            {cb.customer_phone && (
+              <CopyButton getText={() => cb.customer_phone} label="Phone" style={{ padding: '5px 9px' }} />
+            )}
+            <button
+              onClick={() => logCallback.mutate({ caseType: cb.case_type, caseId: cb.case_id })}
+              disabled={logCallback.isPending}
+              style={btnStyle('#3B82F6', '#fff')}
+            >
+              {cb.rep_name ? `Route to ${cb.rep_name.split(' ')[0]}` : 'Log callback'}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 function AddTaskForm({ agencyId, busy, onSubmit }) {

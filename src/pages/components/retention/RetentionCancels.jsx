@@ -279,8 +279,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         last_attempt_at:     new Date().toISOString(),
         last_attempt_result: attemptForm.result,
         ...(event.status === "pending"              ? { status: "attempting"     } : {}),
-        ...(attemptForm.result === "left_voicemail" ? { status: "left_voicemail" } : {}),
-        ...(attemptForm.result === "reached"        ? { contacted_at: event.contacted_at || new Date().toISOString() } : {}),
+        ...(attemptForm.result === "left_voicemail" ? { status: "left_voicemail", awaiting_callback: true } : {}),
+        ...(attemptForm.result === "reached"        ? { contacted_at: event.contacted_at || new Date().toISOString(), awaiting_callback: false } : {}),
       }).eq("id", event.id);
       // If this is the first attempt on the case, set opened_by_id
       if ((event.attempt_count === 0 || !event.opened_by_id) && currentEmployeeId) {
@@ -933,8 +933,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const newCount = (event.attempt_count || 0) + 1;
       const statusUpdate = {};
       if (event.status === "pending") statusUpdate.status = "attempting";
-      if (attemptForm.result === "left_voicemail") statusUpdate.status = "left_voicemail";
-      if (attemptForm.result === "reached") statusUpdate.contacted_at = event.contacted_at || new Date().toISOString();
+      if (attemptForm.result === "left_voicemail") { statusUpdate.status = "left_voicemail"; statusUpdate.awaiting_callback = true; }
+      if (attemptForm.result === "reached") { statusUpdate.contacted_at = event.contacted_at || new Date().toISOString(); statusUpdate.awaiting_callback = false; }
       // Suggest unreachable after 3+ non-reached attempts
       if (newCount >= 3 && attemptForm.result !== "reached" && event.status === "attempting") {
         // Don't auto-set, just leave as attempting — auto-unreachable handles at 5+
