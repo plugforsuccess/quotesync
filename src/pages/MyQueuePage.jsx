@@ -2047,6 +2047,7 @@ export default function MyQueuePage() {
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={employees}
+          canReassign={false}
         />,
         document.body
       )}
@@ -2058,6 +2059,7 @@ export default function MyQueuePage() {
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={employees}
+          canReassign={false}
         />,
         document.body
       )}

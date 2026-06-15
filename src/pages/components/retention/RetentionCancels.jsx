@@ -225,7 +225,7 @@ function OtherCasesWarning({ cases }) {
 
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
-function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [] }) {
+function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [], canReassign = true }) {
   const days = daysUntilCancel(event.cancel_effective_date);
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
@@ -777,18 +777,28 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <label className="dark-label">Assigned To</label>
-                <select
-                  className="dark-select"
-                  value={form.assigned_to_id}
-                  onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
-                >
-                  <option value="">Unassigned</option>
-                  {producers.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                    </option>
-                  ))}
-                </select>
+                {canReassign ? (
+                  <select
+                    className="dark-select"
+                    value={form.assigned_to_id}
+                    onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+                  >
+                    <option value="">Unassigned</option>
+                    {producers.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                    border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-text)" }}>
+                    {(() => {
+                      const a = producers.find(p => p.id === form.assigned_to_id);
+                      return a ? (a.preferred_name || `${a.first_name || ""} ${a.last_name || ""}`.trim()) : "Unassigned";
+                    })()}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="dark-label">Promise Date</label>
@@ -884,7 +894,7 @@ function renewalUrgencyColor(days) {
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
 
-function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId }) {
+function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true }) {
   const days = daysUntilRenewal(event.renewal_date);
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
@@ -1210,6 +1220,16 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 </div>
               </div>
             </div>
+            {event.phone && (
+              <a href={`tel:${event.phone}`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12,
+                  padding: "9px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                }}>
+                \ud83d\udcde Call {event.phone}
+              </a>
+            )}
           </div>
 
           {/* ── Section: Attempt Log ─────────────────────────── */}
@@ -1425,21 +1445,31 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
-            {/* Assigned To */}
+            {/* Assigned To — reps can't reassign their own work; managers can. */}
             <div>
               <label className="dark-label">Assigned To</label>
-              <select
-                className="dark-select"
-                value={form.assigned_to_id}
-                onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
-              >
-                <option value="">Unassigned</option>
-                {producers.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                  </option>
-                ))}
-              </select>
+              {canReassign ? (
+                <select
+                  className="dark-select"
+                  value={form.assigned_to_id}
+                  onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+                >
+                  <option value="">Unassigned</option>
+                  {producers.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                  border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-text)" }}>
+                  {(() => {
+                    const a = producers.find(p => p.id === form.assigned_to_id);
+                    return a ? (a.preferred_name || `${a.first_name || ""} ${a.last_name || ""}`.trim()) : "Unassigned";
+                  })()}
+                </div>
+              )}
             </div>
 
             <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
