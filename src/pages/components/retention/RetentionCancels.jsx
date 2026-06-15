@@ -1145,9 +1145,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 color: event.premium_change == null ? "var(--qs-dim)"
                   : event.premium_change > 0 ? "#EF4444" : "#10B981" },
               { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
-              { label: "Multi-Line",
-                value: event.multi_line === 'Yes' ? 'Yes — Bundled'
-                     : event.multi_line === 'No'  ? 'No — Monoline'
+              { label: "Multiline",
+                value: event.multi_line === 'Yes' ? 'Bundled'
+                     : event.multi_line === 'No'  ? 'Monoline'
                      : '—',
                 color: event.multi_line === 'Yes' ? '#10B981'
                      : event.multi_line === 'No'  ? '#60A5FA'
@@ -1170,7 +1170,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 700, color: color || "var(--qs-text)",
-                  fontFamily: "'DM Mono', monospace", lineHeight: 1,
+                  fontFamily: "'DM Mono', monospace", lineHeight: 1.15, whiteSpace: "nowrap",
                 }}>
                   {value || "\u2014"}
                 </div>
@@ -1256,11 +1256,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             {event.phone && (
               <a href={`tel:${event.phone}`}
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12,
-                  padding: "9px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
-                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  marginTop: 12, width: "100%", boxSizing: "border-box",
+                  padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                  fontSize: 15, fontWeight: 700, textDecoration: "none",
                 }}>
-                \ud83d\udcde Call {event.phone}
+                {"\ud83d\udcde"} Call {event.phone}
               </a>
             )}
             <div style={{ marginTop: 12 }}>
@@ -1774,9 +1775,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                     : '—' },
                 { label: 'Easy Pay',
                   value: r.easy_pay === true ? 'Yes ✓' : r.easy_pay === false ? 'No' : '—' },
-                { label: 'Multi-Line',
-                  value: r.multi_line === 'Yes' ? 'Yes — Bundled'
-                       : r.multi_line === 'No'  ? 'No — Monoline'
+                { label: 'Multiline',
+                  value: r.multi_line === 'Yes' ? 'Bundled'
+                       : r.multi_line === 'No'  ? 'Monoline'
                        : '—',
                   color: r.multi_line === 'Yes' ? '#10B981'
                        : r.multi_line === 'No'  ? '#60A5FA'
