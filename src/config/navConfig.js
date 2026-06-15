@@ -252,8 +252,10 @@ export function personaForPath(pathname) {
   if (pathname.startsWith('/my/scorecard')) return null;
   if (pathname === '/punch' || pathname.startsWith('/punch/')) return null;
   if (pathname.startsWith('/agency/referrals')) return null;
+  if (pathname.startsWith('/my/referrals')) return null;
 
   if (pathname.startsWith('/agency/cross-sell')) return 'sales';
+  if (pathname.startsWith('/my/cross-sell')) return 'sales';
   if (pathname.startsWith('/my/')) return 'service';
   if (pathname.startsWith('/agency/') || pathname.startsWith('/admin/')) return 'principal';
   return null;

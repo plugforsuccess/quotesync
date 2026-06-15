@@ -27,9 +27,9 @@ const SERVICE_TABS = [
 ];
 
 const SALES_TABS = [
-  { to: '/agency/cross-sell', label: 'Cross-Sell' },
+  { to: '/my/cross-sell', label: 'Cross-Sell' },
   SCORECARD_ITEM,
-  { to: '/agency/referrals',  label: 'Referrals' },
+  { to: '/my/referrals',  label: 'Referrals' },
   PUNCH_ITEM,
 ];
 
