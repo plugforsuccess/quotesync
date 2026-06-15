@@ -35,6 +35,7 @@ const primaryItems = {
   // the top nav without first switching back to Principal.
   today:            { to: '/my/today',                 label: 'Today',       icon: '⏱️' },
   myQueue:          { to: '/my/queue',                 label: 'My Queue',    icon: '⚡' },
+  serviceBatch:     { to: '/my/service-batch',         label: 'Service Batch', icon: '🗂️' },
   myLeads:          { to: '/my/leads',                 label: 'My Leads',    icon: '🎯' },
   scorecard:        { to: '/my/scorecard',             label: 'Scorecard',   icon: '📊' },
   // Platform admin primary items
@@ -171,6 +172,7 @@ export const principalPersonaNav = {
     primary: [
       primaryItems.today,
       primaryItems.myQueue,
+      primaryItems.serviceBatch,
       primaryItems.scorecard,
     ],
     secondary: [
@@ -185,7 +187,8 @@ export const principalPersonaNav = {
 
 export const employeeNav = {
   primary: [
-    { to: '/my/queue',     label: 'Queue',     icon: '\u26A1', isPrimary: true },
+    { to: '/my/queue',         label: 'Queue',         icon: '\u26A1', isPrimary: true },
+    { to: '/my/service-batch', label: 'Service Batch', icon: '\uD83D\uDDC2\uFE0F', isPrimary: true },
     { to: '/my/leads',     label: 'Leads',     icon: '\uD83C\uDFAF', isPrimary: true },
     { to: '/my/scorecard', label: 'Scorecard', icon: '\uD83D\uDCCA', isPrimary: true },
     { to: '/punch',        label: 'Punch',     icon: '\u23F1\uFE0F', isPrimary: true },
