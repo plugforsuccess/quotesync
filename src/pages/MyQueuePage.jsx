@@ -1066,79 +1066,8 @@ export default function MyQueuePage() {
           )}
 
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <button
-              className="qs-focusable"
-              onClick={() => { setLogCallTarget({ type: 'cancel', event }); setLogCallForm({ result: 'no_answer', note: '', intervention: EMPTY_INTERVENTION }); }}
-              style={{
-                ...btnBase,
-                border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-                color: 'var(--qs-dim)',
-              }}>
-              Log Call
-            </button>
-
-            {/* Schedule callback */}
-            <button
-              className="qs-focusable"
-              onClick={() => { setCallbackTarget({ type: 'cancel', event }); setCallbackForm({ time: '', note: '' }); }}
-              style={{
-                ...btnBase,
-                border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
-                color: '#60A5FA',
-              }}>
-              📅 Callback
-            </button>
-
-            <button
-              className="qs-focusable"
-              onClick={() => handleInlineResolve('cancel', event, 'saved')}
-              style={{
-                ...btnBase,
-                border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-                color: '#34D399',
-              }}>
-              ✓ Saved
-            </button>
-
-            {/* Saved by selling the bundle — closes the cross-sell as converted
-                (it was the save) instead of releasing it as a new outbound. */}
-            {event.cross_sell_opportunity && event.cross_sell_product && (
-              <button
-                className="qs-focusable"
-                onClick={() => handleInlineResolve('cancel', event, 'saved', true)}
-                title={`Saved by bundling ${productLabel(event.cross_sell_product)} — counts the cross-sell as converted.`}
-                style={{
-                  ...btnBase,
-                  border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.14)',
-                  color: '#34D399',
-                }}>
-                ✓ Saved + bundled {productLabel(event.cross_sell_product)}
-              </button>
-            )}
-
-            {/* Lost quick action — prompts for reason */}
-            <button
-              className="qs-focusable"
-              onClick={() => { setLostTarget({ type: 'cancel', event }); setLostReason(''); }}
-              style={{
-                ...btnBase,
-                border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
-                color: 'var(--qs-dim)',
-              }}>
-              ✗ Lost
-            </button>
-
-            {/* Wants to cancel quick action */}
-            <button
-              className="qs-focusable"
-              onClick={() => handleInlineResolve('cancel', event, 'requested_cancellation')}
-              style={{
-                ...btnBase,
-                border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)',
-                color: '#F87171',
-              }}>
-              Wants to Cancel
-            </button>
+            {/* Log Call / Callback / Saved / Lost / Wants to Cancel moved into
+                the case work surface (Open) — the outcome is captured there. */}
 
             {/* Snooze — show only after 2+ attempts */}
             {event.attempt_count >= 2 && (
@@ -1170,11 +1099,11 @@ export default function MyQueuePage() {
               onClick={() => setSelectedEvent(event)}
               style={{
                 ...btnBase,
-                border: '1px solid var(--qs-border)', background: 'none',
-                color: 'var(--qs-dim)',
+                border: '1px solid #3B82F6', background: '#3B82F6',
+                color: '#fff', fontWeight: 700,
                 marginLeft: 'auto',
               }}>
-              Full details →
+              Open case →
             </button>
           </div>
 
