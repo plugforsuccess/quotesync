@@ -17,7 +17,6 @@ export default function LogServiceTaskButton({
   const [mode, setMode] = useState('resolved'); // 'resolved' (on call) | 'batch'
   const [taskType, setTaskType] = useState('billing');
   const [title, setTitle] = useState('');
-  const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('normal');
 
   const create = useCreateServiceTask();
@@ -38,16 +37,15 @@ export default function LogServiceTaskButton({
         source,
         sourceCaseType: sourceCaseType ?? null,
         sourceCaseId: sourceCaseId ?? null,
-        // On-call: close it immediately, attribute it, no due date. Batch: leave
-        // it open with a due date for the afternoon block.
+        // On-call: close it immediately, attributed. Batch: leave it open on the
+        // 24h SLA timer (no manual due date).
         status: onCall ? 'done' : 'open',
         resolvedOnCall: onCall,
-        dueDate: onCall ? null : (dueDate || null),
       },
       {
         onSuccess: () => {
           setDone(true);
-          setTitle(''); setDueDate(''); setPriority('normal');
+          setTitle(''); setPriority('normal');
           setTimeout(() => { setOpen(false); setDone(false); }, 1500);
         },
       }
@@ -133,9 +131,9 @@ export default function LogServiceTaskButton({
                 placeholder={onCall ? 'e.g. Updated EFT to new account' : 'e.g. Customer to email new mortgagee letter'} />
             </label>
             {!onCall && (
-              <label style={{ ...lbl, gridColumn: '1 / -1' }}>Due date
-                <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={input} />
-              </label>
+              <div style={{ gridColumn: '1 / -1', fontSize: 11, color: 'var(--qs-muted)' }}>
+                Queued to the Service Batch on a 24-hour timer.
+              </div>
             )}
           </div>
 

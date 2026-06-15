@@ -2,7 +2,7 @@
 // Reuses EventDetailModal and RenewalDetailModal from RetentionCancels
 // but scoped entirely to the current employee via RLS.
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -288,7 +288,8 @@ export default function MyQueuePage() {
     };
     const closingCount = renewalCases.filter(r => {
       const d = daysOf(r);
-      return !isNaN(d) && d <= 14;
+      if (isNaN(d)) return false;
+      return closingMode === 'proactive' ? d >= 21 : d <= 14;
     }).length;
     const rateShockCount = renewalCases.filter(r =>
       r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15
@@ -298,7 +299,7 @@ export default function MyQueuePage() {
     );
     const untouched = renewalCases.filter(r => !r.attempt_count).length;
     return { closingCount, rateShockCount, totalSaveable, untouched };
-  }, [renewalCases, churnModel, effectiveSaveLift]);
+  }, [renewalCases, churnModel, effectiveSaveLift, closingMode]);
 
   // Multi-policy flag lookup — same customer appearing in >1 case
   const customerPolicyCounts = useMemo(() => {
@@ -365,6 +366,12 @@ export default function MyQueuePage() {
 
   // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
   const [renewalFilter, setRenewalFilter] = useState('all');
+  // Closing-window KPI mode: 'soon' (≤14d, renewal imminent) ↔ 'proactive'
+  // (≥21d, the ideal early-contact window). Single-click filters; double-click
+  // toggles the window. clickTimerRef disambiguates the two.
+  const [closingMode, setClosingMode] = useState('soon');
+  const clickTimerRef = useRef(null);
+  const inClosingWindow = (d) => isNaN(d) ? false : (closingMode === 'proactive' ? d >= 21 : d <= 14);
   const filteredRenewalCases = useMemo(() => {
     const daysOf = (r) => {
       const d = new Date(r.renewal_date);
@@ -373,7 +380,7 @@ export default function MyQueuePage() {
     };
     switch (renewalFilter) {
       case 'closing':
-        return renewalCases.filter(r => { const d = daysOf(r); return !isNaN(d) && d <= 14; });
+        return renewalCases.filter(r => inClosingWindow(daysOf(r)));
       case 'rate_shock':
         return renewalCases.filter(r => r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15);
       case 'untouched':
@@ -381,7 +388,8 @@ export default function MyQueuePage() {
       default:
         return renewalCases;
     }
-  }, [renewalCases, renewalFilter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [renewalCases, renewalFilter, closingMode]);
 
   // Renewal focus — same daily-target cap as the cancel queue, but ordered by
   // expected saveable premium so reps work the highest-value calls first.
@@ -1608,12 +1616,16 @@ export default function MyQueuePage() {
           },
         ] : [
           {
-            label: 'Closing Window',
+            label: closingMode === 'proactive' ? 'Proactive Window' : 'Closing Window',
             value: renewalStats.closingCount,
             color: renewalStats.closingCount > 0 ? '#FBBF24' : '#34D399',
-            sub:   '≤ 14 days to renewal',
+            sub:   closingMode === 'proactive'
+              ? '≥ 21 days out · dbl-click for ≤14'
+              : '≤ 14 days · dbl-click for ≥21',
             filter: 'closing', isOn: renewalFilter === 'closing',
             apply: () => setRenewalFilter(f => f === 'closing' ? 'all' : 'closing'),
+            // Double-click flips the window definition and shows it immediately.
+            applyDouble: () => { setClosingMode(m => m === 'proactive' ? 'soon' : 'proactive'); setRenewalFilter('closing'); },
           },
           {
             label: 'Rate Shocks',
@@ -1640,13 +1652,24 @@ export default function MyQueuePage() {
         ]).map(stat => {
           const clickable = !!stat.apply;
           const Tag = clickable ? 'button' : 'div';
+          // Cards with applyDouble debounce the single click so a double-click
+          // can fire the window toggle instead.
+          const onClick = !clickable ? undefined : (stat.applyDouble ? () => {
+            if (clickTimerRef.current) return;
+            clickTimerRef.current = setTimeout(() => { clickTimerRef.current = null; stat.apply(); }, 220);
+          } : stat.apply);
+          const onDoubleClick = stat.applyDouble ? () => {
+            clearTimeout(clickTimerRef.current); clickTimerRef.current = null;
+            stat.applyDouble();
+          } : undefined;
           return (
             <Tag
               key={stat.label}
               type={clickable ? 'button' : undefined}
-              onClick={stat.apply}
+              onClick={onClick}
+              onDoubleClick={onDoubleClick}
               className={clickable ? 'qs-focusable' : undefined}
-              title={clickable ? (stat.isOn ? 'Clear filter' : `Filter the list to ${stat.label.toLowerCase()}`) : undefined}
+              title={clickable ? (stat.applyDouble ? 'Click to filter · double-click to switch window' : (stat.isOn ? 'Clear filter' : `Filter the list to ${stat.label.toLowerCase()}`)) : undefined}
               style={{
                 textAlign: 'center', background: stat.isOn ? 'rgba(59,130,246,0.10)' : 'transparent',
                 border: '1px solid', borderColor: stat.isOn ? 'rgba(59,130,246,0.45)' : 'transparent',

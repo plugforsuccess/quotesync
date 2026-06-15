@@ -34,16 +34,21 @@ export const PRIORITY_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 };
 
 const ACTIVE_STATUSES = ['open', 'in_progress', 'blocked'];
 
-// Sort inside a group: priority, then due date (soonest/past-due first, nulls
-// last), then creation order.
+// Service-task SLA: the culture is "finish within 24h, faster if possible." We
+// run a 24h timer from creation rather than a manual due date.
+export const SLA_HOURS = 24;
+export function slaMsLeft(createdAt) {
+  if (!createdAt) return null;
+  return new Date(createdAt).getTime() + SLA_HOURS * 3600000 - Date.now();
+}
+
+// Sort inside a group: priority, then oldest first — the oldest task is closest
+// to breaching its 24h SLA, so it's worked first.
 function sortTasks(tasks) {
   return [...tasks].sort((a, b) => {
     const pa = PRIORITY_ORDER[a.priority] ?? 2;
     const pb = PRIORITY_ORDER[b.priority] ?? 2;
     if (pa !== pb) return pa - pb;
-    const da = a.due_date || '9999-12-31';
-    const db = b.due_date || '9999-12-31';
-    if (da !== db) return da.localeCompare(db);
     return (a.created_at || '').localeCompare(b.created_at || '');
   });
 }
@@ -69,7 +74,7 @@ export function useServiceTasks(agencyId, { assignedTo, includeDone = false, sco
       if (scope === 'mine' && employeeId) q = q.eq('assigned_to_id', employeeId);
       if (scope === 'unassigned') q = q.is('assigned_to_id', null);
       if (!includeDone) q = q.in('status', ACTIVE_STATUSES);
-      const { data, error } = await q.order('due_date', { ascending: true, nullsFirst: false });
+      const { data, error } = await q.order('created_at', { ascending: true });
       if (error) throw error;
       return data || [];
     },
@@ -94,8 +99,8 @@ export function useServiceTasks(agencyId, { assignedTo, includeDone = false, sco
       });
   })();
 
-  const today = new Date().toISOString().slice(0, 10);
-  const overdue = tasks.filter(t => t.due_date && t.due_date < today).length;
+  // Past the 24h SLA = overdue.
+  const overdue = tasks.filter(t => { const ms = slaMsLeft(t.created_at); return ms != null && ms < 0; }).length;
 
   return { ...query, tasks, groups, overdue };
 }

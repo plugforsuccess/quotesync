@@ -199,7 +199,7 @@ export default function EmployeeLayout() {
 
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full flex items-center justify-center text-[0.8125rem] font-bold flex-shrink-0"
-                style={{ background: 'rgba(59,130,246,0.25)', border: '1px solid rgba(59,130,246,0.4)', color: '#93c5fd' }}>
+                style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.45)', color: '#1d4ed8' }}>
                 {initials}
               </div>
               <div className="hidden lg:block min-w-0">

@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
-  useExpectedCallbacks, useLogCallback,
+  useExpectedCallbacks, useLogCallback, slaMsLeft,
   TASK_TYPES, TASK_TYPE_MAP, LANES, SCOPES,
 } from '../hooks/useServiceTasks';
 import CopyButton from '../components/CopyButton';
@@ -26,21 +26,16 @@ const PRIORITY_BADGE = {
   low:    { label: 'LOW',    bg: '#33415533', color: '#94A3B8' },
 };
 
-function daysUntil(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr + 'T00:00:00');
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return Math.ceil((d - today) / 86400000);
-}
-
-function dueLabel(dateStr) {
-  const d = daysUntil(dateStr);
-  if (d == null) return { text: 'no due date', color: 'var(--qs-muted)' };
-  if (d < 0)  return { text: `${Math.abs(d)}d overdue`, color: '#F87171' };
-  if (d === 0) return { text: 'due today', color: '#FCD34D' };
-  if (d === 1) return { text: 'due tomorrow', color: 'var(--qs-dim)' };
-  return { text: `due in ${d}d`, color: 'var(--qs-muted)' };
+// 24h SLA countdown from creation — the goal is to clear every service task
+// within a day, faster when possible.
+function slaLabel(createdAt) {
+  const ms = slaMsLeft(createdAt);
+  if (ms == null) return { text: '—', color: 'var(--qs-muted)' };
+  if (ms < 0) return { text: `SLA overdue ${Math.ceil(-ms / 3600000)}h`, color: '#F87171' };
+  const hrs = ms / 3600000;
+  if (hrs < 1) return { text: `${Math.max(1, Math.ceil(ms / 60000))}m left`, color: '#F87171' };
+  if (hrs < 4) return { text: `${Math.floor(hrs)}h left`, color: '#FBBF24' };
+  return { text: `${Math.floor(hrs)}h left`, color: 'var(--qs-muted)' };
 }
 
 export default function ServiceBatchPage() {
@@ -170,7 +165,7 @@ export default function ServiceBatchPage() {
           background: '#EF444411', border: '1px solid #EF444433', borderRadius: 10,
           padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#FCA5A5', fontWeight: 600,
         }}>
-          ⚠ {overdue} {overdue === 1 ? 'task is' : 'tasks are'} past due — work these first.
+          ⚠ {overdue} {overdue === 1 ? 'task is' : 'tasks are'} past the 24h SLA — work these first.
         </div>
       )}
 
@@ -213,7 +208,7 @@ export default function ServiceBatchPage() {
 }
 
 function TaskRow({ task, onDone, onClaim }) {
-  const due = dueLabel(task.due_date);
+  const sla = slaLabel(task.created_at);
   const prio = PRIORITY_BADGE[task.priority];
   const inProgress = task.status === 'in_progress';
   const needsNote = NOTE_REQUIRED_TYPES.has(task.task_type);
@@ -247,7 +242,7 @@ function TaskRow({ task, onDone, onClaim }) {
           <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
             {task.customer_name ? `${task.customer_name} · ` : ''}
             {task.policy_no ? `${task.policy_no} · ` : ''}
-            <span style={{ color: due.color }}>{due.text}</span>
+            <span style={{ color: sla.color }}>{sla.text}</span>
           </div>
           {task.detail && (
             <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{task.detail}</div>
@@ -353,7 +348,6 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
   const [title, setTitle] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [policyNo, setPolicyNo] = useState('');
-  const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState('normal');
   const [detail, setDetail] = useState('');
 
@@ -366,11 +360,10 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
       title: title.trim(),
       customerName: customerName.trim() || null,
       policyNo: policyNo.trim() || null,
-      dueDate: dueDate || null,
       priority,
       detail: detail.trim() || null,
     });
-    setTitle(''); setCustomerName(''); setPolicyNo(''); setDueDate(''); setDetail('');
+    setTitle(''); setCustomerName(''); setPolicyNo(''); setDetail('');
   }
 
   const input = {
@@ -404,9 +397,6 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
         </label>
         <label style={lbl}>Policy #
           <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Optional" />
-        </label>
-        <label style={lbl}>Due date
-          <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} style={input} />
         </label>
         <label style={{ ...lbl, gridColumn: '1 / -1' }}>Detail
           <input value={detail} onChange={e => setDetail(e.target.value)} style={input} placeholder="Optional notes" />
