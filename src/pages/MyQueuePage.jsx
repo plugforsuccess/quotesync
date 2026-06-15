@@ -16,7 +16,7 @@ import { useInterventionEffectiveness } from '../hooks/useInterventionEffectiven
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import ReadingColumn from '../components/ReadingColumn';
 import InterventionPicker from '../components/InterventionPicker';
-import { CallScriptBox, VoicemailScriptBox, renewalCallScript } from '../components/RetentionScripts';
+import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript } from '../components/RetentionScripts';
 import { titleCaseName } from '../lib/names';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../lib/interventions';
 import { productLabel } from '../lib/productLabels';
@@ -791,22 +791,10 @@ export default function MyQueuePage() {
     // falling back to the "[your name]" placeholder if the employee isn't loaded.
     const agentName = [employee?.preferred_name || employee?.first_name, employee?.last_name]
       .filter(Boolean).join(' ') || '[your name]';
-    const lapsedOn  = fmtDate(event.cancel_effective_date);
-    const scriptLine = isLapsed
-      ? `"Hi ${firstName} — this is ${agentName} calling from your Allstate Insurance agency. Your ${
-          event.product
-        } policy lapsed on ${lapsedOn}.${
-          event.amount_due
-            ? ` We can reinstate your coverage today — the amount due is $${Number(event.amount_due).toLocaleString()}.`
-            : ' I want to help you get your coverage reinstated.'
-        } Are you in a position to take care of that today?"`
-      : `"Hi ${firstName} — this is ${agentName} calling from your Allstate Insurance agency. I'm calling about your ${
-          event.product
-        } policy.${
-          event.amount_due
-            ? ` We're showing a payment of $${Number(event.amount_due).toLocaleString()} due by ${lapsedOn}.`
-            : ` Your payment is due by ${lapsedOn}.`
-        } I want to make sure you don't have a gap in coverage — can I help you take care of that today?"`;
+    const scriptLine = cancelCallScript({
+      firstName, agentName, product: event.product, isLapsed,
+      amountDue: event.amount_due, effectiveDate: event.cancel_effective_date,
+    });
 
     // Color-coded urgency for the "days until cancel" key fact.
     const daysColor = urgent ? '#F87171' : days <= 7 ? '#FBBF24' : 'var(--qs-dim)';
