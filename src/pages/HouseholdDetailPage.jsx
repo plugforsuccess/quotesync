@@ -2,10 +2,12 @@
 // The household view — every policy-bearing record for one customer, across
 // new business, renewals, pending cancels, and terminations. Reached by
 // clicking a result in Customer Search.
+import { useState } from 'react';
 import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { TASK_TYPE_MAP } from '../hooks/useServiceTasks';
 
 const PRODUCT_LABELS = {
   auto: 'Auto', ho: 'HO', renters: 'Renters', condo: 'Condo', landlord: 'Landlord',
@@ -70,6 +72,21 @@ export default function HouseholdDetailPage() {
   });
   const lastTouch = touches[0] || null;
 
+  // Open admin/service work for this customer (billing changes, ID cards, a
+  // coverage question…) so a rep sees it the moment they pull the household up.
+  const { data: serviceTasks = [] } = useQuery({
+    queryKey: ['household_service_tasks', householdId],
+    enabled: !!householdId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('household_service_tasks', { p_household: householdId });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+  const openTasks = serviceTasks.filter(t => !t.resolved);
+  const resolvedTasks = serviceTasks.filter(t => t.resolved);
+  const [showResolved, setShowResolved] = useState(false);
+
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '8px 0' }}>
       <Link to={backTo} style={{ fontSize: 13, color: '#3B82F6', textDecoration: 'none' }}>
@@ -105,6 +122,65 @@ export default function HouseholdDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Open service requests — actionable admin work for this customer */}
+      {serviceTasks.length > 0 && (
+        <div style={{ marginBottom: 22 }}>
+          <div style={{
+            fontSize: 12, fontWeight: 700, color: 'var(--qs-subtle)',
+            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 10,
+          }}>
+            Service requests ({openTasks.length} open)
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {(showResolved ? serviceTasks : openTasks).map(t => {
+              const cfg = TASK_TYPE_MAP[t.task_type] || { label: t.task_type, icon: '📌', color: '#94A3B8' };
+              const prio = t.priority === 'urgent' ? { l: 'URGENT', c: '#FCA5A5', b: '#EF444433' }
+                         : t.priority === 'high'   ? { l: 'HIGH',   c: '#FCD34D', b: '#F59E0B33' } : null;
+              return (
+                <div key={t.id} style={{
+                  background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                  borderLeft: `3px solid ${t.resolved ? 'var(--qs-border)' : cfg.color}`, borderRadius: 8,
+                  padding: '12px 16px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                  opacity: t.resolved ? 0.6 : 1,
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
+                    <span style={{ fontSize: 14 }}>{cfg.icon}</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
+                      background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color,
+                    }}>{cfg.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{t.title}</span>
+                    {t.requires_license && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: '#C4B5FD' }}>🔒</span>
+                    )}
+                    {prio && !t.resolved && (
+                      <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                        background: prio.b, color: prio.c, letterSpacing: '0.05em' }}>{prio.l}</span>
+                    )}
+                  </div>
+                  <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--qs-dim)', flexShrink: 0 }}>
+                    <span>{t.resolved ? 'Resolved' : t.status.replace(/_/g, ' ')}</span>
+                    <span style={{ fontFamily: "'DM Mono', monospace" }}>
+                      {new Date(t.created_at).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {resolvedTasks.length > 0 && (
+            <button
+              onClick={() => setShowResolved(s => !s)}
+              style={{ marginTop: 8, background: 'none', border: 'none', color: '#3B82F6',
+                fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+            >
+              {showResolved ? 'Hide resolved' : `+ ${resolvedTasks.length} resolved (last 90 days)`}
+            </button>
+          )}
+        </div>
+      )}
 
       {isLoading && (
         <div style={{ color: 'var(--qs-muted)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>Loading…</div>
