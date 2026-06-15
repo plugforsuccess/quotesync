@@ -814,19 +814,6 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
-            {/* Notes summary (legacy free-text) */}
-            <div>
-              <label className="dark-label">Notes summary</label>
-              <textarea
-                className="dark-input"
-                value={form.notes}
-                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-                rows={3}
-                placeholder="Short summary (the permanent log is below)…"
-                style={{ resize: "vertical", fontFamily: "inherit" }}
-              />
-            </div>
-
             <CaseNotesFeed caseType="cancel" caseId={event.id} agencyId={agencyId}
               policyNo={event.policy_no} customerName={event.customer_name} />
 
@@ -1403,19 +1390,6 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   </option>
                 ))}
               </select>
-            </div>
-
-            {/* Notes summary (legacy free-text) */}
-            <div>
-              <label className="dark-label">Notes summary</label>
-              <textarea
-                className="dark-input"
-                value={form.notes}
-                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-                rows={3}
-                placeholder="Short summary (the permanent log is below)…"
-                style={{ resize: "vertical", fontFamily: "inherit" }}
-              />
             </div>
 
             <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
