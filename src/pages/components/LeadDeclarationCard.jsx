@@ -106,21 +106,87 @@ export default function LeadDeclarationCard({ lead }) {
             <Field label="Policy Type" value={POLICY_TYPE_LABELS[data.policy_type] || data.policy_type} />
             <Field label="Insurer" value={data.insurer} />
             <Field label="Policy Number" value={data.policy_number} />
+            <Field label="Term" value={data.policy_term} />
             <Field label="Named Insured" value={data.named_insured} />
             <Field label="Effective Date" value={data.effective_date} />
             <Field label="Expiration / Renewal" value={data.expiration_date} />
             <Field label="Annual Premium" value={fmtMoney(data.annual_premium)} />
+            {data.term_premium != null && <Field label="Term Premium" value={fmtMoney(data.term_premium)} />}
+            {data.fees != null && <Field label="Fees" value={fmtMoney(data.fees)} />}
+            <Field label="Risk Address" value={data.risk_address} />
             <Field label="Mailing Address" value={data.mailing_address} />
           </dl>
+
+          {Array.isArray(data.discounts) && data.discounts.length > 0 && (
+            <div className="mt-4">
+              <dt className="text-gray-500 text-sm mb-1.5">Discounts on current policy</dt>
+              <div className="flex flex-wrap gap-1.5">
+                {data.discounts.map((d, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">{d}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mortgagee / lienholder — high-value competitive intel */}
+          {Array.isArray(data.mortgagees) && data.mortgagees.length > 0 && (
+            <div className="mt-4">
+              <dt className="text-gray-500 text-sm mb-1.5">Mortgagee / Lienholder</dt>
+              <ul className="space-y-1.5">
+                {data.mortgagees.map((m, i) => (
+                  <li key={i} className="text-sm text-gray-900">
+                    <span className="font-medium">{m.lender_name || 'Lender'}</span>
+                    {m.position && <span className="text-gray-400 font-normal"> · {m.position}</span>}
+                    {m.loan_number && <span className="text-gray-400 font-normal"> · Loan {m.loan_number}</span>}
+                    {m.address && <div className="text-xs text-gray-500">{m.address}</div>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Home / dwelling coverages (Coverage A–F) */}
+          {data.property && Object.values(data.property).some((v) => v != null) && (
+            <div className="mt-4">
+              <dt className="text-gray-500 text-sm mb-2">Home Coverages &amp; Property</dt>
+              <dl className="grid grid-cols-2 gap-3">
+                <Field label="A · Dwelling" value={data.property.dwelling_coverage_a} />
+                <Field label="B · Other Structures" value={data.property.other_structures_b} />
+                <Field label="C · Personal Property" value={data.property.personal_property_c} />
+                <Field label="D · Loss of Use" value={data.property.loss_of_use_d} />
+                <Field label="E · Personal Liability" value={data.property.personal_liability_e} />
+                <Field label="F · Medical Payments" value={data.property.medical_payments_f} />
+                <Field label="Deductible" value={data.property.all_perils_deductible} />
+                <Field label="Wind / Hail Deductible" value={data.property.wind_hail_deductible} />
+                {data.property.replacement_cost != null && (
+                  <Field label="Valuation" value={data.property.replacement_cost ? 'Replacement Cost' : 'Actual Cash Value'} />
+                )}
+                <Field label="Year Built" value={data.property.year_built} />
+                <Field label="Square Footage" value={data.property.square_footage != null ? data.property.square_footage.toLocaleString() : null} />
+                <Field label="Construction" value={data.property.construction_type} />
+                <Field label="Roof" value={[data.property.roof_type, data.property.roof_year].filter(Boolean).join(' · ')} />
+              </dl>
+            </div>
+          )}
 
           {Array.isArray(data.vehicles) && data.vehicles.length > 0 && (
             <div className="mt-4">
               <dt className="text-gray-500 text-sm mb-1">Vehicles</dt>
-              <ul className="space-y-1">
+              <ul className="space-y-1.5">
                 {data.vehicles.map((v, i) => (
-                  <li key={i} className="text-sm font-medium text-gray-900">
-                    {[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'}
+                  <li key={i} className="text-sm text-gray-900">
+                    <span className="font-medium">{[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'}</span>
                     {v.vin && <span className="text-gray-400 font-normal"> · VIN {v.vin}</span>}
+                    {(v.lienholder || v.finance_type || v.primary_use || v.annual_mileage != null) && (
+                      <div className="text-xs text-gray-500">
+                        {[
+                          v.finance_type,
+                          v.lienholder && `Lienholder: ${v.lienholder}`,
+                          v.primary_use,
+                          v.annual_mileage != null && `${v.annual_mileage.toLocaleString()} mi/yr`,
+                        ].filter(Boolean).join(' · ')}
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -135,6 +201,7 @@ export default function LeadDeclarationCard({ lead }) {
                   <li key={i} className="text-sm font-medium text-gray-900">
                     {d.name || 'Driver'}
                     {d.date_of_birth && <span className="text-gray-400 font-normal"> · DOB {d.date_of_birth}</span>}
+                    {d.relationship && <span className="text-gray-400 font-normal"> · {d.relationship}</span>}
                   </li>
                 ))}
               </ul>
@@ -149,9 +216,15 @@ export default function LeadDeclarationCard({ lead }) {
                   <tbody className="divide-y divide-gray-100">
                     {data.coverages.map((c, i) => (
                       <tr key={i}>
-                        <td className="px-3 py-2 text-gray-700">{c.type || '-'}</td>
+                        <td className="px-3 py-2 text-gray-700">
+                          {c.type || '-'}
+                          {c.applies_to && <span className="block text-xs text-gray-400">{c.applies_to}</span>}
+                        </td>
                         <td className="px-3 py-2 text-gray-900 font-medium text-right">{c.limit || '-'}</td>
-                        <td className="px-3 py-2 text-gray-500 text-right">{c.deductible ? `${c.deductible} ded.` : ''}</td>
+                        <td className="px-3 py-2 text-gray-500 text-right whitespace-nowrap">
+                          {c.deductible ? `${c.deductible} ded.` : ''}
+                          {c.premium != null && <span className="block text-xs text-gray-400">{fmtMoney(c.premium)}</span>}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

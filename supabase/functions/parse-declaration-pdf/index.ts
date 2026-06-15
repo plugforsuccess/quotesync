@@ -43,26 +43,42 @@ const BUCKET = 'lead-declarations'
 const EXTRACTION_TOOL = {
   name: 'record_declaration',
   description:
-    'Record the structured data extracted from an insurance declarations (dec) page.',
+    'Record the structured data extracted from an insurance declarations (dec) page. ' +
+    'This is competitive intelligence for the agent: capture every premium, coverage ' +
+    'limit, deductible, vehicle/VIN, lienholder, and mortgagee shown.',
   input_schema: {
     type: 'object',
     additionalProperties: false,
     properties: {
       policy_type: {
         type: ['string', 'null'],
-        enum: ['auto', 'home', 'renters', 'condo', 'umbrella', 'other', null],
+        enum: ['auto', 'home', 'renters', 'condo', 'landlord', 'umbrella', 'other', null],
         description: 'Line of business this dec page covers.',
       },
       insurer: { type: ['string', 'null'], description: 'Carrier / insurance company name.' },
       policy_number: { type: ['string', 'null'] },
+      policy_term: { type: ['string', 'null'], description: 'Policy term length, e.g. "6 months", "12 months".' },
       named_insured: { type: ['string', 'null'], description: 'Primary policyholder name.' },
+      additional_insureds: {
+        type: 'array',
+        description: 'Other named/additional insureds. Empty if none.',
+        items: { type: 'string' },
+      },
       mailing_address: { type: ['string', 'null'] },
+      risk_address: { type: ['string', 'null'], description: 'Insured property/garaging location if shown separately from mailing address.' },
       effective_date: { type: ['string', 'null'], description: 'Policy effective date, ISO YYYY-MM-DD if determinable.' },
       expiration_date: { type: ['string', 'null'], description: 'Policy expiration/renewal date, ISO YYYY-MM-DD if determinable.' },
       annual_premium: { type: ['number', 'null'], description: 'Total annual premium in USD. Annualize if billed per-term.' },
+      term_premium: { type: ['number', 'null'], description: 'Premium for the policy term as shown, before annualizing.' },
+      fees: { type: ['number', 'null'], description: 'Total policy fees/surcharges in USD, if itemized.' },
+      discounts: {
+        type: 'array',
+        description: 'Discounts applied (e.g. "Multi-policy", "Safe driver", "Paid in full"). Empty if none shown.',
+        items: { type: 'string' },
+      },
       vehicles: {
         type: 'array',
-        description: 'Vehicles listed on the policy (auto only). Empty if none.',
+        description: 'Vehicles listed on the policy (auto). Empty if none.',
         items: {
           type: 'object',
           additionalProperties: false,
@@ -71,8 +87,17 @@ const EXTRACTION_TOOL = {
             make: { type: ['string', 'null'] },
             model: { type: ['string', 'null'] },
             vin: { type: ['string', 'null'] },
+            annual_mileage: { type: ['integer', 'null'] },
+            primary_use: { type: ['string', 'null'], description: 'e.g. commute, pleasure, business, farm.' },
+            garaging_zip: { type: ['string', 'null'] },
+            finance_type: {
+              type: ['string', 'null'],
+              enum: ['owned', 'financed', 'leased', null],
+              description: 'Whether the vehicle is owned outright, financed, or leased.',
+            },
+            lienholder: { type: ['string', 'null'], description: 'Lienholder / lessor / loss payee name, if a loan or lease is shown.' },
           },
-          required: ['year', 'make', 'model', 'vin'],
+          required: ['year', 'make', 'model', 'vin', 'annual_mileage', 'primary_use', 'garaging_zip', 'finance_type', 'lienholder'],
         },
       },
       drivers: {
@@ -84,22 +109,66 @@ const EXTRACTION_TOOL = {
           properties: {
             name: { type: ['string', 'null'] },
             date_of_birth: { type: ['string', 'null'] },
+            relationship: { type: ['string', 'null'], description: 'Relationship to named insured, e.g. spouse, child.' },
           },
-          required: ['name', 'date_of_birth'],
+          required: ['name', 'date_of_birth', 'relationship'],
         },
       },
       coverages: {
         type: 'array',
-        description: 'Coverage lines (e.g. bodily injury, dwelling, deductible).',
+        description: 'Every coverage line shown, with its limit, deductible, and per-line premium when listed.',
         items: {
           type: 'object',
           additionalProperties: false,
           properties: {
-            type: { type: ['string', 'null'], description: 'Coverage name, e.g. "Bodily Injury", "Dwelling".' },
+            applies_to: { type: ['string', 'null'], description: 'What the line applies to, e.g. a vehicle ("2021 Honda CR-V"), "Policy", or "Dwelling".' },
+            type: { type: ['string', 'null'], description: 'Coverage name, e.g. "Bodily Injury", "Comprehensive", "Dwelling".' },
             limit: { type: ['string', 'null'], description: 'Coverage limit as shown, e.g. "100/300", "$250,000".' },
             deductible: { type: ['string', 'null'] },
+            premium: { type: ['number', 'null'], description: 'Premium attributed to this line in USD, if itemized.' },
           },
-          required: ['type', 'limit', 'deductible'],
+          required: ['applies_to', 'type', 'limit', 'deductible', 'premium'],
+        },
+      },
+      property: {
+        type: ['object', 'null'],
+        additionalProperties: false,
+        description: 'Home/dwelling specifics (home, condo, renters, landlord). Null for auto/umbrella.',
+        properties: {
+          dwelling_coverage_a: { type: ['string', 'null'], description: 'Coverage A — Dwelling limit.' },
+          other_structures_b: { type: ['string', 'null'], description: 'Coverage B — Other Structures limit.' },
+          personal_property_c: { type: ['string', 'null'], description: 'Coverage C — Personal Property limit.' },
+          loss_of_use_d: { type: ['string', 'null'], description: 'Coverage D — Loss of Use limit.' },
+          personal_liability_e: { type: ['string', 'null'], description: 'Coverage E — Personal Liability limit.' },
+          medical_payments_f: { type: ['string', 'null'], description: 'Coverage F — Medical Payments limit.' },
+          all_perils_deductible: { type: ['string', 'null'] },
+          wind_hail_deductible: { type: ['string', 'null'], description: 'Separate wind/hail/hurricane deductible, if any.' },
+          replacement_cost: { type: ['boolean', 'null'], description: 'True if replacement-cost (not actual-cash-value) coverage is indicated.' },
+          year_built: { type: ['integer', 'null'] },
+          square_footage: { type: ['integer', 'null'] },
+          construction_type: { type: ['string', 'null'], description: 'e.g. frame, masonry, brick veneer.' },
+          roof_type: { type: ['string', 'null'] },
+          roof_year: { type: ['integer', 'null'] },
+        },
+        required: [
+          'dwelling_coverage_a', 'other_structures_b', 'personal_property_c', 'loss_of_use_d',
+          'personal_liability_e', 'medical_payments_f', 'all_perils_deductible', 'wind_hail_deductible',
+          'replacement_cost', 'year_built', 'square_footage', 'construction_type', 'roof_type', 'roof_year',
+        ],
+      },
+      mortgagees: {
+        type: 'array',
+        description: 'Mortgagee / lienholder / loss-payee clauses on a home/dwelling policy. Empty if none.',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          properties: {
+            position: { type: ['string', 'null'], description: 'e.g. "First Mortgagee", "Second Mortgagee".' },
+            lender_name: { type: ['string', 'null'] },
+            loan_number: { type: ['string', 'null'] },
+            address: { type: ['string', 'null'], description: 'Mortgagee clause mailing address.' },
+          },
+          required: ['position', 'lender_name', 'loan_number', 'address'],
         },
       },
       confidence: {
@@ -110,19 +179,24 @@ const EXTRACTION_TOOL = {
       notes: { type: ['string', 'null'], description: 'Anything ambiguous or worth a human double-check.' },
     },
     required: [
-      'policy_type', 'insurer', 'policy_number', 'named_insured', 'mailing_address',
-      'effective_date', 'expiration_date', 'annual_premium', 'vehicles', 'drivers',
-      'coverages', 'confidence', 'notes',
+      'policy_type', 'insurer', 'policy_number', 'policy_term', 'named_insured', 'additional_insureds',
+      'mailing_address', 'risk_address', 'effective_date', 'expiration_date', 'annual_premium',
+      'term_premium', 'fees', 'discounts', 'vehicles', 'drivers', 'coverages', 'property',
+      'mortgagees', 'confidence', 'notes',
     ],
   },
 }
 
 const SYSTEM_PROMPT =
-  'You are an insurance back-office assistant. You are given a customer\'s current ' +
-  'insurance declarations ("dec") page as a document. Extract the fields exactly as ' +
-  'shown — do not guess values that are not present; use null for anything missing, ' +
-  'illegible, or not applicable. Normalize dates to ISO YYYY-MM-DD only when you are ' +
-  'confident of the value. Always respond by calling the record_declaration tool.'
+  'You are an insurance back-office assistant building a complete competitive profile of a ' +
+  'prospect\'s CURRENT policy for a licensed agent. You are given the customer\'s declarations ' +
+  '("dec") page as a document. Extract every field shown — be thorough and exhaustive: capture ' +
+  'the premium (and per-coverage premiums when itemized), every coverage limit and deductible, ' +
+  'all vehicles with VINs and any lienholder/lessor, all drivers, home Coverage A–F limits, ' +
+  'and especially any MORTGAGEE / lienholder / loss-payee clause (lender name, loan number, address). ' +
+  'Do not guess values that are not present; use null (or an empty array) for anything missing, ' +
+  'illegible, or not applicable. Normalize dates to ISO YYYY-MM-DD only when you are confident of the ' +
+  'value. Always respond by calling the record_declaration tool.'
 
 async function arrayBufferToBase64(buf: ArrayBuffer): Promise<string> {
   const bytes = new Uint8Array(buf)
