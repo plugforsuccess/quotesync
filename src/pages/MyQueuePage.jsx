@@ -17,7 +17,6 @@ import { EventDetailModal, RenewalDetailModal } from './components/retention/Ret
 import ReadingColumn from '../components/ReadingColumn';
 import InterventionPicker from '../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../lib/interventions';
-import CopyButton from '../components/CopyButton';
 
 // The rep reads scripts verbatim — full name, or a clear placeholder if the
 // employee record hasn't loaded.
@@ -39,11 +38,9 @@ function VoicemailScript({ firstName, agentName }) {
       background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
       borderRadius: 6, padding: '7px 10px', marginBottom: 8,
     }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#F59E0B', textTransform: 'uppercase' }}>
-          📞 Voicemail — if no answer
-        </span>
-        <CopyButton getText={() => text} label="Copy" style={{ padding: '3px 8px', fontSize: 11 }} />
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#F59E0B',
+        textTransform: 'uppercase', marginBottom: 4 }}>
+        📞 Voicemail — if no answer (read aloud)
       </div>
       <div style={{ fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
         “{text}”
