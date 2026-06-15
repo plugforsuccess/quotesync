@@ -902,7 +902,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   const scriptChangePct = parseFloat(event.premium_change_pct) || 0;
   const rateShock = scriptChangePct >= 15;
   const me = (producers || []).find(p => p.id === currentEmployeeId);
-  const agentName = me ? (me.preferred_name || me.first_name || 'your agent') : 'your agent';
+  const agentName = me
+    ? ([me.preferred_name || me.first_name, me.last_name].filter(Boolean).join(' ') || 'your agent')
+    : 'your agent';
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
