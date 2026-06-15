@@ -125,7 +125,7 @@ export default function MyQueuePage() {
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
 
   // Cancel filter bar — client-side filter of cancelCases
-  // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy' | 'snoozed'
+  // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy' | 'callbacks' | 'snoozed'
   const [cancelFilter, setCancelFilter] = useState('all');
 
   // Focus mode — show only top N cases up to the employee's daily call target
@@ -301,6 +301,10 @@ export default function MyQueuePage() {
         return cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1);
       case 'snoozed':
         return snoozedCancelCases;
+      case 'callbacks':
+        return cancelCases
+          .filter(e => e.callback_at)
+          .sort((a, b) => new Date(a.callback_at) - new Date(b.callback_at));
       default:
         return cancelCases;
     }
@@ -332,7 +336,8 @@ export default function MyQueuePage() {
   }, [filteredCancelCases, dailyTarget, todayStr]);
 
   // The cases the queue actually displays based on focus toggle.
-  const displayCancelCases = focusMode ? focusCases : filteredCancelCases;
+  // Callbacks view shows every scheduled callback (no focus cap), soonest first.
+  const displayCancelCases = (focusMode && cancelFilter !== 'callbacks') ? focusCases : filteredCancelCases;
 
   // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
   // (renewalFilter / closingMode / clickTimerRef are declared at the top of the
@@ -351,6 +356,10 @@ export default function MyQueuePage() {
         return renewalCases.filter(r => r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15);
       case 'untouched':
         return renewalCases.filter(r => !r.attempt_count);
+      case 'callbacks':
+        return renewalCases
+          .filter(r => r.callback_at)
+          .sort((a, b) => new Date(a.callback_at) - new Date(b.callback_at));
       default:
         return renewalCases;
     }
@@ -372,7 +381,7 @@ export default function MyQueuePage() {
       .sort(bySaveable);
     return [...touched, ...untouched].slice(0, dailyTarget);
   }, [filteredRenewalCases, dailyTarget, todayStr, churnModel, effectiveSaveLift]);
-  const displayRenewalCases = focusMode ? focusRenewalCases : filteredRenewalCases;
+  const displayRenewalCases = (focusMode && renewalFilter !== 'callbacks') ? focusRenewalCases : filteredRenewalCases;
 
   // Master-detail selection for the renewal dialer (mirrors the cancel tab).
   const selectedRenewalCase =
@@ -392,16 +401,26 @@ export default function MyQueuePage() {
     return groups;
   }, [displayCancelCases]);
 
-  const BUCKETS = PRIORITY_BUCKETS
-    .map(b => ({ ...b, cases: cancelBuckets[b.key] || [] }))
-    .filter(b => b.cases.length > 0);
+  // In the Callbacks view, skip priority bucketing — show one flat group in
+  // strict due order (overdue / soonest first) so reps work them in sequence.
+  const BUCKETS = cancelFilter === 'callbacks'
+    ? (displayCancelCases.length
+        ? [{ key: 'callbacks', label: '📅 CALLBACKS · soonest first', color: '#60A5FA', cases: displayCancelCases }]
+        : [])
+    : PRIORITY_BUCKETS
+        .map(b => ({ ...b, cases: cancelBuckets[b.key] || [] }))
+        .filter(b => b.cases.length > 0);
 
   // Flattened, in-priority-order list backing the master-detail pane and
   // keyboard navigation. "other" tier cases (no recognized tier) trail behind.
-  const flatCancelCases = useMemo(() => ([
-    ...PRIORITY_BUCKETS.flatMap(b => cancelBuckets[b.key] || []),
-    ...(cancelBuckets.other || []),
-  ]), [cancelBuckets]);
+  const flatCancelCases = useMemo(() => (
+    cancelFilter === 'callbacks'
+      ? displayCancelCases
+      : [
+          ...PRIORITY_BUCKETS.flatMap(b => cancelBuckets[b.key] || []),
+          ...(cancelBuckets.other || []),
+        ]
+  ), [cancelBuckets, cancelFilter, displayCancelCases]);
   const selectedCancel =
     flatCancelCases.find(c => c.id === selectedCancelId) || flatCancelCases[0] || null;
   const selectedCancelIdx = selectedCancel
@@ -1273,7 +1292,7 @@ export default function MyQueuePage() {
       <div style={{
         background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
         borderRadius: 12, padding: '20px 24px', marginBottom: 20,
-        display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16,
+        display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 16,
       }}>
         {(activeTab === 'cancel' ? [
           {
@@ -1338,6 +1357,14 @@ export default function MyQueuePage() {
             sub:   'never called',
             filter: 'untouched', isOn: renewalFilter === 'untouched',
             apply: () => setRenewalFilter(f => f === 'untouched' ? 'all' : 'untouched'),
+          },
+          {
+            label: '📅 Callbacks',
+            value: renewalCases.filter(r => r.callback_at).length,
+            color: renewalCases.some(r => r.callback_at) ? '#60A5FA' : 'var(--qs-dim)',
+            sub:   'scheduled',
+            filter: 'callbacks', isOn: renewalFilter === 'callbacks',
+            apply: () => setRenewalFilter(f => f === 'callbacks' ? 'all' : 'callbacks'),
           },
         ]).map(stat => {
           const clickable = !!stat.apply;
@@ -1522,6 +1549,7 @@ export default function MyQueuePage() {
                     { key: 'pending',      label: `Pending (${cancelCases.filter(e => e.stage === 'pending_cancel').length})` },
                     { key: 'never_called', label: `Untouched (${cancelCases.filter(e => !e.attempt_count).length})` },
                     { key: 'multi_policy', label: `Multi (${cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1).length})` },
+                    { key: 'callbacks',    label: `📅 Callbacks (${cancelCases.filter(e => e.callback_at).length})` },
                     { key: 'snoozed',      label: `Snoozed${cancelFilter === 'snoozed' ? ` (${snoozedCancelCases.length})` : ''}` },
                   ].map(f => (
                     <button
