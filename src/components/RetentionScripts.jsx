@@ -14,13 +14,30 @@ export function voicemailText({ firstName, agentName, product }) {
     + `you're getting everything you should be. Thanks, talk soon!`;
 }
 
-// Live-answer renewal script. rateShock surfaces the increase up front.
-export function renewalCallScript({ firstName, product, renewalDate, rateShock, changePct }) {
-  const lead = `your ${productLabel(product).toLowerCase()} renewal on ${renewalDate}`;
-  const pct = Number(changePct) || 0;
+// A spoken-friendly date: "2026-06-16" → "June 16th". Date-only strings are
+// parsed as local time to avoid a timezone off-by-one.
+function spokenDate(d) {
+  if (!d) return 'soon';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  const date = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
+  if (Number.isNaN(date.getTime())) return d;
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const day = date.getDate();
+  const j = day % 10, k = day % 100;
+  const ord = (j === 1 && k !== 11) ? 'st' : (j === 2 && k !== 12) ? 'nd' : (j === 3 && k !== 13) ? 'rd' : 'th';
+  return `${month} ${day}${ord}`;
+}
+
+// Live-answer renewal script. Introduces the agent, names the product + a
+// spoken date, and leads with value. rateShock surfaces the increase up front.
+export function renewalCallScript({ firstName, agentName = 'your agent', product, renewalDate, rateShock, changePct }) {
+  const line = productLabel(product).toLowerCase();
+  const when = spokenDate(renewalDate);
+  const pct = Math.abs(Number(changePct) || 0);
+  const intro = `Hi ${firstName}, this is ${agentName} with your Allstate agency.`;
   return rateShock
-    ? `"Hi ${firstName} — calling about ${lead}. Your premium is going up ${pct > 0 ? '+' : ''}${pct.toFixed(1)}%. Want to review options and make sure you're getting the best rate."`
-    : `"Hi ${firstName} — calling about ${lead}. Just making sure everything still looks good and answering any questions."`;
+    ? `"${intro} I'm reaching out ahead of your ${line} policy renewal on ${when}. I noticed the premium is going up about ${pct.toFixed(0)}%, so I'd like to review it together and look at a few options to keep your rate as low as we can."`
+    : `"${intro} I'm calling ahead of your ${line} policy renewal on ${when} — I want to make sure your coverage still fits and answer any questions before it renews."`;
 }
 
 export function CallScriptBox({ label = 'Call script', children }) {

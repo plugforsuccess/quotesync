@@ -1267,7 +1267,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             <div style={{ marginTop: 12 }}>
               <CallScriptBox label="Call script">
                 {renewalCallScript({
-                  firstName, product: event.product, renewalDate: event.renewal_date,
+                  firstName, agentName, product: event.product, renewalDate: event.renewal_date,
                   rateShock, changePct: scriptChangePct,
                 })}
               </CallScriptBox>
