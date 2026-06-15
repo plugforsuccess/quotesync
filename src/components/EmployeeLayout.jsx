@@ -169,11 +169,11 @@ export default function EmployeeLayout() {
         {/* Animated gradient accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x" />
 
-        <div className="flex items-center justify-between gap-4 py-3"
+        <div className="flex items-center gap-4 py-3"
           style={{ paddingLeft: pagePadX, paddingRight: pagePadX }}>
 
           {/* Brand */}
-          <NavLink to={brandTo} className="qs-focusable flex items-center gap-3 group min-w-0">
+          <NavLink to={brandTo} className="qs-focusable flex flex-1 items-center gap-3 group min-w-0">
             {agencyLogoUrl ? (
               <img src={agencyLogoUrl} alt="" className="h-9 w-auto object-contain flex-shrink-0" />
             ) : (
@@ -201,7 +201,7 @@ export default function EmployeeLayout() {
           </nav>
 
           {/* Right cluster: persona switcher · identity · sign out */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex flex-1 items-center justify-end gap-3">
             <div className="hidden sm:block">
               <PersonaSwitcher compact onLight />
             </div>
