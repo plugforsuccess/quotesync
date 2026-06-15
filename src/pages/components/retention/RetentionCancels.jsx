@@ -9,6 +9,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
+import CaseNotesFeed from './CaseNotesFeed';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -815,18 +816,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
-            {/* Notes */}
-            <div>
-              <label className="dark-label">Notes</label>
-              <textarea
-                className="dark-input"
-                value={form.notes}
-                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-                rows={3}
-                placeholder="Call notes, customer response..."
-                style={{ resize: "vertical", fontFamily: "inherit" }}
-              />
-            </div>
+            <CaseNotesFeed caseType="cancel" caseId={event.id} agencyId={agencyId}
+              policyNo={event.policy_no} customerName={event.customer_name} />
 
             {/* Save */}
             <button
@@ -913,7 +904,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     supabase
       .from("renewal_attempts")
       .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-      .eq("renewal_event_id", event.id)
+      .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
   }, [event.id]);
@@ -983,6 +974,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     // Set closed_by_id when resolving a case
     if (["confirmed","lost","unreachable"].includes(form.status)) {
       updates.closed_by_id = currentEmployeeId;
+    }
+    // Stamp the rep-confirmed elasticity label (outcome + provenance), so every
+    // resolved renewal carries a trustworthy final_outcome for the retention dataset.
+    if (["confirmed","lost"].includes(form.status)) {
+      updates.final_outcome        = form.status === "confirmed" ? "renewed" : "lost";
+      updates.outcome_source       = "rep";
+      updates.final_outcome_set_by = currentEmployeeId;
+      updates.final_outcome_set_at = new Date().toISOString();
     }
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
@@ -1398,18 +1397,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </select>
             </div>
 
-            {/* Notes */}
-            <div>
-              <label className="dark-label">Notes</label>
-              <textarea
-                className="dark-input"
-                value={form.notes}
-                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-                rows={3}
-                placeholder="Call notes, customer response..."
-                style={{ resize: "vertical", fontFamily: "inherit" }}
-              />
-            </div>
+            <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
+              policyNo={event.policy_no} customerName={event.customer_name} />
 
             {/* Save */}
             <button

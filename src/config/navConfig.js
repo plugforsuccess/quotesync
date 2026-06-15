@@ -256,10 +256,12 @@ export function personaForPath(pathname) {
   if (pathname.startsWith('/my/scorecard')) return null;
   if (pathname === '/punch' || pathname.startsWith('/punch/')) return null;
   if (pathname.startsWith('/agency/referrals')) return null;
+  if (pathname.startsWith('/my/referrals')) return null;
   // Customer Search is in both producer hats — don't flip the pill.
   if (pathname.startsWith('/agency/customers')) return null;
 
   if (pathname.startsWith('/agency/cross-sell')) return 'sales';
+  if (pathname.startsWith('/my/cross-sell')) return 'sales';
   // /my/leads is the SALES hat's lead queue — must beat the /my/ catch-all
   // below, which otherwise flips the pill to service.
   if (pathname.startsWith('/my/leads')) return 'sales';

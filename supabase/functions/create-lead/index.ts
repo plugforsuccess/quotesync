@@ -604,8 +604,9 @@ Deno.serve(async (req) => {
     console.log(`[LEAD NOTIFICATION] New lead ${lead.id} for agency ${agency?.name} (${agency?.email})`)
 
     // Trigger warm-up SMS (fire-and-forget)
-    // Only if lead has a valid phone number (will be null for Canopy-only leads until enrichment)
-    if (isValidPhone) {
+    // Only if lead has a valid phone AND express consent was captured (TCPA).
+    // Defense-in-depth: the SMS/Bland egress functions also enforce consent.
+    if (isValidPhone && lead.consent_given_at) {
       const notifyUrl = `${supabaseUrl}/functions/v1/lead-notify-sms`
       fetch(notifyUrl, {
         method: 'POST',

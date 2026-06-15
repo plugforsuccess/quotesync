@@ -554,6 +554,11 @@ export default function MyQueuePage() {
         status:          resolution, // 'confirmed' or 'lost'
         resolution_date: new Date().toISOString().slice(0, 10),
         closed_by_id:    employeeId,
+        // Stamp the elasticity label so every resolved renewal is dataset-ready.
+        final_outcome:        resolution === 'confirmed' ? 'renewed' : resolution === 'lost' ? 'lost' : undefined,
+        outcome_source:       'rep',
+        final_outcome_set_by: employeeId,
+        final_outcome_set_at: new Date().toISOString(),
       });
     }
   }

@@ -23,6 +23,8 @@ import UploadReminderBanner from './components/retention/UploadReminderBanner';
 import WorkloadDistribution from './components/retention/WorkloadDistribution';
 import BookMetricsPanel from './components/retention/BookMetricsPanel';
 import SaveablePremiumTargeting from './components/retention/SaveablePremiumTargeting';
+import ElasticityCurveChart from './components/retention/ElasticityCurveChart';
+import NotesSearch from './components/retention/NotesSearch';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -453,13 +455,14 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "targeting", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["at_risk", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "at_risk"    ? "⚡ At Risk"        :
              t === "targeting"  ? "🎯 Targeting"      :
              t === "renewals"   ? "🔄 Renewals"       :
              t === "ai_perf"    ? "📊 AI Performance" :
              t === "resolved"   ? "✅ Outcomes"       :
+             t === "notes"      ? "🗒 Notes"          :
              t === "attrition"  ? "📉 Terminations"   :
              t === "reasons"    ? "🔍 Reasons"        :
              t === "growth"     ? "📈 Net Growth"     :
@@ -482,7 +485,10 @@ export default function RetentionPage() {
         />
       )}
       {activeTab === "targeting" && (
-        <SaveablePremiumTargeting agencyId={agencyId} />
+        <>
+          <ElasticityCurveChart agencyId={agencyId} />
+          <SaveablePremiumTargeting agencyId={agencyId} />
+        </>
       )}
       {activeTab === "renewals" && (
         <RetentionRenewals agencyId={agencyId} />
@@ -493,6 +499,7 @@ export default function RetentionPage() {
       )}
 
       {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
+      {activeTab === "notes" && <NotesSearch agencyId={agencyId} />}
       {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
       {activeTab === "attrition" && (
         <AttritionTab

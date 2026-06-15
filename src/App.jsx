@@ -192,6 +192,8 @@ function App() {
               <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
               <Route path="leads" element={<Suspense fallback={<PageLoader />}><MyLeadsPage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+              <Route path="cross-sell" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense></ErrorBoundary>} />
+              <Route path="referrals" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ReferralRewardsPage /></Suspense></ErrorBoundary>} />
             </Route>
           </Route>
 
