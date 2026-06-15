@@ -8,10 +8,13 @@
 --   * Reads are restricted to authenticated agency members whose agency owns the
 --     lead (matched on the first path segment = lead_id). The parse edge
 --     function uses the service role, which bypasses these policies.
--- Data:  parsed fields land in leads.declaration_data (JSONB). Dec pages carry
---   repeating/nested structures (multiple vehicles/drivers/coverages) that map
---   poorly to flat columns, so we keep the extraction as a single document plus
---   a status/audit trail. The original PDF path + a parse status drive the UI.
+-- Data:  parsed fields land in leads.declaration_data (JSONB) as an ARRAY of
+--   declaration entries — a lead may upload more than one dec page (e.g. one
+--   auto + one home for a bundle). Each entry holds the extracted fields plus
+--   its own pdf_path/media_type/parsed_at. Dec pages carry repeating/nested
+--   structures (multiple vehicles/drivers/coverages) that map poorly to flat
+--   columns, so JSONB fits. declaration_pdf_path / _parse_status / _parsed_at
+--   summarize the most recent upload for quick filtering and the UI.
 -- ============================================================================
 
 -- ── Lead columns ────────────────────────────────────────────────────────────
@@ -23,7 +26,7 @@ ALTER TABLE public.leads
   ADD COLUMN IF NOT EXISTS declaration_parsed_at    timestamptz;
 
 COMMENT ON COLUMN public.leads.declaration_data IS
-  'Structured fields extracted from the uploaded declarations page by the parse-declaration-pdf edge function. Nullable; agency may correct.';
+  'JSONB array of declarations extracted from uploaded dec page(s) by the parse-declaration-pdf edge function (one entry per upload; a lead may have e.g. an auto and a home dec). Nullable; agency may correct.';
 COMMENT ON COLUMN public.leads.declaration_parse_status IS
   'pending = uploaded, awaiting parse; parsed = extraction succeeded; failed = extraction errored (PDF still on file).';
 

@@ -242,10 +242,12 @@ Deno.serve(async (req) => {
       throw new Error('storage_path must be within the lead folder')
     }
 
-    // Confirm the lead exists (and grab agency for the audit trail).
+    // Confirm the lead exists (grab agency for the audit trail, and the existing
+    // declarations so we can append rather than overwrite — a lead may upload
+    // several dec pages, e.g. one auto + one home).
     const { data: lead, error: leadErr } = await supabase
       .from('leads')
-      .select('id, agency_id')
+      .select('id, agency_id, declaration_data')
       .eq('id', leadId)
       .single()
     if (leadErr || !lead) throw new Error('Lead not found')
@@ -299,21 +301,24 @@ Deno.serve(async (req) => {
     )
     if (!toolUse?.input) throw new Error('Model did not return structured declaration data')
 
-    const declarationData = {
+    // One entry per uploaded dec page; append to any already on the lead so a
+    // bundle prospect can upload both their auto and home declarations.
+    const entry = {
       ...toolUse.input,
-      _meta: {
-        model: ANTHROPIC_MODEL,
-        parsed_at: new Date().toISOString(),
-        source_media_type: mediaType,
-        usage: result.usage ?? null,
-      },
+      pdf_path: storagePath,
+      media_type: mediaType,
+      parsed_at: new Date().toISOString(),
+      model: ANTHROPIC_MODEL,
+      usage: result.usage ?? null,
     }
+    const existing = Array.isArray(lead.declaration_data) ? lead.declaration_data : []
+    const declarations = [...existing, entry]
 
     const { error: updErr } = await supabase
       .from('leads')
       .update({
-        declaration_data: declarationData,
-        declaration_pdf_path: storagePath,
+        declaration_data: declarations,
+        declaration_pdf_path: storagePath, // most-recent, for convenience
         declaration_parse_status: 'parsed',
         declaration_parsed_at: new Date().toISOString(),
       })
