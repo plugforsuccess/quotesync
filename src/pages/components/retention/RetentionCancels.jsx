@@ -9,6 +9,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
+import CaseNotesFeed from './CaseNotesFeed';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -813,18 +814,21 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
-            {/* Notes */}
+            {/* Notes summary (legacy free-text) */}
             <div>
-              <label className="dark-label">Notes</label>
+              <label className="dark-label">Notes summary</label>
               <textarea
                 className="dark-input"
                 value={form.notes}
                 onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
                 rows={3}
-                placeholder="Call notes, customer response..."
+                placeholder="Short summary (the permanent log is below)…"
                 style={{ resize: "vertical", fontFamily: "inherit" }}
               />
             </div>
+
+            <CaseNotesFeed caseType="cancel" caseId={event.id} agencyId={agencyId}
+              policyNo={event.policy_no} customerName={event.customer_name} />
 
             {/* Save */}
             <button
@@ -1401,18 +1405,21 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </select>
             </div>
 
-            {/* Notes */}
+            {/* Notes summary (legacy free-text) */}
             <div>
-              <label className="dark-label">Notes</label>
+              <label className="dark-label">Notes summary</label>
               <textarea
                 className="dark-input"
                 value={form.notes}
                 onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
                 rows={3}
-                placeholder="Call notes, customer response..."
+                placeholder="Short summary (the permanent log is below)…"
                 style={{ resize: "vertical", fontFamily: "inherit" }}
               />
             </div>
+
+            <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
+              policyNo={event.policy_no} customerName={event.customer_name} />
 
             {/* Save */}
             <button
