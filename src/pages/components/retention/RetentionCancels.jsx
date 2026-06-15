@@ -10,6 +10,7 @@ import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
 import { productLabel } from '../../../lib/productLabels';
+import { CallScriptBox, VoicemailScriptBox, renewalCallScript } from '../../../components/RetentionScripts';
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 
@@ -362,8 +363,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.75)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px 16px",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "16px",
       }}
       onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
@@ -372,8 +373,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         border: "1px solid var(--qs-border)",
         borderRadius: 14,
         width: "100%",
-        maxWidth: 640,
-        maxHeight: "90vh",
+        maxWidth: 1080,
+        maxHeight: "calc(100vh - 32px)",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -896,6 +897,12 @@ function renewalUrgencyColor(days) {
 
 function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true }) {
   const days = daysUntilRenewal(event.renewal_date);
+  // Script inputs — same source the queue list uses, so the words match.
+  const firstName = event.customer_name?.split(' ')[0] || 'there';
+  const scriptChangePct = parseFloat(event.premium_change_pct) || 0;
+  const rateShock = scriptChangePct >= 15;
+  const me = (producers || []).find(p => p.id === currentEmployeeId);
+  const agentName = me ? (me.preferred_name || me.first_name || 'your agent') : 'your agent';
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
@@ -1033,8 +1040,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.75)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px 16px",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "16px",
       }}
       onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
@@ -1043,8 +1050,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         border: "1px solid var(--qs-border)",
         borderRadius: 14,
         width: "100%",
-        maxWidth: 640,
-        maxHeight: "90vh",
+        maxWidth: 1080,
+        maxHeight: "calc(100vh - 32px)",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -1230,6 +1237,15 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 \ud83d\udcde Call {event.phone}
               </a>
             )}
+            <div style={{ marginTop: 12 }}>
+              <CallScriptBox label="Call script">
+                {renewalCallScript({
+                  firstName, product: event.product, renewalDate: event.renewal_date,
+                  rateShock, changePct: scriptChangePct,
+                })}
+              </CallScriptBox>
+              <VoicemailScriptBox firstName={firstName} agentName={agentName} product={event.product} />
+            </div>
           </div>
 
           {/* ── Section: Attempt Log ─────────────────────────── */}
