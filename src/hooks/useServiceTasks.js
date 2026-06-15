@@ -6,8 +6,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
-// task_type is the batch key. `lane` groups types by where the work happens, so
-// the block can be sequenced (judgment first, then mechanical, then clerical).
+// task_type is the batch key. `lane` groups types by who can do the work and in
+// what order: licensed coverage/price questions first, licensed policy changes
+// next, then the quick front-desk tasks to close out.
 export const TASK_TYPES = [
   { value: 'mortgagee', label: 'Mortgagee / Lienholder', icon: '🏦', lane: 'portal',    color: '#3B82F6' },
   { value: 'vehicle',   label: 'Add / Remove Vehicle',   icon: '🚗', lane: 'portal',    color: '#0EA5E9' },
@@ -22,13 +23,16 @@ export const TASK_TYPES = [
 
 export const TASK_TYPE_MAP = Object.fromEntries(TASK_TYPES.map(t => [t.value, t]));
 
-// Lanes in work-order: licensed judgment while fresh, mechanical portal edits
-// for momentum, quick clerical to close out.
+// Lanes in work-order. `licensed: true` means only a licensed agent can WORK the
+// task (anyone, including the front desk, can still log it). Plain labels so any
+// employee can tell at a glance who does what.
 export const LANES = [
-  { value: 'licensed', label: 'Licensed judgment',   hint: 'Needs a license — coverage & rate. Work these first, while fresh.' },
-  { value: 'portal',   label: 'Carrier-portal edits', hint: 'Mechanical changes — batch all of one type back-to-back.' },
-  { value: 'clerical', label: 'Quick clerical',       hint: 'Docs, ID cards, confirmations — close out with low energy.' },
+  { value: 'licensed', label: 'Coverage & Price', licensed: true,  hint: 'Premium questions & coverage changes — a licensed agent must do these. Work them first, while fresh.' },
+  { value: 'portal',   label: 'Policy Changes',   licensed: true,  hint: 'Add/remove a car, mortgage company, billing, address — a licensed agent must make these changes.' },
+  { value: 'clerical', label: 'Quick Tasks',      licensed: false, hint: 'ID cards, documents, confirmations — the front desk can do these. Close out last.' },
 ];
+
+export const LANE_MAP = Object.fromEntries(LANES.map(l => [l.value, l]));
 
 export const PRIORITY_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 };
 
