@@ -12,7 +12,7 @@ const PRODUCT_LABELS = {
   pup: 'Umbrella', boat: 'Boat', specialty_auto: 'Specialty Auto', life: 'Life',
   manufactured: 'Manufactured',
 };
-const label = p => PRODUCT_LABELS[p] || (p ? p.toUpperCase() : '—');
+const label = p => (PRODUCT_LABELS[p] || p || '—').toUpperCase();
 
 function Chip({ children, color }) {
   return (
@@ -98,7 +98,7 @@ export default function CustomerSearchPage() {
         autoFocus
         value={term}
         onChange={e => setTerm(e.target.value)}
-        placeholder="Search by customer name…"
+        placeholder="Search by name, phone, or policy #…"
         style={{
           width: '100%', padding: '12px 16px', fontSize: 15,
           borderRadius: 10, border: '1px solid var(--qs-border)',
@@ -163,7 +163,7 @@ export default function CustomerSearchPage() {
                 <div>
                   <span style={{ color: 'var(--qs-muted)' }}>Active: </span>
                   {c.active_products?.length
-                    ? c.active_products.map(label).join(', ')
+                    ? <span style={{ color: '#34D399', fontWeight: 600 }}>{c.active_products.map(label).join(', ')}</span>
                     : <span style={{ color: 'var(--qs-muted)' }}>none</span>}
                 </div>
                 {c.lost_products?.length > 0 && (
