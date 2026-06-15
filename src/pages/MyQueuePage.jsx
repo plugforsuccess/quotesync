@@ -26,14 +26,16 @@ function agentNameFor(employee) {
     .filter(Boolean).join(' ') || '[your name]';
 }
 
-// Voicemail script shown on the call card. Deliberately generic — no premium or
-// coverage detail, since a voicemail can be overheard. Tells the customer to
-// call the agency back (the front desk fields it and routes via the callback
-// intake). Copyable for consistency.
-function VoicemailScript({ firstName, agentName }) {
+// Voicemail script shown on the call card. Names the product line (low
+// sensitivity) but no premium or coverage detail, since a voicemail can be
+// overheard. Gives the customer a warm reason to call the agency back (the
+// front desk fields it and routes via the callback intake). Copyable.
+function VoicemailScript({ firstName, agentName, product }) {
+  const policy = product ? `your ${productLabel(product).toLowerCase()} policy` : 'your policy';
   const text = `Hi ${firstName}, this is ${agentName} with your Allstate agency. `
-    + `I'm reaching out about your account — nothing urgent. When you get a moment, `
-    + `please give our office a call back and we'll take care of everything. Thanks, talk soon!`;
+    + `I was reviewing ${policy} and wanted to connect with you personally. `
+    + `When you get a moment, give our office a quick call back — we want to make sure `
+    + `you're getting everything you should be. Thanks, talk soon!`;
   return (
     <div style={{
       background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
@@ -1005,7 +1007,7 @@ export default function MyQueuePage() {
         </div>
 
         {/* Voicemail script — read if no answer (generic, no balance/coverage). */}
-        <VoicemailScript firstName={firstName} agentName={agentName} />
+        <VoicemailScript firstName={firstName} agentName={agentName} product={event.product} />
 
         {/* Status line: promise / last attempt / callback ────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -1362,7 +1364,7 @@ export default function MyQueuePage() {
 
         {/* Voicemail script — read if no answer. Deliberately generic (no
             premium/coverage), since a voicemail can be overheard. */}
-        <VoicemailScript firstName={event.customer_name?.split(' ')[0] || 'there'} agentName={agentNameFor(employee)} />
+        <VoicemailScript firstName={event.customer_name?.split(' ')[0] || 'there'} agentName={agentNameFor(employee)} product={event.product} />
 
         {/* Row 2: Premium + change + attempts */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>

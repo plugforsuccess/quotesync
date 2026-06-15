@@ -143,6 +143,13 @@ export default function EmployeeLayout() {
     return <Navigate to="/my/service-batch" replace />;
   }
 
+  // A principal who flips to their Principal hat belongs in the agency app, not
+  // the employee shell — bounce them out so they get the agency-gated nav
+  // instead of being stranded on the rep tabs.
+  if (isPrincipal && persona === 'principal') {
+    return <Navigate to="/agency/retention" replace />;
+  }
+
   // Responsive side gutter shared by the nav bar and the content area so they
   // stay aligned while still letting content use the full viewport width.
   const pagePadX = 'clamp(1rem, 3vw, 3rem)';
@@ -193,7 +200,7 @@ export default function EmployeeLayout() {
           {/* Right cluster: persona switcher · identity · sign out */}
           <div className="flex items-center gap-3 flex-shrink-0">
             <div className="hidden sm:block">
-              <PersonaSwitcher compact />
+              <PersonaSwitcher compact onLight />
             </div>
 
             <div className="flex items-center gap-2">
