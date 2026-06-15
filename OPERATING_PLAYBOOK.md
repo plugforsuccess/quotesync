@@ -3,6 +3,12 @@
 
 > **The one rule:** Protect Tracy's proactive time. A renewal *saved* is worth more than a phone *answered fast*. Everything below exists to keep Tracy working renewal cases instead of reacting to the phone.
 
+> **⚠️ Status: you don't have the front desk yet.** The Front Desk role below is
+> currently **vacant**. Until you hire it, run the **"Interim — no front desk"**
+> model (§ near the bottom): Tracy is licensed, so she can cover reactive work —
+> the discipline becomes *when* she does it (batched), not *whether*. Everything
+> else in this playbook is how it runs **once the front desk is in place.**
+
 ---
 
 ## Who does what
@@ -35,11 +41,38 @@
 **Front Desk:** phones all day · resolve clerical items as they come · keep the service-task queue current.
 
 **Tracy:**
-- **Morning — RENEWAL BLOCK (protected, phone off):** work the top renewal cases in the queue, ahead of the bill. Cross-sell flagged → hand to You.
-- **Afternoon — SERVICE BATCH:** clear the licensed service tasks from the queue in one pass.
-- **Late day:** callbacks & follow-ups.
+- **Morning — RENEWAL BLOCK (protected, phone off):** work the top of **My Queue → Renewals**, ahead of the bill. Cross-sell flagged → hand to You.
+- **Afternoon — SERVICE BATCH:** clear the service tasks in one pass, in lane order: **Coverage & Price → Policy Changes → Quick Tasks**.
+- **Late day:** clear the **📅 Callbacks** filter and any follow-ups.
 
 **You:** new-business quoting/binding in defended blocks · check the queue for cross-sell hand-offs · run the weekly review.
+
+---
+
+## How Tracy works a case in QuoteSync
+
+The whole loop lives in **My Queue** (Cancellations + Renewals tabs). For each case:
+
+1. **📞 Call** — dials from the card.
+2. **Read the script** — a per-customer **Call script** (name, product, date, and
+   for cancels the balance) sits under the button. Rate-increase renewals lead
+   with *advocacy*, not the percentage. No answer → read the **Voicemail** script
+   (overhear-safe — no balances/coverage).
+3. **Open case →** — the full work surface: log the call, **schedule a callback**,
+   add a **Case Log** note, and set the outcome.
+4. **Record the outcome where the data is captured:**
+   - **Renewal saved →** *Confirmed*, then **type the final premium** so the system
+     logs **💰 premium saved**.
+   - **Cancel saved →** *Saved* / *Rewritten*. Lost either way → *Lost / Won't Renew*.
+5. **Callbacks** scheduled here resurface in the **📅 Callbacks** filter (overdue/
+   soonest first) — work that list in the late-day block.
+
+> The list cards are deliberately lean (**Call · Snooze · Open case**); all the
+> "what happened" recording happens inside **Open case**, so nothing is lost and
+> the **saved-premium** number is always captured.
+>
+> New hire? Walk them through **`TRACY_ONBOARDING.md`** — it includes a hands-on
+> practice run against three seeded test cases.
 
 ---
 
@@ -55,9 +88,11 @@
 
 ## What we measure *(not "calls answered")*
 
-- **Tracy:** renewal saves + cross-sell hand-offs **↑** · reactive time **↓**
+- **Tracy:** renewal saves + **premium saved** (the $ negotiated off the renewal offer) + cross-sell hand-offs **↑** · reactive time **↓**
 - **Front Desk:** % of inbound resolved **without** escalating to Tracy **↑**
 - **Agency:** Net Retention trend on the QuoteSync scoreboard **↑**
+
+*All of these live on Tracy's **Scorecard** tab.*
 
 ---
 
@@ -65,6 +100,33 @@
 
 Renewal save rate · cross-sells surfaced · service queue cleared · anything stuck.
 **If reactive load creeps back in — fix the triage rules, not the people.**
+
+---
+
+## Interim — running without a front desk *(today)*
+
+The front desk is the role that *protects* Tracy's time; it was never the role
+that does work she can't. Tracy is licensed, so she can cover everything — the
+only question is **when**. Until you hire the front desk:
+
+- **Protect the morning renewal block — phone to voicemail.** This is the one
+  rule that can't bend. Use the in-app voicemail script.
+- **Batch the reactive work into two windows** (late-morning + mid-afternoon).
+  Voicemail collects the rest; Tracy returns calls in those windows instead of
+  being interrupted all day.
+- **Every reactive call gets logged** — resolve it on the call where possible, or
+  queue it to the **Service Batch**.
+- **Her triage is two buckets** (no "escalate to a licensed person" — she *is*
+  one): **Save now** (cancel / upset / payment-due-today → work immediately) vs
+  **Service** (resolve or queue).
+- **You (owner)** decide who, if anyone, picks up the phone during Tracy's
+  protected block — simplest is voicemail-everything; optionally you grab the
+  red-flag "I'm cancelling" calls.
+
+> Two things to get right on day one so her queue is actually populated:
+> **(1)** Tracy's employee record must have the **`service_outbound`** role (that's
+> the pool renewal/cancel cases auto-assign to), and **(2)** someone must own the
+> **Allstate report uploads** — QuoteSync has no work in it until those are imported.
 
 ---
 *The whole model in one breath: the Front Desk buys back Tracy's attention so she can do the one thing that compounds — proactive renewal saves and cross-sell — while You bring in new business. Shield the phone, resolve-or-queue everything reactive, batch what's left, and measure saves, not calls.*
