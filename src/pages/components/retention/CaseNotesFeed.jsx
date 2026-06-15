@@ -34,13 +34,13 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
   return (
     <div style={{ marginTop: 8 }}>
       <label className="dark-label">
-        Notes log <span style={{ fontWeight: 400, color: 'var(--qs-dim)', fontSize: 11 }}>· append-only, attributed</span>
+        Case Log
       </label>
 
       {/* Add */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
         <textarea className="dark-input" rows={2} value={body} onChange={e => setBody(e.target.value)}
-          placeholder="Add a note (saved permanently, attributed to you)…" style={{ resize: 'vertical', fontFamily: 'inherit' }} />
+          placeholder="Add comments (saved permanently, attributed to you)…" style={{ resize: 'vertical', fontFamily: 'inherit' }} />
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           <select className="dark-input" value={noteType} onChange={e => setNoteType(e.target.value)} style={{ maxWidth: 150 }}>
             {NOTE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -50,7 +50,7 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
           <button onClick={submit} disabled={!body.trim() || add.isPending}
             style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: '#3B82F6', color: '#fff',
               fontWeight: 600, fontSize: 13, cursor: 'pointer', opacity: (!body.trim() || add.isPending) ? 0.5 : 1 }}>
-            {add.isPending ? 'Saving…' : 'Add note'}
+            {add.isPending ? 'Saving…' : 'Add comment'}
           </button>
         </div>
         {err && <div style={{ fontSize: 12, color: '#EF4444' }}>{err}</div>}
