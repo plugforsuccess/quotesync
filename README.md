@@ -48,6 +48,3 @@ node --test tests/unit   # unit tests
 - **`QUOTESYNC_OS_AUDIT.md`** — file-cited audit of capabilities and gaps.
 - **`OPERATING_PLAYBOOK.md`** — how the agency runs day-to-day.
 - `docs/` — retention engine, SOPs, user manual.
-
-`PRODUCT.md` describes the aspirational product vision; treat it as a roadmap,
-not a description of current behavior (see the trust map in `CLAUDE.md`).

@@ -2,7 +2,7 @@
 
 Guidance for Claude (and humans) working in this repository. Written to reflect
 the codebase **as it actually is**, not as the marketing docs aspire it to be.
-Read this before trusting `PRODUCT.md` or `README.md` (see "Docs: trust map").
+See the "Docs: trust map" below for which docs to trust.
 
 ---
 
@@ -11,7 +11,12 @@ Read this before trusting `PRODUCT.md` or `README.md` (see "Docs: trust map").
 QuoteSync is an **insurance-agency operations platform**, built first and
 foremost as the **retention / service-desk operating system for a single
 Allstate agency** (Wiley-Wilson / "insuredbycam", Georgia). It is *not* a
-carrier-agnostic "book intelligence" SaaS yet, despite how `PRODUCT.md` reads.
+carrier-agnostic "book intelligence" SaaS yet.
+
+> A prior `PRODUCT.md` pitched an aspirational, carrier-agnostic "book
+> intelligence" SaaS (AMS connectors/SFTP, nightly 0–100 risk scoring). It was
+> removed because it didn't match the code; this file and the audit are the
+> accurate references.
 
 The app bundles several distinct surfaces under one React SPA:
 
@@ -60,8 +65,7 @@ For the honest, file-cited assessment of capabilities and gaps, read
 | Charts/PDF | Recharts, `@react-pdf/renderer`; XLSX/CSV via `xlsx` + `papaparse` |
 
 There is **no TypeScript** — the app is `.jsx`/`.js`. There is **no nightly
-cron risk-scoring engine** and **no 0–100 retention risk score** in the code
-(both are claimed in `PRODUCT.md`; neither exists).
+cron risk-scoring engine** and **no 0–100 retention risk score** in the code.
 
 ---
 
@@ -159,7 +163,6 @@ write code/docs that assume them:
 | `QUOTESYNC_OS_AUDIT.md` | ✅ accurate | File-cited ground-truth audit of capabilities & gaps |
 | `OPERATING_PLAYBOOK.md` | ✅ accurate | Real day-to-day agency workflow |
 | `docs/RETENTION_ENGINE.md`, `docs/SOP.md`, `docs/USER_MANUAL.md` | ✅ mostly | Operational references |
-| `PRODUCT.md` | ⚠️ aspirational | Pitch-deck vision; several claims (React 18, AMS connectors/SFTP, nightly 0–100 risk scoring, carrier-agnostic, commit count) are **not** in the code |
 | `README.md` | n/a | Repository overview (was previously the stock Vite template) |
 | `*_TROUBLESHOOTING.md`, `*_FIX.md`, `PR_DESCRIPTION.md`, `zz` | ⚠️ point-in-time | Historical artifacts; verify before relying on them. `zz` is junk (a `less` help dump) |
 
