@@ -18,6 +18,7 @@ import { useForceTheme } from '../contexts/ThemeContext';
 // otherwise the employee's single role. Scorecard is shared.
 const SCORECARD_ITEM     = { to: '/my/scorecard',     label: 'Scorecard' };
 const SERVICE_BATCH_ITEM = { to: '/my/service-batch', label: 'Service Batch' };
+const SEARCH_ITEM        = { to: '/my/customers',     label: '🔎 Search' };
 // Time Clock (/punch) is hidden from the employee portal for now — the punch
 // clock isn't in use yet. The route still works if opened directly; re-add
 // { to: '/punch', label: 'Time Clock' } to the tab arrays below to restore it.
@@ -26,6 +27,7 @@ const SERVICE_TABS = [
   { to: '/my/today', label: 'Today' },
   { to: '/my/queue', label: 'My Queue' },
   SERVICE_BATCH_ITEM,
+  SEARCH_ITEM,
   SCORECARD_ITEM,
 ];
 
@@ -38,6 +40,7 @@ const UNLICENSED_ALLOWED = ['/my/service-batch', '/my/change-password'];
 
 const SALES_TABS = [
   { to: '/my/cross-sell', label: 'Cross-Sell' },
+  SEARCH_ITEM,
   SCORECARD_ITEM,
   { to: '/my/referrals',  label: 'Referrals' },
 ];
