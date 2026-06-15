@@ -460,6 +460,12 @@ function TodayRow({ index, item, todayStr, onOpen }) {
               background: '#10B98122', color: '#34D399', letterSpacing: '0.05em',
             }}>CALLED TODAY</span>
           )}
+          {isCancel && item.promise_date && new Date(item.promise_date) < new Date() && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+              background: '#EF444433', color: '#FCA5A5', letterSpacing: '0.05em',
+            }}>⚠ PAY PROMISE OVERDUE</span>
+          )}
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {titleCaseName(item.customer_name) || '—'}
