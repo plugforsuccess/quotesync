@@ -10,6 +10,7 @@ import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
 import CaseNotesFeed from './CaseNotesFeed';
+import LogServiceTaskButton from './LogServiceTaskButton';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -819,6 +820,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             <CaseNotesFeed caseType="cancel" caseId={event.id} agencyId={agencyId}
               policyNo={event.policy_no} customerName={event.customer_name} />
 
+            <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
+              customerName={event.customer_name} customerPhone={event.phone} source="internal" />
+
             {/* Save */}
             <button
               onClick={save}
@@ -1399,6 +1403,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
             <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
               policyNo={event.policy_no} customerName={event.customer_name} />
+
+            <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
+              customerName={event.customer_name} customerPhone={event.phone} source="renewal_call" />
 
             {/* Save */}
             <button
