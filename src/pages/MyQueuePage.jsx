@@ -177,6 +177,13 @@ export default function MyQueuePage() {
   const [lostTarget, setLostTarget] = useState(null); // { type, event }
   const [lostReason, setLostReason] = useState('');
 
+  // Renewal list filter + closing-window mode. Declared up here (not next to the
+  // filter memo) because renewalStats below reads closingMode — declaring it
+  // later would be a temporal-dead-zone access.
+  const [renewalFilter, setRenewalFilter] = useState('all');
+  const [closingMode, setClosingMode] = useState('soon'); // 'soon' (≤14d) | 'proactive' (≥21d)
+  const clickTimerRef = useRef(null);
+
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
 
@@ -362,12 +369,8 @@ export default function MyQueuePage() {
   const displayCancelCases = focusMode ? focusCases : filteredCancelCases;
 
   // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
-  const [renewalFilter, setRenewalFilter] = useState('all');
-  // Closing-window KPI mode: 'soon' (≤14d, renewal imminent) ↔ 'proactive'
-  // (≥21d, the ideal early-contact window). Single-click filters; double-click
-  // toggles the window. clickTimerRef disambiguates the two.
-  const [closingMode, setClosingMode] = useState('soon');
-  const clickTimerRef = useRef(null);
+  // (renewalFilter / closingMode / clickTimerRef are declared at the top of the
+  // component so renewalStats can read closingMode without a TDZ error.)
   const inClosingWindow = (d) => isNaN(d) ? false : (closingMode === 'proactive' ? d >= 21 : d <= 14);
   const filteredRenewalCases = useMemo(() => {
     const daysOf = (r) => {
