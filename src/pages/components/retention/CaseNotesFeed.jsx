@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { useCaseNotes, NOTE_TYPES, NOTE_TYPE_COLOR } from '../../../hooks/useCaseNotes';
 import CopyButton from '../../../components/CopyButton';
-import { formatNoteForAllstate, formatNotesForAllstate } from '../../../lib/allstateClipboard';
+import { formatNoteForAllstate } from '../../../lib/allstateClipboard';
 
 function fmtTime(ts) {
   if (!ts) return '';
@@ -33,17 +33,9 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
 
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-        <label className="dark-label">
-          Notes log <span style={{ fontWeight: 400, color: 'var(--qs-dim)', fontSize: 11 }}>· append-only, attributed</span>
-        </label>
-        {notes.length > 0 && (
-          <CopyButton
-            label="Copy all for Allstate"
-            getText={() => formatNotesForAllstate(notes, { customerName, policyNo })}
-          />
-        )}
-      </div>
+      <label className="dark-label">
+        Notes log <span style={{ fontWeight: 400, color: 'var(--qs-dim)', fontSize: 11 }}>· append-only, attributed</span>
+      </label>
 
       {/* Add */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>

@@ -48,8 +48,8 @@ function navPillClass({ isActive }) {
   return [
     'qs-focusable px-4 py-2 rounded-lg text-[0.95rem] font-semibold whitespace-nowrap transition-colors',
     isActive
-      ? 'bg-white/10 text-white'
-      : 'text-gray-300 hover:text-white hover:bg-white/5',
+      ? 'bg-blue-100 text-blue-700'
+      : 'text-gray-600 hover:text-gray-900 hover:bg-black/5',
   ].join(' ');
 }
 
@@ -156,7 +156,7 @@ export default function EmployeeLayout() {
     }}>
 
       {/* ── Top nav bar (principal-style glass header) ───────────────── */}
-      <header className="sticky top-0 z-50 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/10">
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-black/10 shadow-sm">
         {/* Animated gradient accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x" />
 
@@ -175,10 +175,10 @@ export default function EmployeeLayout() {
               </div>
             )}
             <div className="min-w-0">
-              <div className="font-black text-base sm:text-lg tracking-tight text-white truncate">
+              <div className="font-black text-base sm:text-lg tracking-tight text-gray-900 truncate">
                 {agencyName}
               </div>
-              <div className="text-xs text-gray-400 truncate">{agencySubtext}</div>
+              <div className="text-xs text-gray-500 truncate">{agencySubtext}</div>
             </div>
           </NavLink>
 
@@ -203,14 +203,14 @@ export default function EmployeeLayout() {
                 {initials}
               </div>
               <div className="hidden lg:block min-w-0">
-                <div className="text-[0.8125rem] font-semibold text-white truncate leading-tight">{fullName}</div>
-                <div className="text-xs text-gray-400 truncate leading-tight">{roleLabel}</div>
+                <div className="text-[0.8125rem] font-semibold text-gray-900 truncate leading-tight">{fullName}</div>
+                <div className="text-xs text-gray-500 truncate leading-tight">{roleLabel}</div>
               </div>
             </div>
 
             <button
               onClick={handleSignOut}
-              className="qs-focusable px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-300 hover:text-white border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 transition-colors"
+              className="qs-focusable px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-600 hover:text-red-600 border border-black/10 hover:border-red-400 hover:bg-red-50 transition-colors"
             >
               Sign out
             </button>

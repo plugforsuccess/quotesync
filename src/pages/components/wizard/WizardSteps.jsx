@@ -1364,7 +1364,6 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
             { icon: Clock, text: 'Takes 60 seconds' },
             { icon: Shield, text: 'Bank-level security' },
             { icon: CheckCircle, text: 'No forms to fill out' },
-          // eslint-disable-next-line no-unused-vars
           ].map(({ icon: Icon, text }) => (
             <div key={text} className="flex items-center gap-2">
               <Icon className="w-4 h-4 text-success-500 flex-shrink-0" />
