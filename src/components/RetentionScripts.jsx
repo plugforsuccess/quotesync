@@ -31,15 +31,17 @@ function spokenDate(d) {
 }
 
 // Live-answer renewal script. Introduces the agent, names the product + a
-// spoken date, and leads with value. rateShock surfaces the increase up front.
-export function renewalCallScript({ firstName, agentName = 'your agent', product, renewalDate, rateShock, changePct }) {
+// spoken date, and leads with advocacy. For rate-shock cases it acknowledges
+// "a change to your rate" WITHOUT volunteering the percentage — leading with the
+// number frames the call as bad news and invites the customer to shop. The rep
+// can quote the exact figure if asked; it's on the card.
+export function renewalCallScript({ firstName, agentName = 'your agent', product, renewalDate, rateShock }) {
   firstName = titleCaseName(firstName);
   const line = productLabel(product).toLowerCase();
   const when = spokenDate(renewalDate);
-  const pct = Math.abs(Number(changePct) || 0);
   const intro = `Hi ${firstName}, this is ${agentName} with your Allstate agency.`;
   return rateShock
-    ? `"${intro} I'm reaching out ahead of your ${line} policy renewal on ${when}. I noticed the premium is going up about ${pct.toFixed(0)}%, so I'd like to review it together and look at a few options to keep your rate as low as we can."`
+    ? `"${intro} I'm reaching out ahead of your ${line} renewal on ${when} — I like to review these personally before they go through. There's a change to your rate this year, and that's exactly why I wanted to call: let's go over your coverage together and make sure you're getting every discount you've earned."`
     : `"${intro} I'm calling ahead of your ${line} policy renewal on ${when} — I want to make sure your coverage still fits and answer any questions before it renews."`;
 }
 
