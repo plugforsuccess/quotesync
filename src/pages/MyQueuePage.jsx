@@ -17,6 +17,7 @@ import { EventDetailModal, RenewalDetailModal } from './components/retention/Ret
 import ReadingColumn from '../components/ReadingColumn';
 import InterventionPicker from '../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../lib/interventions';
+import { productLabel } from '../lib/productLabels';
 
 // The rep reads scripts verbatim — full name, or a clear placeholder if the
 // employee record hasn't loaded.
@@ -707,7 +708,7 @@ export default function MyQueuePage() {
       : (days !== null && days <= 7) ? '#FBBF24'
       : 'var(--qs-dim)';
     const sub = [
-      event.product?.toUpperCase(),
+      productLabel(event.product),
       event.amount_due > 0 ? `${fmt$(event.amount_due)} due` : null,
       policyCount > 1 ? `${policyCount} policies` : `${event.attempt_count || 0} attempts`,
     ].filter(Boolean).join(' · ');
@@ -756,7 +757,7 @@ export default function MyQueuePage() {
     const changePct = parseFloat(event.premium_change_pct) || 0;
     const saveable = expectedSaveablePremium(event, churnModel, effectiveSaveLift);
     const sub = [
-      event.product?.toUpperCase(),
+      productLabel(event.product),
       event.premium != null ? fmt$(event.premium) : null,
       changePct >= 15 ? `⚠ +${changePct.toFixed(0)}%` : null,
       saveable > 0 ? `~${fmt$(saveable)} saveable` : null,
@@ -927,7 +928,7 @@ export default function MyQueuePage() {
               border: '1px solid rgba(16,185,129,0.25)', color: '#34D399',
             }}
             title="Quoting this line adds a multi-policy discount that lowers their current premium — a save lever, not just an upsell.">
-              💡 Bundle {event.cross_sell_product?.toUpperCase()} → lower premium
+              💡 Bundle {productLabel(event.cross_sell_product)} → lower premium
             </span>
           )}
           {event.ai_transcript && (
@@ -1127,13 +1128,13 @@ export default function MyQueuePage() {
               <button
                 className="qs-focusable"
                 onClick={() => handleInlineResolve('cancel', event, 'saved', true)}
-                title={`Saved by bundling ${event.cross_sell_product?.toUpperCase()} — counts the cross-sell as converted.`}
+                title={`Saved by bundling ${productLabel(event.cross_sell_product)} — counts the cross-sell as converted.`}
                 style={{
                   ...btnBase,
                   border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.14)',
                   color: '#34D399',
                 }}>
-                ✓ Saved + bundled {event.cross_sell_product?.toUpperCase()}
+                ✓ Saved + bundled {productLabel(event.cross_sell_product)}
               </button>
             )}
 
@@ -1302,7 +1303,7 @@ export default function MyQueuePage() {
                   border: '1px solid rgba(16,185,129,0.25)',
                   color: '#34D399', flexShrink: 0,
                 }}>
-                  💡 X-sell: {event.cross_sell_product?.toUpperCase()}
+                  💡 X-sell: {productLabel(event.cross_sell_product)}
                 </span>
               )}
             </div>
@@ -2135,7 +2136,7 @@ export default function MyQueuePage() {
                 <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
                   letterSpacing: '0.05em', marginBottom: 2 }}>Product</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>
-                  {logCallTarget.event.product?.toUpperCase()}
+                  {productLabel(logCallTarget.event.product)}
                 </div>
               </div>
             </div>
