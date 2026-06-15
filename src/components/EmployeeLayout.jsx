@@ -26,8 +26,8 @@ const SEARCH_ITEM        = { to: '/my/customers',     label: '🔎 Search' };
 const SERVICE_TABS = [
   { to: '/my/today', label: 'Today' },
   { to: '/my/queue', label: 'My Queue' },
-  SERVICE_BATCH_ITEM,
   SEARCH_ITEM,
+  SERVICE_BATCH_ITEM,
   SCORECARD_ITEM,
 ];
 
