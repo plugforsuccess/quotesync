@@ -1286,7 +1286,7 @@ export default function MyQueuePage() {
             </div>
 
             <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginTop: 3 }}>
-              {event.policy_no} · {event.product}
+              {event.policy_no} · {productLabel(event.product)}
             </div>
           </div>
 
@@ -1318,6 +1318,7 @@ export default function MyQueuePage() {
         <CallScriptBox label="Call script">
           {renewalCallScript({
             firstName: event.customer_name?.split(' ')[0] || 'there',
+            agentName: agentNameFor(employee),
             product: event.product, renewalDate: event.renewal_date,
             rateShock, changePct,
           })}

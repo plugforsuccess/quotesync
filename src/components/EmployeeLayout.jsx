@@ -162,7 +162,7 @@ export default function EmployeeLayout() {
     }}>
 
       {/* ── Top nav bar (principal-style glass header) ───────────────── */}
-      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-black/10 shadow-sm">
+      <header className="relative z-50 bg-white/90 backdrop-blur-xl border-b border-black/10 shadow-sm">
         {/* Animated gradient accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x" />
 
