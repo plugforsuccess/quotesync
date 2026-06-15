@@ -7,6 +7,9 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useActiveEmployees } from '../hooks/useEmployees';
+import { titleCaseName } from '../lib/names';
+import { productLabel } from '../lib/productLabels';
 import { useServiceTasks } from '../hooks/useServiceTasks';
 import { usePersona } from '../hooks/usePersona';
 import { hatForRoles } from '../config/navConfig';
@@ -61,6 +64,9 @@ export default function TodayPage() {
   const { data: employee } = useCurrentEmployee();
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
+  // Needed so the detail modal can resolve the rep's name for the script
+  // (agent name) and the assignee — mirrors My Queue.
+  const { data: employees = [] } = useActiveEmployees(orgId);
   // The dial list is cross-role by design, but the production goal strip is a
   // sales overlay — only show it when the sales hat is active (a dual-role
   // producer wearing Service shouldn't see it).
@@ -376,7 +382,8 @@ export default function TodayPage() {
           onUpdate={updateCancel}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
+          canReassign={false}
         />,
         document.body
       )}
@@ -387,7 +394,8 @@ export default function TodayPage() {
           onUpdate={updateRenewal}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
+          canReassign={false}
         />,
         document.body
       )}
@@ -454,12 +462,12 @@ function TodayRow({ index, item, todayStr, onOpen }) {
           )}
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {item.customer_name || '—'}
+            {titleCaseName(item.customer_name) || '—'}
           </span>
         </div>
         <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
           {dateLabel} · {fmt$(premium)}
-          {item.product ? ` · ${item.product}` : ''}
+          {item.product ? ` · ${productLabel(item.product)}` : ''}
         </div>
       </div>
 
