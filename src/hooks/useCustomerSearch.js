@@ -11,13 +11,9 @@ export function useCustomerSearch(agencyId, term) {
     enabled: !!agencyId && q.length >= 2,
     staleTime: 60 * 1000,
     queryFn: async () => {
+      // Server-side search across name, phone (digits), and policy number.
       const { data, error } = await supabase
-        .from('household_directory')
-        .select('*')
-        .eq('agency_id', agencyId)
-        .ilike('display_name', `%${q}%`)
-        .order('display_name', { ascending: true })
-        .limit(50);
+        .rpc('customer_search', { p_agency_id: agencyId, p_query: q });
       if (error) throw error;
       return data || [];
     },

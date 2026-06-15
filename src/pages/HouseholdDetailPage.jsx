@@ -87,6 +87,10 @@ export default function HouseholdDetailPage() {
   const resolvedTasks = serviceTasks.filter(t => t.resolved);
   const [showResolved, setShowResolved] = useState(false);
 
+  // History at a glance: how many times this household renewed / was saved.
+  const renewedCount = records.filter(r => r.source === 'renewal' && (r.status === 'confirmed' || r.status === 'auto_resolved')).length;
+  const cancelSavedCount = records.filter(r => r.source === 'cancel' && r.status === 'saved').length;
+
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '8px 0' }}>
       <Link to={backTo} style={{ fontSize: 13, color: '#3B82F6', textDecoration: 'none' }}>
@@ -117,6 +121,22 @@ export default function HouseholdDetailPage() {
               <span>
                 <span style={{ color: 'var(--qs-muted)' }}>Lost: </span>
                 <span style={{ color: '#F87171' }}>{household.lost_products.map(label).join(', ')}</span>
+              </span>
+            )}
+          </div>
+        )}
+        {(renewedCount > 0 || cancelSavedCount > 0) && (
+          <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+            {renewedCount > 0 && (
+              <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 11px', borderRadius: 999,
+                background: 'rgba(52,211,153,0.14)', border: '1px solid rgba(52,211,153,0.35)', color: '#34D399' }}>
+                ✅ {renewedCount} renewed
+              </span>
+            )}
+            {cancelSavedCount > 0 && (
+              <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 11px', borderRadius: 999,
+                background: 'rgba(52,211,153,0.14)', border: '1px solid rgba(52,211,153,0.35)', color: '#34D399' }}>
+                💚 {cancelSavedCount} cancel save{cancelSavedCount === 1 ? '' : 's'}
               </span>
             )}
           </div>
