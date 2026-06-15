@@ -9,6 +9,8 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
+import { productLabel } from '../../../lib/productLabels';
+import { CallScriptBox, VoicemailScriptBox, renewalCallScript } from '../../../components/RetentionScripts';
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 
@@ -139,7 +141,7 @@ function CustomerDrilldownModal({ event, onClose }) {
         {/* Detail grid — color values used as inline style props */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
           {[
-            { label: "Product",          value: event.product?.toUpperCase() || "\u2014",                              color: "var(--qs-text)" },
+            { label: "Product",          value: productLabel(event.product) || "\u2014",                              color: "var(--qs-text)" },
             { label: "Cancel Date",      value: event.cancel_effective_date || "\u2014",                               color: urgencyColor(days) },
             { label: "Days Left",        value: days <= 0 ? "PAST DUE" : `${days} days`,                         color: urgencyColor(days) },
             { label: "Phone",            value: event.phone || "\u2014",                                               color: event.phone ? "var(--qs-text)" : "var(--qs-muted)" },
@@ -224,7 +226,7 @@ function OtherCasesWarning({ cases }) {
 
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
-function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [] }) {
+function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [], canReassign = true }) {
   const days = daysUntilCancel(event.cancel_effective_date);
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
@@ -361,8 +363,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.75)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px 16px",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "16px",
       }}
       onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
@@ -371,8 +373,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         border: "1px solid var(--qs-border)",
         borderRadius: 14,
         width: "100%",
-        maxWidth: 640,
-        maxHeight: "90vh",
+        maxWidth: 1080,
+        maxHeight: "calc(100vh - 32px)",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -392,7 +394,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
-              Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
+              Policy {event.policy_no} · {productLabel(event.product)} · Cycle {event.cycle}
             </div>
           </div>
           <button
@@ -524,10 +526,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 fontSize: 11, fontWeight: 700, color: '#10B981',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
-                💡 Bundle to save — {event.cross_sell_product?.toUpperCase()}
+                💡 Bundle to save — {productLabel(event.cross_sell_product)}
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Quote <strong>{event.cross_sell_product?.toUpperCase()}</strong> as part of the save: a
+                Quote <strong>{productLabel(event.cross_sell_product)}</strong> as part of the save: a
                 multi-policy bundle adds a discount that <strong>lowers this premium</strong> — often the
                 fix for a payment-driven cancellation. If they bundle, the cancel resolves and this
                 cross-sell auto-releases as a follow-through opportunity.
@@ -776,18 +778,28 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <label className="dark-label">Assigned To</label>
-                <select
-                  className="dark-select"
-                  value={form.assigned_to_id}
-                  onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
-                >
-                  <option value="">Unassigned</option>
-                  {producers.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                    </option>
-                  ))}
-                </select>
+                {canReassign ? (
+                  <select
+                    className="dark-select"
+                    value={form.assigned_to_id}
+                    onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+                  >
+                    <option value="">Unassigned</option>
+                    {producers.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                    border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-text)" }}>
+                    {(() => {
+                      const a = producers.find(p => p.id === form.assigned_to_id);
+                      return a ? (a.preferred_name || `${a.first_name || ""} ${a.last_name || ""}`.trim()) : "Unassigned";
+                    })()}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="dark-label">Promise Date</label>
@@ -883,8 +895,14 @@ function renewalUrgencyColor(days) {
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
 
-function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId }) {
+function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true }) {
   const days = daysUntilRenewal(event.renewal_date);
+  // Script inputs — same source the queue list uses, so the words match.
+  const firstName = event.customer_name?.split(' ')[0] || 'there';
+  const scriptChangePct = parseFloat(event.premium_change_pct) || 0;
+  const rateShock = scriptChangePct >= 15;
+  const me = (producers || []).find(p => p.id === currentEmployeeId);
+  const agentName = me ? (me.preferred_name || me.first_name || 'your agent') : 'your agent';
   const [saving, setSaving] = useState(false);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
@@ -896,6 +914,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     notes: event.notes || "",
     shopping_reason: event.shopping_reason || "",
   });
+  // Kept out of `form` so it's only written to renewal_cases on the confirmed
+  // (saved) path — the column it targets is the new saved_premium field.
+  const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
 
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
@@ -988,6 +1009,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       updates.final_outcome_set_by = currentEmployeeId;
       updates.final_outcome_set_at = new Date().toISOString();
     }
+    // Saved premium — what the agent got the renewal down to. Captured only on a
+    // confirmed save, so other resolutions never touch the new column.
+    if (form.status === "confirmed") {
+      const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+      updates.saved_premium = Number.isNaN(sp) ? null : sp;
+    }
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
     await onUpdate(event.id, updates);
@@ -1013,8 +1040,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.75)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px 16px",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "16px",
       }}
       onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
@@ -1023,8 +1050,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         border: "1px solid var(--qs-border)",
         borderRadius: 14,
         width: "100%",
-        maxWidth: 640,
-        maxHeight: "90vh",
+        maxWidth: 1080,
+        maxHeight: "calc(100vh - 32px)",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -1044,7 +1071,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
-              Policy {event.policy_no} · {event.product?.toUpperCase()}
+              Policy {event.policy_no} · {productLabel(event.product)}
             </div>
           </div>
           <button
@@ -1081,7 +1108,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               // Normalized product first ("AUTO"), raw Allstate text only as a
               // fallback — product_raw is the unreadable "Auto - Private
               // Passenger Voluntary" form.
-              { label: "Product",       value: event.product?.toUpperCase() || event.product_raw },
+              { label: "Product",       value: productLabel(event.product) || event.product_raw },
               { label: "Renewal Date",  value: event.renewal_date, color: renewalUrgencyColor(days) },
               { label: "Days Until",    value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
               { label: "Premium",       value: event.premium ? fmtFull$(event.premium) : "\u2014" },
@@ -1139,7 +1166,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 ⚠ This customer has an active pending cancel
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Their <strong>{event.active_cancel?.product?.toUpperCase() || 'other'}</strong> policy
+                Their <strong>{productLabel(event.active_cancel?.product) || 'other'}</strong> policy
                 {' '}is in pending cancel. Address that first — do not lead with the renewal
                 or a cross-sell pitch until the cancel issue is resolved.
               </div>
@@ -1162,13 +1189,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
                 Allstate flagged this customer for{' '}
                 <strong style={{ color: '#10B981' }}>
-                  {event.cross_sell_product?.toUpperCase()}
+                  {productLabel(event.cross_sell_product)}
                 </strong>.
                 {' '}After confirming the renewal, ask:
                 <em style={{ color: 'var(--qs-dim)', display: 'block', marginTop: 4 }}>
-                  "While I have you — I noticed you only have [current product] with us.
-                  I'd love to get you a quick quote on [pitch product] to see if we can
-                  save you some money by bundling."
+                  "While I have you — I noticed you only have {productLabel(event.product)} with
+                  us. I'd love to get you a quick quote on {productLabel(event.cross_sell_product)}
+                  {' '}to see if we can save you some money by bundling."
                 </em>
               </div>
             </div>
@@ -1199,6 +1226,25 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   {event.email || "\u2014"}
                 </div>
               </div>
+            </div>
+            {event.phone && (
+              <a href={`tel:${event.phone}`}
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12,
+                  padding: "9px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                }}>
+                \ud83d\udcde Call {event.phone}
+              </a>
+            )}
+            <div style={{ marginTop: 12 }}>
+              <CallScriptBox label="Call script">
+                {renewalCallScript({
+                  firstName, product: event.product, renewalDate: event.renewal_date,
+                  rateShock, changePct: scriptChangePct,
+                })}
+              </CallScriptBox>
+              <VoicemailScriptBox firstName={firstName} agentName={agentName} product={event.product} />
             </div>
           </div>
 
@@ -1366,6 +1412,36 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
+            {/* Saved premium — only on a confirmed (saved) renewal */}
+            {form.status === "confirmed" && (
+              <div>
+                <label className="dark-label">Final premium saved (what they'll pay)</label>
+                <input
+                  className="dark-input"
+                  inputMode="decimal"
+                  placeholder={event.premium ? `Renewal offer was ${fmtFull$(event.premium)}` : "Final annual premium"}
+                  value={savedPremium}
+                  onChange={ev => setSavedPremium(ev.target.value)}
+                />
+                {savedPremium !== "" && event.premium != null && (() => {
+                  const saved = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+                  if (Number.isNaN(saved)) return null;
+                  const delta = event.premium - saved;
+                  const pct = event.premium > 0 ? (delta / event.premium) * 100 : 0;
+                  return (
+                    <div style={{ fontSize: 12, marginTop: 6, fontWeight: 600,
+                      color: delta > 0 ? "#34D399" : delta < 0 ? "#F87171" : "var(--qs-dim)" }}>
+                      {delta > 0
+                        ? `💰 Saved them ${fmtFull$(delta)} — ${pct.toFixed(0)}% off the renewal offer`
+                        : delta < 0
+                          ? `⚠ ${fmtFull$(-delta)} above the renewal offer`
+                          : "Same as the renewal offer"}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
             {/* Shopping reason — only when shopping */}
             {form.status === "shopping" && (
               <div>
@@ -1385,21 +1461,31 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
-            {/* Assigned To */}
+            {/* Assigned To — reps can't reassign their own work; managers can. */}
             <div>
               <label className="dark-label">Assigned To</label>
-              <select
-                className="dark-select"
-                value={form.assigned_to_id}
-                onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
-              >
-                <option value="">Unassigned</option>
-                {producers.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                  </option>
-                ))}
-              </select>
+              {canReassign ? (
+                <select
+                  className="dark-select"
+                  value={form.assigned_to_id}
+                  onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+                >
+                  <option value="">Unassigned</option>
+                  {producers.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                  border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-text)" }}>
+                  {(() => {
+                    const a = producers.find(p => p.id === form.assigned_to_id);
+                    return a ? (a.preferred_name || `${a.first_name || ""} ${a.last_name || ""}`.trim()) : "Unassigned";
+                  })()}
+                </div>
+              )}
             </div>
 
             <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
@@ -1486,7 +1572,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
             {maskCustomerName(r.customer_name)}
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2 }}>
-            Policy {r.policy_no} · {r.product?.toUpperCase()}
+            Policy {r.policy_no} · {productLabel(r.product)}
             {r.risk_type === 'dual_risk' && (
               <span style={{ marginLeft: 8, color: 'var(--qs-danger)', fontWeight: 700 }}>⚡ DUAL RISK</span>
             )}
@@ -2262,7 +2348,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
 
                   {/* Product */}
                   <td style={{ color: 'var(--qs-dim)', fontSize: 12 }}>
-                    {row.product?.toUpperCase() || '—'}
+                    {productLabel(row.product) || '—'}
                   </td>
 
                   <td style={{ color: 'var(--qs-subtle)', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>

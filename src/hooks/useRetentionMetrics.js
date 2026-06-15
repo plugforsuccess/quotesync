@@ -35,7 +35,7 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
 
         supabase
           .from('renewal_cases')
-          .select('id, status, premium, renewal_date, original_year, contacted_at, resolution_date, updated_at, attempt_count, premium_change_pct, opened_by_id, closed_by_id')
+          .select('id, status, premium, saved_premium, renewal_date, original_year, contacted_at, resolution_date, updated_at, attempt_count, premium_change_pct, opened_by_id, closed_by_id')
           .eq(renewalFilter.column, renewalFilter.value),
 
         supabase
@@ -115,6 +115,13 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
         ? renewalCaseIdsReached.size / allRenewals.length : null;
 
       const renewalPremiumRetained = renewalsConfirmed.reduce((s, e) => s + (e.premium || 0), 0);
+      // Dollars the agent took off the renewal offer on saved cases (offer −
+      // final premium, only counting genuine reductions).
+      const renewalPremiumReduced = renewalsConfirmed.reduce((s, e) => {
+        if (e.saved_premium == null || e.premium == null) return s;
+        const d = e.premium - e.saved_premium;
+        return s + (d > 0 ? d : 0);
+      }, 0);
       const renewalResolved = renewalsConfirmed.length + renewalsLost.length;
       const renewalRetainRate = renewalResolved > 0
         ? renewalsConfirmed.length / renewalResolved : null;
@@ -163,6 +170,7 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
         renewalReachRate,
         totalRenewalAttempts:  allRenewalAttempts.length,
         renewalPremiumRetained,
+        renewalPremiumReduced,
         avgDaysBeforeRenewal,
         // Inbound-only metrics
         inboundClosures:       inboundClosures.length,

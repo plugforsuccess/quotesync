@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { usePersona, personaLanding } from '../hooks/usePersona';
 
-export default function PersonaSwitcher({ compact = false, fullWidth = false }) {
+export default function PersonaSwitcher({ compact = false, fullWidth = false, onLight = false }) {
   const { user, currentAgencyRole, currentAgencyId } = useAuth();
   const isPrincipal = currentAgencyRole === 'principal';
   const [persona, setPersona] = usePersona(isPrincipal ? 'principal' : 'service');
@@ -62,10 +62,13 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
       display: fullWidth ? 'flex' : 'inline-flex',
       width: fullWidth ? '100%' : undefined,
       alignItems: 'center',
-      background: 'rgb(var(--qs-muted-rgb) / 0.12)',
+      // The employee header is always white; theme vars can resolve light there
+      // and vanish. onLight uses fixed, high-contrast colors so the pills stay
+      // visible on a light surface without affecting the dark agency app.
+      background: onLight ? '#E8ECF3' : 'rgb(var(--qs-muted-rgb) / 0.12)',
       borderRadius: 999,
       padding: 3,
-      border: '1px solid var(--qs-border)',
+      border: `1px solid ${onLight ? '#D2D9E5' : 'var(--qs-border)'}`,
     }}>
       {visibleOptions.map(opt => {
         const active = opt.key === persona;
@@ -81,7 +84,7 @@ export default function PersonaSwitcher({ compact = false, fullWidth = false }) 
               fontWeight: 600,
               border: 'none', cursor: 'pointer',
               background: active ? '#3B82F6' : 'transparent',
-              color: active ? '#fff' : 'var(--qs-dim)',
+              color: active ? '#fff' : (onLight ? '#475569' : 'var(--qs-dim)'),
               transition: 'all 0.15s',
               fontFamily: 'inherit',
               whiteSpace: 'nowrap',

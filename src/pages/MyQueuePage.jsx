@@ -16,37 +16,15 @@ import { useInterventionEffectiveness } from '../hooks/useInterventionEffectiven
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import ReadingColumn from '../components/ReadingColumn';
 import InterventionPicker from '../components/InterventionPicker';
+import { CallScriptBox, VoicemailScriptBox, renewalCallScript } from '../components/RetentionScripts';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../lib/interventions';
+import { productLabel } from '../lib/productLabels';
 
 // The rep reads scripts verbatim — full name, or a clear placeholder if the
 // employee record hasn't loaded.
 function agentNameFor(employee) {
   return [employee?.preferred_name || employee?.first_name, employee?.last_name]
     .filter(Boolean).join(' ') || '[your name]';
-}
-
-// Voicemail script shown on the call card. Deliberately generic — no premium or
-// coverage detail, since a voicemail can be overheard. Tells the customer to
-// call the agency back (the front desk fields it and routes via the callback
-// intake). Copyable for consistency.
-function VoicemailScript({ firstName, agentName }) {
-  const text = `Hi ${firstName}, this is ${agentName} with your Allstate agency. `
-    + `I'm reaching out about your account — nothing urgent. When you get a moment, `
-    + `please give our office a call back and we'll take care of everything. Thanks, talk soon!`;
-  return (
-    <div style={{
-      background: 'rgba(245,158,11,0.06)', border: '1px solid rgba(245,158,11,0.2)',
-      borderRadius: 6, padding: '7px 10px', marginBottom: 8,
-    }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.05em', color: '#F59E0B',
-        textTransform: 'uppercase', marginBottom: 4 }}>
-        📞 Voicemail — if no answer (read aloud)
-      </div>
-      <div style={{ fontSize: 12, color: 'var(--qs-dim)', fontStyle: 'italic', lineHeight: 1.5 }}>
-        “{text}”
-      </div>
-    </div>
-  );
 }
 
 // Format relative time — "2d ago", "3h ago", "just now"
@@ -707,7 +685,7 @@ export default function MyQueuePage() {
       : (days !== null && days <= 7) ? '#FBBF24'
       : 'var(--qs-dim)';
     const sub = [
-      event.product?.toUpperCase(),
+      productLabel(event.product),
       event.amount_due > 0 ? `${fmt$(event.amount_due)} due` : null,
       policyCount > 1 ? `${policyCount} policies` : `${event.attempt_count || 0} attempts`,
     ].filter(Boolean).join(' · ');
@@ -756,7 +734,7 @@ export default function MyQueuePage() {
     const changePct = parseFloat(event.premium_change_pct) || 0;
     const saveable = expectedSaveablePremium(event, churnModel, effectiveSaveLift);
     const sub = [
-      event.product?.toUpperCase(),
+      productLabel(event.product),
       event.premium != null ? fmt$(event.premium) : null,
       changePct >= 15 ? `⚠ +${changePct.toFixed(0)}%` : null,
       saveable > 0 ? `~${fmt$(saveable)} saveable` : null,
@@ -927,7 +905,7 @@ export default function MyQueuePage() {
               border: '1px solid rgba(16,185,129,0.25)', color: '#34D399',
             }}
             title="Quoting this line adds a multi-policy discount that lowers their current premium — a save lever, not just an upsell.">
-              💡 Bundle {event.cross_sell_product?.toUpperCase()} → lower premium
+              💡 Bundle {productLabel(event.cross_sell_product)} → lower premium
             </span>
           )}
           {event.ai_transcript && (
@@ -1004,7 +982,7 @@ export default function MyQueuePage() {
         </div>
 
         {/* Voicemail script — read if no answer (generic, no balance/coverage). */}
-        <VoicemailScript firstName={firstName} agentName={agentName} />
+        <VoicemailScriptBox firstName={firstName} agentName={agentName} product={event.product} />
 
         {/* Status line: promise / last attempt / callback ────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -1127,13 +1105,13 @@ export default function MyQueuePage() {
               <button
                 className="qs-focusable"
                 onClick={() => handleInlineResolve('cancel', event, 'saved', true)}
-                title={`Saved by bundling ${event.cross_sell_product?.toUpperCase()} — counts the cross-sell as converted.`}
+                title={`Saved by bundling ${productLabel(event.cross_sell_product)} — counts the cross-sell as converted.`}
                 style={{
                   ...btnBase,
                   border: '1px solid rgba(16,185,129,0.4)', background: 'rgba(16,185,129,0.14)',
                   color: '#34D399',
                 }}>
-                ✓ Saved + bundled {event.cross_sell_product?.toUpperCase()}
+                ✓ Saved + bundled {productLabel(event.cross_sell_product)}
               </button>
             )}
 
@@ -1302,7 +1280,7 @@ export default function MyQueuePage() {
                   border: '1px solid rgba(16,185,129,0.25)',
                   color: '#34D399', flexShrink: 0,
                 }}>
-                  💡 X-sell: {event.cross_sell_product?.toUpperCase()}
+                  💡 X-sell: {productLabel(event.cross_sell_product)}
                 </span>
               )}
             </div>
@@ -1337,31 +1315,17 @@ export default function MyQueuePage() {
         </div>
 
         {/* Talking point script — primary call purpose */}
-        {(() => {
-          const firstName = event.customer_name?.split(' ')[0] || 'there';
-          const scriptLine = rateShock
-            ? `"Hi ${firstName} — calling about your ${event.product} renewal on ${event.renewal_date}. Your premium is going up ${changePct > 0 ? '+' : ''}${changePct.toFixed(1)}%. Want to review options and make sure you're getting the best rate."`
-            : `"Hi ${firstName} — calling about your ${event.product} renewal on ${event.renewal_date}. Just making sure everything still looks good and answering any questions."`;
-          return (
-            <div style={{
-              background: 'rgba(59,130,246,0.06)',
-              border: '1px solid rgba(59,130,246,0.15)',
-              borderRadius: 6,
-              padding: '7px 10px',
-              marginBottom: 8,
-              fontSize: 12,
-              color: 'var(--qs-dim)',
-              fontStyle: 'italic',
-              lineHeight: 1.5,
-            }}>
-              {scriptLine}
-            </div>
-          );
-        })()}
+        <CallScriptBox label="Call script">
+          {renewalCallScript({
+            firstName: event.customer_name?.split(' ')[0] || 'there',
+            product: event.product, renewalDate: event.renewal_date,
+            rateShock, changePct,
+          })}
+        </CallScriptBox>
 
         {/* Voicemail script — read if no answer. Deliberately generic (no
             premium/coverage), since a voicemail can be overheard. */}
-        <VoicemailScript firstName={event.customer_name?.split(' ')[0] || 'there'} agentName={agentNameFor(employee)} />
+        <VoicemailScriptBox firstName={event.customer_name?.split(' ')[0] || 'there'} agentName={agentNameFor(employee)} product={event.product} />
 
         {/* Row 2: Premium + change + attempts */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
@@ -1459,17 +1423,7 @@ export default function MyQueuePage() {
             </a>
           )}
 
-          <button
-            onClick={() => { setLogCallTarget({ type: 'renewal', event }); setLogCallForm({ result: 'no_answer', note: '', intervention: EMPTY_INTERVENTION }); }}
-            style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
-              border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-dim)', cursor: 'pointer', fontWeight: 600,
-            }}>
-            Log Call
-          </button>
-
-          {/* Schedule callback */}
+          {/* Schedule callback — quick triage defer (kept on the card) */}
           <button
             onClick={() => { setCallbackTarget({ type: 'renewal', event }); setCallbackForm({ time: '', note: '' }); }}
             style={{
@@ -1479,27 +1433,8 @@ export default function MyQueuePage() {
             }}>
             📅 Callback
           </button>
-
-          <button
-            onClick={() => handleInlineResolve('renewal', event, 'confirmed')}
-            style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
-              border: '1px solid rgba(52,211,153,0.3)', background: 'rgba(52,211,153,0.08)',
-              color: '#34D399', cursor: 'pointer', fontWeight: 600,
-            }}>
-            ✓ Confirmed
-          </button>
-
-          {/* Won't Renew quick action — prompts for reason */}
-          <button
-            onClick={() => { setLostTarget({ type: 'renewal', event }); setLostReason(''); }}
-            style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
-              border: '1px solid rgba(100,116,139,0.3)', background: 'rgba(100,116,139,0.08)',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
-            }}>
-            ✗ Won't Renew
-          </button>
+          {/* Log Call / Confirmed / Won't Renew moved into the case work
+              surface (Open) — where the outcome + saved-premium are captured. */}
 
           {/* Snooze — show only after 2+ attempts */}
           {event.attempt_count >= 2 && (
@@ -1529,12 +1464,12 @@ export default function MyQueuePage() {
           <button
             onClick={() => setSelectedRenewal(event)}
             style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
-              border: '1px solid var(--qs-border)', background: 'none',
-              color: 'var(--qs-subtle)', cursor: 'pointer', fontWeight: 600,
+              fontSize: 13, padding: '7px 14px', borderRadius: 7,
+              border: '1px solid #3B82F6', background: '#3B82F6',
+              color: '#fff', cursor: 'pointer', fontWeight: 700,
               marginLeft: 'auto',
             }}>
-            View →
+            Open case →
           </button>
         </div>
       </div>
@@ -2044,6 +1979,7 @@ export default function MyQueuePage() {
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={employees}
+          canReassign={false}
         />,
         document.body
       )}
@@ -2055,6 +1991,7 @@ export default function MyQueuePage() {
           agencyId={orgId}
           currentEmployeeId={employeeId}
           producers={employees}
+          canReassign={false}
         />,
         document.body
       )}
@@ -2135,7 +2072,7 @@ export default function MyQueuePage() {
                 <div style={{ fontSize: 10, color: 'var(--qs-subtle)', textTransform: 'uppercase',
                   letterSpacing: '0.05em', marginBottom: 2 }}>Product</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>
-                  {logCallTarget.event.product?.toUpperCase()}
+                  {productLabel(logCallTarget.event.product)}
                 </div>
               </div>
             </div>

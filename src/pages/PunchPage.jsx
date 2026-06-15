@@ -176,7 +176,7 @@ export default function PunchPage() {
       {screen === "status" && (
         <div style={{ width: "100%", maxWidth: 360, textAlign: "center" }}>
           <div style={{ fontSize: 24, fontWeight: 700, color: "var(--qs-bright)", marginBottom: 4 }}>
-            Hi, {employeeName}
+            {employeeName ? `Hi, ${employeeName}` : "Welcome 👋"}
           </div>
           <div style={{ fontSize: 14, color: "var(--qs-subtle)", marginBottom: 28 }}>
             {STATUS_LABELS[currentStatus]}
