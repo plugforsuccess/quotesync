@@ -214,6 +214,22 @@ export function computeStepSequence(answers) {
   return steps;
 }
 
+// Longest journey across all product paths. Used as a conservative denominator
+// for the progress bar BEFORE a product is chosen — the eventual length is
+// unknown and varies a lot (a bundle is ~25 steps, auto-only ~13), so dividing
+// by the max keeps early steps from over-reporting. Computed from the step
+// builder so it can't drift out of sync if steps are added.
+const PATH_PROBES = [
+  { productIntent: 'bundle', ownsHome: true },
+  { productIntent: 'auto', ownsHome: true },
+  { productIntent: 'auto_renters', ownsHome: false },
+  { productIntent: 'home', ownsHome: true },
+  { productIntent: 'landlord', ownsHome: true },
+];
+export const MAX_STEP_COUNT = Math.max(
+  ...PATH_PROBES.map((p) => computeStepSequence(p).length)
+);
+
 // ─── Hook ──────────────────────────────────────────────────────────
 
 export function useWizard() {
@@ -236,6 +252,20 @@ export function useWizard() {
   const progress = totalSteps > 1 ? (currentIndex + 1) / totalSteps : 0;
   const isFirstStep = currentIndex === 0;
   const isLastStep = currentIndex >= stepSequence.length - 1;
+
+  // Progress percentage for the bar. Before a product is chosen the path length
+  // is unknown and short (~9 steps), so dividing by it over-reports (e.g. the
+  // discount step would show 25% of a journey that's really ~8% done for a
+  // bundle). Use the longest path as the denominator until the product is known,
+  // then switch to the real length so it still reaches ~100% at the end.
+  const progressPct = useMemo(() => {
+    const effectiveTotal = answers.productIntent
+      ? totalSteps
+      : Math.max(totalSteps, MAX_STEP_COUNT);
+    const denom = effectiveTotal - 1;
+    if (denom <= 0) return 0;
+    return Math.min(Math.round(((currentIndex + 1) / denom) * 100), 99);
+  }, [answers.productIntent, totalSteps, currentIndex]);
 
 
 
@@ -366,6 +396,7 @@ export function useWizard() {
     setCurrentIndex,  // needed for ZIP prefill skip
     totalSteps,
     progress,
+    progressPct,
     isFirstStep,
     isLastStep,
     direction,
