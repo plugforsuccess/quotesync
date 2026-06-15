@@ -834,11 +834,9 @@ export default function MyQueuePage() {
           }}>
             {isLapsed ? 'Reinstatement script' : 'Call script'}
           </div>
-          {/* Line length capped (~70ch) so a full-width card still reads
-              comfortably for the older-agent audience. */}
           <p style={{
             fontSize: 'clamp(1rem, 0.95rem + 0.35vw, 1.1875rem)',
-            color: 'var(--qs-text)', lineHeight: 1.65, margin: 0, maxWidth: '70ch',
+            color: 'var(--qs-text)', lineHeight: 1.65, margin: 0,
           }}>
             {scriptLine}
           </p>
