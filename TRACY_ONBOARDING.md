@@ -193,9 +193,10 @@ and shows your hours for the day.
    not hunting through spreadsheets."
 2. **"This is your day."** Open **Today** → "Here's your list and your call
    target." Then **My Queue** → "This is the dialer. Cancellations and Renewals."
-3. **"Let's work one together."** Pick a real renewal. Click **Call**, read the
-   **Call script** aloud, show the **Voicemail** script. Then **Open case →** and
-   walk through logging the call, scheduling a callback, and marking the outcome.
+3. **"Let's work one together."** Use the **practice cases in §13** — they're
+   built for exactly this. Click **Call**, read the **Call script** aloud, show
+   the **Voicemail** script, then **Open case →** and walk through logging the
+   call, scheduling a callback, and marking the outcome.
 4. **"When you save someone, type the new premium here."** Show the saved‑premium
    field and the "💰 Saved them $X" line. "That's how I see the dollars you're
    bringing in."
@@ -205,6 +206,54 @@ and shows your hours for the day.
    mornings and the rest takes care of itself."
 8. **"One rule."** "A renewal saved beats a phone answered fast. When in doubt,
    protect the proactive work — that's the whole job."
+
+---
+
+## 13. Practice run — three live test cases
+
+We've loaded **three practice customers** into your queue so you can rehearse the
+whole flow safely before you call a real customer. They're tagged `TEST-` and use
+a placeholder phone, so calling them won't reach anyone (ask Cam to point the
+Call button at a cell if you want to hear it ring). Work all three in order —
+each one rehearses a different script and outcome.
+
+> When you **resolve** a practice case it leaves your active queue. To run the
+> drill again, just ask Cam to reset the test cases.
+
+### A. Jonathan Rivera — *renewal with a rate increase* (My Queue → Renewals)
+Auto policy, renews tomorrow, premium up this year. **This is the hardest kind of
+call** — practice staying the advocate.
+1. Click **📞 Call**, then read the **Call script** aloud. Notice it says *"there's
+   a change to your rate this year"* — **it does not lead with the percentage.**
+   (The exact figure is on the card if Jonathan asks.)
+2. Pretend he doesn't answer → read the **Voicemail** script.
+3. Click **Open case →**, **Log the call** as *Left voicemail*.
+4. **Schedule a callback** for an hour from now, with a note like "LVM, try after 5."
+5. Close the case. Then open the **📅 Callbacks** filter — Jonathan should be
+   sitting right there, due soon.
+
+### B. David Chen — *normal renewal* (My Queue → Renewals)
+Home policy, small change, multi‑policy + EasyPay. **The easy, friendly check‑in.**
+1. Click **📞 Call**, read the **Call script** — notice it's a warm "make sure
+   your coverage still fits" check‑in, no rate talk.
+2. Pretend he answers and is happy to renew. Click **Open case →**.
+3. **Log the call** as *Reached*, set the outcome to **Confirmed Renewal ✓**.
+4. In the **Final premium saved** box, type a number (e.g. `1250`) and watch it
+   show **"💰 Saved them $X — Y% off the renewal offer."**
+5. Add a one‑line **Case Log** note: "Confirmed renewal, happy, no changes."
+6. Save. David drops off your active queue — that's a logged save. ✅
+
+### C. Maria Alvarez — *pending cancellation* (My Queue → Cancellations)
+Home policy, cancels in 2 days, a balance is due. **A coverage‑gap save.**
+1. Click **📞 Call**, read the **Call script** — it names the **amount due**
+   ($412.50) and asks to take care of it today. (That dollar amount is only read on
+   a live call, never in a voicemail.)
+2. Pretend she'll pay. Click **Open case →**, **Log the call** as *Reached*, and
+   set the outcome to **Saved**.
+3. Add a **Case Log** note: "Took payment, coverage reinstated."
+
+**After all three:** open your **Scorecard** and see your saves + premium reflected.
+That's the full loop — you're ready. 🎯
 
 ---
 
