@@ -3,11 +3,13 @@
 // case work surface), so the same words appear wherever a rep works a case.
 // Builders are pure (easy to copy/test); the *Box components render them.
 import { productLabel } from '../lib/productLabels';
+import { titleCaseName } from '../lib/names';
 
 // Voicemail — names the product line (low sensitivity) but no premium/coverage
 // detail, since a voicemail can be overheard. Warm reason to call back.
 export function voicemailText({ firstName, agentName, product }) {
   const policy = product ? `your ${productLabel(product).toLowerCase()} policy` : 'your policy';
+  firstName = titleCaseName(firstName);
   return `Hi ${firstName}, this is ${agentName} with your Allstate agency. `
     + `I was reviewing ${policy} and wanted to connect with you personally. `
     + `When you get a moment, give our office a quick call back — we want to make sure `
@@ -31,6 +33,7 @@ function spokenDate(d) {
 // Live-answer renewal script. Introduces the agent, names the product + a
 // spoken date, and leads with value. rateShock surfaces the increase up front.
 export function renewalCallScript({ firstName, agentName = 'your agent', product, renewalDate, rateShock, changePct }) {
+  firstName = titleCaseName(firstName);
   const line = productLabel(product).toLowerCase();
   const when = spokenDate(renewalDate);
   const pct = Math.abs(Number(changePct) || 0);

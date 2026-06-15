@@ -10,6 +10,7 @@ import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
 import { productLabel } from '../../../lib/productLabels';
+import { titleCaseName } from '../../../lib/names';
 import { CallScriptBox, VoicemailScriptBox, renewalCallScript } from '../../../components/RetentionScripts';
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
@@ -41,7 +42,7 @@ function fmtFull$(n) {
 
 function maskCustomerName(name) {
   if (!name) return "—";
-  const parts = name.trim().split(/\s+/);
+  const parts = titleCaseName(name).trim().split(/\s+/);
   if (parts.length === 1) return parts[0];
   return `${parts[0]} ${parts[parts.length - 1][0]}.`;
 }
