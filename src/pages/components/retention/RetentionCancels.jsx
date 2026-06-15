@@ -897,6 +897,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     notes: event.notes || "",
     shopping_reason: event.shopping_reason || "",
   });
+  // Kept out of `form` so it's only written to renewal_cases on the confirmed
+  // (saved) path — the column it targets is the new saved_premium field.
+  const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
 
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
@@ -988,6 +991,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       updates.outcome_source       = "rep";
       updates.final_outcome_set_by = currentEmployeeId;
       updates.final_outcome_set_at = new Date().toISOString();
+    }
+    // Saved premium — what the agent got the renewal down to. Captured only on a
+    // confirmed save, so other resolutions never touch the new column.
+    if (form.status === "confirmed") {
+      const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+      updates.saved_premium = Number.isNaN(sp) ? null : sp;
     }
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
@@ -1364,6 +1373,36 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   <option value="escalated">Escalate to Agent</option>
                   <option value="lost">Lost — Won't Renew</option>
                 </select>
+              </div>
+            )}
+
+            {/* Saved premium — only on a confirmed (saved) renewal */}
+            {form.status === "confirmed" && (
+              <div>
+                <label className="dark-label">Final premium saved (what they'll pay)</label>
+                <input
+                  className="dark-input"
+                  inputMode="decimal"
+                  placeholder={event.premium ? `Renewal offer was ${fmtFull$(event.premium)}` : "Final annual premium"}
+                  value={savedPremium}
+                  onChange={ev => setSavedPremium(ev.target.value)}
+                />
+                {savedPremium !== "" && event.premium != null && (() => {
+                  const saved = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+                  if (Number.isNaN(saved)) return null;
+                  const delta = event.premium - saved;
+                  const pct = event.premium > 0 ? (delta / event.premium) * 100 : 0;
+                  return (
+                    <div style={{ fontSize: 12, marginTop: 6, fontWeight: 600,
+                      color: delta > 0 ? "#34D399" : delta < 0 ? "#F87171" : "var(--qs-dim)" }}>
+                      {delta > 0
+                        ? `💰 Saved them ${fmtFull$(delta)} — ${pct.toFixed(0)}% off the renewal offer`
+                        : delta < 0
+                          ? `⚠ ${fmtFull$(-delta)} above the renewal offer`
+                          : "Same as the renewal offer"}
+                    </div>
+                  );
+                })()}
               </div>
             )}
 

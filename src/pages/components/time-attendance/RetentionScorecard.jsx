@@ -153,6 +153,12 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             value={fmt$(metrics.renewalPremiumRetained)}
             color="#10B981"
           />
+          <MetricRow
+            label="Premium Saved"
+            value={fmt$(metrics.renewalPremiumReduced)}
+            sub="reduced off renewal offers"
+            color="#34D399"
+          />
           {metrics.renewalsShopping > 0 && (
             <MetricRow
               label="Shopping (Escalated)"
