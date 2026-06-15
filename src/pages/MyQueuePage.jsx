@@ -1423,18 +1423,8 @@ export default function MyQueuePage() {
             </a>
           )}
 
-          {/* Schedule callback — quick triage defer (kept on the card) */}
-          <button
-            onClick={() => { setCallbackTarget({ type: 'renewal', event }); setCallbackForm({ time: '', note: '' }); }}
-            style={{
-              fontSize: 13, padding: '7px 12px', borderRadius: 7,
-              border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.08)',
-              color: '#60A5FA', cursor: 'pointer', fontWeight: 600,
-            }}>
-            📅 Callback
-          </button>
-          {/* Log Call / Confirmed / Won't Renew moved into the case work
-              surface (Open) — where the outcome + saved-premium are captured. */}
+          {/* Log Call / Callback / Confirmed / Won't Renew all live in the case
+              work surface (Open) now — where outcome + saved-premium are captured. */}
 
           {/* Snooze — show only after 2+ attempts */}
           {event.attempt_count >= 2 && (

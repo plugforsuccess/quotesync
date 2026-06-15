@@ -48,7 +48,7 @@ function navPillClass({ isActive }) {
     'qs-focusable px-4 py-2 rounded-lg text-[0.95rem] font-semibold whitespace-nowrap transition-colors',
     isActive
       ? 'bg-blue-100 text-blue-700'
-      : 'text-gray-600 hover:text-gray-900 hover:bg-black/5',
+      : 'text-gray-900 hover:bg-black/5',
   ].join(' ');
 }
 

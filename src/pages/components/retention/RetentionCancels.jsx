@@ -917,6 +917,32 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // Kept out of `form` so it's only written to renewal_cases on the confirmed
   // (saved) path — the column it targets is the new saved_premium field.
   const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
+  // Callback scheduling (moved off the list card into the work surface).
+  const [cbTime, setCbTime] = useState("");
+  const [cbNote, setCbNote] = useState("");
+  const [cbSaving, setCbSaving] = useState(false);
+
+  async function scheduleCallback() {
+    if (!cbTime || cbSaving) return;
+    setCbSaving(true);
+    const callbackAt = new Date(cbTime).toISOString();
+    await supabase.from("renewal_attempts").insert({
+      renewal_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+      method: "phone", result: "reached",
+      note: `Callback scheduled: ${cbNote || "no details"}`,
+    });
+    await onUpdate(event.id, {
+      attempt_count:       (event.attempt_count || 0) + 1,
+      last_attempt_at:     new Date().toISOString(),
+      last_attempt_result: "reached",
+      contacted_at:        event.contacted_at || new Date().toISOString(),
+      callback_at:         callbackAt,
+      callback_note:       cbNote || null,
+    });
+    setCbSaving(false);
+    setCbTime(""); setCbNote("");
+    onClose();
+  }
 
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
@@ -1119,9 +1145,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 color: event.premium_change == null ? "var(--qs-dim)"
                   : event.premium_change > 0 ? "#EF4444" : "#10B981" },
               { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
-              { label: "Multi-Line",
-                value: event.multi_line === 'Yes' ? 'Yes — Bundled'
-                     : event.multi_line === 'No'  ? 'No — Monoline'
+              { label: "Multiline",
+                value: event.multi_line === 'Yes' ? 'Bundled'
+                     : event.multi_line === 'No'  ? 'Monoline'
                      : '—',
                 color: event.multi_line === 'Yes' ? '#10B981'
                      : event.multi_line === 'No'  ? '#60A5FA'
@@ -1144,7 +1170,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 700, color: color || "var(--qs-text)",
-                  fontFamily: "'DM Mono', monospace", lineHeight: 1,
+                  fontFamily: "'DM Mono', monospace", lineHeight: 1.15, whiteSpace: "nowrap",
                 }}>
                   {value || "\u2014"}
                 </div>
@@ -1230,11 +1256,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             {event.phone && (
               <a href={`tel:${event.phone}`}
                 style={{
-                  display: "inline-flex", alignItems: "center", gap: 8, marginTop: 12,
-                  padding: "9px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
-                  fontSize: 14, fontWeight: 700, textDecoration: "none",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  marginTop: 12, width: "100%", boxSizing: "border-box",
+                  padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                  fontSize: 15, fontWeight: 700, textDecoration: "none",
                 }}>
-                \ud83d\udcde Call {event.phone}
+                {"\ud83d\udcde"} Call {event.phone}
               </a>
             )}
             <div style={{ marginTop: 12 }}>
@@ -1246,6 +1273,33 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </CallScriptBox>
               <VoicemailScriptBox firstName={firstName} agentName={agentName} product={event.product} />
             </div>
+          </div>
+
+          {/* ── Schedule a callback ──────────────────────────── */}
+          <div style={{ marginBottom: 20 }}>
+            <label className="dark-label">Schedule a callback</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="datetime-local" className="dark-input" value={cbTime}
+                onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
+              <input className="dark-input" placeholder="Note (optional)" value={cbNote}
+                onChange={e => setCbNote(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
+              <button onClick={scheduleCallback} disabled={!cbTime || cbSaving}
+                style={{
+                  fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none",
+                  background: "#3B82F6", color: "#fff", fontWeight: 700,
+                  cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
+                  opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
+                }}>
+                {cbSaving ? "Scheduling…" : "📅 Schedule"}
+              </button>
+            </div>
+            {event.callback_at && (
+              <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
+                Current: {new Date(event.callback_at).toLocaleString("en-US", {
+                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                })}
+              </div>
+            )}
           </div>
 
           {/* ── Section: Attempt Log ─────────────────────────── */}
@@ -1721,9 +1775,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                     : '—' },
                 { label: 'Easy Pay',
                   value: r.easy_pay === true ? 'Yes ✓' : r.easy_pay === false ? 'No' : '—' },
-                { label: 'Multi-Line',
-                  value: r.multi_line === 'Yes' ? 'Yes — Bundled'
-                       : r.multi_line === 'No'  ? 'No — Monoline'
+                { label: 'Multiline',
+                  value: r.multi_line === 'Yes' ? 'Bundled'
+                       : r.multi_line === 'No'  ? 'Monoline'
                        : '—',
                   color: r.multi_line === 'Yes' ? '#10B981'
                        : r.multi_line === 'No'  ? '#60A5FA'
