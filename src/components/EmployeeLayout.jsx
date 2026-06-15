@@ -15,23 +15,23 @@ import PersonaSwitcher from './PersonaSwitcher';
 import { useForceTheme } from '../contexts/ThemeContext';
 
 // Nav tabs by hat. The active hat is the persona for a dual-role producer,
-// otherwise the employee's single role. Scorecard + Time Clock are shared.
+// otherwise the employee's single role. Scorecard is shared.
 const SCORECARD_ITEM     = { to: '/my/scorecard',     label: 'Scorecard' };
-const PUNCH_ITEM         = { to: '/punch',            label: 'Time Clock' };
 const SERVICE_BATCH_ITEM = { to: '/my/service-batch', label: 'Service Batch' };
+// Time Clock (/punch) is hidden from the employee portal for now — the punch
+// clock isn't in use yet. The route still works if opened directly; re-add
+// { to: '/punch', label: 'Time Clock' } to the tab arrays below to restore it.
 
 const SERVICE_TABS = [
   { to: '/my/today', label: 'Today' },
   { to: '/my/queue', label: 'My Queue' },
   SERVICE_BATCH_ITEM,
   SCORECARD_ITEM,
-  PUNCH_ITEM,
 ];
 
-// Unlicensed (front desk): clerical intake only — Service Batch + time clock.
+// Unlicensed (front desk): clerical intake only — Service Batch.
 const UNLICENSED_TABS = [
   SERVICE_BATCH_ITEM,
-  PUNCH_ITEM,
 ];
 // The only /my/* surfaces an unlicensed user may open (others redirect here).
 const UNLICENSED_ALLOWED = ['/my/service-batch', '/my/change-password'];
@@ -40,7 +40,6 @@ const SALES_TABS = [
   { to: '/my/cross-sell', label: 'Cross-Sell' },
   SCORECARD_ITEM,
   { to: '/my/referrals',  label: 'Referrals' },
-  PUNCH_ITEM,
 ];
 
 // Shared pill styling for the top nav — matches the principal nav's pill feel.
