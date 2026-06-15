@@ -4,6 +4,8 @@
 // single free-text notes field.
 import { useState } from 'react';
 import { useCaseNotes, NOTE_TYPES, NOTE_TYPE_COLOR } from '../../../hooks/useCaseNotes';
+import CopyButton from '../../../components/CopyButton';
+import { formatNoteForAllstate, formatNotesForAllstate } from '../../../lib/allstateClipboard';
 
 function fmtTime(ts) {
   if (!ts) return '';
@@ -31,9 +33,17 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
 
   return (
     <div style={{ marginTop: 8 }}>
-      <label className="dark-label">
-        Notes log <span style={{ fontWeight: 400, color: 'var(--qs-dim)', fontSize: 11 }}>· append-only, attributed</span>
-      </label>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+        <label className="dark-label">
+          Notes log <span style={{ fontWeight: 400, color: 'var(--qs-dim)', fontSize: 11 }}>· append-only, attributed</span>
+        </label>
+        {notes.length > 0 && (
+          <CopyButton
+            label="Copy all for Allstate"
+            getText={() => formatNotesForAllstate(notes, { customerName, policyNo })}
+          />
+        )}
+      </div>
 
       {/* Add */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
@@ -72,10 +82,14 @@ export default function CaseNotesFeed({ caseType, caseId, agencyId, policyNo, cu
                     <span key={tag} style={{ fontSize: 10, color: 'var(--qs-subtle)', background: 'var(--qs-card)', borderRadius: 4, padding: '1px 6px' }}>#{tag}</span>
                   ))}
                 </div>
-                <button onClick={() => togglePin.mutate({ id: n.id, pinned: !n.pinned })} title={n.pinned ? 'Unpin' : 'Pin'}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: n.pinned ? '#F59E0B' : 'var(--qs-dim)' }}>
-                  {n.pinned ? '★' : '☆'}
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <CopyButton getText={() => formatNoteForAllstate(n)} label="Copy"
+                    style={{ padding: '3px 8px', fontSize: 11 }} />
+                  <button onClick={() => togglePin.mutate({ id: n.id, pinned: !n.pinned })} title={n.pinned ? 'Unpin' : 'Pin'}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: n.pinned ? '#F59E0B' : 'var(--qs-dim)' }}>
+                    {n.pinned ? '★' : '☆'}
+                  </button>
+                </div>
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)', whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>{n.body}</div>
               <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginTop: 4 }}>{n.author_name || '—'} · {fmtTime(n.created_at)}</div>

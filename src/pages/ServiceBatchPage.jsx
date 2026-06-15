@@ -1,14 +1,22 @@
 // Service Batch — the Operating Playbook's "Afternoon — SERVICE BATCH" surface.
-// Routine admin work (mortgagee, vehicles, billing, premium, coverage, docs)
-// logged as service_tasks, grouped by type and sorted by due date so it clears
-// in one protected block instead of as phone interrupts.
+// Cold service requests (the ones not resolved live on a renewal call) logged as
+// service_tasks, grouped by type and sorted by due date so they clear in one
+// protected block. Each task copies a paste-ready block for Allstate.
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import {
-  useServiceTasks, useCreateServiceTask, useUpdateServiceTask,
-  TASK_TYPES, TASK_TYPE_MAP, LANES,
+  useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
+  TASK_TYPES, TASK_TYPE_MAP, LANES, SCOPES,
 } from '../hooks/useServiceTasks';
+import CopyButton from '../components/CopyButton';
+import { formatTaskForAllstate } from '../lib/allstateClipboard';
+
+// Completing one of these without recording what was done loses the audit trail
+// the agency cares about most — so a completion note is required.
+const NOTE_REQUIRED_TYPES = new Set(['billing', 'coverage', 'premium']);
 
 const PRIORITY_BADGE = {
   urgent: { label: 'URGENT', bg: '#EF444433', color: '#FCA5A5' },
@@ -38,12 +46,28 @@ export default function ServiceBatchPage() {
   const { data: employee } = useCurrentEmployee();
   const agencyId = employee?.org_id;
   const employeeId = employee?.id;
+  const queryClient = useQueryClient();
 
-  const { groups, tasks, overdue, isLoading } = useServiceTasks(agencyId);
+  const [scope, setScope] = useState('all');
+  const { groups, tasks, overdue, isLoading } = useServiceTasks(agencyId, { scope, employeeId });
   const createTask = useCreateServiceTask();
   const updateTask = useUpdateServiceTask();
 
   const [showAdd, setShowAdd] = useState(false);
+
+  // Realtime — a task logged by the front desk (or another rep) shows up live
+  // while the batch is open, instead of waiting for a refetch.
+  useEffect(() => {
+    if (!agencyId) return;
+    const channel = supabase
+      .channel(`service-tasks-${agencyId}`)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'service_tasks',
+        filter: `agency_id=eq.${agencyId}`,
+      }, () => queryClient.invalidateQueries({ queryKey: ['service_tasks'] }))
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [agencyId, queryClient]);
 
   const laneCounts = useMemo(() => {
     const c = { licensed: 0, portal: 0, clerical: 0 };
@@ -54,8 +78,11 @@ export default function ServiceBatchPage() {
     return c;
   }, [tasks]);
 
-  function markDone(id) {
-    updateTask.mutate({ id, updates: { status: 'done', completed_by_id: employeeId } });
+  function markDone(id, completionNote) {
+    updateTask.mutate({
+      id,
+      updates: { status: 'done', completed_by_id: employeeId, completion_note: completionNote || null },
+    });
   }
   function claim(id) {
     updateTask.mutate({ id, updates: { status: 'in_progress', assigned_to_id: employeeId } });
@@ -105,8 +132,21 @@ export default function ServiceBatchPage() {
         />
       )}
 
+      {/* Scope filter — route the licensed lane to the rep it's assigned to */}
+      <div style={{ display: 'flex', gap: 6, margin: '14px 0 0' }}>
+        {SCOPES.map(s => (
+          <button key={s.value} onClick={() => setScope(s.value)} style={{
+            cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+            borderRadius: 999, padding: '5px 14px', border: '1px solid',
+            borderColor: scope === s.value ? '#3B82F6' : 'var(--qs-border)',
+            background: scope === s.value ? '#3B82F6' : 'var(--qs-card)',
+            color: scope === s.value ? '#fff' : 'var(--qs-muted)',
+          }}>{s.label}</button>
+        ))}
+      </div>
+
       {/* Lane summary — the work-order for the block */}
-      <div style={{ display: 'flex', gap: 8, margin: '16px 0' }}>
+      <div style={{ display: 'flex', gap: 8, margin: '14px 0' }}>
         {LANES.map((lane, i) => (
           <div key={lane.value} title={lane.hint} style={{
             flex: 1, background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
@@ -139,7 +179,7 @@ export default function ServiceBatchPage() {
           <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>Service queue is clear</div>
           <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 6 }}>
-            No open admin tasks. Log one with “+ Log task” as calls come in.
+            No open admin tasks in this view. Log one with “+ Log task” as calls come in.
           </div>
         </div>
       ) : (
@@ -157,7 +197,8 @@ export default function ServiceBatchPage() {
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {group.tasks.map(task => (
-                  <TaskRow key={task.id} task={task} onDone={() => markDone(task.id)} onClaim={() => claim(task.id)} />
+                  <TaskRow key={task.id} task={task}
+                    onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
                 ))}
               </div>
             </div>
@@ -172,39 +213,74 @@ function TaskRow({ task, onDone, onClaim }) {
   const due = dueLabel(task.due_date);
   const prio = PRIORITY_BADGE[task.priority];
   const inProgress = task.status === 'in_progress';
+  const needsNote = NOTE_REQUIRED_TYPES.has(task.task_type);
+
+  const [confirming, setConfirming] = useState(false);
+  const [note, setNote] = useState('');
+
+  function handleDone() {
+    if (needsNote) { setConfirming(true); return; }
+    onDone(null);
+  }
 
   return (
     <div style={{
       background: inProgress ? 'rgba(59,130,246,0.06)' : 'var(--qs-elevated)',
       border: '1px solid', borderColor: inProgress ? '#3B82F633' : 'var(--qs-border)',
-      borderRadius: 10, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12,
+      borderRadius: 10, padding: '12px 14px',
     }}>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
-          {prio && (
-            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-              background: prio.bg, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+            {prio && (
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                background: prio.bg, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
+            )}
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {task.title}
+            </span>
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
+            {task.customer_name ? `${task.customer_name} · ` : ''}
+            {task.policy_no ? `${task.policy_no} · ` : ''}
+            <span style={{ color: due.color }}>{due.text}</span>
+          </div>
+          {task.detail && (
+            <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{task.detail}</div>
           )}
-          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
-            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {task.title}
-          </span>
         </div>
-        <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-          {task.customer_name ? `${task.customer_name} · ` : ''}
-          {task.policy_no ? `${task.policy_no} · ` : ''}
-          <span style={{ color: due.color }}>{due.text}</span>
+        <div style={{ flexShrink: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
+          <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
+          {!inProgress && (
+            <button onClick={onClaim} style={btnStyle('var(--qs-card)', 'var(--qs-text)')}>Start</button>
+          )}
+          <button onClick={handleDone} style={btnStyle('#10B981', '#fff')}>Done</button>
         </div>
-        {task.detail && (
-          <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{task.detail}</div>
-        )}
       </div>
-      <div style={{ flexShrink: 0, display: 'flex', gap: 6 }}>
-        {!inProgress && (
-          <button onClick={onClaim} style={btnStyle('var(--qs-card)', 'var(--qs-text)')}>Start</button>
-        )}
-        <button onClick={onDone} style={btnStyle('#10B981', '#fff')}>Done</button>
-      </div>
+
+      {confirming && (
+        <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            autoFocus
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && note.trim()) onDone(note.trim()); }}
+            placeholder="What was done? (required for billing/coverage/premium)"
+            style={{
+              flex: 1, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+              borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit',
+            }}
+          />
+          <button onClick={() => note.trim() && onDone(note.trim())} disabled={!note.trim()}
+            style={btnStyle(note.trim() ? '#10B981' : 'var(--qs-card)', note.trim() ? '#fff' : 'var(--qs-muted)')}>
+            Confirm
+          </button>
+          <button onClick={() => { setConfirming(false); setNote(''); }} style={btnStyle('var(--qs-card)', 'var(--qs-muted)')}>
+            Cancel
+          </button>
+        </div>
+      )}
     </div>
   );
 }

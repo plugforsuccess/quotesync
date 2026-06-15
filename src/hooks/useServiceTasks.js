@@ -48,16 +48,26 @@ function sortTasks(tasks) {
   });
 }
 
+// Work-scope filter for the batch — "mine" routes licensed work to the rep it's
+// assigned to, "unassigned" surfaces the cold pool to claim, "all" is the shop view.
+export const SCOPES = [
+  { value: 'all',        label: 'All' },
+  { value: 'mine',       label: 'Mine' },
+  { value: 'unassigned', label: 'Unassigned' },
+];
+
 // The batch view. Returns the flat active list plus a type-grouped, due-sorted
 // structure ready to render as the Service Batch.
-export function useServiceTasks(agencyId, { assignedTo, includeDone = false } = {}) {
+export function useServiceTasks(agencyId, { assignedTo, includeDone = false, scope = 'all', employeeId } = {}) {
   const query = useQuery({
-    queryKey: ['service_tasks', agencyId, assignedTo, includeDone],
+    queryKey: ['service_tasks', agencyId, assignedTo, includeDone, scope, employeeId],
     enabled: !!agencyId,
     staleTime: 60_000,
     queryFn: async () => {
       let q = supabase.from('service_tasks').select('*').eq('agency_id', agencyId);
       if (assignedTo) q = q.eq('assigned_to_id', assignedTo);
+      if (scope === 'mine' && employeeId) q = q.eq('assigned_to_id', employeeId);
+      if (scope === 'unassigned') q = q.is('assigned_to_id', null);
       if (!includeDone) q = q.in('status', ACTIVE_STATUSES);
       const { data, error } = await q.order('due_date', { ascending: true, nullsFirst: false });
       if (error) throw error;

@@ -5,7 +5,7 @@
 // persona switcher + sign-out on the right. Content sits full-width below so
 // queue screens can use the whole viewport instead of a narrow sidebar gutter.
 
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,15 +16,25 @@ import { useForceTheme } from '../contexts/ThemeContext';
 
 // Nav tabs by hat. The active hat is the persona for a dual-role producer,
 // otherwise the employee's single role. Scorecard + Time Clock are shared.
-const SCORECARD_ITEM = { to: '/my/scorecard', label: 'Scorecard' };
-const PUNCH_ITEM     = { to: '/punch',        label: 'Time Clock' };
+const SCORECARD_ITEM     = { to: '/my/scorecard',     label: 'Scorecard' };
+const PUNCH_ITEM         = { to: '/punch',            label: 'Time Clock' };
+const SERVICE_BATCH_ITEM = { to: '/my/service-batch', label: 'Service Batch' };
 
 const SERVICE_TABS = [
   { to: '/my/today', label: 'Today' },
   { to: '/my/queue', label: 'My Queue' },
+  SERVICE_BATCH_ITEM,
   SCORECARD_ITEM,
   PUNCH_ITEM,
 ];
+
+// Unlicensed (front desk): clerical intake only — Service Batch + time clock.
+const UNLICENSED_TABS = [
+  SERVICE_BATCH_ITEM,
+  PUNCH_ITEM,
+];
+// The only /my/* surfaces an unlicensed user may open (others redirect here).
+const UNLICENSED_ALLOWED = ['/my/service-batch', '/my/change-password'];
 
 const SALES_TABS = [
   { to: '/my/cross-sell', label: 'Cross-Sell' },
@@ -53,11 +63,13 @@ export default function EmployeeLayout() {
   // A principal and a dual-role (sales + service) employee both wear more than
   // one hat, so both auto-sync the pill to the URL. Single-role employees just
   // get their one hat. The returned persona shapes the nav below.
+  const location = useLocation();
   const empRoles = employee?.roles || [];
   const hasService = empRoles.includes('service_inbound')
     || empRoles.includes('service_outbound')
     || empRoles.includes('service');
   const hasSales = empRoles.includes('sales');
+  const hasUnlicensed = empRoles.includes('unlicensed');
   const isPrincipal = currentAgencyRole === 'principal';
   const multiHat = isPrincipal || (hasSales && hasService);
   const [persona] = useAutoSyncPersona(multiHat, isPrincipal ? 'principal' : 'service');
@@ -112,10 +124,25 @@ export default function EmployeeLayout() {
   )).join(' · ') || 'Employee';
 
   // The active hat: dual-role follows the pill, single-role uses its one role.
+  // Unlicensed is the clerical-only hat, used only when there's no rep role.
   const hat = (hasSales && hasService)
     ? (persona === 'service' ? 'service' : 'sales')
-    : (hasSales ? 'sales' : 'service');
-  const navItems = hat === 'sales' ? SALES_TABS : SERVICE_TABS;
+    : hasSales ? 'sales'
+    : hasService ? 'service'
+    : hasUnlicensed ? 'unlicensed'
+    : 'service';
+  const navItems = hat === 'sales' ? SALES_TABS
+    : hat === 'unlicensed' ? UNLICENSED_TABS
+    : SERVICE_TABS;
+
+  // Confine the unlicensed (front desk) hat to the Service Batch — they have no
+  // license, so the retention queues and customer/coverage surfaces are off
+  // limits. NOTE: this is a UI boundary; hardening it at the data layer
+  // (role-aware RLS on renewal/cancel tables) is a recommended follow-up.
+  const brandTo = hat === 'unlicensed' ? '/my/service-batch' : '/my/today';
+  if (hat === 'unlicensed' && !UNLICENSED_ALLOWED.some(p => location.pathname.startsWith(p))) {
+    return <Navigate to="/my/service-batch" replace />;
+  }
 
   // Responsive side gutter shared by the nav bar and the content area so they
   // stay aligned while still letting content use the full viewport width.
@@ -137,7 +164,7 @@ export default function EmployeeLayout() {
           style={{ paddingLeft: pagePadX, paddingRight: pagePadX }}>
 
           {/* Brand */}
-          <NavLink to="/my/today" className="qs-focusable flex items-center gap-3 group min-w-0">
+          <NavLink to={brandTo} className="qs-focusable flex items-center gap-3 group min-w-0">
             {agencyLogoUrl ? (
               <img src={agencyLogoUrl} alt="" className="h-9 w-auto object-contain flex-shrink-0" />
             ) : (

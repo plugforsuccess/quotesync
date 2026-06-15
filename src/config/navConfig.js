@@ -180,6 +180,16 @@ export const principalPersonaNav = {
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },
+  // Unlicensed (front desk) hat: clerical intake only. Just the Service Batch
+  // and the time clock — no licensed retention queues, no customer/coverage data.
+  unlicensed: {
+    primary: [
+      primaryItems.serviceBatch,
+    ],
+    secondary: [
+      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
+    ],
+  },
 };
 
 // ── Employee plane navigation (service_inbound / service_outbound) ──────────
@@ -205,9 +215,13 @@ export const employeeNav = {
 export function hatForRoles(roles = [], persona) {
   const hasService = roles.some(r => ['service_inbound', 'service_outbound', 'service'].includes(r));
   const hasSales = roles.includes('sales');
+  const hasUnlicensed = roles.includes('unlicensed');
   if (hasSales && hasService) return persona === 'service' ? 'service' : 'sales';
   if (hasSales) return 'sales';
   if (hasService) return 'service';
+  // Unlicensed (front desk) only when the person has no licensed rep role — it's
+  // the clerical-intake hat, restricted to the Service Batch.
+  if (hasUnlicensed) return 'unlicensed';
   return null;
 }
 
@@ -262,6 +276,8 @@ export function personaForPath(pathname) {
   if (pathname.startsWith('/my/referrals')) return null;
   // Customer Search is in both producer hats — don't flip the pill.
   if (pathname.startsWith('/agency/customers')) return null;
+  // Service Batch is shared (service + unlicensed) — don't flip the pill.
+  if (pathname.startsWith('/my/service-batch')) return null;
 
   if (pathname.startsWith('/agency/cross-sell')) return 'sales';
   if (pathname.startsWith('/my/cross-sell')) return 'sales';
@@ -307,4 +323,5 @@ export const roleDisplayNames = {
   manager: 'Manager',
   producer: 'Producer',
   employee: 'Employee',
+  unlicensed: 'Unlicensed',
 };
