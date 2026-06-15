@@ -276,6 +276,7 @@ export function personaForPath(pathname) {
   if (pathname.startsWith('/my/referrals')) return null;
   // Customer Search is in both producer hats — don't flip the pill.
   if (pathname.startsWith('/agency/customers')) return null;
+  if (pathname.startsWith('/my/customers')) return null;
   // Service Batch is shared (service + unlicensed) — don't flip the pill.
   if (pathname.startsWith('/my/service-batch')) return null;
 

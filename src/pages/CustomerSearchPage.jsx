@@ -2,7 +2,7 @@
 // Producer customer lookup — type a name, see the household's full picture:
 // active lines, lost lines (winback openings), open cancel/renewal work, contact.
 import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useCustomerSearch, useReconcileHouseholds, useMergeHouseholds } from '../hooks/useCustomerSearch';
@@ -27,6 +27,9 @@ export default function CustomerSearchPage() {
   const { currentAgencyId } = useAuth();
   const { agency } = usePermissions();
   const canManage = !!agency?.isPrincipal;
+  // Keep household links inside whichever shell we're in (employee /my or
+  // agency), so a rep searching from their workspace stays in their workspace.
+  const detailBase = useLocation().pathname.startsWith('/my') ? '/my/customers' : '/agency/customers';
   // ?q= lets other surfaces (cross-sell cards, queue links) deep-link straight
   // into a pre-run search for a specific customer.
   const [searchParams] = useSearchParams();
@@ -138,7 +141,7 @@ export default function CustomerSearchPage() {
                   )}
                   <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>
-                    <Link to={`/agency/customers/${c.household_id}`} style={{ color: 'var(--qs-bright)', textDecoration: 'none' }}
+                    <Link to={`${detailBase}/${c.household_id}`} style={{ color: 'var(--qs-bright)', textDecoration: 'none' }}
                       onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
                       onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                       {c.display_name}

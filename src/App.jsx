@@ -194,6 +194,8 @@ function App() {
               <Route path="service-batch" element={<Suspense fallback={<PageLoader />}><ServiceBatchPage /></Suspense>} />
               <Route path="leads" element={<Suspense fallback={<PageLoader />}><MyLeadsPage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+              <Route path="customers" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CustomerSearchPage /></Suspense></ErrorBoundary>} />
+              <Route path="customers/:householdId" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><HouseholdDetailPage /></Suspense></ErrorBoundary>} />
               <Route path="cross-sell" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense></ErrorBoundary>} />
               <Route path="referrals" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ReferralRewardsPage /></Suspense></ErrorBoundary>} />
             </Route>

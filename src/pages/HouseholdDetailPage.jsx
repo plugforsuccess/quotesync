@@ -2,7 +2,7 @@
 // The household view — every policy-bearing record for one customer, across
 // new business, renewals, pending cancels, and terminations. Reached by
 // clicking a result in Customer Search.
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,6 +30,7 @@ const label = p => PRODUCT_LABELS[p] || (p ? p.toUpperCase() : '—');
 export default function HouseholdDetailPage() {
   const { householdId } = useParams();
   const { currentAgencyId } = useAuth();
+  const backTo = useLocation().pathname.startsWith('/my') ? '/my/customers' : '/agency/customers';
 
   const { data: household } = useQuery({
     queryKey: ['household_header', householdId],
@@ -71,7 +72,7 @@ export default function HouseholdDetailPage() {
 
   return (
     <div style={{ maxWidth: 820, margin: '0 auto', padding: '8px 0' }}>
-      <Link to="/agency/customers" style={{ fontSize: 13, color: '#3B82F6', textDecoration: 'none' }}>
+      <Link to={backTo} style={{ fontSize: 13, color: '#3B82F6', textDecoration: 'none' }}>
         ← Customer Search
       </Link>
 
