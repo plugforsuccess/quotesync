@@ -43,6 +43,25 @@ export function renewalCallScript({ firstName, agentName = 'your agent', product
     : `"${intro} I'm calling ahead of your ${line} policy renewal on ${when} — I want to make sure your coverage still fits and answer any questions before it renews."`;
 }
 
+// Live-answer cancel/save script. Leads with the lapse/payment situation and a
+// direct ask to resolve it today. Reads the balance aloud only on a live call
+// (the voicemail stays balance-free).
+export function cancelCallScript({ firstName, agentName = 'your agent', product, isLapsed, amountDue, effectiveDate }) {
+  firstName = titleCaseName(firstName);
+  const line = productLabel(product).toLowerCase();
+  const when = spokenDate(effectiveDate);
+  const amt = amountDue ? `$${Number(amountDue).toLocaleString()}` : null;
+  const intro = `Hi ${firstName}, this is ${agentName} calling from your Allstate agency.`;
+  if (isLapsed) {
+    return `"${intro} Your ${line} policy lapsed on ${when}.${
+      amt ? ` We can reinstate your coverage today — the amount due is ${amt}.` : ' I want to help you get your coverage reinstated.'
+    } Are you in a position to take care of that today?"`;
+  }
+  return `"${intro} I'm calling about your ${line} policy.${
+    amt ? ` We're showing a payment of ${amt} due by ${when}.` : ` Your payment is due by ${when}.`
+  } I want to make sure you don't have a gap in coverage — can I help you take care of that today?"`;
+}
+
 export function CallScriptBox({ label = 'Call script', children }) {
   return (
     <div style={{

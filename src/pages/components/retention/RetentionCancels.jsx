@@ -11,7 +11,7 @@ import InterventionPicker from '../../../components/InterventionPicker';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
 import { productLabel } from '../../../lib/productLabels';
 import { titleCaseName } from '../../../lib/names';
-import { CallScriptBox, VoicemailScriptBox, renewalCallScript } from '../../../components/RetentionScripts';
+import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript } from '../../../components/RetentionScripts';
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 
@@ -243,6 +243,42 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     rewrite_new_premium: event.rewrite_new_premium || "",
     rewrite_reason:      event.rewrite_reason || "",
   });
+
+  // Script + contact inputs (mirrors the queue card).
+  const firstName = event.customer_name?.split(" ")[0] || "there";
+  const isLapsed = days < 0;
+  const me = (producers || []).find(p => p.id === currentEmployeeId);
+  const agentName = me
+    ? ([me.preferred_name || me.first_name, me.last_name].filter(Boolean).join(" ") || "your agent")
+    : "your agent";
+
+  // Callback scheduling (moved off the list card into the work surface).
+  const [cbTime, setCbTime] = useState("");
+  const [cbNote, setCbNote] = useState("");
+  const [cbSaving, setCbSaving] = useState(false);
+
+  async function scheduleCallback() {
+    if (!cbTime || cbSaving) return;
+    setCbSaving(true);
+    const callbackAt = new Date(cbTime).toISOString();
+    await supabase.from("pending_cancel_attempts").insert({
+      pending_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+      method: "phone", result: "reached",
+      note: `Callback scheduled: ${cbNote || "no details"}`,
+    });
+    await onUpdate(event.id, {
+      attempt_count:       (event.attempt_count || 0) + 1,
+      last_attempt_at:     new Date().toISOString(),
+      last_attempt_result: "reached",
+      contacted_at:        event.contacted_at || new Date().toISOString(),
+      callback_at:         callbackAt,
+      callback_note:       cbNote || null,
+      status: event.status === "pending" ? "contacted" : event.status,
+    });
+    setCbSaving(false);
+    setCbTime(""); setCbNote("");
+    onClose();
+  }
 
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
@@ -537,6 +573,64 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             </div>
           )}
+
+          {/* ── Contact · Call · scripts ─────────────────────── */}
+          <div style={{
+            background: "var(--qs-elevated)", border: "1px solid var(--qs-border)",
+            borderRadius: 10, padding: "14px 16px", marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
+              textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Contact</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Phone</div>
+                <div style={{ fontSize: 14, color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>{event.phone || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Email</div>
+                <div style={{ fontSize: 14, color: "var(--qs-dim)" }}>{event.email || "—"}</div>
+              </div>
+            </div>
+            {event.phone && (
+              <a href={`tel:${event.phone}`} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                marginTop: 12, width: "100%", boxSizing: "border-box",
+                padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                fontSize: 15, fontWeight: 700, textDecoration: "none",
+              }}>{"📞"} Call {event.phone}</a>
+            )}
+            <div style={{ marginTop: 12 }}>
+              <CallScriptBox label="Call script">
+                {cancelCallScript({
+                  firstName, agentName, product: event.product, isLapsed,
+                  amountDue: event.amount_due, effectiveDate: event.cancel_effective_date,
+                })}
+              </CallScriptBox>
+              <VoicemailScriptBox firstName={firstName} agentName={agentName} product={event.product} />
+            </div>
+          </div>
+
+          {/* ── Schedule a callback ──────────────────────────── */}
+          <div style={{ marginBottom: 20 }}>
+            <label className="dark-label">Schedule a callback</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="datetime-local" className="dark-input" value={cbTime}
+                onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
+              <input className="dark-input" placeholder="Note (optional)" value={cbNote}
+                onChange={e => setCbNote(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
+              <button onClick={scheduleCallback} disabled={!cbTime || cbSaving} style={{
+                fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none",
+                background: "#3B82F6", color: "#fff", fontWeight: 700,
+                cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
+                opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
+              }}>{cbSaving ? "Scheduling…" : "📅 Schedule"}</button>
+            </div>
+            {event.callback_at && (
+              <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
+                Current: {new Date(event.callback_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+              </div>
+            )}
+          </div>
 
           {/* ── Section: Attempt Log ─────────────────────────── */}
           <div style={{
