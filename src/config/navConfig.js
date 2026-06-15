@@ -35,6 +35,7 @@ const primaryItems = {
   // the top nav without first switching back to Principal.
   today:            { to: '/my/today',                 label: 'Today',       icon: '⏱️' },
   myQueue:          { to: '/my/queue',                 label: 'My Queue',    icon: '⚡' },
+  serviceBatch:     { to: '/my/service-batch',         label: 'Service Batch', icon: '🗂️' },
   myLeads:          { to: '/my/leads',                 label: 'My Leads',    icon: '🎯' },
   scorecard:        { to: '/my/scorecard',             label: 'Scorecard',   icon: '📊' },
   // Platform admin primary items
@@ -171,10 +172,21 @@ export const principalPersonaNav = {
     primary: [
       primaryItems.today,
       primaryItems.myQueue,
+      primaryItems.serviceBatch,
       primaryItems.scorecard,
     ],
     secondary: [
       primaryItems.customers,
+      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
+    ],
+  },
+  // Unlicensed (front desk) hat: clerical intake only. Just the Service Batch
+  // and the time clock — no licensed retention queues, no customer/coverage data.
+  unlicensed: {
+    primary: [
+      primaryItems.serviceBatch,
+    ],
+    secondary: [
       { to: '/punch', label: 'Time Clock', icon: '⏱️' },
     ],
   },
@@ -185,7 +197,8 @@ export const principalPersonaNav = {
 
 export const employeeNav = {
   primary: [
-    { to: '/my/queue',     label: 'Queue',     icon: '\u26A1', isPrimary: true },
+    { to: '/my/queue',         label: 'Queue',         icon: '\u26A1', isPrimary: true },
+    { to: '/my/service-batch', label: 'Service Batch', icon: '\uD83D\uDDC2\uFE0F', isPrimary: true },
     { to: '/my/leads',     label: 'Leads',     icon: '\uD83C\uDFAF', isPrimary: true },
     { to: '/my/scorecard', label: 'Scorecard', icon: '\uD83D\uDCCA', isPrimary: true },
     { to: '/punch',        label: 'Punch',     icon: '\u23F1\uFE0F', isPrimary: true },
@@ -202,9 +215,13 @@ export const employeeNav = {
 export function hatForRoles(roles = [], persona) {
   const hasService = roles.some(r => ['service_inbound', 'service_outbound', 'service'].includes(r));
   const hasSales = roles.includes('sales');
+  const hasUnlicensed = roles.includes('unlicensed');
   if (hasSales && hasService) return persona === 'service' ? 'service' : 'sales';
   if (hasSales) return 'sales';
   if (hasService) return 'service';
+  // Unlicensed (front desk) only when the person has no licensed rep role — it's
+  // the clerical-intake hat, restricted to the Service Batch.
+  if (hasUnlicensed) return 'unlicensed';
   return null;
 }
 
@@ -259,6 +276,8 @@ export function personaForPath(pathname) {
   if (pathname.startsWith('/my/referrals')) return null;
   // Customer Search is in both producer hats — don't flip the pill.
   if (pathname.startsWith('/agency/customers')) return null;
+  // Service Batch is shared (service + unlicensed) — don't flip the pill.
+  if (pathname.startsWith('/my/service-batch')) return null;
 
   if (pathname.startsWith('/agency/cross-sell')) return 'sales';
   if (pathname.startsWith('/my/cross-sell')) return 'sales';
@@ -304,4 +323,5 @@ export const roleDisplayNames = {
   manager: 'Manager',
   producer: 'Producer',
   employee: 'Employee',
+  unlicensed: 'Unlicensed',
 };

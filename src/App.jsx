@@ -115,6 +115,7 @@ const ReferralRulesPage = lazyWithRetry(() => import('./pages/ReferralRulesPage'
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
 const MyLeadsPage = lazyWithRetry(() => import('./pages/MyLeadsPage'));
 const TodayPage = lazyWithRetry(() => import('./pages/TodayPage'));
+const ServiceBatchPage = lazyWithRetry(() => import('./pages/ServiceBatchPage'));
 const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
 const ChangePasswordPage = lazyWithRetry(() => import('./pages/ChangePasswordPage'));
 
@@ -190,6 +191,7 @@ function App() {
               <Route index element={<Navigate to="/my/today" replace />} />
               <Route path="today" element={<Suspense fallback={<PageLoader />}><TodayPage /></Suspense>} />
               <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
+              <Route path="service-batch" element={<Suspense fallback={<PageLoader />}><ServiceBatchPage /></Suspense>} />
               <Route path="leads" element={<Suspense fallback={<PageLoader />}><MyLeadsPage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
               <Route path="cross-sell" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense></ErrorBoundary>} />

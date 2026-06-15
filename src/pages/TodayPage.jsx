@@ -7,6 +7,7 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useServiceTasks } from '../hooks/useServiceTasks';
 import { usePersona } from '../hooks/usePersona';
 import { hatForRoles } from '../config/navConfig';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
@@ -69,6 +70,9 @@ export default function TodayPage() {
 
   const [selectedCancel,  setSelectedCancel]  = useState(null);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
+
+  // Service-batch glance — open admin tasks waiting for the afternoon block.
+  const { tasks: serviceTasks = [], overdue: serviceOverdue = 0 } = useServiceTasks(orgId);
 
   // Persist outcomes from the detail modals and refresh the list — without
   // these, the modal Save button silently no-ops, the case stays in the queue,
@@ -294,6 +298,26 @@ export default function TodayPage() {
           </div>
         )}
       </div>
+
+      {/* Service Batch glance — admin tasks for the afternoon block */}
+      {serviceTasks.length > 0 && (
+        <a href="/my/service-batch" style={{
+          display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none',
+          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+          borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+        }}>
+          <span style={{ fontSize: 18 }}>🗂️</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>
+              {serviceTasks.length} service {serviceTasks.length === 1 ? 'task' : 'tasks'} to batch
+            </div>
+            <div style={{ fontSize: 12, color: serviceOverdue > 0 ? '#F87171' : 'var(--qs-muted)' }}>
+              {serviceOverdue > 0 ? `${serviceOverdue} past due · ` : ''}clear in one block, grouped by type
+            </div>
+          </div>
+          <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, flexShrink: 0 }}>Open Service Batch →</span>
+        </a>
+      )}
 
       {/* Ranked list */}
       {isLoading ? (
