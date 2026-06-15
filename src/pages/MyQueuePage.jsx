@@ -17,6 +17,7 @@ import { EventDetailModal, RenewalDetailModal } from './components/retention/Ret
 import ReadingColumn from '../components/ReadingColumn';
 import InterventionPicker from '../components/InterventionPicker';
 import { CallScriptBox, VoicemailScriptBox, renewalCallScript } from '../components/RetentionScripts';
+import { titleCaseName } from '../lib/names';
 import { EMPTY_INTERVENTION, interventionInsertFields } from '../lib/interventions';
 import { productLabel } from '../lib/productLabels';
 
@@ -708,7 +709,7 @@ export default function MyQueuePage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--qs-bright)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {event.customer_name}
+            {titleCaseName(event.customer_name)}
           </span>
           <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: statusColor, flexShrink: 0 }}>
             {statusText}
@@ -758,7 +759,7 @@ export default function MyQueuePage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
           <span style={{ fontSize: '0.9375rem', fontWeight: 600, color: 'var(--qs-bright)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {event.customer_name}
+            {titleCaseName(event.customer_name)}
           </span>
           <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: statusColor, flexShrink: 0 }}>
             {statusText}
@@ -874,7 +875,7 @@ export default function MyQueuePage() {
             fontWeight: 600, color: 'var(--qs-bright)',
             margin: 0, lineHeight: 1.2,
           }}>
-            {event.customer_name}
+            {titleCaseName(event.customer_name)}
           </h3>
 
           {event.policy_no && (
@@ -1213,7 +1214,7 @@ export default function MyQueuePage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
               <span style={{ fontSize: 17, fontWeight: 700, color: 'var(--qs-bright)',
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                {event.customer_name}
+                {titleCaseName(event.customer_name)}
               </span>
 
               {rateShock && (
@@ -2003,7 +2004,7 @@ export default function MyQueuePage() {
             borderRadius: 12, padding: 24, width: '100%', maxWidth: 440,
           }}>
             <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 6 }}>
-              Log Call — {logCallTarget.event.customer_name}
+              Log Call — {titleCaseName(logCallTarget.event.customer_name)}
             </div>
             <div style={{ fontSize: 14, color: 'var(--qs-subtle)', marginBottom: 14 }}>
               {logCallTarget.event.policy_no}
@@ -2167,7 +2168,7 @@ export default function MyQueuePage() {
               Schedule Callback
             </div>
             <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16 }}>
-              {callbackTarget.event.customer_name} · {callbackTarget.event.policy_no}
+              {titleCaseName(callbackTarget.event.customer_name)} · {callbackTarget.event.policy_no}
             </div>
 
             <label className="dark-label">Callback time</label>
@@ -2234,7 +2235,7 @@ export default function MyQueuePage() {
               Mark as Lost
             </div>
             <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 14 }}>
-              {lostTarget.event.customer_name}
+              {titleCaseName(lostTarget.event.customer_name)}
             </div>
 
             <label className="dark-label">Reason (optional but helpful)</label>
