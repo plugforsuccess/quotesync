@@ -1,16 +1,53 @@
-# React + Vite
+# QuoteSync
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Insurance-agency operations platform — at its core, the **retention /
+service-desk operating system** for an Allstate agency, with a consumer lead
+funnel, AI/voice + SMS outreach, a defensive-driving course business, and
+agency back-office tooling layered on top.
 
-Currently, two official plugins are available:
+> Allstate is the system of record; QuoteSync is the workflow/intelligence layer
+> on top of manually-imported carrier reports.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Stack
 
-## React Compiler
+React 19 + Vite 7 + React Router 7 + Tailwind 3 on the frontend, TanStack React
+Query for data access, and Supabase (Postgres + RLS + Auth + Deno Edge
+Functions) on the backend. Hosted on Vercel + Supabase. JavaScript/JSX (no
+TypeScript).
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Getting started
 
-## Expanding the ESLint configuration
+```bash
+npm install
+cp .env.example .env.local   # fill in Supabase + integration keys
+npm run dev                  # Vite dev server
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Common commands
+
+```bash
+npm run build            # production build
+npm run preview          # preview the build
+npm run lint             # ESLint (flat config)
+npm run test:e2e         # Playwright e2e
+node --test tests/unit   # unit tests
+```
+
+## Where things live
+
+- `src/App.jsx` — all routes (consumer, `/my` employee, `/agency`, `/admin`)
+- `src/pages/` — page components; `src/hooks/` — the React Query data layer
+- `src/lib/` — parsers (Allstate report formats), Supabase client, utils
+- `supabase/functions/` — Deno edge functions (Bland, Twilio, Canopy, Stripe/DD, punch)
+- `supabase/migrations/` + `migrations/` — SQL migrations (current + legacy lineages)
+
+## Documentation
+
+- **`CLAUDE.md`** — orientation for contributors (and Claude); the accurate
+  picture of what's built vs. aspirational.
+- **`QUOTESYNC_OS_AUDIT.md`** — file-cited audit of capabilities and gaps.
+- **`OPERATING_PLAYBOOK.md`** — how the agency runs day-to-day.
+- `docs/` — retention engine, SOPs, user manual.
+
+`PRODUCT.md` describes the aspirational product vision; treat it as a roadmap,
+not a description of current behavior (see the trust map in `CLAUDE.md`).
