@@ -821,7 +821,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               policyNo={event.policy_no} customerName={event.customer_name} />
 
             <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
-              customerName={event.customer_name} customerPhone={event.phone} source="internal" />
+              customerName={event.customer_name} customerPhone={event.phone}
+              sourceCaseType="cancel" sourceCaseId={event.id} source="internal" />
 
             {/* Save */}
             <button
@@ -1405,7 +1406,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               policyNo={event.policy_no} customerName={event.customer_name} />
 
             <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
-              customerName={event.customer_name} customerPhone={event.phone} source="renewal_call" />
+              customerName={event.customer_name} customerPhone={event.phone}
+              sourceCaseType="renewal" sourceCaseId={event.id} source="renewal_call" />
 
             {/* Save */}
             <button

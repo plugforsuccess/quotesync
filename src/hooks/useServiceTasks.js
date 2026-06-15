@@ -99,6 +99,7 @@ export function useCreateServiceTask() {
         task_type: task.taskType || 'other',
         title: task.title,
         detail: task.detail ?? null,
+        status: task.status || 'open',
         priority: task.priority || 'normal',
         requires_license: task.requiresLicense ?? false,
         policy_no: task.policyNo ?? null,
@@ -107,6 +108,11 @@ export function useCreateServiceTask() {
         due_date: task.dueDate ?? null,
         assigned_to_id: task.assignedTo ?? null,
         source: task.source || 'inbound_call',
+        // Link back to the renewal/cancel call this came off, and flag when it
+        // was resolved live on that call (vs. queued cold for the batch).
+        source_case_type: task.sourceCaseType ?? null,
+        source_case_id: task.sourceCaseId ?? null,
+        resolved_on_call: task.resolvedOnCall ?? false,
       });
       if (error) throw error;
     },
