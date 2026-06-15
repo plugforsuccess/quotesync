@@ -44,6 +44,7 @@ export const SESSION_KEYS = {
   CANOPY_HOME_SHOWN: 'qs_funnel_canopy_home_shown',
   CANOPY_HOME_SYNCED: 'qs_funnel_canopy_home_synced',
   PROPERTY_DATA_SOURCE: 'qs_funnel_property_data_source',
+  INTAKE_MODE: 'qs_funnel_intake_mode',
 };
 
 // ─── Helpers ───────────────────────────────────────────────────────
@@ -93,6 +94,7 @@ function restore() {
     stories: sessionStorage.getItem(SESSION_KEYS.STORIES) || null,
     canopyHomeSynced: jp(sessionStorage.getItem(SESSION_KEYS.CANOPY_HOME_SYNCED), false),
     propertyDataSource: sessionStorage.getItem(SESSION_KEYS.PROPERTY_DATA_SOURCE) || null,
+    intakeMode: sessionStorage.getItem(SESSION_KEYS.INTAKE_MODE) || null,
   };
 }
 
@@ -137,6 +139,7 @@ function persistToSession(a) {
     [SESSION_KEYS.STORIES, a.stories],
     [SESSION_KEYS.CANOPY_HOME_SYNCED, JSON.stringify(a.canopyHomeSynced)],
     [SESSION_KEYS.PROPERTY_DATA_SOURCE, a.propertyDataSource],
+    [SESSION_KEYS.INTAKE_MODE, a.intakeMode],
   ];
   pairs.forEach(([k, v]) => {
     if (v != null && v !== '') {
@@ -155,7 +158,19 @@ function persistToSession(a) {
  * New steps: veteranStatus, premium capture, coverage lapse, vehicle details.
  */
 export function computeStepSequence(answers) {
-  const steps = ['zip', 'discountQualifier', 'veteranStatus', 'productIntent', 'earlyPhone'];
+  // ZIP first (routing + eligibility + creates the partial lead), then the
+  // dec-page fast-path offer.
+  const steps = ['zip', 'decUpload'];
+
+  // Fast path: if the lead uploaded their declarations page(s), skip the manual
+  // questionnaire entirely — premium/coverages/vehicles/etc. are read from the
+  // document, so we only still need contact info + TCPA consent.
+  if (answers.intakeMode === 'upload') {
+    steps.push('contact', 'confirmation');
+    return steps;
+  }
+
+  steps.push('discountQualifier', 'veteranStatus', 'productIntent', 'earlyPhone');
 
   const intent = answers.productIntent;
   const isOwner = answers.ownsHome === true;
@@ -214,6 +229,22 @@ export function computeStepSequence(answers) {
   return steps;
 }
 
+// Longest journey across all product paths. Used as a conservative denominator
+// for the progress bar BEFORE a product is chosen — the eventual length is
+// unknown and varies a lot (a bundle is ~25 steps, auto-only ~13), so dividing
+// by the max keeps early steps from over-reporting. Computed from the step
+// builder so it can't drift out of sync if steps are added.
+const PATH_PROBES = [
+  { productIntent: 'bundle', ownsHome: true },
+  { productIntent: 'auto', ownsHome: true },
+  { productIntent: 'auto_renters', ownsHome: false },
+  { productIntent: 'home', ownsHome: true },
+  { productIntent: 'landlord', ownsHome: true },
+];
+export const MAX_STEP_COUNT = Math.max(
+  ...PATH_PROBES.map((p) => computeStepSequence(p).length)
+);
+
 // ─── Hook ──────────────────────────────────────────────────────────
 
 export function useWizard() {
@@ -236,6 +267,21 @@ export function useWizard() {
   const progress = totalSteps > 1 ? (currentIndex + 1) / totalSteps : 0;
   const isFirstStep = currentIndex === 0;
   const isLastStep = currentIndex >= stepSequence.length - 1;
+
+  // Progress percentage for the bar. Before a product is chosen the path length
+  // is unknown and short (~9 steps), so dividing by it over-reports (e.g. the
+  // discount step would show 25% of a journey that's really ~8% done for a
+  // bundle). Use the longest path as the denominator until the product is known,
+  // then switch to the real length so it still reaches ~100% at the end.
+  const progressPct = useMemo(() => {
+    // The path is "known" once the lead picks a product OR takes the upload
+    // fast-path; until then, divide by the longest path so we don't over-report.
+    const pathKnown = !!answers.productIntent || answers.intakeMode === 'upload';
+    const effectiveTotal = pathKnown ? totalSteps : Math.max(totalSteps, MAX_STEP_COUNT);
+    const denom = effectiveTotal - 1;
+    if (denom <= 0) return 0;
+    return Math.min(Math.round(((currentIndex + 1) / denom) * 100), 99);
+  }, [answers.productIntent, answers.intakeMode, totalSteps, currentIndex]);
 
 
 
@@ -366,6 +412,7 @@ export function useWizard() {
     setCurrentIndex,  // needed for ZIP prefill skip
     totalSteps,
     progress,
+    progressPct,
     isFirstStep,
     isLastStep,
     direction,

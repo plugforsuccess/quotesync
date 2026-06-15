@@ -11,6 +11,7 @@ import { trackEvent } from '../../../lib/analytics';
 import AddressAutocomplete from '../../../components/AddressAutocomplete';
 import { TOP_VEHICLE_MAKES, ALL_VEHICLE_MAKES } from '../../../data/vehicleMakes';
 import { getModelsForMake } from '../../../data/vehicleModels';
+import DeclarationUpload from './DeclarationUpload';
 
 // ─── Shared UI Primitives ──────────────────────────────────────────
 
@@ -1307,6 +1308,10 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
   const { launchCanopy } = useCanopyLauncher();
   const savings = getSavingsEstimate(answers.ownsHome, answers.vehicleCount, answers.productIntent);
 
+  // Capture the lead id during render (the initializer runs before the clear
+  // effect below) so the dec-page upload still has something to attach to.
+  const [leadId] = useState(() => sessionStorage.getItem(SESSION_KEYS.LEAD_ID));
+
   // H-2: Clear PII from sessionStorage once confirmation renders
   // (data is already in React state and submitted to server)
   useEffect(() => {
@@ -1384,6 +1389,9 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
           </div>
         </button>
       </div>
+
+      {/* Declarations-page upload — optional enrichment */}
+      <DeclarationUpload leadId={leadId} agentName={agentName} />
 
       {/* About Agent */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">

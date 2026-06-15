@@ -1,6 +1,11 @@
 [functions.create-lead]
 verify_jwt = false
 
+# Called from the public confirmation page with the anon key after a lead uploads
+# their declarations page; authenticated by lead_id + storage-path ownership, not a JWT.
+[functions.parse-declaration-pdf]
+verify_jwt = false
+
 [functions.canopy-webhook]
 verify_jwt = false
 

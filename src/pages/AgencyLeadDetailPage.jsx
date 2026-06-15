@@ -20,6 +20,7 @@ import {
   useDisposeLead
 } from '../hooks/useAgencyLeads';
 import DispositionModal from './components/DispositionModal';
+import LeadDeclarationCard from './components/LeadDeclarationCard';
 import { getScoreColor, formatScoreFactors, RISK_FLAG_CONFIG } from '../lib/leadScoring';
 import { supabase } from '../lib/supabase';
 import PageSpinner from '../components/PageSpinner';
@@ -685,6 +686,9 @@ const AgencyLeadDetailPage = () => {
                 </div>
               )}
             </div>
+
+            {/* Declarations page — extracted from the lead's uploaded dec page */}
+            <LeadDeclarationCard lead={lead} />
 
             {/* Quote Summary */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

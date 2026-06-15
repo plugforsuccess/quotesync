@@ -2,10 +2,26 @@
  * Leads API - Client-side utilities for lead creation
  */
 
+import { supabase } from './supabase';
+
 // Edge function URL - configure in environment
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-lead`
   : '/functions/v1/create-lead';
+
+const PARSE_DECLARATION_URL = import.meta.env.VITE_SUPABASE_URL
+  ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/parse-declaration-pdf`
+  : '/functions/v1/parse-declaration-pdf';
+
+const DECLARATIONS_BUCKET = 'lead-declarations';
+const MAX_DECLARATION_BYTES = 15 * 1024 * 1024; // keep in sync with the bucket's file_size_limit
+const ACCEPTED_DECLARATION_TYPES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/heic',
+];
 
 /**
  * Generates or retrieves session ID for attribution tracking
@@ -133,6 +149,60 @@ export async function createLeadFromCanopy({ pullId, state, zip, productIntent }
 
   if (!response.ok) {
     throw new Error(data.error || 'Failed to create lead');
+  }
+
+  return data;
+}
+
+/**
+ * Uploads a lead's declarations page to Storage and triggers server-side
+ * extraction. The original file lands in the private `lead-declarations` bucket
+ * under `{leadId}/...`; the parse-declaration-pdf edge function reads it with the
+ * service role, extracts the fields via Claude, and writes them onto the lead.
+ *
+ * @param {Object} params
+ * @param {string} params.leadId - Lead UUID the dec page belongs to (required)
+ * @param {File}   params.file   - The PDF (preferred) or image to upload (required)
+ * @returns {Promise<Object>} { success, declaration } from the parse function
+ */
+export async function uploadDeclarationPdf({ leadId, file }) {
+  if (!leadId) throw new Error('leadId is required');
+  if (!file) throw new Error('file is required');
+
+  if (!ACCEPTED_DECLARATION_TYPES.includes(file.type)) {
+    throw new Error('Please upload a PDF, or a photo (JPG/PNG) of your declarations page.');
+  }
+  if (file.size > MAX_DECLARATION_BYTES) {
+    throw new Error('That file is too large — please upload one under 15 MB.');
+  }
+
+  // Stable-ish name within the lead's folder; timestamp avoids clobbering re-uploads.
+  const ext = (file.name?.split('.').pop() || 'pdf').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const storagePath = `${leadId}/declaration-${Date.now()}.${ext || 'pdf'}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(DECLARATIONS_BUCKET)
+    .upload(storagePath, file, { contentType: file.type, upsert: false });
+
+  if (uploadError) {
+    throw new Error('Upload failed. Please try again.');
+  }
+
+  const response = await fetch(PARSE_DECLARATION_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+    },
+    body: JSON.stringify({ lead_id: leadId, storage_path: storagePath }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    // The file is safely stored even if extraction failed — the agent can still
+    // open it manually, so surface a soft error rather than implying data loss.
+    throw new Error(data.error || 'We saved your document but couldn\'t read it automatically.');
   }
 
   return data;
