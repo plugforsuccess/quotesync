@@ -897,7 +897,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 )}
               </div>
               <div>
-                <label className="dark-label">Promise Date</label>
+                <label className="dark-label">Pay Promise Date</label>
                 <input
                   className="dark-input"
                   type="date"
@@ -1768,7 +1768,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
                   color: urgencyColor(daysUntilCancel(r.cancel_effective_date)) },
                 { label: 'Status',
                   value: STATUS_CONFIG[r.cancel_status]?.label || r.cancel_status || '—' },
-                { label: 'Promise Date', value: r.promise_date || '—',
+                { label: 'Pay Promise Date', value: r.promise_date || '—',
                   color: (() => {
                     if (!r.promise_date) return 'var(--qs-subtle)';
                     const d = Math.ceil((new Date(r.promise_date) - new Date()) / 86400000);

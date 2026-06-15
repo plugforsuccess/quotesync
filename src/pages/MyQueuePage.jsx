@@ -305,6 +305,11 @@ export default function MyQueuePage() {
         return cancelCases
           .filter(e => e.callback_at)
           .sort((a, b) => new Date(a.callback_at) - new Date(b.callback_at));
+      case 'promises':
+        // Overdue pay-promises — they said they'd pay by a date that has passed.
+        return cancelCases
+          .filter(e => e.promise_date && new Date(e.promise_date) < new Date())
+          .sort((a, b) => new Date(a.promise_date) - new Date(b.promise_date));
       default:
         return cancelCases;
     }
@@ -337,7 +342,7 @@ export default function MyQueuePage() {
 
   // The cases the queue actually displays based on focus toggle.
   // Callbacks view shows every scheduled callback (no focus cap), soonest first.
-  const displayCancelCases = (focusMode && cancelFilter !== 'callbacks') ? focusCases : filteredCancelCases;
+  const displayCancelCases = (focusMode && cancelFilter !== 'callbacks' && cancelFilter !== 'promises') ? focusCases : filteredCancelCases;
 
   // KPI-card filter for the renewal list: 'all' | 'closing' | 'rate_shock' | 'untouched'
   // (renewalFilter / closingMode / clickTimerRef are declared at the top of the
@@ -401,11 +406,15 @@ export default function MyQueuePage() {
     return groups;
   }, [displayCancelCases]);
 
-  // In the Callbacks view, skip priority bucketing — show one flat group in
-  // strict due order (overdue / soonest first) so reps work them in sequence.
-  const BUCKETS = cancelFilter === 'callbacks'
+  // In the Callbacks / Promises views, skip priority bucketing — show one flat
+  // group in strict due order so reps work them in sequence.
+  const FLAT_CANCEL_VIEWS = {
+    callbacks: { label: '📅 CALLBACKS · soonest first',    color: '#60A5FA' },
+    promises:  { label: '⚠ PAY PROMISES · most overdue first', color: '#F87171' },
+  };
+  const BUCKETS = FLAT_CANCEL_VIEWS[cancelFilter]
     ? (displayCancelCases.length
-        ? [{ key: 'callbacks', label: '📅 CALLBACKS · soonest first', color: '#60A5FA', cases: displayCancelCases }]
+        ? [{ key: cancelFilter, ...FLAT_CANCEL_VIEWS[cancelFilter], cases: displayCancelCases }]
         : [])
     : PRIORITY_BUCKETS
         .map(b => ({ ...b, cases: cancelBuckets[b.key] || [] }))
@@ -414,7 +423,7 @@ export default function MyQueuePage() {
   // Flattened, in-priority-order list backing the master-detail pane and
   // keyboard navigation. "other" tier cases (no recognized tier) trail behind.
   const flatCancelCases = useMemo(() => (
-    cancelFilter === 'callbacks'
+    (cancelFilter === 'callbacks' || cancelFilter === 'promises')
       ? displayCancelCases
       : [
           ...PRIORITY_BUCKETS.flatMap(b => cancelBuckets[b.key] || []),
@@ -841,13 +850,15 @@ export default function MyQueuePage() {
         {/* Status line: promise / last attempt / callback ────────────── */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             {promisePast && (
-              <span style={{ fontSize: '0.875rem', color: '#F87171', fontWeight: 600 }}>
-                ⚠ Promise broken · {new Date(event.promise_date).toLocaleDateString()}
+              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 700, color: '#FCA5A5',
+                background: 'rgba(239,68,68,0.14)', border: '1px solid rgba(239,68,68,0.4)' }}>
+                ⚠ Pay promise overdue · {new Date(event.promise_date).toLocaleDateString()}
               </span>
             )}
             {promiseSoon && (
-              <span style={{ fontSize: '0.875rem', color: '#FBBF24', fontWeight: 600 }}>
-                Promised {new Date(event.promise_date).toLocaleDateString()}
+              <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 600, color: '#FBBF24',
+                background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.3)' }}>
+                📌 Pay promise {new Date(event.promise_date).toLocaleDateString()}
               </span>
             )}
             {lastAtt && !promisePast && (
@@ -1550,6 +1561,7 @@ export default function MyQueuePage() {
                     { key: 'never_called', label: `Untouched (${cancelCases.filter(e => !e.attempt_count).length})` },
                     { key: 'multi_policy', label: `Multi (${cancelCases.filter(e => (customerPolicyCounts[e.customer_name] || 1) > 1).length})` },
                     { key: 'callbacks',    label: `📅 Callbacks (${cancelCases.filter(e => e.callback_at).length})` },
+                    { key: 'promises',     label: `⚠ Promises (${cancelCases.filter(e => e.promise_date && new Date(e.promise_date) < new Date()).length})` },
                     { key: 'snoozed',      label: `Snoozed${cancelFilter === 'snoozed' ? ` (${snoozedCancelCases.length})` : ''}` },
                   ].map(f => (
                     <button
