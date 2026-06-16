@@ -8,7 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
-import { useActiveEmployees } from '../hooks/useEmployees';
+import { useActiveEmployees, useAssignableMembers } from '../hooks/useEmployees';
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
   useExpectedCallbacks, useLogCallback, useServiceTaskVelocity, slaMsLeft,
@@ -22,7 +22,7 @@ const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: '
 
 // Completing one of these without recording what was done loses the audit trail
 // the agency cares about most — so a completion note is required.
-const NOTE_REQUIRED_TYPES = new Set(['billing', 'coverage', 'premium']);
+const NOTE_REQUIRED_TYPES = new Set(['billing', 'coverage', 'premium', 'insurance_review']);
 
 const PRIORITY_BADGE = {
   urgent: { label: 'URGENT', bg: '#EF444433', color: '#FCA5A5' },
@@ -94,13 +94,18 @@ export default function ServiceBatchPage() {
          .sort((a, b) => (slaMsLeft(a.created_at) ?? 0) - (slaMsLeft(b.created_at) ?? 0)),
   [tasks]);
 
-  // Resolve employee ids → names for "logged by" / assignee on each task.
+  // Resolve ids → names for "logged by" / assignee on each task. Employees power
+  // "logged by" (created_by_id is always an employee); the assignable-members
+  // list is the full active roster — incl. sales producers and unlicensed staff
+  // with a membership but no employee row — so they can be assigned tasks too.
   const { data: employees = [] } = useActiveEmployees(agencyId);
+  const { data: assignable = [] } = useAssignableMembers(agencyId);
   const empName = useMemo(() => {
     const m = {};
     for (const e of employees) m[e.id] = e.preferred_name || `${e.first_name || ''} ${e.last_name || ''}`.trim();
+    for (const a of assignable) m[a.id] = a.name; // includes sales/unlicensed members
     return m;
-  }, [employees]);
+  }, [employees, assignable]);
   function assign(id, toId) {
     updateTask.mutate({ id, updates: { assigned_to_id: toId || null } });
   }
@@ -249,7 +254,7 @@ export default function ServiceBatchPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {overdueTasks.map(task => (
               <TaskRow key={task.id} task={task}
-                empName={empName} employees={employees}
+                empName={empName} employees={assignable}
                 onAssign={(toId) => assign(task.id, toId)}
                 onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
                 onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
@@ -281,7 +286,7 @@ export default function ServiceBatchPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {group.tasks.map(task => (
                   <TaskRow key={task.id} task={task}
-                    empName={empName} employees={employees}
+                    empName={empName} employees={assignable}
                     onAssign={(toId) => assign(task.id, toId)}
                     onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
                     onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
@@ -648,10 +653,10 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
       borderRadius: 10, padding: 16, marginBottom: 4 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         {/* Who it's for goes first — it's what links the task to a household. */}
-        <label style={{ ...lbl, gridColumn: '1 / -1' }}>Customer <span style={{ color: '#F87171' }}>*</span>
+        <label style={{ ...lbl, gridColumn: '1 / -1' }}><span>Customer <span style={{ color: '#F87171' }}>*</span></span>
           <input value={customerName} onChange={e => setCustomerName(e.target.value)} style={input} placeholder="Customer name" />
         </label>
-        <label style={lbl}>Policy # <span style={{ color: '#F87171' }}>*</span>
+        <label style={lbl}><span>Policy # <span style={{ color: '#F87171' }}>*</span></span>
           <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Policy number" />
         </label>
         <label style={lbl}>Product
@@ -673,7 +678,7 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
             <option value="low">Low</option>
           </select>
         </label>
-        <label style={{ ...lbl, gridColumn: '1 / -1' }}>What's needed <span style={{ color: '#F87171' }}>*</span>
+        <label style={{ ...lbl, gridColumn: '1 / -1' }}><span>What's needed <span style={{ color: '#F87171' }}>*</span></span>
           <input value={title} onChange={e => setTitle(e.target.value)} style={input}
             placeholder="e.g. Update mortgagee to ABC Bank" />
         </label>

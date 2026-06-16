@@ -16,6 +16,7 @@ export const TASK_TYPES = [
   { value: 'address',   label: 'Address Update',         icon: '📍', lane: 'portal',    color: '#14B8A6' },
   { value: 'premium',   label: 'Premium Question',       icon: '💲', lane: 'licensed',  color: '#EF4444' },
   { value: 'coverage',  label: 'Coverage Change',        icon: '🛡️', lane: 'licensed',  color: '#8B5CF6' },
+  { value: 'insurance_review', label: 'Insurance Review', icon: '🧐', lane: 'licensed', color: '#6366F1' },
   { value: 'id_cards',  label: 'ID Cards / Docs',        icon: '🪪', lane: 'clerical',  color: '#10B981' },
   { value: 'document',  label: 'Document Request',       icon: '📄', lane: 'clerical',  color: '#22C55E' },
   { value: 'other',     label: 'Other',                  icon: '📌', lane: 'clerical',  color: '#94A3B8' },

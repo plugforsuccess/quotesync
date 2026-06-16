@@ -205,6 +205,23 @@ export function useActiveEmployees(orgId) {
   });
 }
 
+// Everyone a task/case can be assigned to — active agency members, including
+// sales producers and unlicensed staff who have a membership but no employee
+// row. Keyed by employee id when one exists (so attribution/display still work),
+// else the user id. Backed by the agency_assignable_members SECURITY DEFINER fn.
+export function useAssignableMembers(orgId) {
+  return useQuery({
+    queryKey: ['assignable_members', orgId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('agency_assignable_members', { p_agency_id: orgId });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!orgId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 // ── Active service reps for Performance team view ────────────────────────────
 
 export function useActiveServiceReps(orgId) {
