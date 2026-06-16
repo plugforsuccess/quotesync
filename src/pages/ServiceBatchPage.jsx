@@ -619,9 +619,10 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
   const [priority, setPriority] = useState('normal');
   const [detail, setDetail] = useState('');
 
-  // Customer name identifies who the task is for and drives household linking +
-  // search, so it's required alongside the task title.
-  const canSubmit = !!agencyId && title.trim().length > 0 && customerName.trim().length > 0 && !busy;
+  // Customer name + policy number identify who the task is for and drive
+  // household/policy linking + search, so both are required alongside the title.
+  const canSubmit = !!agencyId && title.trim().length > 0
+    && customerName.trim().length > 0 && policyNo.trim().length > 0 && !busy;
 
   function submit() {
     if (!canSubmit) return;
@@ -650,8 +651,8 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
         <label style={{ ...lbl, gridColumn: '1 / -1' }}>Customer <span style={{ color: '#F87171' }}>*</span>
           <input value={customerName} onChange={e => setCustomerName(e.target.value)} style={input} placeholder="Customer name" />
         </label>
-        <label style={lbl}>Policy #
-          <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Optional" />
+        <label style={lbl}>Policy # <span style={{ color: '#F87171' }}>*</span>
+          <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Policy number" />
         </label>
         <label style={lbl}>Product
           <select value={product} onChange={e => setProduct(e.target.value)} style={input}>
