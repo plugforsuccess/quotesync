@@ -1738,16 +1738,15 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 {savedPremium !== "" && event.premium != null && (() => {
                   const paid = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
                   if (Number.isNaN(paid)) return null;
-                  const delta = event.premium - paid; // positive = we reduced the offer
-                  const pct = event.premium > 0 ? (Math.abs(delta) / event.premium) * 100 : 0;
+                  const diff = paid - event.premium; // + paid above offer, − below
+                  const pct = event.premium > 0 ? (Math.abs(diff) / event.premium) * 100 : 0;
                   return (
-                    <div style={{ fontSize: 12, marginTop: 6, fontWeight: 600,
-                      color: delta > 0 ? "#34D399" : "var(--qs-dim)" }}>
-                      {delta > 0
-                        ? `💰 Saved them ${fmtFull$(delta)} — ${pct.toFixed(0)}% off the renewal offer`
-                        : delta < 0
-                          ? `Paid ${fmtFull$(-delta)} above the offer (${pct.toFixed(0)}% more)`
-                          : "Renewed at the full offer"}
+                    <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
+                      Premium difference vs offer ({fmtFull$(event.premium)}):{" "}
+                      <strong style={{ color: diff < 0 ? "#34D399" : diff > 0 ? "#FBBF24" : "var(--qs-dim)" }}>
+                        {diff > 0 ? "+" : diff < 0 ? "−" : ""}{fmtFull$(Math.abs(diff))}
+                        {pct ? ` (${pct.toFixed(0)}%)` : ""}
+                      </strong>
                     </div>
                   );
                 })()}
