@@ -4,9 +4,11 @@
 // protected block. Each task copies a paste-ready block for Allstate.
 
 import { useState, useMemo, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
   useExpectedCallbacks, useLogCallback, slaMsLeft,
@@ -14,6 +16,8 @@ import {
 } from '../hooks/useServiceTasks';
 import CopyButton from '../components/CopyButton';
 import { formatTaskForAllstate } from '../lib/allstateClipboard';
+
+const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
 
 // Completing one of these without recording what was done loses the audit trail
 // the agency cares about most — so a completion note is required.
@@ -44,10 +48,24 @@ export default function ServiceBatchPage() {
   const employeeId = employee?.id;
   const queryClient = useQueryClient();
 
+  const navigate = useNavigate();
+  const customersBase = useLocation().pathname.startsWith('/my') ? '/my/customers' : '/agency/customers';
+
   const [scope, setScope] = useState('all');
   const { groups, tasks, overdue, isLoading } = useServiceTasks(agencyId, { scope, employeeId });
   const createTask = useCreateServiceTask();
   const updateTask = useUpdateServiceTask();
+
+  // Resolve employee ids → names for "logged by" / assignee on each task.
+  const { data: employees = [] } = useActiveEmployees(agencyId);
+  const empName = useMemo(() => {
+    const m = {};
+    for (const e of employees) m[e.id] = e.preferred_name || `${e.first_name || ''} ${e.last_name || ''}`.trim();
+    return m;
+  }, [employees]);
+  function assign(id, toId) {
+    updateTask.mutate({ id, updates: { assigned_to_id: toId || null } });
+  }
 
   const [showAdd, setShowAdd] = useState(false);
 
@@ -196,6 +214,9 @@ export default function ServiceBatchPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {group.tasks.map(task => (
                   <TaskRow key={task.id} task={task}
+                    empName={empName} employees={employees}
+                    onAssign={(toId) => assign(task.id, toId)}
+                    onCustomer={(name) => navigate(`${customersBase}?q=${encodeURIComponent(name)}`)}
                     onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
                 ))}
               </div>
@@ -207,7 +228,7 @@ export default function ServiceBatchPage() {
   );
 }
 
-function TaskRow({ task, onDone, onClaim }) {
+function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onDone, onClaim }) {
   const sla = slaLabel(task.created_at);
   const prio = PRIORITY_BADGE[task.priority];
   const inProgress = task.status === 'in_progress';
@@ -227,26 +248,53 @@ function TaskRow({ task, onDone, onClaim }) {
       border: '1px solid', borderColor: inProgress ? '#3B82F633' : 'var(--qs-border)',
       borderRadius: 10, padding: '12px 14px',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+          {/* Title + prominent SLA timer */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
             {prio && (
               <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                 background: prio.bg, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
             )}
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
               {task.title}
             </span>
+            <span style={{
+              marginLeft: 'auto', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999,
+              whiteSpace: 'nowrap', background: `${sla.color}22`, border: `1px solid ${sla.color}55`, color: sla.color,
+            }}>⏱ {sla.text}</span>
           </div>
-          <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-            {task.customer_name ? `${task.customer_name} · ` : ''}
-            {task.policy_no ? `${task.policy_no} · ` : ''}
-            <span style={{ color: sla.color }}>{sla.text}</span>
-          </div>
+          {/* Customer (click → household) · policy */}
+          {(task.customer_name || task.policy_no) && (
+            <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
+              {task.customer_name && (
+                <button onClick={() => onCustomer?.(task.customer_name)} title="Open customer"
+                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                    fontFamily: 'inherit', fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
+                  {task.customer_name}
+                </button>
+              )}
+              {task.customer_name && task.policy_no ? ' · ' : ''}
+              {task.policy_no && <span style={{ fontFamily: "'DM Mono', monospace" }}>{task.policy_no}</span>}
+            </div>
+          )}
           {task.detail && (
             <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{task.detail}</div>
           )}
+          {/* Who logged it + when, and the assignee control */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, flexWrap: 'wrap',
+            fontSize: 11, color: 'var(--qs-subtle)' }}>
+            <span>📝 Logged by {empName[task.created_by_id] || 'Unknown'} · {fmtShortDate(task.created_at)}</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              <span>👤</span>
+              <select value={task.assigned_to_id || ''} onChange={e => onAssign?.(e.target.value)}
+                style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 6,
+                  color: 'var(--qs-dim)', fontSize: 11, padding: '2px 4px', fontFamily: 'inherit', cursor: 'pointer' }}>
+                <option value="">Unassigned</option>
+                {employees.map(e => <option key={e.id} value={e.id}>{empName[e.id]}</option>)}
+              </select>
+            </span>
+          </div>
         </div>
         <div style={{ flexShrink: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />

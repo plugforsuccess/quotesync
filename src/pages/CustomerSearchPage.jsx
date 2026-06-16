@@ -1,7 +1,7 @@
 // src/pages/CustomerSearchPage.jsx
 // Producer customer lookup — type a name, see the household's full picture:
 // active lines, lost lines (winback openings), open cancel/renewal work, contact.
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
@@ -24,7 +24,7 @@ function Chip({ children, color }) {
 }
 
 export default function CustomerSearchPage() {
-  const { currentAgencyId } = useAuth();
+  const { currentAgencyId, user } = useAuth();
   const { agency } = usePermissions();
   const canManage = !!agency?.isPrincipal;
   // Keep household links inside whichever shell we're in (employee /my or
@@ -40,8 +40,10 @@ export default function CustomerSearchPage() {
   const merge = useMergeHouseholds(currentAgencyId);
   const ready = term.trim().length >= 2;
 
-  // Last 8 searches, kept in localStorage so a rep can re-run a recent lookup.
-  const RECENT_KEY = 'qs_recent_customer_searches';
+  // Recent searches / viewed customers, scoped to THIS user so a shared machine
+  // doesn't show one rep's history to another. Kept in localStorage so they
+  // persist across sign-out / log back in on the same device.
+  const RECENT_KEY = `qs_recent_customer_searches_${user?.id || 'anon'}`;
   const [recent, setRecent] = useState(() => {
     try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }
   });
@@ -56,10 +58,18 @@ export default function CustomerSearchPage() {
   }
 
   // Last 8 customers opened — jump straight back to someone you just worked.
-  const VIEWED_KEY = 'qs_recent_viewed_customers';
+  const VIEWED_KEY = `qs_recent_viewed_customers_${user?.id || 'anon'}`;
   const [viewed, setViewed] = useState(() => {
     try { return JSON.parse(localStorage.getItem(VIEWED_KEY) || '[]'); } catch { return []; }
   });
+
+  // Auth resolves a tick after mount, so re-read once the user id is known
+  // (the initial render may have used the 'anon' key).
+  useEffect(() => {
+    try { setRecent(JSON.parse(localStorage.getItem(RECENT_KEY) || '[]')); } catch { /* noop */ }
+    try { setViewed(JSON.parse(localStorage.getItem(VIEWED_KEY) || '[]')); } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [RECENT_KEY, VIEWED_KEY]);
   function recordViewed(id, name) {
     if (!id) return;
     setViewed(prev => {
