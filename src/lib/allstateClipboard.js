@@ -24,7 +24,11 @@ function fmtDate(d) {
 // One service task → a paste-ready block.
 export function formatTaskForAllstate(task) {
   const lines = [];
-  const who = [task.customer_name, task.policy_no].filter(Boolean).join(' · ');
+  // List every policy the task covers (multi-policy tasks span more than one).
+  const pols = (task.policy_nos && task.policy_nos.length)
+    ? task.policy_nos
+    : (task.policy_no ? [task.policy_no] : []);
+  const who = [task.customer_name, pols.join(' · ')].filter(Boolean).join(' · ');
   if (who) lines.push(who);
   const kind = [TYPE_LABEL[task.task_type] || 'Service', PRODUCT_LABEL[task.product]]
     .filter(Boolean).join(' · ');

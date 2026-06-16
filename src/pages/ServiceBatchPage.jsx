@@ -347,7 +347,13 @@ function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onD
               </button>
             )}
             {task.customer_name && task.policy_no ? ' · ' : ''}
-            {task.policy_no && <span style={{ fontFamily: "'DM Mono', monospace" }}>{task.policy_no}</span>}
+            {(() => {
+              const pols = (task.policy_nos && task.policy_nos.length) ? task.policy_nos
+                : (task.policy_no ? [task.policy_no] : []);
+              return pols.length
+                ? <span style={{ fontFamily: "'DM Mono', monospace" }}>{pols.join(' · ')}</span>
+                : null;
+            })()}
           </div>
         )}
 
@@ -638,6 +644,24 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
     setFocused(null);
   }
 
+  // Multi-policy: a task can cover several of the customer's policies (e.g. an
+  // insurance review across auto + home). The primary policy stays in the field
+  // above; these are the extras. We pull the customer's other policies from the
+  // same directory search so the rep just clicks to add them.
+  const [extraPolicies, setExtraPolicies] = useState([]); // [{ policy_no, product }]
+  const [addingPolicy, setAddingPolicy] = useState(false);
+  const { data: custPolicies = [] } = usePolicyAutocomplete(agencyId, addingPolicy ? customerName : '');
+  const addablePolicies = custPolicies.filter(
+    p => p.policy_no !== policyNo && !extraPolicies.some(e => e.policy_no === p.policy_no)
+  );
+  function addExtraPolicy(p) {
+    setExtraPolicies(prev => prev.some(e => e.policy_no === p.policy_no)
+      ? prev : [...prev, { policy_no: p.policy_no, product: p.product }]);
+  }
+  function removeExtraPolicy(pn) {
+    setExtraPolicies(prev => prev.filter(e => e.policy_no !== pn));
+  }
+
   // Customer name + policy number identify who the task is for and drive
   // household/policy linking + search, so both are required alongside the title.
   const canSubmit = !!agencyId && title.trim().length > 0
@@ -645,16 +669,19 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
 
   function submit() {
     if (!canSubmit) return;
+    const policyNos = [policyNo.trim(), ...extraPolicies.map(p => p.policy_no)].filter(Boolean);
     onSubmit({
       taskType,
       product: product || null,
       title: title.trim(),
       customerName: customerName.trim() || null,
       policyNo: policyNo.trim() || null,
+      policyNos,
       priority,
       detail: detail.trim() || null,
     });
     setTitle(''); setCustomerName(''); setPolicyNo(''); setDetail(''); setProduct('');
+    setExtraPolicies([]); setAddingPolicy(false);
   }
 
   const input = {
@@ -705,6 +732,48 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
           </div>
         )}
       </div>
+
+      {/* Also on this task — extra policies for a multi-policy task (e.g. an
+          insurance review across auto + home). */}
+      {customerName.trim() && policyNo.trim() && (
+        <div style={{ marginBottom: 10 }}>
+          <div style={{ ...lbl, marginBottom: 6 }}>Also on this task <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+            {extraPolicies.map(p => (
+              <span key={p.policy_no} style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '4px 8px', borderRadius: 14, background: 'var(--qs-card)',
+                border: '1px solid var(--qs-border)', fontSize: 12 }}>
+                <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-text)' }}>{p.policy_no}</span>
+                {p.product && <span style={{ color: 'var(--qs-muted)' }}>{productShort(p.product)}</span>}
+                <button type="button" onClick={() => removeExtraPolicy(p.policy_no)}
+                  style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>×</button>
+              </span>
+            ))}
+            {!addingPolicy ? (
+              <button type="button" onClick={() => setAddingPolicy(true)}
+                style={{ padding: '4px 10px', borderRadius: 14, border: '1px dashed var(--qs-border)',
+                  background: 'transparent', color: 'var(--qs-dim)', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                + add policy
+              </button>
+            ) : (
+              <span style={{ display: 'inline-flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                {addablePolicies.length === 0 ? (
+                  <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>No other policies found for this customer.</span>
+                ) : addablePolicies.map(p => (
+                  <button key={p.policy_no} type="button" onClick={() => addExtraPolicy(p)}
+                    style={{ padding: '4px 8px', borderRadius: 14, border: '1px solid var(--qs-info)',
+                      background: 'rgba(59,130,246,0.12)', color: 'var(--qs-info)', fontSize: 12, cursor: 'pointer',
+                      fontFamily: 'inherit' }}>
+                    + {p.policy_no}{p.product ? ` · ${productShort(p.product)}` : ''}
+                  </button>
+                ))}
+                <button type="button" onClick={() => setAddingPolicy(false)}
+                  style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 12 }}>done</button>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
         <label style={lbl}>Product

@@ -154,6 +154,11 @@ export function useCreateServiceTask() {
         priority: task.priority || 'normal',
         requires_license: task.requiresLicense ?? false,
         policy_no: task.policyNo ?? null,
+        // Full policy list for tasks that span more than one (e.g. an insurance
+        // review across auto + home). Defaults to the single primary policy.
+        policy_nos: (task.policyNos && task.policyNos.length)
+          ? task.policyNos
+          : (task.policyNo ? [task.policyNo] : []),
         product: task.product ?? null,
         customer_name: task.customerName ?? null,
         customer_phone: task.customerPhone ?? null,
