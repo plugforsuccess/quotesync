@@ -252,6 +252,24 @@ export default function TodayPage() {
       });
   }, [cancels, renewals]);
 
+  // Never-worked alarm: cases on her plate that hit (or are about to hit) their
+  // deadline with zero attempts. These are how policies lapse unworked — surface
+  // them loudly so they get called before the deadline passes.
+  const untouched = useMemo(() => {
+    const all = [
+      ...cancels.map(c  => ({ ...c, _date: c.cancel_effective_date })),
+      ...renewals.map(r => ({ ...r, _date: r.renewal_date })),
+    ].filter(x => !(x.attempt_count > 0));
+    let dueSoon = 0, lapsed = 0;
+    for (const x of all) {
+      const d = daysUntil(x._date);
+      if (d == null) continue;
+      if (d < 0) lapsed++;
+      else if (d < 7) dueSoon++;
+    }
+    return { dueSoon, lapsed };
+  }, [cancels, renewals]);
+
   const isLoading = cancelsLoading || renewalsLoading;
 
   if (!employee) {
@@ -339,6 +357,29 @@ export default function TodayPage() {
           </div>
           <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, flexShrink: 0 }}>Open Service Batch →</span>
         </a>
+      )}
+
+      {/* Never-worked alarm — call these before they lapse */}
+      {(untouched.dueSoon > 0 || untouched.lapsed > 0) && (
+        <div style={{
+          background: untouched.lapsed > 0 ? 'rgba(239,68,68,0.10)' : 'rgba(245,158,11,0.10)',
+          border: `1px solid ${untouched.lapsed > 0 ? 'rgba(239,68,68,0.4)' : 'rgba(245,158,11,0.4)'}`,
+          borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700,
+            color: untouched.lapsed > 0 ? '#F87171' : '#FBBF24' }}>
+            ⚠ Call these before they lapse
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>
+            {untouched.dueSoon > 0 && (
+              <span><strong>{untouched.dueSoon}</strong> due this week you haven't called yet. </span>
+            )}
+            {untouched.lapsed > 0 && (
+              <span><strong style={{ color: '#F87171' }}>{untouched.lapsed}</strong> already past due, never called — try a reinstatement/rewrite now. </span>
+            )}
+            They're in your ranked list below — work them first.
+          </div>
+        </div>
       )}
 
       {/* Waiting to hear back — voicemails + scheduled callbacks */}

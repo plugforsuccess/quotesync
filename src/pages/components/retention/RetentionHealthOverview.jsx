@@ -9,6 +9,7 @@ import { supabase } from '../../../lib/supabase';
 import { useBookSnapshots } from '../../../hooks/useBookMetrics';
 import { useSaveVelocity } from '../../../hooks/useSaveVelocity';
 import { useOpenEscalations } from '../../../hooks/useEscalations';
+import { useQueueHygiene } from '../../../hooks/useQueueHygiene';
 
 // Headline net-retention target. Below this (and a shrinking book) trips red.
 const NET_RETENTION_TARGET = 0.85;
@@ -41,6 +42,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
   const { data: book } = useBookSnapshots(agencyId);
   const { data: velocity } = useSaveVelocity(agencyId, 8);
   const { data: escalations = [] } = useOpenEscalations(agencyId);
+  const { data: hygiene } = useQueueHygiene(agencyId, 7);
 
   const { data: parked = { total: 0, reSnoozed: 0 } } = useQuery({
     queryKey: ['parked_cases', agencyId],
@@ -69,19 +71,35 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
   const netRet = totals?.blendedNetRetention ?? null;
   const pifVar = totals?.pifVariance ?? null;
 
+  const preventable = hygiene?.lapsedUnworked ?? 0;
+
   // Overall status: book health (net retention vs target + book direction) is
-  // the spine; operational risk nudges it. Missing book data → can't be green.
+  // the spine; a workflow leak (cases lapsing unworked) can't read green no
+  // matter how the book looks. Missing book data → can't be green either.
   const status = (() => {
-    if (netRet == null) return { key: 'amber', color: '#F59E0B', label: 'Book data pending',
+    // A preventable-lapse leak is a process failure — it outranks a clean book.
+    if (preventable >= 5) return { key: 'red', color: '#EF4444', label: 'Workflow leaking',
+      note: `${preventable} cases lapsed without ever being called — work the leak, not just the book.` };
+
+    let s;
+    if (netRet == null) s = { key: 'amber', color: '#F59E0B', label: 'Book data pending',
       note: 'Upload a book-health report to score net retention.' };
-    const belowTarget = netRet < NET_RETENTION_TARGET;
-    const shrinking = pifVar != null && pifVar < 0;
-    if (belowTarget && shrinking) return { key: 'red', color: '#EF4444', label: 'Needs attention',
-      note: 'Net retention is below target and the book is shrinking.' };
-    if (belowTarget || shrinking) return { key: 'amber', color: '#F59E0B', label: 'Watch',
-      note: belowTarget ? 'Net retention is below target.' : 'The book is shrinking month-over-month.' };
-    return { key: 'green', color: '#10B981', label: 'Healthy',
-      note: 'Net retention is on target and the book is holding or growing.' };
+    else {
+      const belowTarget = netRet < NET_RETENTION_TARGET;
+      const shrinking = pifVar != null && pifVar < 0;
+      if (belowTarget && shrinking) s = { key: 'red', color: '#EF4444', label: 'Needs attention',
+        note: 'Net retention is below target and the book is shrinking.' };
+      else if (belowTarget || shrinking) s = { key: 'amber', color: '#F59E0B', label: 'Watch',
+        note: belowTarget ? 'Net retention is below target.' : 'The book is shrinking month-over-month.' };
+      else s = { key: 'green', color: '#10B981', label: 'Healthy',
+        note: 'Net retention is on target and the book is holding or growing.' };
+    }
+    // Any preventable lapse keeps it off green.
+    if (preventable > 0 && s.key === 'green') {
+      s = { key: 'amber', color: '#F59E0B', label: 'Watch',
+        note: `${preventable} case${preventable === 1 ? '' : 's'} lapsed without ever being called.` };
+    }
+    return s;
   })();
 
   const trend = book?.trend || [];
@@ -108,6 +126,41 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           </div>
           <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}>net retention · {Math.round(NET_RETENTION_TARGET * 100)}% target</div>
         </div>
+      </div>
+
+      {/* Workflow leaks — the leading process signal */}
+      <div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+          letterSpacing: '0.06em', marginBottom: 10 }}>Is the workflow catching cases in time?</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 12 }}>
+          <StatCard label="Preventable lapses"
+            value={hygiene?.lapsedUnworked ?? '—'}
+            sub="past deadline · never called"
+            color={(hygiene?.lapsedUnworked ?? 0) > 0 ? '#EF4444' : '#10B981'}
+            accent={(hygiene?.lapsedUnworked ?? 0) > 0 ? '#EF4444' : undefined}
+            onClick={() => onNavigate?.('at_risk')} />
+          <StatCard label="About to lapse, untouched"
+            value={hygiene?.untouchedDueSoon ?? '—'}
+            sub="due ≤7 days · never called"
+            color={(hygiene?.untouchedDueSoon ?? 0) > 0 ? '#F59E0B' : '#10B981'}
+            accent={(hygiene?.untouchedDueSoon ?? 0) > 0 ? '#F59E0B' : undefined}
+            onClick={() => onNavigate?.('at_risk')} />
+          <StatCard label="Lapsed — win-back open"
+            value={hygiene?.lapsedTotal ?? '—'}
+            sub="past deadline · still workable"
+            onClick={() => onNavigate?.('at_risk')} />
+          <StatCard label="Unassigned at-risk"
+            value={hygiene?.unassignedAtRisk ?? '—'}
+            sub="no owner"
+            color={(hygiene?.unassignedAtRisk ?? 0) > 0 ? '#F59E0B' : 'var(--qs-dim)'}
+            onClick={() => onNavigate?.('at_risk')} />
+        </div>
+        {(hygiene?.lapsedUnworked ?? 0) > 0 && (
+          <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 8 }}>
+            These didn't lapse because they were hard — they lapsed because nobody worked them in time.
+            Fix the leak first: work the win-back list, then call everything due this week before it joins them.
+          </div>
+        )}
       </div>
 
       {/* Book-level health */}
