@@ -24,7 +24,7 @@ const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: '
 
 // Completing one of these without recording what was done loses the audit trail
 // the agency cares about most — so a completion note is required.
-const NOTE_REQUIRED_TYPES = new Set(['billing', 'coverage', 'premium', 'insurance_review']);
+const NOTE_REQUIRED_TYPES = new Set(['billing', 'coverage', 'premium', 'insurance_review', 'reinstatement', 'terminate', 'claim', 'payment']);
 
 const PRIORITY_BADGE = {
   urgent: { label: 'URGENT', bg: '#EF444433', color: '#FCA5A5' },

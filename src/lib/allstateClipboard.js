@@ -3,9 +3,11 @@
 // then pastes a clean, consistent block into Allstate without retyping.
 
 const TYPE_LABEL = {
-  mortgagee: 'Mortgagee/Lienholder', vehicle: 'Vehicle', billing: 'Billing',
-  premium: 'Premium', coverage: 'Coverage', address: 'Address',
-  id_cards: 'ID Cards/Docs', document: 'Document', other: 'Service',
+  mortgagee: 'Mortgagee/Lienholder', vehicle: 'Vehicle', driver: 'Driver',
+  billing: 'Billing', payment: 'Payment', address: 'Address/Contact',
+  premium: 'Premium', coverage: 'Coverage', insurance_review: 'Insurance Review',
+  reinstatement: 'Reinstatement', terminate: 'Cancel/Terminate', claim: 'Claim/FNOL',
+  id_cards: 'ID Cards/Proof of Ins', document: 'Document', other: 'Service',
 };
 
 const PRODUCT_LABEL = {

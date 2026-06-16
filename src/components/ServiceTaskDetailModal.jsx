@@ -12,7 +12,7 @@ import {
   useUpdateServiceTask, TASK_TYPE_MAP, productShort, slaMsLeft, SLA_HOURS,
 } from '../hooks/useServiceTasks';
 
-const NOTE_REQUIRED = new Set(['billing', 'coverage', 'premium', 'insurance_review']);
+const NOTE_REQUIRED = new Set(['billing', 'coverage', 'premium', 'insurance_review', 'reinstatement', 'terminate', 'claim', 'payment']);
 
 function fmtSla(ms) {
   if (ms == null) return null;
