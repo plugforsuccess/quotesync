@@ -12,6 +12,7 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import { TASK_TYPE_MAP, productShort } from '../hooks/useServiceTasks';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
+import ServiceTaskDetailModal from '../components/ServiceTaskDetailModal';
 
 const PRODUCT_LABELS = {
   auto: 'Auto', ho: 'HO', renters: 'Renters', condo: 'Condo', landlord: 'Landlord',
@@ -48,6 +49,7 @@ export default function HouseholdDetailPage() {
   const queryClient = useQueryClient();
   // A renewal/cancel record opened in its work-surface modal, in place.
   const [openCase, setOpenCase] = useState(null); // { kind: 'renewal'|'cancel', data }
+  const [openTaskId, setOpenTaskId] = useState(null); // open a service request in its detail modal
 
   async function openRecord(r) {
     if (r.source !== 'renewal' && r.source !== 'cancel') return;
@@ -185,11 +187,11 @@ export default function HouseholdDetailPage() {
               const prio = t.priority === 'urgent' ? { l: 'URGENT', c: '#FCA5A5', b: '#EF444433' }
                          : t.priority === 'high'   ? { l: 'HIGH',   c: '#FCD34D', b: '#F59E0B33' } : null;
               return (
-                <div key={t.id} style={{
+                <div key={t.id} onClick={() => setOpenTaskId(t.id)} title="Open service request" style={{
                   background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                   borderLeft: `3px solid ${t.resolved ? 'var(--qs-border)' : cfg.color}`, borderRadius: 8,
                   padding: '12px 16px', display: 'flex', alignItems: 'center',
-                  justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+                  justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', cursor: 'pointer',
                   opacity: t.resolved ? 0.6 : 1,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
@@ -270,6 +272,15 @@ export default function HouseholdDetailPage() {
                 {r.detail && (
                   <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>{r.detail}</span>
                 )}
+                {r.callback_at && (() => {
+                  const overdue = new Date(r.callback_at) < new Date();
+                  return (
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
+                      background: overdue ? '#EF444422' : '#3B82F622', color: overdue ? '#FCA5A5' : '#60A5FA' }}>
+                      📅 {overdue ? 'Callback due' : 'Call back'} {new Date(r.callback_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                    </span>
+                  );
+                })()}
               </div>
               <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--qs-dim)', flexShrink: 0, alignItems: 'center' }}>
                 <span style={{ fontFamily: "'DM Mono', monospace" }}>{fmt$(r.premium)}</span>
@@ -346,6 +357,14 @@ export default function HouseholdDetailPage() {
           canReassign={false}
         />,
         document.body
+      )}
+      {openTaskId && (
+        <ServiceTaskDetailModal
+          taskId={openTaskId}
+          agencyId={currentAgencyId}
+          onClose={() => setOpenTaskId(null)}
+          onChanged={() => queryClient.invalidateQueries({ queryKey: ['household_service_tasks', householdId] })}
+        />
       )}
     </div>
   );
