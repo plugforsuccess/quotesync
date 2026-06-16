@@ -168,7 +168,14 @@ export function useCreateServiceTask() {
       });
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['service_tasks'] }),
+    // Refresh every surface that lists tasks — the batch, the per-case list on
+    // the case detail (so a just-logged task shows immediately), and the
+    // per-household list — not just the Service Batch query.
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['case_service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
+    },
   });
 }
 
@@ -200,7 +207,11 @@ export function useUpdateServiceTask() {
       const { error } = await supabase.from('service_tasks').update(updates).eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['service_tasks'] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['case_service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
+    },
   });
 }
 
