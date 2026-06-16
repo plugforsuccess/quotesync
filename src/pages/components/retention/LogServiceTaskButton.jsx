@@ -66,7 +66,7 @@ export default function LogServiceTaskButton({
           color: 'var(--qs-text)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
         }}
       >
-        🗂️ Log service request
+        ➕ Add service request
       </button>
     );
   }
@@ -106,7 +106,7 @@ export default function LogServiceTaskButton({
               background: 'var(--qs-card)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 700,
               cursor: 'pointer', fontFamily: 'inherit',
             }}>
-              + Log another
+              ➕ Add another
             </button>
             <button type="button" onClick={() => { setOpen(false); setDone(false); }} style={{
               flex: 1, padding: '8px', borderRadius: 8, border: 'none',

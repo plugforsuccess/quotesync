@@ -2012,6 +2012,17 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
           </div>
         )}
 
+        {/* Service requests — view existing + add (multiple allowed per case) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4, marginBottom: 12 }}>
+          {r.cancel_event_id && <LinkedServiceTasks caseType="cancel" caseId={r.cancel_event_id} />}
+          {r.renewal_event_id && <LinkedServiceTasks caseType="renewal" caseId={r.renewal_event_id} />}
+          <LogServiceTaskButton agencyId={agencyId}
+            policyNo={r.policy_no} customerName={r.customer_name} customerPhone={r.phone}
+            sourceCaseType={r.cancel_event_id ? 'cancel' : 'renewal'}
+            sourceCaseId={r.cancel_event_id || r.renewal_event_id}
+            source="internal" />
+        </div>
+
         <button className="btn-ghost" onClick={onClose} style={{ width: '100%', marginTop: 8 }}>Close</button>
       </div>
     </div>
