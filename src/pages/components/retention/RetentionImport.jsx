@@ -169,7 +169,13 @@ function parseReport(file) {
 
           const item_count = itemsI >= 0 ? (parseInt(row[itemsI]) || 1) : null;
 
-          const stage = (cancelStatusI >= 0 && row[cancelStatusI]?.toString().trim() === 'Cancelled')
+          // A "Cancelled" audit status whose effective date is still in the
+          // FUTURE hasn't lapsed yet — the policy is in force and savable (a
+          // scheduled cancellation, or an Allstate reporting quirk). Only mark it
+          // lapsed once the effective date has actually passed; otherwise keep it
+          // a workable pending cancel so it stays in the queue, not shown as gone.
+          const reportedCancelled = cancelStatusI >= 0 && row[cancelStatusI]?.toString().trim() === 'Cancelled';
+          const stage = (reportedCancelled && cancelDate <= today)
             ? 'cancelled'
             : 'pending_cancel';
 
