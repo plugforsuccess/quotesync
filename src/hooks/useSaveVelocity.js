@@ -33,13 +33,13 @@ export function useSaveVelocity(agencyId, weeks = 8) {
       const [{ data: cancels }, { data: renewals }] = await Promise.all([
         supabase
           .from('pending_cases')
-          .select('status, resolution_date, premium_at_risk, saved_premium, closed_by_id')
+          .select('status, resolution_date, premium_at_risk, saved_premium, closed_by_id, save_method')
           .eq('agency_id', agencyId)
           .in('status', ['saved', 'rewritten'])
           .gte('resolution_date', startStr),
         supabase
           .from('renewal_cases')
-          .select('status, resolution_date, premium, saved_premium, closed_by_id')
+          .select('status, resolution_date, premium, saved_premium, closed_by_id, save_method')
           .eq('agency_id', agencyId)
           .eq('status', 'confirmed')
           .gte('resolution_date', startStr),
@@ -56,6 +56,8 @@ export function useSaveVelocity(agencyId, weeks = 8) {
         weekKeys.map(k => [k, { week: k, cancelSaves: 0, renewalSaves: 0, premium: 0 }])
       );
       const byRep = {};
+      // Save-tactic breakdown over the window — "how did we keep them?"
+      const byMethod = {};
 
       const add = (rows, kind) => {
         for (const r of rows || []) {
@@ -69,6 +71,10 @@ export function useSaveVelocity(agencyId, weeks = 8) {
             bucket[kind === 'cancel' ? 'cancelSaves' : 'renewalSaves'] += 1;
             bucket.premium += Number(prem) || 0;
           }
+          const method = r.save_method || 'unrecorded';
+          const mb = (byMethod[method] ||= { method, count: 0, premium: 0 });
+          mb.count += 1;
+          mb.premium += Number(prem) || 0;
           const rep = (byRep[r.closed_by_id] ||= {
             empId: r.closed_by_id, cancelSaves: 0, renewalSaves: 0, premium: 0,
             recent: 0, prior: 0,
@@ -89,8 +95,9 @@ export function useSaveVelocity(agencyId, weeks = 8) {
       );
       const totalSaves = series.reduce((s, w) => s + w.cancelSaves + w.renewalSaves, 0);
       const totalPremium = series.reduce((s, w) => s + w.premium, 0);
+      const methods = Object.values(byMethod).sort((a, b) => b.count - a.count);
 
-      return { series, reps, totalSaves, totalPremium, weeks };
+      return { series, reps, methods, totalSaves, totalPremium, weeks };
     },
   });
 }

@@ -10,6 +10,7 @@ import { useBookSnapshots } from '../../../hooks/useBookMetrics';
 import { useSaveVelocity } from '../../../hooks/useSaveVelocity';
 import { useOpenEscalations } from '../../../hooks/useEscalations';
 import { useQueueHygiene } from '../../../hooks/useQueueHygiene';
+import { SAVE_METHOD_LABEL } from '../../../lib/saveMethods';
 
 // Headline net-retention target. Below this (and a shrinking book) trips red.
 const NET_RETENTION_TARGET = 0.85;
@@ -242,7 +243,14 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
             sub={`vs ${fmt$(k.premiumAtRisk)} still at risk`} color="#10B981"
             onClick={() => onNavigate?.('at_risk')} />
           <StatCard label="Save Velocity" value={velocity ? `${velocity.totalSaves}` : '—'}
-            sub="saves · last 8 weeks" color="#3B82F6" onClick={() => onNavigate?.('velocity')} />
+            sub={(() => {
+              const recorded = (velocity?.methods || []).filter(m => m.method !== 'unrecorded');
+              if (recorded.length === 0 || !velocity?.totalSaves) return 'saves · last 8 weeks';
+              const top = recorded[0];
+              const pct = Math.round((top.count / velocity.totalSaves) * 100);
+              return `top: ${SAVE_METHOD_LABEL[top.method] || top.method} ${pct}%`;
+            })()}
+            color="#3B82F6" onClick={() => onNavigate?.('velocity')} />
           <StatCard label="Terminations" value={k.terminations ?? '—'}
             sub="requested cancel" onClick={() => onNavigate?.('attrition')} />
           <StatCard label="Open Escalations" value={escalations.length}
