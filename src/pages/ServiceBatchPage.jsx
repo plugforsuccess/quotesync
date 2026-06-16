@@ -52,9 +52,16 @@ export default function ServiceBatchPage() {
   const customersBase = useLocation().pathname.startsWith('/my') ? '/my/customers' : '/agency/customers';
 
   const [scope, setScope] = useState('all');
+  const [overdueOnly, setOverdueOnly] = useState(false);
   const { groups, tasks, overdue, isLoading } = useServiceTasks(agencyId, { scope, employeeId });
   const createTask = useCreateServiceTask();
   const updateTask = useUpdateServiceTask();
+
+  // Flat, most-overdue-first list for the Overdue view.
+  const overdueTasks = useMemo(() =>
+    tasks.filter(t => { const ms = slaMsLeft(t.created_at); return ms != null && ms < 0; })
+         .sort((a, b) => (slaMsLeft(a.created_at) ?? 0) - (slaMsLeft(b.created_at) ?? 0)),
+  [tasks]);
 
   // Resolve employee ids → names for "logged by" / assignee on each task.
   const { data: employees = [] } = useActiveEmployees(agencyId);
@@ -149,7 +156,7 @@ export default function ServiceBatchPage() {
       <ExpectedCallbacks agencyId={agencyId} />
 
       {/* Scope filter — route the licensed lane to the rep it's assigned to */}
-      <div style={{ display: 'flex', gap: 6, margin: '14px 0 0' }}>
+      <div style={{ display: 'flex', gap: 6, margin: '14px 0 0', flexWrap: 'wrap' }}>
         {SCOPES.map(s => (
           <button key={s.value} onClick={() => setScope(s.value)} style={{
             cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
@@ -159,6 +166,14 @@ export default function ServiceBatchPage() {
             color: scope === s.value ? '#fff' : 'var(--qs-muted)',
           }}>{s.label}</button>
         ))}
+        {/* Overdue — pull up only breached tasks, most overdue first */}
+        <button onClick={() => setOverdueOnly(v => !v)} style={{
+          cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+          borderRadius: 999, padding: '5px 14px', border: '1px solid', marginLeft: 'auto',
+          borderColor: overdueOnly ? '#EF4444' : (overdue > 0 ? '#EF444466' : 'var(--qs-border)'),
+          background: overdueOnly ? '#EF4444' : 'var(--qs-card)',
+          color: overdueOnly ? '#fff' : (overdue > 0 ? '#F87171' : 'var(--qs-muted)'),
+        }}>⚠ Overdue ({overdue})</button>
       </div>
 
       {/* Lane summary — the work-order for the block */}
@@ -189,6 +204,25 @@ export default function ServiceBatchPage() {
 
       {isLoading ? (
         <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}>Loading…</div>
+      ) : overdueOnly ? (
+        overdueTasks.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--qs-elevated)',
+            borderRadius: 10, border: '1px solid var(--qs-border)' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>No overdue tasks</div>
+            <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 6 }}>Everything's within the 24h SLA.</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {overdueTasks.map(task => (
+              <TaskRow key={task.id} task={task}
+                empName={empName} employees={employees}
+                onAssign={(toId) => assign(task.id, toId)}
+                onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
+                onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
+            ))}
+          </div>
+        )
       ) : groups.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '64px 20px', background: 'var(--qs-elevated)',
           borderRadius: 10, border: '1px solid var(--qs-border)' }}>
@@ -216,7 +250,7 @@ export default function ServiceBatchPage() {
                   <TaskRow key={task.id} task={task}
                     empName={empName} employees={employees}
                     onAssign={(toId) => assign(task.id, toId)}
-                    onCustomer={(name) => navigate(`${customersBase}?q=${encodeURIComponent(name)}`)}
+                    onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
                     onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
                 ))}
               </div>
@@ -246,87 +280,86 @@ function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onD
     <div style={{
       background: inProgress ? 'rgba(59,130,246,0.06)' : 'var(--qs-elevated)',
       border: '1px solid', borderColor: inProgress ? '#3B82F633' : 'var(--qs-border)',
-      borderRadius: 10, padding: '12px 14px',
+      borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'stretch',
     }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {/* Title + prominent SLA timer */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
-            {prio && (
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                background: prio.bg, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
-            )}
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)' }}>
-              {task.title}
-            </span>
-            <span style={{
-              marginLeft: 'auto', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 999,
-              whiteSpace: 'nowrap', background: `${sla.color}22`, border: `1px solid ${sla.color}55`, color: sla.color,
-            }}>⏱ {sla.text}</span>
-          </div>
-          {/* Customer (click → household) · policy */}
-          {(task.customer_name || task.policy_no) && (
-            <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
-              {task.customer_name && (
-                <button onClick={() => onCustomer?.(task.customer_name)} title="Open customer"
-                  style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                    fontFamily: 'inherit', fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
-                  {task.customer_name}
-                </button>
-              )}
-              {task.customer_name && task.policy_no ? ' · ' : ''}
-              {task.policy_no && <span style={{ fontFamily: "'DM Mono', monospace" }}>{task.policy_no}</span>}
-            </div>
+      {/* Content */}
+      <div style={{ flex: 1, minWidth: 0, padding: '16px 18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+          {prio && (
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+              background: prio.bg, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
           )}
-          {task.detail && (
-            <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>{task.detail}</div>
-          )}
-          {/* Who logged it + when, and the assignee control */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, flexWrap: 'wrap',
-            fontSize: 11, color: 'var(--qs-subtle)' }}>
-            <span>📝 Logged by {empName[task.created_by_id] || 'Unknown'} · {fmtShortDate(task.created_at)}</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              <span>👤</span>
-              <select value={task.assigned_to_id || ''} onChange={e => onAssign?.(e.target.value)}
-                style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 6,
-                  color: 'var(--qs-dim)', fontSize: 11, padding: '2px 4px', fontFamily: 'inherit', cursor: 'pointer' }}>
-                <option value="">Unassigned</option>
-                {employees.map(e => <option key={e.id} value={e.id}>{empName[e.id]}</option>)}
-              </select>
-            </span>
-          </div>
+          <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)' }}>{task.title}</span>
         </div>
-        <div style={{ flexShrink: 0, display: 'flex', gap: 6, alignItems: 'center' }}>
+
+        {(task.customer_name || task.policy_no) && (
+          <div style={{ fontSize: 12.5, color: 'var(--qs-muted)', marginBottom: 4 }}>
+            {task.customer_name && (
+              <button onClick={() => onCustomer?.(task)} title="Open customer"
+                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                  fontFamily: 'inherit', fontSize: 12.5, color: '#60A5FA', fontWeight: 600 }}>
+                {task.customer_name}{task.household_id ? ' ↗' : ''}
+              </button>
+            )}
+            {task.customer_name && task.policy_no ? ' · ' : ''}
+            {task.policy_no && <span style={{ fontFamily: "'DM Mono', monospace" }}>{task.policy_no}</span>}
+          </div>
+        )}
+
+        {task.detail && (
+          <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 4, lineHeight: 1.5 }}>{task.detail}</div>
+        )}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8, flexWrap: 'wrap',
+          fontSize: 11, color: 'var(--qs-subtle)' }}>
+          <span>📝 Logged by {empName[task.created_by_id] || 'Unknown'} · {fmtShortDate(task.created_at)}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <span>👤</span>
+            <select value={task.assigned_to_id || ''} onChange={e => onAssign?.(e.target.value)}
+              style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 6,
+                color: 'var(--qs-dim)', fontSize: 11, padding: '2px 4px', fontFamily: 'inherit', cursor: 'pointer' }}>
+              <option value="">Unassigned</option>
+              {employees.map(e => <option key={e.id} value={e.id}>{empName[e.id]}</option>)}
+            </select>
+          </span>
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: 6, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
           {!inProgress && (
             <button onClick={onClaim} style={btnStyle('var(--qs-card)', 'var(--qs-text)')}>Start</button>
           )}
           <button onClick={handleDone} style={btnStyle('#10B981', '#fff')}>Done</button>
         </div>
+
+        {confirming && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <input autoFocus value={note} onChange={e => setNote(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && note.trim()) onDone(note.trim()); }}
+              placeholder="What was done? (required for billing/coverage/premium)"
+              style={{ flex: 1, minWidth: 200, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
+            <button onClick={() => note.trim() && onDone(note.trim())} disabled={!note.trim()}
+              style={btnStyle(note.trim() ? '#10B981' : 'var(--qs-card)', note.trim() ? '#fff' : 'var(--qs-muted)')}>
+              Confirm
+            </button>
+            <button onClick={() => { setConfirming(false); setNote(''); }} style={btnStyle('var(--qs-card)', 'var(--qs-muted)')}>
+              Cancel
+            </button>
+          </div>
+        )}
       </div>
 
-      {confirming && (
-        <div style={{ marginTop: 10, display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            autoFocus
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && note.trim()) onDone(note.trim()); }}
-            placeholder="What was done? (required for billing/coverage/premium)"
-            style={{
-              flex: 1, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
-              borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit',
-            }}
-          />
-          <button onClick={() => note.trim() && onDone(note.trim())} disabled={!note.trim()}
-            style={btnStyle(note.trim() ? '#10B981' : 'var(--qs-card)', note.trim() ? '#fff' : 'var(--qs-muted)')}>
-            Confirm
-          </button>
-          <button onClick={() => { setConfirming(false); setNote(''); }} style={btnStyle('var(--qs-card)', 'var(--qs-muted)')}>
-            Cancel
-          </button>
-        </div>
-      )}
+      {/* Full-height SLA timer panel — far right, conveys urgency at a glance */}
+      <div style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        minWidth: 120, padding: '0 14px', textAlign: 'center',
+        background: `${sla.color}1f`, borderLeft: `1px solid ${sla.color}55`, color: sla.color,
+      }}>
+        <div style={{ fontSize: 22, marginBottom: 4 }}>⏱</div>
+        <div style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.25 }}>{sla.text}</div>
+      </div>
     </div>
   );
 }
