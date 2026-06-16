@@ -113,6 +113,15 @@ export function useCreateServiceTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (task) => {
+      // Resolve the customer to a household at log time so the task links to the
+      // exact household later (robust against duplicate names).
+      let householdId = task.householdId ?? null;
+      if (!householdId && task.customerName && task.agencyId) {
+        const { data } = await supabase.rpc('household_id_for_name', {
+          p_agency_id: task.agencyId, p_name: task.customerName,
+        });
+        householdId = data ?? null;
+      }
       const { error } = await supabase.from('service_tasks').insert({
         agency_id: task.agencyId,
         task_type: task.taskType || 'other',
@@ -124,6 +133,7 @@ export function useCreateServiceTask() {
         policy_no: task.policyNo ?? null,
         customer_name: task.customerName ?? null,
         customer_phone: task.customerPhone ?? null,
+        household_id: householdId,
         due_date: task.dueDate ?? null,
         assigned_to_id: task.assignedTo ?? null,
         source: task.source || 'inbound_call',
