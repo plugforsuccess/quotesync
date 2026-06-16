@@ -143,6 +143,11 @@ late‑day block.
 back** section at the top — every voicemail you left and every callback you
 scheduled, in one list, soonest/overdue first. Start your follow‑up block there.
 
+> **About Snooze:** you can park a case (after 2+ attempts) to retry in 1–7 days
+> — but **not** once its cancel/renewal date is within **14 days**. If you see
+> **"🔒 Too close to snooze,"** that case has to be worked now; it's too near the
+> deadline to hide. Snooze is "not yet," never "not at all."
+
 ---
 
 ## 7. The Case Log — write it down
