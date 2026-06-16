@@ -142,6 +142,24 @@ export default function MyQueuePage() {
 
   // Stale refresh tracking
   const [lastRefreshed, setLastRefreshed] = useState(Date.now());
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Force a real refetch (bypasses staleTime) with visible feedback, so the
+  // button always pulls current data — invalidate alone can silently no-op.
+  async function refreshQueue() {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        refetchCancel(),
+        refetchRenewal(),
+        queryClient.invalidateQueries({ queryKey: ['my_cancel_cases_snoozed', employeeId] }),
+      ]);
+      setLastRefreshed(Date.now());
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   // Cancel filter bar — client-side filter of cancelCases
   // values: 'all' | 'lapsed' | 'pending' | 'never_called' | 'multi_policy' | 'callbacks' | 'snoozed'
@@ -177,7 +195,7 @@ export default function MyQueuePage() {
 
   // Pull cases assigned to this employee — RLS enforces they only see their own.
   // Snoozed cases (snoozed_until in the future) are hidden from the default view.
-  const { data: cancelCases = [], isLoading: cancelLoading } = useQuery({
+  const { data: cancelCases = [], isLoading: cancelLoading, refetch: refetchCancel } = useQuery({
     queryKey: ['my_cancel_cases', employeeId],
     queryFn: async () => {
       if (!employeeId) return [];
@@ -217,7 +235,7 @@ export default function MyQueuePage() {
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: renewalCases = [], isLoading: renewalLoading } = useQuery({
+  const { data: renewalCases = [], isLoading: renewalLoading, refetch: refetchRenewal } = useQuery({
     queryKey: ['my_renewal_cases', employeeId],
     queryFn: async () => {
       if (!employeeId) return [];
@@ -1346,14 +1364,12 @@ export default function MyQueuePage() {
             Updated {relativeTime(new Date(lastRefreshed).toISOString())}
           </span>
           <button
-            onClick={() => {
-              queryClient.invalidateQueries({ queryKey: ['my_cancel_cases', employeeId] });
-              queryClient.invalidateQueries({ queryKey: ['my_renewal_cases', employeeId] });
-            }}
+            onClick={refreshQueue}
+            disabled={refreshing}
             style={{ fontSize: 13, padding: '6px 12px', borderRadius: 7,
               border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
-              color: 'var(--qs-subtle)', cursor: 'pointer' }}>
-            ↻ Refresh
+              color: 'var(--qs-subtle)', cursor: refreshing ? 'wait' : 'pointer', opacity: refreshing ? 0.7 : 1 }}>
+            {refreshing ? '↻ Refreshing…' : '↻ Refresh'}
           </button>
         </div>
       </div>
