@@ -14,6 +14,7 @@ import { EventDetailModal, RenewalDetailModal } from "./components/retention/Ret
 import EscalationsInbox from "./components/retention/EscalationsInbox";
 import SaveVelocityPanel from "./components/retention/SaveVelocityPanel";
 import RetentionHealthOverview from "./components/retention/RetentionHealthOverview";
+import SaveIntegrityPanel from "./components/retention/SaveIntegrityPanel";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
 import TerminationReasonTab from "./components/retention/TerminationReasonTab";
@@ -125,10 +126,13 @@ export default function RetentionPage() {
     setSyncing(true);
     try {
       await supabase.rpc('auto_resolve_stale_renewals');
+      // Claw back any saves the latest termination report shows lapsed anyway.
+      await supabase.rpc('reconcile_false_saves', { p_agency_id: agencyId }).catch(() => {});
       setLastSynced(new Date());
       queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['save_integrity', agencyId] });
     } catch (err) {
       console.error('[sync queue]', err.message);
     } finally {
@@ -497,11 +501,12 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["health", "at_risk", "velocity", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["health", "at_risk", "velocity", "integrity", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "health"     ? "🩺 Health"         :
              t === "at_risk"    ? "⚡ At Risk"        :
              t === "velocity"   ? "🏎️ Velocity"       :
+             t === "integrity"  ? "🛡️ Integrity"      :
              t === "targeting"  ? "🎯 Targeting"      :
              t === "renewals"   ? "🔄 Renewals"       :
              t === "ai_perf"    ? "📊 AI Performance" :
@@ -533,6 +538,9 @@ export default function RetentionPage() {
       )}
       {activeTab === "velocity" && (
         <SaveVelocityPanel agencyId={agencyId} />
+      )}
+      {activeTab === "integrity" && (
+        <SaveIntegrityPanel agencyId={agencyId} />
       )}
       {activeTab === "targeting" && (
         <>
