@@ -101,6 +101,14 @@ The whole loop lives in **My Queue** (Cancellations + Renewals tabs). For each c
 Renewal save rate · cross-sells surfaced · service queue cleared · anything stuck.
 **If reactive load creeps back in — fix the triage rules, not the people.**
 
+**Run it off two tabs in the Retention Hub:**
+- **🏎️ Velocity** — saves per week and premium preserved, with a per-rep
+  recent-vs-prior-4-week trend arrow. This is the *pace* of saving, not a
+  lifetime rate — watch for a slowdown.
+- **⤴ Escalations** — anything Tracy handed up for your decision sits here
+  (who, why, when). Open the case, make the call, **Resolve**. Clear it weekly;
+  a growing list means a process gap, not a Tracy gap.
+
 ---
 
 ## Interim — running without a front desk *(today)*
