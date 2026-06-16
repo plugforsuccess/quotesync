@@ -21,8 +21,12 @@ ALTER TABLE public.service_tasks
 CREATE INDEX IF NOT EXISTS idx_service_tasks_product
   ON public.service_tasks (agency_id, product);
 
--- Surface product on the household view's open-service-work feed.
-CREATE OR REPLACE FUNCTION public.household_service_tasks(p_household uuid)
+-- Surface product on the household view's open-service-work feed. The return
+-- type gains a column, so the existing function must be dropped first (Postgres
+-- won't change an OUT-parameter signature via CREATE OR REPLACE).
+DROP FUNCTION IF EXISTS public.household_service_tasks(uuid);
+
+CREATE FUNCTION public.household_service_tasks(p_household uuid)
 RETURNS TABLE(
   id uuid, task_type text, title text, detail text, status text, priority text,
   requires_license boolean, policy_no text, product text, due_date date,
