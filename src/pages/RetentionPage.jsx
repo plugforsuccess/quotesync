@@ -12,6 +12,7 @@ import { useCurrentAgency } from "../hooks/useAgencyLeads";
 import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
 import { EventDetailModal, RenewalDetailModal } from "./components/retention/RetentionCancels";
 import EscalationsInbox from "./components/retention/EscalationsInbox";
+import SaveVelocityPanel from "./components/retention/SaveVelocityPanel";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
 import TerminationReasonTab from "./components/retention/TerminationReasonTab";
@@ -492,9 +493,10 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["at_risk", "velocity", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "at_risk"    ? "⚡ At Risk"        :
+             t === "velocity"   ? "🏎️ Velocity"       :
              t === "targeting"  ? "🎯 Targeting"      :
              t === "renewals"   ? "🔄 Renewals"       :
              t === "ai_perf"    ? "📊 AI Performance" :
@@ -520,6 +522,9 @@ export default function RetentionPage() {
           urgentFilter={urgentFilter}
           onClearUrgentFilter={() => setUrgentFilter(false)}
         />
+      )}
+      {activeTab === "velocity" && (
+        <SaveVelocityPanel agencyId={agencyId} />
       )}
       {activeTab === "targeting" && (
         <>
