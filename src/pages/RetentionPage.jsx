@@ -10,7 +10,8 @@ import { useCurrentAgency } from "../hooks/useAgencyLeads";
 
 // Extracted tab components
 import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
-import { EventDetailModal } from "./components/retention/RetentionCancels";
+import { EventDetailModal, RenewalDetailModal } from "./components/retention/RetentionCancels";
+import EscalationsInbox from "./components/retention/EscalationsInbox";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
 import TerminationReasonTab from "./components/retention/TerminationReasonTab";
@@ -80,7 +81,18 @@ export default function RetentionPage() {
   );
   const [urgentFilter, setUrgentFilter] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedRenewal, setSelectedRenewal] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Open a case straight from the Escalations inbox — fetch the row so the same
+  // detail modal the queues use opens here too.
+  const openEscalatedCase = useCallback(async (caseType, caseId) => {
+    const table = caseType === 'renewal' ? 'renewal_cases' : 'pending_cases';
+    const { data } = await supabase.from(table).select('*').eq('id', caseId).maybeSingle();
+    if (!data) return;
+    if (caseType === 'renewal') setSelectedRenewal(data);
+    else setSelectedEvent(data);
+  }, []);
   const hasFlaggedBroken = useRef(false);
 
   const { data: reminders = [] } = useUploadReminders(agencyId);
@@ -300,10 +312,26 @@ export default function RetentionPage() {
 
   // ─── Event update handler ─────────────────────────────────────────────
 
-  function updateEvent(id, updates) {
-    queryClient.setQueryData(["pending_cases", agencyId], old =>
-      (old || []).map(e => e.id === id ? { ...e, ...updates } : e)
-    );
+  async function updateEvent(id, updates) {
+    // Persist to the DB (the modal's Save relies on this), then refresh. Without
+    // the write, a principal saving a case from here would silently lose it.
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase.from("pending_cases").update(updates).eq("id", id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ["pending_cases", agencyId] });
+    queryClient.invalidateQueries({ queryKey: ["open_escalations", agencyId] });
+    return null;
+  }
+
+  async function updateRenewalCase(id, updates) {
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase.from("renewal_cases").update(updates).eq("id", id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ["renewal_cases", agencyId] });
+    queryClient.invalidateQueries({ queryKey: ["open_escalations", agencyId] });
+    return null;
   }
 
   // ─── Page Render ──────────────────────────────────────────────────────
@@ -450,6 +478,15 @@ export default function RetentionPage() {
         <KpiCard label="Terminations" value={kpis.terminations} sub="requested cancel" color="var(--qs-subtle)" />
       </div>
 
+      {/* Escalations hand-off inbox — principal only, hidden when empty */}
+      {currentAgencyRole === 'principal' && (
+        <EscalationsInbox
+          agencyId={agencyId}
+          producers={producers}
+          onOpenCase={openEscalatedCase}
+        />
+      )}
+
       {/* Upload reminders — shown on all tabs */}
       <UploadReminderBanner reminders={reminders} />
 
@@ -529,6 +566,17 @@ export default function RetentionPage() {
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
           onUpdate={updateEvent}
+          agencyId={agencyId}
+          currentEmployeeId={currentEmployee?.id ?? null}
+          producers={producers}
+        />,
+        document.body
+      )}
+      {selectedRenewal && createPortal(
+        <RenewalDetailModal
+          event={selectedRenewal}
+          onClose={() => setSelectedRenewal(null)}
+          onUpdate={updateRenewalCase}
           agencyId={agencyId}
           currentEmployeeId={currentEmployee?.id ?? null}
           producers={producers}

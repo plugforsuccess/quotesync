@@ -217,6 +217,14 @@ export default function EmployeeLayout() {
               </div>
             </div>
 
+            <a
+              href="/my/change-password"
+              title="Change password"
+              className="qs-focusable hidden sm:inline-flex px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-900 hover:text-blue-600 border border-black/10 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+            >
+              🔑 Password
+            </a>
+
             <button
               onClick={handleSignOut}
               className="qs-focusable px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-900 hover:text-red-600 border border-black/10 hover:border-red-400 hover:bg-red-50 transition-colors"
@@ -234,6 +242,9 @@ export default function EmployeeLayout() {
               {label}
             </NavLink>
           ))}
+          <a href="/my/change-password" className="qs-focusable px-4 py-2 rounded-lg text-[0.95rem] font-semibold whitespace-nowrap text-gray-900 hover:bg-black/5">
+            🔑 Password
+          </a>
         </nav>
       </header>
 
