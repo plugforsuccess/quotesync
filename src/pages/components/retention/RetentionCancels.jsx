@@ -349,6 +349,26 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
   async function save() {
     setSaving(true);
+    // Save outcomes require a recorded attempt (DB guard `enforce_cancel_save_has_attempt`)
+    // so every save captures HOW it happened. If the rep marks saved/rewritten on a
+    // case with no logged attempt yet, record one now from the chosen tactic — so
+    // "mark saved" is a single action and never trips the guard with a raw error.
+    if (["saved", "rewritten"].includes(form.status)) {
+      const { count } = await supabase
+        .from("pending_cancel_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("pending_case_id", event.id);
+      if (!count) {
+        await supabase.from("pending_cancel_attempts").insert({
+          pending_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+          method: "phone", result: "reached",
+          note: "Outcome recorded from the work surface",
+          ...(form.save_method
+            ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
+            : {}),
+        });
+      }
+    }
     const updates = { ...form };
     if (["contacted","promise_to_pay","payment_plan_requested"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
@@ -406,11 +426,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     disconnected:   "Disconnected",
   };
 
+  // Let a rep record the outcome on any still-open case — including a fresh
+  // 'pending' one they already know the result for (e.g. confirmed in Allstate
+  // the customer paid). Marking saved auto-logs the required attempt (see save()).
+  const CANCEL_TERMINAL = ["saved", "rewritten", "lost", "auto_resolved", "cancelled"];
   const showOutcomePicker =
-    event.status === "contacted" ||
     attemptForm.result === "reached" ||
-    ["contacted","payment_plan_requested","promise_to_pay",
-     "promise_broken","requested_cancellation"].includes(event.status);
+    !CANCEL_TERMINAL.includes(event.status);
 
   return (
     <div
@@ -998,23 +1020,36 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
             <EscalateCaseBox caseType="cancel" caseId={event.id} onEscalated={onClose} />
 
-            {/* Save */}
-            <button
-              onClick={save}
-              disabled={saving}
-              style={{
-                width: "100%", padding: "12px",
-                borderRadius: 10, border: "none",
-                background: saving ? "var(--qs-elevated)" : "#10B981",
-                color: saving ? "var(--qs-muted)" : "#fff",
-                fontSize: 15, fontWeight: 700,
-                cursor: saving ? "not-allowed" : "pointer",
-                transition: "background 0.15s",
-                marginTop: 4,
-              }}
-            >
-              {saving ? "Saving\u2026" : "Save Case"}
-            </button>
+            {/* Save \u2014 a save outcome needs the tactic so we capture how it happened */}
+            {(() => {
+              const needsTactic = ["saved", "rewritten"].includes(form.status) && !form.save_method;
+              const disabled = saving || needsTactic;
+              return (
+                <div>
+                  <button
+                    onClick={save}
+                    disabled={disabled}
+                    style={{
+                      width: "100%", padding: "12px",
+                      borderRadius: 10, border: "none",
+                      background: disabled ? "var(--qs-elevated)" : "#10B981",
+                      color: disabled ? "var(--qs-muted)" : "#fff",
+                      fontSize: 15, fontWeight: 700,
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      transition: "background 0.15s",
+                      marginTop: 4,
+                    }}
+                  >
+                    {saving ? "Saving\u2026" : "Save Case"}
+                  </button>
+                  {needsTactic && (
+                    <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 6, textAlign: "center" }}>
+                      Pick <strong>What saved them?</strong> to record the save \u2014 it logs the call for you.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -1181,6 +1216,25 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
   async function save() {
     setSaving(true);
+    // A rep-confirmed renewal requires a recorded attempt (DB guard
+    // `enforce_renewal_save_has_attempt`). Auto-log one from the chosen tactic so
+    // confirming is a single action and never trips the guard with a raw error.
+    if (form.status === "confirmed") {
+      const { count } = await supabase
+        .from("renewal_attempts")
+        .select("id", { count: "exact", head: true })
+        .eq("renewal_case_id", event.id);
+      if (!count) {
+        await supabase.from("renewal_attempts").insert({
+          renewal_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+          method: "phone", result: "reached",
+          note: "Outcome recorded from the work surface",
+          ...(form.save_method
+            ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
+            : {}),
+        });
+      }
+    }
     const updates = { ...form };
     if (["review_requested","confirmed","at_risk","shopping","escalated"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
@@ -1225,9 +1279,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     disconnected:   "Disconnected",
   };
 
+  // Let a rep record the outcome on any still-open renewal — including a fresh
+  // one they already know the result for. Confirming auto-logs the required
+  // attempt (see save()).
+  const RENEWAL_TERMINAL = ["confirmed", "lost", "auto_resolved", "unreachable"];
   const showOutcomePicker =
     attemptForm.result === "reached" ||
-    ["review_requested","shopping","at_risk","escalated","confirmed"].includes(event.status);
+    !RENEWAL_TERMINAL.includes(event.status);
 
   return (
     <div
@@ -1741,23 +1799,36 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
             <EscalateCaseBox caseType="renewal" caseId={event.id} onEscalated={onClose} />
 
-            {/* Save */}
-            <button
-              onClick={save}
-              disabled={saving}
-              style={{
-                width: "100%", padding: "12px",
-                borderRadius: 10, border: "none",
-                background: saving ? "var(--qs-elevated)" : "#10B981",
-                color: saving ? "var(--qs-muted)" : "#fff",
-                fontSize: 15, fontWeight: 700,
-                cursor: saving ? "not-allowed" : "pointer",
-                transition: "background 0.15s",
-                marginTop: 4,
-              }}
-            >
-              {saving ? "Saving\u2026" : "Save Case"}
-            </button>
+            {/* Save \u2014 confirming needs the tactic so we capture how it was saved */}
+            {(() => {
+              const needsTactic = form.status === "confirmed" && !form.save_method;
+              const disabled = saving || needsTactic;
+              return (
+                <div>
+                  <button
+                    onClick={save}
+                    disabled={disabled}
+                    style={{
+                      width: "100%", padding: "12px",
+                      borderRadius: 10, border: "none",
+                      background: disabled ? "var(--qs-elevated)" : "#10B981",
+                      color: disabled ? "var(--qs-muted)" : "#fff",
+                      fontSize: 15, fontWeight: 700,
+                      cursor: disabled ? "not-allowed" : "pointer",
+                      transition: "background 0.15s",
+                      marginTop: 4,
+                    }}
+                  >
+                    {saving ? "Saving\u2026" : "Save Case"}
+                  </button>
+                  {needsTactic && (
+                    <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 6, textAlign: "center" }}>
+                      Pick <strong>What saved them?</strong> to confirm \u2014 it logs the call for you.
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
