@@ -86,6 +86,14 @@ The renewal pipeline is the daily driver for CSRs and account managers.
 - Each task has an SLA clock. Overdue tasks escalate to the assigning manager.
 - Workload balancing view shows open tasks, average age, and close rate per staff member so owners can spot CSRs who are drowning before they burn out.
 
+**Retention-rep work surface (renewal + cancellation)**
+- A single full-width case view with a customer-specific call script, one-click dial, callback scheduling, and a permanent Case Log.
+- **Outcome capture with dollars:** confirming a renewal captures the **final premium saved** (offer − final); saving a cancellation captures the **premium preserved**. Both roll into the scorecard so saves are measured in real dollars, not just a tally.
+- **Escalate to agent** is a true hand-off — it flags the case, writes an audit note, and notifies the principal's **Escalations inbox** (open the case, decide, resolve), rather than just relabeling a status.
+- **Refer to sales** pushes a cross-sell opportunity spotted on the call onto the sales board, and service requests raised on a call are linked both ways to the case.
+- **Snooze guardrails:** a case can only be deferred while its deadline is ≥14 days out, and a snooze can never park it within 14 days of the cancel/renewal date — so nothing hides past the point it must be worked. Re-snoozes are counted and surfaced.
+- **Today** gives the rep a ranked dial list, a "waiting to hear back" list (voicemails + scheduled callbacks), and a "call these before they lapse" alarm for any case nearing its deadline with no attempts yet.
+
 ### 3. Carrier Mix & Premium Analysis
 
 This module answers the strategic questions agency owners usually only think about once a year — and usually too late.
@@ -110,6 +118,24 @@ QuoteSync does not just report the problem. For each flagged concentration risk 
 - Which households are the best candidates to rewrite to a secondary carrier (based on underwriting fit, price competitiveness, and household risk score).
 - Which LOBs are underpenetrated in the existing book (e.g., 1,400 auto households, only 280 home policies — a concrete cross-sell universe).
 - Which carrier appointments the agency does not yet have but should, based on the geographic and LOB profile of the book.
+
+### 4. Retention Health & Workflow Monitoring
+
+The principal's answer to "is the retention workflow actually working?" — on one screen, before the lagging numbers move.
+
+**Retention Health overview** (the principal's landing tab)
+- A single green / amber / red status that ties **book-level health** (net retention %, policy retention, policies-in-force vs prior year-end, month-over-month trend — from the monthly book-health upload) to the **operational picture** (save rate, premium saved vs at-risk, save velocity, terminations, open escalations, parked cases). Every tile drills into its detail.
+
+**Workflow-leak alarms** (leading indicators, not lagging)
+- **Preventable lapses** — cases that reached their deadline *never having been called*. A policy that lapses unworked is a process failure, not a hard loss — and a preventable-lapse leak forces the health status off green no matter how the book looks.
+- **About to lapse, untouched** — cases due within 7 days with zero attempts: the next batch, surfaced in time to prevent it.
+- An 8-week **preventable-lapse trend** the principal can drive to zero, plus a rep-facing "call these before they lapse" banner.
+
+**Save velocity**
+- Saves per week (cancellation saves + confirmed renewals) and premium preserved, with a per-rep rollup and a recent-vs-prior-4-week trend arrow — the *pace* of retention, not just a lifetime rate.
+
+**Escalations inbox**
+- Every case a rep handed up for an agent decision, with who / why / when, one-click open of the case, and resolve — a closed loop with an audit trail.
 
 ---
 
@@ -247,6 +273,14 @@ QuoteSync is opinionated about what success looks like for an agency. The platfo
 - Household lifetime value by cohort
 - Cross-sell ratio (policies per household) trend
 - New business vs. attrition (net book movement)
+
+**Workflow health (rep + principal)**
+- Net retention status (green / amber / red vs target) blending book health and workflow leaks
+- Save velocity — saves and premium preserved per week, per rep, with a recent-vs-prior trend
+- Preventable lapses — cases past deadline with zero attempts (with an 8-week trend)
+- About-to-lapse-untouched — cases due ≤7 days with no attempts
+- Premium saved — rep-confirmed, on both renewal (off the offer) and cancellation (preserved) saves
+- Parked (snoozed) cases, incl. re-snoozed count; open escalations awaiting an agent decision
 
 **Operational**
 - Data feed freshness and reconciliation error rate

@@ -86,3 +86,17 @@ Architecturally **multi-tenant-by-design, but Allstate-by-default in the seams.*
 - ❌ "We re-shop at-risk renewals." No remarketing/comparison data is stored on the retention side.
 
 The honest one-liner for the owner: **this is a strong retention-desk operating system sitting downstream of Allstate, with the beginnings — but not yet the proof — of the retention-elasticity data moat the $1,000 price depends on.** The single highest-leverage move is #1: turn the intervention log from "how many times we called" into "what we did and what it changed."
+
+---
+
+## Addendum — addressed since this audit (go-live hardening)
+
+A round of go-live work closed several operational gaps. Mapping to the items above, honestly:
+
+- **#3 Remarketing bridge — partially.** Escalation is no longer a bare flag: a `case_escalations` record now routes the case to the principal's **Escalations inbox**, writes an audit case-note, and notifies principals, for **renewals *and* cancels** (`escalate_case`/`resolve_escalation` RPCs). **Still open:** no re-quote / old-vs-proposed-premium comparison is captured on escalation — the remarketing/elasticity capture (#1, #3) remains the highest-leverage gap.
+- **#2 Book-level retention census — surfaced, not yet per-policy.** A new **Retention Health** overview reads `book_snapshots` to show blended **net retention %** and **PIF current vs prior-year-end** with a trend. This gives a product-level in-force read from the monthly book-health upload. **Still open:** a per-policy in-force roster (the searchable denominator scoped in `BOOK_IMPORT_SCOPE.md`) for a true per-customer "% of book retained."
+- **Activity-vs-outcome visibility — new.** `useQueueHygiene` surfaces the leading process signal the lagging metrics miss: **preventable lapses** (past deadline, zero attempts), **about-to-lapse untouched** (due ≤7d, zero attempts), and an 8-week preventable-lapse trend. A preventable-lapse leak forces the health status off green; the rep gets a "call these before they lapse" alarm on Today. This measures whether the workflow is *working*, distinct from whether a given case was *savable*.
+- **Save measured in dollars + pace.** Renewal saves capture final premium off the offer; cancellation saves now capture **premium preserved** (`pending_cases.saved_premium`). A principal **Save Velocity** view trends saves and premium-preserved per week, per rep.
+- **Queue integrity.** Snooze can no longer hide a case past its deadline (≥14-day buffer, enforced both in the UI and on write), and re-snoozes are counted and surfaced so deferral can't become a silent hiding place.
+
+These harden the **workflow** layer. They do **not** change the core data-moat verdict: items **#1 (structured intervention + observed outcome)** and the **remarketing/comparison capture** remain the work that turns this from a strong retention desk into the defensible elasticity asset.
