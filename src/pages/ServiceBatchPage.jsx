@@ -11,8 +11,9 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
-  useExpectedCallbacks, useLogCallback, slaMsLeft,
-  TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES,
+  useExpectedCallbacks, useLogCallback, useServiceTaskVelocity, slaMsLeft,
+  TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES, PRODUCTS, productShort,
+  SLA_HOURS,
 } from '../hooks/useServiceTasks';
 import CopyButton from '../components/CopyButton';
 import { formatTaskForAllstate } from '../lib/allstateClipboard';
@@ -30,16 +31,46 @@ const PRIORITY_BADGE = {
   low:    { label: 'LOW',    bg: '#33415533', color: '#94A3B8' },
 };
 
+// Break a millisecond span into h/m/s parts for the live readout.
+function parts(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  return { h: Math.floor(s / 3600), m: Math.floor((s % 3600) / 60), s: s % 60 };
+}
+// Compact "Xh Ym" / "Ym Zs" / "Ym" — the unit shown adapts to the magnitude.
+function fmtDur(ms) {
+  const { h, m, s } = parts(ms);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
 // 24h SLA countdown from creation — the goal is to clear every service task
-// within a day, faster when possible.
-function slaLabel(createdAt) {
+// within a day, faster when possible. Tiers carry a real color at every stage
+// (no dead grey): healthy emerald → amber as it ages → red in the final hour
+// and past breach. `frac` is the share of the 24h window already consumed.
+function slaState(createdAt) {
   const ms = slaMsLeft(createdAt);
-  if (ms == null) return { text: '—', color: 'var(--qs-muted)' };
-  if (ms < 0) return { text: `SLA overdue ${Math.ceil(-ms / 3600000)}h`, color: '#F87171' };
+  if (ms == null) return null;
+  const total = SLA_HOURS * 3600000;
+  const frac = Math.min(1, Math.max(0, (total - ms) / total));
   const hrs = ms / 3600000;
-  if (hrs < 1) return { text: `${Math.max(1, Math.ceil(ms / 60000))}m left`, color: '#F87171' };
-  if (hrs < 4) return { text: `${Math.floor(hrs)}h left`, color: '#FBBF24' };
-  return { text: `${Math.floor(hrs)}h left`, color: 'var(--qs-muted)' };
+  let color, label;
+  if (ms < 0)        { color = '#F87171'; label = `Overdue ${fmtDur(-ms)}`; }
+  else if (hrs < 1)  { color = '#FB7185'; label = `${fmtDur(ms)} left`; }
+  else if (hrs < 4)  { color = '#FBBF24'; label = `${fmtDur(ms)} left`; }
+  else if (hrs < 12) { color = '#38BDF8'; label = `${fmtDur(ms)} left`; }
+  else               { color = '#34D399'; label = `${fmtDur(ms)} left`; }
+  return { ms, frac, color, label, overdue: ms < 0 };
+}
+
+// Shared 1s heartbeat so every live timer on the page ticks in lockstep with a
+// single interval, instead of one timer per row.
+function useTick(intervalMs = 1000) {
+  const [, setN] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setN(n => n + 1), intervalMs);
+    return () => clearInterval(id);
+  }, [intervalMs]);
 }
 
 export default function ServiceBatchPage() {
@@ -155,6 +186,8 @@ export default function ServiceBatchPage() {
 
       <ExpectedCallbacks agencyId={agencyId} />
 
+      <CompletionPace agencyId={agencyId} />
+
       {/* Scope filter — route the licensed lane to the rep it's assigned to */}
       <div style={{ display: 'flex', gap: 6, margin: '14px 0 0', flexWrap: 'wrap' }}>
         {SCOPES.map(s => (
@@ -263,8 +296,8 @@ export default function ServiceBatchPage() {
 }
 
 function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onDone, onClaim }) {
-  const sla = slaLabel(task.created_at);
   const prio = PRIORITY_BADGE[task.priority];
+  const product = productShort(task.product);
   const inProgress = task.status === 'in_progress';
   const needsNote = NOTE_REQUIRED_TYPES.has(task.task_type);
 
@@ -288,6 +321,11 @@ function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onD
           {prio && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
               background: prio.bg, color: prio.color, letterSpacing: '0.05em' }}>{prio.label}</span>
+          )}
+          {product && (
+            <span title="Line of business" style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px',
+              borderRadius: 4, background: '#22D3EE1f', border: '1px solid #22D3EE40', color: '#67E8F9',
+              letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace" }}>{product}</span>
           )}
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)' }}>{task.title}</span>
         </div>
@@ -351,15 +389,46 @@ function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onD
         )}
       </div>
 
-      {/* Full-height SLA timer panel — far right, conveys urgency at a glance */}
+      {/* Full-height live SLA timer — far right, ticks to the second */}
+      <SlaTimer createdAt={task.created_at} />
+    </div>
+  );
+}
+
+// Live, self-contained SLA timer. Owns its own 1s tick so only this panel
+// re-renders each second, not the whole task body. A conic progress ring fills
+// as the 24h window burns down and the digits count to the second — the agency
+// watches these complete fast, so the clock is the loudest thing on the row.
+function SlaTimer({ createdAt }) {
+  useTick(1000);
+  const sla = slaState(createdAt);
+  if (!sla) {
+    return <div style={{ minWidth: 132, borderLeft: '1px solid var(--qs-border)' }} />;
+  }
+  const pct = Math.round(sla.frac * 100);
+  return (
+    <div style={{
+      position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: 8, minWidth: 132, padding: '0 16px', textAlign: 'center',
+      background: `${sla.color}14`, borderLeft: `1px solid ${sla.color}55`, color: sla.color,
+    }}>
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        minWidth: 120, padding: '0 14px', textAlign: 'center',
-        background: `${sla.color}1f`, borderLeft: `1px solid ${sla.color}55`, color: sla.color,
+        position: 'relative', width: 56, height: 56, borderRadius: '50%',
+        background: `conic-gradient(${sla.color} ${pct}%, ${sla.color}22 ${pct}% 100%)`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        boxShadow: sla.overdue ? `0 0 0 1px ${sla.color}, 0 0 14px ${sla.color}66` : `0 0 10px ${sla.color}33`,
+        animation: sla.overdue ? 'qs-pulse 1.4s ease-in-out infinite' : 'none',
       }}>
-        <div style={{ fontSize: 22, marginBottom: 4 }}>⏱</div>
-        <div style={{ fontSize: 13, fontWeight: 800, lineHeight: 1.25 }}>{sla.text}</div>
+        <div style={{
+          width: 44, height: 44, borderRadius: '50%', background: 'var(--qs-elevated)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+        }}>{sla.overdue ? '⚠' : '⏱'}</div>
       </div>
+      <div style={{
+        fontSize: 12.5, fontWeight: 800, lineHeight: 1.2, letterSpacing: '0.01em',
+        fontFamily: "'DM Mono', monospace", fontVariantNumeric: 'tabular-nums',
+      }}>{sla.label}</div>
+      <style>{'@keyframes qs-pulse{0%,100%{opacity:1}50%{opacity:0.55}}'}</style>
     </div>
   );
 }
@@ -424,8 +493,126 @@ function ExpectedCallbacks({ agencyId }) {
   );
 }
 
+function median(arr) {
+  if (!arr.length) return null;
+  const s = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
+function fmtMins(mins) {
+  if (mins == null) return '—';
+  if (mins < 60) return `${Math.round(mins)}m`;
+  const h = Math.floor(mins / 60), m = Math.round(mins % 60);
+  return m ? `${h}h ${m}m` : `${h}h`;
+}
+const startOfDay = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; };
+
+// Completion-pace strip — the curve of how fast service tasks get cleared.
+// Each bar is a day's median time-to-done; reps watch this bend downward as the
+// live SLA timers push the batch to clear faster. Hidden until there's data.
+function CompletionPace({ agencyId, days = 14 }) {
+  const { data: done = [], isLoading } = useServiceTaskVelocity(agencyId, days);
+
+  const stats = useMemo(() => {
+    const byDay = new Map();
+    for (let i = days - 1; i >= 0; i--) {
+      const d = startOfDay(new Date()); d.setDate(d.getDate() - i);
+      byDay.set(d.toDateString(), { date: d, mins: [] });
+    }
+    const allMins = [];
+    for (const t of done) {
+      if (!t.completed_at || !t.created_at) continue;
+      const mins = (new Date(t.completed_at) - new Date(t.created_at)) / 60000;
+      if (!(mins >= 0)) continue;
+      allMins.push(mins);
+      const b = byDay.get(startOfDay(t.completed_at).toDateString());
+      if (b) b.mins.push(mins);
+    }
+    const buckets = [...byDay.values()].map(b => ({
+      date: b.date, count: b.mins.length, median: median(b.mins),
+    }));
+    const today = byDay.get(startOfDay(new Date()).toDateString());
+    const withData = buckets.filter(b => b.median != null);
+    const half = Math.floor(withData.length / 2);
+    const firstMed = median(withData.slice(0, half).map(b => b.median));
+    const lastMed = median(withData.slice(half).map(b => b.median));
+    return {
+      buckets,
+      todayCount: today ? today.mins.length : 0,
+      todayMedian: today ? median(today.mins) : null,
+      overallMedian: median(allMins),
+      trend: (firstMed != null && lastMed != null) ? lastMed - firstMed : null,
+      total: allMins.length,
+    };
+  }, [done, days]);
+
+  if (isLoading || stats.total === 0) return null;
+
+  // Sparkline over days-with-data; faster (lower median) sits lower on the curve.
+  const pts = stats.buckets.map((b, i) => ({ x: i, median: b.median })).filter(p => p.median != null);
+  const W = 280, H = 44, maxMed = Math.max(1, ...pts.map(p => p.median));
+  const X = i => (days <= 1 ? 0 : (i / (days - 1)) * W);
+  const Y = m => H - 4 - (m / maxMed) * (H - 8);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${X(p.x).toFixed(1)},${Y(p.median).toFixed(1)}`).join(' ');
+  const area = pts.length ? `${line} L${X(pts[pts.length - 1].x).toFixed(1)},${H} L${X(pts[0].x).toFixed(1)},${H} Z` : '';
+
+  // Down is good (we got faster): green. Up is slower: amber.
+  const trendGood = stats.trend == null ? null : stats.trend <= 0;
+  const trendColor = trendGood == null ? 'var(--qs-muted)' : trendGood ? '#34D399' : '#FBBF24';
+
+  return (
+    <div style={{
+      marginTop: 16, borderRadius: 12, padding: '14px 16px',
+      background: 'linear-gradient(135deg, rgba(34,211,238,0.08), rgba(52,211,153,0.05))',
+      border: '1px solid var(--qs-border)', display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap',
+    }}>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
+          letterSpacing: '0.06em' }}>Completion pace · {days}d</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginTop: 4 }}>
+          <span style={{ fontSize: 26, fontWeight: 800, color: 'var(--qs-bright)',
+            fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{fmtMins(stats.overallMedian)}</span>
+          <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>median time to done</span>
+        </div>
+      </div>
+
+      <div style={{ flex: 1, minWidth: 180 }}>
+        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none"
+          style={{ width: '100%', height: 44, display: 'block' }}>
+          <defs>
+            <linearGradient id="qs-pace-fill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#34D399" stopOpacity="0.35" />
+              <stop offset="100%" stopColor="#34D399" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {area && <path d={area} fill="url(#qs-pace-fill)" />}
+          {line && <path d={line} fill="none" stroke="#34D399" strokeWidth="2"
+            strokeLinejoin="round" strokeLinecap="round" />}
+          {pts.length === 1 && <circle cx={X(pts[0].x)} cy={Y(pts[0].median)} r="3" fill="#34D399" />}
+        </svg>
+      </div>
+
+      <div style={{ display: 'flex', gap: 18 }}>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--qs-bright)',
+            fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>{stats.todayCount}</div>
+          <div style={{ fontSize: 10.5, color: 'var(--qs-muted)', marginTop: 3 }}>done today</div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: 18, fontWeight: 800, color: trendColor,
+            fontFamily: "'DM Mono', monospace", lineHeight: 1 }}>
+            {stats.trend == null ? '—' : `${stats.trend <= 0 ? '▼' : '▲'} ${fmtMins(Math.abs(stats.trend))}`}
+          </div>
+          <div style={{ fontSize: 10.5, color: 'var(--qs-muted)', marginTop: 3 }}>vs. window start</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AddTaskForm({ agencyId, busy, onSubmit }) {
   const [taskType, setTaskType] = useState('mortgagee');
+  const [product, setProduct] = useState('');
   const [title, setTitle] = useState('');
   const [customerName, setCustomerName] = useState('');
   const [policyNo, setPolicyNo] = useState('');
@@ -438,13 +625,14 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
     if (!canSubmit) return;
     onSubmit({
       taskType,
+      product: product || null,
       title: title.trim(),
       customerName: customerName.trim() || null,
       policyNo: policyNo.trim() || null,
       priority,
       detail: detail.trim() || null,
     });
-    setTitle(''); setCustomerName(''); setPolicyNo(''); setDetail('');
+    setTitle(''); setCustomerName(''); setPolicyNo(''); setDetail(''); setProduct('');
   }
 
   const input = {
@@ -461,6 +649,12 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
             {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </label>
+        <label style={lbl}>Product
+          <select value={product} onChange={e => setProduct(e.target.value)} style={input}>
+            <option value="">— Line of business —</option>
+            {PRODUCTS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+        </label>
         <label style={lbl}>Priority
           <select value={priority} onChange={e => setPriority(e.target.value)} style={input}>
             <option value="urgent">Urgent</option>
@@ -469,15 +663,15 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
             <option value="low">Low</option>
           </select>
         </label>
+        <label style={lbl}>Policy #
+          <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Optional" />
+        </label>
         <label style={{ ...lbl, gridColumn: '1 / -1' }}>What's needed
           <input value={title} onChange={e => setTitle(e.target.value)} style={input}
             placeholder="e.g. Update mortgagee to ABC Bank" />
         </label>
-        <label style={lbl}>Customer
+        <label style={{ ...lbl, gridColumn: '1 / -1' }}>Customer
           <input value={customerName} onChange={e => setCustomerName(e.target.value)} style={input} placeholder="Name" />
-        </label>
-        <label style={lbl}>Policy #
-          <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Optional" />
         </label>
         <label style={{ ...lbl, gridColumn: '1 / -1' }}>Detail
           <input value={detail} onChange={e => setDetail(e.target.value)} style={input} placeholder="Optional notes" />
