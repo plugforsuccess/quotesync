@@ -46,9 +46,10 @@ export default function LogServiceTaskButton({
       },
       {
         onSuccess: () => {
+          // Stay open on a success screen so the rep can log another request for
+          // the same case (e.g. one handled on-call + one queued for batch).
           setDone(true);
           setTitle(''); setPriority('normal'); setProduct('');
-          setTimeout(() => { setOpen(false); setDone(false); }, 1500);
         },
       }
     );
@@ -95,8 +96,26 @@ export default function LogServiceTaskButton({
       </div>
 
       {done ? (
-        <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, padding: '6px 0' }}>
-          {onCall ? '✓ Handled on this call' : '✓ Queued to Service Batch'}
+        <div>
+          <div style={{ fontSize: 13, color: '#10B981', fontWeight: 600, padding: '6px 0' }}>
+            {onCall ? '✓ Handled on this call' : '✓ Queued to Service Batch'}
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+            <button type="button" onClick={() => setDone(false)} style={{
+              flex: 1, padding: '8px', borderRadius: 8, border: '1px solid var(--qs-border)',
+              background: 'var(--qs-card)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              + Log another
+            </button>
+            <button type="button" onClick={() => { setOpen(false); setDone(false); }} style={{
+              flex: 1, padding: '8px', borderRadius: 8, border: 'none',
+              background: '#10B981', color: '#fff', fontSize: 13, fontWeight: 700,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}>
+              Done
+            </button>
+          </div>
         </div>
       ) : (
         <>

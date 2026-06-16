@@ -15,6 +15,7 @@ import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript 
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 import { EscalateCaseBox, LinkedServiceTasks, ReferToSalesBox } from './CaseHandoffExtras';
+import { SAVE_METHODS } from '../../../lib/saveMethods';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -243,6 +244,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     notes:               event.notes || "",
     rewrite_new_premium: event.rewrite_new_premium || "",
     rewrite_reason:      event.rewrite_reason || "",
+    save_method:         event.save_method || "",
   });
   // Kept out of `form` so it's only written on the saved (reinstatement) path —
   // the column it targets is pending_cases.saved_premium.
@@ -365,6 +367,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
       updates.saved_premium = Number.isNaN(sp) ? null : sp;
     }
+    // Save method (what saved them) is only meaningful on a save; clear it on
+    // any non-save outcome so a stale tactic doesn't linger.
+    updates.save_method = ["saved","rewritten"].includes(form.status)
+      ? (form.save_method || null) : null;
     // Strip rewrite fields if not a rewrite outcome
     if (form.status !== "rewritten") {
       updates.rewrite_new_premium = null;
@@ -905,6 +911,23 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
+            {/* What saved them — the tactic, captured on any save outcome */}
+            {["saved","rewritten"].includes(form.status) && (
+              <div>
+                <label className="dark-label">What saved them?</label>
+                <select
+                  className="dark-select"
+                  value={form.save_method}
+                  onChange={ev => setForm(p => ({ ...p, save_method: ev.target.value }))}
+                >
+                  <option value="">— Select the method —</option>
+                  {SAVE_METHODS.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Assignment + Promise date */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
@@ -1054,6 +1077,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     contact_method: event.contact_method || "",
     notes: event.notes || "",
     shopping_reason: event.shopping_reason || "",
+    save_method: event.save_method || "",
   });
   // Kept out of `form` so it's only written to renewal_cases on the confirmed
   // (saved) path — the column it targets is the new saved_premium field.
@@ -1182,6 +1206,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
       updates.saved_premium = Number.isNaN(sp) ? null : sp;
     }
+    // Save method (what saved them) — only meaningful on a confirmed save;
+    // cleared otherwise so a stale tactic doesn't linger on a lost/shopping case.
+    updates.save_method = form.status === "confirmed" ? (form.save_method || null) : null;
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
     await onUpdate(event.id, updates);
@@ -1633,6 +1660,23 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     </div>
                   );
                 })()}
+              </div>
+            )}
+
+            {/* What saved them — the tactic, captured at the confirmed save */}
+            {form.status === "confirmed" && (
+              <div>
+                <label className="dark-label">What saved them?</label>
+                <select
+                  className="dark-select"
+                  value={form.save_method}
+                  onChange={ev => setForm(p => ({ ...p, save_method: ev.target.value }))}
+                >
+                  <option value="">— Select the method —</option>
+                  {SAVE_METHODS.map(m => (
+                    <option key={m.value} value={m.value}>{m.label}</option>
+                  ))}
+                </select>
               </div>
             )}
 
