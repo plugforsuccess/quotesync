@@ -124,7 +124,7 @@ function CustomerDrilldownModal({ event, onClose }) {
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
-      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+      onMouseDown={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
       <div style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
 
@@ -455,7 +455,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         display: "flex", alignItems: "flex-start", justifyContent: "center",
         padding: "16px",
       }}
-      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+      onMouseDown={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
       <div style={{
         background: "var(--qs-card)",
@@ -1328,7 +1328,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         display: "flex", alignItems: "flex-start", justifyContent: "center",
         padding: "16px",
       }}
-      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+      onMouseDown={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
       <div style={{
         background: "var(--qs-card)",
