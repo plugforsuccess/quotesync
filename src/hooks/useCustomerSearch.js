@@ -20,6 +20,24 @@ export function useCustomerSearch(agencyId, term) {
   });
 }
 
+// Policy-level typeahead for the service-task form — matches a partial name OR a
+// policy-number prefix and returns distinct (customer, policy, product, phone),
+// so typing a name fills the policy number and vice versa.
+export function usePolicyAutocomplete(agencyId, term) {
+  const q = (term || '').trim();
+  return useQuery({
+    queryKey: ['policy_autocomplete', agencyId, q.toLowerCase()],
+    enabled: !!agencyId && q.length >= 2,
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc('policy_autocomplete', { p_agency_id: agencyId, p_query: q });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
 // Rebuild the household layer from the latest source data (run after uploads).
 export function useReconcileHouseholds(agencyId) {
   const qc = useQueryClient();

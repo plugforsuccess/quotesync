@@ -12,9 +12,11 @@ import { useActiveEmployees, useAssignableMembers } from '../hooks/useEmployees'
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
   useExpectedCallbacks, useLogCallback, useServiceTaskVelocity, slaMsLeft,
-  TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES, PRODUCTS, productShort,
+  TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES, PRODUCTS, PRODUCT_MAP, productShort,
   SLA_HOURS,
 } from '../hooks/useServiceTasks';
+import { usePolicyAutocomplete } from '../hooks/useCustomerSearch';
+import { titleCaseName } from '../lib/names';
 import CopyButton from '../components/CopyButton';
 import { formatTaskForAllstate } from '../lib/allstateClipboard';
 
@@ -624,6 +626,18 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
   const [priority, setPriority] = useState('normal');
   const [detail, setDetail] = useState('');
 
+  // Directory autocomplete: the focused field drives the search (a name OR a
+  // policy #); picking a suggestion fills both fields + the product line.
+  const [focused, setFocused] = useState(null); // 'customer' | 'policy' | null
+  const term = focused === 'customer' ? customerName : focused === 'policy' ? policyNo : '';
+  const { data: suggestions = [] } = usePolicyAutocomplete(agencyId, term);
+  function selectSuggestion(s) {
+    setCustomerName(s.customer_name);
+    setPolicyNo(s.policy_no);
+    if (s.product && PRODUCT_MAP[s.product]) setProduct(s.product);
+    setFocused(null);
+  }
+
   // Customer name + policy number identify who the task is for and drive
   // household/policy linking + search, so both are required alongside the title.
   const canSubmit = !!agencyId && title.trim().length > 0
@@ -651,14 +665,48 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
   return (
     <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
       borderRadius: 10, padding: 16, marginBottom: 4 }}>
+      {/* Who it's for goes first — type a name to fill the policy # (or a policy #
+          to fill the name) from the directory. */}
+      <div style={{ position: 'relative', marginBottom: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+          <label style={lbl}><span>Customer <span style={{ color: '#F87171' }}>*</span></span>
+            <input value={customerName} autoComplete="off"
+              onChange={e => { setCustomerName(e.target.value); setFocused('customer'); }}
+              onFocus={() => setFocused('customer')}
+              onBlur={() => setTimeout(() => setFocused(f => (f === 'customer' ? null : f)), 150)}
+              style={input} placeholder="Start typing a name…" />
+          </label>
+          <label style={lbl}><span>Policy # <span style={{ color: '#F87171' }}>*</span></span>
+            <input value={policyNo} autoComplete="off"
+              onChange={e => { setPolicyNo(e.target.value); setFocused('policy'); }}
+              onFocus={() => setFocused('policy')}
+              onBlur={() => setTimeout(() => setFocused(f => (f === 'policy' ? null : f)), 150)}
+              style={input} placeholder="…or a policy #" />
+          </label>
+        </div>
+        {focused && suggestions.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 30, marginTop: 4,
+            background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8,
+            maxHeight: 240, overflowY: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
+            {suggestions.map((s, i) => (
+              <button type="button" key={`${s.policy_no}-${i}`}
+                onMouseDown={e => { e.preventDefault(); selectSuggestion(s); }}
+                style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 8, textAlign: 'left',
+                  padding: '8px 10px', background: 'transparent', border: 'none',
+                  borderBottom: '1px solid var(--qs-elevated)', color: 'var(--qs-text)',
+                  cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>
+                <span style={{ fontWeight: 600 }}>{titleCaseName(s.customer_name)}</span>
+                <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono', monospace",
+                  color: 'var(--qs-muted)', fontSize: 12 }}>
+                  {s.policy_no}{s.product ? ` · ${productShort(s.product)}` : ''}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {/* Who it's for goes first — it's what links the task to a household. */}
-        <label style={{ ...lbl, gridColumn: '1 / -1' }}><span>Customer <span style={{ color: '#F87171' }}>*</span></span>
-          <input value={customerName} onChange={e => setCustomerName(e.target.value)} style={input} placeholder="Customer name" />
-        </label>
-        <label style={lbl}><span>Policy # <span style={{ color: '#F87171' }}>*</span></span>
-          <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Policy number" />
-        </label>
         <label style={lbl}>Product
           <select value={product} onChange={e => setProduct(e.target.value)} style={input}>
             <option value="">— Line of business —</option>
