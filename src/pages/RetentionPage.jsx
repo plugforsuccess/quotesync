@@ -13,6 +13,7 @@ import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
 import { EventDetailModal, RenewalDetailModal } from "./components/retention/RetentionCancels";
 import EscalationsInbox from "./components/retention/EscalationsInbox";
 import SaveVelocityPanel from "./components/retention/SaveVelocityPanel";
+import RetentionHealthOverview from "./components/retention/RetentionHealthOverview";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
 import TerminationReasonTab from "./components/retention/TerminationReasonTab";
@@ -78,7 +79,7 @@ export default function RetentionPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(
-    () => searchParams.get("tab") || "at_risk"
+    () => searchParams.get("tab") || "health"
   );
   const [urgentFilter, setUrgentFilter] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -255,7 +256,10 @@ export default function RetentionPage() {
     const terminations = events.filter(e => e.status === "requested_cancellation");
 
     const premiumAtRisk = active.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
-    const premiumSaved = saved.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
+    // Prefer the rep-confirmed saved_premium (reinstatement) or rewrite premium;
+    // fall back to the at-risk amount for saves logged before that capture.
+    const premiumSaved = saved.reduce((s, e) =>
+      s + (e.saved_premium ?? e.rewrite_new_premium ?? e.premium_at_risk ?? 0), 0);
 
     const workable = saved.length + lost.length;
     const saveRate = workable > 0 ? saved.length / workable : null;
@@ -493,9 +497,10 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "velocity", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["health", "at_risk", "velocity", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "at_risk"    ? "⚡ At Risk"        :
+            {t === "health"     ? "🩺 Health"         :
+             t === "at_risk"    ? "⚡ At Risk"        :
              t === "velocity"   ? "🏎️ Velocity"       :
              t === "targeting"  ? "🎯 Targeting"      :
              t === "renewals"   ? "🔄 Renewals"       :
@@ -514,6 +519,9 @@ export default function RetentionPage() {
       </div>
 
       {/* Tab Content */}
+      {activeTab === "health" && (
+        <RetentionHealthOverview agencyId={agencyId} kpis={kpis} onNavigate={setActiveTab} />
+      )}
       {activeTab === "at_risk" && (
         <UnifiedAtRiskTab
           agencyId={agencyId}

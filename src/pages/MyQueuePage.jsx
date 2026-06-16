@@ -19,6 +19,25 @@ import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript 
 import { titleCaseName } from '../lib/names';
 import { productLabel } from '../lib/productLabels';
 
+// Snooze guardrails: a case can't be deferred once its deadline is within 14
+// days, and a snooze can never PARK it to within 14 days of the deadline — so a
+// case never hides past the point it has to be worked. eligibleSnoozeOptions
+// returns the still-allowed durations for a given deadline (possibly none).
+const SNOOZE_CHOICES = [
+  { days: 1, reason: 'retry_tomorrow',   label: '1 day — retry tomorrow' },
+  { days: 2, reason: 'retry_in_2_days',  label: '2 days — retry in 2 days' },
+  { days: 7, reason: 'retry_next_week',  label: '1 week — retry next week' },
+];
+const SNOOZE_DEADLINE_BUFFER_DAYS = 14;
+function eligibleSnoozeOptions(deadlineStr) {
+  if (!deadlineStr) return SNOOZE_CHOICES; // no deadline → no deadline risk
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const days = Math.ceil((new Date(deadlineStr) - today) / 86400000);
+  const maxSnooze = days - SNOOZE_DEADLINE_BUFFER_DAYS;
+  if (maxSnooze < 1) return [];
+  return SNOOZE_CHOICES.filter(c => c.days <= maxSnooze);
+}
+
 // The rep reads scripts verbatim — full name, or a clear placeholder if the
 // employee record hasn't loaded.
 function agentNameFor(employee) {
@@ -526,22 +545,26 @@ export default function MyQueuePage() {
   }
 
 
-  // Snooze a case for N days — hides it from the default queue
+  // Snooze a case for N days — hides it from the default queue. Guarded so it
+  // can never park a case within 14 days of its deadline, and counts re-snoozes
+  // so repeatedly-parked cases stay visible to the principal.
   async function handleSnooze(type, event, days, reason) {
+    const deadline = type === 'cancel' ? event.cancel_effective_date : event.renewal_date;
+    if (!eligibleSnoozeOptions(deadline).some(c => c.days === days)) return; // guardrail
+
     const snoozeUntil = new Date();
     snoozeUntil.setDate(snoozeUntil.getDate() + days);
+    const patch = {
+      snoozed_until: snoozeUntil.toISOString(),
+      snooze_reason: reason,
+      snooze_count: (event.snooze_count || 0) + 1,
+    };
 
     if (type === 'cancel') {
-      await updateCancelCase(event.id, {
-        snoozed_until: snoozeUntil.toISOString(),
-        snooze_reason: reason,
-      });
+      await updateCancelCase(event.id, patch);
       queryClient.invalidateQueries({ queryKey: ['my_cancel_cases_snoozed', employeeId] });
     } else {
-      await updateRenewalCase(event.id, {
-        snoozed_until: snoozeUntil.toISOString(),
-        snooze_reason: reason,
-      });
+      await updateRenewalCase(event.id, patch);
     }
   }
 
@@ -892,6 +915,7 @@ export default function MyQueuePage() {
               <span style={{ ...chip, fontSize: '0.8125rem', fontWeight: 600, color: 'var(--qs-dim)',
                 background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
                 ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
+                {event.snooze_count > 1 ? ` · ${event.snooze_count}×` : ''}
               </span>
             )}
         </div>
@@ -931,30 +955,48 @@ export default function MyQueuePage() {
             {/* Log Call / Callback / Saved / Lost / Wants to Cancel moved into
                 the case work surface (Open) — the outcome is captured there. */}
 
-            {/* Snooze — show only after 2+ attempts */}
-            {event.attempt_count >= 2 && (
-              <select
-                className="dark-select qs-focusable"
-                defaultValue=""
-                onChange={e => {
-                  if (!e.target.value) return;
-                  const [days, reason] = e.target.value.split('|');
-                  handleSnooze('cancel', event, parseInt(days), reason);
-                  e.target.value = '';
-                }}
-                style={{
-                  ...btnBase, width: 'auto',
-                  color: 'var(--qs-dim)',
-                  border: '1px solid var(--qs-border)',
-                  background: 'var(--qs-elevated)',
-                }}
-              >
-                <option value="">⏸ Snooze</option>
-                <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
-                <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
-                <option value="7|retry_next_week">1 week — retry next week</option>
-              </select>
-            )}
+            {/* Snooze — only after 2+ attempts, and only while the deadline is
+                far enough out (≥14-day buffer). */}
+            {event.attempt_count >= 2 && (() => {
+              const snoozeOpts = eligibleSnoozeOptions(event.cancel_effective_date);
+              if (snoozeOpts.length === 0) {
+                return (
+                  <span
+                    title="Within 14 days of the cancel date — this has to be worked, not snoozed."
+                    style={{
+                      ...btnBase, width: 'auto', cursor: 'default',
+                      color: 'var(--qs-muted)', border: '1px solid var(--qs-border)',
+                      background: 'var(--qs-elevated)', display: 'inline-flex', alignItems: 'center',
+                    }}
+                  >
+                    🔒 Too close to snooze
+                  </span>
+                );
+              }
+              return (
+                <select
+                  className="dark-select qs-focusable"
+                  defaultValue=""
+                  onChange={e => {
+                    if (!e.target.value) return;
+                    const [days, reason] = e.target.value.split('|');
+                    handleSnooze('cancel', event, parseInt(days), reason);
+                    e.target.value = '';
+                  }}
+                  style={{
+                    ...btnBase, width: 'auto',
+                    color: 'var(--qs-dim)',
+                    border: '1px solid var(--qs-border)',
+                    background: 'var(--qs-elevated)',
+                  }}
+                >
+                  <option value="">⏸ Snooze</option>
+                  {snoozeOpts.map(o => (
+                    <option key={o.days} value={`${o.days}|${o.reason}`}>{o.label}</option>
+                  ))}
+                </select>
+              );
+            })()}
 
             <button
               className="qs-focusable"
@@ -1182,6 +1224,7 @@ export default function MyQueuePage() {
               borderRadius: 4, padding: '1px 7px', flexShrink: 0,
             }}>
               ⏸ Snoozed until {new Date(event.snoozed_until).toLocaleDateString()}
+              {event.snooze_count > 1 ? ` · ${event.snooze_count}×` : ''}
             </span>
           )}
         </div>
@@ -1219,30 +1262,48 @@ export default function MyQueuePage() {
           {/* Log Call / Callback / Confirmed / Won't Renew all live in the case
               work surface (Open) now — where outcome + saved-premium are captured. */}
 
-          {/* Snooze — show only after 2+ attempts */}
-          {event.attempt_count >= 2 && (
-            <select
-              className="dark-select"
-              defaultValue=""
-              onChange={e => {
-                if (!e.target.value) return;
-                const [days, reason] = e.target.value.split('|');
-                handleSnooze('renewal', event, parseInt(days), reason);
-                e.target.value = '';
-              }}
-              style={{
-                fontSize: 12, padding: '5px 10px', borderRadius: 7,
-                cursor: 'pointer', color: 'var(--qs-muted)',
-                border: '1px solid var(--qs-border)',
-                background: 'var(--qs-elevated)',
-              }}
-            >
-              <option value="">⏸ Snooze</option>
-              <option value="1|retry_tomorrow">1 day — retry tomorrow</option>
-              <option value="2|retry_in_2_days">2 days — retry in 2 days</option>
-              <option value="7|retry_next_week">1 week — retry next week</option>
-            </select>
-          )}
+          {/* Snooze — only after 2+ attempts, and only while the renewal date is
+              far enough out (≥14-day buffer). */}
+          {event.attempt_count >= 2 && (() => {
+            const snoozeOpts = eligibleSnoozeOptions(event.renewal_date);
+            if (snoozeOpts.length === 0) {
+              return (
+                <span
+                  title="Within 14 days of the renewal date — this has to be worked, not snoozed."
+                  style={{
+                    fontSize: 12, padding: '5px 10px', borderRadius: 7,
+                    color: 'var(--qs-muted)', border: '1px solid var(--qs-border)',
+                    background: 'var(--qs-elevated)', display: 'inline-flex', alignItems: 'center',
+                  }}
+                >
+                  🔒 Too close to snooze
+                </span>
+              );
+            }
+            return (
+              <select
+                className="dark-select"
+                defaultValue=""
+                onChange={e => {
+                  if (!e.target.value) return;
+                  const [days, reason] = e.target.value.split('|');
+                  handleSnooze('renewal', event, parseInt(days), reason);
+                  e.target.value = '';
+                }}
+                style={{
+                  fontSize: 12, padding: '5px 10px', borderRadius: 7,
+                  cursor: 'pointer', color: 'var(--qs-muted)',
+                  border: '1px solid var(--qs-border)',
+                  background: 'var(--qs-elevated)',
+                }}
+              >
+                <option value="">⏸ Snooze</option>
+                {snoozeOpts.map(o => (
+                  <option key={o.days} value={`${o.days}|${o.reason}`}>{o.label}</option>
+                ))}
+              </select>
+            );
+          })()}
 
           <button
             onClick={() => setSelectedRenewal(event)}
