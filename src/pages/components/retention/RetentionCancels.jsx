@@ -1727,27 +1727,27 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             {/* Saved premium — only on a confirmed (saved) renewal */}
             {form.status === "confirmed" && (
               <div>
-                <label className="dark-label">Final premium saved (what they'll pay)</label>
+                <label className="dark-label">Premium paid (what they renewed at)</label>
                 <input
                   className="dark-input"
                   inputMode="decimal"
-                  placeholder={event.premium ? `Renewal offer was ${fmtFull$(event.premium)}` : "Final annual premium"}
+                  placeholder={event.premium ? `Renewal offer was ${fmtFull$(event.premium)}` : "Annual premium paid"}
                   value={savedPremium}
                   onChange={ev => setSavedPremium(ev.target.value)}
                 />
                 {savedPremium !== "" && event.premium != null && (() => {
-                  const saved = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
-                  if (Number.isNaN(saved)) return null;
-                  const delta = event.premium - saved;
-                  const pct = event.premium > 0 ? (delta / event.premium) * 100 : 0;
+                  const paid = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+                  if (Number.isNaN(paid)) return null;
+                  const delta = event.premium - paid; // positive = we reduced the offer
+                  const pct = event.premium > 0 ? (Math.abs(delta) / event.premium) * 100 : 0;
                   return (
                     <div style={{ fontSize: 12, marginTop: 6, fontWeight: 600,
-                      color: delta > 0 ? "#34D399" : delta < 0 ? "#F87171" : "var(--qs-dim)" }}>
+                      color: delta > 0 ? "#34D399" : "var(--qs-dim)" }}>
                       {delta > 0
                         ? `💰 Saved them ${fmtFull$(delta)} — ${pct.toFixed(0)}% off the renewal offer`
                         : delta < 0
-                          ? `⚠ ${fmtFull$(-delta)} above the renewal offer`
-                          : "Same as the renewal offer"}
+                          ? `Paid ${fmtFull$(-delta)} above the offer (${pct.toFixed(0)}% more)`
+                          : "Renewed at the full offer"}
                     </div>
                   );
                 })()}
