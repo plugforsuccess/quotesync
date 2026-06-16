@@ -1728,24 +1728,28 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
-            {/* Premium paid — pre-filled from the report's renewal offer */}
+            {/* Renewal offer (read-only, from report) + premium paid (rep enters) */}
             {form.status === "confirmed" && (
               <div>
-                <label className="dark-label">
-                  Premium paid (what they renewed at)
-                  {event.premium != null && (
-                    <span style={{ fontWeight: 400, color: "var(--qs-muted)", marginLeft: 6 }}>
-                      — offer {fmtFull$(event.premium)}; change only if they paid differently
-                    </span>
-                  )}
-                </label>
-                <input
-                  className="dark-input"
-                  inputMode="decimal"
-                  placeholder={event.premium ? `Renewal offer was ${fmtFull$(event.premium)}` : "Annual premium paid"}
-                  value={savedPremium}
-                  onChange={ev => setSavedPremium(ev.target.value)}
-                />
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label className="dark-label">Renewal offer <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>(from report)</span></label>
+                    <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                      border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-dim)" }}>
+                      {event.premium != null ? fmtFull$(event.premium) : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="dark-label">Renewal paid</label>
+                    <input
+                      className="dark-input"
+                      inputMode="decimal"
+                      placeholder="Annual premium paid"
+                      value={savedPremium}
+                      onChange={ev => setSavedPremium(ev.target.value)}
+                    />
+                  </div>
+                </div>
                 {savedPremium !== "" && event.premium != null && (() => {
                   const paid = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
                   if (Number.isNaN(paid)) return null;
@@ -1753,7 +1757,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   const pct = event.premium > 0 ? (Math.abs(diff) / event.premium) * 100 : 0;
                   return (
                     <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
-                      Premium difference vs offer ({fmtFull$(event.premium)}):{" "}
+                      Premium difference:{" "}
                       <strong style={{ color: diff < 0 ? "#34D399" : diff > 0 ? "#FBBF24" : "var(--qs-dim)" }}>
                         {diff > 0 ? "+" : diff < 0 ? "−" : ""}{fmtFull$(Math.abs(diff))}
                         {pct ? ` (${pct.toFixed(0)}%)` : ""}
