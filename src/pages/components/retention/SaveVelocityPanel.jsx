@@ -12,6 +12,42 @@ function methodLabel(m) {
   return m === 'unrecorded' ? 'Not recorded' : (SAVE_METHOD_LABEL[m] || m);
 }
 
+// Compact labels for the per-rep chips (full labels are too long in a cell).
+const METHOD_SHORT = {
+  company_transfer: 'Transfer', requote: 'Re-quote', bundle: 'Bundle',
+  discount: 'Discount', competitor_match: 'Comp match', payment_plan: 'Pay plan',
+  reinstatement: 'Reinstate', rewrite: 'Rewrite', explained_increase: 'Explained',
+  retention_offer: 'Retention', other: 'Other', unrecorded: '—',
+};
+function methodShort(m) { return METHOD_SHORT[m] || methodLabel(m); }
+
+// A rep's save methods as ranked chips — who leans on transfers vs. discounts.
+function RepMethodChips({ methods }) {
+  const entries = Object.entries(methods || {}).sort((a, b) => b[1] - a[1]);
+  if (entries.length === 0) return <span style={{ color: 'var(--qs-muted)' }}>—</span>;
+  const shown = entries.slice(0, 3);
+  const extra = entries.length - shown.length;
+  return (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+      {shown.map(([m, n]) => {
+        const transfer = m === 'company_transfer';
+        const unrec = m === 'unrecorded';
+        return (
+          <span key={m} style={{
+            fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 10,
+            background: transfer ? 'rgba(139,92,246,0.15)' : unrec ? 'var(--qs-elevated)' : 'rgba(16,185,129,0.12)',
+            color: transfer ? '#A78BFA' : unrec ? 'var(--qs-muted)' : '#34D399',
+            whiteSpace: 'nowrap',
+          }}>
+            {methodShort(m)} {n}
+          </span>
+        );
+      })}
+      {extra > 0 && <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>+{extra}</span>}
+    </div>
+  );
+}
+
 function fmt$(n) {
   if (!n) return '$0';
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
@@ -144,7 +180,7 @@ export default function SaveVelocityPanel({ agencyId }) {
           <table>
             <thead>
               <tr>
-                <th>Rep</th><th>Saves</th><th>Cancel</th><th>Renewal</th><th>Premium</th><th>Trend</th>
+                <th>Rep</th><th>Saves</th><th>Cancel</th><th>Renewal</th><th>Premium</th><th>Methods</th><th>Trend</th>
               </tr>
             </thead>
             <tbody>
@@ -160,6 +196,7 @@ export default function SaveVelocityPanel({ agencyId }) {
                     <td>{r.cancelSaves}</td>
                     <td>{r.renewalSaves}</td>
                     <td>{fmt$(r.premium)}</td>
+                    <td><RepMethodChips methods={r.methods} /></td>
                     <td style={{ color: trendColor, fontWeight: 600 }}>
                       {trendArrow} {Math.abs(trend)} {trend >= 0 ? 'vs prior 4wk' : 'vs prior 4wk'}
                     </td>
@@ -171,6 +208,7 @@ export default function SaveVelocityPanel({ agencyId }) {
         )}
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
           Trend compares the most recent 4 weeks against the prior 4. Saves are attributed to whoever closed the case.
+          Methods shows each rep's top save tactics (Transfer highlighted) — useful for coaching who leans where.
         </p>
       </div>
     </div>

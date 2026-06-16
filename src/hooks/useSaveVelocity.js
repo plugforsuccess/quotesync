@@ -77,10 +77,11 @@ export function useSaveVelocity(agencyId, weeks = 8) {
           mb.premium += Number(prem) || 0;
           const rep = (byRep[r.closed_by_id] ||= {
             empId: r.closed_by_id, cancelSaves: 0, renewalSaves: 0, premium: 0,
-            recent: 0, prior: 0,
+            recent: 0, prior: 0, methods: {},
           });
           rep[kind === 'cancel' ? 'cancelSaves' : 'renewalSaves'] += 1;
           rep.premium += Number(prem) || 0;
+          rep.methods[method] = (rep.methods[method] || 0) + 1;
           // recent = last half of the window, prior = first half (trend arrow).
           const half = weekKeys[Math.floor(weeks / 2)];
           if (wk >= half) rep.recent += 1; else rep.prior += 1;
