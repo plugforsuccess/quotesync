@@ -1031,6 +1031,9 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       }
 
       await supabase.from('renewal_uploads').update({ committed: true }).eq('id', upload.id);
+      // Refresh the customer directory so new customers are searchable and any
+      // service-task names get canonicalized to the official report name by policy.
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       // 6. Build summary message
       const repNames = assignmentQueue.map(r =>
@@ -1366,6 +1369,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       }
 
       await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       const crossMsg = crossResolved > 0
         ? ` \u00b7 ${crossResolved} pending case${crossResolved > 1 ? 's' : ''} closed from termination report`
@@ -1902,6 +1906,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       }
 
       await supabase.from("pending_cancel_uploads").update({ committed: true }).eq("id", batchId);
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       // Re-evaluate priority_tier for all active cases — cases that were P3
       // last upload may now be P1/P2 as the cancel date approaches.
@@ -2063,6 +2068,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       }
 
       await supabase.from("cancellation_uploads").update({ committed: true, rows_added: rowsAdded, rows_updated: rowsUpdated }).eq("id", batchId);
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       // Re-evaluate priority_tier for all active cases after stage advances.
       await supabase.rpc('refresh_priority_tiers', {
