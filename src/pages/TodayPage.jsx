@@ -272,6 +272,14 @@ export default function TodayPage() {
 
   const isLoading = cancelsLoading || renewalsLoading;
 
+  // Promised to pay — cancels where the customer committed to a pay date. Soonest
+  // (and overdue) first, so the day's promise follow-ups are in one place.
+  const promises = useMemo(() => {
+    return cancels
+      .filter(c => c.promise_date)
+      .sort((a, b) => (a.promise_date || '').localeCompare(b.promise_date || ''));
+  }, [cancels]);
+
   if (!employee) {
     return (
       <div style={{ padding: 32 }}>
@@ -415,6 +423,52 @@ export default function TodayPage() {
                     background: TYPE_BADGE[item._kind].bg, color: TYPE_BADGE[item._kind].color,
                     letterSpacing: '0.05em', flexShrink: 0,
                   }}>{TYPE_BADGE[item._kind].label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1 }}>
+                    {titleCaseName(item.customer_name) || '—'}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, flexShrink: 0,
+                    color: overdue ? '#F87171' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Promised to pay — cancels with a committed pay date */}
+      {promises.length > 0 && (
+        <div style={{
+          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+          borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-dim)', marginBottom: 8,
+            textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            💵 Promised to pay ({promises.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {promises.map(item => {
+              const due = new Date(item.promise_date + 'T00:00:00');
+              const overdue = due < new Date(new Date().toDateString());
+              const label = `${overdue ? '⚠ Promise overdue' : '📌 Pay by'} ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedCancel(item)}
+                  style={{
+                    textAlign: 'left', cursor: 'pointer', width: '100%',
+                    background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                    borderRadius: 8, padding: '8px 12px', display: 'flex',
+                    alignItems: 'center', gap: 10, fontFamily: 'inherit', color: 'var(--qs-text)',
+                  }}
+                >
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                    background: TYPE_BADGE.cancel.bg, color: TYPE_BADGE.cancel.color,
+                    letterSpacing: '0.05em', flexShrink: 0,
+                  }}>{TYPE_BADGE.cancel.label}</span>
                   <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1 }}>
                     {titleCaseName(item.customer_name) || '—'}
