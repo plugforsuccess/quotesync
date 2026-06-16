@@ -100,6 +100,34 @@ which rate band?"* — which (a) replaces the 30% save-lift prior with real
 per-tactic numbers, and (b) is the proprietary, durable asset behind the
 system-of-record pricing.
 
+### 7. Monitor — is the workflow actually working?
+**Where:** Retention page → **🩺 Health** tab (the principal's landing), plus
+**🏎️ Velocity**, and the **Escalations** inbox.
+
+The scoreboard measures *outcomes*; this layer measures whether the desk is
+executing — and catches breakage before next month's net-retention number moves:
+
+- **Health overview** — one green/amber/red status tying book health (net
+  retention %, PIF vs prior-YE, trend from `book_snapshots`) to operational
+  signals (save rate, premium saved vs at-risk, velocity, terminations,
+  escalations, parked cases). Every tile drills in.
+- **Workflow-leak alarms** (`useQueueHygiene`) — the leading indicator: **preventable
+  lapses** (past deadline, *never called*), **about-to-lapse untouched** (due
+  ≤7d, zero attempts), and an 8-week preventable-lapse trend. A leak forces the
+  status off green; the rep sees a "call these before they lapse" banner on Today.
+- **Save velocity** — saves/week (cancel saves + confirmed renewals) and premium
+  preserved, per rep, with a recent-vs-prior-4-week trend. The *pace*, not just a
+  lifetime rate.
+- **Escalation hand-off** — when a rep can't close a case (needs a licensed-agent
+  / principal decision), **Escalate to agent** records a `case_escalations` row,
+  flags the case, writes an audit note, and notifies principals, who work the
+  **Escalations inbox** (open → decide → resolve). Renewals *and* cancels.
+- **Queue integrity** — snooze can't park a case within 14 days of its deadline
+  (enforced in UI and on write); re-snoozes are counted so deferral can't become
+  a silent hiding place.
+- **Dollar capture** — renewal saves record final premium off the offer;
+  cancellation saves record premium preserved (`saved_premium`).
+
 ## What's live now vs. what ramps with data
 
 | Capability | Status |
@@ -109,6 +137,9 @@ system-of-record pricing.
 | 📖 Book Metrics scoreboard (retention trend, leak table) | **After** Premium & Profitability upload; trend builds month over month |
 | Per-policy observed outcomes (`policy_elasticity_base`) | **After** Policy Audit uploads |
 | Intervention capture on calls | **Live now** |
+| 🩺 Health status + workflow-leak alarms (preventable lapses) | **Live now** — operational signals; net-retention tile fills after a Premium & Profitability upload |
+| 🏎️ Save velocity (per-rep, weekly) | **Live now** |
+| Escalation hand-off → principal Escalations inbox | **Live now** |
 | Per-tactic save-lift learning | **Ramps** as captured calls + monthly Policy Audits accumulate |
 
 ## To light it up
