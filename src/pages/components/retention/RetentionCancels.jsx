@@ -232,6 +232,7 @@ function OtherCasesWarning({ cases }) {
 function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [], canReassign = true }) {
   const days = daysUntilCancel(event.cancel_effective_date);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
@@ -349,6 +350,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
   async function save() {
     setSaving(true);
+    setSaveError(null);
     // Save outcomes require a recorded attempt (DB guard `enforce_cancel_save_has_attempt`)
     // so every save captures HOW it happened. If the rep marks saved/rewritten on a
     // case with no logged attempt yet, record one now from the chosen tactic — so
@@ -359,7 +361,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         .select("id", { count: "exact", head: true })
         .eq("pending_case_id", event.id);
       if (!count) {
-        await supabase.from("pending_cancel_attempts").insert({
+        const { error: attErr } = await supabase.from("pending_cancel_attempts").insert({
           pending_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
           method: "phone", result: "reached",
           note: "Outcome recorded from the work surface",
@@ -368,6 +370,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
             : {}),
         });
+        if (attErr) {
+          setSaveError(`Couldn't record the call: ${attErr.message}`);
+          setSaving(false);
+          return;
+        }
       }
     }
     const updates = { ...form };
@@ -413,7 +420,12 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         ? (rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim())
         : null;
     }
-    await onUpdate(event.id, updates);
+    const err = await onUpdate(event.id, updates);
+    if (err) {
+      setSaveError(`Couldn't save the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onClose();
   }
@@ -1048,6 +1060,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       Pick <strong>What saved them?</strong> to record the save \u2014 it logs the call for you.
                     </div>
                   )}
+                  {saveError && (
+                    <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
+                      background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: 8, padding: "8px 10px" }}>
+                      {saveError}
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -1104,6 +1123,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     ? ([me.preferred_name || me.first_name, me.last_name].filter(Boolean).join(' ') || 'your agent')
     : 'your agent';
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
@@ -1217,6 +1237,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
   async function save() {
     setSaving(true);
+    setSaveError(null);
     // A rep-confirmed renewal requires a recorded attempt (DB guard
     // `enforce_renewal_save_has_attempt`). Auto-log one from the chosen tactic so
     // confirming is a single action and never trips the guard with a raw error.
@@ -1226,7 +1247,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         .select("id", { count: "exact", head: true })
         .eq("renewal_case_id", event.id);
       if (!count) {
-        await supabase.from("renewal_attempts").insert({
+        const { error: attErr } = await supabase.from("renewal_attempts").insert({
           renewal_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
           method: "phone", result: "reached",
           note: "Outcome recorded from the work surface",
@@ -1235,6 +1256,11 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
             : {}),
         });
+        if (attErr) {
+          setSaveError(`Couldn't record the call: ${attErr.message}`);
+          setSaving(false);
+          return;
+        }
       }
     }
     const updates = { ...form };
@@ -1267,7 +1293,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     updates.save_method = form.status === "confirmed" ? (form.save_method || null) : null;
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
-    await onUpdate(event.id, updates);
+    const err = await onUpdate(event.id, updates);
+    if (err) {
+      setSaveError(`Couldn't save the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onClose();
   }
@@ -1826,6 +1857,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   {needsTactic && (
                     <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 6, textAlign: "center" }}>
                       Pick <strong>What saved them?</strong> to confirm \u2014 it logs the call for you.
+                    </div>
+                  )}
+                  {saveError && (
+                    <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
+                      background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                      borderRadius: 8, padding: "8px 10px" }}>
+                      {saveError}
                     </div>
                   )}
                 </div>
