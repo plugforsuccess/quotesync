@@ -1137,7 +1137,11 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   });
   // Kept out of `form` so it's only written to renewal_cases on the confirmed
   // (saved) path — the column it targets is the new saved_premium field.
-  const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
+  // Pre-fill with the renewal offer from the report so the rep doesn't retype it;
+  // they only change it when the customer paid a different amount.
+  const [savedPremium, setSavedPremium] = useState(
+    event.saved_premium ?? (event.premium != null ? String(event.premium) : "")
+  );
   // Callback scheduling (moved off the list card into the work surface).
   const [cbTime, setCbTime] = useState("");
   const [cbNote, setCbNote] = useState("");
@@ -1724,10 +1728,17 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
-            {/* Saved premium — only on a confirmed (saved) renewal */}
+            {/* Premium paid — pre-filled from the report's renewal offer */}
             {form.status === "confirmed" && (
               <div>
-                <label className="dark-label">Premium paid (what they renewed at)</label>
+                <label className="dark-label">
+                  Premium paid (what they renewed at)
+                  {event.premium != null && (
+                    <span style={{ fontWeight: 400, color: "var(--qs-muted)", marginLeft: 6 }}>
+                      — offer {fmtFull$(event.premium)}; change only if they paid differently
+                    </span>
+                  )}
+                </label>
                 <input
                   className="dark-input"
                   inputMode="decimal"
