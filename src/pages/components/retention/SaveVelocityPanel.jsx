@@ -14,7 +14,7 @@ function methodLabel(m) {
 
 // Compact labels for the per-rep chips (full labels are too long in a cell).
 const METHOD_SHORT = {
-  company_transfer: 'Transfer', requote: 'Re-quote', bundle: 'Bundle',
+  company_transfer: 'Transfer', paid_past_due: 'Paid due', requote: 'Re-quote', bundle: 'Bundle',
   discount: 'Discount', competitor_match: 'Comp match', payment_plan: 'Pay plan',
   reinstatement: 'Reinstate', rewrite: 'Rewrite', explained_increase: 'Explained',
   retention_offer: 'Retention', other: 'Other', unrecorded: '—',

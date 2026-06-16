@@ -15,7 +15,7 @@ import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript 
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 import { EscalateCaseBox, LinkedServiceTasks, ReferToSalesBox } from './CaseHandoffExtras';
-import { SAVE_METHODS } from '../../../lib/saveMethods';
+import { cancelSaveMethods, renewalSaveMethods } from '../../../lib/saveMethods';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -943,7 +943,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   onChange={ev => setForm(p => ({ ...p, save_method: ev.target.value }))}
                 >
                   <option value="">— Select the method —</option>
-                  {SAVE_METHODS.map(m => (
+                  {cancelSaveMethods(event.stage).map(m => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
@@ -1731,7 +1731,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   onChange={ev => setForm(p => ({ ...p, save_method: ev.target.value }))}
                 >
                   <option value="">— Select the method —</option>
-                  {SAVE_METHODS.map(m => (
+                  {renewalSaveMethods().map(m => (
                     <option key={m.value} value={m.value}>{m.label}</option>
                   ))}
                 </select>
