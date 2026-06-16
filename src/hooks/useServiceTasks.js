@@ -113,12 +113,14 @@ export function useCreateServiceTask() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (task) => {
-      // Resolve the customer to a household at log time so the task links to the
-      // exact household later (robust against duplicate names).
+      // Resolve the customer to a household at log time — creating one on the
+      // spot if they're not on any work list — so the customer is immediately
+      // searchable and the task links to the exact household (no waiting on a
+      // principal rebuild). Later uploads canonicalize the name by policy number.
       let householdId = task.householdId ?? null;
       if (!householdId && task.customerName && task.agencyId) {
-        const { data } = await supabase.rpc('household_id_for_name', {
-          p_agency_id: task.agencyId, p_name: task.customerName,
+        const { data } = await supabase.rpc('get_or_create_household', {
+          p_agency_id: task.agencyId, p_name: task.customerName, p_phone: task.customerPhone ?? null,
         });
         householdId = data ?? null;
       }
