@@ -3,11 +3,15 @@
 // new business, renewals, pending cancels, and terminations. Reached by
 // clicking a result in Customer Search.
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link, useLocation } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import { TASK_TYPE_MAP } from '../hooks/useServiceTasks';
+import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
 const PRODUCT_LABELS = {
   auto: 'Auto', ho: 'HO', renters: 'Renters', condo: 'Condo', landlord: 'Landlord',
@@ -27,12 +31,35 @@ const TOUCH_CONFIG = {
   lead:       { label: 'Lead dial',    color: '#F59E0B' },
 };
 const fmt$ = n => (n == null || isNaN(n)) ? '—' : `$${Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
-const label = p => PRODUCT_LABELS[p] || (p ? p.toUpperCase() : '—');
+const label = p => (PRODUCT_LABELS[p] || p || '—').toUpperCase();
+const fmtDate = d => {
+  if (!d) return '—';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(d);
+  const date = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(d);
+  return isNaN(date.getTime()) ? d : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
 
 export default function HouseholdDetailPage() {
   const { householdId } = useParams();
   const { currentAgencyId } = useAuth();
   const backTo = useLocation().pathname.startsWith('/my') ? '/my/customers' : '/agency/customers';
+  const { data: employee } = useCurrentEmployee();
+  const { data: employees = [] } = useActiveEmployees(currentAgencyId);
+  const queryClient = useQueryClient();
+  // A renewal/cancel record opened in its work-surface modal, in place.
+  const [openCase, setOpenCase] = useState(null); // { kind: 'renewal'|'cancel', data }
+
+  async function openRecord(r) {
+    if (r.source !== 'renewal' && r.source !== 'cancel') return;
+    const table = r.source === 'renewal' ? 'renewal_cases' : 'pending_cases';
+    const { data } = await supabase.from(table).select('*').eq('id', r.id).maybeSingle();
+    if (data) setOpenCase({ kind: r.source, data });
+  }
+  async function updateCase(table, id, updates) {
+    await supabase.from(table).update(updates).eq('id', id);
+    queryClient.invalidateQueries({ queryKey: ['household_records', householdId] });
+    queryClient.invalidateQueries({ queryKey: ['household_service_tasks', householdId] });
+  }
 
   const { data: household } = useQuery({
     queryKey: ['household_header', householdId],
@@ -114,7 +141,7 @@ export default function HouseholdDetailPage() {
             <span>
               <span style={{ color: 'var(--qs-muted)' }}>Active: </span>
               {household.active_products?.length
-                ? household.active_products.map(label).join(', ')
+                ? <span style={{ color: '#34D399', fontWeight: 600 }}>{household.active_products.map(label).join(', ')}</span>
                 : <span style={{ color: 'var(--qs-muted)' }}>none</span>}
             </span>
             {household.lost_products?.length > 0 && (
@@ -214,12 +241,14 @@ export default function HouseholdDetailPage() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {records.map((r, i) => {
           const cfg = SOURCE_CONFIG[r.source] || { label: r.source, color: 'var(--qs-dim)' };
+          const openable = r.source === 'renewal' || r.source === 'cancel';
           return (
-            <div key={i} style={{
+            <div key={i} onClick={openable ? () => openRecord(r) : undefined} style={{
               background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
               borderLeft: `3px solid ${cfg.color}`, borderRadius: 8,
               padding: '12px 16px', display: 'flex', alignItems: 'center',
               justifyContent: 'space-between', gap: 12, flexWrap: 'wrap',
+              cursor: openable ? 'pointer' : 'default',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                 <span style={{
@@ -235,9 +264,10 @@ export default function HouseholdDetailPage() {
                   <span style={{ fontSize: 11, color: 'var(--qs-muted)' }}>{r.detail}</span>
                 )}
               </div>
-              <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--qs-dim)', flexShrink: 0 }}>
+              <div style={{ display: 'flex', gap: 14, fontSize: 12, color: 'var(--qs-dim)', flexShrink: 0, alignItems: 'center' }}>
                 <span style={{ fontFamily: "'DM Mono', monospace" }}>{fmt$(r.premium)}</span>
-                <span>{r.record_date || '—'}</span>
+                <span>{fmtDate(r.record_date)}</span>
+                {openable && <span style={{ color: '#3B82F6' }}>Open →</span>}
               </div>
             </div>
           );
@@ -284,6 +314,31 @@ export default function HouseholdDetailPage() {
             })}
           </div>
         </div>
+      )}
+
+      {openCase?.kind === 'renewal' && createPortal(
+        <RenewalDetailModal
+          event={openCase.data}
+          onClose={() => setOpenCase(null)}
+          onUpdate={(id, updates) => updateCase('renewal_cases', id, updates)}
+          agencyId={currentAgencyId}
+          currentEmployeeId={employee?.id}
+          producers={employees}
+          canReassign={false}
+        />,
+        document.body
+      )}
+      {openCase?.kind === 'cancel' && createPortal(
+        <EventDetailModal
+          event={openCase.data}
+          onClose={() => setOpenCase(null)}
+          onUpdate={(id, updates) => updateCase('pending_cases', id, updates)}
+          agencyId={currentAgencyId}
+          currentEmployeeId={employee?.id}
+          producers={employees}
+          canReassign={false}
+        />,
+        document.body
       )}
     </div>
   );
