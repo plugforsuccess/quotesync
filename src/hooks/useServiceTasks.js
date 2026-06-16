@@ -10,14 +10,22 @@ import { supabase } from '../lib/supabase';
 // what order: licensed coverage/price questions first, licensed policy changes
 // next, then the quick front-desk tasks to close out.
 export const TASK_TYPES = [
+  // Policy Changes (portal — a licensed agent makes the change)
   { value: 'mortgagee', label: 'Mortgagee / Lienholder', icon: '🏦', lane: 'portal',    color: '#3B82F6' },
   { value: 'vehicle',   label: 'Add / Remove Vehicle',   icon: '🚗', lane: 'portal',    color: '#0EA5E9' },
+  { value: 'driver',    label: 'Add / Remove Driver',    icon: '🧑', lane: 'portal',    color: '#06B6D4' },
   { value: 'billing',   label: 'Billing Change',         icon: '💳', lane: 'portal',    color: '#F59E0B' },
-  { value: 'address',   label: 'Address Update',         icon: '📍', lane: 'portal',    color: '#14B8A6' },
+  { value: 'payment',   label: 'Payment / Make a Payment', icon: '💵', lane: 'portal',  color: '#84CC16' },
+  { value: 'address',   label: 'Address / Contact Update', icon: '📍', lane: 'portal',  color: '#14B8A6' },
+  // Coverage & Price (licensed — work first)
   { value: 'premium',   label: 'Premium Question',       icon: '💲', lane: 'licensed',  color: '#EF4444' },
   { value: 'coverage',  label: 'Coverage Change',        icon: '🛡️', lane: 'licensed',  color: '#8B5CF6' },
   { value: 'insurance_review', label: 'Insurance Review', icon: '🧐', lane: 'licensed', color: '#6366F1' },
-  { value: 'id_cards',  label: 'ID Cards / Docs',        icon: '🪪', lane: 'clerical',  color: '#10B981' },
+  { value: 'reinstatement', label: 'Reinstatement',      icon: '♻️', lane: 'licensed',  color: '#F97316' },
+  { value: 'terminate', label: 'Cancel / Terminate Policy', icon: '🚫', lane: 'licensed', color: '#DC2626' },
+  // Quick Tasks (clerical — the front desk can close these out)
+  { value: 'claim',     label: 'Claim / FNOL',           icon: '📋', lane: 'clerical',  color: '#EAB308' },
+  { value: 'id_cards',  label: 'ID Cards / Proof of Ins.', icon: '🪪', lane: 'clerical', color: '#10B981' },
   { value: 'document',  label: 'Document Request',       icon: '📄', lane: 'clerical',  color: '#22C55E' },
   { value: 'other',     label: 'Other',                  icon: '📌', lane: 'clerical',  color: '#94A3B8' },
 ];
