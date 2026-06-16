@@ -27,14 +27,18 @@ change. The system routes the at‑risk customers straight to **your** queue.
 ## 2. Getting in & what you'll see
 
 1. Sign in at the agency login link (ask Cam for the bookmark).
-2. You'll land on **your workspace**. Across the top you have four tabs:
+2. You'll land on **your workspace**. Across the top you have these tabs:
 
 | Tab | What it's for |
 |---|---|
-| **Today** | Your ranked to‑do list for the day + your call target. Start here. |
+| **Today** | Your ranked to‑do list for the day + your call target + who you're waiting to hear back from. Start here. |
 | **My Queue** | The dialer. Every at‑risk renewal & cancellation assigned to you. This is where you live. |
+| **🔎 Search** | Look up any customer by name, phone, or policy number. |
 | **Service Batch** | Admin/service tasks to clear in one afternoon block (not phone interrupts). |
 | **Scorecard** | How you're doing — saves, premium retained, premium saved. |
+
+> **Changing your password:** top‑right of the nav, click **🔑 Password**. Do this
+> on day one to replace the temporary password Cam gave you.
 
 > If your queue looks empty on day one, it just means the latest Allstate
 > reports haven't been uploaded yet — tell Cam. The cases flow to you
@@ -101,6 +105,25 @@ Type it in. The system shows **"💰 Saved them $X — Y% off the renewal offer"
 rolls it into your scorecard. This is how the agency sees the real dollars you're
 saving — so always fill it in when you save someone.
 
+**Cancellations too:** when you mark a cancel **Saved**, the work surface asks for
+the **Premium saved (annual)** — what the policy continues at. There's a *"use
+at‑risk amount"* shortcut if it's the same. Fill it in so your cancel saves count
+in real dollars, not just as a tally.
+
+---
+
+## 5b. When it's above your desk — Escalate to agent
+
+Most of the time you'll close the case yourself. When you **can't** — it needs
+Cam's sign‑off (a fee waiver, an exception, a pricing/coverage call, or a
+customer dispute) — open the case and click **⤴ Escalate to agent**, pick a
+reason, add a line of detail, and **Hand off to agent**.
+
+That's a real hand‑off: Cam gets it in his **Escalations** inbox, the case is
+flagged, and a note lands in the Case Log automatically. You don't have to walk
+over and explain — it's routed. Once you escalate, the case shows **"⤴ Escalated
+— awaiting pickup"** so you (and Cam) know it's in his hands.
+
 ---
 
 ## 6. Callbacks — schedule them, then find them
@@ -115,6 +138,15 @@ late‑day block.
 
 > A scheduled callback shows on the case as **"📅 Call back {time}"**, and flips
 > to **"⏰ overdue"** once the time passes — so nothing slips.
+
+**The fast way to find them:** your **Today** page has a **⏳ Waiting to hear
+back** section at the top — every voicemail you left and every callback you
+scheduled, in one list, soonest/overdue first. Start your follow‑up block there.
+
+> **About Snooze:** you can park a case (after 2+ attempts) to retry in 1–7 days
+> — but **not** once its cancel/renewal date is within **14 days**. If you see
+> **"🔒 Too close to snooze,"** that case has to be worked now; it's too near the
+> deadline to hide. Snooze is "not yet," never "not at all."
 
 ---
 

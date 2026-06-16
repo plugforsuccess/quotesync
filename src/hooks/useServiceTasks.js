@@ -172,6 +172,27 @@ export function useCreateServiceTask() {
   });
 }
 
+// Reverse link: the service tasks that came off a given renewal/cancel case.
+// service_tasks already stamps source_case_type/source_case_id at log time, so
+// the case detail can show "what was raised here" without any new schema.
+export function useCaseServiceTasks(caseType, caseId) {
+  return useQuery({
+    queryKey: ['case_service_tasks', caseType, caseId],
+    enabled: !!caseType && !!caseId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('service_tasks')
+        .select('id, task_type, title, status, priority, created_at, completed_at, resolved_on_call')
+        .eq('source_case_type', caseType)
+        .eq('source_case_id', caseId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
 export function useUpdateServiceTask() {
   const qc = useQueryClient();
   return useMutation({

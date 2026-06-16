@@ -101,6 +101,18 @@ The whole loop lives in **My Queue** (Cancellations + Renewals tabs). For each c
 Renewal save rate · cross-sells surfaced · service queue cleared · anything stuck.
 **If reactive load creeps back in — fix the triage rules, not the people.**
 
+**Start on the 🩺 Health tab** of the Retention Hub — one screen with the
+green/amber/red status: net retention % (from your monthly book-health upload),
+policies-in-force up/down, save rate, premium saved vs at-risk, save velocity,
+open escalations, and parked (snoozed) cases. Each tile drills into the detail.
+Then:
+- **🏎️ Velocity** — saves per week and premium preserved, with a per-rep
+  recent-vs-prior-4-week trend arrow. This is the *pace* of saving, not a
+  lifetime rate — watch for a slowdown.
+- **⤴ Escalations** — anything Tracy handed up for your decision sits here
+  (who, why, when). Open the case, make the call, **Resolve**. Clear it weekly;
+  a growing list means a process gap, not a Tracy gap.
+
 ---
 
 ## Interim — running without a front desk *(today)*

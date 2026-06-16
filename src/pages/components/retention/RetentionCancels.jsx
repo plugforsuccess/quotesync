@@ -14,6 +14,7 @@ import { titleCaseName } from '../../../lib/names';
 import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript } from '../../../components/RetentionScripts';
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
+import { EscalateCaseBox, LinkedServiceTasks, ReferToSalesBox } from './CaseHandoffExtras';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -243,6 +244,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     rewrite_new_premium: event.rewrite_new_premium || "",
     rewrite_reason:      event.rewrite_reason || "",
   });
+  // Kept out of `form` so it's only written on the saved (reinstatement) path —
+  // the column it targets is pending_cases.saved_premium.
+  const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
 
   // Script + contact inputs (mirrors the queue card).
   const firstName = event.customer_name?.split(" ")[0] || "there";
@@ -353,6 +357,13 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     // Set closed_by_id when resolving a case
     if (["saved","rewritten","lost","requested_cancellation","cancelled"].includes(form.status)) {
       updates.closed_by_id = currentEmployeeId;
+    }
+    // Premium preserved on a straight save (reinstatement). Captured only on the
+    // 'saved' outcome, so other resolutions never touch the column. Rewrites use
+    // rewrite_new_premium instead (handled below).
+    if (form.status === "saved") {
+      const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+      updates.saved_premium = Number.isNaN(sp) ? null : sp;
     }
     // Strip rewrite fields if not a rewrite outcome
     if (form.status !== "rewritten") {
@@ -869,6 +880,31 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
+            {/* Saved premium — only on a straight save (reinstatement) */}
+            {form.status === "saved" && (
+              <div>
+                <label className="dark-label">Premium saved (annual)</label>
+                <input
+                  className="dark-input"
+                  inputMode="decimal"
+                  placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Annual premium preserved"}
+                  value={savedPremium}
+                  onChange={ev => setSavedPremium(ev.target.value)}
+                />
+                <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
+                  What the policy continues at after the save.
+                  {event.premium_at_risk ? (
+                    <button type="button"
+                      onClick={() => setSavedPremium(String(event.premium_at_risk))}
+                      style={{ marginLeft: 6, background: "none", border: "none", padding: 0,
+                        color: "#34D399", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
+                      use at-risk amount
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
             {/* Assignment + Promise date */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
@@ -930,6 +966,14 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
               customerName={event.customer_name} customerPhone={event.phone}
               sourceCaseType="cancel" sourceCaseId={event.id} source="internal" />
+
+            <LinkedServiceTasks caseType="cancel" caseId={event.id} />
+
+            <ReferToSalesBox agencyId={agencyId} caseType="cancel" caseId={event.id}
+              customerName={event.customer_name} policyNo={event.policy_no}
+              currentProduct={event.product} />
+
+            <EscalateCaseBox caseType="cancel" caseId={event.id} onEscalated={onClose} />
 
             {/* Save */}
             <button
@@ -1557,7 +1601,6 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   <option value="review_requested">Wants Policy Review</option>
                   <option value="shopping">Shopping Competitors</option>
                   <option value="at_risk">At Risk (payment/unhappy)</option>
-                  <option value="escalated">Escalate to Agent</option>
                   <option value="lost">Lost — Won't Renew</option>
                 </select>
               </div>
@@ -1645,6 +1688,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
               customerName={event.customer_name} customerPhone={event.phone}
               sourceCaseType="renewal" sourceCaseId={event.id} source="renewal_call" />
+
+            <LinkedServiceTasks caseType="renewal" caseId={event.id} />
+
+            <ReferToSalesBox agencyId={agencyId} caseType="renewal" caseId={event.id}
+              customerName={event.customer_name} policyNo={event.policy_no}
+              currentProduct={event.product} />
+
+            <EscalateCaseBox caseType="renewal" caseId={event.id} onEscalated={onClose} />
 
             {/* Save */}
             <button

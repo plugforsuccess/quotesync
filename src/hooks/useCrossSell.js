@@ -50,6 +50,50 @@ export function useCrossSellUploads(agencyId) {
   });
 }
 
+// Rep hand-off to sales: an opportunity spotted on a renewal/cancel call gets
+// referred straight onto the Cross-Sell board (match_type 'rep_referral', no
+// upload batch). Also flags the originating case so the link shows both ways.
+export function useReferCrossSell(agencyId) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      caseType, caseId, customerName, policyNo,
+      currentProduct, recommendedProduct, notes,
+    }) => {
+      const { data: created, error } = await supabase
+        .from('cross_sell_cases')
+        .insert({
+          agency_id: agencyId,
+          customer_name: customerName,
+          policy_no: policyNo ?? null,
+          current_product: currentProduct ?? null,
+          recommended_product: recommendedProduct,
+          match_type: 'rep_referral',
+          status: 'new',
+          notes: notes ?? null,
+          renewal_case_id: caseType === 'renewal' ? caseId : null,
+          pending_case_id: caseType === 'cancel' ? caseId : null,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      // Flag the originating case so the opportunity surfaces there too.
+      const table = caseType === 'renewal' ? 'renewal_cases' : 'pending_cases';
+      await supabase.from(table).update({
+        cross_sell_opportunity: true,
+        cross_sell_product: recommendedProduct,
+        cross_sell_case_id: created.id,
+      }).eq('id', caseId);
+
+      return created.id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['cross_sell_cases', agencyId] });
+    },
+  });
+}
+
 export function useUpdateCrossSellCase(agencyId, employeeId = null) {
   const queryClient = useQueryClient();
   return useMutation({

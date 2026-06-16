@@ -30,7 +30,7 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
       ] = await Promise.all([
         supabase
           .from('pending_cases')
-          .select('id, status, premium_at_risk, contacted_at, resolution_date, promise_date, updated_at, attempt_count, opened_by_id, closed_by_id, stage')
+          .select('id, status, premium_at_risk, saved_premium, contacted_at, resolution_date, promise_date, updated_at, attempt_count, opened_by_id, closed_by_id, stage')
           .eq(cancelFilter.column, cancelFilter.value),
 
         supabase
@@ -82,7 +82,9 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
       const cancelReachRate = allCancel.length > 0
         ? cancelCaseIdsReached.size / allCancel.length : null;
 
-      const premiumSaved  = cancelSaved.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
+      // Prefer the rep-confirmed saved_premium (what the policy continues at);
+      // fall back to the at-risk amount for saves logged before that capture.
+      const premiumSaved  = cancelSaved.reduce((s, e) => s + (e.saved_premium ?? e.premium_at_risk ?? 0), 0);
       const premiumAtRisk = cancelWorkable.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
 
       const promisesDue  = allCancel.filter(e =>
