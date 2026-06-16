@@ -986,11 +986,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             <CaseNotesFeed caseType="cancel" caseId={event.id} agencyId={agencyId}
               policyNo={event.policy_no} customerName={event.customer_name} />
 
+            <LinkedServiceTasks caseType="cancel" caseId={event.id} />
+
             <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
               customerName={event.customer_name} customerPhone={event.phone}
               sourceCaseType="cancel" sourceCaseId={event.id} source="internal" />
-
-            <LinkedServiceTasks caseType="cancel" caseId={event.id} />
 
             <ReferToSalesBox agencyId={agencyId} caseType="cancel" caseId={event.id}
               customerName={event.customer_name} policyNo={event.policy_no}
@@ -1729,11 +1729,11 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
               policyNo={event.policy_no} customerName={event.customer_name} />
 
+            <LinkedServiceTasks caseType="renewal" caseId={event.id} />
+
             <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
               customerName={event.customer_name} customerPhone={event.phone}
               sourceCaseType="renewal" sourceCaseId={event.id} source="renewal_call" />
-
-            <LinkedServiceTasks caseType="renewal" caseId={event.id} />
 
             <ReferToSalesBox agencyId={agencyId} caseType="renewal" caseId={event.id}
               customerName={event.customer_name} policyNo={event.policy_no}
