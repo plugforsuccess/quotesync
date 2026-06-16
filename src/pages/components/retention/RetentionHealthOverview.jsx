@@ -161,6 +161,34 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
             Fix the leak first: work the win-back list, then call everything due this week before it joins them.
           </div>
         )}
+
+        {/* Preventable-lapse trend — the number you want walking to zero */}
+        {hygiene?.lapseTrend?.length > 1 && (() => {
+          const maxLapse = Math.max(1, ...hygiene.lapseTrend.map(t => t.count));
+          return (
+            <div className="card" style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-dim)', marginBottom: 8 }}>
+                Preventable lapses per week — trending to zero?
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 64 }}>
+                {hygiene.lapseTrend.map(t => (
+                  <div key={t.week} title={`Week of ${t.week}: ${t.count} preventable`}
+                    style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: t.count ? '#F87171' : 'var(--qs-muted)' }}>
+                      {t.count || ''}
+                    </div>
+                    <div style={{ width: '100%', maxWidth: 26,
+                      height: Math.max(2, (t.count / maxLapse) * 40),
+                      background: t.count ? '#EF4444' : 'var(--qs-elevated)', borderRadius: 3 }} />
+                    <div style={{ fontSize: 9, color: 'var(--qs-muted)', fontFamily: "'DM Mono', monospace" }}>
+                      {t.week.slice(5)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Book-level health */}
