@@ -96,19 +96,34 @@ opens the full work surface where you:
 
 ---
 
-## 5. When you save someone — capture the premium
+## 5. When you save someone — how to record it
 
-This one's important and new. When you mark a renewal **Confirmed**, the work
-surface asks for the **final premium the customer agreed to pay**.
+When a customer keeps their policy — pays the past‑due, renews, lets you move
+them to a better rate — **record it on the case.** Here's the whole thing:
 
-Type it in. The system shows **"💰 Saved them $X — Y% off the renewal offer"** and
-rolls it into your scorecard. This is how the agency sees the real dollars you're
-saving — so always fill it in when you save someone.
+1. Open the case (**My Queue** → Cancellations or Renewals → **Open case**).
+2. Under **Outcome**, choose **Saved ✓ — paid, policy continues** (for a
+   cancellation) or **Confirmed Renewal ✓** (for a renewal).
+3. A **"What saved them?"** box appears — pick how you did it: **Reinstated
+   (paid balance)**, **Company transfer**, **Payment plan**, **Re‑quote**,
+   **Bundled**, **Applied a discount**, **Matched a competitor**, etc.
+4. Type the **premium** — for a renewal, the **final premium** they'll pay; for a
+   cancellation, the **Premium saved (annual)** (there's a *"use at‑risk amount"*
+   shortcut if it's the same).
+5. Click **Save Case.**
 
-**Cancellations too:** when you mark a cancel **Saved**, the work surface asks for
-the **Premium saved (annual)** — what the policy continues at. There's a *"use
-at‑risk amount"* shortcut if it's the same. Fill it in so your cancel saves count
-in real dollars, not just as a tally.
+> **You do NOT have to log the call separately first.** Picking *What saved them?*
+> records the call for you in one step. The **Save** button stays grey until you
+> pick a tactic — that's on purpose, so every save shows *how* you did it.
+
+**Why the tactic matters:** it's the one thing no Allstate report contains. Over
+time it tells the agency which moves actually save customers (e.g. how often a
+**company transfer** keeps someone), and it's how your saves get credited with
+real dollars on your **Scorecard** — not just a tally.
+
+> **Example — a customer paid their past‑due:** open their case → Outcome
+> **Saved** → *What saved them?* **Reinstated (paid balance)** → enter the
+> premium → **Save Case.** Done.
 
 ---
 
