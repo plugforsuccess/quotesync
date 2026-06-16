@@ -6,6 +6,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useSaveVelocity } from '../../../hooks/useSaveVelocity';
+import { SAVE_METHOD_LABEL } from '../../../lib/saveMethods';
+
+function methodLabel(m) {
+  return m === 'unrecorded' ? 'Not recorded' : (SAVE_METHOD_LABEL[m] || m);
+}
 
 function fmt$(n) {
   if (!n) return '$0';
@@ -41,8 +46,9 @@ export default function SaveVelocityPanel({ agencyId }) {
   }
   if (!data) return null;
 
-  const { series, reps, totalSaves, totalPremium } = data;
+  const { series, reps, methods = [], totalSaves, totalPremium } = data;
   const maxSaves = Math.max(1, ...series.map(w => w.cancelSaves + w.renewalSaves));
+  const maxMethod = Math.max(1, ...methods.map(m => m.count));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -87,6 +93,44 @@ export default function SaveVelocityPanel({ agencyId }) {
           <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#F59E0B', borderRadius: 2, marginRight: 4 }} />Cancel saves</span>
           <span><span style={{ display: 'inline-block', width: 10, height: 10, background: '#3B82F6', borderRadius: 2, marginRight: 4 }} />Confirmed renewals</span>
         </div>
+      </div>
+
+      {/* By save method — "how did we keep them?" */}
+      <div className="card">
+        <h4 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>
+          By save method (8-week window)
+        </h4>
+        {methods.length === 0 ? (
+          <div style={{ fontSize: 13, color: 'var(--qs-muted)' }}>No saves recorded in the window yet.</div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {methods.map(m => {
+              const pct = totalSaves > 0 ? Math.round((m.count / totalSaves) * 100) : 0;
+              const isTransfer = m.method === 'company_transfer';
+              const unrecorded = m.method === 'unrecorded';
+              const barColor = unrecorded ? 'var(--qs-muted)' : isTransfer ? '#8B5CF6' : '#10B981';
+              return (
+                <div key={m.method} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 170, flexShrink: 0, fontSize: 13,
+                    fontWeight: isTransfer ? 700 : 500,
+                    color: unrecorded ? 'var(--qs-muted)' : 'var(--qs-text)' }}>
+                    {methodLabel(m.method)}
+                  </div>
+                  <div style={{ flex: 1, height: 18, background: 'var(--qs-elevated)', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ width: `${(m.count / maxMethod) * 100}%`, height: '100%',
+                      background: barColor, borderRadius: 4, minWidth: 2 }} />
+                  </div>
+                  <div style={{ width: 110, flexShrink: 0, textAlign: 'right', fontSize: 12, color: 'var(--qs-dim)' }}>
+                    <strong style={{ color: 'var(--qs-text)' }}>{m.count}</strong> · {pct}% · {fmt$(m.premium)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
+          The tactic captured when each case was saved. "Not recorded" = saved before a method was selected.
+        </p>
       </div>
 
       {/* Per-rep rollup */}
