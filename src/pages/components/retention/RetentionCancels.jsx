@@ -363,6 +363,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           pending_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
           method: "phone", result: "reached",
           note: "Outcome recorded from the work surface",
+          auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
           ...(form.save_method
             ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
             : {}),
@@ -1229,6 +1230,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           renewal_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
           method: "phone", result: "reached",
           note: "Outcome recorded from the work surface",
+          auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
           ...(form.save_method
             ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
             : {}),

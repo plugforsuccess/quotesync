@@ -89,7 +89,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
           <MetricRow
             label="Save Rate"
             value={fmtPct(metrics.cancelSaveRate)}
-            sub={`${metrics.cancelSaved} saved · ${metrics.cancelLost} lost`}
+            sub={`${metrics.cancelSaved} saved · ${metrics.cancelLost} lost${metrics.cancelReversed > 0 ? ` · ${metrics.cancelReversed} reversed` : ''}`}
             color={saveRateColor}
           />
           <MetricRow
