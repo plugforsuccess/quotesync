@@ -104,9 +104,11 @@ them to a better rate — **record it on the case.** Here's the whole thing:
 1. Open the case (**My Queue** → Cancellations or Renewals → **Open case**).
 2. Under **Outcome**, choose **Saved ✓ — paid, policy continues** (for a
    cancellation) or **Confirmed Renewal ✓** (for a renewal).
-3. A **"What saved them?"** box appears — pick how you did it: **Reinstated
-   (paid balance)**, **Company transfer**, **Payment plan**, **Re‑quote**,
-   **Bundled**, **Applied a discount**, **Matched a competitor**, etc.
+3. A **"What saved them?"** box appears — pick how you did it: **Paid past due**,
+   **Company transfer**, **Payment plan**, **Re‑quote**, **Bundled**, **Applied a
+   discount**, **Matched a competitor**, etc. *(The list adapts to the case —
+   **Reinstated (paid after cancel)** only shows once a policy has actually
+   cancelled; **Paid past due** is for paying before it cancels.)*
 4. Type the **premium** — for a renewal, the **final premium** they'll pay; for a
    cancellation, the **Premium saved (annual)** (there's a *"use at‑risk amount"*
    shortcut if it's the same).
@@ -121,9 +123,10 @@ time it tells the agency which moves actually save customers (e.g. how often a
 **company transfer** keeps someone), and it's how your saves get credited with
 real dollars on your **Scorecard** — not just a tally.
 
-> **Example — a customer paid their past‑due:** open their case → Outcome
-> **Saved** → *What saved them?* **Reinstated (paid balance)** → enter the
-> premium → **Save Case.** Done.
+> **Example — a customer paid their past‑due (policy hadn't cancelled yet):**
+> open their case → Outcome **Saved** → *What saved them?* **Paid past due** →
+> enter the premium → **Save Case.** Done. *(Use **Reinstated** only if the
+> policy had already cancelled and they paid to bring it back.)*
 
 ---
 
