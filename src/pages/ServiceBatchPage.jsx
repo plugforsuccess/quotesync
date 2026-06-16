@@ -619,7 +619,9 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
   const [priority, setPriority] = useState('normal');
   const [detail, setDetail] = useState('');
 
-  const canSubmit = !!agencyId && title.trim().length > 0 && !busy;
+  // Customer name identifies who the task is for and drives household linking +
+  // search, so it's required alongside the task title.
+  const canSubmit = !!agencyId && title.trim().length > 0 && customerName.trim().length > 0 && !busy;
 
   function submit() {
     if (!canSubmit) return;
@@ -644,15 +646,22 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
     <div style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
       borderRadius: 10, padding: 16, marginBottom: 4 }}>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        <label style={lbl}>Type
-          <select value={taskType} onChange={e => setTaskType(e.target.value)} style={input}>
-            {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
+        {/* Who it's for goes first — it's what links the task to a household. */}
+        <label style={{ ...lbl, gridColumn: '1 / -1' }}>Customer <span style={{ color: '#F87171' }}>*</span>
+          <input value={customerName} onChange={e => setCustomerName(e.target.value)} style={input} placeholder="Customer name" />
+        </label>
+        <label style={lbl}>Policy #
+          <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Optional" />
         </label>
         <label style={lbl}>Product
           <select value={product} onChange={e => setProduct(e.target.value)} style={input}>
             <option value="">— Line of business —</option>
             {PRODUCTS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+          </select>
+        </label>
+        <label style={lbl}>Type
+          <select value={taskType} onChange={e => setTaskType(e.target.value)} style={input}>
+            {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </label>
         <label style={lbl}>Priority
@@ -663,15 +672,9 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
             <option value="low">Low</option>
           </select>
         </label>
-        <label style={lbl}>Policy #
-          <input value={policyNo} onChange={e => setPolicyNo(e.target.value)} style={input} placeholder="Optional" />
-        </label>
-        <label style={{ ...lbl, gridColumn: '1 / -1' }}>What's needed
+        <label style={{ ...lbl, gridColumn: '1 / -1' }}>What's needed <span style={{ color: '#F87171' }}>*</span>
           <input value={title} onChange={e => setTitle(e.target.value)} style={input}
             placeholder="e.g. Update mortgagee to ABC Bank" />
-        </label>
-        <label style={{ ...lbl, gridColumn: '1 / -1' }}>Customer
-          <input value={customerName} onChange={e => setCustomerName(e.target.value)} style={input} placeholder="Name" />
         </label>
         <label style={{ ...lbl, gridColumn: '1 / -1' }}>Detail
           <input value={detail} onChange={e => setDetail(e.target.value)} style={input} placeholder="Optional notes" />
