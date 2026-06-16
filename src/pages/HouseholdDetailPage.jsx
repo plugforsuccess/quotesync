@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
-import { TASK_TYPE_MAP } from '../hooks/useServiceTasks';
+import { TASK_TYPE_MAP, productShort } from '../hooks/useServiceTasks';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
 const PRODUCT_LABELS = {
@@ -198,6 +198,13 @@ export default function HouseholdDetailPage() {
                       fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
                       background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color,
                     }}>{cfg.label}</span>
+                    {productShort(t.product) && (
+                      <span title="Line of business" style={{
+                        fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 4,
+                        background: '#22D3EE1a', border: '1px solid #22D3EE40', color: '#67E8F9',
+                        letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace",
+                      }}>{productShort(t.product)}</span>
+                    )}
                     <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)' }}>{t.title}</span>
                     {t.requires_license && (
                       <span style={{ fontSize: 10, fontWeight: 700, color: '#C4B5FD' }}>🔒</span>

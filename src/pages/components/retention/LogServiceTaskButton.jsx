@@ -6,7 +6,7 @@
 // live (customer must send a document, left a voicemail).
 
 import { useState } from 'react';
-import { useCreateServiceTask, TASK_TYPES } from '../../../hooks/useServiceTasks';
+import { useCreateServiceTask, TASK_TYPES, PRODUCTS } from '../../../hooks/useServiceTasks';
 
 export default function LogServiceTaskButton({
   agencyId, policyNo, customerName, customerPhone,
@@ -16,6 +16,7 @@ export default function LogServiceTaskButton({
   const [done, setDone] = useState(false);
   const [mode, setMode] = useState('resolved'); // 'resolved' (on call) | 'batch'
   const [taskType, setTaskType] = useState('billing');
+  const [product, setProduct] = useState('');
   const [title, setTitle] = useState('');
   const [priority, setPriority] = useState('normal');
 
@@ -29,6 +30,7 @@ export default function LogServiceTaskButton({
       {
         agencyId,
         taskType,
+        product: product || null,
         title: title.trim(),
         customerName: customerName ?? null,
         policyNo: policyNo ?? null,
@@ -45,7 +47,7 @@ export default function LogServiceTaskButton({
       {
         onSuccess: () => {
           setDone(true);
-          setTitle(''); setPriority('normal');
+          setTitle(''); setPriority('normal'); setProduct('');
           setTimeout(() => { setOpen(false); setDone(false); }, 1500);
         },
       }
@@ -114,10 +116,14 @@ export default function LogServiceTaskButton({
                 {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </label>
-            {onCall ? (
-              <div />
-            ) : (
-              <label style={lbl}>Priority
+            <label style={lbl}>Product
+              <select value={product} onChange={e => setProduct(e.target.value)} style={input}>
+                <option value="">— Line of business —</option>
+                {PRODUCTS.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </label>
+            {!onCall && (
+              <label style={{ ...lbl, gridColumn: '1 / -1' }}>Priority
                 <select value={priority} onChange={e => setPriority(e.target.value)} style={input}>
                   <option value="urgent">Urgent</option>
                   <option value="high">High</option>

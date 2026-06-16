@@ -8,6 +8,12 @@ const TYPE_LABEL = {
   id_cards: 'ID Cards/Docs', document: 'Document', other: 'Service',
 };
 
+const PRODUCT_LABEL = {
+  auto: 'AUTO', ho: 'HO', renters: 'RENTERS', condo: 'CONDO', landlord: 'LANDLORD',
+  pup: 'UMBRELLA', boat: 'BOAT', specialty_auto: 'SPEC AUTO', life: 'LIFE',
+  manufactured: 'MFG HOME', other: 'OTHER',
+};
+
 function fmtDate(d) {
   if (!d) return '';
   const dt = new Date(d.length <= 10 ? d + 'T00:00:00' : d);
@@ -20,7 +26,9 @@ export function formatTaskForAllstate(task) {
   const lines = [];
   const who = [task.customer_name, task.policy_no].filter(Boolean).join(' · ');
   if (who) lines.push(who);
-  const head = [TYPE_LABEL[task.task_type] || 'Service', fmtDate(task.due_date) || fmtDate(task.completed_at)]
+  const kind = [TYPE_LABEL[task.task_type] || 'Service', PRODUCT_LABEL[task.product]]
+    .filter(Boolean).join(' · ');
+  const head = [kind, fmtDate(task.due_date) || fmtDate(task.completed_at)]
     .filter(Boolean).join(' — ');
   if (head) lines.push(head);
   if (task.title) lines.push(task.title);

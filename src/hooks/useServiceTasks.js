@@ -23,6 +23,26 @@ export const TASK_TYPES = [
 
 export const TASK_TYPE_MAP = Object.fromEntries(TASK_TYPES.map(t => [t.value, t]));
 
+// Line of business a task touches — same vocabulary as
+// household_directory.active_products, so a task names its product the way the
+// household header reads it. Drives the form dropdown and the per-line badges.
+export const PRODUCTS = [
+  { value: 'auto',           label: 'Auto',          short: 'AUTO' },
+  { value: 'ho',             label: 'Homeowners',    short: 'HO' },
+  { value: 'renters',        label: 'Renters',       short: 'RENTERS' },
+  { value: 'condo',          label: 'Condo',         short: 'CONDO' },
+  { value: 'landlord',       label: 'Landlord',      short: 'LANDLORD' },
+  { value: 'pup',            label: 'Umbrella',      short: 'UMBRELLA' },
+  { value: 'boat',           label: 'Boat',          short: 'BOAT' },
+  { value: 'specialty_auto', label: 'Specialty Auto',short: 'SPEC AUTO' },
+  { value: 'life',           label: 'Life',          short: 'LIFE' },
+  { value: 'manufactured',   label: 'Manufactured',  short: 'MFG HOME' },
+  { value: 'other',          label: 'Other',         short: 'OTHER' },
+];
+export const PRODUCT_MAP = Object.fromEntries(PRODUCTS.map(p => [p.value, p]));
+// Short uppercase code for a badge, e.g. 'ho' → 'HO'. Null when unset.
+export const productShort = p => p ? (PRODUCT_MAP[p]?.short || String(p).toUpperCase()) : null;
+
 // Lanes in work-order. `licensed: true` means only a licensed agent can WORK the
 // task (anyone, including the front desk, can still log it). Plain labels so any
 // employee can tell at a glance who does what.
@@ -133,6 +153,7 @@ export function useCreateServiceTask() {
         priority: task.priority || 'normal',
         requires_license: task.requiresLicense ?? false,
         policy_no: task.policyNo ?? null,
+        product: task.product ?? null,
         customer_name: task.customerName ?? null,
         customer_phone: task.customerPhone ?? null,
         household_id: householdId,
@@ -172,6 +193,31 @@ export function useExpectedCallbacks(agencyId) {
     staleTime: 30_000,
     queryFn: async () => {
       const { data, error } = await supabase.rpc('fd_expected_callbacks');
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+// Completion velocity — how fast service tasks get cleared, so the agency can
+// watch the curve bend over time. Pulls every task completed in the window with
+// its created/completed stamps; the UI buckets them into a per-day median
+// time-to-done. The whole point of the live SLA timer is to drive this down.
+export function useServiceTaskVelocity(agencyId, days = 14) {
+  return useQuery({
+    queryKey: ['service_task_velocity', agencyId, days],
+    enabled: !!agencyId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const since = new Date(Date.now() - days * 86400000).toISOString();
+      const { data, error } = await supabase
+        .from('service_tasks')
+        .select('created_at, completed_at')
+        .eq('agency_id', agencyId)
+        .eq('status', 'done')
+        .gte('completed_at', since)
+        .not('completed_at', 'is', null)
+        .order('completed_at', { ascending: true });
       if (error) throw error;
       return data || [];
     },
