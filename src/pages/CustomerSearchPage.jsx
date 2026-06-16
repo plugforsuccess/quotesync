@@ -2,7 +2,7 @@
 // Producer customer lookup — type a name, see the household's full picture:
 // active lines, lost lines (winback openings), open cancel/renewal work, contact.
 import { useState } from 'react';
-import { Link, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { usePermissions } from '../hooks/usePermissions';
 import { useCustomerSearch, useReconcileHouseholds, useMergeHouseholds } from '../hooks/useCustomerSearch';
@@ -67,6 +67,13 @@ export default function CustomerSearchPage() {
       try { localStorage.setItem(VIEWED_KEY, JSON.stringify(next)); } catch { /* noop */ }
       return next;
     });
+  }
+
+  const navigate = useNavigate();
+  function openHousehold(c) {
+    recordSearch(term);
+    recordViewed(c.household_id, c.display_name);
+    navigate(`${detailBase}/${c.household_id}`);
   }
 
   function toggle(id) {
@@ -197,21 +204,22 @@ export default function CustomerSearchPage() {
           const winback = (c.active_policies > 0) && (c.lost_products?.length > 0);
           const picked = selected.includes(c.household_id);
           return (
-            <div key={c.household_id} style={{
+            <div key={c.household_id} onClick={() => openHousehold(c)} style={{
               background: 'var(--qs-card)',
               border: `1px solid ${picked ? '#3B82F6' : 'var(--qs-border)'}`,
-              borderRadius: 10, padding: '14px 16px',
+              borderRadius: 10, padding: '14px 16px', cursor: 'pointer',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
                 <div style={{ minWidth: 0, display: 'flex', gap: 10 }}>
                   {canManage && (
                     <input type="checkbox" checked={picked} onChange={() => toggle(c.household_id)}
+                      onClick={e => e.stopPropagation()}
                       title="Select to merge duplicate customers" style={{ marginTop: 3 }} />
                   )}
                   <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 700 }}>
                     <Link to={`${detailBase}/${c.household_id}`} style={{ color: 'var(--qs-bright)', textDecoration: 'none' }}
-                      onClick={() => { recordSearch(term); recordViewed(c.household_id, c.display_name); }}
+                      onClick={e => { e.stopPropagation(); recordSearch(term); recordViewed(c.household_id, c.display_name); }}
                       onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
                       onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}>
                       {c.display_name}
