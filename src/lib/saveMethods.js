@@ -45,3 +45,41 @@ export function cancelSaveMethods(stage) {
 export function renewalSaveMethods() {
   return SAVE_METHODS.filter(m => !m.cancelOnly);
 }
+
+// ── Attempt tactic → case save_method ───────────────────────────────────────
+// The save tactic is captured once, on the call attempt ("What did you do to
+// save them?", a multi-select from intervention_types). The case-level
+// save_method is auto-derived from it so the rep never enters the tactic twice.
+// This maps the per-attempt intervention vocabulary onto the case vocabulary.
+export const INTERVENTION_TO_SAVE_METHOD = {
+  company_transfer:   'company_transfer',
+  requote_deductible: 'requote',
+  requote_coverage:   'requote',
+  bundle:             'bundle',
+  discount:           'discount',
+  competitor_match:   'competitor_match',
+  payment_plan:       'payment_plan',
+  explained_increase: 'explained_increase',
+  escalated:          'retention_offer', // escalating to the principal secures an exception/offer
+  other:              'other',
+};
+
+// When one call recorded several tactics, this is the order we treat as the
+// "headline" reason the customer stayed (most decisive first).
+const INTERVENTION_PRIORITY = [
+  'company_transfer', 'competitor_match', 'requote_deductible', 'requote_coverage',
+  'bundle', 'discount', 'payment_plan', 'explained_increase', 'escalated', 'other',
+];
+
+// Given attempt rows (newest-first) each with an `interventions` code array,
+// derive the single case-level save_method from the most recent attempt that
+// recorded any tactic. Returns null when no tactic was ever captured.
+export function deriveSaveMethod(attempts) {
+  for (const a of attempts || []) {
+    const codes = Array.isArray(a?.interventions) ? a.interventions : [];
+    if (codes.length === 0) continue;
+    const primary = INTERVENTION_PRIORITY.find(c => codes.includes(c)) || codes[0];
+    return INTERVENTION_TO_SAVE_METHOD[primary] || 'other';
+  }
+  return null;
+}

@@ -15,7 +15,7 @@ import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript 
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 import { EscalateCaseBox, LinkedServiceTasks, ReferToSalesBox } from './CaseHandoffExtras';
-import { cancelSaveMethods, renewalSaveMethods } from '../../../lib/saveMethods';
+import { SAVE_METHOD_LABEL, deriveSaveMethod } from '../../../lib/saveMethods';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -248,7 +248,6 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     notes:               event.notes || "",
     rewrite_new_premium: event.rewrite_new_premium || "",
     rewrite_reason:      event.rewrite_reason || "",
-    save_method:         event.save_method || "",
   });
   // Kept out of `form` so it's only written on the saved (reinstatement) path —
   // the column it targets is pending_cases.saved_premium.
@@ -301,7 +300,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   useEffect(() => {
     supabase
       .from("pending_cancel_attempts")
-      .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
       .eq("pending_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -341,7 +340,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       }
       const { data } = await supabase
         .from("pending_cancel_attempts")
-        .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -370,9 +369,6 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           method: "phone", result: "reached",
           note: "Outcome recorded from the work surface",
           auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
-          ...(form.save_method
-            ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
-            : {}),
         });
         if (attErr) {
           setSaveError(`Couldn't record the call: ${attErr.message}`);
@@ -403,10 +399,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
       updates.saved_premium = Number.isNaN(sp) ? null : sp;
     }
-    // Save method (what saved them) is only meaningful on a save; clear it on
-    // any non-save outcome so a stale tactic doesn't linger.
+    // Save method (what saved them) is auto-derived from the tactic captured on
+    // the call attempt — only meaningful on a save; cleared on any non-save
+    // outcome so a stale tactic doesn't linger.
     updates.save_method = ["saved","rewritten"].includes(form.status)
-      ? (form.save_method || null) : null;
+      ? derivedSaveMethod : null;
     // Strip rewrite fields if not a rewrite outcome
     if (form.status !== "rewritten") {
       updates.rewrite_new_premium = null;
@@ -458,6 +455,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     // Keep an already-resolved case viewable/editable even if contacted_at was
     // never stamped (e.g. marked saved directly off a reached call).
     ["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(event.status);
+
+  // "What saved them" — auto-derived from the tactic captured on the call (the
+  // "What did you do to save them?" chips), so the rep never re-enters it.
+  const derivedSaveMethod = deriveSaveMethod(attempts) || event.save_method || null;
 
   return (
     <div
@@ -968,20 +969,19 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
-            {/* What saved them — the tactic, captured on any save outcome */}
+            {/* What saved them — auto-derived from the tactic logged on the call
+                ("What did you do to save them?"), shown read-only so it's never
+                entered twice. */}
             {["saved","rewritten"].includes(form.status) && (
               <div>
                 <label className="dark-label">What saved them?</label>
-                <select
-                  className="dark-select"
-                  value={form.save_method}
-                  onChange={ev => setForm(p => ({ ...p, save_method: ev.target.value }))}
-                >
-                  <option value="">— Select the method —</option>
-                  {cancelSaveMethods(event.stage).map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
+                <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                  border: "1px solid var(--qs-border)", fontSize: 13,
+                  color: derivedSaveMethod ? "var(--qs-text)" : "var(--qs-muted)" }}>
+                  {derivedSaveMethod
+                    ? (SAVE_METHOD_LABEL[derivedSaveMethod] || derivedSaveMethod)
+                    : "Add it on the call attempt above — “What did you do to save them?”"}
+                </div>
               </div>
             )}
 
@@ -1055,43 +1055,31 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
             <EscalateCaseBox caseType="cancel" caseId={event.id} onEscalated={onClose} />
 
-            {/* Save \u2014 a save outcome needs the tactic so we capture how it happened */}
-            {(() => {
-              const needsTactic = ["saved", "rewritten"].includes(form.status) && !form.save_method;
-              const disabled = saving || needsTactic;
-              return (
-                <div>
-                  <button
-                    onClick={save}
-                    disabled={disabled}
-                    style={{
-                      width: "100%", padding: "12px",
-                      borderRadius: 10, border: "none",
-                      background: disabled ? "var(--qs-elevated)" : "#10B981",
-                      color: disabled ? "var(--qs-muted)" : "#fff",
-                      fontSize: 15, fontWeight: 700,
-                      cursor: disabled ? "not-allowed" : "pointer",
-                      transition: "background 0.15s",
-                      marginTop: 4,
-                    }}
-                  >
-                    {saving ? "Saving\u2026" : "Save Case"}
-                  </button>
-                  {needsTactic && (
-                    <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 6, textAlign: "center" }}>
-                      Pick <strong>What saved them?</strong> to record the save \u2014 it logs the call for you.
-                    </div>
-                  )}
-                  {saveError && (
-                    <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
-                      background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
-                      borderRadius: 8, padding: "8px 10px" }}>
-                      {saveError}
-                    </div>
-                  )}
+            <div>
+              <button
+                onClick={save}
+                disabled={saving}
+                style={{
+                  width: "100%", padding: "12px",
+                  borderRadius: 10, border: "none",
+                  background: saving ? "var(--qs-elevated)" : "#10B981",
+                  color: saving ? "var(--qs-muted)" : "#fff",
+                  fontSize: 15, fontWeight: 700,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  transition: "background 0.15s",
+                  marginTop: 4,
+                }}
+              >
+                {saving ? "Saving\u2026" : "Save Case"}
+              </button>
+              {saveError && (
+                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
+                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 8, padding: "8px 10px" }}>
+                  {saveError}
                 </div>
-              );
-            })()}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1158,7 +1146,6 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     contact_method: event.contact_method || "",
     notes: event.notes || "",
     shopping_reason: event.shopping_reason || "",
-    save_method: event.save_method || "",
   });
   // Kept out of `form` so it's only written to renewal_cases on the confirmed
   // (saved) path — the column it targets is the new saved_premium field.
@@ -1205,7 +1192,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   useEffect(() => {
     supabase
       .from("renewal_attempts")
-      .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
       .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -1254,7 +1241,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
       const { data } = await supabase
         .from("renewal_attempts")
-        .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
         .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -1282,9 +1269,6 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           method: "phone", result: "reached",
           note: "Outcome recorded from the work surface",
           auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
-          ...(form.save_method
-            ? interventionInsertFields({ ...EMPTY_INTERVENTION, interventions: [form.save_method] })
-            : {}),
         });
         if (attErr) {
           setSaveError(`Couldn't record the call: ${attErr.message}`);
@@ -1322,9 +1306,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
       updates.saved_premium = Number.isNaN(sp) ? null : sp;
     }
-    // Save method (what saved them) — only meaningful on a confirmed save;
-    // cleared otherwise so a stale tactic doesn't linger on a lost/shopping case.
-    updates.save_method = form.status === "confirmed" ? (form.save_method || null) : null;
+    // Save method (what saved them) — auto-derived from the tactic captured on
+    // the call; only meaningful on a confirmed save, cleared otherwise so a
+    // stale tactic doesn't linger on a lost/shopping case.
+    updates.save_method = form.status === "confirmed" ? derivedSaveMethod : null;
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
     const err = await onUpdate(event.id, updates);
@@ -1357,6 +1342,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     // Keep an already-resolved renewal viewable/editable even if contacted_at
     // was never stamped (e.g. confirmed directly off a reached call).
     ["review_requested","shopping","at_risk","escalated","confirmed","lost"].includes(event.status);
+
+  // "What saved them" — auto-derived from the tactic captured on the call (the
+  // "What did you do to save them?" chips), so the rep never re-enters it.
+  const derivedSaveMethod = deriveSaveMethod(attempts) || event.save_method || null;
 
   return (
     <div
@@ -1812,20 +1801,19 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
-            {/* What saved them — the tactic, captured at the confirmed save */}
+            {/* What saved them — auto-derived from the tactic logged on the call
+                ("What did you do to save them?"), shown read-only so it's never
+                entered twice. */}
             {form.status === "confirmed" && (
               <div>
                 <label className="dark-label">What saved them?</label>
-                <select
-                  className="dark-select"
-                  value={form.save_method}
-                  onChange={ev => setForm(p => ({ ...p, save_method: ev.target.value }))}
-                >
-                  <option value="">— Select the method —</option>
-                  {renewalSaveMethods().map(m => (
-                    <option key={m.value} value={m.value}>{m.label}</option>
-                  ))}
-                </select>
+                <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                  border: "1px solid var(--qs-border)", fontSize: 13,
+                  color: derivedSaveMethod ? "var(--qs-text)" : "var(--qs-muted)" }}>
+                  {derivedSaveMethod
+                    ? (SAVE_METHOD_LABEL[derivedSaveMethod] || derivedSaveMethod)
+                    : "Add it on the call attempt above — “What did you do to save them?”"}
+                </div>
               </div>
             )}
 
@@ -1890,43 +1878,31 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
             <EscalateCaseBox caseType="renewal" caseId={event.id} onEscalated={onClose} />
 
-            {/* Save \u2014 confirming needs the tactic so we capture how it was saved */}
-            {(() => {
-              const needsTactic = form.status === "confirmed" && !form.save_method;
-              const disabled = saving || needsTactic;
-              return (
-                <div>
-                  <button
-                    onClick={save}
-                    disabled={disabled}
-                    style={{
-                      width: "100%", padding: "12px",
-                      borderRadius: 10, border: "none",
-                      background: disabled ? "var(--qs-elevated)" : "#10B981",
-                      color: disabled ? "var(--qs-muted)" : "#fff",
-                      fontSize: 15, fontWeight: 700,
-                      cursor: disabled ? "not-allowed" : "pointer",
-                      transition: "background 0.15s",
-                      marginTop: 4,
-                    }}
-                  >
-                    {saving ? "Saving\u2026" : "Save Case"}
-                  </button>
-                  {needsTactic && (
-                    <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 6, textAlign: "center" }}>
-                      Pick <strong>What saved them?</strong> to confirm \u2014 it logs the call for you.
-                    </div>
-                  )}
-                  {saveError && (
-                    <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
-                      background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
-                      borderRadius: 8, padding: "8px 10px" }}>
-                      {saveError}
-                    </div>
-                  )}
+            <div>
+              <button
+                onClick={save}
+                disabled={saving}
+                style={{
+                  width: "100%", padding: "12px",
+                  borderRadius: 10, border: "none",
+                  background: saving ? "var(--qs-elevated)" : "#10B981",
+                  color: saving ? "var(--qs-muted)" : "#fff",
+                  fontSize: 15, fontWeight: 700,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  transition: "background 0.15s",
+                  marginTop: 4,
+                }}
+              >
+                {saving ? "Saving\u2026" : "Save Case"}
+              </button>
+              {saveError && (
+                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
+                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 8, padding: "8px 10px" }}>
+                  {saveError}
                 </div>
-              );
-            })()}
+              )}
+            </div>
           </div>
         </div>
       </div>
