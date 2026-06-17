@@ -5,7 +5,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees, useAssignableMembers } from '../hooks/useEmployees';
@@ -86,7 +86,25 @@ export default function ServiceBatchPage() {
 
   const [scope, setScope] = useState('all');
   const [overdueOnly, setOverdueOnly] = useState(false);
+  const [showDone, setShowDone] = useState(false);
   const { groups, tasks, overdue, isLoading } = useServiceTasks(agencyId, { scope, employeeId });
+
+  // Recently completed tasks — the "Done" view, so a cleared task is visible
+  // (and auditable) instead of just vanishing from the batch.
+  const { data: doneTasks = [] } = useQuery({
+    queryKey: ['service_tasks_done', agencyId],
+    enabled: !!agencyId && showDone,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const since = new Date(); since.setDate(since.getDate() - 14);
+      const { data, error } = await supabase.from('service_tasks').select('*')
+        .eq('agency_id', agencyId).eq('status', 'done')
+        .gte('completed_at', since.toISOString())
+        .order('completed_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
   const createTask = useCreateServiceTask();
   const updateTask = useUpdateServiceTask();
 
@@ -204,13 +222,21 @@ export default function ServiceBatchPage() {
           }}>{s.label}</button>
         ))}
         {/* Overdue — pull up only breached tasks, most overdue first */}
-        <button onClick={() => setOverdueOnly(v => !v)} style={{
+        <button onClick={() => { setOverdueOnly(v => !v); setShowDone(false); }} style={{
           cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
           borderRadius: 999, padding: '5px 14px', border: '1px solid', marginLeft: 'auto',
           borderColor: overdueOnly ? '#EF4444' : (overdue > 0 ? '#EF444466' : 'var(--qs-border)'),
           background: overdueOnly ? '#EF4444' : 'var(--qs-card)',
           color: overdueOnly ? '#fff' : (overdue > 0 ? '#F87171' : 'var(--qs-muted)'),
         }}>⚠ Overdue ({overdue})</button>
+        {/* Done — recently completed tasks (last 14 days) */}
+        <button onClick={() => { setShowDone(v => !v); setOverdueOnly(false); }} style={{
+          cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+          borderRadius: 999, padding: '5px 14px', border: '1px solid',
+          borderColor: showDone ? '#10B981' : 'var(--qs-border)',
+          background: showDone ? '#10B981' : 'var(--qs-card)',
+          color: showDone ? '#fff' : 'var(--qs-muted)',
+        }}>✓ Done</button>
       </div>
 
       {/* Lane summary — the work-order for the block */}
@@ -241,6 +267,44 @@ export default function ServiceBatchPage() {
 
       {isLoading ? (
         <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}>Loading…</div>
+      ) : showDone ? (
+        doneTasks.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--qs-elevated)',
+            borderRadius: 10, border: '1px solid var(--qs-border)' }}>
+            <div style={{ fontSize: 32, marginBottom: 8 }}>✓</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>Nothing completed yet</div>
+            <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 6 }}>No tasks marked done in the last 14 days.</div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 2 }}>{doneTasks.length} completed · last 14 days</div>
+            {doneTasks.map(task => {
+              const cfg = TASK_TYPE_MAP[task.task_type] || { label: task.task_type, icon: '📌', color: '#94A3B8' };
+              return (
+                <div key={task.id} style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                  borderLeft: '3px solid #10B981', borderRadius: 8, padding: '10px 14px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                    <span>{cfg.icon}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+                      background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color }}>{cfg.label}</span>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)', textDecoration: 'line-through', opacity: 0.85 }}>{task.title}</span>
+                    <span style={{ marginLeft: 'auto', fontSize: 12, color: 'var(--qs-dim)' }}>
+                      ✓ {empName[task.completed_by_id] || 'Unknown'} · {fmtShortDate(task.completed_at)}
+                    </span>
+                  </div>
+                  {(task.customer_name || task.policy_no) && (
+                    <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginTop: 4 }}>
+                      {task.customer_name || '—'}{task.policy_no ? ` · ${task.policy_no}` : ''}
+                    </div>
+                  )}
+                  {task.completion_note && (
+                    <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4, fontStyle: 'italic' }}>“{task.completion_note}”</div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )
       ) : overdueOnly ? (
         overdueTasks.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 20px', background: 'var(--qs-elevated)',

@@ -187,6 +187,7 @@ export function useCreateServiceTask() {
     // per-household list — not just the Service Batch query.
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['service_tasks_done'] });
       qc.invalidateQueries({ queryKey: ['case_service_tasks'] });
       qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
     },
@@ -223,6 +224,7 @@ export function useUpdateServiceTask() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['service_tasks_done'] });
       qc.invalidateQueries({ queryKey: ['case_service_tasks'] });
       qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
     },
