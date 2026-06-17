@@ -41,6 +41,21 @@ function WorkedRows({ worked, k, onCustomer }) {
         {w.saved
           ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
           : <span>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
+        {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
+      </td>
+    </tr>
+  ));
+}
+
+// Service tasks the rep completed that day.
+function TaskDoneRows({ tasks, k }) {
+  return tasks.map((t, i) => (
+    <tr key={`${k}-task-${i}`} style={{ background: 'var(--qs-elevated)' }}>
+      <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
+          background: '#10B98122', color: '#34D399' }}>TASK ✓</span>
+        <span style={{ color: 'var(--qs-text)' }}>{t.title}</span>
+        {t.customer_name ? ` · ${titleCaseName(t.customer_name)}` : ''}
       </td>
     </tr>
   ));
@@ -83,7 +98,7 @@ function RepTimeline({ agencyId, employees }) {
             {data.series.map(d => {
               const saves = d.cancelSaves + d.renewalSaves;
               const idle = d.attempts + saves + d.tasksDone === 0;
-              const expandable = d.worked.length > 0;
+              const expandable = d.worked.length > 0 || d.tasksList.length > 0;
               return (
                 <Fragment key={d.date}>
                   <tr onClick={() => expandable && setOpenDay(openDay === d.date ? null : d.date)}
@@ -98,6 +113,7 @@ function RepTimeline({ agencyId, employees }) {
                     <td>{d.tasksDone || '—'}</td>
                   </tr>
                   {openDay === d.date && <WorkedRows worked={d.worked} k={d.date} onCustomer={onCustomer} />}
+                  {openDay === d.date && <TaskDoneRows tasks={d.tasksList} k={d.date} />}
                 </Fragment>
               );
             })}
@@ -146,7 +162,7 @@ function DailyTeam({ agencyId, employees }) {
           <tbody>
             {rows.map(({ e, a }) => {
               const saves = a.cancelSaves + a.renewalSaves;
-              const expandable = a.worked.length > 0;
+              const expandable = a.worked.length > 0 || a.tasksList.length > 0;
               return (
                 <Fragment key={e.id}>
                   <tr onClick={() => expandable && setOpenRep(openRep === e.id ? null : e.id)}
@@ -161,6 +177,7 @@ function DailyTeam({ agencyId, employees }) {
                     <td>{a.tasksDone || '—'}</td>
                   </tr>
                   {openRep === e.id && <WorkedRows worked={a.worked} k={e.id} onCustomer={onCustomer} />}
+                  {openRep === e.id && <TaskDoneRows tasks={a.tasksList} k={e.id} />}
                 </Fragment>
               );
             })}
