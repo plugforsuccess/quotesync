@@ -120,6 +120,10 @@ export default function ServiceBatchPage() {
   // with a membership but no employee row — so they can be assigned tasks too.
   const { data: employees = [] } = useActiveEmployees(agencyId);
   const { data: assignable = [] } = useAssignableMembers(agencyId);
+  // The Expected-Callbacks strip is a front-desk INBOUND tool. Hide it until the
+  // agency actually has a front desk (an active unlicensed member); it auto-
+  // appears once one is hired, and can't confuse a no-front-desk shop until then.
+  const hasFrontDesk = employees.some(e => (e.roles || []).includes('unlicensed'));
   const empName = useMemo(() => {
     const m = {};
     for (const e of employees) m[e.id] = e.preferred_name || `${e.first_name || ''} ${e.last_name || ''}`.trim();
@@ -206,7 +210,7 @@ export default function ServiceBatchPage() {
         />
       )}
 
-      <ExpectedCallbacks agencyId={agencyId} />
+      {hasFrontDesk && <ExpectedCallbacks agencyId={agencyId} />}
 
       <CompletionPace agencyId={agencyId} />
 
