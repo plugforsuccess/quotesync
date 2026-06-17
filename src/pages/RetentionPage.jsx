@@ -16,6 +16,7 @@ import SaveVelocityPanel from "./components/retention/SaveVelocityPanel";
 import RetentionHealthOverview from "./components/retention/RetentionHealthOverview";
 import SaveIntegrityPanel from "./components/retention/SaveIntegrityPanel";
 import RenewalPremiumAudit from "./components/retention/RenewalPremiumAudit";
+import RepActivityPanel from "./components/retention/RepActivityPanel";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
 import TerminationReasonTab from "./components/retention/TerminationReasonTab";
@@ -502,10 +503,11 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["health", "at_risk", "velocity", "integrity", "renewal_audit", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["health", "at_risk", "activity", "velocity", "integrity", "renewal_audit", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "health"     ? "🩺 Health"         :
              t === "at_risk"    ? "⚡ At Risk"        :
+             t === "activity"   ? "🗓️ Activity"       :
              t === "velocity"   ? "🏎️ Velocity"       :
              t === "integrity"  ? "🛡️ Integrity"      :
              t === "renewal_audit" ? "📑 Renewal Audit" :
@@ -537,6 +539,9 @@ export default function RetentionPage() {
           urgentFilter={urgentFilter}
           onClearUrgentFilter={() => setUrgentFilter(false)}
         />
+      )}
+      {activeTab === "activity" && (
+        <RepActivityPanel agencyId={agencyId} />
       )}
       {activeTab === "velocity" && (
         <SaveVelocityPanel agencyId={agencyId} />
