@@ -9,6 +9,17 @@ import { computePriorityTier } from "../../../lib/retentionPriority";
 import { isRewriteReason } from "../../../lib/retentionRewrite";
 import CrossSellUploadModal from "../cross-sell/CrossSellUploadModal";
 
+// Household grouping key for assignment — so every policy in a household is
+// worked by ONE rep (no customer getting calls from two reps). Phone is the
+// strongest signal; fall back to the normalized name.
+function householdKey(name, phone) {
+  const d = String(phone || "").replace(/\D/g, "");
+  if (d.length >= 10) return "p:" + d.slice(-10);
+  const n = String(name || "").trim().toLowerCase().replace(/\s+/g, " ");
+  return n ? "n:" + n : null;
+}
+
+
 async function syncRetentionQueue(supabase) {
   try {
     await supabase.rpc('auto_resolve_stale_renewals');
@@ -832,10 +843,11 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
       // 3. Build assignment rotation — seed with existing caseloads for balanced distribution
       const runningCount = {};
+      const householdRep = {}; // household key -> rep id, so a household stays with one rep
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from('renewal_cases')
-          .select('assigned_to_id')
+          .select('assigned_to_id, customer_name, phone')
           .eq('agency_id', agencyId)
           .not('assigned_to_id', 'is', null)
           .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)');
@@ -845,6 +857,9 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           if (runningCount[c.assigned_to_id] !== undefined) {
             runningCount[c.assigned_to_id]++;
           }
+          // Seed so a new policy joins the rep already handling that household.
+          const k = householdKey(c.customer_name, c.phone);
+          if (k && c.assigned_to_id && !householdRep[k]) householdRep[k] = c.assigned_to_id;
         });
       }
 
@@ -856,6 +871,16 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         const picked = sorted[0];
         runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
         return picked.id;
+      }
+
+      // Keep a household on one rep: reuse the household's rep if known, else
+      // pick the next balanced rep and remember it for the rest of the household.
+      function pickRepForHousehold(row) {
+        const k = householdKey(row.customer_name, row.phone);
+        if (k && householdRep[k]) return householdRep[k];
+        const id = pickNextRep();
+        if (k && id) householdRep[k] = id;
+        return id;
       }
 
       // 4. Create upload record
@@ -877,7 +902,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       //    Mixing them in a single upsert causes PostgREST to normalize columns,
       //    which either drops assigned_to_id on new rows or nullifies it on existing rows.
       const newRecords = toAdd.map(r => {
-        const assignedId = pickNextRep();
+        const assignedId = pickRepForHousehold(r);
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
@@ -1804,16 +1829,19 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
       const activeReps = reps || [];
       const runningCount = {};
+      const householdRep = {}; // household key -> rep id, so a household stays with one rep
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from("pending_cases")
-          .select("assigned_to_id")
+          .select("assigned_to_id, customer_name, phone")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
           .not("status", "in", '(saved,lost,auto_resolved,requested_cancellation)');
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
           if (runningCount[c.assigned_to_id] !== undefined) runningCount[c.assigned_to_id]++;
+          const k = householdKey(c.customer_name, c.phone);
+          if (k && c.assigned_to_id && !householdRep[k]) householdRep[k] = c.assigned_to_id;
         });
       }
 
@@ -1823,6 +1851,18 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         const picked = sorted[0];
         runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
         return picked;
+      }
+
+      // Keep a household on one rep (object form for the pending-cancel flow).
+      function pickRepForHousehold(row) {
+        const k = householdKey(row.customer_name, row.phone);
+        if (k && householdRep[k]) {
+          const found = activeReps.find(x => x.id === householdRep[k]);
+          if (found) return found;
+        }
+        const rep = pickNextRep();
+        if (k && rep) householdRep[k] = rep.id;
+        return rep;
       }
 
       const { data: batch, error: batchErr } = await supabase
@@ -1844,7 +1884,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         const { error } = await supabase
           .from("pending_cases")
           .insert(diffResult.toAdd.map(r => {
-            const rep = pickNextRep();
+            const rep = pickRepForHousehold(r);
             return {
               agency_id: agencyId,
               upload_batch_id: batchId,
@@ -1986,16 +2026,19 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
       const activeReps = reps || [];
       const runningCount = {};
+      const householdRep = {}; // household key -> rep id, so a household stays with one rep
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from("pending_cases")
-          .select("assigned_to_id")
+          .select("assigned_to_id, customer_name, phone")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
           .not("status", "in", '(saved,lost,auto_resolved,requested_cancellation,cancelled)');
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
           if (runningCount[c.assigned_to_id] !== undefined) runningCount[c.assigned_to_id]++;
+          const k = householdKey(c.customer_name, c.phone);
+          if (k && c.assigned_to_id && !householdRep[k]) householdRep[k] = c.assigned_to_id;
         });
       }
 
@@ -2005,6 +2048,18 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         const picked = sorted[0];
         runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
         return picked;
+      }
+
+      // Keep a household on one rep (object form for the cancellation-audit flow).
+      function pickRepForHousehold(row) {
+        const k = householdKey(row.customer_name, row.phone);
+        if (k && householdRep[k]) {
+          const found = activeReps.find(x => x.id === householdRep[k]);
+          if (found) return found;
+        }
+        const rep = pickNextRep();
+        if (k && rep) householdRep[k] = rep.id;
+        return rep;
       }
 
       const policyNosFromAdd = cancelAuditDiff.toAdd.map(r => r.policy_no).filter(Boolean);
@@ -2049,7 +2104,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
             await supabase.from('pending_cases').update(advancePayload).eq('id', existingByPolicyNo.id);
             rowsUpdated++;
           } else {
-            const rep = pickNextRep();
+            const rep = pickRepForHousehold(r);
             trueInserts.push({
               agency_id: agencyId, upload_batch_id: batchId,
               ...(rep ? { assigned_to_id: rep.id, assigned_to: rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim() } : {}),
