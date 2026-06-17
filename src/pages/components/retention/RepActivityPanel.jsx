@@ -3,6 +3,7 @@
 //   • Daily    — one day, every rep side by side (the daily standup).
 
 import { useState, useEffect, Fragment } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
 import { useRepActivity } from '../../../hooks/useRepActivity';
 import { useDailyTeamActivity } from '../../../hooks/useDailyTeamActivity';
@@ -20,16 +21,26 @@ function dayLabel(k) {
 }
 function empName(e) { return e.preferred_name || `${e.first_name || ''} ${e.last_name || ''}`.trim(); }
 
-function SaveRows({ saves, date }) {
-  return saves.map((s, i) => (
-    <tr key={`${date}-${i}`} style={{ background: 'var(--qs-elevated)' }}>
+// Cases the rep worked (touched) — saved ones tagged, others show the outcome.
+// The customer name links into their full household (all cases, touches, notes).
+function WorkedRows({ worked, k, onCustomer }) {
+  return worked.map((w, i) => (
+    <tr key={`${k}-${i}`} style={{ background: 'var(--qs-elevated)' }}>
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
-          background: s.kind === 'cancel' ? '#EF444422' : '#3B82F622',
-          color: s.kind === 'cancel' ? '#F87171' : '#60A5FA' }}>
-          {s.kind === 'cancel' ? 'CANCEL SAVE' : 'RENEWAL'}
+          background: w.kind === 'cancel' ? '#EF444422' : '#3B82F622',
+          color: w.kind === 'cancel' ? '#F87171' : '#60A5FA' }}>
+          {w.kind === 'cancel' ? 'CANCEL' : 'RENEWAL'}
         </span>
-        {titleCaseName(s.name) || '—'} · {fmt$(s.premium)}
+        <button type="button" onClick={() => w.name && onCustomer?.(w.name)} title="Open customer"
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
+            fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
+          {titleCaseName(w.name) || '—'} ↗
+        </button>
+        {' · '}
+        {w.saved
+          ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
+          : <span>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
       </td>
     </tr>
   ));
@@ -37,6 +48,8 @@ function SaveRows({ saves, date }) {
 
 // ── By rep: one rep, last 14 days ───────────────────────────────────────────
 function RepTimeline({ agencyId, employees }) {
+  const navigate = useNavigate();
+  const onCustomer = (name) => navigate(`/agency/customers?q=${encodeURIComponent(name)}`);
   const [repId, setRepId] = useState('');
   const [openDay, setOpenDay] = useState(null);
   useEffect(() => {
@@ -70,7 +83,7 @@ function RepTimeline({ agencyId, employees }) {
             {data.series.map(d => {
               const saves = d.cancelSaves + d.renewalSaves;
               const idle = d.attempts + saves + d.tasksDone === 0;
-              const expandable = d.saves.length > 0;
+              const expandable = d.worked.length > 0;
               return (
                 <Fragment key={d.date}>
                   <tr onClick={() => expandable && setOpenDay(openDay === d.date ? null : d.date)}
@@ -84,7 +97,7 @@ function RepTimeline({ agencyId, employees }) {
                     <td style={{ color: d.premium ? '#10B981' : 'var(--qs-muted)' }}>{d.premium ? fmt$(d.premium) : '—'}</td>
                     <td>{d.tasksDone || '—'}</td>
                   </tr>
-                  {openDay === d.date && <SaveRows saves={d.saves} date={d.date} />}
+                  {openDay === d.date && <WorkedRows worked={d.worked} k={d.date} onCustomer={onCustomer} />}
                 </Fragment>
               );
             })}
@@ -97,6 +110,8 @@ function RepTimeline({ agencyId, employees }) {
 
 // ── Daily: one day, all reps ────────────────────────────────────────────────
 function DailyTeam({ agencyId, employees }) {
+  const navigate = useNavigate();
+  const onCustomer = (name) => navigate(`/agency/customers?q=${encodeURIComponent(name)}`);
   const [date, setDate] = useState(localDay());
   const [openRep, setOpenRep] = useState(null);
   const { data: byRep = {}, isLoading } = useDailyTeamActivity(agencyId, date);
@@ -131,7 +146,7 @@ function DailyTeam({ agencyId, employees }) {
           <tbody>
             {rows.map(({ e, a }) => {
               const saves = a.cancelSaves + a.renewalSaves;
-              const expandable = a.saves.length > 0;
+              const expandable = a.worked.length > 0;
               return (
                 <Fragment key={e.id}>
                   <tr onClick={() => expandable && setOpenRep(openRep === e.id ? null : e.id)}
@@ -145,7 +160,7 @@ function DailyTeam({ agencyId, employees }) {
                     <td style={{ color: a.premium ? '#10B981' : 'var(--qs-muted)' }}>{a.premium ? fmt$(a.premium) : '—'}</td>
                     <td>{a.tasksDone || '—'}</td>
                   </tr>
-                  {openRep === e.id && <SaveRows saves={a.saves} date={e.id} />}
+                  {openRep === e.id && <WorkedRows worked={a.worked} k={e.id} onCustomer={onCustomer} />}
                 </Fragment>
               );
             })}

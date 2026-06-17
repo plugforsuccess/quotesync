@@ -143,9 +143,6 @@ export default function ServiceBatchPage() {
       updates: { status: 'done', completed_by_id: employeeId, completion_note: completionNote || null },
     });
   }
-  function claim(id) {
-    updateTask.mutate({ id, updates: { status: 'in_progress', assigned_to_id: employeeId } });
-  }
 
   if (!employee) {
     return (
@@ -259,7 +256,7 @@ export default function ServiceBatchPage() {
                 empName={empName} employees={assignable}
                 onAssign={(toId) => assign(task.id, toId)}
                 onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
-                onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
+                onDone={(note) => markDone(task.id, note)} />
             ))}
           </div>
         )
@@ -291,7 +288,7 @@ export default function ServiceBatchPage() {
                     empName={empName} employees={assignable}
                     onAssign={(toId) => assign(task.id, toId)}
                     onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
-                    onDone={(note) => markDone(task.id, note)} onClaim={() => claim(task.id)} />
+                    onDone={(note) => markDone(task.id, note)} />
                 ))}
               </div>
             </div>
@@ -302,7 +299,7 @@ export default function ServiceBatchPage() {
   );
 }
 
-function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onDone, onClaim }) {
+function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onDone }) {
   const prio = PRIORITY_BADGE[task.priority];
   const product = productShort(task.product);
   const inProgress = task.status === 'in_progress';
@@ -378,9 +375,6 @@ function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onD
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
-          {!inProgress && (
-            <button onClick={onClaim} style={btnStyle('var(--qs-card)', 'var(--qs-text)')}>Start</button>
-          )}
           <button onClick={handleDone} style={btnStyle('#10B981', '#fff')}>Done</button>
         </div>
 
