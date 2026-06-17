@@ -61,14 +61,18 @@ export const INTERVENTION_TO_SAVE_METHOD = {
   payment_plan:       'payment_plan',
   explained_increase: 'explained_increase',
   escalated:          'retention_offer', // escalating to the principal secures an exception/offer
+  paid_past_due:      'paid_past_due',    // cancel-only: paid the past-due balance before cancel
+  reinstatement:      'reinstatement',    // cancel-only: paid after the policy cancelled
   other:              'other',
 };
 
 // When one call recorded several tactics, this is the order we treat as the
-// "headline" reason the customer stayed (most decisive first).
+// "headline" reason the customer stayed (most decisive first). The cancel-only
+// tactics (paying past due / reinstating) are decisive saves, so they rank high.
 const INTERVENTION_PRIORITY = [
-  'company_transfer', 'competitor_match', 'requote_deductible', 'requote_coverage',
-  'bundle', 'discount', 'payment_plan', 'explained_increase', 'escalated', 'other',
+  'reinstatement', 'paid_past_due', 'company_transfer', 'competitor_match',
+  'requote_deductible', 'requote_coverage', 'bundle', 'discount', 'payment_plan',
+  'explained_increase', 'escalated', 'other',
 ];
 
 // Given attempt rows (newest-first) each with an `interventions` code array,

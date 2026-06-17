@@ -11,7 +11,7 @@ export function useInterventionTypes() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('intervention_types')
-        .select('code, display_name, description, captures_premium, captures_competitor, sort_order')
+        .select('code, display_name, description, captures_premium, captures_competitor, sort_order, applies_to')
         .eq('is_active', true)
         .order('sort_order', { ascending: true });
       if (error) throw error;
