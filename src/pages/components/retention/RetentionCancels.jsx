@@ -227,6 +227,45 @@ function OtherCasesWarning({ cases }) {
   );
 }
 
+// Escape hatch for the no-contact case: a customer who already paid before we
+// ever called isn't a rep save — it's resolved as auto_resolved (no save
+// credit, no reached-attempt requirement). Two-step to avoid stray clicks.
+function AlreadyPaidAction({ onConfirm, busy }) {
+  const [confirming, setConfirming] = useState(false);
+  if (!confirming) {
+    return (
+      <button type="button" onClick={() => setConfirming(true)} style={{
+        width: "100%", padding: "9px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+        border: "1px dashed var(--qs-border)", background: "transparent",
+        color: "var(--qs-muted)", fontSize: 12, fontWeight: 600,
+      }}>
+        Customer already paid in Allstate? Clear it without a call
+      </button>
+    );
+  }
+  return (
+    <div style={{ border: "1px solid var(--qs-border)", borderRadius: 8, padding: "10px 12px", background: "var(--qs-elevated)" }}>
+      <div style={{ fontSize: 12, color: "var(--qs-dim)", marginBottom: 8 }}>
+        Clear this case as <strong>already paid</strong>? It resolves as auto-cleared — no call needed, and it does <strong>not</strong> count as a save.
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" disabled={busy} onClick={() => { setConfirming(false); onConfirm(); }} style={{
+          flex: 1, padding: "8px", borderRadius: 8, border: "none", background: busy ? "var(--qs-card)" : "#10B981",
+          color: busy ? "var(--qs-muted)" : "#fff", fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit",
+        }}>
+          {busy ? "Clearing…" : "Yes, mark paid"}
+        </button>
+        <button type="button" onClick={() => setConfirming(false)} style={{
+          flex: 1, padding: "8px", borderRadius: 8, border: "1px solid var(--qs-border)", background: "var(--qs-card)",
+          color: "var(--qs-text)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+        }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
 function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [], canReassign = true }) {
@@ -351,6 +390,29 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
+  }
+
+  // Already paid before we reached them → auto_resolved (system close, no save
+  // credit, exempt from the reached-attempt rule). Allstate is the system of
+  // record; this just clears our queue without faking a call. The customer paid
+  // the amount at risk in full (no discount earned), so we still log that paid
+  // premium — premium difference is $0, distinguishing "paid full" from a save.
+  async function markAlreadyPaid() {
+    setSaving(true);
+    setSaveError(null);
+    const err = await onUpdate(event.id, {
+      status: "auto_resolved",
+      resolution_date: new Date().toISOString().slice(0, 10),
+      closed_by_id: currentEmployeeId,
+      saved_premium: event.premium_at_risk ?? null,
+    });
+    if (err) {
+      setSaveError(`Couldn't clear the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    onClose();
   }
 
   async function save() {
@@ -876,6 +938,12 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </select>
             </div>
 
+            {/* No-contact escape hatch: customer already paid before we reached
+                them. Only meaningful while the case is still open. */}
+            {!["saved","rewritten","lost","requested_cancellation","cancelled","auto_resolved"].includes(event.status) && (
+              <AlreadyPaidAction onConfirm={markAlreadyPaid} busy={saving} />
+            )}
+
             {/* Rewrite detail fields — only when Rewritten is selected */}
             {form.status === "rewritten" && (
               <div style={{
@@ -1259,6 +1327,32 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
+  }
+
+  // Already paid before we reached them → auto_resolved (renewed, but observed
+  // not rep-driven, so it's exempt from the reached-attempt rule and earns no
+  // save credit). The customer paid the renewal offer in full, so we log that
+  // paid premium = the offer (premium difference $0) — tracked, not credited.
+  async function markAlreadyPaid() {
+    setSaving(true);
+    setSaveError(null);
+    const err = await onUpdate(event.id, {
+      status: "auto_resolved",
+      final_outcome: "renewed",
+      outcome_source: "observed",
+      final_outcome_set_by: currentEmployeeId,
+      final_outcome_set_at: new Date().toISOString(),
+      resolution_date: new Date().toISOString().slice(0, 10),
+      closed_by_id: currentEmployeeId,
+      saved_premium: event.premium ?? null,
+    });
+    if (err) {
+      setSaveError(`Couldn't clear the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    onClose();
   }
 
   async function save() {
@@ -1770,6 +1864,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 <option value="lost">Lost — Won't Renew</option>
               </select>
             </div>
+
+            {/* No-contact escape hatch: customer already paid the renewal before
+                we reached them. Only meaningful while the case is still open. */}
+            {!["confirmed","lost","auto_resolved","unreachable"].includes(event.status) && (
+              <AlreadyPaidAction onConfirm={markAlreadyPaid} busy={saving} />
+            )}
 
             {/* Renewal offer (read-only, from report) + premium paid (rep enters) */}
             {form.status === "confirmed" && (
