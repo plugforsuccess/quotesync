@@ -378,6 +378,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       }
     }
     const updates = { ...form };
+    // contact_method has a CHECK constraint (phone/text/email/other or NULL);
+    // an unset method comes through as "" from the form — coerce it to null so
+    // the write doesn't trip `pending_cancel_events_contact_method_check`.
+    updates.contact_method = form.contact_method || null;
     if (["contacted","promise_to_pay","payment_plan_requested"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
@@ -1268,6 +1272,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       }
     }
     const updates = { ...form };
+    // contact_method has a CHECK constraint (phone/text/email/other or NULL);
+    // an unset method comes through as "" from the form — coerce it to null so
+    // the write doesn't trip `renewal_events_contact_method_check`.
+    updates.contact_method = form.contact_method || null;
     if (["review_requested","confirmed","at_risk","shopping","escalated"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
