@@ -443,13 +443,17 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     disconnected:   "Disconnected",
   };
 
-  // Let a rep record the outcome on any still-open case — including a fresh
-  // 'pending' one they already know the result for (e.g. confirmed in Allstate
-  // the customer paid). Marking saved auto-logs the required attempt (see save()).
-  const CANCEL_TERMINAL = ["saved", "rewritten", "lost", "auto_resolved", "cancelled"];
+  // Case Management is gated behind a reached customer: the outcome picker only
+  // appears once the customer has actually been reached — either the rep is
+  // logging a "reached" attempt right now, or a reached attempt is already on
+  // the record (which stamps contacted_at). No reach yet → no outcome to record.
   const showOutcomePicker =
     attemptForm.result === "reached" ||
-    !CANCEL_TERMINAL.includes(event.status);
+    event.last_attempt_result === "reached" ||
+    !!event.contacted_at ||
+    // Keep an already-resolved case viewable/editable even if contacted_at was
+    // never stamped (e.g. marked saved directly off a reached call).
+    ["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(event.status);
 
   return (
     <div
@@ -842,6 +846,14 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   value={form.status}
                   onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
                 >
+                  {/* When the case hasn't been resolved to one of the outcomes
+                      below, form.status (e.g. "pending"/"attempting") matches no
+                      option — a native select would then silently DISPLAY the
+                      first option. Render a matching placeholder so it reads
+                      "Select an outcome" and stays in sync with state. */}
+                  {!["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(form.status) && (
+                    <option value={form.status}>— Select an outcome —</option>
+                  )}
                   <option value="contacted">Contacted — no action yet</option>
                   <option value="payment_plan_requested">Wants Payment Plan</option>
                   <option value="promise_to_pay">Promised to Pay</option>
@@ -850,6 +862,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   <option value="requested_cancellation">Wants to Cancel</option>
                   <option value="lost">Lost</option>
                 </select>
+              </div>
+            )}
+
+            {/* Gated: no outcome until the customer is actually reached. */}
+            {!showOutcomePicker && (
+              <div style={{
+                fontSize: 12, color: "var(--qs-muted)", background: "var(--qs-elevated)",
+                border: "1px dashed var(--qs-border)", borderRadius: 8, padding: "10px 12px",
+              }}>
+                Log a <strong>Reached</strong> attempt above to record a save outcome.
               </div>
             )}
 
@@ -1324,13 +1346,17 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     disconnected:   "Disconnected",
   };
 
-  // Let a rep record the outcome on any still-open renewal — including a fresh
-  // one they already know the result for. Confirming auto-logs the required
-  // attempt (see save()).
-  const RENEWAL_TERMINAL = ["confirmed", "lost", "auto_resolved", "unreachable"];
+  // Case Management is gated behind a reached customer: the outcome picker only
+  // appears once the customer has actually been reached — either the rep is
+  // logging a "reached" attempt right now, or a reached attempt is already on
+  // the record (which stamps contacted_at). No reach yet → no outcome to record.
   const showOutcomePicker =
     attemptForm.result === "reached" ||
-    !RENEWAL_TERMINAL.includes(event.status);
+    event.last_attempt_result === "reached" ||
+    !!event.contacted_at ||
+    // Keep an already-resolved renewal viewable/editable even if contacted_at
+    // was never stamped (e.g. confirmed directly off a reached call).
+    ["review_requested","shopping","at_risk","escalated","confirmed","lost"].includes(event.status);
 
   return (
     <div
@@ -1727,12 +1753,30 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   value={form.status}
                   onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
                 >
+                  {/* When the case hasn't been resolved to one of the outcomes
+                      below, form.status (e.g. "pending"/"attempting") matches no
+                      option — a native select would then silently DISPLAY the
+                      first option. Render a matching placeholder so it reads
+                      "Select an outcome" and stays in sync with state. */}
+                  {!["confirmed","review_requested","shopping","at_risk","lost"].includes(form.status) && (
+                    <option value={form.status}>— Select an outcome —</option>
+                  )}
                   <option value="confirmed">Confirmed Renewal ✓</option>
                   <option value="review_requested">Wants Policy Review</option>
                   <option value="shopping">Shopping Competitors</option>
                   <option value="at_risk">At Risk (payment/unhappy)</option>
                   <option value="lost">Lost — Won't Renew</option>
                 </select>
+              </div>
+            )}
+
+            {/* Gated: no outcome until the customer is actually reached. */}
+            {!showOutcomePicker && (
+              <div style={{
+                fontSize: 12, color: "var(--qs-muted)", background: "var(--qs-elevated)",
+                border: "1px dashed var(--qs-border)", borderRadius: 8, padding: "10px 12px",
+              }}>
+                Log a <strong>Reached</strong> attempt above to record a renewal outcome.
               </div>
             )}
 
