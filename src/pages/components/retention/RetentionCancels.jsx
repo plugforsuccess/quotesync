@@ -456,6 +456,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     // never stamped (e.g. marked saved directly off a reached call).
     ["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(event.status);
 
+  // Scopes the tactic chips to cancel-only tactics (paid past due, reinstated).
+  const caseContext = "cancel";
   // "What saved them" — auto-derived from the tactic captured on the call (the
   // "What did you do to save them?" chips), so the rep never re-enters it.
   const derivedSaveMethod = deriveSaveMethod(attempts) || event.save_method || null;
@@ -765,6 +767,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
             {attemptForm.result === 'reached' && (
               <InterventionPicker
+                context={caseContext}
                 value={attemptForm.intervention}
                 onChange={(iv) => setAttemptForm(p => ({ ...p, intervention: iv }))}
               />
@@ -1343,6 +1346,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     // was never stamped (e.g. confirmed directly off a reached call).
     ["review_requested","shopping","at_risk","escalated","confirmed","lost"].includes(event.status);
 
+  // Scopes the tactic chips — renewals never see the cancel-only tactics.
+  const caseContext = "renewal";
   // "What saved them" — auto-derived from the tactic captured on the call (the
   // "What did you do to save them?" chips), so the rep never re-enters it.
   const derivedSaveMethod = deriveSaveMethod(attempts) || event.save_method || null;
@@ -1656,6 +1661,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
             {attemptForm.result === 'reached' && (
               <InterventionPicker
+                context={caseContext}
                 value={attemptForm.intervention}
                 onChange={(iv) => setAttemptForm(p => ({ ...p, intervention: iv }))}
               />

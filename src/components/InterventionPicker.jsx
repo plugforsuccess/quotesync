@@ -17,8 +17,14 @@
 import { useInterventionTypes } from '../hooks/useInterventionTypes';
 import { EMPTY_INTERVENTION } from '../lib/interventions';
 
-export default function InterventionPicker({ value, onChange }) {
-  const { data: types = [] } = useInterventionTypes();
+// `context` ('cancel' | 'renewal') scopes the tactic chips: cancel-only tactics
+// (paid past due, reinstated) never show on a renewal call and vice-versa.
+// Types tagged `applies_to: 'all'` show everywhere.
+export default function InterventionPicker({ value, onChange, context }) {
+  const { data: allTypes = [] } = useInterventionTypes();
+  const types = allTypes.filter(
+    (t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context
+  );
   const v = value || EMPTY_INTERVENTION;
   const selected = v.interventions || [];
 
