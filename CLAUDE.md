@@ -137,6 +137,13 @@ points at the hosted project); there is no local Supabase stack checked in.
   `src/config/navConfig.js`. Most pages are lazy-loaded via `lazyWithRetry`
   (handles post-deploy chunk errors — don't remove the retry wrapper).
 - **Edge functions are Deno**, not Node — different runtime/imports than `src/`.
+- **Migrations that add/alter columns MUST end with `NOTIFY pgrst, 'reload schema';`.**
+  This project's PostgREST auto-reload-on-DDL is unreliable, so without it the API
+  layer keeps a stale schema cache and **silently rejects any insert/update that
+  references the new column** (PGRST204) — which has bitten saves and service-task
+  logging more than once. Always append the NOTIFY to such migrations; if a write
+  starts failing right after a schema change, run `NOTIFY pgrst, 'reload schema';`
+  to refresh the cache.
 - Match the surrounding file's style (plain JSX, Tailwind classes, existing
   hook/parser patterns). No TS, no new state libraries.
 
