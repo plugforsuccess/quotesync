@@ -235,6 +235,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   const [saveError, setSaveError] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
+  // Whether a reached attempt has been logged this session — unlocks Case
+  // Management (the outcome picker) once the rep has actually spoken to them.
+  const [reachedLogged, setReachedLogged] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
   const [form, setForm] = useState({
     status:              event.status,
@@ -342,6 +345,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
+      if (attemptForm.result === "reached") setReachedLogged(true);
       setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }
@@ -444,11 +448,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   };
 
   // Case Management is gated behind a reached customer: the outcome picker only
-  // appears once the customer has actually been reached — either the rep is
-  // logging a "reached" attempt right now, or a reached attempt is already on
-  // the record (which stamps contacted_at). No reach yet → no outcome to record.
+  // unlocks once a "reached" attempt has actually been LOGGED (Log Attempt
+  // clicked), a reached attempt is already on the record (contacted_at stamped),
+  // or the case already holds an outcome status. No reach → nothing to record.
   const showOutcomePicker =
-    attemptForm.result === "reached" ||
+    reachedLogged ||
     event.last_attempt_result === "reached" ||
     !!event.contacted_at ||
     // Keep an already-resolved case viewable/editable even if contacted_at was
@@ -837,43 +841,35 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-            {/* Outcome — only when customer has been reached */}
-            {showOutcomePicker && (
-              <div>
-                <label className="dark-label">Outcome (customer reached)</label>
-                <select
-                  className="dark-select"
-                  value={form.status}
-                  onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
-                >
-                  {/* When the case hasn't been resolved to one of the outcomes
-                      below, form.status (e.g. "pending"/"attempting") matches no
-                      option — a native select would then silently DISPLAY the
-                      first option. Render a matching placeholder so it reads
-                      "Select an outcome" and stays in sync with state. */}
-                  {!["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(form.status) && (
-                    <option value={form.status}>— Select an outcome —</option>
-                  )}
-                  <option value="contacted">Contacted — no action yet</option>
-                  <option value="payment_plan_requested">Wants Payment Plan</option>
-                  <option value="promise_to_pay">Promised to Pay</option>
-                  <option value="saved">Saved ✓ — paid, policy continues</option>
-                  <option value="rewritten">Rewritten ✓ — new policy at lower rate</option>
-                  <option value="requested_cancellation">Wants to Cancel</option>
-                  <option value="lost">Lost</option>
-                </select>
-              </div>
-            )}
-
-            {/* Gated: no outcome until the customer is actually reached. */}
-            {!showOutcomePicker && (
-              <div style={{
-                fontSize: 12, color: "var(--qs-muted)", background: "var(--qs-elevated)",
-                border: "1px dashed var(--qs-border)", borderRadius: 8, padding: "10px 12px",
-              }}>
-                Log a <strong>Reached</strong> attempt above to record a save outcome.
-              </div>
-            )}
+            {/* Outcome — visible but locked (greyed, not editable) until a
+                reached attempt is logged. */}
+            <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
+              title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
+              <label className="dark-label">Outcome (customer reached)</label>
+              <select
+                className="dark-select"
+                value={form.status}
+                disabled={!showOutcomePicker}
+                onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
+                style={{ cursor: showOutcomePicker ? undefined : "not-allowed" }}
+              >
+                {/* When the case hasn't been resolved to one of the outcomes
+                    below, form.status (e.g. "pending"/"attempting") matches no
+                    option — a native select would then silently DISPLAY the
+                    first option. Render a matching placeholder so it reads
+                    "Select an outcome" and stays in sync with state. */}
+                {!["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(form.status) && (
+                  <option value={form.status}>— Select an outcome —</option>
+                )}
+                <option value="contacted">Contacted — no action yet</option>
+                <option value="payment_plan_requested">Wants Payment Plan</option>
+                <option value="promise_to_pay">Promised to Pay</option>
+                <option value="saved">Saved ✓ — paid, policy continues</option>
+                <option value="rewritten">Rewritten ✓ — new policy at lower rate</option>
+                <option value="requested_cancellation">Wants to Cancel</option>
+                <option value="lost">Lost</option>
+              </select>
+            </div>
 
             {/* Rewrite detail fields — only when Rewritten is selected */}
             {form.status === "rewritten" && (
@@ -1152,6 +1148,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   const [saveError, setSaveError] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
+  // Whether a reached attempt has been logged this session — unlocks Case
+  // Management (the outcome picker) once the rep has actually spoken to them.
+  const [reachedLogged, setReachedLogged] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
   const [form, setForm] = useState({
     status: event.status,
@@ -1259,6 +1258,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
+      if (attemptForm.result === "reached") setReachedLogged(true);
       setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }
@@ -1347,11 +1347,11 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   };
 
   // Case Management is gated behind a reached customer: the outcome picker only
-  // appears once the customer has actually been reached — either the rep is
-  // logging a "reached" attempt right now, or a reached attempt is already on
-  // the record (which stamps contacted_at). No reach yet → no outcome to record.
+  // unlocks once a "reached" attempt has actually been LOGGED (Log Attempt
+  // clicked), a reached attempt is already on the record (contacted_at stamped),
+  // or the case already holds an outcome status. No reach → nothing to record.
   const showOutcomePicker =
-    attemptForm.result === "reached" ||
+    reachedLogged ||
     event.last_attempt_result === "reached" ||
     !!event.contacted_at ||
     // Keep an already-resolved renewal viewable/editable even if contacted_at
@@ -1744,41 +1744,33 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-            {/* Outcome — only when customer has been reached */}
-            {showOutcomePicker && (
-              <div>
-                <label className="dark-label">Outcome (customer reached)</label>
-                <select
-                  className="dark-select"
-                  value={form.status}
-                  onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
-                >
-                  {/* When the case hasn't been resolved to one of the outcomes
-                      below, form.status (e.g. "pending"/"attempting") matches no
-                      option — a native select would then silently DISPLAY the
-                      first option. Render a matching placeholder so it reads
-                      "Select an outcome" and stays in sync with state. */}
-                  {!["confirmed","review_requested","shopping","at_risk","lost"].includes(form.status) && (
-                    <option value={form.status}>— Select an outcome —</option>
-                  )}
-                  <option value="confirmed">Confirmed Renewal ✓</option>
-                  <option value="review_requested">Wants Policy Review</option>
-                  <option value="shopping">Shopping Competitors</option>
-                  <option value="at_risk">At Risk (payment/unhappy)</option>
-                  <option value="lost">Lost — Won't Renew</option>
-                </select>
-              </div>
-            )}
-
-            {/* Gated: no outcome until the customer is actually reached. */}
-            {!showOutcomePicker && (
-              <div style={{
-                fontSize: 12, color: "var(--qs-muted)", background: "var(--qs-elevated)",
-                border: "1px dashed var(--qs-border)", borderRadius: 8, padding: "10px 12px",
-              }}>
-                Log a <strong>Reached</strong> attempt above to record a renewal outcome.
-              </div>
-            )}
+            {/* Outcome — visible but locked (greyed, not editable) until a
+                reached attempt is logged. */}
+            <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
+              title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
+              <label className="dark-label">Outcome (customer reached)</label>
+              <select
+                className="dark-select"
+                value={form.status}
+                disabled={!showOutcomePicker}
+                onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
+                style={{ cursor: showOutcomePicker ? undefined : "not-allowed" }}
+              >
+                {/* When the case hasn't been resolved to one of the outcomes
+                    below, form.status (e.g. "pending"/"attempting") matches no
+                    option — a native select would then silently DISPLAY the
+                    first option. Render a matching placeholder so it reads
+                    "Select an outcome" and stays in sync with state. */}
+                {!["confirmed","review_requested","shopping","at_risk","lost"].includes(form.status) && (
+                  <option value={form.status}>— Select an outcome —</option>
+                )}
+                <option value="confirmed">Confirmed Renewal ✓</option>
+                <option value="review_requested">Wants Policy Review</option>
+                <option value="shopping">Shopping Competitors</option>
+                <option value="at_risk">At Risk (payment/unhappy)</option>
+                <option value="lost">Lost — Won't Renew</option>
+              </select>
+            </div>
 
             {/* Renewal offer (read-only, from report) + premium paid (rep enters) */}
             {form.status === "confirmed" && (
