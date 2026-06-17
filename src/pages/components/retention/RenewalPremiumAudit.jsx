@@ -41,7 +41,7 @@ export default function RenewalPremiumAudit({ agencyId }) {
     );
   }
 
-  const { rows, count, totalOffer, totalPaid, netDiff, avgDiff, below, above, atOffer } = data;
+  const { rows, count, totalOffer, totalPaid, netDiff, avgDiff, below, above, atOffer, autoPaid } = data;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -53,6 +53,10 @@ export default function RenewalPremiumAudit({ agencyId }) {
           sub={`avg ${signed(avgDiff)} / renewal`} />
         <Stat label="vs offer" value={`${below} below · ${atOffer} at · ${above} above`}
           sub="paid relative to the renewal offer" />
+        {autoPaid > 0 && (
+          <Stat label="Auto-paid at offer" value={autoPaid}
+            sub="paid in full before we reached them" />
+        )}
       </div>
 
       <div className="card">
@@ -64,10 +68,19 @@ export default function RenewalPremiumAudit({ agencyId }) {
           <tbody>
             {rows.map(r => (
               <tr key={r.id}>
-                <td style={{ fontWeight: 600 }}>{titleCaseName(r.customer_name) || '—'}</td>
+                <td style={{ fontWeight: 600 }}>
+                  {titleCaseName(r.customer_name) || '—'}
+                  {r.autoResolved && (
+                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, padding: '1px 6px',
+                      borderRadius: 6, background: 'var(--qs-elevated)', color: 'var(--qs-muted)',
+                      border: '1px solid var(--qs-border)', verticalAlign: 'middle' }} title="Customer paid the offer in full before we reached them — no rep save credit">
+                      auto-paid
+                    </span>
+                  )}
+                </td>
                 <td style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-muted)' }}>{r.policy_no || '—'}</td>
                 <td>{fmtDate(r.resolution_date)}</td>
-                <td style={{ color: 'var(--qs-dim)' }}>{r.rep || '—'}</td>
+                <td style={{ color: 'var(--qs-dim)' }}>{r.autoResolved ? 'Auto' : (r.rep || '—')}</td>
                 <td>{fmt$(r.offer)}</td>
                 <td>{fmt$(r.paid)}</td>
                 <td style={{ fontWeight: 700, color: diffColor(r.diff) }}>
