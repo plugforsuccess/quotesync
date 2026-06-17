@@ -4,10 +4,31 @@
 
 import { useState, useEffect, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '../../../lib/supabase';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
 import { useRepActivity } from '../../../hooks/useRepActivity';
 import { useDailyTeamActivity } from '../../../hooks/useDailyTeamActivity';
 import { titleCaseName } from '../../../lib/names';
+
+// Live: when a rep logs a call, saves a case, or completes a task, refresh the
+// activity views within seconds — a live action feed, not a manual refresh.
+function useLiveActivity(agencyId) {
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!agencyId) return;
+    const refresh = () => {
+      qc.invalidateQueries({ queryKey: ['rep_activity'] });
+      qc.invalidateQueries({ queryKey: ['daily_team_activity'] });
+    };
+    const ch = supabase.channel(`live-activity-${agencyId}`);
+    for (const table of ['pending_cancel_attempts', 'renewal_attempts', 'pending_cases', 'renewal_cases', 'service_tasks']) {
+      ch.on('postgres_changes', { event: '*', schema: 'public', table, filter: `agency_id=eq.${agencyId}` }, refresh);
+    }
+    ch.subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [agencyId, qc]);
+}
 
 function fmt$(n) {
   if (!n) return '$0';
@@ -191,6 +212,7 @@ function DailyTeam({ agencyId, employees }) {
 export default function RepActivityPanel({ agencyId }) {
   const { data: employees = [] } = useActiveEmployees(agencyId);
   const [mode, setMode] = useState('daily'); // 'daily' (team) | 'rep'
+  useLiveActivity(agencyId);
 
   const tab = (active) => ({
     padding: '7px 14px', borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
@@ -203,6 +225,13 @@ export default function RepActivityPanel({ agencyId }) {
     <div className="card">
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
         <h3 style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)', margin: 0 }}>Activity</h3>
+        <span title="Updates live as reps work" style={{ display: 'inline-flex', alignItems: 'center', gap: 5,
+          fontSize: 11, fontWeight: 700, color: '#34D399' }}>
+          <span style={{ width: 7, height: 7, borderRadius: 4, background: '#34D399',
+            boxShadow: '0 0 0 0 rgba(52,211,153,0.6)', animation: 'pulse 2s infinite' }} />
+          LIVE
+        </span>
+        <style>{`@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,0.5)}70%{box-shadow:0 0 0 6px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}`}</style>
         <div style={{ display: 'flex', gap: 6, marginLeft: 6 }}>
           <button style={tab(mode === 'daily')} onClick={() => setMode('daily')}>Daily — team</button>
           <button style={tab(mode === 'rep')} onClick={() => setMode('rep')}>By rep</button>
