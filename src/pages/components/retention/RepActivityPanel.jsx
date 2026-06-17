@@ -9,6 +9,7 @@ import { supabase } from '../../../lib/supabase';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
 import { useRepActivity } from '../../../hooks/useRepActivity';
 import { useDailyTeamActivity } from '../../../hooks/useDailyTeamActivity';
+import { useQueueCoverage } from '../../../hooks/useQueueCoverage';
 import { titleCaseName } from '../../../lib/names';
 
 // Live: when a rep logs a call, saves a case, or completes a task, refresh the
@@ -209,9 +210,65 @@ function DailyTeam({ agencyId, employees }) {
   );
 }
 
+// ── Queue: each rep's assigned queue + how well they're burning it down today ─
+function Bar({ pct, color }) {
+  return (
+    <div style={{ height: 6, borderRadius: 3, background: 'var(--qs-elevated)', overflow: 'hidden', minWidth: 60 }}>
+      <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', background: color, borderRadius: 3 }} />
+    </div>
+  );
+}
+function QueueCoverage({ agencyId }) {
+  const { data: rows = [], isLoading } = useQueueCoverage(agencyId);
+  if (isLoading) return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>;
+  if (rows.length === 0) return <div style={{ color: 'var(--qs-muted)', fontSize: 13 }}>No cases assigned to any rep right now.</div>;
+  return (
+    <>
+      <table>
+        <thead><tr>
+          <th>Rep</th><th>Queue</th><th>Untouched</th><th>Worked today</th><th>Calls vs target</th><th>Queue coverage</th>
+        </tr></thead>
+        <tbody>
+          {rows.map(r => {
+            const cover = r.queue ? Math.round((r.touchedToday / r.queue) * 100) : 0;
+            const targetPct = r.target ? Math.round((r.callsToday / r.target) * 100) : 0;
+            const hit = r.callsToday >= r.target;
+            return (
+              <tr key={r.empId}>
+                <td style={{ fontWeight: 600 }}>{r.name}</td>
+                <td style={{ fontWeight: 700 }}>{r.queue}</td>
+                <td style={{ color: r.untouched ? '#FBBF24' : 'var(--qs-muted)', fontWeight: r.untouched ? 700 : 400 }}>
+                  {r.untouched || '—'}{r.overdue ? ` · ${r.overdue} overdue` : ''}
+                </td>
+                <td style={{ color: r.touchedToday ? '#10B981' : 'var(--qs-muted)', fontWeight: 700 }}>{r.touchedToday || '—'}</td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ minWidth: 44, color: hit ? '#10B981' : 'var(--qs-text)', fontWeight: 600 }}>{r.callsToday}/{r.target}</span>
+                    <Bar pct={targetPct} color={hit ? '#10B981' : targetPct >= 50 ? '#3B82F6' : '#F59E0B'} />
+                  </div>
+                </td>
+                <td>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ minWidth: 36, color: 'var(--qs-dim)' }}>{cover}%</span>
+                    <Bar pct={cover} color={cover >= 80 ? '#10B981' : cover >= 40 ? '#3B82F6' : '#F59E0B'} />
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
+        Queue = active cases assigned to the rep (not snoozed). Untouched = never called; “overdue” = past their deadline
+        and never called. Worked today / coverage = distinct cases they've touched today. Calls vs target uses each rep's daily call target.
+      </p>
+    </>
+  );
+}
+
 export default function RepActivityPanel({ agencyId }) {
   const { data: employees = [] } = useActiveEmployees(agencyId);
-  const [mode, setMode] = useState('daily'); // 'daily' (team) | 'rep'
+  const [mode, setMode] = useState('queue'); // 'queue' | 'daily' (team) | 'rep'
   useLiveActivity(agencyId);
 
   const tab = (active) => ({
@@ -233,12 +290,13 @@ export default function RepActivityPanel({ agencyId }) {
         </span>
         <style>{`@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(52,211,153,0.5)}70%{box-shadow:0 0 0 6px rgba(52,211,153,0)}100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}`}</style>
         <div style={{ display: 'flex', gap: 6, marginLeft: 6 }}>
+          <button style={tab(mode === 'queue')} onClick={() => setMode('queue')}>Queue — today</button>
           <button style={tab(mode === 'daily')} onClick={() => setMode('daily')}>Daily — team</button>
           <button style={tab(mode === 'rep')} onClick={() => setMode('rep')}>By rep</button>
         </div>
       </div>
-      {mode === 'daily'
-        ? <DailyTeam agencyId={agencyId} employees={employees} />
+      {mode === 'queue' ? <QueueCoverage agencyId={agencyId} />
+        : mode === 'daily' ? <DailyTeam agencyId={agencyId} employees={employees} />
         : <RepTimeline agencyId={agencyId} employees={employees} />}
     </div>
   );
