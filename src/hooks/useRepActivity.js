@@ -29,17 +29,17 @@ export function useRepActivity(agencyId, employeeId, days = 14) {
         { data: tasksDone },
       ] = await Promise.all([
         supabase.from('pending_cancel_attempts')
-          .select('attempted_at, result, auto_logged')
+          .select('attempted_at, result, auto_logged, pending_case_id, pending_cases(customer_name)')
           .eq('agency_id', agencyId).eq('employee_id', employeeId).gte('attempted_at', startIso),
         supabase.from('renewal_attempts')
-          .select('attempted_at, result, auto_logged')
+          .select('attempted_at, result, auto_logged, renewal_case_id, renewal_cases(customer_name)')
           .eq('agency_id', agencyId).eq('employee_id', employeeId).gte('attempted_at', startIso),
         supabase.from('pending_cases')
-          .select('customer_name, resolution_date, premium_at_risk, saved_premium, save_reversed_at')
+          .select('id, customer_name, resolution_date, premium_at_risk, saved_premium, save_reversed_at')
           .eq('agency_id', agencyId).eq('closed_by_id', employeeId).eq('status', 'saved')
           .gte('resolution_date', startDate),
         supabase.from('renewal_cases')
-          .select('customer_name, resolution_date, premium, saved_premium')
+          .select('id, customer_name, resolution_date, premium, saved_premium')
           .eq('agency_id', agencyId).eq('closed_by_id', employeeId).eq('status', 'confirmed')
           .gte('resolution_date', startDate),
         supabase.from('service_tasks')
@@ -55,30 +55,50 @@ export function useRepActivity(agencyId, employeeId, days = 14) {
         dayMap[d.toLocaleDateString('en-CA')] = {
           date: d.toLocaleDateString('en-CA'),
           attempts: 0, reached: 0, cancelSaves: 0, renewalSaves: 0, premium: 0, tasksDone: 0,
-          saves: [],
+          worked: {}, // keyed by `${kind}:${caseId}` → { name, kind, result, saved, premium }
         };
       }
       const bump = (k, fn) => { const d = dayMap[k]; if (d) fn(d); };
+      // Record (or update) a case the rep touched that day.
+      const touch = (d, kind, caseId, name, result) => {
+        const key = `${kind}:${caseId}`;
+        const w = (d.worked[key] ||= { name, kind, result: null, saved: false, premium: 0 });
+        if (name && !w.name) w.name = name;
+        if (result === 'reached') w.result = 'reached';
+        else if (!w.result) w.result = result;
+        return w;
+      };
 
-      for (const a of [...(cancelAtt || []), ...(renewalAtt || [])]) {
-        if (a.auto_logged) continue; // synthetic outcome record, not real activity
-        bump(dayKey(a.attempted_at), d => { d.attempts++; if (a.result === 'reached') d.reached++; });
+      for (const a of cancelAtt || []) {
+        if (a.auto_logged) continue;
+        bump(dayKey(a.attempted_at), d => { d.attempts++; if (a.result === 'reached') d.reached++;
+          touch(d, 'cancel', a.pending_case_id, a.pending_cases?.customer_name, a.result); });
+      }
+      for (const a of renewalAtt || []) {
+        if (a.auto_logged) continue;
+        bump(dayKey(a.attempted_at), d => { d.attempts++; if (a.result === 'reached') d.reached++;
+          touch(d, 'renewal', a.renewal_case_id, a.renewal_cases?.customer_name, a.result); });
       }
       for (const s of cancelSaves || []) {
         if (s.save_reversed_at) continue; // reversed by Allstate — not a save
         const prem = Number(s.saved_premium ?? s.premium_at_risk ?? 0) || 0;
         bump(dayKey(s.resolution_date), d => { d.cancelSaves++; d.premium += prem;
-          d.saves.push({ kind: 'cancel', name: s.customer_name, premium: prem }); });
+          const w = touch(d, 'cancel', s.id, s.customer_name, 'saved'); w.saved = true; w.premium = prem; });
       }
       for (const s of renewalSaves || []) {
         const prem = Number(s.saved_premium ?? s.premium ?? 0) || 0;
         bump(dayKey(s.resolution_date), d => { d.renewalSaves++; d.premium += prem;
-          d.saves.push({ kind: 'renewal', name: s.customer_name, premium: prem }); });
+          const w = touch(d, 'renewal', s.id, s.customer_name, 'saved'); w.saved = true; w.premium = prem; });
       }
       for (const t of tasksDone || []) {
         bump(dayKey(t.completed_at), d => { d.tasksDone++; });
       }
 
+      // Flatten worked map → list (saved first), and stamp the worked count.
+      for (const d of Object.values(dayMap)) {
+        d.worked = Object.values(d.worked).sort((a, b) => (b.saved - a.saved));
+        d.workedCount = d.worked.length;
+      }
       const series = Object.values(dayMap).sort((a, b) => b.date.localeCompare(a.date));
       const totals = series.reduce((acc, d) => ({
         attempts: acc.attempts + d.attempts, reached: acc.reached + d.reached,
