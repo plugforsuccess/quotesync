@@ -176,6 +176,12 @@ export default function LogServiceTaskButton({
           }}>
             {create.isPending ? 'Saving…' : onCall ? 'Mark handled on call' : 'Queue for batch'}
           </button>
+          {create.isError && (
+            <div style={{ marginTop: 8, fontSize: 12, color: '#F87171', background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 10px' }}>
+              Couldn't save: {create.error?.message || 'please try again'}
+            </div>
+          )}
         </>
       )}
     </div>

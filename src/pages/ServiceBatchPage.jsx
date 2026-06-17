@@ -206,6 +206,7 @@ export default function ServiceBatchPage() {
         <AddTaskForm
           agencyId={agencyId}
           busy={createTask.isPending}
+          error={createTask.isError ? (createTask.error?.message || 'Could not save the task') : null}
           onSubmit={(t) => createTask.mutate({ agencyId, ...t }, { onSuccess: () => setShowAdd(false) })}
         />
       )}
@@ -686,7 +687,7 @@ function CompletionPace({ agencyId, days = 14 }) {
   );
 }
 
-function AddTaskForm({ agencyId, busy, onSubmit }) {
+function AddTaskForm({ agencyId, busy, error, onSubmit }) {
   const [taskType, setTaskType] = useState('mortgagee');
   const [product, setProduct] = useState('');
   const [title, setTitle] = useState('');
@@ -873,6 +874,12 @@ function AddTaskForm({ agencyId, busy, onSubmit }) {
           borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, fontFamily: 'inherit',
         }}>{busy ? 'Saving…' : 'Add to batch'}</button>
       </div>
+      {error && (
+        <div style={{ marginTop: 10, fontSize: 12, color: '#F87171', background: 'rgba(239,68,68,0.08)',
+          border: '1px solid rgba(239,68,68,0.3)', borderRadius: 8, padding: '8px 10px' }}>
+          Couldn't save: {error}
+        </div>
+      )}
     </div>
   );
 }
