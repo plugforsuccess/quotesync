@@ -19,12 +19,14 @@ import { EMPTY_INTERVENTION } from '../lib/interventions';
 
 // `context` ('cancel' | 'renewal') scopes the tactic chips: cancel-only tactics
 // (paid past due, reinstated) never show on a renewal call and vice-versa.
-// Types tagged `applies_to: 'all'` show everywhere.
-export default function InterventionPicker({ value, onChange, context }) {
+// Types tagged `applies_to: 'all'` show everywhere. `filter` is an optional
+// predicate for finer caller-specific rules (e.g. only offer "Reinstated" once
+// the policy has actually cancelled).
+export default function InterventionPicker({ value, onChange, context, filter }) {
   const { data: allTypes = [] } = useInterventionTypes();
-  const types = allTypes.filter(
-    (t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context
-  );
+  const types = allTypes
+    .filter((t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context)
+    .filter((t) => !filter || filter(t));
   const v = value || EMPTY_INTERVENTION;
   const selected = v.interventions || [];
 
