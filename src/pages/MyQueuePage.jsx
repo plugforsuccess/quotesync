@@ -90,6 +90,22 @@ const RESULT_LABELS = {
   disconnected:   'Disconnected',
 };
 
+// Collapse a household's policies into one queue entry (call once, work both
+// lines). Preserves the incoming queue order — the household sits where its
+// first/soonest policy ranks; single-policy customers pass through unchanged.
+function groupRenewalsByHousehold(cases) {
+  const groups = [];
+  const byKey = {};
+  for (const ev of cases) {
+    const key = (ev.customer_name || '').trim().toLowerCase();
+    if (key && byKey[key]) { byKey[key].cases.push(ev); continue; }
+    const g = { key: key || ev.id, cases: [ev] };
+    if (key) byKey[key] = g;
+    groups.push(g);
+  }
+  return groups;
+}
+
 const PRIORITY_BUCKETS = [
   {
     key: 'P0',
@@ -424,6 +440,7 @@ export default function MyQueuePage() {
     return [...touched, ...untouched].slice(0, dailyTarget);
   }, [filteredRenewalCases, dailyTarget, todayStr, churnModel, effectiveSaveLift]);
   const displayRenewalCases = (focusMode && renewalFilter !== 'callbacks') ? focusRenewalCases : filteredRenewalCases;
+  const groupedRenewals = groupRenewalsByHousehold(displayRenewalCases);
 
   // Master-detail selection for the renewal dialer (mirrors the cancel tab).
   const selectedRenewalCase =
@@ -685,6 +702,62 @@ export default function MyQueuePage() {
           {sub}
         </div>
       </button>
+    );
+  }
+
+  // Multi-policy household — one card, a row per policy. Call the customer once
+  // and work each line; clicking a policy row opens that case like any other.
+  function HouseholdRenewalGroup({ cases, selectedId, onSelect }) {
+    const name = titleCaseName(cases[0].customer_name);
+    return (
+      <div style={{ border: '1px solid var(--qs-border)', borderRadius: 8,
+        marginBottom: 4, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          gap: 8, padding: '6px 10px', background: 'var(--qs-elevated)' }}>
+          <span style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--qs-bright)',
+            whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {name}
+          </span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--qs-dim)',
+            background: 'var(--qs-card)', padding: '1px 7px', borderRadius: 10, flexShrink: 0 }}>
+            {cases.length} policies · 1 call
+          </span>
+        </div>
+        {cases.map(ev => {
+          const date = new Date(ev.renewal_date);
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const d = Math.ceil((date - today) / 86400000);
+          const statusText = isNaN(d) ? '—' : d === 0 ? 'Today' : d < 0 ? 'Overdue' : `${d}d`;
+          const statusColor = d <= 7 ? '#F87171' : d <= 14 ? '#FBBF24' : d >= 21 ? '#34D399' : 'var(--qs-dim)';
+          const changePct = parseFloat(ev.premium_change_pct) || 0;
+          const active = selectedId === ev.id;
+          return (
+            <button
+              key={ev.id}
+              type="button"
+              data-renewal-row={ev.id}
+              onClick={() => onSelect(ev.id)}
+              className="qs-focusable"
+              aria-current={active ? 'true' : undefined}
+              style={{
+                display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'center',
+                gap: 8, textAlign: 'left', cursor: 'pointer', border: 'none',
+                background: active ? 'rgba(59,130,246,0.14)' : 'transparent',
+                borderLeft: `3px solid ${active ? '#3B82F6' : changePct >= 15 ? '#F87171' : 'transparent'}`,
+                padding: '0.45rem 0.75rem',
+              }}>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--qs-dim)',
+                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {productLabel(ev.product)}{ev.premium != null ? ` · ${fmt$(ev.premium)}` : ''}
+                {changePct >= 15 ? ` · ⚠ +${changePct.toFixed(0)}%` : ''}
+              </span>
+              <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: statusColor, flexShrink: 0 }}>
+                {statusText}
+              </span>
+            </button>
+          );
+        })}
+      </div>
     );
   }
 
@@ -1777,12 +1850,19 @@ export default function MyQueuePage() {
                 }}>
                   {focusMode ? 'Focus — highest saveable first' : 'Full queue — soonest first'}
                 </div>
-                {displayRenewalCases.map(event => (
+                {groupedRenewals.map(g => g.cases.length === 1 ? (
                   <RenewalRow
-                    key={event.id}
-                    event={event}
-                    active={selectedRenewalCase?.id === event.id}
-                    onSelect={() => setSelectedRenewalCaseId(event.id)}
+                    key={g.cases[0].id}
+                    event={g.cases[0]}
+                    active={selectedRenewalCase?.id === g.cases[0].id}
+                    onSelect={() => setSelectedRenewalCaseId(g.cases[0].id)}
+                  />
+                ) : (
+                  <HouseholdRenewalGroup
+                    key={g.key}
+                    cases={g.cases}
+                    selectedId={selectedRenewalCase?.id}
+                    onSelect={setSelectedRenewalCaseId}
                   />
                 ))}
 
