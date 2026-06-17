@@ -75,15 +75,12 @@ const INTERVENTION_PRIORITY = [
   'explained_increase', 'escalated', 'other',
 ];
 
-// Given attempt rows (newest-first) each with an `interventions` code array,
-// derive the single case-level save_method from the most recent attempt that
-// recorded any tactic. Returns null when no tactic was ever captured.
-export function deriveSaveMethod(attempts) {
-  for (const a of attempts || []) {
-    const codes = Array.isArray(a?.interventions) ? a.interventions : [];
-    if (codes.length === 0) continue;
-    const primary = INTERVENTION_PRIORITY.find(c => codes.includes(c)) || codes[0];
-    return INTERVENTION_TO_SAVE_METHOD[primary] || 'other';
-  }
-  return null;
+// Given the intervention codes captured on the save (the "What did you do to
+// save them?" chips), return the single "headline" case-level save_method.
+// Null when no tactic was recorded.
+export function saveMethodFromCodes(codes) {
+  const arr = Array.isArray(codes) ? codes.filter(Boolean) : [];
+  if (arr.length === 0) return null;
+  const primary = INTERVENTION_PRIORITY.find(c => arr.includes(c)) || arr[0];
+  return INTERVENTION_TO_SAVE_METHOD[primary] || 'other';
 }
