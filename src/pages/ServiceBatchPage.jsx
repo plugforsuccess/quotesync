@@ -261,7 +261,7 @@ export default function ServiceBatchPage() {
           background: '#EF444411', border: '1px solid #EF444433', borderRadius: 10,
           padding: '10px 14px', marginBottom: 14, fontSize: 13, color: '#FCA5A5', fontWeight: 600,
         }}>
-          ⚠ {overdue} {overdue === 1 ? 'task is' : 'tasks are'} past the 24h SLA — work these first.
+          ⏰ {overdue} {overdue === 1 ? 'task has' : 'tasks have'} been waiting more than a day — let's clear {overdue === 1 ? 'it' : 'them'} first.
         </div>
       )}
 
@@ -525,11 +525,12 @@ function ExpectedCallbacks({ agencyId }) {
       marginTop: 16, border: '1px solid #F59E0B33', borderRadius: 10,
       background: '#F59E0B0D', padding: 14,
     }}>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#FBBF24', marginBottom: 10 }}>
-        📞 Expected callbacks · {callbacks.length}
-        <span style={{ fontWeight: 400, color: 'var(--qs-muted)', marginLeft: 6 }}>
-          customers a rep is waiting to hear back from
-        </span>
+      <div style={{ fontSize: 13, fontWeight: 700, color: '#FBBF24', marginBottom: 4 }}>
+        📞 If one of these customers calls in · {callbacks.length}
+      </div>
+      <div style={{ fontSize: 12, fontWeight: 400, color: 'var(--qs-muted)', marginBottom: 10 }}>
+        A rep left them a voicemail. <strong>Only when they call back</strong>, hand the live call to that
+        rep with the button. (Reps see their own scheduled callbacks on their Today page — no routing needed.)
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
         {callbacks.map(cb => (
@@ -555,7 +556,7 @@ function ExpectedCallbacks({ agencyId }) {
               disabled={logCallback.isPending}
               style={btnStyle('#3B82F6', '#fff')}
             >
-              {cb.rep_name ? `Route to ${cb.rep_name.split(' ')[0]}` : 'Log callback'}
+              {cb.rep_name ? `📞 On the line → ${cb.rep_name.split(' ')[0]}` : '📞 They called — log it'}
             </button>
           </div>
         ))}
