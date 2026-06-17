@@ -687,6 +687,22 @@ function CompletionPace({ agencyId, days = 14 }) {
   );
 }
 
+// Group per-policy autocomplete rows under one customer, so a multi-line
+// customer (e.g. auto + home) shows as a single result with a row per policy
+// instead of the same name repeated. Suggestions arrive ordered by name.
+function groupSuggestionsByCustomer(list) {
+  const groups = [];
+  const byName = {};
+  for (const s of list) {
+    const key = (s.customer_name || '').trim().toLowerCase();
+    if (byName[key]) { byName[key].policies.push(s); continue; }
+    const g = { name: s.customer_name, policies: [s] };
+    byName[key] = g;
+    groups.push(g);
+  }
+  return groups;
+}
+
 function AddTaskForm({ agencyId, busy, error, onSubmit }) {
   const [taskType, setTaskType] = useState('mortgagee');
   const [product, setProduct] = useState('');
@@ -779,19 +795,44 @@ function AddTaskForm({ agencyId, busy, error, onSubmit }) {
           <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 30, marginTop: 4,
             background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8,
             maxHeight: 240, overflowY: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.35)' }}>
-            {suggestions.map((s, i) => (
-              <button type="button" key={`${s.policy_no}-${i}`}
-                onMouseDown={e => { e.preventDefault(); selectSuggestion(s); }}
+            {groupSuggestionsByCustomer(suggestions).map((grp, gi) => grp.policies.length === 1 ? (
+              <button type="button" key={`${grp.policies[0].policy_no}-${gi}`}
+                onMouseDown={e => { e.preventDefault(); selectSuggestion(grp.policies[0]); }}
                 style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 8, textAlign: 'left',
                   padding: '8px 10px', background: 'transparent', border: 'none',
                   borderBottom: '1px solid var(--qs-elevated)', color: 'var(--qs-text)',
                   cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>
-                <span style={{ fontWeight: 600 }}>{titleCaseName(s.customer_name)}</span>
+                <span style={{ fontWeight: 600 }}>{titleCaseName(grp.name)}</span>
                 <span style={{ marginLeft: 'auto', fontFamily: "'DM Mono', monospace",
                   color: 'var(--qs-muted)', fontSize: 12 }}>
-                  {s.policy_no}{s.product ? ` · ${productShort(s.product)}` : ''}
+                  {grp.policies[0].policy_no}{grp.policies[0].product ? ` · ${productShort(grp.policies[0].product)}` : ''}
                 </span>
               </button>
+            ) : (
+              <div key={`${grp.name}-${gi}`} style={{ borderBottom: '1px solid var(--qs-elevated)' }}>
+                <div style={{ padding: '7px 10px 3px', fontSize: 13, fontWeight: 700, color: 'var(--qs-text)' }}>
+                  {titleCaseName(grp.name)}
+                  <span style={{ marginLeft: 6, fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)' }}>
+                    · {grp.policies.length} policies
+                  </span>
+                </div>
+                {grp.policies.map((s, i) => (
+                  <button type="button" key={`${s.policy_no}-${i}`}
+                    onMouseDown={e => { e.preventDefault(); selectSuggestion(s); }}
+                    style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 8, textAlign: 'left',
+                      padding: '6px 10px 6px 20px', background: 'transparent', border: 'none',
+                      color: 'var(--qs-text)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13 }}>
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-muted)', fontSize: 12 }}>
+                      {s.policy_no}
+                    </span>
+                    {s.product && (
+                      <span style={{ marginLeft: 'auto', fontSize: 11, fontWeight: 700, color: 'var(--qs-dim)' }}>
+                        {productShort(s.product)}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
             ))}
           </div>
         )}
