@@ -15,7 +15,7 @@ import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript 
 import CaseNotesFeed from './CaseNotesFeed';
 import LogServiceTaskButton from './LogServiceTaskButton';
 import { EscalateCaseBox, LinkedServiceTasks, ReferToSalesBox } from './CaseHandoffExtras';
-import { SAVE_METHOD_LABEL, deriveSaveMethod } from '../../../lib/saveMethods';
+import { SAVE_METHOD_LABEL, saveMethodFromCodes } from '../../../lib/saveMethods';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -239,6 +239,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // Management (the outcome picker) once the rep has actually spoken to them.
   const [reachedLogged, setReachedLogged] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  // The save tactic ("What did you do to save them?") — captured in Case
+  // Management when recording the save, not on every call attempt.
+  const [saveIntervention, setSaveIntervention] = useState(EMPTY_INTERVENTION);
   const [form, setForm] = useState({
     status:              event.status,
     assigned_to_id:      event.assigned_to_id || "",
@@ -319,7 +322,6 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       method:          attemptForm.method,
       result:          attemptForm.result,
       note:            attemptForm.note || null,
-      ...interventionInsertFields(attemptForm.intervention),
     });
     if (!error) {
       await supabase.from("pending_cases").update({
@@ -354,21 +356,25 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   async function save() {
     setSaving(true);
     setSaveError(null);
-    // Save outcomes require a recorded attempt (DB guard `enforce_cancel_save_has_attempt`)
-    // so every save captures HOW it happened. If the rep marks saved/rewritten on a
-    // case with no logged attempt yet, record one now from the chosen tactic — so
-    // "mark saved" is a single action and never trips the guard with a raw error.
+    // Persist the save tactic + satisfy the save-has-attempt guard
+    // (`enforce_cancel_save_has_attempt`). Attempts are insert-only under RLS, so
+    // the Case-Management tactic is recorded by logging an auto-attempt that
+    // carries it (excluded from outreach metrics via auto_logged). We insert when
+    // the rep picked a tactic that isn't already on record, or — with no tactic —
+    // only if the case has no attempt yet (so the guard doesn't trip).
     if (["saved", "rewritten"].includes(form.status)) {
-      const { count } = await supabase
-        .from("pending_cancel_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("pending_case_id", event.id);
-      if (!count) {
+      const codes = (saveIntervention.interventions || []).filter(Boolean);
+      const key = codes.slice().sort().join("|");
+      const tacticOnRecord = codes.length > 0 && attempts.some(
+        a => (a.interventions || []).slice().sort().join("|") === key
+      );
+      if ((codes.length > 0 && !tacticOnRecord) || attempts.length === 0) {
         const { error: attErr } = await supabase.from("pending_cancel_attempts").insert({
           pending_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
           method: "phone", result: "reached",
-          note: "Outcome recorded from the work surface",
+          note: codes.length ? "Save tactic recorded" : "Outcome recorded from the work surface",
           auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
+          ...interventionInsertFields(saveIntervention),
         });
         if (attErr) {
           setSaveError(`Couldn't record the call: ${attErr.message}`);
@@ -399,9 +405,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
       updates.saved_premium = Number.isNaN(sp) ? null : sp;
     }
-    // Save method (what saved them) is auto-derived from the tactic captured on
-    // the call attempt — only meaningful on a save; cleared on any non-save
-    // outcome so a stale tactic doesn't linger.
+    // Save method (what saved them) — the headline of the Case-Management tactic;
+    // only meaningful on a save, cleared on any non-save outcome so a stale
+    // tactic doesn't linger.
     updates.save_method = ["saved","rewritten"].includes(form.status)
       ? derivedSaveMethod : null;
     // Strip rewrite fields if not a rewrite outcome
@@ -461,9 +467,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // Reinstatement (paying after the policy cancels) only makes sense once it
   // has actually cancelled — hide that chip until then.
   const tacticFilter = (t) => t.code !== "reinstatement" || event.stage === "cancelled";
-  // "What saved them" — auto-derived from the tactic captured on the call (the
-  // "What did you do to save them?" chips), so the rep never re-enters it.
-  const derivedSaveMethod = deriveSaveMethod(attempts) || event.save_method || null;
+  // "What saved them" lives in Case Management (not the call log): the tactic is
+  // captured here when recording the save, and the headline becomes save_method.
+  const derivedSaveMethod = saveMethodFromCodes(saveIntervention.interventions) || event.save_method || null;
 
   return (
     <div
@@ -768,15 +774,6 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               style={{ marginBottom: 10 }}
             />
 
-            {attemptForm.result === 'reached' && (
-              <InterventionPicker
-                context={caseContext}
-                filter={tacticFilter}
-                value={attemptForm.intervention}
-                onChange={(iv) => setAttemptForm(p => ({ ...p, intervention: iv }))}
-              />
-            )}
-
             <button
               onClick={logAttempt}
               disabled={loggingAttempt || !currentEmployeeId}
@@ -976,19 +973,22 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
-            {/* What saved them — auto-derived from the tactic logged on the call
-                ("What did you do to save them?"), shown read-only so it's never
-                entered twice. */}
+            {/* What saved them — captured here in Case Management when recording
+                the save (not on every call attempt). */}
             {["saved","rewritten"].includes(form.status) && (
               <div>
-                <label className="dark-label">What saved them?</label>
-                <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
-                  border: "1px solid var(--qs-border)", fontSize: 13,
-                  color: derivedSaveMethod ? "var(--qs-text)" : "var(--qs-muted)" }}>
-                  {derivedSaveMethod
-                    ? (SAVE_METHOD_LABEL[derivedSaveMethod] || derivedSaveMethod)
-                    : "Add it on the call attempt above — “What did you do to save them?”"}
-                </div>
+                {event.save_method && (
+                  <div style={{ fontSize: 11, color: "var(--qs-muted)", marginBottom: 6 }}>
+                    Currently recorded: <strong style={{ color: "var(--qs-dim)" }}>
+                      {SAVE_METHOD_LABEL[event.save_method] || event.save_method}</strong>
+                  </div>
+                )}
+                <InterventionPicker
+                  context={caseContext}
+                  filter={tacticFilter}
+                  value={saveIntervention}
+                  onChange={setSaveIntervention}
+                />
               </div>
             )}
 
@@ -1147,6 +1147,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // Management (the outcome picker) once the rep has actually spoken to them.
   const [reachedLogged, setReachedLogged] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  // The save tactic ("What did you do to save them?") — captured in Case
+  // Management when recording the save, not on every call attempt.
+  const [saveIntervention, setSaveIntervention] = useState(EMPTY_INTERVENTION);
   const [form, setForm] = useState({
     status: event.status,
     assigned_to_id: event.assigned_to_id || "",
@@ -1218,7 +1221,6 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       method: attemptForm.method,
       result: attemptForm.result,
       note: attemptForm.note || null,
-      ...interventionInsertFields(attemptForm.intervention),
     });
     if (!error) {
       const newCount = (event.attempt_count || 0) + 1;
@@ -1262,20 +1264,25 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   async function save() {
     setSaving(true);
     setSaveError(null);
-    // A rep-confirmed renewal requires a recorded attempt (DB guard
-    // `enforce_renewal_save_has_attempt`). Auto-log one from the chosen tactic so
-    // confirming is a single action and never trips the guard with a raw error.
+    // Persist the save tactic + satisfy the save-has-attempt guard
+    // (`enforce_renewal_save_has_attempt`). Attempts are insert-only under RLS, so
+    // the Case-Management tactic is recorded by logging an auto-attempt that
+    // carries it (excluded from outreach metrics via auto_logged). We insert when
+    // the rep picked a tactic that isn't already on record, or — with no tactic —
+    // only if the case has no attempt yet (so the guard doesn't trip).
     if (form.status === "confirmed") {
-      const { count } = await supabase
-        .from("renewal_attempts")
-        .select("id", { count: "exact", head: true })
-        .eq("renewal_case_id", event.id);
-      if (!count) {
+      const codes = (saveIntervention.interventions || []).filter(Boolean);
+      const key = codes.slice().sort().join("|");
+      const tacticOnRecord = codes.length > 0 && attempts.some(
+        a => (a.interventions || []).slice().sort().join("|") === key
+      );
+      if ((codes.length > 0 && !tacticOnRecord) || attempts.length === 0) {
         const { error: attErr } = await supabase.from("renewal_attempts").insert({
           renewal_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
           method: "phone", result: "reached",
-          note: "Outcome recorded from the work surface",
+          note: codes.length ? "Save tactic recorded" : "Outcome recorded from the work surface",
           auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
+          ...interventionInsertFields(saveIntervention),
         });
         if (attErr) {
           setSaveError(`Couldn't record the call: ${attErr.message}`);
@@ -1353,9 +1360,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // Scopes the tactic chips — renewals never see the cancel-only tactics.
   const caseContext = "renewal";
   const tacticFilter = undefined; // no extra stage rules on renewals
-  // "What saved them" — auto-derived from the tactic captured on the call (the
-  // "What did you do to save them?" chips), so the rep never re-enters it.
-  const derivedSaveMethod = deriveSaveMethod(attempts) || event.save_method || null;
+  // "What saved them" lives in Case Management (not the call log): the tactic is
+  // captured here when recording the save, and the headline becomes save_method.
+  const derivedSaveMethod = saveMethodFromCodes(saveIntervention.interventions) || event.save_method || null;
 
   return (
     <div
@@ -1664,15 +1671,6 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               style={{ marginBottom: 10 }}
             />
 
-            {attemptForm.result === 'reached' && (
-              <InterventionPicker
-                context={caseContext}
-                filter={tacticFilter}
-                value={attemptForm.intervention}
-                onChange={(iv) => setAttemptForm(p => ({ ...p, intervention: iv }))}
-              />
-            )}
-
             <button
               onClick={logAttempt}
               disabled={loggingAttempt || !currentEmployeeId}
@@ -1813,19 +1811,23 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
-            {/* What saved them — auto-derived from the tactic logged on the call
-                ("What did you do to save them?"), shown read-only so it's never
-                entered twice. */}
+            {/* What saved them — captured here in Case Management when recording
+                the confirmed save (not on every call attempt). */}
             {form.status === "confirmed" && (
               <div>
                 <label className="dark-label">What saved them?</label>
-                <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
-                  border: "1px solid var(--qs-border)", fontSize: 13,
-                  color: derivedSaveMethod ? "var(--qs-text)" : "var(--qs-muted)" }}>
-                  {derivedSaveMethod
-                    ? (SAVE_METHOD_LABEL[derivedSaveMethod] || derivedSaveMethod)
-                    : "Add it on the call attempt above — “What did you do to save them?”"}
-                </div>
+                {event.save_method && (
+                  <div style={{ fontSize: 11, color: "var(--qs-muted)", margin: "2px 0 6px" }}>
+                    Currently recorded: <strong style={{ color: "var(--qs-dim)" }}>
+                      {SAVE_METHOD_LABEL[event.save_method] || event.save_method}</strong>
+                  </div>
+                )}
+                <InterventionPicker
+                  context={caseContext}
+                  filter={tacticFilter}
+                  value={saveIntervention}
+                  onChange={setSaveIntervention}
+                />
               </div>
             )}
 
