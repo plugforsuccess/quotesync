@@ -12,7 +12,8 @@ import { useActiveEmployees, useAssignableMembers } from '../hooks/useEmployees'
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
   useExpectedCallbacks, useLogCallback, useServiceTaskVelocity, slaMsLeft,
-  useLogServiceTaskAttempt, TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
+  useLogServiceTaskAttempt, useSetServiceTaskWaiting, useSetServiceTaskFollowUp, useServiceActivity,
+  TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
   TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES, PRODUCTS, PRODUCT_MAP, productShort,
   SLA_HOURS,
 } from '../hooks/useServiceTasks';
@@ -111,8 +112,8 @@ export default function ServiceBatchPage() {
 
   // Flat, most-overdue-first list for the Overdue view.
   const overdueTasks = useMemo(() =>
-    tasks.filter(t => { const ms = slaMsLeft(t.created_at); return ms != null && ms < 0; })
-         .sort((a, b) => (slaMsLeft(a.created_at) ?? 0) - (slaMsLeft(b.created_at) ?? 0)),
+    tasks.filter(t => { if (t.status === 'blocked') return false; const ms = slaMsLeft(t); return ms != null && ms < 0; })
+         .sort((a, b) => (slaMsLeft(a) ?? 0) - (slaMsLeft(b) ?? 0)),
   [tasks]);
 
   // Resolve ids → names for "logged by" / assignee on each task. Employees power
@@ -271,6 +272,8 @@ export default function ServiceBatchPage() {
         </div>
       )}
 
+      <ServiceActivityPanel agencyId={agencyId} empName={empName} />
+
       {isLoading ? (
         <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}>Loading…</div>
       ) : showDone ? (
@@ -369,25 +372,82 @@ export default function ServiceBatchPage() {
   );
 }
 
+// Principal's "is the desk being worked today" panel — per-person attempts,
+// active load, cleared count, and median time-to-done. Collapsed by default.
+function ServiceActivityPanel({ agencyId, empName }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: byRep = {} } = useServiceActivity(agencyId, today);
+  const [open, setOpen] = useState(false);
+  const rows = Object.entries(byRep)
+    .map(([id, r]) => ({ id, name: empName[id] || 'Unknown', ...r }))
+    .filter(r => r.attempts || r.cleared || r.inProgress)
+    .sort((a, b) => (b.attempts + b.cleared) - (a.attempts + a.cleared));
+  if (rows.length === 0) return null;
+  const dur = ms => { const h = Math.floor(ms / 3600000); const m = Math.round((ms % 3600000) / 60000); return h ? `${h}h ${m}m` : `${m}m`; };
+  const totAtt = rows.reduce((s, r) => s + r.attempts, 0);
+  const totClr = rows.reduce((s, r) => s + r.cleared, 0);
+  const th = { textAlign: 'left', fontWeight: 700, color: 'var(--qs-subtle)', padding: '4px 8px' };
+  const td = { padding: '5px 8px', color: 'var(--qs-text)' };
+  return (
+    <div style={{ marginBottom: 16, border: '1px solid var(--qs-border)', borderRadius: 10, background: 'var(--qs-elevated)' }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between',
+        alignItems: 'center', background: 'none', border: 'none', padding: '11px 14px', cursor: 'pointer',
+        fontFamily: 'inherit', color: 'var(--qs-bright)' }}>
+        <span style={{ fontSize: 13, fontWeight: 700 }}>📊 Team activity today</span>
+        <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>{totAtt} attempt{totAtt === 1 ? '' : 's'} · {totClr} cleared · {open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div style={{ padding: '0 10px 12px', overflowX: 'auto' }}>
+          <table style={{ width: '100%', fontSize: 12.5, borderCollapse: 'collapse' }}>
+            <thead><tr>
+              <th style={th}>Person</th><th style={th}>Attempts</th><th style={th}>Reached</th>
+              <th style={th}>In progress</th><th style={th}>Cleared</th><th style={th}>Median time</th>
+            </tr></thead>
+            <tbody>
+              {rows.map(r => (
+                <tr key={r.id} style={{ borderTop: '1px solid var(--qs-border)' }}>
+                  <td style={{ ...td, fontWeight: 600 }}>{r.name}</td>
+                  <td style={td}>{r.attempts}</td>
+                  <td style={td}>{r.reached}</td>
+                  <td style={td}>{r.inProgress}</td>
+                  <td style={td}>{r.cleared}</td>
+                  <td style={td}>{r.medianMs ? dur(r.medianMs) : '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCustomer, onDone }) {
   const prio = PRIORITY_BADGE[task.priority];
   const product = productShort(task.product);
   const inProgress = task.status === 'in_progress';
   const needsNote = NOTE_REQUIRED_TYPES.has(task.task_type);
 
+  const waiting = task.status === 'blocked';
+  // Hard to reach: 3+ tries and we've still never actually reached them.
+  const hardToReach = (task.attempt_count || 0) >= 3 && task.last_attempt_result && task.last_attempt_result !== 'reached';
+
   const { data: me } = useCurrentEmployee();
   const logAttempt = useLogServiceTaskAttempt();
+  const setWaiting = useSetServiceTaskWaiting();
+  const setFollowUp = useSetServiceTaskFollowUp();
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState('');
   const [logging, setLogging] = useState(false);
-  const [att, setAtt] = useState({ method: 'phone', result: 'left_voicemail', note: '' });
+  const [att, setAtt] = useState({ method: 'phone', result: 'left_voicemail', note: '', followUp: '', waiting: false });
 
   function submitAttempt() {
     if (logAttempt.isPending) return;
     logAttempt.mutate(
       { taskId: task.id, agencyId, employeeId: me?.id ?? null, method: att.method, result: att.result,
-        note: att.note, prevCount: task.attempt_count ?? 0, prevStatus: task.status },
-      { onSuccess: () => { setLogging(false); setAtt(a => ({ ...a, note: '' })); } }
+        note: att.note, prevCount: task.attempt_count ?? 0, prevStatus: task.status, task,
+        followUpAt: att.followUp ? new Date(att.followUp).toISOString() : undefined, waiting: att.waiting },
+      { onSuccess: () => { setLogging(false); setAtt({ method: 'phone', result: 'left_voicemail', note: '', followUp: '', waiting: false }); } }
     );
   }
 
@@ -415,6 +475,19 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
               letterSpacing: '0.05em', fontFamily: "'DM Mono', monospace" }}>{product}</span>
           )}
           <span style={{ fontSize: 15, fontWeight: 600, color: 'var(--qs-bright)' }}>{task.title}</span>
+          {waiting && (
+            <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+              background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-muted)' }}>
+              ⏸️ WAITING ON CUSTOMER
+            </span>
+          )}
+          {hardToReach && (
+            <span title="3+ attempts, never reached — try another channel or escalate"
+              style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
+                background: '#F59E0B22', border: '1px solid #F59E0B55', color: '#FBBF24' }}>
+              ⚠ HARD TO REACH
+            </span>
+          )}
         </div>
 
         {(task.customer_name || task.policy_no) && (
@@ -469,10 +542,24 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
           </div>
         )}
 
+        {/* Next follow-up — set after a voicemail so it resurfaces when due */}
+        {task.follow_up_at && (
+          <div style={{ marginTop: 6, fontSize: 11.5, fontWeight: 700,
+            color: new Date(task.follow_up_at) <= new Date() ? '#FBBF24' : 'var(--qs-dim)',
+            display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span>⏰ Follow up {new Date(task.follow_up_at) <= new Date() ? 'due ·' : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+            <button onClick={() => setFollowUp.mutate({ id: task.id, followUpAt: null })}
+              style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 11, padding: 0, textDecoration: 'underline' }}>clear</button>
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
           <button onClick={() => setLogging(v => !v)} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}>📞 Log call</button>
+          {waiting
+            ? <button onClick={() => setWaiting.mutate({ id: task.id, waiting: false, task })} style={btnStyle('var(--qs-card)', '#34D399')}>▶ Resume</button>
+            : <button onClick={() => setWaiting.mutate({ id: task.id, waiting: true, task })} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}>⏸ Wait on customer</button>}
           <button onClick={handleDone} style={btnStyle('#10B981', '#fff')}>Done</button>
         </div>
 
@@ -491,8 +578,15 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
             <input value={att.note} onChange={e => setAtt(a => ({ ...a, note: e.target.value }))}
               onKeyDown={e => { if (e.key === 'Enter') submitAttempt(); }}
               placeholder="Note (optional)"
-              style={{ flex: 1, minWidth: 160, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+              style={{ flex: 1, minWidth: 140, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                 borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
+            <input type="datetime-local" value={att.followUp} onChange={e => setAtt(a => ({ ...a, followUp: e.target.value }))}
+              title="Schedule the next try" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                borderRadius: 8, padding: '7px 9px', fontSize: 12, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
+            <label style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: 'var(--qs-dim)', cursor: 'pointer' }}>
+              <input type="checkbox" checked={att.waiting} onChange={e => setAtt(a => ({ ...a, waiting: e.target.checked }))} />
+              Waiting on customer
+            </label>
             <button onClick={submitAttempt} disabled={logAttempt.isPending} style={btnStyle('#3B82F6', '#fff')}>
               {logAttempt.isPending ? 'Logging…' : 'Log'}
             </button>
@@ -519,7 +613,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
       </div>
 
       {/* Full-height live SLA timer — far right, ticks to the second */}
-      <SlaTimer createdAt={task.created_at} />
+      <SlaTimer task={task} />
     </div>
   );
 }
@@ -528,9 +622,21 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
 // re-renders each second, not the whole task body. A conic progress ring fills
 // as the 24h window burns down and the digits count to the second — the agency
 // watches these complete fast, so the clock is the loudest thing on the row.
-function SlaTimer({ createdAt }) {
+function SlaTimer({ task }) {
   useTick(1000);
-  const sla = slaState(createdAt);
+  // Parked 'waiting on customer' → the clock is paused; show that instead of a
+  // countdown so the row doesn't look neglected.
+  if (task?.status === 'blocked') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 6, minWidth: 132, padding: '0 16px', textAlign: 'center',
+        background: 'var(--qs-elevated)', borderLeft: '1px solid var(--qs-border)', color: 'var(--qs-muted)' }}>
+        <div style={{ fontSize: 20 }}>⏸️</div>
+        <div style={{ fontSize: 11.5, fontWeight: 800, lineHeight: 1.2 }}>Waiting<br/>on customer</div>
+      </div>
+    );
+  }
+  const sla = slaState(task);
   if (!sla) {
     return <div style={{ minWidth: 132, borderLeft: '1px solid var(--qs-border)' }} />;
   }

@@ -30,6 +30,7 @@ const TOUCH_CONFIG = {
   renewal:    { label: 'Renewal call', color: '#3B82F6' },
   cross_sell: { label: 'Cross-sell',   color: '#10B981' },
   lead:       { label: 'Lead dial',    color: '#F59E0B' },
+  service:    { label: 'Service task', color: '#22D3EE' },
 };
 const fmt$ = n => (n == null || isNaN(n)) ? '—' : `$${Number(n).toLocaleString(undefined, { maximumFractionDigits: 0 })}`;
 const label = p => (PRODUCT_LABELS[p] || p || '—').toUpperCase();

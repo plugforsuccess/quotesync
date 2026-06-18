@@ -70,9 +70,16 @@ const ACTIVE_STATUSES = ['open', 'in_progress', 'blocked'];
 // Service-task SLA: the culture is "finish within 24h, faster if possible." We
 // run a 24h timer from creation rather than a manual due date.
 export const SLA_HOURS = 24;
-export function slaMsLeft(createdAt) {
-  if (!createdAt) return null;
-  return new Date(createdAt).getTime() + SLA_HOURS * 3600000 - Date.now();
+// Time left on the 24h SLA. Accepts a task (preferred — so the timer can be
+// paused while 'waiting on customer') or a bare created_at string. While a task
+// is paused (sla_paused_at set), the live pause grows with the clock, freezing
+// the time-left; banked pause (sla_pause_ms) pushes the deadline out.
+export function slaMsLeft(taskOrCreatedAt) {
+  const t = typeof taskOrCreatedAt === 'string' ? { created_at: taskOrCreatedAt } : (taskOrCreatedAt || {});
+  if (!t.created_at) return null;
+  const banked = Number(t.sla_pause_ms || 0);
+  const livePause = t.sla_paused_at ? (Date.now() - new Date(t.sla_paused_at).getTime()) : 0;
+  return new Date(t.created_at).getTime() + SLA_HOURS * 3600000 + banked + livePause - Date.now();
 }
 
 // Sort inside a group: priority, then oldest first — the oldest task is closest
@@ -155,8 +162,12 @@ export function useServiceTasks(agencyId, { assignedTo, includeDone = false, sco
       });
   })();
 
-  // Past the 24h SLA = overdue.
-  const overdue = tasks.filter(t => { const ms = slaMsLeft(t.created_at); return ms != null && ms < 0; }).length;
+  // Past the 24h SLA = overdue. Parked ('waiting on customer') tasks are paused,
+  // so they never count as overdue — the clock is on the customer, not us.
+  const overdue = tasks.filter(t => {
+    if (t.status === 'blocked') return false;
+    const ms = slaMsLeft(t); return ms != null && ms < 0;
+  }).length;
 
   return { ...query, tasks, groups, overdue };
 }
@@ -279,7 +290,7 @@ export function useServiceTaskAttempts(taskId) {
 export function useLogServiceTaskAttempt() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ taskId, agencyId, employeeId, method, result, note, prevCount = 0, prevStatus }) => {
+    mutationFn: async ({ taskId, agencyId, employeeId, method, result, note, prevCount = 0, prevStatus, followUpAt, waiting, task }) => {
       const attemptedAt = new Date().toISOString();
       const { error } = await supabase.from('service_task_attempts').insert({
         service_task_id: taskId, agency_id: agencyId, employee_id: employeeId ?? null,
@@ -291,7 +302,15 @@ export function useLogServiceTaskAttempt() {
         last_attempt_at: attemptedAt,
         last_attempt_result: result,
       };
-      if (prevStatus === 'open') taskUpdate.status = 'in_progress';
+      // Optional: schedule the next try, and/or park the task 'waiting on
+      // customer' (pauses the SLA). Otherwise an untouched task starts working.
+      if (followUpAt !== undefined) taskUpdate.follow_up_at = followUpAt || null;
+      if (waiting) {
+        taskUpdate.status = 'blocked';
+        if (!task?.sla_paused_at) taskUpdate.sla_paused_at = attemptedAt;
+      } else if (prevStatus === 'open') {
+        taskUpdate.status = 'in_progress';
+      }
       const { error: uerr } = await supabase.from('service_tasks').update(taskUpdate).eq('id', taskId);
       if (uerr) throw uerr;
     },
@@ -301,6 +320,93 @@ export function useLogServiceTaskAttempt() {
       qc.invalidateQueries({ queryKey: ['service_tasks'] });
       qc.invalidateQueries({ queryKey: ['service_tasks_done'] });
       qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
+    },
+  });
+}
+
+// Park a task 'waiting on customer' (pauses the SLA) or resume it. Resuming
+// banks the paused time so the 24h deadline shifts out by however long it waited.
+export function useSetServiceTaskWaiting() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, waiting, task }) => {
+      const updates = {};
+      if (waiting) {
+        updates.status = 'blocked';
+        if (!task?.sla_paused_at) updates.sla_paused_at = new Date().toISOString();
+      } else {
+        updates.status = (task?.attempt_count > 0) ? 'in_progress' : 'open';
+        if (task?.sla_paused_at) {
+          updates.sla_pause_ms = Number(task.sla_pause_ms || 0) + (Date.now() - new Date(task.sla_paused_at).getTime());
+          updates.sla_paused_at = null;
+        }
+      }
+      const { error } = await supabase.from('service_tasks').update(updates).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['service_task'] });
+      qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
+    },
+  });
+}
+
+// Set or clear a task's follow-up time without logging an attempt.
+export function useSetServiceTaskFollowUp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, followUpAt }) => {
+      const { error } = await supabase.from('service_tasks').update({ follow_up_at: followUpAt || null }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['service_task'] });
+    },
+  });
+}
+
+// Per-person service activity for a date — attempts logged, tasks in progress,
+// tasks cleared, and median time-to-done. The principal's "is the desk being
+// actively worked" view, mirroring the retention rep-activity panel.
+export function useServiceActivity(agencyId, dateStr) {
+  return useQuery({
+    queryKey: ['service_activity', agencyId, dateStr],
+    enabled: !!agencyId && !!dateStr,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const start = new Date(dateStr + 'T00:00:00');
+      const end = new Date(start); end.setDate(start.getDate() + 1);
+      const startIso = start.toISOString(); const endIso = end.toISOString();
+
+      const [{ data: attempts }, { data: doneToday }, { data: active }] = await Promise.all([
+        supabase.from('service_task_attempts')
+          .select('employee_id, result')
+          .eq('agency_id', agencyId).gte('attempted_at', startIso).lt('attempted_at', endIso),
+        supabase.from('service_tasks')
+          .select('completed_by_id, created_at, completed_at')
+          .eq('agency_id', agencyId).eq('status', 'done')
+          .gte('completed_at', startIso).lt('completed_at', endIso),
+        supabase.from('service_tasks')
+          .select('assigned_to_id, status')
+          .eq('agency_id', agencyId).in('status', ['open', 'in_progress', 'blocked']),
+      ]);
+
+      const byRep = {};
+      const rep = (id) => (byRep[id] ||= { attempts: 0, reached: 0, cleared: 0, inProgress: 0, _ttd: [] });
+      for (const a of attempts || []) { if (!a.employee_id) continue; const r = rep(a.employee_id); r.attempts++; if (a.result === 'reached') r.reached++; }
+      for (const t of doneToday || []) {
+        if (!t.completed_by_id) continue; const r = rep(t.completed_by_id); r.cleared++;
+        if (t.created_at && t.completed_at) r._ttd.push(new Date(t.completed_at) - new Date(t.created_at));
+      }
+      for (const t of active || []) { if (!t.assigned_to_id) continue; if (t.status !== 'blocked') rep(t.assigned_to_id).inProgress++; }
+
+      for (const r of Object.values(byRep)) {
+        if (r._ttd.length) { const s = [...r._ttd].sort((a, b) => a - b); r.medianMs = s[Math.floor(s.length / 2)]; }
+        delete r._ttd;
+      }
+      return byRep; // keyed by employee id
     },
   });
 }
