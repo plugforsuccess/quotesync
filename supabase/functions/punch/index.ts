@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const displayName = employee.preferred_name || employee.first_name;
+    const displayName = (employee.preferred_name || employee.first_name || employee.last_name || "").trim();
     const today = new Date().toLocaleDateString("en-CA", {
       timeZone: "America/New_York",
     }); // YYYY-MM-DD ET

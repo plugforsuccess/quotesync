@@ -1,5 +1,6 @@
 // src/pages/components/cross-sell/CrossSellQueue.jsx
 // Renders a list of cross-sell cases with inline outcome editing.
+import { Link } from 'react-router-dom';
 
 const PRODUCT_LABELS = {
   auto: 'Auto', ho: 'HO', renters: 'Renters', condo: 'Condo',
@@ -14,6 +15,18 @@ const OUTCOME_OPTIONS = [
   { value: 'not_reached', label: 'Could not reach' },
 ];
 
+function SectionHeader({ children }) {
+  return (
+    <div style={{
+      fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)',
+      textTransform: 'uppercase', letterSpacing: '0.06em',
+      padding: '8px 2px 2px',
+    }}>
+      {children}
+    </div>
+  );
+}
+
 export default function CrossSellQueue({ cases, tab, onUpdate, emptyLabel }) {
   if (!cases || cases.length === 0) {
     return (
@@ -23,16 +36,29 @@ export default function CrossSellQueue({ cases, tab, onUpdate, emptyLabel }) {
     );
   }
 
+  // Win-backs sort first; give the two groups visible headers so the list
+  // reads as "work these, then these" instead of one undifferentiated wall.
+  const winbacks = cases.filter(c => c.lostLine);
+  const standard = cases.filter(c => !c.lostLine);
+
+  const renderCards = (list) => list.map(c => (
+    <CrossSellCard key={c.id} cs={c} tab={tab} onUpdate={(updates) => onUpdate(c.id, updates)} />
+  ));
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      {cases.map(c => (
-        <CrossSellCard
-          key={c.id}
-          cs={c}
-          tab={tab}
-          onUpdate={(updates) => onUpdate(c.id, updates)}
-        />
-      ))}
+      {winbacks.length > 0 && (
+        <>
+          <SectionHeader>♻ Win-backs — lost a line, best conversion ({winbacks.length})</SectionHeader>
+          {renderCards(winbacks)}
+        </>
+      )}
+      {standard.length > 0 && (
+        <>
+          {winbacks.length > 0 && <SectionHeader>Standard opportunities ({standard.length})</SectionHeader>}
+          {renderCards(standard)}
+        </>
+      )}
     </div>
   );
 }
@@ -56,8 +82,16 @@ function CrossSellCard({ cs, tab, onUpdate }) {
     }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', marginBottom: 3 }}>
-            {cs.customer_name}
+          <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 3 }}>
+            <Link
+              to={`/agency/customers?q=${encodeURIComponent(cs.customer_name || '')}`}
+              title="Open this customer's household view"
+              style={{ color: 'var(--qs-bright)', textDecoration: 'none' }}
+              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+            >
+              {cs.customer_name}
+            </Link>
             <span style={{
               marginLeft: 8, fontSize: 11, fontWeight: 700,
               background: 'rgba(59,130,246,0.12)',
@@ -66,6 +100,18 @@ function CrossSellCard({ cs, tab, onUpdate }) {
             }}>
               Pitch: {PRODUCT_LABELS[cs.recommended_product] || cs.recommended_product}
             </span>
+            {cs.lostLine && (
+              <span
+                title={`Active customer who lost their ${PRODUCT_LABELS[cs.lostLine.product] || cs.lostLine.product} ${cs.lostLine.months} month(s) ago${cs.lostLine.reason ? ` (${cs.lostLine.reason})` : ''}. Warm re-add — the bundle discount lowers their remaining premium.`}
+                style={{
+                  marginLeft: 6, fontSize: 11, fontWeight: 700,
+                  background: 'rgba(16,185,129,0.14)',
+                  border: '1px solid rgba(16,185,129,0.35)',
+                  color: '#34D399', borderRadius: 4, padding: '1px 6px', cursor: 'help',
+                }}>
+                ♻ Win back {PRODUCT_LABELS[cs.lostLine.product] || cs.lostLine.product} · lost {cs.lostLine.months}mo ago
+              </span>
+            )}
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)' }}>
             Has: {PRODUCT_LABELS[cs.current_product] || cs.current_product || '—'}

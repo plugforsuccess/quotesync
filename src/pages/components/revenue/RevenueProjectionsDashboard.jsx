@@ -150,6 +150,26 @@ const emptyEntry = () => ({
   note: "",
 });
 
+// ─── Chargeback clawback estimate ────────────────────────────────────────────
+// Pro-rata model: clawback ≈ the unearned fraction of the term at termination.
+// Auto products run 6-month terms; everything else 12. This is an estimate —
+// the Allstate compensation statement remains the source of truth.
+const SIX_MONTH_TERM_PRODUCTS = ["auto", "specialty_auto"];
+
+function estimateClawback(entry) {
+  if (!entry.chargebackLapseDate || !entry.issuedDate) return null;
+  const issued = new Date(entry.issuedDate + "T00:00:00");
+  const lapsed = new Date(entry.chargebackLapseDate + "T00:00:00");
+  if (isNaN(issued) || isNaN(lapsed)) return null;
+  const daysInForce = Math.max(0, Math.round((lapsed - issued) / 86400000));
+  const termDays = SIX_MONTH_TERM_PRODUCTS.includes(entry.product) ? 182 : 365;
+  const fraction = Math.min(1, Math.max(0, 1 - daysInForce / termDays));
+  const label = daysInForce >= 30
+    ? `${Math.round(daysInForce / 30.44)} month${Math.round(daysInForce / 30.44) !== 1 ? "s" : ""}`
+    : `${daysInForce} day${daysInForce !== 1 ? "s" : ""}`;
+  return { daysInForce, fraction, label };
+}
+
 // ─── Parse uploaded Allstate CSV/XLSX rows ───────────────────────────────────
 function parseAllstateRows(rows) {
   // Best-effort mapping for common Allstate export column names
@@ -507,7 +527,7 @@ export default function RevenueProjectionsDashboard() {
     return { rangeStart: new Date(y, m, 1), rangeEnd: new Date(y, m + 1, 0), label: `${MONTH_NAMES[m]} ${y}` };
   }, [view, customStart, customEnd]);
 
-  const { entries, loading, error, addEntry, addEntries, deleteEntry } = useRevenueEntries({ agencyId, rangeStart, rangeEnd });
+  const { entries, loading, error, addEntry, addEntries, deleteEntry, setChargeback } = useRevenueEntries({ agencyId, rangeStart, rangeEnd });
 
   // Fetch all entries for the current year — used by producer breakdown range filter
   const selectedYear = TODAY.getFullYear();
@@ -537,11 +557,25 @@ export default function RevenueProjectionsDashboard() {
         customerName: r.customer_name ?? null,
         source:       r.source,
         note:         r.note ?? "",
+        chargebackFlaggedAt: r.chargeback_flagged_at ?? null,
+        chargebackReason:    r.chargeback_reason ?? null,
+        chargedBackAt:       r.charged_back_at ?? null,
+        chargebackLapseDate: r.chargeback_lapse_date ?? null,
       }));
     },
     enabled: !!agencyId,
     staleTime: 2 * 60 * 1000,
   });
+
+  // Running chargeback record (current year) — confirmed chargebacks only
+  const chargebackRecord = useMemo(() => {
+    const rows = allYearEntries.filter(e => e.chargedBackAt);
+    return {
+      count: rows.length,
+      premium: rows.reduce((s, e) => s + (e.premium || 0), 0),
+      pendingReview: allYearEntries.filter(e => e.chargebackFlaggedAt && !e.chargedBackAt).length,
+    };
+  }, [allYearEntries]);
 
   // ─── Filtered entries ──────────────────────────────────────────────────────
   // Compare as YYYY-MM-DD strings (local timezone) to avoid UTC parsing bugs.
@@ -554,6 +588,10 @@ export default function RevenueProjectionsDashboard() {
   const filtered = useMemo(() =>
     entries.filter(e => e.date >= rangeStartStr && e.date <= rangeEndStr),
     [entries, rangeStartStr, rangeEndStr]);
+
+  // Confirmed chargebacks stay visible in the table as the running record,
+  // but never count toward premium/commission/points totals.
+  const countable = useMemo(() => filtered.filter(e => !e.chargedBackAt), [filtered]);
 
   // ─── Sort handler ──────────────────────────────────────────────────────────
   const handleSort = (col) => {
@@ -596,7 +634,7 @@ export default function RevenueProjectionsDashboard() {
       landlord: {...base}, specialty_auto: {...base}, pup: {...base},
       manufactured: {...base}, boat: {...base}, motor_club: {...base}, other: {...base},
     };
-    filtered.forEach(e => {
+    countable.forEach(e => {
       const c = calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
       const p = byProduct[e.product] ?? byProduct.other;
       p.premium += e.premium;
@@ -611,27 +649,27 @@ export default function RevenueProjectionsDashboard() {
     // dollar amount at stake if the VC baseline isn't hit by month-end.
     let commissionAtVC = 0;
     let commissionAtBase = 0;
-    filtered.forEach(e => {
+    countable.forEach(e => {
       commissionAtVC   += calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, true,  BASE_RATES);
       commissionAtBase += calcCommission(e.premium, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, false, BASE_RATES);
     });
     const vcBonusDelta = commissionAtVC - commissionAtBase;
 
     return { byProduct, totalPremium, totalCommission, commissionAtVC, commissionAtBase, vcBonusDelta };
-  }, [filtered, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES]);
+  }, [countable, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES]);
 
   // ─── Policies stats (items, VC baseline, portfolio points) ───────────────
   const policiesStats = useMemo(() => {
-    const totalPolicies = filtered.reduce((s, e) => s + e.policyCount, 0);
+    const totalPolicies = countable.reduce((s, e) => s + e.policyCount, 0);
 
     // VC Baseline = all VC-eligible product items
-    const vcBaselineCount = filtered.reduce((s, e) => {
+    const vcBaselineCount = countable.reduce((s, e) => {
       if (VC_ITEM_PRODUCTS.includes(e.product)) return s + e.itemCount;
       return s;
     }, 0);
 
     // Portfolio points = PORTFOLIO_POINTS[product] × itemCount
-    const totalPoints = filtered.reduce((s, e) => {
+    const totalPoints = countable.reduce((s, e) => {
       const pts = PORTFOLIO_POINTS[e.product] ?? 0;
       return s + pts * e.itemCount;
     }, 0);
@@ -639,7 +677,7 @@ export default function RevenueProjectionsDashboard() {
     // Prior month — derived from rangeStart so historical views work correctly
     const priorStart = new Date(rangeStart.getFullYear(), rangeStart.getMonth() - 1, 1).toISOString().slice(0, 10);
     const priorEnd   = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 0).toISOString().slice(0, 10);
-    const priorEntries = entries.filter(e => e.date >= priorStart && e.date <= priorEnd);
+    const priorEntries = entries.filter(e => e.date >= priorStart && e.date <= priorEnd && !e.chargedBackAt);
     const priorPoints  = priorEntries.reduce((s, e) => {
       const pts = PORTFOLIO_POINTS[e.product] ?? 0;
       return s + pts * (e.itemCount ?? 1);
@@ -648,7 +686,7 @@ export default function RevenueProjectionsDashboard() {
     const pointsDelta = totalPoints - priorPoints;
 
     return { totalPolicies, vcBaselineCount, totalPoints, priorPoints, pointsDelta };
-  }, [filtered, entries, rangeStart]);
+  }, [countable, entries, rangeStart]);
 
   // ─── Producer-filtered entries (independent range) ─────────────────────────
   const producerFiltered = useMemo(() => {
@@ -673,6 +711,7 @@ export default function RevenueProjectionsDashboard() {
   const byProducer = useMemo(() => {
     const map = {};
     producerFiltered.forEach(e => {
+      if (e.chargedBackAt) return; // chargebacks don't count toward production
       const name = e.producerName || "Unassigned";
       if (!map[name]) map[name] = { name, policies: 0, items: 0, premium: 0, commission: 0, points: 0 };
       map[name].policies   += 1;
@@ -1746,6 +1785,35 @@ export default function RevenueProjectionsDashboard() {
             )}
           </div>
 
+          {/* Running chargeback record (YTD) */}
+          {(chargebackRecord.count > 0 || chargebackRecord.pendingReview > 0) && (() => {
+            const cbRows = allYearEntries.filter(e => e.chargedBackAt);
+            const lostCommission = cbRows.reduce((s, e) => {
+              const full = calcCommission(e.premium || 0, e.product, e.tier ?? "monoline", COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES);
+              const cb = estimateClawback(e);
+              return s + full * (cb ? cb.fraction : 1); // pro-rated when the lapse date is known
+            }, 0);
+            return (
+              <div style={{
+                display: 'flex', gap: 18, alignItems: 'center', flexWrap: 'wrap',
+                background: '#EF44440D', border: '1px solid #EF444426',
+                borderRadius: 8, padding: '10px 14px', marginBottom: 14, fontSize: 12,
+              }}>
+                <span style={{ fontWeight: 700, color: '#EF4444', letterSpacing: '0.04em' }}>CHARGEBACKS YTD</span>
+                <span style={{ color: 'var(--qs-dim)' }}>
+                  {chargebackRecord.count} polic{chargebackRecord.count === 1 ? 'y' : 'ies'}
+                  {' '}· {fmtFull$(chargebackRecord.premium)} premium
+                  {' '}· ~{fmtFull$(lostCommission)} commission reversed
+                </span>
+                {chargebackRecord.pendingReview > 0 && (
+                  <span style={{ color: '#F59E0B', fontWeight: 600 }}>
+                    {chargebackRecord.pendingReview} flagged awaiting review
+                  </span>
+                )}
+              </div>
+            );
+          })()}
+
           {/* Table */}
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "40px 0", color: "var(--qs-muted)", fontSize: 13 }}>No entries in this range. Add manually or upload an Allstate report.</div>
@@ -1768,6 +1836,7 @@ export default function RevenueProjectionsDashboard() {
               <tbody>
                 {sortedEntries.map(e => {
                   const tier = e.tier ?? "monoline";
+                  const cb = estimateClawback(e);
                   return (
                     <tr key={e.id}>
                       <td style={{ color: "var(--qs-subtle)", fontFamily: "'DM Mono', monospace", fontSize: 12 }}>{e.date}</td>
@@ -1790,11 +1859,35 @@ export default function RevenueProjectionsDashboard() {
                               EXCL
                             </span>
                           )}
+                          {e.chargedBackAt ? (
+                            <span
+                              title={`Chargeback confirmed${e.chargebackReason ? ` (${e.chargebackReason})` : ''}${cb ? ` — in force ${cb.label}, ~${Math.round(cb.fraction * 100)}% of commission clawed back (est.)` : ''} — kept as record, excluded from totals.`}
+                              style={{
+                                fontSize: 9, fontWeight: 700, padding: '1px 5px',
+                                borderRadius: 3, letterSpacing: '0.04em',
+                                background: '#EF4444', color: '#fff',
+                                cursor: 'help',
+                              }}>
+                              CB{cb ? ` ~${Math.round(cb.fraction * 100)}%` : ''}
+                            </span>
+                          ) : e.chargebackFlaggedAt && (
+                            <span
+                              title={`On termination report${e.chargebackReason ? ` (${e.chargebackReason})` : ''}${cb ? ` — in force ${cb.label} → ~${Math.round(cb.fraction * 100)}% clawback if confirmed (est.)` : ''}. Review your commission statement, then confirm with the CB button if charged back.`}
+                              style={{
+                                fontSize: 9, fontWeight: 700, padding: '1px 5px',
+                                borderRadius: 3, letterSpacing: '0.04em',
+                                background: '#EF444418', color: '#EF4444',
+                                border: '1px solid #EF444433',
+                                cursor: 'help',
+                              }}>
+                              CHGBK?{cb ? ` ${cb.label} → ~${Math.round(cb.fraction * 100)}%` : ''}
+                            </span>
+                          )}
                         </span>
                       </td>
                       <td><span className="tag" style={{ background: `${TIER_COLORS[tier]}22`, color: TIER_COLORS[tier] }}>{TIER_LABELS[tier]}</span></td>
-                      <td style={{ fontFamily: "'DM Mono', monospace" }}>{fmtFull$(e.premium)}</td>
-                      <td style={{ fontFamily: "'DM Mono', monospace", textAlign: "right" }}>
+                      <td style={{ fontFamily: "'DM Mono', monospace", textDecoration: e.chargedBackAt ? "line-through" : "none", opacity: e.chargedBackAt ? 0.5 : 1 }}>{fmtFull$(e.premium)}</td>
+                      <td style={{ fontFamily: "'DM Mono', monospace", textAlign: "right", textDecoration: e.chargedBackAt ? "line-through" : "none", opacity: e.chargedBackAt ? 0.5 : 1 }}>
                         <span style={{ color: "var(--qs-success)", display: "block" }}>
                           {fmtFull$(calcCommission(e.premium, e.product, tier, COMMISSIONABLE_FACTORS, showingVCRates, BASE_RATES))}
                         </span>
@@ -1806,7 +1899,23 @@ export default function RevenueProjectionsDashboard() {
                       </td>
                       <td><span className="tag" style={{ background: e.source==="upload" ? "rgb(59 130 246 / 0.15)" : "var(--qs-elevated)", color: e.source==="upload" ? "var(--qs-info)" : "var(--qs-dim)" }}>{e.source}</span></td>
                       <td style={{ color: "var(--qs-subtle)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.note}</td>
-                      <td><button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button></td>
+                      <td style={{ whiteSpace: "nowrap" }}>
+                        {(e.chargebackFlaggedAt || e.chargedBackAt) && (
+                          <button
+                            onClick={() => setChargeback(e.id, !e.chargedBackAt)}
+                            title={e.chargedBackAt ? "Undo chargeback — count this entry again" : "Confirm chargeback — keep as record, exclude from totals"}
+                            style={{
+                              padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1,
+                              border: '1px solid #EF444433', borderRadius: 6, cursor: 'pointer',
+                              background: e.chargedBackAt ? '#EF4444' : '#EF444418',
+                              color: e.chargedBackAt ? '#fff' : '#EF4444',
+                              fontSize: 11, fontWeight: 700, marginRight: 4,
+                            }}>
+                            {e.chargedBackAt ? '↩' : 'CB'}
+                          </button>
+                        )}
+                        <button className="del-btn" onClick={() => deleteEntry(e.id)} style={{ padding: 8, minWidth: 44, minHeight: 44, lineHeight: 1 }}>×</button>
+                      </td>
                     </tr>
                   );
                 })}
@@ -2070,7 +2179,7 @@ export default function RevenueProjectionsDashboard() {
 
         // Build per-product breakdown
         const byProduct = {};
-        filtered.forEach(e => {
+        countable.forEach(e => {
           if (!byProduct[e.product]) byProduct[e.product] = { policies: 0, items: 0, points: 0 };
           byProduct[e.product].policies += e.policyCount;
           byProduct[e.product].items    += e.itemCount;

@@ -6,7 +6,19 @@ import * as XLSX from "xlsx";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { computePriorityTier } from "../../../lib/retentionPriority";
+import { isRewriteReason } from "../../../lib/retentionRewrite";
 import CrossSellUploadModal from "../cross-sell/CrossSellUploadModal";
+
+// Household grouping key for assignment — so every policy in a household is
+// worked by ONE rep (no customer getting calls from two reps). Phone is the
+// strongest signal; fall back to the normalized name.
+function householdKey(name, phone) {
+  const d = String(phone || "").replace(/\D/g, "");
+  if (d.length >= 10) return "p:" + d.slice(-10);
+  const n = String(name || "").trim().toLowerCase().replace(/\s+/g, " ");
+  return n ? "n:" + n : null;
+}
+
 
 async function syncRetentionQueue(supabase) {
   try {
@@ -168,7 +180,13 @@ function parseReport(file) {
 
           const item_count = itemsI >= 0 ? (parseInt(row[itemsI]) || 1) : null;
 
-          const stage = (cancelStatusI >= 0 && row[cancelStatusI]?.toString().trim() === 'Cancelled')
+          // A "Cancelled" audit status whose effective date is still in the
+          // FUTURE hasn't lapsed yet — the policy is in force and savable (a
+          // scheduled cancellation, or an Allstate reporting quirk). Only mark it
+          // lapsed once the effective date has actually passed; otherwise keep it
+          // a workable pending cancel so it stays in the queue, not shown as gone.
+          const reportedCancelled = cancelStatusI >= 0 && row[cancelStatusI]?.toString().trim() === 'Cancelled';
+          const stage = (reportedCancelled && cancelDate <= today)
             ? 'cancelled'
             : 'pending_cancel';
 
@@ -201,7 +219,7 @@ function parseReport(file) {
 
 // ─── Diff Engine ───────────────────────────────────────────────────────────────
 
-function diffReport(parsed, existing, lapseMap = new Map()) {
+function diffReport(parsed, existing, lapseMap = new Map(), coveredTermMonths = new Set()) {
   const today = new Date().toISOString().slice(0, 10);
   const makeKey = (pno, cdate) => `${pno.toLowerCase()}|${cdate}`;
   const parsedKeys = new Set(parsed.map(r => makeKey(r.policy_no, r.cancel_effective_date)));
@@ -218,7 +236,9 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
   const toAdd = [];
   const toUpdate = [];
   const duplicates = [];
-  const autoLost = [];   // confirmed in lapse_events — auto-closed
+  const autoLost = [];      // confirmed lost in lapse_events — auto-closed
+  const autoRewritten = []; // cancelled only to rewrite/transfer — RETAINED, not lost
+  const autoPaid = [];   // absent + cancel month covered by a committed termination report it isn't on → paid
   const toReview = [];   // absent from report, no lapse record — verify in Allstate
 
   for (const row of parsed) {
@@ -259,8 +279,10 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
     const lapseRecord = lapseMap.get(e.policy_no);
 
     if (lapseRecord) {
-      // Authoritative — confirmed in termination report. Auto-close as lost.
-      autoLost.push({
+      // Authoritative — confirmed in termination report. But a "Cancel/Rewrite"
+      // termination means the customer was KEPT on a new policy number, not
+      // lost — route those to the retained (rewritten) bucket instead.
+      const record = {
         id: e.id,
         policy_no: e.policy_no,
         customer_name: e.customer_name,
@@ -270,12 +292,32 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
         lapse_date: lapseRecord.lapse_date,
         termination_reason: lapseRecord.termination_reason,
         resolution_date: lapseRecord.lapse_date || today,
-      });
+      };
+      if (isRewriteReason(lapseRecord.termination_reason)) {
+        autoRewritten.push(record);
+      } else {
+        autoLost.push(record);
+      }
     } else if (daysPastCancel <= 0) {
       // Cancel date is today or future — still in active window.
       // Do nothing — leave status unchanged, don't surface in review.
+    } else if (coveredTermMonths.has(e.cancel_effective_date?.slice(0, 7))) {
+      // Cancel date passed, no lapse record, AND a committed termination
+      // report fully covers the cancel month without listing this policy.
+      // If it had lapsed it would be on that report — so the customer paid.
+      // Clear automatically instead of burning a human review on it.
+      autoPaid.push({
+        id: e.id,
+        policy_no: e.policy_no,
+        customer_name: e.customer_name,
+        product: e.product,
+        premium_at_risk: e.premium_at_risk,
+        cancel_effective_date: e.cancel_effective_date,
+        resolution_date: today,
+      });
     } else {
-      // Cancel date has passed but no lapse record.
+      // Cancel date has passed but no lapse record, and the cancel month
+      // isn't covered by a committed termination report yet.
       // Absence = ambiguous (paid OR lapsed). Must verify in Allstate.
       toReview.push({
         id: e.id,
@@ -292,7 +334,7 @@ function diffReport(parsed, existing, lapseMap = new Map()) {
     }
   }
 
-  return { toAdd, toUpdate, duplicates, autoLost, toReview };
+  return { toAdd, toUpdate, duplicates, autoLost, autoRewritten, autoPaid, toReview };
 }
 
 // ─── Auto-Resolve Review Panel ──────────────────────────────────────────────
@@ -320,8 +362,10 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
         fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16,
         background: 'var(--qs-elevated)', borderRadius: 6, padding: '8px 12px'
       }}>
-        These policies were active but absent from this report. Confirm whether
-        they paid, mark as lost, or keep active for follow-up.
+        These cases were being worked but are absent from this report. Confirm
+        whether they paid, mark as lost, or keep in the call queue for follow-up.
+        {/* "Active" deliberately avoided here — at Allstate it means coverage
+            in force / current on payments, which these policies are not. */}
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
@@ -331,7 +375,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
         </button>
         <button className="btn-ghost" style={{ fontSize: 12 }}
           onClick={() => cases.forEach(c => onDecide(c.id, 'keep'))}>
-          Keep All Active
+          Keep All in Queue
         </button>
       </div>
 
@@ -374,7 +418,7 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
                 {[
                   { value: 'auto_resolved', label: 'Paid ✓', color: '#10B981' },
                   { value: 'lost',          label: 'Lost',   color: '#EF4444' },
-                  { value: 'keep',          label: 'Keep',   color: '#3B82F6' },
+                  { value: 'keep',          label: 'Keep in Queue', color: '#3B82F6' },
                 ].map(opt => (
                   <button key={opt.value} onClick={() => onDecide(c.id, opt.value)}
                     style={{
@@ -397,13 +441,16 @@ function AutoResolveReviewPanel({ cases, decisions, onDecide, onConfirmAll }) {
         <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 12 }}>
           {counts.paid > 0 && <span style={{ color: '#10B981', marginRight: 12 }}>✓ {counts.paid} marked paid</span>}
           {counts.lost > 0 && <span style={{ color: '#EF4444', marginRight: 12 }}>✗ {counts.lost} marked lost</span>}
-          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} kept active</span>}
+          {counts.keep > 0 && <span style={{ color: '#3B82F6' }}>↺ {counts.keep} kept in queue</span>}
         </div>
       )}
 
-      <button className="btn-primary" disabled={!allDecided} onClick={onConfirmAll}
-        style={{ opacity: allDecided ? 1 : 0.4 }}>
-        Confirm {cases.length} decisions
+      <button className="btn-ghost" disabled={!allDecided} onClick={onConfirmAll}
+        style={{
+          opacity: allDecided ? 1 : 0.4,
+          color: '#3B82F6', borderColor: '#3B82F655', fontWeight: 600,
+        }}>
+        Save {cases.length} review decision{cases.length !== 1 ? 's' : ''}
       </button>
       {!allDecided && (
         <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 6 }}>
@@ -452,6 +499,8 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
               { label: 'New Policies',    value: diffResult.toAdd.length,    color: '#10B981' },
               { label: 'Updated',         value: diffResult.toUpdate.length,  color: '#3B82F6' },
               { label: 'Confirmed Lost',  value: diffResult.autoLost.length,  color: '#EF4444' },
+              { label: 'Rewritten',       value: diffResult.autoRewritten?.length ?? 0, color: '#34D399' },
+              { label: 'Cleared (Paid)',  value: diffResult.autoPaid?.length ?? 0, color: '#10B981' },
               { label: 'Needs Review',    value: diffResult.toReview.length,  color: '#F59E0B' },
             ].filter(item => item.value > 0).map(({ label, value, color }) => (
               <div key={label} style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8, padding: '12px 14px' }}>
@@ -477,12 +526,50 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
                 ✗ {diffResult.autoLost.length} confirmed lost
               </span>
               {' '}— matched termination report. Marked lost automatically.
-              <div style={{ marginTop: 6, fontSize: 11, color: 'var(--qs-dim)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
                 {diffResult.autoLost.map(c => (
-                  <span key={c.id} style={{ marginRight: 12 }}>
-                    {c.customer_name} ({c.product?.toUpperCase()})
+                  <div key={c.id} title={c.termination_reason || undefined} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.customer_name} ({c.product?.toUpperCase()}){' '}
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
                     {c.termination_reason ? ` — ${c.termination_reason}` : ''}
-                  </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {diffResult.autoRewritten?.length > 0 && (
+            <div style={{ fontSize: 12, background: '#34D39911', border: '1px solid #34D39933',
+              borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
+              <span style={{ color: '#34D399', fontWeight: 600 }}>
+                ✓ {diffResult.autoRewritten.length} rewritten / transferred
+              </span>
+              {' '}— cancelled only to move to a new policy. Counted as retained, not lost.
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
+                {diffResult.autoRewritten.map(c => (
+                  <div key={c.id} title={c.termination_reason || undefined} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.customer_name} ({c.product?.toUpperCase()}){' '}
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
+                    {c.termination_reason ? ` — ${c.termination_reason}` : ''}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {diffResult.autoPaid?.length > 0 && (
+            <div style={{ fontSize: 12, background: '#10B98111', border: '1px solid #10B98133',
+              borderRadius: 6, padding: '8px 12px', marginBottom: 12 }}>
+              <span style={{ color: '#10B981', fontWeight: 600 }}>
+                ✓ {diffResult.autoPaid.length} cleared as paid
+              </span>
+              {' '}— absent from this snapshot and not on the committed termination report covering their cancel month. Closed automatically.
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '3px 16px', marginTop: 8, fontSize: 11, color: 'var(--qs-dim)' }}>
+                {diffResult.autoPaid.map(c => (
+                  <div key={c.id} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {c.customer_name} ({c.product?.toUpperCase()}){' '}
+                    <span style={{ fontFamily: "'DM Mono', monospace", color: 'var(--qs-subtle)' }}>{c.policy_no}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -497,13 +584,23 @@ function UploadTab({ uploadFile, uploadError, uploadMsg, isParsing, isCommitting
             />
           )}
 
-          <div style={{ display: "flex", gap: 10 }}>
+          {/* Commit row \u2014 visually separated from the review panel above so the
+              scoped "Save review decisions" action isn't confused with the
+              whole-upload commit. */}
+          <div style={{
+            display: "flex", gap: 10, alignItems: "center",
+            marginTop: 24, paddingTop: 16,
+            borderTop: "1px solid var(--qs-border)",
+          }}>
             <button className="btn-primary" onClick={onCommit} disabled={isCommitting}>
-              {isCommitting ? "Committing\u2026" : "Confirm & Commit"}
+              {isCommitting ? "Committing\u2026" : "Commit Upload"}
             </button>
             <button className="btn-ghost" onClick={onCancel}>
               Cancel
             </button>
+            <span style={{ fontSize: 11, color: "var(--qs-muted)" }}>
+              Applies everything above \u2014 adds, updates, and auto-closures.
+            </span>
           </div>
         </div>
       )}
@@ -535,8 +632,15 @@ function parseRenewalXLSX(data) {
 
   const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
   const rows = allRows.slice(headerIdx + 1);
-  const findRenewalCol = (candidates) =>
-    headers.findIndex(h => candidates.some(c => h?.includes(c)));
+  // Candidate-priority match (see findLapseCol) — first candidate that hits
+  // any header wins, so specific names beat generic ones like "effective date".
+  const findRenewalCol = (candidates) => {
+    for (const c of candidates) {
+      const i = headers.findIndex(h => h?.includes(c));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
 
   const iPolicy    = findRenewalCol(["policy number", "policy no", "policy #", "pol no"]);
   const iCustomer  = findRenewalCol(["customer name", "insured name", "insured", "name", "customer"]);
@@ -739,10 +843,11 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
 
       // 3. Build assignment rotation — seed with existing caseloads for balanced distribution
       const runningCount = {};
+      const householdRep = {}; // household key -> rep id, so a household stays with one rep
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from('renewal_cases')
-          .select('assigned_to_id')
+          .select('assigned_to_id, customer_name, phone')
           .eq('agency_id', agencyId)
           .not('assigned_to_id', 'is', null)
           .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)');
@@ -752,6 +857,9 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
           if (runningCount[c.assigned_to_id] !== undefined) {
             runningCount[c.assigned_to_id]++;
           }
+          // Seed so a new policy joins the rep already handling that household.
+          const k = householdKey(c.customer_name, c.phone);
+          if (k && c.assigned_to_id && !householdRep[k]) householdRep[k] = c.assigned_to_id;
         });
       }
 
@@ -763,6 +871,16 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         const picked = sorted[0];
         runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
         return picked.id;
+      }
+
+      // Keep a household on one rep: reuse the household's rep if known, else
+      // pick the next balanced rep and remember it for the rest of the household.
+      function pickRepForHousehold(row) {
+        const k = householdKey(row.customer_name, row.phone);
+        if (k && householdRep[k]) return householdRep[k];
+        const id = pickNextRep();
+        if (k && id) householdRep[k] = id;
+        return id;
       }
 
       // 4. Create upload record
@@ -784,7 +902,7 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       //    Mixing them in a single upsert causes PostgREST to normalize columns,
       //    which either drops assigned_to_id on new rows or nullifies it on existing rows.
       const newRecords = toAdd.map(r => {
-        const assignedId = pickNextRep();
+        const assignedId = pickRepForHousehold(r);
         return {
           agency_id: agencyId,
           upload_batch_id: upload.id,
@@ -853,28 +971,38 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)');
 
       if (pastDueCases && pastDueCases.length > 0) {
-        // Fetch policy numbers from pending_cases (active cancel cases)
+        // Fetch policy numbers from pending_cases (active cancel cases).
+        // Exclude retained terminal outcomes (saved/rewritten) — those were
+        // kept, not "still in the cancel cycle".
         const { data: cancelCases } = await supabase
           .from('pending_cases')
           .select('policy_no')
           .eq('agency_id', agencyId)
-          .not('status', 'in', '(lost,auto_resolved,cancelled,requested_cancellation)');
+          .not('status', 'in', '(saved,rewritten,lost,auto_resolved,cancelled,requested_cancellation)');
 
         const cancelPolicies = new Set((cancelCases || []).map(c => c.policy_no));
 
-        // Fetch policy numbers from lapse_events (terminated)
+        // Fetch lapse_events (terminated) with reason so rewrites/transfers
+        // (cancelled only to move to a new policy number) count as retained.
         const { data: lapseData } = await supabase
           .from('lapse_events')
-          .select('policy_no')
+          .select('policy_no, termination_reason')
           .eq('agency_id', agencyId);
 
         const lapsedPolicies = new Set((lapseData || []).map(l => l.policy_no));
+        const rewrittenPolicies = new Set(
+          (lapseData || []).filter(l => isRewriteReason(l.termination_reason)).map(l => l.policy_no)
+        );
 
         const toLost = [];
+        const toRetained = [];
         const toAutoResolve = [];
 
         for (const rc of pastDueCases) {
-          if (cancelPolicies.has(rc.policy_no) || lapsedPolicies.has(rc.policy_no)) {
+          if (rewrittenPolicies.has(rc.policy_no)) {
+            // Rewritten/transferred to a new policy number — retained, not lost.
+            toRetained.push(rc.id);
+          } else if (cancelPolicies.has(rc.policy_no) || lapsedPolicies.has(rc.policy_no)) {
             // On pending cancel or termination report — didn't renew
             toLost.push(rc.id);
           } else if (rc.easy_pay && rc.renewal_date < tenDaysAgoStr) {
@@ -890,24 +1018,53 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
         if (toLost.length > 0) {
           await supabase
             .from('renewal_cases')
-            .update({ status: 'lost', resolution_date: today })
+            .update({
+              status: 'lost',
+              resolution_date: today,
+              final_outcome: 'lost',          // dataset label
+              outcome_source: 'observed',     // confirmed on a report
+              final_outcome_set_at: new Date().toISOString(),
+            })
             .in('id', toLost);
+        }
+
+        if (toRetained.length > 0) {
+          await supabase
+            .from('renewal_cases')
+            .update({
+              status: 'confirmed',
+              final_outcome: 'renewed',
+              final_outcome_set_at: new Date().toISOString(),
+              outcome_source: 'observed',
+              resolution_date: today,
+            })
+            .in('id', toRetained);
         }
 
         if (toAutoResolve.length > 0) {
           await supabase
             .from('renewal_cases')
-            .update({ status: 'auto_resolved', resolution_date: today })
+            .update({
+              status: 'auto_resolved',
+              resolution_date: today,
+              final_outcome: 'renewed',       // not on any cancel/term report → renewed
+              outcome_source: 'inferred',      // inferred from easy-pay / age, not observed
+              final_outcome_set_at: new Date().toISOString(),
+            })
             .in('id', toAutoResolve);
         }
 
         crossRefMsg = [
           toLost.length > 0 && `${toLost.length} renewal${toLost.length > 1 ? 's' : ''} closed (entered cancel cycle)`,
+          toRetained.length > 0 && `${toRetained.length} retained (rewritten)`,
           toAutoResolve.length > 0 && `${toAutoResolve.length} auto-resolved`,
         ].filter(Boolean).join(' \u00b7 ');
       }
 
       await supabase.from('renewal_uploads').update({ committed: true }).eq('id', upload.id);
+      // Refresh the customer directory so new customers are searchable and any
+      // service-task names get canonicalized to the official report name by policy.
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       // 6. Build summary message
       const repNames = assignmentQueue.map(r =>
@@ -1022,21 +1179,44 @@ function parseLapseXLSX(data) {
 
   const headers = allRows[headerIdx].map(h => h?.toString().toLowerCase().trim());
   const rows = allRows.slice(headerIdx);
-  const findLapseCol = (candidates) => headers.findIndex(h => candidates.some(c => h?.includes(c)));
+  // Candidate-priority match: try each candidate in order across all headers.
+  // Header-order matching picked "Renewal Effective Date" over "Termination
+  // Effective Date" because it appears first in the BOB export.
+  const findLapseCol = (candidates) => {
+    for (const c of candidates) {
+      const i = headers.findIndex(h => h?.includes(c));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
 
-  const iPolicy   = findLapseCol(["policy", "policy no", "policy number"]);
-  const iCustomer = findLapseCol(["customer", "insured", "name"]);
+  const iPolicy   = findLapseCol(["policy number", "policy no", "policy"]);
+  const iFirst    = findLapseCol(["insured first name", "first name"]);
+  const iLast     = findLapseCol(["insured last name", "last name"]);
+  const iCustomer = findLapseCol(["customer name", "insured name", "customer", "insured", "name"]);
   const iProduct  = findLapseCol(["product name", "line code", "product code", "product", "line of business", "lob"]);
   const iPremium  = findLapseCol(["premium new", "written premium", "annual premium", "premium"]);
   const iDate     = findLapseCol(["termination effective", "lapse date", "cancel date", "cancellation date", "eff date", "effective date"]);
   const iReason   = findLapseCol(["termination reason", "cancel reason", "reason"]);
   const iItems    = findLapseCol(["number of items", "no. of items", "item count", "items"]);
+  const iPhone    = findLapseCol(["phone number", "insured phone", "phone", "mobile", "cell"]);
+  const iEmail    = findLapseCol(["insured email", "email address", "email"]);
+  const iZip      = findLapseCol(["zip code", "zip", "postal"]);
 
   const SINGLE_ITEM_PRODUCTS = ["ho", "condo", "renters", "landlord", "pup", "manufactured", "boat", "motor_club"];
 
   return rows.slice(1).filter(r => r.some(Boolean)).map(r => {
     const productRaw = iProduct >= 0 ? r[iProduct]?.toString() ?? "" : "";
     const product = normaliseProduct(productRaw);
+
+    // BOB exports split the name into First/Last columns — combine when present
+    let customerName = "";
+    if (iFirst >= 0 && iLast >= 0) {
+      customerName = `${r[iFirst]?.toString().trim() ?? ""} ${r[iLast]?.toString().trim() ?? ""}`.trim();
+    }
+    if (!customerName && iCustomer >= 0) {
+      customerName = r[iCustomer]?.toString().trim() ?? "";
+    }
 
     const rawDate = iDate >= 0 ? r[iDate] : null;
     let lapseDate = null;
@@ -1050,13 +1230,16 @@ function parseLapseXLSX(data) {
 
     return {
       policy_no:          iPolicy >= 0   ? r[iPolicy]?.toString().trim() ?? "" : "",
-      customer_name:      iCustomer >= 0 ? r[iCustomer]?.toString().trim() ?? "" : "",
+      customer_name:      customerName,
       product,
       product_raw:        productRaw,
       premium:            iPremium >= 0  ? parseFloat(r[iPremium]?.toString().replace(/[$,]/g, "")) || null : null,
       item_count,
       lapse_date:         lapseDate,
       termination_reason: iReason >= 0   ? r[iReason]?.toString().trim() ?? "" : "",
+      phone:              iPhone >= 0    ? r[iPhone]?.toString().trim() || null : null,
+      email:              iEmail >= 0    ? r[iEmail]?.toString().trim() || null : null,
+      zip:                iZip >= 0      ? r[iZip]?.toString().trim().slice(0, 5) || null : null,
     };
   }).filter(r => r.policy_no);
 }
@@ -1074,6 +1257,9 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
   const [isCommitting, setIsCommitting] = useState(false);
   const [commitMsg, setCommitMsg] = useState("");
   const [parseError, setParseError] = useState("");
+  // Historical bulk load for winback: excluded from growth/attrition charts and
+  // skips the live-cycle side-effects (pending-case closeout, chargeback flags).
+  const [isBackfill, setIsBackfill] = useState(false);
   const lapseFileRef = useRef(null);
 
   async function handleFileSelect(e) {
@@ -1122,6 +1308,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
           rows_added: newCount,
           rows_updated: existingCount,
           committed: false,
+          backfill: isBackfill,
         })
         .select("id")
         .single();
@@ -1131,6 +1318,7 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
         agency_id: agencyId,
         report_month: reportMonth,
         upload_batch_id: upload.id,
+        backfill: isBackfill,
         ...r,
       }));
 
@@ -1143,7 +1331,10 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
       const terminatedPolicyNos = parsedRows.map(r => r.policy_no).filter(Boolean);
       let crossResolved = 0;
 
-      if (terminatedPolicyNos.length > 0) {
+      // A historical backfill is winback raw material only — skip every
+      // live-cycle side-effect (pending-case closeout, chargeback flagging,
+      // queue resync). Those reconcile the current month, not 2023-2025.
+      if (!isBackfill && terminatedPolicyNos.length > 0) {
         const { data: matchedCases } = await supabase
           .from('pending_cases')
           .select('id, policy_no, lapse_date')
@@ -1156,12 +1347,16 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
 
           for (const c of matchedCases) {
             const lapseRow = parsedRows.find(r => r.policy_no === c.policy_no);
+            // A "Cancel/Rewrite" termination means the customer was kept on a
+            // new policy number — close as retained (rewritten), not lost.
+            const rewritten = isRewriteReason(lapseRow?.termination_reason);
             await supabase
               .from('pending_cases')
               .update({
-                status: 'lost',
+                status: rewritten ? 'rewritten' : 'lost',
                 resolution_date: lapseRow?.lapse_date || today,
                 termination_reason: lapseRow?.termination_reason || null,
+                ...(rewritten ? { rewrite_reason: lapseRow?.termination_reason || null } : {}),
               })
               .eq('id', c.id);
           }
@@ -1170,19 +1365,60 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
         }
       }
 
+      // Flag matching new-business revenue entries as potential chargebacks \u2014
+      // a policy that appears on a termination report after being written
+      // usually has its commission charged back, and the revenue dashboard
+      // has no other signal for this. The flag survives daily NB re-uploads
+      // because the upsert only touches the columns it supplies.
+      // Rewrites are skipped: the household stays on a new policy number and
+      // rewrites generate no new-business entry, so the original entry is the
+      // only production record and must keep counting.
+      let chargebacksFlagged = 0;
+      const flagCandidatePolicyNos = isBackfill ? [] : parsedRows
+        .filter(r => r.policy_no && !isRewriteReason(r.termination_reason))
+        .map(r => r.policy_no);
+      if (flagCandidatePolicyNos.length > 0) {
+        const { data: nbMatches } = await supabase
+          .from('revenue_entries')
+          .select('id, policy_no')
+          .eq('agency_id', agencyId)
+          .in('policy_no', flagCandidatePolicyNos)
+          .is('chargeback_flagged_at', null);
+
+        for (const entry of (nbMatches ?? [])) {
+          const lapseRow = parsedRows.find(r => r.policy_no === entry.policy_no);
+          await supabase
+            .from('revenue_entries')
+            .update({
+              chargeback_flagged_at: new Date().toISOString(),
+              chargeback_reason: lapseRow?.termination_reason || null,
+              chargeback_lapse_date: lapseRow?.lapse_date || null,
+            })
+            .eq('id', entry.id);
+        }
+        chargebacksFlagged = (nbMatches ?? []).length;
+      }
+
       await supabase.from("lapse_uploads").update({ committed: true }).eq("id", upload.id);
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       const crossMsg = crossResolved > 0
         ? ` \u00b7 ${crossResolved} pending case${crossResolved > 1 ? 's' : ''} closed from termination report`
         : '';
-      setCommitMsg(`${parsedRows.length} terminations recorded${crossMsg}`);
+      const chargebackMsg = chargebacksFlagged > 0
+        ? ` \u00b7 ${chargebacksFlagged} new-business entr${chargebacksFlagged > 1 ? 'ies' : 'y'} flagged as possible chargeback`
+        : '';
+      setCommitMsg(isBackfill
+        ? `${parsedRows.length} historical terminations ingested for winback (excluded from growth trend).`
+        : `${parsedRows.length} terminations recorded${crossMsg}${chargebackMsg}`);
       setParsedRows(null);
       setLapseFile(null);
-      await syncRetentionQueue(supabase);
+      if (!isBackfill) await syncRetentionQueue(supabase);
       queryClient.invalidateQueries({ queryKey: ["lapse_events_summary", agencyId] });
       queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['revenue_entries', agencyId] });
     } catch (err) {
       console.error("[termination commit error]", err.message);
       setParseError(friendlyUploadError(err.message));
@@ -1209,6 +1445,14 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
             {lapseFile ? `\uD83D\uDCC4 ${lapseFile.name}` : "Choose File"}
           </button>
         </div>
+        <label style={{
+          marginTop: 16, display: "flex", alignItems: "center", gap: 6,
+          fontSize: 12, color: "var(--qs-subtle)", cursor: "pointer",
+        }}
+        title="For a one-time historical bulk load (e.g. 2023-2025) used to generate winback leads. Excluded from the Net Portfolio Growth trend and skips live-cycle reconciliation.">
+          <input type="checkbox" checked={isBackfill} onChange={e => setIsBackfill(e.target.checked)} />
+          Historical backfill (winback only)
+        </label>
       </div>
 
       {parseError && (
@@ -1461,6 +1705,9 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
   // Auto-resolve review state
   const [autoResolveDecisions, setAutoResolveDecisions] = useState({});
+  // Review cases whose decisions were already written via "Confirm N decisions" —
+  // commit must NOT park these back to pending_review.
+  const [resolvedReviewIds, setResolvedReviewIds] = useState([]);
 
   // Fetch pending_cases for diff engine
   const { data: events = [] } = useQuery({
@@ -1498,6 +1745,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       const [
         { data: freshEvents, error: fetchErr },
         { data: lapseEvents, error: lapseErr },
+        { data: termUploads },
       ] = await Promise.all([
         supabase
           .from('pending_cases')
@@ -1508,13 +1756,34 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
           .from('lapse_events')
           .select('policy_no, lapse_date, termination_reason')
           .eq('agency_id', agencyId),
+        supabase
+          .from('lapse_uploads')
+          .select('report_month, created_at')
+          .eq('agency_id', agencyId)
+          .eq('committed', true),
       ]);
       if (fetchErr) throw new Error(fetchErr.message);
 
       const lapseMap = new Map((lapseEvents || []).map(l => [l.policy_no, l]));
-      const diff = diffReport(parsed, freshEvents || [], lapseMap);
+
+      // Months fully covered by a committed termination report: the upload
+      // must postdate the month's end, otherwise a partial-month export could
+      // be missing late-month terminations and absence proves nothing.
+      const coveredTermMonths = new Set(
+        (termUploads || [])
+          .filter(u => {
+            if (!u.report_month) return false;
+            const [y, m] = u.report_month.slice(0, 7).split('-').map(Number);
+            const monthEnd = new Date(y, m, 1); // first day of following month
+            return new Date(u.created_at) >= monthEnd;
+          })
+          .map(u => u.report_month.slice(0, 7))
+      );
+
+      const diff = diffReport(parsed, freshEvents || [], lapseMap, coveredTermMonths);
       setDiffResult(diff);
       setAutoResolveDecisions({});
+      setResolvedReviewIds([]);
     } catch (err) {
       console.error('[triage upload error]', err.message);
       setUploadError(`❌ ${friendlyUploadError(err.message)}`);
@@ -1540,6 +1809,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
     if (keep.length > 0)
       await supabase.from('pending_cases').update({ status: 'pending' }).in('id', keep);
 
+    setResolvedReviewIds(prev => [...prev, ...paid, ...lost, ...keep]);
     setAutoResolveDecisions({});
     queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
     queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
@@ -1559,16 +1829,19 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
       const activeReps = reps || [];
       const runningCount = {};
+      const householdRep = {}; // household key -> rep id, so a household stays with one rep
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from("pending_cases")
-          .select("assigned_to_id")
+          .select("assigned_to_id, customer_name, phone")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
           .not("status", "in", '(saved,lost,auto_resolved,requested_cancellation)');
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
           if (runningCount[c.assigned_to_id] !== undefined) runningCount[c.assigned_to_id]++;
+          const k = householdKey(c.customer_name, c.phone);
+          if (k && c.assigned_to_id && !householdRep[k]) householdRep[k] = c.assigned_to_id;
         });
       }
 
@@ -1580,6 +1853,18 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         return picked;
       }
 
+      // Keep a household on one rep (object form for the pending-cancel flow).
+      function pickRepForHousehold(row) {
+        const k = householdKey(row.customer_name, row.phone);
+        if (k && householdRep[k]) {
+          const found = activeReps.find(x => x.id === householdRep[k]);
+          if (found) return found;
+        }
+        const rep = pickNextRep();
+        if (k && rep) householdRep[k] = rep.id;
+        return rep;
+      }
+
       const { data: batch, error: batchErr } = await supabase
         .from("pending_cancel_uploads")
         .insert({
@@ -1588,7 +1873,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
           filename: uploadFile?.name,
           rows_added: diffResult.toAdd.length,
           rows_updated: diffResult.toUpdate.length,
-          rows_auto_resolved: diffResult.autoLost.length + diffResult.toReview.length,
+          rows_auto_resolved: diffResult.autoLost.length + (diffResult.autoRewritten?.length ?? 0) + (diffResult.autoPaid?.length ?? 0) + diffResult.toReview.length,
           committed: false,
         })
         .select().single();
@@ -1599,7 +1884,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         const { error } = await supabase
           .from("pending_cases")
           .insert(diffResult.toAdd.map(r => {
-            const rep = pickNextRep();
+            const rep = pickRepForHousehold(r);
             return {
               agency_id: agencyId,
               upload_batch_id: batchId,
@@ -1630,15 +1915,44 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         }
       }
 
-      // Stage ambiguous absent cases for human review
-      if (diffResult.toReview.length > 0) {
+      // Auto-clear paid cases — absent from the snapshot and proven absent
+      // from a committed termination report covering their cancel month.
+      if (diffResult.autoPaid?.length > 0) {
+        await supabase
+          .from('pending_cases')
+          .update({ status: 'auto_resolved', resolution_date: new Date().toISOString().slice(0, 10) })
+          .in('id', diffResult.autoPaid.map(c => c.id));
+      }
+
+      // Auto-close rewrites/transfers as RETAINED (not lost) — the customer
+      // moved to a new policy number, so this is a save, not a loss.
+      if (diffResult.autoRewritten?.length > 0) {
+        for (const c of diffResult.autoRewritten) {
+          await supabase.from('pending_cases').update({
+            status: 'rewritten',
+            resolution_date: c.resolution_date,
+            termination_reason: c.termination_reason || null,
+            rewrite_reason: c.termination_reason || null,
+            lapse_date: c.lapse_date || null,
+          }).eq('id', c.id);
+        }
+      }
+
+      // Stage ambiguous absent cases for human review — but never overwrite
+      // cases whose review decisions were already written via "Confirm N
+      // decisions" (paid/lost/keep would silently revert to pending_review).
+      const reviewIdsToPark = diffResult.toReview
+        .map(c => c.id)
+        .filter(id => !resolvedReviewIds.includes(id));
+      if (reviewIdsToPark.length > 0) {
         await supabase
           .from('pending_cases')
           .update({ status: 'pending_review' })
-          .in('id', diffResult.toReview.map(c => c.id));
+          .in('id', reviewIdsToPark);
       }
 
       await supabase.from("pending_cancel_uploads").update({ committed: true }).eq("id", batchId);
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       // Re-evaluate priority_tier for all active cases — cases that were P3
       // last upload may now be P1/P2 as the cancel date approaches.
@@ -1656,7 +1970,9 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         diffResult.toAdd.length > 0     && `${diffResult.toAdd.length} added`,
         diffResult.toUpdate.length > 0   && `${diffResult.toUpdate.length} updated`,
         diffResult.autoLost.length > 0   && `${diffResult.autoLost.length} confirmed lost`,
-        diffResult.toReview.length > 0   && `${diffResult.toReview.length} need review`,
+        diffResult.autoRewritten?.length > 0 && `${diffResult.autoRewritten.length} rewritten`,
+        diffResult.autoPaid?.length > 0  && `${diffResult.autoPaid.length} cleared as paid`,
+        reviewIdsToPark.length > 0       && `${reviewIdsToPark.length} need review`,
       ].filter(Boolean).join(' · ');
 
       setUploadMsg(`${parts} · ${assignmentSummary}`);
@@ -1710,16 +2026,19 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
 
       const activeReps = reps || [];
       const runningCount = {};
+      const householdRep = {}; // household key -> rep id, so a household stays with one rep
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from("pending_cases")
-          .select("assigned_to_id")
+          .select("assigned_to_id, customer_name, phone")
           .eq("agency_id", agencyId)
           .not("assigned_to_id", "is", null)
           .not("status", "in", '(saved,lost,auto_resolved,requested_cancellation,cancelled)');
         activeReps.forEach(r => { runningCount[r.id] = 0; });
         (caseloads || []).forEach(c => {
           if (runningCount[c.assigned_to_id] !== undefined) runningCount[c.assigned_to_id]++;
+          const k = householdKey(c.customer_name, c.phone);
+          if (k && c.assigned_to_id && !householdRep[k]) householdRep[k] = c.assigned_to_id;
         });
       }
 
@@ -1729,6 +2048,18 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
         const picked = sorted[0];
         runningCount[picked.id] = (runningCount[picked.id] || 0) + 1;
         return picked;
+      }
+
+      // Keep a household on one rep (object form for the cancellation-audit flow).
+      function pickRepForHousehold(row) {
+        const k = householdKey(row.customer_name, row.phone);
+        if (k && householdRep[k]) {
+          const found = activeReps.find(x => x.id === householdRep[k]);
+          if (found) return found;
+        }
+        const rep = pickNextRep();
+        if (k && rep) householdRep[k] = rep.id;
+        return rep;
       }
 
       const policyNosFromAdd = cancelAuditDiff.toAdd.map(r => r.policy_no).filter(Boolean);
@@ -1773,7 +2104,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
             await supabase.from('pending_cases').update(advancePayload).eq('id', existingByPolicyNo.id);
             rowsUpdated++;
           } else {
-            const rep = pickNextRep();
+            const rep = pickRepForHousehold(r);
             trueInserts.push({
               agency_id: agencyId, upload_batch_id: batchId,
               ...(rep ? { assigned_to_id: rep.id, assigned_to: rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim() } : {}),
@@ -1798,6 +2129,7 @@ export default function RetentionImport({ agencyId, currentUserId, currentEmploy
       }
 
       await supabase.from("cancellation_uploads").update({ committed: true, rows_added: rowsAdded, rows_updated: rowsUpdated }).eq("id", batchId);
+      await supabase.rpc('reconcile_households', { p_agency_id: agencyId });
 
       // Re-evaluate priority_tier for all active cases after stage advances.
       await supabase.rpc('refresh_priority_tiers', {

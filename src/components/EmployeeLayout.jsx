@@ -5,7 +5,7 @@
 // persona switcher + sign-out on the right. Content sits full-width below so
 // queue screens can use the whole viewport instead of a narrow sidebar gutter.
 
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,22 +15,34 @@ import PersonaSwitcher from './PersonaSwitcher';
 import { useForceTheme } from '../contexts/ThemeContext';
 
 // Nav tabs by hat. The active hat is the persona for a dual-role producer,
-// otherwise the employee's single role. Scorecard + Time Clock are shared.
-const SCORECARD_ITEM = { to: '/my/scorecard', label: 'Scorecard' };
-const PUNCH_ITEM     = { to: '/punch',        label: 'Time Clock' };
+// otherwise the employee's single role. Scorecard is shared.
+const SCORECARD_ITEM     = { to: '/my/scorecard',     label: 'Scorecard' };
+const SERVICE_BATCH_ITEM = { to: '/my/service-batch', label: 'Service Batch' };
+const SEARCH_ITEM        = { to: '/my/customers',     label: '🔎 Search' };
+// Time Clock (/punch) is hidden from the employee portal for now — the punch
+// clock isn't in use yet. The route still works if opened directly; re-add
+// { to: '/punch', label: 'Time Clock' } to the tab arrays below to restore it.
 
 const SERVICE_TABS = [
   { to: '/my/today', label: 'Today' },
   { to: '/my/queue', label: 'My Queue' },
+  SEARCH_ITEM,
+  SERVICE_BATCH_ITEM,
   SCORECARD_ITEM,
-  PUNCH_ITEM,
 ];
 
+// Unlicensed (front desk): clerical intake only — Service Batch.
+const UNLICENSED_TABS = [
+  SERVICE_BATCH_ITEM,
+];
+// The only /my/* surfaces an unlicensed user may open (others redirect here).
+const UNLICENSED_ALLOWED = ['/my/service-batch', '/my/change-password'];
+
 const SALES_TABS = [
-  { to: '/agency/cross-sell', label: 'Cross-Sell' },
+  { to: '/my/cross-sell', label: 'Cross-Sell' },
+  SEARCH_ITEM,
   SCORECARD_ITEM,
-  { to: '/agency/referrals',  label: 'Referrals' },
-  PUNCH_ITEM,
+  { to: '/my/referrals',  label: 'Referrals' },
 ];
 
 // Shared pill styling for the top nav — matches the principal nav's pill feel.
@@ -38,8 +50,8 @@ function navPillClass({ isActive }) {
   return [
     'qs-focusable px-4 py-2 rounded-lg text-[0.95rem] font-semibold whitespace-nowrap transition-colors',
     isActive
-      ? 'bg-white/10 text-white'
-      : 'text-gray-300 hover:text-white hover:bg-white/5',
+      ? 'bg-blue-100 text-blue-700'
+      : 'text-gray-900 hover:bg-black/5',
   ].join(' ');
 }
 
@@ -53,11 +65,13 @@ export default function EmployeeLayout() {
   // A principal and a dual-role (sales + service) employee both wear more than
   // one hat, so both auto-sync the pill to the URL. Single-role employees just
   // get their one hat. The returned persona shapes the nav below.
+  const location = useLocation();
   const empRoles = employee?.roles || [];
   const hasService = empRoles.includes('service_inbound')
     || empRoles.includes('service_outbound')
     || empRoles.includes('service');
   const hasSales = empRoles.includes('sales');
+  const hasUnlicensed = empRoles.includes('unlicensed');
   const isPrincipal = currentAgencyRole === 'principal';
   const multiHat = isPrincipal || (hasSales && hasService);
   const [persona] = useAutoSyncPersona(multiHat, isPrincipal ? 'principal' : 'service');
@@ -112,10 +126,32 @@ export default function EmployeeLayout() {
   )).join(' · ') || 'Employee';
 
   // The active hat: dual-role follows the pill, single-role uses its one role.
+  // Unlicensed is the clerical-only hat, used only when there's no rep role.
   const hat = (hasSales && hasService)
     ? (persona === 'service' ? 'service' : 'sales')
-    : (hasSales ? 'sales' : 'service');
-  const navItems = hat === 'sales' ? SALES_TABS : SERVICE_TABS;
+    : hasSales ? 'sales'
+    : hasService ? 'service'
+    : hasUnlicensed ? 'unlicensed'
+    : 'service';
+  const navItems = hat === 'sales' ? SALES_TABS
+    : hat === 'unlicensed' ? UNLICENSED_TABS
+    : SERVICE_TABS;
+
+  // Confine the unlicensed (front desk) hat to the Service Batch — they have no
+  // license, so the retention queues and customer/coverage surfaces are off
+  // limits. NOTE: this is a UI boundary; hardening it at the data layer
+  // (role-aware RLS on renewal/cancel tables) is a recommended follow-up.
+  const brandTo = hat === 'unlicensed' ? '/my/service-batch' : '/my/today';
+  if (hat === 'unlicensed' && !UNLICENSED_ALLOWED.some(p => location.pathname.startsWith(p))) {
+    return <Navigate to="/my/service-batch" replace />;
+  }
+
+  // A principal who flips to their Principal hat belongs in the agency app, not
+  // the employee shell — bounce them out so they get the agency-gated nav
+  // instead of being stranded on the rep tabs.
+  if (isPrincipal && persona === 'principal') {
+    return <Navigate to="/agency/retention" replace />;
+  }
 
   // Responsive side gutter shared by the nav bar and the content area so they
   // stay aligned while still letting content use the full viewport width.
@@ -129,15 +165,15 @@ export default function EmployeeLayout() {
     }}>
 
       {/* ── Top nav bar (principal-style glass header) ───────────────── */}
-      <header className="sticky top-0 z-50 bg-[#0f172a]/90 backdrop-blur-xl border-b border-white/10">
+      <header className="relative z-50 bg-white/90 backdrop-blur-xl border-b border-black/10 shadow-sm">
         {/* Animated gradient accent line */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x" />
 
-        <div className="flex items-center justify-between gap-4 py-3"
+        <div className="flex items-center gap-4 py-3"
           style={{ paddingLeft: pagePadX, paddingRight: pagePadX }}>
 
           {/* Brand */}
-          <NavLink to="/my/today" className="qs-focusable flex items-center gap-3 group min-w-0">
+          <NavLink to={brandTo} className="qs-focusable flex flex-1 items-center gap-3 group min-w-0">
             {agencyLogoUrl ? (
               <img src={agencyLogoUrl} alt="" className="h-9 w-auto object-contain flex-shrink-0" />
             ) : (
@@ -148,10 +184,10 @@ export default function EmployeeLayout() {
               </div>
             )}
             <div className="min-w-0">
-              <div className="font-black text-base sm:text-lg tracking-tight text-white truncate">
+              <div className="font-black text-base sm:text-lg tracking-tight text-gray-900 truncate">
                 {agencyName}
               </div>
-              <div className="text-xs text-gray-400 truncate">{agencySubtext}</div>
+              <div className="text-xs text-gray-500 truncate">{agencySubtext}</div>
             </div>
           </NavLink>
 
@@ -165,25 +201,33 @@ export default function EmployeeLayout() {
           </nav>
 
           {/* Right cluster: persona switcher · identity · sign out */}
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex flex-1 items-center justify-end gap-3">
             <div className="hidden sm:block">
-              <PersonaSwitcher compact />
+              <PersonaSwitcher compact onLight />
             </div>
 
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full flex items-center justify-center text-[0.8125rem] font-bold flex-shrink-0"
-                style={{ background: 'rgba(59,130,246,0.25)', border: '1px solid rgba(59,130,246,0.4)', color: '#93c5fd' }}>
+                style={{ background: 'rgba(59,130,246,0.15)', border: '1px solid rgba(59,130,246,0.45)', color: '#1d4ed8' }}>
                 {initials}
               </div>
               <div className="hidden lg:block min-w-0">
-                <div className="text-[0.8125rem] font-semibold text-white truncate leading-tight">{fullName}</div>
-                <div className="text-xs text-gray-400 truncate leading-tight">{roleLabel}</div>
+                <div className="text-[0.8125rem] font-semibold text-gray-900 truncate leading-tight">{fullName}</div>
+                <div className="text-xs text-gray-500 truncate leading-tight">{roleLabel}</div>
               </div>
             </div>
 
+            <a
+              href="/my/change-password"
+              title="Change password"
+              className="qs-focusable hidden sm:inline-flex px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-900 hover:text-blue-600 border border-black/10 hover:border-blue-400 hover:bg-blue-50 transition-colors"
+            >
+              🔑 Password
+            </a>
+
             <button
               onClick={handleSignOut}
-              className="qs-focusable px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-300 hover:text-white border border-white/10 hover:border-red-500/40 hover:bg-red-500/10 transition-colors"
+              className="qs-focusable px-3 py-2 rounded-lg text-[0.875rem] font-semibold text-gray-900 hover:text-red-600 border border-black/10 hover:border-red-400 hover:bg-red-50 transition-colors"
             >
               Sign out
             </button>
@@ -198,6 +242,9 @@ export default function EmployeeLayout() {
               {label}
             </NavLink>
           ))}
+          <a href="/my/change-password" className="qs-focusable px-4 py-2 rounded-lg text-[0.95rem] font-semibold whitespace-nowrap text-gray-900 hover:bg-black/5">
+            🔑 Password
+          </a>
         </nav>
       </header>
 

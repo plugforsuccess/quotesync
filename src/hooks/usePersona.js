@@ -3,7 +3,7 @@
 // default landing pages and nav emphasis but never restricts what data the
 // user can see (the data layer always uses the user's real roles + RLS).
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { personaForPath } from '../config/navConfig';
 
@@ -87,21 +87,31 @@ export function usePersona(defaultPersona = 'principal') {
 export function useAutoSyncPersona(enabled, defaultPersona = 'principal') {
   const location = useLocation();
   const [persona, setPersona] = usePersona(defaultPersona);
+  // Always-current persona, read inside effects that must NOT depend on persona.
+  const personaRef = useRef(persona);
+  personaRef.current = persona;
 
+  // Snap the pill to the page being viewed — but ONLY when the path actually
+  // changes. Depending on `persona` here would re-run this on every explicit
+  // pill click and revert the selection against the page we're leaving (the bug
+  // where Sales/Principal wouldn't stick). Navigation updates the path, which is
+  // the only thing that should drive a re-sync.
   useEffect(() => {
     if (!enabled) return;
     const next = personaForPath(location.pathname);
-    if (next && PERSONAS.includes(next) && next !== persona) {
+    if (next && PERSONAS.includes(next) && next !== personaRef.current) {
       setPersona(next);
     }
-  }, [location.pathname, enabled, persona, setPersona]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, enabled, setPersona]);
 
   // Remember where we are in each hat so the switcher can return here. A page
   // owned by a specific hat (personaForPath) is filed under that hat; a shared
   // page (scorecard / punch) is filed under the hat currently worn.
   useEffect(() => {
-    recordPersonaPath(personaForPath(location.pathname) || persona, location.pathname);
-  }, [location.pathname, persona]);
+    recordPersonaPath(personaForPath(location.pathname) || personaRef.current, location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   return [persona, setPersona];
 }

@@ -89,7 +89,7 @@ export default function RetentionScorecard({ metrics, isLoading }) {
           <MetricRow
             label="Save Rate"
             value={fmtPct(metrics.cancelSaveRate)}
-            sub={`${metrics.cancelSaved} saved · ${metrics.cancelLost} lost`}
+            sub={`${metrics.cancelSaved} saved · ${metrics.cancelLost} lost${metrics.cancelReversed > 0 ? ` · ${metrics.cancelReversed} reversed` : ''}`}
             color={saveRateColor}
           />
           <MetricRow
@@ -152,6 +152,12 @@ export default function RetentionScorecard({ metrics, isLoading }) {
             label="Premium Retained"
             value={fmt$(metrics.renewalPremiumRetained)}
             color="#10B981"
+          />
+          <MetricRow
+            label="Premium Saved"
+            value={fmt$(metrics.renewalPremiumReduced)}
+            sub="reduced off renewal offers"
+            color="#34D399"
           />
           {metrics.renewalsShopping > 0 && (
             <MetricRow

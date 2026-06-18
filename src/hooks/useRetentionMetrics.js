@@ -30,23 +30,28 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
       ] = await Promise.all([
         supabase
           .from('pending_cases')
-          .select('id, status, premium_at_risk, contacted_at, resolution_date, promise_date, updated_at, attempt_count, opened_by_id, closed_by_id, stage')
+          .select('id, status, premium_at_risk, saved_premium, save_reversed_at, contacted_at, resolution_date, promise_date, updated_at, attempt_count, opened_by_id, closed_by_id, stage')
           .eq(cancelFilter.column, cancelFilter.value),
 
         supabase
           .from('renewal_cases')
-          .select('id, status, premium, renewal_date, original_year, contacted_at, resolution_date, updated_at, attempt_count, premium_change_pct, opened_by_id, closed_by_id')
+          .select('id, status, premium, saved_premium, renewal_date, original_year, contacted_at, resolution_date, updated_at, attempt_count, premium_change_pct, opened_by_id, closed_by_id')
           .eq(renewalFilter.column, renewalFilter.value),
 
+        // Exclude auto_logged attempts (the synthetic record written when an
+        // outcome is marked without a dialed call) so outreach/reach reflect
+        // only real calls — a rep can't pad activity by clicking "Saved".
         supabase
           .from('pending_cancel_attempts')
           .select('id, pending_case_id, result, attempted_at')
-          .eq('employee_id', employeeId),
+          .eq('employee_id', employeeId)
+          .eq('auto_logged', false),
 
         supabase
           .from('renewal_attempts')
           .select('id, renewal_case_id, result, attempted_at')
-          .eq('employee_id', employeeId),
+          .eq('employee_id', employeeId)
+          .eq('auto_logged', false),
 
         // Inbound only: count cases closed by this employee that were opened by someone else
         scoreType === 'inbound'
@@ -69,8 +74,14 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
 
       // ── Pending Cancel Metrics ──────────────────────────────────────────
       const cancelWorkable = allCancel.filter(e => !CANCEL_TERMINAL.includes(e.status));
-      const cancelSaved    = allCancel.filter(e => e.status === 'saved');
-      const cancelLost     = allCancel.filter(e => ['lost','requested_cancellation','cancelled'].includes(e.status));
+      // A save reversed by the Allstate termination report (the policy lapsed
+      // anyway) no longer counts as a save — it counts as a loss. This claws back
+      // the credit so a "saved" that didn't hold can't pad the save rate.
+      const cancelReversed = allCancel.filter(e => e.status === 'saved' && e.save_reversed_at);
+      const cancelSaved    = allCancel.filter(e => e.status === 'saved' && !e.save_reversed_at);
+      const cancelLost     = allCancel.filter(e =>
+        ['lost','requested_cancellation','cancelled'].includes(e.status) ||
+        (e.status === 'saved' && e.save_reversed_at));
 
       const cancelCaseIdsWithAttempts = new Set(allCancelAttempts.map(a => a.pending_case_id));
       const cancelCaseIdsReached = new Set(
@@ -82,7 +93,9 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
       const cancelReachRate = allCancel.length > 0
         ? cancelCaseIdsReached.size / allCancel.length : null;
 
-      const premiumSaved  = cancelSaved.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
+      // Prefer the rep-confirmed saved_premium (what the policy continues at);
+      // fall back to the at-risk amount for saves logged before that capture.
+      const premiumSaved  = cancelSaved.reduce((s, e) => s + (e.saved_premium ?? e.premium_at_risk ?? 0), 0);
       const premiumAtRisk = cancelWorkable.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
 
       const promisesDue  = allCancel.filter(e =>
@@ -115,6 +128,13 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
         ? renewalCaseIdsReached.size / allRenewals.length : null;
 
       const renewalPremiumRetained = renewalsConfirmed.reduce((s, e) => s + (e.premium || 0), 0);
+      // Dollars the agent took off the renewal offer on saved cases (offer −
+      // final premium, only counting genuine reductions).
+      const renewalPremiumReduced = renewalsConfirmed.reduce((s, e) => {
+        if (e.saved_premium == null || e.premium == null) return s;
+        const d = e.premium - e.saved_premium;
+        return s + (d > 0 ? d : 0);
+      }, 0);
       const renewalResolved = renewalsConfirmed.length + renewalsLost.length;
       const renewalRetainRate = renewalResolved > 0
         ? renewalsConfirmed.length / renewalResolved : null;
@@ -142,6 +162,7 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
         cancelWorkable:       cancelWorkable.length,
         cancelSaved:          cancelSaved.length,
         cancelLost:           cancelLost.length,
+        cancelReversed:       cancelReversed.length,
         cancelSaveRate,
         cancelContactRate,
         cancelReachRate,
@@ -163,6 +184,7 @@ export function useRetentionMetrics(employeeId, scoreType = 'outbound') {
         renewalReachRate,
         totalRenewalAttempts:  allRenewalAttempts.length,
         renewalPremiumRetained,
+        renewalPremiumReduced,
         avgDaysBeforeRenewal,
         // Inbound-only metrics
         inboundClosures:       inboundClosures.length,

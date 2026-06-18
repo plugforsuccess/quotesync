@@ -37,6 +37,7 @@ import {
   RoofReplacedRecentlyStep,
   PropertyDetailsStep,
 } from './components/wizard/WizardSteps';
+import DeclarationFastPathStep from './components/wizard/DeclarationFastPathStep';
 import { validateStep } from './components/wizard/wizardValidation';
 
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
@@ -154,64 +155,29 @@ const MANUAL_ADVANCE_STEPS = new Set([
   'propertyDetails',
 ]);
 
-// ─── Progress Wheel ────────────────────────────────────────────────
+// ─── Progress Bar ──────────────────────────────────────────────────
+// Slim bar pinned directly beneath the fixed global header (80px mobile /
+// 96px desktop — see Layout spacer). Sits in the header/content seam so it
+// never overlaps the logo above or the question text below. Mirrors the
+// header's scroll hide/show via `hidden`.
 
-function ProgressWheel({ pct, hidden }) {
-  const size = 120;
-  const stroke = 8;
-  const r = (size - stroke) / 2;
-  const circ = 2 * Math.PI * r;
-  const offset = circ - (pct / 100) * circ;
-  const gradientId = 'progress-wheel-gradient';
-
+function ProgressBar({ pct, hidden }) {
   return (
     <div
+      className="fixed left-0 right-0 top-[80px] sm:top-[96px] z-40 px-4 pointer-events-none transition-all duration-300"
       style={{
-        position: 'fixed',
-        top: '16px',
-        left: '50%',
-        transform: hidden ? 'translateX(-50%) translateY(-20px)' : 'translateX(-50%)',
+        transform: hidden ? 'translateY(-120%)' : 'translateY(0)',
         opacity: hidden ? 0 : 1,
-        transition: 'transform 300ms ease, opacity 300ms ease',
-        zIndex: 60,
-        pointerEvents: 'none',
       }}
     >
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} className="-rotate-90" style={{ display: 'block' }}>
-          <defs>
-            <linearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#34d399" />
-              <stop offset="100%" stopColor="#14b8a6" />
-            </linearGradient>
-          </defs>
-
-          {/* Track */}
-          <circle
-            cx={size / 2} cy={size / 2} r={r}
-            fill="#0f172a"
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth={stroke}
+      <div className="max-w-lg mx-auto flex items-center gap-2.5">
+        <div className="flex-1 h-1.5 rounded-full bg-white/15 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500"
+            style={{ width: `${pct}%`, transition: 'width 0.5s ease-out' }}
           />
-
-          {/* Arc */}
-          <circle
-            cx={size / 2} cy={size / 2} r={r}
-            fill="transparent"
-            stroke={`url(#${gradientId})`}
-            strokeWidth={stroke}
-            strokeLinecap="round"
-            strokeDasharray={circ}
-            strokeDashoffset={offset}
-            style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
-          />
-        </svg>
-
-        {/* Center label */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-black text-white leading-none">{pct}%</span>
-          <span className="text-xs font-semibold text-white/60 mt-0.5">Complete</span>
         </div>
+        <span className="text-xs font-bold text-white/80 tabular-nums w-9 text-right">{pct}%</span>
       </div>
     </div>
   );
@@ -590,6 +556,40 @@ export default function SaveWizardPage() {
     goNext();
   }, [setAnswer, onStepLeaving, currentStepId, goNext]);
 
+  // ─── Dec-page fast path (skip the manual questionnaire) ─────────
+
+  const handleDecFastPathContinue = useCallback((declarations) => {
+    const list = declarations || [];
+    // Infer product intent from the uploaded policy types (aids routing).
+    const types = new Set(list.map((d) => d?.policy_type).filter(Boolean));
+    const hasAuto = types.has('auto');
+    const hasHome = types.has('home') || types.has('condo');
+    let intent = null;
+    if (hasAuto && hasHome) intent = 'bundle';
+    else if (hasAuto) intent = 'auto';
+    else if (hasHome) intent = 'home';
+    else if (types.has('landlord')) intent = 'landlord';
+    if (intent) setAnswer('productIntent', intent);
+
+    // Prefill the name from the declarations if we don't already have one.
+    const primaryName = list.find((d) => d?.named_insured)?.named_insured;
+    if (primaryName && !answers.firstName) {
+      const parts = primaryName.trim().split(/\s+/);
+      setAnswer('firstName', parts[0]);
+      if (parts.length > 1) setAnswer('lastName', parts.slice(1).join(' '));
+    }
+
+    setAnswer('intakeMode', 'upload');
+    trackEvent('declaration_fastpath_continue', { count: list.length, intent });
+    goNext();
+  }, [answers.firstName, setAnswer, goNext]);
+
+  const handleDecFastPathSkip = useCallback(() => {
+    setAnswer('intakeMode', 'manual');
+    trackEvent('declaration_fastpath_skipped', {});
+    goNext();
+  }, [setAnswer, goNext]);
+
   const handleNext = useCallback(() => {
     const validationError = validateStep(currentStepId, answers);
     if (validationError) {
@@ -636,6 +636,13 @@ export default function SaveWizardPage() {
             onAutoAdvance={handleAutoAdvance}
             isTargetZip={isTargetZip}
             licensedStatesLabel={funnelAgency?.licensed_states?.join(', ') || 'Georgia'}
+          />
+        );
+      case 'decUpload':
+        return (
+          <DeclarationFastPathStep
+            onContinue={handleDecFastPathContinue}
+            onSkip={handleDecFastPathSkip}
           />
         );
       case 'discountQualifier':
@@ -903,14 +910,13 @@ export default function SaveWizardPage() {
       <div className="absolute top-20 left-10 w-72 h-72 bg-primary-500/20 rounded-full blur-3xl animate-pulse"></div>
       <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '700ms' }}></div>
 
-      {/* Progress Wheel — OUTSIDE the padded container */}
-      {!isConfirmation && <ProgressWheel pct={Math.min(
-        Math.round(((currentIndex + 1) / (wizard.totalSteps - 1)) * 100),
-        99
-      )} hidden={hideWheel} />}
+      {/* Progress Bar — pinned just under the fixed header. Percentage comes
+          from the hook, which uses the longest path as the denominator until a
+          product is chosen so it doesn't over-report before the path is known. */}
+      {!isConfirmation && <ProgressBar pct={wizard.progressPct} hidden={hideWheel} />}
 
-      {/* Content container — top padding removed, bottom padding kept */}
-      <div className="container mx-auto px-4 pt-20 pb-12 sm:pb-16 relative z-10">
+      {/* Content container — modest top padding (no longer clearing a floating wheel) */}
+      <div className="container mx-auto px-4 pt-8 pb-12 sm:pb-16 relative z-10">
         <div className="max-w-lg mx-auto">
 
           {/* Header — only on qualification steps */}

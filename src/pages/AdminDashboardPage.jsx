@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { Eye } from 'lucide-react';
+import DataIngestionHealth from './components/admin/DataIngestionHealth';
 
 const KpiCard = ({ label, value, sub, color = 'var(--qs-bright)' }) => (
   <div className="dark-card" style={{ flex: 1 }}>
@@ -157,6 +158,9 @@ const AdminDashboardPage = () => {
             </table>
           </div>
         </div>
+
+        {/* Per-agency upload cadence — catch a stale feed before it rots retention */}
+        <DataIngestionHealth />
       </div>
     </div>
   );

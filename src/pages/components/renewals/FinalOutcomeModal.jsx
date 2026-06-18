@@ -22,9 +22,10 @@ function useSetFinalOutcome() {
     mutationFn: async ({ policyId, finalOutcome, notes, employeeId }) => {
       const now = new Date().toISOString();
 
-      const renewalStatus = finalOutcome === 'renewed' ? 'renewed'
+      // Map the outcome onto the canonical workflow status ('renewed' → 'confirmed').
+      const workflowStatus = finalOutcome === 'renewed' ? 'confirmed'
         : finalOutcome === 'lost' ? 'lost'
-        : undefined; // unknown doesn't change renewal_status
+        : undefined; // unknown doesn't change the status
 
       const updates = {
         final_outcome: finalOutcome,
@@ -32,10 +33,13 @@ function useSetFinalOutcome() {
         final_outcome_set_by: employeeId,
         final_outcome_set_at: now,
         followup_completed_at: now,
+        // Human-verified outcome — tag provenance so the elasticity dataset can
+        // separate rep-confirmed from inferred/observed labels.
+        ...(finalOutcome !== 'unknown' ? { outcome_source: 'rep' } : {}),
       };
 
-      if (renewalStatus) {
-        updates.renewal_status = renewalStatus;
+      if (workflowStatus) {
+        updates.status = workflowStatus;
       }
 
       const { data, error } = await supabase

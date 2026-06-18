@@ -142,7 +142,14 @@ export const AuthProvider = ({ children }) => {
   const [impersonationSession, setImpersonationSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [authError, setAuthError] = useState(null);
+  // True once role/membership resolution has completed for the current user
+  // (success OR failure). LoginPage must not route until this is set —
+  // routing on `user` alone races membership resolution and lands users on
+  // the public home page when localStorage has no cached role.
+  const [authzResolved, setAuthzResolved] = useState(false);
   const requestIdRef = useRef(0);
+  const userRef = useRef(null);
+  useEffect(() => { userRef.current = user; }, [user]);
 
   // Fetch user profile and memberships
   const fetchUserProfile = async (currentUser, accessToken = null) => {
@@ -188,6 +195,7 @@ export const AuthProvider = ({ children }) => {
           setCurrentAgencyId(null);
           setCurrentAgencyRole(null);
         }
+        setAuthzResolved(true);
         return;
       }
     }
@@ -389,6 +397,7 @@ export const AuthProvider = ({ children }) => {
                 .from('lapse_events')
                 .select('report_month, product, premium, item_count')
                 .eq('agency_id', resolvedAgencyId)
+                .eq('backfill', false) // exclude one-time historical winback backfill
                 .order('report_month', { ascending: false });
               const byMonth = {};
               (data ?? []).forEach(r => {
@@ -470,6 +479,7 @@ export const AuthProvider = ({ children }) => {
         ]).catch(() => {}); // prefetch failures are non-fatal — pages will fetch on demand
       }
 
+      setAuthzResolved(true);
       console.log('[AUTHZ] resolved', {
         uid: currentUser.id,
         platformRole: profileData?.platform_role,
@@ -508,11 +518,15 @@ export const AuthProvider = ({ children }) => {
         canRetry: true,
         canReset: true
       });
+      // Resolution finished (in failure) — gates waiting on authzResolved must
+      // not hang; the authError screen takes over.
+      setAuthzResolved(true);
     }
   };
 
   const resetState = () => {
     clearRBACCache();
+    setAuthzResolved(false);
     setUser(null);
     setProfile(null);
     setRole(null);
@@ -675,7 +689,21 @@ export const AuthProvider = ({ children }) => {
           // Never set loading:true here — it will freeze the UI if anything
           // async fails. Just silently update the user token metadata.
           if (session?.user) {
-            setUser(session.user);
+            if (userRef.current) {
+              // User already resolved — just refresh token metadata.
+              setUser(session.user);
+            } else {
+              // Session exists but no resolved user state (fresh storage /
+              // mid-login race). Setting user alone would expose `user` with
+              // no role and misroute the login redirect — resolve fully.
+              try {
+                await fetchUserProfile(session.user, session.access_token);
+              } catch (e) {
+                if (!isAbortError(e)) {
+                  console.error('[AUTHZ] fetchUserProfile failed on INITIAL_SESSION:', e);
+                }
+              }
+            }
           } else if (!session) {
             resetState();
             // loading stays false — user is already on a page, don't block them
@@ -943,6 +971,7 @@ export const AuthProvider = ({ children }) => {
     user,
     profile,
     role, // Legacy
+    authzResolved,
     // Two-plane RBAC
     activePlane,
     isPlatformUser,

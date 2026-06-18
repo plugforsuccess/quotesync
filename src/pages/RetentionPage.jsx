@@ -7,11 +7,16 @@ import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabase";
 import { useCurrentAgency } from "../hooks/useAgencyLeads";
-import { calcCancelPriority } from "../lib/retentionPriority";
 
 // Extracted tab components
 import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
-import { EventDetailModal } from "./components/retention/RetentionCancels";
+import { EventDetailModal, RenewalDetailModal } from "./components/retention/RetentionCancels";
+import EscalationsInbox from "./components/retention/EscalationsInbox";
+import SaveVelocityPanel from "./components/retention/SaveVelocityPanel";
+import RetentionHealthOverview from "./components/retention/RetentionHealthOverview";
+import SaveIntegrityPanel from "./components/retention/SaveIntegrityPanel";
+import RenewalPremiumAudit from "./components/retention/RenewalPremiumAudit";
+import RepActivityPanel from "./components/retention/RepActivityPanel";
 import RetentionImport from "./components/retention/RetentionImport";
 import { ResolvedTab, TrendsTab, AttritionTab, NetGrowthTab } from "./components/retention/RetentionAnalytics";
 import TerminationReasonTab from "./components/retention/TerminationReasonTab";
@@ -22,6 +27,10 @@ import RetentionAIPerformance from './components/retention/RetentionAIPerformanc
 import { useUploadReminders } from '../hooks/useUploadReminders';
 import UploadReminderBanner from './components/retention/UploadReminderBanner';
 import WorkloadDistribution from './components/retention/WorkloadDistribution';
+import BookMetricsPanel from './components/retention/BookMetricsPanel';
+import SaveablePremiumTargeting from './components/retention/SaveablePremiumTargeting';
+import ElasticityCurveChart from './components/retention/ElasticityCurveChart';
+import NotesSearch from './components/retention/NotesSearch';
 import { useAuth } from '../contexts/AuthContext';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -29,13 +38,6 @@ import { useAuth } from '../contexts/AuthContext';
 function fmt$(n) {
   if (n == null || isNaN(n)) return "$0";
   return "$" + Math.round(n).toLocaleString();
-}
-
-function daysUntilCancel(dateStr) {
-  if (!dateStr) return 999;
-  const d = new Date(dateStr);
-  const now = new Date();
-  return Math.ceil((d - now) / 86400000);
 }
 
 // ─── Styles ─────────────────────────────────────────────────────────────────
@@ -80,11 +82,22 @@ export default function RetentionPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState(
-    () => searchParams.get("tab") || "at_risk"
+    () => searchParams.get("tab") || "health"
   );
   const [urgentFilter, setUrgentFilter] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [selectedRenewal, setSelectedRenewal] = useState(null);
   const [currentUserId, setCurrentUserId] = useState(null);
+
+  // Open a case straight from the Escalations inbox — fetch the row so the same
+  // detail modal the queues use opens here too.
+  const openEscalatedCase = useCallback(async (caseType, caseId) => {
+    const table = caseType === 'renewal' ? 'renewal_cases' : 'pending_cases';
+    const { data } = await supabase.from(table).select('*').eq('id', caseId).maybeSingle();
+    if (!data) return;
+    if (caseType === 'renewal') setSelectedRenewal(data);
+    else setSelectedEvent(data);
+  }, []);
   const hasFlaggedBroken = useRef(false);
 
   const { data: reminders = [] } = useUploadReminders(agencyId);
@@ -115,10 +128,13 @@ export default function RetentionPage() {
     setSyncing(true);
     try {
       await supabase.rpc('auto_resolve_stale_renewals');
+      // Claw back any saves the latest termination report shows lapsed anyway.
+      await supabase.rpc('reconcile_false_saves', { p_agency_id: agencyId }).catch(() => {});
       setLastSynced(new Date());
       queryClient.invalidateQueries({ queryKey: ['pending_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['renewal_cases', agencyId] });
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', agencyId] });
+      queryClient.invalidateQueries({ queryKey: ['save_integrity', agencyId] });
     } catch (err) {
       console.error('[sync queue]', err.message);
     } finally {
@@ -244,17 +260,24 @@ export default function RetentionPage() {
     const saved = events.filter(e => ["saved", "rewritten"].includes(e.status));
     const lost = events.filter(e => ["lost", "promise_broken"].includes(e.status));
     const terminations = events.filter(e => e.status === "requested_cancellation");
-    const contacted = events.filter(e =>
-      ["contacted", "payment_plan_requested", "promise_to_pay", "saved", "rewritten", "promise_broken", "requested_cancellation", "lost"].includes(e.status)
-    );
 
     const premiumAtRisk = active.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
-    const premiumSaved = saved.reduce((s, e) => s + (e.premium_at_risk || 0), 0);
+    // Prefer the rep-confirmed saved_premium (reinstatement) or rewrite premium;
+    // fall back to the at-risk amount for saves logged before that capture.
+    const premiumSaved = saved.reduce((s, e) =>
+      s + (e.saved_premium ?? e.rewrite_new_premium ?? e.premium_at_risk ?? 0), 0);
 
     const workable = saved.length + lost.length;
     const saveRate = workable > 0 ? saved.length / workable : null;
-    const contactRate = (active.length + contacted.length) > 0
-      ? contacted.length / (active.length + contacted.length) : null;
+    // Contact rate = of the cases currently in the active queue, the share a
+    // human has actually worked (≥1 outreach attempt). The old formula counted
+    // auto-closed 'lost' cases (closed by the termination import, never
+    // contacted) as contacts and double-mixed active+contacted in the
+    // denominator — e.g. 12 auto-closed losses surfaced as a 32% contact rate
+    // when no case had been touched.
+    const contactedActive = active.filter(e => (e.attempt_count || 0) > 0);
+    const contactRate = active.length > 0
+      ? contactedActive.length / active.length : null;
 
     const today = new Date();
     const urgent = active.filter(e => {
@@ -300,10 +323,26 @@ export default function RetentionPage() {
 
   // ─── Event update handler ─────────────────────────────────────────────
 
-  function updateEvent(id, updates) {
-    queryClient.setQueryData(["pending_cases", agencyId], old =>
-      (old || []).map(e => e.id === id ? { ...e, ...updates } : e)
-    );
+  async function updateEvent(id, updates) {
+    // Persist to the DB (the modal's Save relies on this), then refresh. Without
+    // the write, a principal saving a case from here would silently lose it.
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase.from("pending_cases").update(updates).eq("id", id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ["pending_cases", agencyId] });
+    queryClient.invalidateQueries({ queryKey: ["open_escalations", agencyId] });
+    return null;
+  }
+
+  async function updateRenewalCase(id, updates) {
+    if (updates && Object.keys(updates).length > 0) {
+      const { error } = await supabase.from("renewal_cases").update(updates).eq("id", id);
+      if (error) return error;
+    }
+    queryClient.invalidateQueries({ queryKey: ["renewal_cases", agencyId] });
+    queryClient.invalidateQueries({ queryKey: ["open_escalations", agencyId] });
+    return null;
   }
 
   // ─── Page Render ──────────────────────────────────────────────────────
@@ -450,21 +489,38 @@ export default function RetentionPage() {
         <KpiCard label="Terminations" value={kpis.terminations} sub="requested cancel" color="var(--qs-subtle)" />
       </div>
 
+      {/* Escalations hand-off inbox — principal only, hidden when empty */}
+      {currentAgencyRole === 'principal' && (
+        <EscalationsInbox
+          agencyId={agencyId}
+          producers={producers}
+          onOpenCase={openEscalatedCase}
+        />
+      )}
+
       {/* Upload reminders — shown on all tabs */}
       <UploadReminderBanner reminders={reminders} />
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["at_risk", "renewals", "ai_perf", "resolved", "attrition", "reasons", "growth", "trends", "import", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["health", "at_risk", "activity", "velocity", "integrity", "renewal_audit", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
-            {t === "at_risk"    ? "⚡ At Risk"        :
+            {t === "health"     ? "🩺 Health"         :
+             t === "at_risk"    ? "⚡ At Risk"        :
+             t === "activity"   ? "🗓️ Activity"       :
+             t === "velocity"   ? "🏎️ Velocity"       :
+             t === "integrity"  ? "🛡️ Integrity"      :
+             t === "renewal_audit" ? "📑 Renewal Audit" :
+             t === "targeting"  ? "🎯 Targeting"      :
              t === "renewals"   ? "🔄 Renewals"       :
              t === "ai_perf"    ? "📊 AI Performance" :
              t === "resolved"   ? "✅ Outcomes"       :
+             t === "notes"      ? "🗒 Notes"          :
              t === "attrition"  ? "📉 Terminations"   :
              t === "reasons"    ? "🔍 Reasons"        :
              t === "growth"     ? "📈 Net Growth"     :
              t === "trends"     ? "📋 Trends"         :
+             t === "book"       ? "📖 Book Metrics"   :
              t === "distribute" ? "⚖️ Distribute"     :
                                   "⬆ Import"}
           </button>
@@ -472,6 +528,9 @@ export default function RetentionPage() {
       </div>
 
       {/* Tab Content */}
+      {activeTab === "health" && (
+        <RetentionHealthOverview agencyId={agencyId} kpis={kpis} onNavigate={setActiveTab} />
+      )}
       {activeTab === "at_risk" && (
         <UnifiedAtRiskTab
           agencyId={agencyId}
@@ -480,6 +539,24 @@ export default function RetentionPage() {
           urgentFilter={urgentFilter}
           onClearUrgentFilter={() => setUrgentFilter(false)}
         />
+      )}
+      {activeTab === "activity" && (
+        <RepActivityPanel agencyId={agencyId} />
+      )}
+      {activeTab === "velocity" && (
+        <SaveVelocityPanel agencyId={agencyId} />
+      )}
+      {activeTab === "integrity" && (
+        <SaveIntegrityPanel agencyId={agencyId} />
+      )}
+      {activeTab === "renewal_audit" && (
+        <RenewalPremiumAudit agencyId={agencyId} />
+      )}
+      {activeTab === "targeting" && (
+        <>
+          <ElasticityCurveChart agencyId={agencyId} />
+          <SaveablePremiumTargeting agencyId={agencyId} />
+        </>
       )}
       {activeTab === "renewals" && (
         <RetentionRenewals agencyId={agencyId} />
@@ -490,6 +567,7 @@ export default function RetentionPage() {
       )}
 
       {activeTab === "resolved" && <ResolvedTab resolvedEvents={resolvedEvents} />}
+      {activeTab === "notes" && <NotesSearch agencyId={agencyId} />}
       {activeTab === "trends" && <TrendsTab trendsData={trendsData} />}
       {activeTab === "attrition" && (
         <AttritionTab
@@ -499,6 +577,9 @@ export default function RetentionPage() {
       )}
       {activeTab === "reasons" && <TerminationReasonTab agencyId={agencyId} />}
       {activeTab === "growth" && <NetGrowthTab agencyId={agencyId} />}
+      {activeTab === "book" && (
+        <BookMetricsPanel agencyId={agencyId} currentUserId={currentUserId} />
+      )}
       {activeTab === "import" && (
         <RetentionImport
           agencyId={agencyId}
@@ -516,6 +597,17 @@ export default function RetentionPage() {
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
           onUpdate={updateEvent}
+          agencyId={agencyId}
+          currentEmployeeId={currentEmployee?.id ?? null}
+          producers={producers}
+        />,
+        document.body
+      )}
+      {selectedRenewal && createPortal(
+        <RenewalDetailModal
+          event={selectedRenewal}
+          onClose={() => setSelectedRenewal(null)}
+          onUpdate={updateRenewalCase}
           agencyId={agencyId}
           currentEmployeeId={currentEmployee?.id ?? null}
           producers={producers}

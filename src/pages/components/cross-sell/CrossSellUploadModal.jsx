@@ -34,14 +34,35 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
       }
 
       const matched = await runMatchEngine(parsed, agencyId);
-      setRows(matched);
-      setMatchSummary({
-        total:        matched.length,
-        renewal_only: matched.filter(r => r.match_type === 'renewal_only').length,
-        cancel_only:  matched.filter(r => r.match_type === 'cancel_only').length,
-        both:         matched.filter(r => r.match_type === 'both').length,
-        new_lead:     matched.filter(r => r.match_type === 'new_lead').length,
+      // Drop opportunities already live or won in the queue — only genuinely
+      // new ones get committed, so monthly re-uploads don't pile up duplicates.
+      // Also de-dupe WITHIN the file: Allstate can list the same policy twice
+      // (e.g. one row per dwelling on a multi-location customer).
+      const seen = new Set();
+      const fresh = matched.filter(r => {
+        if (r.duplicate) return false;
+        const key = `${r.policy_no || r.customer_name}|${r.recommended_product}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
       });
+      const skipped = matched.length - fresh.length;
+      setRows(fresh);
+      setMatchSummary({
+        total:        fresh.length,
+        renewal_only: fresh.filter(r => r.match_type === 'renewal_only').length,
+        cancel_only:  fresh.filter(r => r.match_type === 'cancel_only').length,
+        both:         fresh.filter(r => r.match_type === 'both').length,
+        new_lead:     fresh.filter(r => r.match_type === 'new_lead').length,
+        skipped,
+      });
+      if (fresh.length === 0) {
+        setErrorMsg(skipped > 0
+          ? `All ${skipped} rows are already in the cross-sell queue — nothing new to add.`
+          : 'No valid rows found in file.');
+        setStage('error');
+        return;
+      }
       setStage('preview');
     } catch (err) {
       setErrorMsg(err.message);
@@ -50,42 +71,60 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
   }
 
   async function runMatchEngine(parsedRows, agencyId) {
-    const [{ data: renewals }, { data: cancels }] = await Promise.all([
+    const [{ data: renewals }, { data: cancels }, { data: existingXs }] = await Promise.all([
       supabase
         .from('renewal_cases')
-        .select('id, customer_name, policy_no, product, renewal_date, status, multi_line, multi_policy')
+        .select('id, customer_name, policy_no, product, renewal_date, status, multi_line, multi_policy, assigned_to_id')
         .eq('agency_id', agencyId)
         .not('status', 'in', '(confirmed,lost,auto_resolved)'),
       supabase
         .from('pending_cases')
-        .select('id, customer_name, policy_no, product, cancel_effective_date, status, amount_due, stage')
+        .select('id, customer_name, policy_no, product, cancel_effective_date, status, amount_due, stage, assigned_to_id')
         .eq('agency_id', agencyId)
         .not('status', 'in', '(saved,lost,auto_resolved,cancelled,requested_cancellation,rewritten)'),
+      // Existing cross-sell cases still open or already won — used to skip
+      // re-adding the same opportunity on each monthly upload. Declined/closed
+      // cases are NOT in this set, so a previously-declined customer can be
+      // re-pitched in a later cycle.
+      supabase
+        .from('cross_sell_cases')
+        .select('policy_no, customer_name, recommended_product, status')
+        .eq('agency_id', agencyId)
+        .not('status', 'in', '(declined,closed)'),
     ]);
+
+    // Skip keys: a customer already has a live or won pitch for this product.
+    const xsKey = (policyNo, name, product) =>
+      `${(policyNo || name || '').toString().toLowerCase().trim()}|${product || ''}`;
+    const existingXsKeys = new Set(
+      (existingXs || []).map(x => xsKey(x.policy_no, x.customer_name, x.recommended_product))
+    );
 
     const renewalByPolicy = {};
     const renewalByName = {};
     (renewals || []).forEach(r => {
       if (r.policy_no) renewalByPolicy[r.policy_no] = r;
-      renewalByName[r.customer_name.toLowerCase().trim()] = r;
+      const nameKey = r.customer_name?.toLowerCase().trim();
+      if (nameKey) renewalByName[nameKey] = r;
     });
 
     const cancelByPolicy = {};
     const cancelByName = {};
     (cancels || []).forEach(p => {
       if (p.policy_no) cancelByPolicy[p.policy_no] = p;
-      cancelByName[p.customer_name.toLowerCase().trim()] = p;
+      const nameKey = p.customer_name?.toLowerCase().trim();
+      if (nameKey) cancelByName[nameKey] = p;
     });
 
     return parsedRows.map(row => {
-      const nameKey = row.customer_name.toLowerCase().trim();
+      const nameKey = row.customer_name?.toLowerCase().trim() || null;
 
       const renewalMatch = (row.policy_no && renewalByPolicy[row.policy_no])
-        || renewalByName[nameKey]
+        || (nameKey && renewalByName[nameKey])
         || null;
 
       const cancelMatch = (row.policy_no && cancelByPolicy[row.policy_no])
-        || cancelByName[nameKey]
+        || (nameKey && cancelByName[nameKey])
         || null;
 
       let match_type = 'new_lead';
@@ -102,6 +141,10 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         status = 'hold';
       }
 
+      const duplicate = existingXsKeys.has(
+        xsKey(row.policy_no, row.customer_name, row.recommended_product)
+      );
+
       return {
         ...row,
         renewal_case_id: renewalMatch?.id || null,
@@ -110,6 +153,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         cancel_case:     cancelMatch,
         match_type,
         status,
+        duplicate,
       };
     });
   }
@@ -141,6 +185,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
       upload_batch_id:     batchId,
       customer_name:       r.customer_name,
       policy_no:           r.policy_no,
+      zip:                 r.zip,
       current_product:     r.current_product,
       recommended_product: r.recommended_product,
       opportunity_tier:    r.opportunity_tier,
@@ -149,6 +194,12 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
       pending_case_id:     r.pending_case_id,
       match_type:          r.match_type,
       status:              r.status,
+      // One customer, one owner: a cross-sell that rides an existing renewal
+      // or cancel case belongs to that case's rep — the pitch happens on the
+      // call they're already making, not as a second dial by someone else.
+      assigned_to_id:      r.renewal_case?.assigned_to_id
+                        ?? r.cancel_case?.assigned_to_id
+                        ?? null,
     }));
 
     const { data: insertedCases, error: casesError } = await supabase
@@ -182,34 +233,12 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
         .eq('id', c.pending_case_id);
     }
 
-    const newLeadRows = rows.filter(r => r.match_type === 'new_lead');
-    if (newLeadRows.length > 0) {
-      const leadInserts = newLeadRows.map(r => ({
-        agency_id:      agencyId,
-        first_name:     r.customer_name.split(' ')[0] || '',
-        last_name:      r.customer_name.split(' ').slice(1).join(' ') || '',
-        source:         'cross_sell_audit',
-        product_intent: r.recommended_product,
-        status:         'new',
-      }));
-
-      const { data: createdLeads } = await supabase
-        .from('leads')
-        .insert(leadInserts)
-        .select('id');
-
-      if (createdLeads) {
-        const newLeadCases = insertedCases.filter(c => c.match_type === 'new_lead');
-        for (let i = 0; i < newLeadCases.length; i++) {
-          if (createdLeads[i]) {
-            await supabase
-              .from('cross_sell_cases')
-              .update({ lead_id: createdLeads[i].id })
-              .eq('id', newLeadCases[i].id);
-          }
-        }
-      }
-    }
+    // NOTE: outbound (new_lead) cross-sell rows are deliberately NOT pushed
+    // into Lead Manager. These customers are ACTIVE BOOK (the audit only lists
+    // customers the agency holds) — relationship selling, worked in the
+    // Outbound tab here. Creating twin leads gave every customer two
+    // unsynced work items and pointed stranger-pipeline machinery (SLA, drips)
+    // at existing customers.
 
     queryClient.invalidateQueries({ queryKey: ['cross_sell_cases', agencyId] });
     queryClient.invalidateQueries({ queryKey: ['cross_sell_uploads', agencyId] });
@@ -223,7 +252,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
     renewal_only: { label: 'Renewal match',    color: '#3B82F6', note: 'Pitch during renewal call' },
     cancel_only:  { label: 'Cancel match',     color: '#F59E0B', note: 'On hold — resolve cancel first' },
     both:         { label: 'Renewal + Cancel', color: '#EF4444', note: 'On hold — cancel takes priority' },
-    new_lead:     { label: 'New outbound lead',color: '#10B981', note: 'Will be created in Lead Manager' },
+    new_lead:     { label: 'Outbound pitch',   color: '#10B981', note: 'Active customer — worked in the Outbound tab' },
   };
 
   return (
@@ -338,6 +367,15 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                 ))}
               </div>
 
+              {matchSummary.skipped > 0 && (
+                <div style={{
+                  fontSize: 12, color: 'var(--qs-subtle)', marginBottom: 16,
+                  background: 'var(--qs-elevated)', borderRadius: 6, padding: '8px 12px',
+                }}>
+                  {matchSummary.skipped} already in the queue (open or won) — skipped, not re-added.
+                </div>
+              )}
+
               <div style={{
                 border: '1px solid var(--qs-border)', borderRadius: 8,
                 overflow: 'hidden', marginBottom: 16,
@@ -410,7 +448,6 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
                 }}
               >
                 Commit {rows.length} rows
-                {matchSummary.new_lead > 0 && ` · create ${matchSummary.new_lead} leads`}
               </button>
             </div>
           )}
@@ -418,7 +455,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
           {stage === 'committing' && (
             <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--qs-dim)' }}>
               <div style={{ fontSize: 32, marginBottom: 12 }}>💾</div>
-              <div style={{ fontSize: 14 }}>Saving cross-sell cases and creating leads…</div>
+              <div style={{ fontSize: 14 }}>Saving cross-sell cases…</div>
             </div>
           )}
 
@@ -430,7 +467,7 @@ export default function CrossSellUploadModal({ agencyId, uploadedBy, onClose }) 
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginBottom: 20, lineHeight: 1.6 }}>
                 {matchSummary.renewal_only + matchSummary.both} renewal cases flagged
-                · {matchSummary.new_lead} leads created in Lead Manager
+                · {matchSummary.new_lead} outbound pitches in the queue
               </div>
               <button onClick={onClose} style={{
                 padding: '10px 24px', borderRadius: 8, border: 'none',

@@ -25,7 +25,7 @@ import InsuranceQuotesPage from './pages/InsuranceQuotesPage';
 // previous reload and we don't clear it here, lazyWithRetry will see it and
 // re-throw on the next chunk error instead of reloading again.
 // useEffect is too late — lazyWithRetry runs during import, before React mounts.
-try { sessionStorage.removeItem('qs_chunk_error_reloaded'); } catch (_) {}
+try { sessionStorage.removeItem('qs_chunk_error_reloaded'); } catch { /* best-effort flag clear */ }
 
 // Retry wrapper for lazy imports — handles chunk load failures after deploys.
 // On first chunk error: reload the page (new assets will be fetched).
@@ -103,6 +103,8 @@ const WeeklyOperatingReviewPage = lazyWithRetry(() => import('./pages/WeeklyOper
 const RetentionPage = lazyWithRetry(() => import('./pages/RetentionPage'));
 const TerminationAliasesPage = lazyWithRetry(() => import('./pages/TerminationAliasesPage'));
 const CrossSellPage = lazyWithRetry(() => import('./pages/CrossSellPage'));
+const CustomerSearchPage = lazyWithRetry(() => import('./pages/CustomerSearchPage'));
+const HouseholdDetailPage = lazyWithRetry(() => import('./pages/HouseholdDetailPage'));
 const RenewalDetailPage = lazyWithRetry(() => import('./pages/RenewalDetailPage'));
 const ConsentManagementPage = lazyWithRetry(() => import('./pages/ConsentManagementPage'));
 const ReferralRewardsPage = lazyWithRetry(() => import('./pages/ReferralRewardsPage'));
@@ -111,7 +113,9 @@ const ReferralRulesPage = lazyWithRetry(() => import('./pages/ReferralRulesPage'
 
 // Employee-scoped pages
 const MyQueuePage = lazyWithRetry(() => import('./pages/MyQueuePage'));
+const MyLeadsPage = lazyWithRetry(() => import('./pages/MyLeadsPage'));
 const TodayPage = lazyWithRetry(() => import('./pages/TodayPage'));
+const ServiceBatchPage = lazyWithRetry(() => import('./pages/ServiceBatchPage'));
 const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
 const ChangePasswordPage = lazyWithRetry(() => import('./pages/ChangePasswordPage'));
 
@@ -187,7 +191,13 @@ function App() {
               <Route index element={<Navigate to="/my/today" replace />} />
               <Route path="today" element={<Suspense fallback={<PageLoader />}><TodayPage /></Suspense>} />
               <Route path="queue" element={<Suspense fallback={<PageLoader />}><MyQueuePage /></Suspense>} />
+              <Route path="service-batch" element={<Suspense fallback={<PageLoader />}><ServiceBatchPage /></Suspense>} />
+              <Route path="leads" element={<Suspense fallback={<PageLoader />}><MyLeadsPage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+              <Route path="customers" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CustomerSearchPage /></Suspense></ErrorBoundary>} />
+              <Route path="customers/:householdId" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><HouseholdDetailPage /></Suspense></ErrorBoundary>} />
+              <Route path="cross-sell" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense></ErrorBoundary>} />
+              <Route path="referrals" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ReferralRewardsPage /></Suspense></ErrorBoundary>} />
             </Route>
           </Route>
 
@@ -443,6 +453,22 @@ function App() {
               <ProtectedRoute requiredAgencyRole="employee">
                 <ErrorBoundary fallback={<PageError />}>
                   <Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+
+            {/* Customer Search — any active agency member */}
+            <Route path="agency/customers" element={
+              <ProtectedRoute requireAgencyMembership>
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><CustomerSearchPage /></Suspense>
+                </ErrorBoundary>
+              </ProtectedRoute>
+            } />
+            <Route path="agency/customers/:householdId" element={
+              <ProtectedRoute requireAgencyMembership>
+                <ErrorBoundary fallback={<PageError />}>
+                  <Suspense fallback={<PageLoader />}><HouseholdDetailPage /></Suspense>
                 </ErrorBoundary>
               </ProtectedRoute>
             } />

@@ -7,6 +7,10 @@ import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useActiveEmployees } from '../hooks/useEmployees';
+import { titleCaseName } from '../lib/names';
+import { productLabel } from '../lib/productLabels';
+import { useServiceTasks } from '../hooks/useServiceTasks';
 import { usePersona } from '../hooks/usePersona';
 import { hatForRoles } from '../config/navConfig';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
@@ -60,6 +64,9 @@ export default function TodayPage() {
   const { data: employee } = useCurrentEmployee();
   const employeeId = employee?.id;
   const orgId      = employee?.org_id;
+  // Needed so the detail modal can resolve the rep's name for the script
+  // (agent name) and the assignee — mirrors My Queue.
+  const { data: employees = [] } = useActiveEmployees(orgId);
   // The dial list is cross-role by design, but the production goal strip is a
   // sales overlay — only show it when the sales hat is active (a dual-role
   // producer wearing Service shouldn't see it).
@@ -69,6 +76,9 @@ export default function TodayPage() {
 
   const [selectedCancel,  setSelectedCancel]  = useState(null);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
+
+  // Service-batch glance — open admin tasks waiting for the afternoon block.
+  const { tasks: serviceTasks = [], overdue: serviceOverdue = 0 } = useServiceTasks(orgId);
 
   // Persist outcomes from the detail modals and refresh the list — without
   // these, the modal Save button silently no-ops, the case stays in the queue,
@@ -226,7 +236,49 @@ export default function TodayPage() {
   const focused = ranked.slice(0, dailyTarget);
   const remainder = ranked.length - focused.length;
 
+  // Waiting to hear back — voicemails left + scheduled callbacks, so the
+  // follow-up Tracy is owed isn't buried in the ranked dial list. Soonest
+  // callback first; overdue callbacks float to the top.
+  const waiting = useMemo(() => {
+    return [
+      ...cancels.map(c  => ({ ...c, _kind: 'cancel'  })),
+      ...renewals.map(r => ({ ...r, _kind: 'renewal' })),
+    ]
+      .filter(x => x.awaiting_callback || x.callback_at)
+      .sort((a, b) => {
+        const ca = a.callback_at ? new Date(a.callback_at).getTime() : Infinity;
+        const cb = b.callback_at ? new Date(b.callback_at).getTime() : Infinity;
+        return ca - cb;
+      });
+  }, [cancels, renewals]);
+
+  // Never-worked alarm: cases on her plate that hit (or are about to hit) their
+  // deadline with zero attempts. These are how policies lapse unworked — surface
+  // them loudly so they get called before the deadline passes.
+  const untouched = useMemo(() => {
+    const all = [
+      ...cancels.map(c  => ({ ...c, _date: c.cancel_effective_date })),
+      ...renewals.map(r => ({ ...r, _date: r.renewal_date })),
+    ].filter(x => !(x.attempt_count > 0));
+    let dueSoon = 0, lapsed = 0;
+    for (const x of all) {
+      const d = daysUntil(x._date);
+      if (d == null) continue;
+      if (d < 0) lapsed++;
+      else if (d < 7) dueSoon++;
+    }
+    return { dueSoon, lapsed };
+  }, [cancels, renewals]);
+
   const isLoading = cancelsLoading || renewalsLoading;
+
+  // Promised to pay — cancels where the customer committed to a pay date. Soonest
+  // (and overdue) first, so the day's promise follow-ups are in one place.
+  const promises = useMemo(() => {
+    return cancels
+      .filter(c => c.promise_date)
+      .sort((a, b) => (a.promise_date || '').localeCompare(b.promise_date || ''));
+  }, [cancels]);
 
   if (!employee) {
     return (
@@ -295,6 +347,143 @@ export default function TodayPage() {
         )}
       </div>
 
+      {/* Service Batch glance — admin tasks for the afternoon block */}
+      {serviceTasks.length > 0 && (
+        <a href="/my/service-batch" style={{
+          display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none',
+          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+          borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+        }}>
+          <span style={{ fontSize: 18 }}>🗂️</span>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-bright)' }}>
+              {serviceTasks.length} service {serviceTasks.length === 1 ? 'task' : 'tasks'} to batch
+            </div>
+            <div style={{ fontSize: 12, color: serviceOverdue > 0 ? '#F87171' : 'var(--qs-muted)' }}>
+              {serviceOverdue > 0 ? `${serviceOverdue} past due · ` : ''}clear in one block, grouped by type
+            </div>
+          </div>
+          <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 600, flexShrink: 0 }}>Open Service Batch →</span>
+        </a>
+      )}
+
+      {/* Never-worked alarm — call these before they lapse */}
+      {(untouched.dueSoon > 0 || untouched.lapsed > 0) && (
+        <div style={{
+          background: untouched.lapsed > 0 ? 'rgba(239,68,68,0.10)' : 'rgba(245,158,11,0.10)',
+          border: `1px solid ${untouched.lapsed > 0 ? 'rgba(239,68,68,0.4)' : 'rgba(245,158,11,0.4)'}`,
+          borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+        }}>
+          <div style={{ fontSize: 13, fontWeight: 700,
+            color: untouched.lapsed > 0 ? '#F87171' : '#FBBF24' }}>
+            ⚠ Call these before they lapse
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--qs-dim)', marginTop: 4 }}>
+            {untouched.dueSoon > 0 && (
+              <span><strong>{untouched.dueSoon}</strong> due this week you haven't called yet. </span>
+            )}
+            {untouched.lapsed > 0 && (
+              <span><strong style={{ color: '#F87171' }}>{untouched.lapsed}</strong> already past due, never called — try a reinstatement/rewrite now. </span>
+            )}
+            They're in your ranked list below — work them first.
+          </div>
+        </div>
+      )}
+
+      {/* Waiting to hear back — voicemails + scheduled callbacks */}
+      {waiting.length > 0 && (
+        <div style={{
+          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+          borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-dim)', marginBottom: 8,
+            textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            ⏳ Waiting to hear back ({waiting.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {waiting.map(item => {
+              const cb = item.callback_at ? new Date(item.callback_at) : null;
+              const overdue = cb && cb < new Date();
+              const label = cb
+                ? `${overdue ? '📅 Callback due' : '📅 Call back'} ${cb.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}`
+                : '📞 Left voicemail — awaiting callback';
+              return (
+                <button
+                  key={`${item._kind}-${item.id}`}
+                  onClick={() => item._kind === 'cancel' ? setSelectedCancel(item) : setSelectedRenewal(item)}
+                  style={{
+                    textAlign: 'left', cursor: 'pointer', width: '100%',
+                    background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                    borderRadius: 8, padding: '8px 12px', display: 'flex',
+                    alignItems: 'center', gap: 10, fontFamily: 'inherit', color: 'var(--qs-text)',
+                  }}
+                >
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                    background: TYPE_BADGE[item._kind].bg, color: TYPE_BADGE[item._kind].color,
+                    letterSpacing: '0.05em', flexShrink: 0,
+                  }}>{TYPE_BADGE[item._kind].label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1 }}>
+                    {titleCaseName(item.customer_name) || '—'}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, flexShrink: 0,
+                    color: overdue ? '#F87171' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Promised to pay — cancels with a committed pay date */}
+      {promises.length > 0 && (
+        <div style={{
+          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+          borderRadius: 10, padding: '12px 16px', marginBottom: 18,
+        }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qs-dim)', marginBottom: 8,
+            textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            💵 Promised to pay ({promises.length})
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {promises.map(item => {
+              const due = new Date(item.promise_date + 'T00:00:00');
+              const overdue = due < new Date(new Date().toDateString());
+              const label = `${overdue ? '⚠ Promise overdue' : '📌 Pay by'} ${due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedCancel(item)}
+                  style={{
+                    textAlign: 'left', cursor: 'pointer', width: '100%',
+                    background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                    borderRadius: 8, padding: '8px 12px', display: 'flex',
+                    alignItems: 'center', gap: 10, fontFamily: 'inherit', color: 'var(--qs-text)',
+                  }}
+                >
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                    background: TYPE_BADGE.cancel.bg, color: TYPE_BADGE.cancel.color,
+                    letterSpacing: '0.05em', flexShrink: 0,
+                  }}>{TYPE_BADGE.cancel.label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--qs-bright)',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', flexShrink: 1 }}>
+                    {titleCaseName(item.customer_name) || '—'}
+                  </span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, flexShrink: 0,
+                    color: overdue ? '#F87171' : 'var(--qs-muted)', fontWeight: overdue ? 700 : 500 }}>
+                    {label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Ranked list */}
       {isLoading ? (
         <div style={{ color: 'var(--qs-subtle)', fontSize: 14 }}>Loading…</div>
@@ -352,7 +541,8 @@ export default function TodayPage() {
           onUpdate={updateCancel}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
+          canReassign={false}
         />,
         document.body
       )}
@@ -363,7 +553,8 @@ export default function TodayPage() {
           onUpdate={updateRenewal}
           agencyId={orgId}
           currentEmployeeId={employeeId}
-          producers={[]}
+          producers={employees}
+          canReassign={false}
         />,
         document.body
       )}
@@ -428,14 +619,20 @@ function TodayRow({ index, item, todayStr, onOpen }) {
               background: '#10B98122', color: '#34D399', letterSpacing: '0.05em',
             }}>CALLED TODAY</span>
           )}
+          {isCancel && item.promise_date && new Date(item.promise_date) < new Date() && (
+            <span style={{
+              fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+              background: '#EF444433', color: '#FCA5A5', letterSpacing: '0.05em',
+            }}>⚠ PAY PROMISE OVERDUE</span>
+          )}
           <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--qs-bright)',
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-            {item.customer_name || '—'}
+            {titleCaseName(item.customer_name) || '—'}
           </span>
         </div>
         <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
           {dateLabel} · {fmt$(premium)}
-          {item.product ? ` · ${item.product}` : ''}
+          {item.product ? ` · ${productLabel(item.product)}` : ''}
         </div>
       </div>
 

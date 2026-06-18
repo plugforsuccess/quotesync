@@ -50,7 +50,7 @@ export function getTriageBucket(policy) {
     daysUntil >= 15 &&
     policy.consent?.autodial_consent === true &&
     !policy.consent?.dnc &&
-    ['pending', 'contacted'].includes(policy.renewal_status) &&
+    ['pending'].includes(policy.status) &&
     policy.priority_tier !== 'critical' &&
     policy.last_contact_outcome !== 'shopping' &&
     !(policy.human_followup_required && !policy.followup_completed_at)

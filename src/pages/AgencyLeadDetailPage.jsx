@@ -20,6 +20,7 @@ import {
   useDisposeLead
 } from '../hooks/useAgencyLeads';
 import DispositionModal from './components/DispositionModal';
+import LeadDeclarationCard from './components/LeadDeclarationCard';
 import { getScoreColor, formatScoreFactors, RISK_FLAG_CONFIG } from '../lib/leadScoring';
 import { supabase } from '../lib/supabase';
 import PageSpinner from '../components/PageSpinner';
@@ -384,7 +385,9 @@ const AgencyLeadDetailPage = () => {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-xl font-bold text-gray-900">
-                  Lead {lead.zip || ''} / {lead.state || ''}
+                  {(lead.first_name || lead.last_name)
+                    ? `${lead.first_name || ''} ${lead.last_name || ''}`.trim()
+                    : `Lead ${lead.zip || ''} / ${lead.state || ''}`}
                 </h1>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium
                   ${lead.status === 'new' ? 'bg-primary-100 text-primary-700' : ''}
@@ -645,7 +648,7 @@ const AgencyLeadDetailPage = () => {
                 </div>
               </dl>
 
-              {/* Contact Info Note */}
+              {/* Contact Info Note — source-aware */}
               {lead.source === 'canopy' ? (
                 <div className="mt-4 p-3 bg-primary-50 rounded-lg">
                   <p className="text-sm text-primary-800">
@@ -653,15 +656,39 @@ const AgencyLeadDetailPage = () => {
                     Contact details captured via Canopy. View full profile in your Canopy dashboard.
                   </p>
                 </div>
+              ) : lead.source === 'winback' ? (
+                <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
+                  <p className="text-sm text-emerald-800">
+                    ♻ <span className="font-semibold">Former customer</span> — generated from termination
+                    history. Contact comes from their Allstate record:
+                    {lead.phone ? <span className="font-medium"> {lead.phone}</span> : ' no phone on file'}
+                    {lead.email ? <> · <span className="font-medium">{lead.email}</span></> : null}
+                  </p>
+                  {lead.callback_note && (
+                    <p className="text-sm text-emerald-900 mt-2 font-medium">{lead.callback_note}</p>
+                  )}
+                </div>
+              ) : lead.source === 'cross_sell_audit' ? (
+                <div className="mt-4 p-3 bg-emerald-50 rounded-lg">
+                  <p className="text-sm text-emerald-800">
+                    💡 <span className="font-semibold">Active-book customer</span> — from the cross-sell
+                    audit. They already hold a policy with the agency; pitch adds the bundle discount.
+                    {lead.phone ? <span className="font-medium"> {lead.phone}</span> : null}
+                  </p>
+                </div>
               ) : (
                 <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-700">
                     <Phone className="w-4 h-4 inline mr-1" />
                     Contact details submitted via form.
+                    {lead.phone ? <span className="font-medium"> {lead.phone}</span> : null}
                   </p>
                 </div>
               )}
             </div>
+
+            {/* Declarations page — extracted from the lead's uploaded dec page */}
+            <LeadDeclarationCard lead={lead} />
 
             {/* Quote Summary */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -947,6 +974,10 @@ const AgencyLeadDetailPage = () => {
                   <dd className="text-xl font-bold text-gray-900">
                     {lead.first_contact_at ? (
                       formatDuration(lead.created_at, lead.first_contact_at)
+                    ) : lead.source === 'winback' ? (
+                      // Winbacks are batch work, not interrupt work — a 2024
+                      // termination doesn't decay by the hour. No SLA pressure.
+                      <span className="text-gray-500">Batch lead — no SLA</span>
                     ) : (
                       <span className="text-orange-600">Not contacted</span>
                     )}

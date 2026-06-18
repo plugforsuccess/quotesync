@@ -255,6 +255,7 @@ export function useProducerActuals(agencyId, employeeId, monthStart, monthEnd) {
         .select('id, issued_date, policy_no, product, premium, item_count, customer_name, producer_id, producer_name')
         .eq('agency_id', agencyId)
         .eq('producer_id', employeeId)
+        .is('charged_back_at', null)
         .gte('issued_date', monthStart)
         .lte('issued_date', monthEnd)
         .order('issued_date', { ascending: false });

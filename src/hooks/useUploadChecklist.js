@@ -55,6 +55,8 @@ export function useUploadChecklist(agencyId) {
         pendingCancel,
         renewal,
         crossSell,
+        premiumProfit,
+        policyAudit,
         reviewResult,
       ] = await Promise.all([
         // Call log: which days have data this week?
@@ -128,6 +130,28 @@ export function useUploadChecklist(agencyId) {
           .from('cross_sell_uploads')
           .select('uploaded_at')
           .eq('agency_id', agencyId)
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+
+        // Premium & Profitability: uploaded this month?
+        supabase
+          .from('book_metric_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('report_type', 'premium_profitability')
+          .eq('committed', true)
+          .gte('uploaded_at', currentMonthStart)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+
+        // Policy Audit: uploaded this month?
+        supabase
+          .from('book_metric_uploads')
+          .select('uploaded_at')
+          .eq('agency_id', agencyId)
+          .eq('report_type', 'policy_audit')
           .eq('committed', true)
           .gte('uploaded_at', currentMonthStart)
           .order('uploaded_at', { ascending: false })
@@ -325,6 +349,56 @@ export function useUploadChecklist(agencyId) {
         detail: null,
         link: '/agency/retention?tab=import',
         uploadOrder: 5,
+      });
+
+      // 9. Premium & Profitability — monthly book scoreboard. Allstate Business
+      // Metrics post on a ~1-month lag (the production month finalizes
+      // mid-following-month), so the upload window is 15th–25th — uploading
+      // earlier would flag a report that hasn't posted yet. Grounds the
+      // Targeting churn model; no write-order dependency with Policy Audit.
+      const ppInWindow = dayOfMonth >= 15 && dayOfMonth <= 25;
+      const ppUploaded = !!premiumProfit.data?.length;
+      const ppDue = ppInWindow && !ppUploaded;
+      const ppOverdue = dayOfMonth > 25 && !ppUploaded;
+      items.push({
+        key: 'premium_profitability',
+        category: 'book_of_business',
+        label: 'Premium & Profitability Report',
+        description: ppUploaded
+          ? 'Uploaded this month'
+          : ppDue
+          ? 'Due 15th–25th — this month’s report has posted'
+          : ppOverdue
+          ? 'Overdue — not uploaded this month'
+          : 'Not yet due (Allstate posts ~mid-month)',
+        status: ppUploaded ? 'current' : ppOverdue ? 'overdue' : ppDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=book',
+        uploadOrder: 6,
+      });
+
+      // 10. Policy Audit — monthly per-policy census. Posts EARLIER than P&P:
+      // the prior month's audit is available in the first days of the month
+      // (e.g. May's audit is ready by ~June 5), so the window is 5th–15th.
+      const paInWindow = dayOfMonth >= 5 && dayOfMonth <= 15;
+      const paUploaded = !!policyAudit.data?.length;
+      const paDue = paInWindow && !paUploaded;
+      const paOverdue = dayOfMonth > 15 && !paUploaded;
+      items.push({
+        key: 'policy_audit',
+        category: 'book_of_business',
+        label: 'Policy Audit Report',
+        description: paUploaded
+          ? 'Uploaded this month'
+          : paDue
+          ? 'Due 5th–15th — last month’s audit has posted'
+          : paOverdue
+          ? 'Overdue — not uploaded this month'
+          : 'Not yet due (posts early month)',
+        status: paUploaded ? 'current' : paOverdue ? 'overdue' : paDue ? 'due' : 'upcoming',
+        detail: null,
+        link: '/agency/retention?tab=book',
+        uploadOrder: 7,
       });
 
       // ── Management cadence items ────────────────────────────────────────

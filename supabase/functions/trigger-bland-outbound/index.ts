@@ -121,7 +121,7 @@ Deno.serve(async (req) => {
     // 2. Fetch lead record
     const { data: lead, error: leadError } = await supabase
       .from('leads')
-      .select('id, phone, agency_id, bland_outbound_call_id, bland_outbound_status')
+      .select('id, phone, agency_id, consent_given_at, bland_outbound_call_id, bland_outbound_status')
       .eq('id', lead_id)
       .single()
 
@@ -136,6 +136,33 @@ Deno.serve(async (req) => {
     if (!lead.phone) {
       console.log(`[BLAND_OUTBOUND] No phone for lead ${lead_id}, skipping`)
       return new Response(JSON.stringify({ skipped: true, reason: 'no_phone' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    // 2a. CONSENT GATE (TCPA). Do not auto-dial without express written consent
+    // captured at submission, and never dial a number flagged DNC. Enforced
+    // server-side here (the public create-lead body cannot be trusted to gate).
+    if (!lead.consent_given_at) {
+      console.log(`[BLAND_OUTBOUND] No consent for lead ${lead_id}, skipping`)
+      await logAudit(supabase, 'BLAND_OUTBOUND_SKIPPED', lead.id, { reason: 'no_consent' })
+      return new Response(JSON.stringify({ skipped: true, reason: 'no_consent' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
+    const { data: consentRow } = await supabase
+      .from('customer_consent')
+      .select('dnc')
+      .eq('agency_id', lead.agency_id)
+      .eq('customer_phone', lead.phone)
+      .maybeSingle()
+    if (consentRow?.dnc) {
+      console.log(`[BLAND_OUTBOUND] Phone on DNC for lead ${lead_id}, skipping`)
+      await logAudit(supabase, 'BLAND_OUTBOUND_SKIPPED', lead.id, { reason: 'dnc' })
+      return new Response(JSON.stringify({ skipped: true, reason: 'dnc' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })

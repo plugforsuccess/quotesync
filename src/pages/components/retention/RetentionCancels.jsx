@@ -1,12 +1,21 @@
 // src/pages/components/retention/RetentionCancels.jsx
 // Extracted from BookHealthPage.jsx — UnifiedAtRiskTab + all modal dependencies.
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { calcRenewalPriority, calcCancelPriority, computePriorityTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
 import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
+import InterventionPicker from '../../../components/InterventionPicker';
+import { EMPTY_INTERVENTION, interventionInsertFields } from '../../../lib/interventions';
+import { productLabel } from '../../../lib/productLabels';
+import { titleCaseName } from '../../../lib/names';
+import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript } from '../../../components/RetentionScripts';
+import CaseNotesFeed from './CaseNotesFeed';
+import LogServiceTaskButton from './LogServiceTaskButton';
+import { EscalateCaseBox, LinkedServiceTasks, ReferToSalesBox } from './CaseHandoffExtras';
+import { SAVE_METHOD_LABEL, saveMethodFromCodes } from '../../../lib/saveMethods';
 
 const STATUS_CONFIG = {
   pending:                { label: "Pending",           color: "var(--qs-dim)", bg: "#94A3B822" },
@@ -35,7 +44,7 @@ function fmtFull$(n) {
 
 function maskCustomerName(name) {
   if (!name) return "—";
-  const parts = name.trim().split(/\s+/);
+  const parts = titleCaseName(name).trim().split(/\s+/);
   if (parts.length === 1) return parts[0];
   return `${parts[0]} ${parts[parts.length - 1][0]}.`;
 }
@@ -115,7 +124,7 @@ function CustomerDrilldownModal({ event, onClose }) {
   return (
     <div
       style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 8 }}
-      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+      onMouseDown={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
       <div style={{ background: "var(--qs-card)", border: "1px solid var(--qs-border)", borderRadius: 14, width: "100%", maxWidth: "98vw", height: "96vh", overflow: "auto", padding: "24px 20px" }}>
 
@@ -135,7 +144,7 @@ function CustomerDrilldownModal({ event, onClose }) {
         {/* Detail grid — color values used as inline style props */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 }}>
           {[
-            { label: "Product",          value: event.product?.toUpperCase() || "\u2014",                              color: "var(--qs-text)" },
+            { label: "Product",          value: productLabel(event.product) || "\u2014",                              color: "var(--qs-text)" },
             { label: "Cancel Date",      value: event.cancel_effective_date || "\u2014",                               color: urgencyColor(days) },
             { label: "Days Left",        value: days <= 0 ? "PAST DUE" : `${days} days`,                         color: urgencyColor(days) },
             { label: "Phone",            value: event.phone || "\u2014",                                               color: event.phone ? "var(--qs-text)" : "var(--qs-muted)" },
@@ -218,14 +227,60 @@ function OtherCasesWarning({ cases }) {
   );
 }
 
+// Escape hatch for the no-contact case: a customer who already paid before we
+// ever called isn't a rep save — it's resolved as auto_resolved (no save
+// credit, no reached-attempt requirement). Two-step to avoid stray clicks.
+function AlreadyPaidAction({ onConfirm, busy }) {
+  const [confirming, setConfirming] = useState(false);
+  if (!confirming) {
+    return (
+      <button type="button" onClick={() => setConfirming(true)} style={{
+        width: "100%", padding: "9px", borderRadius: 8, cursor: "pointer", fontFamily: "inherit",
+        border: "1px dashed var(--qs-border)", background: "transparent",
+        color: "var(--qs-muted)", fontSize: 12, fontWeight: 600,
+      }}>
+        Customer already paid in Allstate? Clear it without a call
+      </button>
+    );
+  }
+  return (
+    <div style={{ border: "1px solid var(--qs-border)", borderRadius: 8, padding: "10px 12px", background: "var(--qs-elevated)" }}>
+      <div style={{ fontSize: 12, color: "var(--qs-dim)", marginBottom: 8 }}>
+        Clear this case as <strong>already paid</strong>? It resolves as auto-cleared — no call needed, and it does <strong>not</strong> count as a save.
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button type="button" disabled={busy} onClick={() => { setConfirming(false); onConfirm(); }} style={{
+          flex: 1, padding: "8px", borderRadius: 8, border: "none", background: busy ? "var(--qs-card)" : "#10B981",
+          color: busy ? "var(--qs-muted)" : "#fff", fontSize: 13, fontWeight: 700, cursor: busy ? "not-allowed" : "pointer", fontFamily: "inherit",
+        }}>
+          {busy ? "Clearing…" : "Yes, mark paid"}
+        </button>
+        <button type="button" onClick={() => setConfirming(false)} style={{
+          flex: 1, padding: "8px", borderRadius: 8, border: "1px solid var(--qs-border)", background: "var(--qs-card)",
+          color: "var(--qs-text)", fontSize: 13, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
+        }}>
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
-function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [] }) {
+function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [], canReassign = true }) {
   const days = daysUntilCancel(event.cancel_effective_date);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
-  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
+  // Whether a reached attempt has been logged this session — unlocks Case
+  // Management (the outcome picker) once the rep has actually spoken to them.
+  const [reachedLogged, setReachedLogged] = useState(false);
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  // The save tactic ("What did you do to save them?") — captured in Case
+  // Management when recording the save, not on every call attempt.
+  const [saveIntervention, setSaveIntervention] = useState(EMPTY_INTERVENTION);
   const [form, setForm] = useState({
     status:              event.status,
     assigned_to_id:      event.assigned_to_id || "",
@@ -236,6 +291,45 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     rewrite_new_premium: event.rewrite_new_premium || "",
     rewrite_reason:      event.rewrite_reason || "",
   });
+  // Kept out of `form` so it's only written on the saved (reinstatement) path —
+  // the column it targets is pending_cases.saved_premium.
+  const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
+
+  // Script + contact inputs (mirrors the queue card).
+  const firstName = event.customer_name?.split(" ")[0] || "there";
+  const isLapsed = days < 0;
+  const me = (producers || []).find(p => p.id === currentEmployeeId);
+  const agentName = me
+    ? ([me.preferred_name || me.first_name, me.last_name].filter(Boolean).join(" ") || "your agent")
+    : "your agent";
+
+  // Callback scheduling (moved off the list card into the work surface).
+  const [cbTime, setCbTime] = useState("");
+  const [cbNote, setCbNote] = useState("");
+  const [cbSaving, setCbSaving] = useState(false);
+
+  async function scheduleCallback() {
+    if (!cbTime || cbSaving) return;
+    setCbSaving(true);
+    const callbackAt = new Date(cbTime).toISOString();
+    await supabase.from("pending_cancel_attempts").insert({
+      pending_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+      method: "phone", result: "reached",
+      note: `Callback scheduled: ${cbNote || "no details"}`,
+    });
+    await onUpdate(event.id, {
+      attempt_count:       (event.attempt_count || 0) + 1,
+      last_attempt_at:     new Date().toISOString(),
+      last_attempt_result: "reached",
+      contacted_at:        event.contacted_at || new Date().toISOString(),
+      callback_at:         callbackAt,
+      callback_note:       cbNote || null,
+      status: event.status === "pending" ? "contacted" : event.status,
+    });
+    setCbSaving(false);
+    setCbTime(""); setCbNote("");
+    onClose();
+  }
 
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
@@ -248,7 +342,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   useEffect(() => {
     supabase
       .from("pending_cancel_attempts")
-      .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
       .eq("pending_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -274,8 +368,8 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         last_attempt_at:     new Date().toISOString(),
         last_attempt_result: attemptForm.result,
         ...(event.status === "pending"              ? { status: "attempting"     } : {}),
-        ...(attemptForm.result === "left_voicemail" ? { status: "left_voicemail" } : {}),
-        ...(attemptForm.result === "reached"        ? { contacted_at: event.contacted_at || new Date().toISOString() } : {}),
+        ...(attemptForm.result === "left_voicemail" ? { status: "left_voicemail", awaiting_callback: true } : {}),
+        ...(attemptForm.result === "reached"        ? { contacted_at: event.contacted_at || new Date().toISOString(), awaiting_callback: false } : {}),
       }).eq("id", event.id);
       // If this is the first attempt on the case, set opened_by_id
       if ((event.attempt_count === 0 || !event.opened_by_id) && currentEmployeeId) {
@@ -287,19 +381,75 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       }
       const { data } = await supabase
         .from("pending_cancel_attempts")
-        .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
-      setAttemptForm({ method: "phone", result: "no_answer", note: "" });
+      if (attemptForm.result === "reached") setReachedLogged(true);
+      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
   }
 
+  // Already paid before we reached them → auto_resolved (system close, no save
+  // credit, exempt from the reached-attempt rule). Allstate is the system of
+  // record; this just clears our queue without faking a call. The customer paid
+  // the amount at risk in full (no discount earned), so we still log that paid
+  // premium — premium difference is $0, distinguishing "paid full" from a save.
+  async function markAlreadyPaid() {
+    setSaving(true);
+    setSaveError(null);
+    const err = await onUpdate(event.id, {
+      status: "auto_resolved",
+      resolution_date: new Date().toISOString().slice(0, 10),
+      closed_by_id: currentEmployeeId,
+      saved_premium: event.premium_at_risk ?? null,
+    });
+    if (err) {
+      setSaveError(`Couldn't clear the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    onClose();
+  }
+
   async function save() {
     setSaving(true);
+    setSaveError(null);
+    // Persist the save tactic + satisfy the save-has-attempt guard
+    // (`enforce_cancel_save_has_attempt`). Attempts are insert-only under RLS, so
+    // the Case-Management tactic is recorded by logging an auto-attempt that
+    // carries it (excluded from outreach metrics via auto_logged). We insert when
+    // the rep picked a tactic that isn't already on record, or — with no tactic —
+    // only if the case has no attempt yet (so the guard doesn't trip).
+    if (["saved", "rewritten"].includes(form.status)) {
+      const codes = (saveIntervention.interventions || []).filter(Boolean);
+      const key = codes.slice().sort().join("|");
+      const tacticOnRecord = codes.length > 0 && attempts.some(
+        a => (a.interventions || []).slice().sort().join("|") === key
+      );
+      if ((codes.length > 0 && !tacticOnRecord) || attempts.length === 0) {
+        const { error: attErr } = await supabase.from("pending_cancel_attempts").insert({
+          pending_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+          method: "phone", result: "reached",
+          note: codes.length ? "Save tactic recorded" : "Outcome recorded from the work surface",
+          auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
+          ...interventionInsertFields(saveIntervention),
+        });
+        if (attErr) {
+          setSaveError(`Couldn't record the call: ${attErr.message}`);
+          setSaving(false);
+          return;
+        }
+      }
+    }
     const updates = { ...form };
+    // contact_method has a CHECK constraint (phone/text/email/other or NULL);
+    // an unset method comes through as "" from the form — coerce it to null so
+    // the write doesn't trip `pending_cancel_events_contact_method_check`.
+    updates.contact_method = form.contact_method || null;
     if (["contacted","promise_to_pay","payment_plan_requested"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
@@ -310,6 +460,18 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     if (["saved","rewritten","lost","requested_cancellation","cancelled"].includes(form.status)) {
       updates.closed_by_id = currentEmployeeId;
     }
+    // Premium preserved on a straight save (reinstatement). Captured only on the
+    // 'saved' outcome, so other resolutions never touch the column. Rewrites use
+    // rewrite_new_premium instead (handled below).
+    if (form.status === "saved") {
+      const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+      updates.saved_premium = Number.isNaN(sp) ? null : sp;
+    }
+    // Save method (what saved them) — the headline of the Case-Management tactic;
+    // only meaningful on a save, cleared on any non-save outcome so a stale
+    // tactic doesn't linger.
+    updates.save_method = ["saved","rewritten"].includes(form.status)
+      ? derivedSaveMethod : null;
     // Strip rewrite fields if not a rewrite outcome
     if (form.status !== "rewritten") {
       updates.rewrite_new_premium = null;
@@ -331,7 +493,12 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         ? (rep.preferred_name || `${rep.first_name || ""} ${rep.last_name || ""}`.trim())
         : null;
     }
-    await onUpdate(event.id, updates);
+    const err = await onUpdate(event.id, updates);
+    if (err) {
+      setSaveError(`Couldn't save the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onClose();
   }
@@ -345,29 +512,44 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     disconnected:   "Disconnected",
   };
 
+  // Case Management is gated behind a reached customer: the outcome picker only
+  // unlocks once a "reached" attempt has actually been LOGGED (Log Attempt
+  // clicked), a reached attempt is already on the record (contacted_at stamped),
+  // or the case already holds an outcome status. No reach → nothing to record.
   const showOutcomePicker =
-    event.status === "contacted" ||
-    attemptForm.result === "reached" ||
-    ["contacted","payment_plan_requested","promise_to_pay",
-     "promise_broken","requested_cancellation"].includes(event.status);
+    reachedLogged ||
+    event.last_attempt_result === "reached" ||
+    !!event.contacted_at ||
+    // Keep an already-resolved case viewable/editable even if contacted_at was
+    // never stamped (e.g. marked saved directly off a reached call).
+    ["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(event.status);
+
+  // Scopes the tactic chips to cancel-only tactics (paid past due, reinstated).
+  const caseContext = "cancel";
+  // Reinstatement (paying after the policy cancels) only makes sense once it
+  // has actually cancelled — hide that chip until then.
+  const tacticFilter = (t) => t.code !== "reinstatement" || event.stage === "cancelled";
+  // "What saved them" lives in Case Management (not the call log): the tactic is
+  // captured here when recording the save, and the headline becomes save_method.
+  const derivedSaveMethod = saveMethodFromCodes(saveIntervention.interventions) || event.save_method || null;
 
   return (
     <div
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.75)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px 16px",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "16px",
       }}
-      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+      onMouseDown={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
       <div style={{
         background: "var(--qs-card)",
         border: "1px solid var(--qs-border)",
         borderRadius: 14,
         width: "100%",
-        maxWidth: 640,
-        maxHeight: "90vh",
+        maxWidth: 1080,
+        maxHeight: "calc(100vh - 32px)",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -387,7 +569,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
-              Policy {event.policy_no} · {event.product?.toUpperCase()} · Cycle {event.cycle}
+              Policy {event.policy_no} · {productLabel(event.product)} · Cycle {event.cycle}
             </div>
           </div>
           <button
@@ -519,14 +701,74 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 fontSize: 11, fontWeight: 700, color: '#10B981',
                 textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4,
               }}>
-                💡 Cross-sell opportunity on file
+                💡 Bundle to save — {productLabel(event.cross_sell_product)}
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Allstate flagged this customer for <strong>{event.cross_sell_product?.toUpperCase()}</strong>.
-                {' '}Resolve the cancel first — then pitch.
+                Quote <strong>{productLabel(event.cross_sell_product)}</strong> as part of the save: a
+                multi-policy bundle adds a discount that <strong>lowers this premium</strong> — often the
+                fix for a payment-driven cancellation. If they bundle, the cancel resolves and this
+                cross-sell auto-releases as a follow-through opportunity.
               </div>
             </div>
           )}
+
+          {/* ── Contact · Call · scripts ─────────────────────── */}
+          <div style={{
+            background: "var(--qs-elevated)", border: "1px solid var(--qs-border)",
+            borderRadius: 10, padding: "14px 16px", marginBottom: 20,
+          }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--qs-subtle)",
+              textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 10 }}>Contact</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Phone</div>
+                <div style={{ fontSize: 14, color: "var(--qs-text)", fontFamily: "'DM Mono', monospace" }}>{event.phone || "—"}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: 11, color: "var(--qs-subtle)", marginBottom: 2 }}>Email</div>
+                <div style={{ fontSize: 14, color: "var(--qs-dim)" }}>{event.email || "—"}</div>
+              </div>
+            </div>
+            {event.phone && (
+              <a href={`tel:${event.phone}`} style={{
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                marginTop: 12, width: "100%", boxSizing: "border-box",
+                padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                fontSize: 15, fontWeight: 700, textDecoration: "none",
+              }}>{"📞"} Call {event.phone}</a>
+            )}
+            <div style={{ marginTop: 12 }}>
+              <CallScriptBox label="Call script">
+                {cancelCallScript({
+                  firstName, agentName, product: event.product, isLapsed,
+                  amountDue: event.amount_due, effectiveDate: event.cancel_effective_date,
+                })}
+              </CallScriptBox>
+              <VoicemailScriptBox firstName={firstName} agentName={agentName} product={event.product} />
+            </div>
+          </div>
+
+          {/* ── Schedule a callback ──────────────────────────── */}
+          <div style={{ marginBottom: 20 }}>
+            <label className="dark-label">Schedule a callback</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="datetime-local" className="dark-input" value={cbTime}
+                onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
+              <input className="dark-input" placeholder="Note (optional)" value={cbNote}
+                onChange={e => setCbNote(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
+              <button onClick={scheduleCallback} disabled={!cbTime || cbSaving} style={{
+                fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none",
+                background: "#3B82F6", color: "#fff", fontWeight: 700,
+                cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
+                opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
+              }}>{cbSaving ? "Scheduling…" : "📅 Schedule"}</button>
+            </div>
+            {event.callback_at && (
+              <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
+                Current: {new Date(event.callback_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+              </div>
+            )}
+          </div>
 
           {/* ── Section: Attempt Log ─────────────────────────── */}
           <div style={{
@@ -666,24 +908,40 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-            {/* Outcome — only when customer has been reached */}
-            {showOutcomePicker && (
-              <div>
-                <label className="dark-label">Outcome (customer reached)</label>
-                <select
-                  className="dark-select"
-                  value={form.status}
-                  onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
-                >
-                  <option value="contacted">Contacted — no action yet</option>
-                  <option value="payment_plan_requested">Wants Payment Plan</option>
-                  <option value="promise_to_pay">Promised to Pay</option>
-                  <option value="saved">Saved ✓ — paid, policy continues</option>
-                  <option value="rewritten">Rewritten ✓ — new policy at lower rate</option>
-                  <option value="requested_cancellation">Wants to Cancel</option>
-                  <option value="lost">Lost</option>
-                </select>
-              </div>
+            {/* Outcome — visible but locked (greyed, not editable) until a
+                reached attempt is logged. */}
+            <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
+              title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
+              <label className="dark-label">Outcome (customer reached)</label>
+              <select
+                className="dark-select"
+                value={form.status}
+                disabled={!showOutcomePicker}
+                onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
+                style={{ cursor: showOutcomePicker ? undefined : "not-allowed" }}
+              >
+                {/* When the case hasn't been resolved to one of the outcomes
+                    below, form.status (e.g. "pending"/"attempting") matches no
+                    option — a native select would then silently DISPLAY the
+                    first option. Render a matching placeholder so it reads
+                    "Select an outcome" and stays in sync with state. */}
+                {!["contacted","payment_plan_requested","promise_to_pay","saved","rewritten","requested_cancellation","lost"].includes(form.status) && (
+                  <option value={form.status}>— Select an outcome —</option>
+                )}
+                <option value="contacted">Contacted — no action yet</option>
+                <option value="payment_plan_requested">Wants Payment Plan</option>
+                <option value="promise_to_pay">Promised to Pay</option>
+                <option value="saved">Saved ✓ — paid, policy continues</option>
+                <option value="rewritten">Rewritten ✓ — new policy at lower rate</option>
+                <option value="requested_cancellation">Wants to Cancel</option>
+                <option value="lost">Lost</option>
+              </select>
+            </div>
+
+            {/* No-contact escape hatch: customer already paid before we reached
+                them. Only meaningful while the case is still open. */}
+            {!["saved","rewritten","lost","requested_cancellation","cancelled","auto_resolved"].includes(event.status) && (
+              <AlreadyPaidAction onConfirm={markAlreadyPaid} busy={saving} />
             )}
 
             {/* Rewrite detail fields — only when Rewritten is selected */}
@@ -758,25 +1016,79 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
+            {/* Saved premium — only on a straight save (reinstatement) */}
+            {form.status === "saved" && (
+              <div>
+                <label className="dark-label">Premium saved (annual)</label>
+                <input
+                  className="dark-input"
+                  inputMode="decimal"
+                  placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Annual premium preserved"}
+                  value={savedPremium}
+                  onChange={ev => setSavedPremium(ev.target.value)}
+                />
+                <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
+                  What the policy continues at after the save.
+                  {event.premium_at_risk ? (
+                    <button type="button"
+                      onClick={() => setSavedPremium(String(event.premium_at_risk))}
+                      style={{ marginLeft: 6, background: "none", border: "none", padding: 0,
+                        color: "#34D399", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
+                      use at-risk amount
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            )}
+
+            {/* What saved them — captured here in Case Management when recording
+                the save (not on every call attempt). */}
+            {["saved","rewritten"].includes(form.status) && (
+              <div>
+                {event.save_method && (
+                  <div style={{ fontSize: 11, color: "var(--qs-muted)", marginBottom: 6 }}>
+                    Currently recorded: <strong style={{ color: "var(--qs-dim)" }}>
+                      {SAVE_METHOD_LABEL[event.save_method] || event.save_method}</strong>
+                  </div>
+                )}
+                <InterventionPicker
+                  context={caseContext}
+                  filter={tacticFilter}
+                  value={saveIntervention}
+                  onChange={setSaveIntervention}
+                />
+              </div>
+            )}
+
             {/* Assignment + Promise date */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               <div>
                 <label className="dark-label">Assigned To</label>
-                <select
-                  className="dark-select"
-                  value={form.assigned_to_id}
-                  onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
-                >
-                  <option value="">Unassigned</option>
-                  {producers.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                    </option>
-                  ))}
-                </select>
+                {canReassign ? (
+                  <select
+                    className="dark-select"
+                    value={form.assigned_to_id}
+                    onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+                  >
+                    <option value="">Unassigned</option>
+                    {producers.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                    border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-text)" }}>
+                    {(() => {
+                      const a = producers.find(p => p.id === form.assigned_to_id);
+                      return a ? (a.preferred_name || `${a.first_name || ""} ${a.last_name || ""}`.trim()) : "Unassigned";
+                    })()}
+                  </div>
+                )}
               </div>
               <div>
-                <label className="dark-label">Promise Date</label>
+                <label className="dark-label">Pay Promise Date</label>
                 <input
                   className="dark-input"
                   type="date"
@@ -803,36 +1115,46 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               </div>
             )}
 
-            {/* Notes */}
-            <div>
-              <label className="dark-label">Notes</label>
-              <textarea
-                className="dark-input"
-                value={form.notes}
-                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-                rows={3}
-                placeholder="Call notes, customer response..."
-                style={{ resize: "vertical", fontFamily: "inherit" }}
-              />
-            </div>
+            <CaseNotesFeed caseType="cancel" caseId={event.id} agencyId={agencyId}
+              policyNo={event.policy_no} customerName={event.customer_name} />
 
-            {/* Save */}
-            <button
-              onClick={save}
-              disabled={saving}
-              style={{
-                width: "100%", padding: "12px",
-                borderRadius: 10, border: "none",
-                background: saving ? "var(--qs-elevated)" : "#10B981",
-                color: saving ? "var(--qs-muted)" : "#fff",
-                fontSize: 15, fontWeight: 700,
-                cursor: saving ? "not-allowed" : "pointer",
-                transition: "background 0.15s",
-                marginTop: 4,
-              }}
-            >
-              {saving ? "Saving\u2026" : "Save Case"}
-            </button>
+            <LinkedServiceTasks caseType="cancel" caseId={event.id} />
+
+            <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
+              customerName={event.customer_name} customerPhone={event.phone}
+              sourceCaseType="cancel" sourceCaseId={event.id} source="internal" />
+
+            <ReferToSalesBox agencyId={agencyId} caseType="cancel" caseId={event.id}
+              customerName={event.customer_name} policyNo={event.policy_no}
+              currentProduct={event.product} />
+
+            <EscalateCaseBox caseType="cancel" caseId={event.id} onEscalated={onClose} />
+
+            <div>
+              <button
+                onClick={save}
+                disabled={saving}
+                style={{
+                  width: "100%", padding: "12px",
+                  borderRadius: 10, border: "none",
+                  background: saving ? "var(--qs-elevated)" : "#10B981",
+                  color: saving ? "var(--qs-muted)" : "#fff",
+                  fontSize: 15, fontWeight: 700,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  transition: "background 0.15s",
+                  marginTop: 4,
+                }}
+              >
+                {saving ? "Saving\u2026" : "Save Case"}
+              </button>
+              {saveError && (
+                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
+                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 8, padding: "8px 10px" }}>
+                  {saveError}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -875,12 +1197,27 @@ function renewalUrgencyColor(days) {
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
 
-function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId }) {
+function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true }) {
   const days = daysUntilRenewal(event.renewal_date);
+  // Script inputs — same source the queue list uses, so the words match.
+  const firstName = event.customer_name?.split(' ')[0] || 'there';
+  const scriptChangePct = parseFloat(event.premium_change_pct) || 0;
+  const rateShock = scriptChangePct >= 15;
+  const me = (producers || []).find(p => p.id === currentEmployeeId);
+  const agentName = me
+    ? ([me.preferred_name || me.first_name, me.last_name].filter(Boolean).join(' ') || 'your agent')
+    : 'your agent';
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
   const [attempts, setAttempts] = useState([]);
   const [loggingAttempt, setLoggingAttempt] = useState(false);
-  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "" });
+  // Whether a reached attempt has been logged this session — unlocks Case
+  // Management (the outcome picker) once the rep has actually spoken to them.
+  const [reachedLogged, setReachedLogged] = useState(false);
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  // The save tactic ("What did you do to save them?") — captured in Case
+  // Management when recording the save, not on every call attempt.
+  const [saveIntervention, setSaveIntervention] = useState(EMPTY_INTERVENTION);
   const [form, setForm] = useState({
     status: event.status,
     assigned_to_id: event.assigned_to_id || "",
@@ -888,6 +1225,39 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     notes: event.notes || "",
     shopping_reason: event.shopping_reason || "",
   });
+  // Kept out of `form` so it's only written to renewal_cases on the confirmed
+  // (saved) path — the column it targets is the new saved_premium field.
+  // Pre-fill with the renewal offer from the report so the rep doesn't retype it;
+  // they only change it when the customer paid a different amount.
+  const [savedPremium, setSavedPremium] = useState(
+    event.saved_premium ?? (event.premium != null ? String(event.premium) : "")
+  );
+  // Callback scheduling (moved off the list card into the work surface).
+  const [cbTime, setCbTime] = useState("");
+  const [cbNote, setCbNote] = useState("");
+  const [cbSaving, setCbSaving] = useState(false);
+
+  async function scheduleCallback() {
+    if (!cbTime || cbSaving) return;
+    setCbSaving(true);
+    const callbackAt = new Date(cbTime).toISOString();
+    await supabase.from("renewal_attempts").insert({
+      renewal_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+      method: "phone", result: "reached",
+      note: `Callback scheduled: ${cbNote || "no details"}`,
+    });
+    await onUpdate(event.id, {
+      attempt_count:       (event.attempt_count || 0) + 1,
+      last_attempt_at:     new Date().toISOString(),
+      last_attempt_result: "reached",
+      contacted_at:        event.contacted_at || new Date().toISOString(),
+      callback_at:         callbackAt,
+      callback_note:       cbNote || null,
+    });
+    setCbSaving(false);
+    setCbTime(""); setCbNote("");
+    onClose();
+  }
 
   const { data: otherCases = [] } = useOtherActiveCases({
     agencyId,
@@ -900,8 +1270,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   useEffect(() => {
     supabase
       .from("renewal_attempts")
-      .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-      .eq("renewal_event_id", event.id)
+      .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
+      .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
   }, [event.id]);
@@ -913,7 +1283,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     }
     setLoggingAttempt(true);
     const { error } = await supabase.from("renewal_attempts").insert({
-      renewal_event_id: event.id,
+      renewal_case_id: event.id,
       agency_id: agencyId,
       employee_id: currentEmployeeId,
       method: attemptForm.method,
@@ -924,8 +1294,8 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const newCount = (event.attempt_count || 0) + 1;
       const statusUpdate = {};
       if (event.status === "pending") statusUpdate.status = "attempting";
-      if (attemptForm.result === "left_voicemail") statusUpdate.status = "left_voicemail";
-      if (attemptForm.result === "reached") statusUpdate.contacted_at = event.contacted_at || new Date().toISOString();
+      if (attemptForm.result === "left_voicemail") { statusUpdate.status = "left_voicemail"; statusUpdate.awaiting_callback = true; }
+      if (attemptForm.result === "reached") { statusUpdate.contacted_at = event.contacted_at || new Date().toISOString(); statusUpdate.awaiting_callback = false; }
       // Suggest unreachable after 3+ non-reached attempts
       if (newCount >= 3 && attemptForm.result !== "reached" && event.status === "attempting") {
         // Don't auto-set, just leave as attempting — auto-unreachable handles at 5+
@@ -948,19 +1318,78 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
       const { data } = await supabase
         .from("renewal_attempts")
-        .select("id, attempted_at, method, result, note, employees(first_name, last_name)")
-        .eq("renewal_event_id", event.id)
+        .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
+        .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
-      setAttemptForm({ method: "phone", result: "no_answer", note: "" });
+      if (attemptForm.result === "reached") setReachedLogged(true);
+      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
   }
 
+  // Already paid before we reached them → auto_resolved (renewed, but observed
+  // not rep-driven, so it's exempt from the reached-attempt rule and earns no
+  // save credit). The customer paid the renewal offer in full, so we log that
+  // paid premium = the offer (premium difference $0) — tracked, not credited.
+  async function markAlreadyPaid() {
+    setSaving(true);
+    setSaveError(null);
+    const err = await onUpdate(event.id, {
+      status: "auto_resolved",
+      final_outcome: "renewed",
+      outcome_source: "observed",
+      final_outcome_set_by: currentEmployeeId,
+      final_outcome_set_at: new Date().toISOString(),
+      resolution_date: new Date().toISOString().slice(0, 10),
+      closed_by_id: currentEmployeeId,
+      saved_premium: event.premium ?? null,
+    });
+    if (err) {
+      setSaveError(`Couldn't clear the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
+    setSaving(false);
+    onClose();
+  }
+
   async function save() {
     setSaving(true);
+    setSaveError(null);
+    // Persist the save tactic + satisfy the save-has-attempt guard
+    // (`enforce_renewal_save_has_attempt`). Attempts are insert-only under RLS, so
+    // the Case-Management tactic is recorded by logging an auto-attempt that
+    // carries it (excluded from outreach metrics via auto_logged). We insert when
+    // the rep picked a tactic that isn't already on record, or — with no tactic —
+    // only if the case has no attempt yet (so the guard doesn't trip).
+    if (form.status === "confirmed") {
+      const codes = (saveIntervention.interventions || []).filter(Boolean);
+      const key = codes.slice().sort().join("|");
+      const tacticOnRecord = codes.length > 0 && attempts.some(
+        a => (a.interventions || []).slice().sort().join("|") === key
+      );
+      if ((codes.length > 0 && !tacticOnRecord) || attempts.length === 0) {
+        const { error: attErr } = await supabase.from("renewal_attempts").insert({
+          renewal_case_id: event.id, agency_id: agencyId, employee_id: currentEmployeeId,
+          method: "phone", result: "reached",
+          note: codes.length ? "Save tactic recorded" : "Outcome recorded from the work surface",
+          auto_logged: true, // not a real dialed call — excluded from outreach/reach metrics
+          ...interventionInsertFields(saveIntervention),
+        });
+        if (attErr) {
+          setSaveError(`Couldn't record the call: ${attErr.message}`);
+          setSaving(false);
+          return;
+        }
+      }
+    }
     const updates = { ...form };
+    // contact_method has a CHECK constraint (phone/text/email/other or NULL);
+    // an unset method comes through as "" from the form — coerce it to null so
+    // the write doesn't trip `renewal_events_contact_method_check`.
+    updates.contact_method = form.contact_method || null;
     if (["review_requested","confirmed","at_risk","shopping","escalated"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
@@ -971,9 +1400,32 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     if (["confirmed","lost","unreachable"].includes(form.status)) {
       updates.closed_by_id = currentEmployeeId;
     }
+    // Stamp the rep-confirmed elasticity label (outcome + provenance), so every
+    // resolved renewal carries a trustworthy final_outcome for the retention dataset.
+    if (["confirmed","lost"].includes(form.status)) {
+      updates.final_outcome        = form.status === "confirmed" ? "renewed" : "lost";
+      updates.outcome_source       = "rep";
+      updates.final_outcome_set_by = currentEmployeeId;
+      updates.final_outcome_set_at = new Date().toISOString();
+    }
+    // Saved premium — what the agent got the renewal down to. Captured only on a
+    // confirmed save, so other resolutions never touch the new column.
+    if (form.status === "confirmed") {
+      const sp = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+      updates.saved_premium = Number.isNaN(sp) ? null : sp;
+    }
+    // Save method (what saved them) — auto-derived from the tactic captured on
+    // the call; only meaningful on a confirmed save, cleared otherwise so a
+    // stale tactic doesn't linger on a lost/shopping case.
+    updates.save_method = form.status === "confirmed" ? derivedSaveMethod : null;
     updates.assigned_to_id = updates.assigned_to_id || null;
     if (form.status !== "shopping") updates.shopping_reason = null;
-    await onUpdate(event.id, updates);
+    const err = await onUpdate(event.id, updates);
+    if (err) {
+      setSaveError(`Couldn't save the case: ${err.message || err}`);
+      setSaving(false);
+      return;
+    }
     setSaving(false);
     onClose();
   }
@@ -987,27 +1439,42 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     disconnected:   "Disconnected",
   };
 
+  // Case Management is gated behind a reached customer: the outcome picker only
+  // unlocks once a "reached" attempt has actually been LOGGED (Log Attempt
+  // clicked), a reached attempt is already on the record (contacted_at stamped),
+  // or the case already holds an outcome status. No reach → nothing to record.
   const showOutcomePicker =
-    attemptForm.result === "reached" ||
-    ["review_requested","shopping","at_risk","escalated","confirmed"].includes(event.status);
+    reachedLogged ||
+    event.last_attempt_result === "reached" ||
+    !!event.contacted_at ||
+    // Keep an already-resolved renewal viewable/editable even if contacted_at
+    // was never stamped (e.g. confirmed directly off a reached call).
+    ["review_requested","shopping","at_risk","escalated","confirmed","lost"].includes(event.status);
+
+  // Scopes the tactic chips — renewals never see the cancel-only tactics.
+  const caseContext = "renewal";
+  const tacticFilter = undefined; // no extra stage rules on renewals
+  // "What saved them" lives in Case Management (not the call log): the tactic is
+  // captured here when recording the save, and the headline becomes save_method.
+  const derivedSaveMethod = saveMethodFromCodes(saveIntervention.interventions) || event.save_method || null;
 
   return (
     <div
       style={{
         position: "fixed", inset: 0, zIndex: 1000,
         background: "rgba(0,0,0,0.75)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        padding: "24px 16px",
+        display: "flex", alignItems: "flex-start", justifyContent: "center",
+        padding: "16px",
       }}
-      onClick={ev => { if (ev.target === ev.currentTarget) onClose(); }}
+      onMouseDown={ev => { if (ev.target === ev.currentTarget) onClose(); }}
     >
       <div style={{
         background: "var(--qs-card)",
         border: "1px solid var(--qs-border)",
         borderRadius: 14,
         width: "100%",
-        maxWidth: 640,
-        maxHeight: "90vh",
+        maxWidth: 1080,
+        maxHeight: "calc(100vh - 32px)",
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -1027,7 +1494,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               {maskCustomerName(event.customer_name) || "Unknown Customer"}
             </div>
             <div style={{ fontSize: 13, color: "var(--qs-subtle)" }}>
-              Policy {event.policy_no} · {event.product?.toUpperCase()}
+              Policy {event.policy_no} · {productLabel(event.product)}
             </div>
           </div>
           <button
@@ -1061,7 +1528,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           }}>
             {[
               { label: "Policy No",     value: event.policy_no },
-              { label: "Product",       value: event.product_raw || event.product?.toUpperCase() },
+              // Normalized product first ("AUTO"), raw Allstate text only as a
+              // fallback — product_raw is the unreadable "Auto - Private
+              // Passenger Voluntary" form.
+              { label: "Product",       value: productLabel(event.product) || event.product_raw },
               { label: "Renewal Date",  value: event.renewal_date, color: renewalUrgencyColor(days) },
               { label: "Days Until",    value: days <= 0 ? "PAST DUE" : `${days} days`, color: renewalUrgencyColor(days) },
               { label: "Premium",       value: event.premium ? fmtFull$(event.premium) : "\u2014" },
@@ -1072,9 +1542,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 color: event.premium_change == null ? "var(--qs-dim)"
                   : event.premium_change > 0 ? "#EF4444" : "#10B981" },
               { label: "Easy Pay",      value: event.easy_pay === true ? "Yes ✓" : event.easy_pay === false ? "No" : "—" },
-              { label: "Multi-Line",
-                value: event.multi_line === 'Yes' ? 'Yes — Bundled'
-                     : event.multi_line === 'No'  ? 'No — Monoline'
+              { label: "Multiline",
+                value: event.multi_line === 'Yes' ? 'Bundled'
+                     : event.multi_line === 'No'  ? 'Monoline'
                      : '—',
                 color: event.multi_line === 'Yes' ? '#10B981'
                      : event.multi_line === 'No'  ? '#60A5FA'
@@ -1097,7 +1567,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 </div>
                 <div style={{
                   fontSize: 16, fontWeight: 700, color: color || "var(--qs-text)",
-                  fontFamily: "'DM Mono', monospace", lineHeight: 1,
+                  fontFamily: "'DM Mono', monospace", lineHeight: 1.15, whiteSpace: "nowrap",
                 }}>
                   {value || "\u2014"}
                 </div>
@@ -1119,7 +1589,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 ⚠ This customer has an active pending cancel
               </div>
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                Their <strong>{event.active_cancel?.product?.toUpperCase() || 'other'}</strong> policy
+                Their <strong>{productLabel(event.active_cancel?.product) || 'other'}</strong> policy
                 {' '}is in pending cancel. Address that first — do not lead with the renewal
                 or a cross-sell pitch until the cancel issue is resolved.
               </div>
@@ -1142,13 +1612,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
                 Allstate flagged this customer for{' '}
                 <strong style={{ color: '#10B981' }}>
-                  {event.cross_sell_product?.toUpperCase()}
+                  {productLabel(event.cross_sell_product)}
                 </strong>.
                 {' '}After confirming the renewal, ask:
                 <em style={{ color: 'var(--qs-dim)', display: 'block', marginTop: 4 }}>
-                  "While I have you — I noticed you only have [current product] with us.
-                  I'd love to get you a quick quote on [pitch product] to see if we can
-                  save you some money by bundling."
+                  "While I have you — I noticed you only have {productLabel(event.product)} with
+                  us. I'd love to get you a quick quote on {productLabel(event.cross_sell_product)}
+                  {' '}to see if we can save you some money by bundling."
                 </em>
               </div>
             </div>
@@ -1180,6 +1650,53 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 </div>
               </div>
             </div>
+            {event.phone && (
+              <a href={`tel:${event.phone}`}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                  marginTop: 12, width: "100%", boxSizing: "border-box",
+                  padding: "11px 16px", borderRadius: 8, background: "#10B981", color: "#fff",
+                  fontSize: 15, fontWeight: 700, textDecoration: "none",
+                }}>
+                {"\ud83d\udcde"} Call {event.phone}
+              </a>
+            )}
+            <div style={{ marginTop: 12 }}>
+              <CallScriptBox label="Call script">
+                {renewalCallScript({
+                  firstName, agentName, product: event.product, renewalDate: event.renewal_date,
+                  rateShock, changePct: scriptChangePct,
+                })}
+              </CallScriptBox>
+              <VoicemailScriptBox firstName={firstName} agentName={agentName} product={event.product} />
+            </div>
+          </div>
+
+          {/* ── Schedule a callback ──────────────────────────── */}
+          <div style={{ marginBottom: 20 }}>
+            <label className="dark-label">Schedule a callback</label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              <input type="datetime-local" className="dark-input" value={cbTime}
+                onChange={e => setCbTime(e.target.value)} style={{ maxWidth: 230 }} />
+              <input className="dark-input" placeholder="Note (optional)" value={cbNote}
+                onChange={e => setCbNote(e.target.value)} style={{ flex: 1, minWidth: 140 }} />
+              <button onClick={scheduleCallback} disabled={!cbTime || cbSaving}
+                style={{
+                  fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "none",
+                  background: "#3B82F6", color: "#fff", fontWeight: 700,
+                  cursor: (!cbTime || cbSaving) ? "not-allowed" : "pointer",
+                  opacity: (!cbTime || cbSaving) ? 0.5 : 1, fontFamily: "inherit",
+                }}>
+                {cbSaving ? "Scheduling…" : "📅 Schedule"}
+              </button>
+            </div>
+            {event.callback_at && (
+              <div style={{ fontSize: 12, color: "#60A5FA", marginTop: 6 }}>
+                Current: {new Date(event.callback_at).toLocaleString("en-US", {
+                  month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+                })}
+              </div>
+            )}
           </div>
 
           {/* ── Section: Attempt Log ─────────────────────────── */}
@@ -1320,22 +1837,97 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
 
-            {/* Outcome — only when customer has been reached */}
-            {showOutcomePicker && (
+            {/* Outcome — visible but locked (greyed, not editable) until a
+                reached attempt is logged. */}
+            <div style={{ opacity: showOutcomePicker ? 1 : 0.45 }}
+              title={showOutcomePicker ? undefined : "Log a reached attempt to record an outcome"}>
+              <label className="dark-label">Outcome (customer reached)</label>
+              <select
+                className="dark-select"
+                value={form.status}
+                disabled={!showOutcomePicker}
+                onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
+                style={{ cursor: showOutcomePicker ? undefined : "not-allowed" }}
+              >
+                {/* When the case hasn't been resolved to one of the outcomes
+                    below, form.status (e.g. "pending"/"attempting") matches no
+                    option — a native select would then silently DISPLAY the
+                    first option. Render a matching placeholder so it reads
+                    "Select an outcome" and stays in sync with state. */}
+                {!["confirmed","review_requested","shopping","at_risk","lost"].includes(form.status) && (
+                  <option value={form.status}>— Select an outcome —</option>
+                )}
+                <option value="confirmed">Confirmed Renewal ✓</option>
+                <option value="review_requested">Wants Policy Review</option>
+                <option value="shopping">Shopping Competitors</option>
+                <option value="at_risk">At Risk (payment/unhappy)</option>
+                <option value="lost">Lost — Won't Renew</option>
+              </select>
+            </div>
+
+            {/* No-contact escape hatch: customer already paid the renewal before
+                we reached them. Only meaningful while the case is still open. */}
+            {!["confirmed","lost","auto_resolved","unreachable"].includes(event.status) && (
+              <AlreadyPaidAction onConfirm={markAlreadyPaid} busy={saving} />
+            )}
+
+            {/* Renewal offer (read-only, from report) + premium paid (rep enters) */}
+            {form.status === "confirmed" && (
               <div>
-                <label className="dark-label">Outcome (customer reached)</label>
-                <select
-                  className="dark-select"
-                  value={form.status}
-                  onChange={ev => setForm(p => ({ ...p, status: ev.target.value }))}
-                >
-                  <option value="confirmed">Confirmed Renewal ✓</option>
-                  <option value="review_requested">Wants Policy Review</option>
-                  <option value="shopping">Shopping Competitors</option>
-                  <option value="at_risk">At Risk (payment/unhappy)</option>
-                  <option value="escalated">Escalate to Agent</option>
-                  <option value="lost">Lost — Won't Renew</option>
-                </select>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div>
+                    <label className="dark-label">Renewal offer <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>(from report)</span></label>
+                    <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                      border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-dim)" }}>
+                      {event.premium != null ? fmtFull$(event.premium) : "—"}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="dark-label">Renewal paid</label>
+                    <input
+                      className="dark-input"
+                      inputMode="decimal"
+                      placeholder="Annual premium paid"
+                      value={savedPremium}
+                      onChange={ev => setSavedPremium(ev.target.value)}
+                    />
+                  </div>
+                </div>
+                {savedPremium !== "" && event.premium != null && (() => {
+                  const paid = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+                  if (Number.isNaN(paid)) return null;
+                  const diff = paid - event.premium; // + paid above offer, − below
+                  const pct = event.premium > 0 ? (Math.abs(diff) / event.premium) * 100 : 0;
+                  return (
+                    <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
+                      Premium difference:{" "}
+                      <strong style={{ color: diff < 0 ? "#34D399" : diff > 0 ? "#FBBF24" : "var(--qs-dim)" }}>
+                        {diff > 0 ? "+" : diff < 0 ? "−" : ""}{fmtFull$(Math.abs(diff))}
+                        {pct ? ` (${pct.toFixed(0)}%)` : ""}
+                      </strong>
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* What saved them — captured here in Case Management when recording
+                the confirmed save (not on every call attempt). */}
+            {form.status === "confirmed" && (
+              <div>
+                <label className="dark-label">What saved them?</label>
+                {event.save_method && (
+                  <div style={{ fontSize: 11, color: "var(--qs-muted)", margin: "2px 0 6px" }}>
+                    Currently recorded: <strong style={{ color: "var(--qs-dim)" }}>
+                      {SAVE_METHOD_LABEL[event.save_method] || event.save_method}</strong>
+                  </div>
+                )}
+                <InterventionPicker
+                  context={caseContext}
+                  filter={tacticFilter}
+                  value={saveIntervention}
+                  onChange={setSaveIntervention}
+                />
               </div>
             )}
 
@@ -1358,53 +1950,73 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               </div>
             )}
 
-            {/* Assigned To */}
+            {/* Assigned To — reps can't reassign their own work; managers can. */}
             <div>
               <label className="dark-label">Assigned To</label>
-              <select
-                className="dark-select"
-                value={form.assigned_to_id}
-                onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
-              >
-                <option value="">Unassigned</option>
-                {producers.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
-                  </option>
-                ))}
-              </select>
+              {canReassign ? (
+                <select
+                  className="dark-select"
+                  value={form.assigned_to_id}
+                  onChange={ev => setForm(p => ({ ...p, assigned_to_id: ev.target.value }))}
+                >
+                  <option value="">Unassigned</option>
+                  {producers.map(p => (
+                    <option key={p.id} value={p.id}>
+                      {p.preferred_name || `${p.first_name || ""} ${p.last_name || ""}`.trim()}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div style={{ padding: "8px 10px", borderRadius: 8, background: "var(--qs-elevated)",
+                  border: "1px solid var(--qs-border)", fontSize: 13, color: "var(--qs-text)" }}>
+                  {(() => {
+                    const a = producers.find(p => p.id === form.assigned_to_id);
+                    return a ? (a.preferred_name || `${a.first_name || ""} ${a.last_name || ""}`.trim()) : "Unassigned";
+                  })()}
+                </div>
+              )}
             </div>
 
-            {/* Notes */}
+            <CaseNotesFeed caseType="renewal" caseId={event.id} agencyId={agencyId}
+              policyNo={event.policy_no} customerName={event.customer_name} />
+
+            <LinkedServiceTasks caseType="renewal" caseId={event.id} />
+
+            <LogServiceTaskButton agencyId={agencyId} policyNo={event.policy_no}
+              customerName={event.customer_name} customerPhone={event.phone}
+              sourceCaseType="renewal" sourceCaseId={event.id} source="renewal_call" />
+
+            <ReferToSalesBox agencyId={agencyId} caseType="renewal" caseId={event.id}
+              customerName={event.customer_name} policyNo={event.policy_no}
+              currentProduct={event.product} />
+
+            <EscalateCaseBox caseType="renewal" caseId={event.id} onEscalated={onClose} />
+
             <div>
-              <label className="dark-label">Notes</label>
-              <textarea
-                className="dark-input"
-                value={form.notes}
-                onChange={ev => setForm(p => ({ ...p, notes: ev.target.value }))}
-                rows={3}
-                placeholder="Call notes, customer response..."
-                style={{ resize: "vertical", fontFamily: "inherit" }}
-              />
+              <button
+                onClick={save}
+                disabled={saving}
+                style={{
+                  width: "100%", padding: "12px",
+                  borderRadius: 10, border: "none",
+                  background: saving ? "var(--qs-elevated)" : "#10B981",
+                  color: saving ? "var(--qs-muted)" : "#fff",
+                  fontSize: 15, fontWeight: 700,
+                  cursor: saving ? "not-allowed" : "pointer",
+                  transition: "background 0.15s",
+                  marginTop: 4,
+                }}
+              >
+                {saving ? "Saving\u2026" : "Save Case"}
+              </button>
+              {saveError && (
+                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
+                  background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
+                  borderRadius: 8, padding: "8px 10px" }}>
+                  {saveError}
+                </div>
+              )}
             </div>
-
-            {/* Save */}
-            <button
-              onClick={save}
-              disabled={saving}
-              style={{
-                width: "100%", padding: "12px",
-                borderRadius: 10, border: "none",
-                background: saving ? "var(--qs-elevated)" : "#10B981",
-                color: saving ? "var(--qs-muted)" : "#fff",
-                fontSize: 15, fontWeight: 700,
-                cursor: saving ? "not-allowed" : "pointer",
-                transition: "background 0.15s",
-                marginTop: 4,
-              }}
-            >
-              {saving ? "Saving\u2026" : "Save Case"}
-            </button>
           </div>
         </div>
       </div>
@@ -1414,9 +2026,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
 // ─── Unified Detail Modal ───────────────────────────────────────────────────
 
-function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [], onReassign }) {
+function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign }) {
   const [saving, setSaving] = useState(false);
   const [localRow, setLocalRow] = useState(row);
+  const { config: productConfig } = useAgencyProductConfig(agencyId);
 
   // Use localRow for display so reassignment reflects immediately without closing modal
   const r = localRow;
@@ -1464,7 +2077,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
             {maskCustomerName(r.customer_name)}
           </div>
           <div style={{ fontSize: 12, color: 'var(--qs-subtle)', marginTop: 2 }}>
-            Policy {r.policy_no} · {r.product?.toUpperCase()}
+            Policy {r.policy_no} · {productLabel(r.product)}
             {r.risk_type === 'dual_risk' && (
               <span style={{ marginLeft: 8, color: 'var(--qs-danger)', fontWeight: 700 }}>⚡ DUAL RISK</span>
             )}
@@ -1509,7 +2122,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                   color: urgencyColor(daysUntilCancel(r.cancel_effective_date)) },
                 { label: 'Status',
                   value: STATUS_CONFIG[r.cancel_status]?.label || r.cancel_status || '—' },
-                { label: 'Promise Date', value: r.promise_date || '—',
+                { label: 'Pay Promise Date', value: r.promise_date || '—',
                   color: (() => {
                     if (!r.promise_date) return 'var(--qs-subtle)';
                     const d = Math.ceil((new Date(r.promise_date) - new Date()) / 86400000);
@@ -1580,7 +2193,7 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                   value: (() => { const d = daysUntilRenewal(r.renewal_date); return d <= 0 ? 'PAST DUE' : `${d} days`; })(),
                   color: renewalUrgencyColor(daysUntilRenewal(r.renewal_date)) },
                 { label: 'Status',
-                  value: RENEWAL_STATUS_CONFIG[r.renewal_status]?.label || r.renewal_status || '—' },
+                  value: RENEWAL_STATUS_CONFIG[r.status]?.label || r.status || '—' },
                 { label: 'Attempts', value: r.renewal_attempts || 0 },
               ].map(({ label, value, color }) => (
                 <div key={label} style={{ background: 'var(--qs-card)', borderRadius: 6, padding: '8px 10px' }}>
@@ -1613,9 +2226,9 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
                     : '—' },
                 { label: 'Easy Pay',
                   value: r.easy_pay === true ? 'Yes ✓' : r.easy_pay === false ? 'No' : '—' },
-                { label: 'Multi-Line',
-                  value: r.multi_line === 'Yes' ? 'Yes — Bundled'
-                       : r.multi_line === 'No'  ? 'No — Monoline'
+                { label: 'Multiline',
+                  value: r.multi_line === 'Yes' ? 'Bundled'
+                       : r.multi_line === 'No'  ? 'Monoline'
                        : '—',
                   color: r.multi_line === 'Yes' ? '#10B981'
                        : r.multi_line === 'No'  ? '#60A5FA'
@@ -1657,6 +2270,17 @@ function UnifiedDetailModal({ row, onClose, agencyId, employeeMap, producers = [
 
           </div>
         )}
+
+        {/* Service requests — view existing + add (multiple allowed per case) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4, marginBottom: 12 }}>
+          {r.cancel_event_id && <LinkedServiceTasks caseType="cancel" caseId={r.cancel_event_id} />}
+          {r.renewal_event_id && <LinkedServiceTasks caseType="renewal" caseId={r.renewal_event_id} />}
+          <LogServiceTaskButton agencyId={agencyId}
+            policyNo={r.policy_no} customerName={r.customer_name} customerPhone={r.phone}
+            sourceCaseType={r.cancel_event_id ? 'cancel' : 'renewal'}
+            sourceCaseId={r.cancel_event_id || r.renewal_event_id}
+            source="internal" />
+        </div>
 
         <button className="btn-ghost" onClick={onClose} style={{ width: '100%', marginTop: 8 }}>Close</button>
       </div>
@@ -1706,7 +2330,7 @@ function calcUnifiedPriority(row) {
   return row.risk_type === 'dual_risk' ? Math.min(base + 15, 100) : base;
 }
 
-function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFilter = false, onClearUrgentFilter }) {
+function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, onClearUrgentFilter }) {
   const { config: productConfig } = useAgencyProductConfig(agencyId);
   const queryClient = useQueryClient();
 
@@ -1752,7 +2376,6 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFi
   const [myCasesOnly, setMyCasesOnly] = useState(false);
   const [sortCol, setSortCol] = useState('priority');
   const [sortDir, setSortDir] = useState('desc');
-  const [selectedUnified, setSelectedUnified] = useState(null);
   // Drilldown: { event, side: 'cancel'|'renewal' } — opens the full detail modal with logging
   const [drilldown, setDrilldown] = useState(null);
 
@@ -2241,7 +2864,7 @@ function UnifiedAtRiskTab({ agencyId, currentUserId, currentEmployeeId, urgentFi
 
                   {/* Product */}
                   <td style={{ color: 'var(--qs-dim)', fontSize: 12 }}>
-                    {row.product?.toUpperCase() || '—'}
+                    {productLabel(row.product) || '—'}
                   </td>
 
                   <td style={{ color: 'var(--qs-subtle)', fontSize: 12, fontFamily: "'DM Mono', monospace" }}>
