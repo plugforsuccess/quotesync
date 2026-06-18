@@ -41,7 +41,8 @@ export default function RenewalPremiumAudit({ agencyId }) {
     );
   }
 
-  const { rows, count, totalOffer, totalPaid, netDiff, avgDiff, below, above, atOffer, autoPaid } = data;
+  const { rows, count, totalOffer, totalPaid, netDiff, avgDiff, below, above, atOffer, autoPaid, realized } = data;
+  const pctStr = (p) => `${p >= 0 ? '+' : '−'}${Math.abs(p).toFixed(1)}%`;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -59,11 +60,40 @@ export default function RenewalPremiumAudit({ agencyId }) {
         )}
       </div>
 
+      {/* Realized increase per policy — paid vs the customer's PRIOR premium. */}
+      {realized && realized.count > 0 && (
+        <div className="card" style={{ borderColor: 'rgba(59,130,246,0.35)' }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 3px' }}>
+            Realized increase per policy
+          </h3>
+          <p style={{ fontSize: 11, color: 'var(--qs-muted)', margin: '0 0 12px' }}>
+            What retained customers actually pay vs their prior premium (paid − last year) — the renewal
+            offer minus the save discount, net of the rate shock. The "are we growing premium per policy" number.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 12 }}>
+            <Stat label="Avg increase / policy" value={pctStr(realized.avgPct)}
+              color={realized.avgPct >= 0 ? '#34D399' : '#F87171'}
+              sub={`${signed(realized.avgInc)} avg · ${realized.count} retained`} />
+            <Stat label="Premium grown vs prior" value={signed(realized.netVsPrior)}
+              color={realized.netVsPrior >= 0 ? '#34D399' : '#F87171'}
+              sub="total paid − total prior" />
+            {(realized.savedAvgPct != null || realized.autoAvgPct != null) && (
+              <Stat label="By outcome"
+                value={[
+                  realized.savedAvgPct != null ? `saved ${pctStr(realized.savedAvgPct)}` : null,
+                  realized.autoAvgPct != null ? `auto ${pctStr(realized.autoAvgPct)}` : null,
+                ].filter(Boolean).join(' · ')}
+                sub="realized increase by outcome" />
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="card">
         <h3 style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)', margin: '0 0 12px' }}>By renewal</h3>
         <table>
           <thead>
-            <tr><th>Customer</th><th>Policy</th><th>Closed</th><th>Rep</th><th>Offer</th><th>Paid</th><th>Difference</th></tr>
+            <tr><th>Customer</th><th>Policy</th><th>Closed</th><th>Rep</th><th>Offer</th><th>Paid</th><th>vs offer</th><th>vs prior</th></tr>
           </thead>
           <tbody>
             {rows.map(r => (
@@ -86,13 +116,21 @@ export default function RenewalPremiumAudit({ agencyId }) {
                 <td style={{ fontWeight: 700, color: diffColor(r.diff) }}>
                   {signed(r.diff)}{r.pct ? ` (${r.pct > 0 ? '+' : ''}${r.pct.toFixed(0)}%)` : ''}
                 </td>
+                <td style={{ fontWeight: 600, color: r.realizedInc == null ? 'var(--qs-muted)'
+                  : r.realizedInc >= 0 ? '#34D399' : '#F87171' }}>
+                  {r.realizedInc != null
+                    ? `${signed(r.realizedInc)}${r.realizedPct != null ? ` (${r.realizedPct >= 0 ? '+' : ''}${r.realizedPct.toFixed(0)}%)` : ''}`
+                    : '—'}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
-          Offer is the renewal report premium; paid is what the rep recorded. Difference = paid − offer
-          (green = renewed below offer, amber = above).
+          Offer is the renewal report premium; paid is what the rep recorded. <strong>vs offer</strong> = paid − offer
+          (green = renewed below offer, amber = above). <strong>vs prior</strong> = paid − last year's premium —
+          the rate change the customer actually pays (green = premium grew, red = below prior). Blank when the
+          report didn't carry a prior premium.
         </p>
       </div>
     </div>
