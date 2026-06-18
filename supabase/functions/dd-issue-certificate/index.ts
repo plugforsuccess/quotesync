@@ -112,8 +112,10 @@ async function buildPdf(opts: {
     const nw = nameFont.widthOfTextAtSize(opts.studentName, ns)
     page.drawText(opts.studentName, { x: PW / 2 - nw / 2, y: Y(498), size: ns, font: nameFont, color: rgb(0.294, 0, 0.510) })
 
-    // Completion date on its line.
-    page.drawText(opts.completionDate, { x: X(380), y: Y(890), size: 12, font: serif, color: rgb(0.12, 0.15, 0.25) })
+    // Completion date — centered over the line, raised slightly.
+    const dsz = 13
+    const dw = serif.widthOfTextAtSize(opts.completionDate, dsz)
+    page.drawText(opts.completionDate, { x: X(502) - dw / 2, y: Y(882), size: dsz, font: serif, color: rgb(0.12, 0.15, 0.25) })
     return await pdf.save()
   }
 
