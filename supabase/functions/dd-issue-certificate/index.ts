@@ -9,6 +9,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
+import fontkit from 'https://esm.sh/@pdf-lib/fontkit@1.1.1'
 
 const allowedOrigins = [
   'https://insuredbycam.com',
@@ -64,21 +65,22 @@ function wrap(text: string, font: any, size: number, maxWidth: number): string[]
   return lines
 }
 
-// The finished certificate template (border + course line + QuoteSync logo) is
-// served as a static asset; we fetch it once and overlay only the dynamic
-// fields (student name + completion date). Falls back to a simple drawn
-// certificate if the template can't be fetched, so issuance never hard-fails.
+// The finished certificate template + name font are served as static assets; we
+// fetch each once and overlay only the dynamic fields (student name + completion
+// date). Falls back to a simple drawn certificate (and Times for the name) if
+// the assets can't be fetched, so issuance never hard-fails.
 const CERT_TEMPLATE_URL = Deno.env.get('DD_CERT_TEMPLATE_URL') ||
-  'https://www.insuredbycam.com/quotesync-cert-sample.png'
-let templateCache: Uint8Array | null = null
-async function getTemplate(): Promise<Uint8Array | null> {
-  if (templateCache) return templateCache
+  'https://www.insuredbycam.com/quotesync-cert-sample-2.png'
+const CERT_FONT_URL = Deno.env.get('DD_CERT_FONT_URL') ||
+  'https://www.insuredbycam.com/EBGaramond-Bold.ttf'
+const assetCache: Record<string, Uint8Array | null> = {}
+async function fetchAsset(url: string): Promise<Uint8Array | null> {
+  if (url in assetCache) return assetCache[url]
   try {
-    const r = await fetch(CERT_TEMPLATE_URL)
-    if (!r.ok) return null
-    templateCache = new Uint8Array(await r.arrayBuffer())
-    return templateCache
-  } catch { return null }
+    const r = await fetch(url)
+    assetCache[url] = r.ok ? new Uint8Array(await r.arrayBuffer()) : null
+  } catch { assetCache[url] = null }
+  return assetCache[url]
 }
 
 async function buildPdf(opts: {
@@ -87,10 +89,11 @@ async function buildPdf(opts: {
   complianceLabel: string; ddsProviderNo: string | null; isDdsApproved: boolean;
 }): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
+  pdf.registerFontkit(fontkit)
   const serif = await pdf.embedFont(StandardFonts.TimesRoman)
   const serifB = await pdf.embedFont(StandardFonts.TimesRomanBold)
 
-  const tpl = await getTemplate()
+  const tpl = await fetchAsset(CERT_TEMPLATE_URL)
   if (tpl) {
     // Overlay only the dynamic fields onto the QuoteSync template. Coordinates
     // are in the template's pixel space (1448x1086), mapped to a 792pt page.
@@ -100,15 +103,17 @@ async function buildPdf(opts: {
     page.drawImage(png, { x: 0, y: 0, width: PW, height: PH })
     const X = (px: number) => px * k, Y = (py: number) => PH - py * k
 
-    // Cover the "Your Name" placeholder, then center the real name on the line.
-    page.drawRectangle({ x: X(486), y: Y(448 + 112), width: X(476), height: 112 * k, color: rgb(1, 1, 1) })
-    let ns = 27
-    while (serifB.widthOfTextAtSize(opts.studentName, ns) > 500 && ns > 13) ns -= 1
-    const nw = serifB.widthOfTextAtSize(opts.studentName, ns)
-    page.drawText(opts.studentName, { x: PW / 2 - nw / 2, y: Y(529), size: ns, font: serifB, color: rgb(0.20, 0.31, 0.60) })
+    // Student name — EB Garamond Bold, 44pt, indigo (fallback: Times Bold).
+    let nameFont = serifB
+    const fontBytes = await fetchAsset(CERT_FONT_URL)
+    if (fontBytes) { try { nameFont = await pdf.embedFont(fontBytes) } catch { nameFont = serifB } }
+    let ns = 44
+    while (nameFont.widthOfTextAtSize(opts.studentName, ns) > 600 && ns > 20) ns -= 1
+    const nw = nameFont.widthOfTextAtSize(opts.studentName, ns)
+    page.drawText(opts.studentName, { x: PW / 2 - nw / 2, y: Y(498), size: ns, font: nameFont, color: rgb(0.294, 0, 0.510) })
 
-    // Completion date value on its line.
-    page.drawText(opts.completionDate, { x: X(372), y: Y(892), size: 12, font: serif, color: rgb(0.12, 0.15, 0.25) })
+    // Completion date on its line.
+    page.drawText(opts.completionDate, { x: X(380), y: Y(890), size: 12, font: serif, color: rgb(0.12, 0.15, 0.25) })
     return await pdf.save()
   }
 
