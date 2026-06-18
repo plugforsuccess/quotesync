@@ -64,8 +64,22 @@ function wrap(text: string, font: any, size: number, maxWidth: number): string[]
   return lines
 }
 
-// Fixed course line on the certificate (matches the approved layout).
-const COURSE_LINE = 'Georgia Defensive Driving Course (6 hours)'
+// The finished certificate template (border + course line + QuoteSync logo) is
+// served as a static asset; we fetch it once and overlay only the dynamic
+// fields (student name + completion date). Falls back to a simple drawn
+// certificate if the template can't be fetched, so issuance never hard-fails.
+const CERT_TEMPLATE_URL = Deno.env.get('DD_CERT_TEMPLATE_URL') ||
+  'https://www.insuredbycam.com/quotesync-cert-sample.png'
+let templateCache: Uint8Array | null = null
+async function getTemplate(): Promise<Uint8Array | null> {
+  if (templateCache) return templateCache
+  try {
+    const r = await fetch(CERT_TEMPLATE_URL)
+    if (!r.ok) return null
+    templateCache = new Uint8Array(await r.arrayBuffer())
+    return templateCache
+  } catch { return null }
+}
 
 async function buildPdf(opts: {
   studentName: string; dln: string | null; courseTitle: string;
@@ -73,70 +87,47 @@ async function buildPdf(opts: {
   complianceLabel: string; ddsProviderNo: string | null; isDdsApproved: boolean;
 }): Promise<Uint8Array> {
   const pdf = await PDFDocument.create()
-  const page = pdf.addPage([792, 612]) // US Letter, landscape
-  const W = 792, H = 612
   const serif = await pdf.embedFont(StandardFonts.TimesRoman)
   const serifB = await pdf.embedFont(StandardFonts.TimesRomanBold)
-  const helv = await pdf.embedFont(StandardFonts.Helvetica)
-  const helvB = await pdf.embedFont(StandardFonts.HelveticaBold)
 
-  const ink = rgb(0.07, 0.07, 0.07)
-  const sub = rgb(0.25, 0.25, 0.25)
-  const green = rgb(0.122, 0.62, 0.408)
-  const keyline = rgb(0.17, 0.275, 0.21)
-  const gray = rgb(0.42, 0.45, 0.50)
-  const badgeGreen = rgb(0.063, 0.725, 0.506)
-  const white = rgb(1, 1, 1)
+  const tpl = await getTemplate()
+  if (tpl) {
+    // Overlay only the dynamic fields onto the QuoteSync template. Coordinates
+    // are in the template's pixel space (1448x1086), mapped to a 792pt page.
+    const png = await pdf.embedPng(tpl)
+    const IW = png.width, IH = png.height, PW = 792, PH = Math.round(PW * IH / IW), k = PW / IW
+    const page = pdf.addPage([PW, PH])
+    page.drawImage(png, { x: 0, y: 0, width: PW, height: PH })
+    const X = (px: number) => px * k, Y = (py: number) => PH - py * k
 
-  const center = (text: string, y: number, font: any, size: number, color = ink) => {
+    // Cover the "Your Name" placeholder, then center the real name on the line.
+    page.drawRectangle({ x: X(486), y: Y(448 + 112), width: X(476), height: 112 * k, color: rgb(1, 1, 1) })
+    let ns = 27
+    while (serifB.widthOfTextAtSize(opts.studentName, ns) > 500 && ns > 13) ns -= 1
+    const nw = serifB.widthOfTextAtSize(opts.studentName, ns)
+    page.drawText(opts.studentName, { x: PW / 2 - nw / 2, y: Y(529), size: ns, font: serifB, color: rgb(0.20, 0.31, 0.60) })
+
+    // Completion date value on its line.
+    page.drawText(opts.completionDate, { x: X(372), y: Y(892), size: 12, font: serif, color: rgb(0.12, 0.15, 0.25) })
+    return await pdf.save()
+  }
+
+  // Fallback — a simple drawn certificate if the template asset is unavailable.
+  const W = 792, H = 612
+  const page = pdf.addPage([W, H])
+  const navy = rgb(0.106, 0.165, 0.29), sub = rgb(0.25, 0.29, 0.4)
+  const center = (text: string, y: number, font: any, size: number, color = navy) => {
     const w = font.widthOfTextAtSize(text, size)
     page.drawText(text, { x: (W - w) / 2, y, size, font, color })
   }
-
-  // --- Ornate green border band (to the edge), bounded by a dark keyline ---
-  page.drawRectangle({ x: 12, y: 12, width: W - 24, height: H - 24, borderColor: green, borderWidth: 1.2 })
-  page.drawRectangle({ x: 34, y: 34, width: W - 68, height: H - 68, borderColor: keyline, borderWidth: 1.5 })
-
-  const inset = 23, step = 26
-  const drawDiamond = (cx: number, cy: number, r: number) => {
-    const p = [[cx, cy + r], [cx + r, cy], [cx, cy - r], [cx - r, cy]]
-    for (let i = 0; i < 4; i++) {
-      const a = p[i], b = p[(i + 1) % 4]
-      page.drawLine({ start: { x: a[0], y: a[1] }, end: { x: b[0], y: b[1] }, thickness: 0.9, color: green })
-    }
-  }
-  const motif = (cx: number, cy: number) => { drawDiamond(cx, cy, 7); drawDiamond(cx, cy, 3.6); page.drawCircle({ x: cx, y: cy, size: 1.1, color: green }) }
-  for (let x = inset; x <= W - inset + 0.1; x += step) { motif(x, H - inset); motif(x, inset) }
-  for (let y = inset + step; y <= H - inset - step + 0.1; y += step) { motif(inset, y); motif(W - inset, y) }
-
-  // --- Body text (serif, like the NHSA certificate) ---
-  center('CERTIFICATE OF COMPLETION', 462, serif, 31)
-  center('This certifies that', 402, serif, 14, sub)
-  center(opts.studentName, 360, serifB, 22)
-  center('has completed the course for', 318, serif, 14, sub)
-  center(COURSE_LINE, 280, serifB, 17)
-
-  // Completion date (bottom-left)
-  const dl = 'Completion Date: '
-  page.drawText(dl, { x: 70, y: 150, size: 12, font: serif, color: sub })
-  page.drawText(opts.completionDate, { x: 70 + serif.widthOfTextAtSize(dl, 12), y: 150, size: 12, font: serif, color: ink })
-
-  // --- insuredbycam brand mark (bottom-right) ---
-  const bx = 548, by = 128, bs = 42
-  page.drawRectangle({ x: bx, y: by, width: bs, height: bs, color: badgeGreen })
-  const s = bs / 24
-  const pt = (px: number, py: number) => ({ x: bx + px * s, y: by + bs - py * s }) // top-down -> pdf coords
-  page.drawLine({ start: pt(5, 13), end: pt(9, 17), thickness: 3.2, color: white })
-  page.drawLine({ start: pt(9, 17), end: pt(19, 7), thickness: 3.2, color: white })
-  page.drawText('insuredbycam', { x: bx + bs + 10, y: by + bs / 2 - 7, size: 18, font: helvB, color: ink })
-
-  // --- Compliance + certificate id (bottom strip) ---
-  const cl = wrap(opts.complianceLabel, helv, 8.5, W - 220)
-  let cy = 82
-  for (const ln of cl) { center(ln, cy, helv, 8.5, gray); cy -= 11 }
-  const idLine = `Certificate ID: ${opts.certUid}` + (opts.dln ? `   ·   DL: ${opts.dln}` : '')
-  center(idLine, cy - 1, helv, 8.5, gray)
-
+  page.drawRectangle({ x: 24, y: 24, width: W - 48, height: H - 48, borderColor: rgb(0.18, 0.43, 0.69), borderWidth: 2 })
+  center('CERTIFICATE OF COMPLETION', 470, serifB, 30)
+  center('This certifies that', 410, serif, 14, sub)
+  center(opts.studentName, 366, serifB, 24, rgb(0.20, 0.31, 0.60))
+  center('has successfully completed the', 322, serif, 14, sub)
+  center('Georgia Defensive Driving Course (6 hours)', 286, serifB, 18)
+  center(`Completion Date: ${opts.completionDate}`, 150, serif, 12, sub)
+  center('QuoteSync — Course Provider', 120, serifB, 12)
   return await pdf.save()
 }
 
