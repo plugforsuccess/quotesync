@@ -202,7 +202,7 @@ export default function EmployeeLayout() {
 
           {/* Right cluster: persona switcher · identity · sign out */}
           <div className="flex flex-1 items-center justify-end gap-3">
-            <div className="hidden sm:block">
+            <div className="hidden md:block">
               <PersonaSwitcher compact onLight />
             </div>
 
@@ -234,9 +234,15 @@ export default function EmployeeLayout() {
           </div>
         </div>
 
-        {/* Primary nav — mobile (second row, scrolls horizontally) */}
+        {/* Primary nav — mobile (second row, scrolls horizontally). The persona
+            switcher leads the row so principals/dual-role reps can switch hats on
+            a phone — on desktop it lives in the header right cluster instead.
+            PersonaSwitcher self-hides (renders null) for single-hat users. */}
         <nav className="md:hidden flex items-center gap-1 overflow-x-auto pb-2"
           style={{ paddingLeft: pagePadX, paddingRight: pagePadX }}>
+          <div className="flex-shrink-0 empty:hidden">
+            <PersonaSwitcher compact onLight />
+          </div>
           {navItems.map(({ to, label }) => (
             <NavLink key={to} to={to} end className={navPillClass}>
               {label}

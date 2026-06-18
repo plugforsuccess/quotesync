@@ -446,6 +446,8 @@ function Layout({ forcePlane = null }) {
             ))}
 
             <div className="mt-4 flex flex-col items-center gap-3">
+              {/* Persona switcher — self-hides for single-hat users */}
+              <PersonaSwitcher />
               {/* Theme toggle — mobile; hidden on consumer/funnel routes */}
               {showThemeToggle && <ThemeToggle variant="pill" />}
               <UserMenu
@@ -483,6 +485,13 @@ function Layout({ forcePlane = null }) {
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Persona switcher — gives principals/dual-role reps a way to switch
+                hats on mobile (on desktop it lives in the header nav).
+                Self-hides for single-hat users. */}
+            <div className="px-4 py-3 border-b border-white/10 empty:hidden">
+              <PersonaSwitcher fullWidth />
             </div>
 
             {/* Drawer nav groups */}
