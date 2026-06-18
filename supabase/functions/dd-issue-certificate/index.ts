@@ -64,6 +64,9 @@ function wrap(text: string, font: any, size: number, maxWidth: number): string[]
   return lines
 }
 
+// Fixed course line on the certificate (matches the approved layout).
+const COURSE_LINE = 'Georgia Defensive Driving Course (6 hours)'
+
 async function buildPdf(opts: {
   studentName: string; dln: string | null; courseTitle: string;
   completionDate: string; scorePct: number | null; certUid: string;
@@ -72,50 +75,67 @@ async function buildPdf(opts: {
   const pdf = await PDFDocument.create()
   const page = pdf.addPage([792, 612]) // US Letter, landscape
   const W = 792, H = 612
+  const serif = await pdf.embedFont(StandardFonts.TimesRoman)
+  const serifB = await pdf.embedFont(StandardFonts.TimesRomanBold)
   const helv = await pdf.embedFont(StandardFonts.Helvetica)
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold)
-  const ink = rgb(0.09, 0.11, 0.15)
-  const green = rgb(0.10, 0.55, 0.36)
-  const gray = rgb(0.40, 0.44, 0.50)
+  const helvB = await pdf.embedFont(StandardFonts.HelveticaBold)
+
+  const ink = rgb(0.07, 0.07, 0.07)
+  const sub = rgb(0.25, 0.25, 0.25)
+  const green = rgb(0.122, 0.62, 0.408)
+  const keyline = rgb(0.17, 0.275, 0.21)
+  const gray = rgb(0.42, 0.45, 0.50)
+  const badgeGreen = rgb(0.063, 0.725, 0.506)
+  const white = rgb(1, 1, 1)
 
   const center = (text: string, y: number, font: any, size: number, color = ink) => {
     const w = font.widthOfTextAtSize(text, size)
     page.drawText(text, { x: (W - w) / 2, y, size, font, color })
   }
 
-  // Borders
-  page.drawRectangle({ x: 24, y: 24, width: W - 48, height: H - 48, borderColor: green, borderWidth: 3 })
-  page.drawRectangle({ x: 34, y: 34, width: W - 68, height: H - 68, borderColor: rgb(0.85, 0.88, 0.86), borderWidth: 1 })
+  // --- Ornate green border band (to the edge), bounded by a dark keyline ---
+  page.drawRectangle({ x: 12, y: 12, width: W - 24, height: H - 24, borderColor: green, borderWidth: 1.2 })
+  page.drawRectangle({ x: 34, y: 34, width: W - 68, height: H - 68, borderColor: keyline, borderWidth: 1.5 })
 
-  center(AGENCY_NAME, H - 90, bold, 16, green)
-  center('CERTIFICATE OF COMPLETION', H - 140, bold, 30, ink)
-  center('Defensive Driving', H - 168, helv, 14, gray)
-
-  center('This certifies that', H - 220, helv, 13, gray)
-  center(opts.studentName, H - 262, bold, 28, ink)
-  center('has successfully completed', H - 300, helv, 13, gray)
-  center(opts.courseTitle, H - 332, bold, 18, ink)
-  center('6.0 hours of instruction', H - 356, helv, 12, gray)
-
-  const detail = `Completion date: ${opts.completionDate}` +
-    (opts.scorePct != null ? `     Final score: ${opts.scorePct}%` : '')
-  center(detail, H - 392, helv, 12, ink)
-
-  if (opts.isDdsApproved && opts.ddsProviderNo) {
-    center(`DDS Provider No: ${opts.ddsProviderNo}`, H - 414, helv, 11, ink)
+  const inset = 23, step = 26
+  const drawDiamond = (cx: number, cy: number, r: number) => {
+    const p = [[cx, cy + r], [cx + r, cy], [cx, cy - r], [cx - r, cy]]
+    for (let i = 0; i < 4; i++) {
+      const a = p[i], b = p[(i + 1) % 4]
+      page.drawLine({ start: { x: a[0], y: a[1] }, end: { x: b[0], y: b[1] }, thickness: 0.9, color: green })
+    }
   }
+  const motif = (cx: number, cy: number) => { drawDiamond(cx, cy, 7); drawDiamond(cx, cy, 3.6); page.drawCircle({ x: cx, y: cy, size: 1.1, color: green }) }
+  for (let x = inset; x <= W - inset + 0.1; x += step) { motif(x, H - inset); motif(x, inset) }
+  for (let y = inset + step; y <= H - inset - step + 0.1; y += step) { motif(inset, y); motif(W - inset, y) }
 
-  // Compliance text (wrapped), bottom
-  const cl = wrap(opts.complianceLabel, helv, 9, W - 160)
-  let cy = 96
-  for (const ln of cl) { center(ln, cy, helv, 9, gray); cy -= 12 }
+  // --- Body text (serif, like the NHSA certificate) ---
+  center('CERTIFICATE OF COMPLETION', 462, serif, 31)
+  center('This certifies that', 402, serif, 14, sub)
+  center(opts.studentName, 360, serifB, 22)
+  center('has completed the course for', 318, serif, 14, sub)
+  center(COURSE_LINE, 280, serifB, 17)
 
-  // Footer meta
-  page.drawText(`Certificate ID: ${opts.certUid}`, { x: 48, y: 50, size: 9, font: helv, color: gray })
-  if (opts.dln) {
-    const dlnText = `DL: ${opts.dln}`
-    page.drawText(dlnText, { x: W - 48 - helv.widthOfTextAtSize(dlnText, 9), y: 50, size: 9, font: helv, color: gray })
-  }
+  // Completion date (bottom-left)
+  const dl = 'Completion Date: '
+  page.drawText(dl, { x: 70, y: 150, size: 12, font: serif, color: sub })
+  page.drawText(opts.completionDate, { x: 70 + serif.widthOfTextAtSize(dl, 12), y: 150, size: 12, font: serif, color: ink })
+
+  // --- insuredbycam brand mark (bottom-right) ---
+  const bx = 548, by = 128, bs = 42
+  page.drawRectangle({ x: bx, y: by, width: bs, height: bs, color: badgeGreen })
+  const s = bs / 24
+  const pt = (px: number, py: number) => ({ x: bx + px * s, y: by + bs - py * s }) // top-down -> pdf coords
+  page.drawLine({ start: pt(5, 13), end: pt(9, 17), thickness: 3.2, color: white })
+  page.drawLine({ start: pt(9, 17), end: pt(19, 7), thickness: 3.2, color: white })
+  page.drawText('insuredbycam', { x: bx + bs + 10, y: by + bs / 2 - 7, size: 18, font: helvB, color: ink })
+
+  // --- Compliance + certificate id (bottom strip) ---
+  const cl = wrap(opts.complianceLabel, helv, 8.5, W - 220)
+  let cy = 82
+  for (const ln of cl) { center(ln, cy, helv, 8.5, gray); cy -= 11 }
+  const idLine = `Certificate ID: ${opts.certUid}` + (opts.dln ? `   ·   DL: ${opts.dln}` : '')
+  center(idLine, cy - 1, helv, 8.5, gray)
 
   return await pdf.save()
 }

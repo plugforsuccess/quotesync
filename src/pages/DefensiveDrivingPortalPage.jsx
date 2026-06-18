@@ -55,7 +55,7 @@ export default function DefensiveDrivingPortalPage() {
   const navigate = useNavigate();
 
   const [theme, setTheme] = useState(() => localStorage.getItem('dd-theme') || 'light');
-  const [size, setSize] = useState(() => localStorage.getItem('dd-size') || 'large');
+  const [size, setSize] = useState(() => localStorage.getItem('dd-size') || 'larger');
   useEffect(() => { localStorage.setItem('dd-theme', theme); }, [theme]);
   useEffect(() => { localStorage.setItem('dd-size', size); }, [size]);
   const a11y = useMemo(() => ({ theme, setTheme, size, setSize }), [theme, size]);
@@ -181,6 +181,10 @@ export default function DefensiveDrivingPortalPage() {
             </div>
           )}
         </div>
+
+        <p className="mt-8 text-center ddc-sm ddc-muted">
+          Need help? Call <a href="tel:+17707861616" className="ddc-accent font-semibold">(770) 786-1616</a>
+        </p>
       </div>
     </>,
   );
