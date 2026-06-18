@@ -33,7 +33,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
   const logAttempt = useLogServiceTaskAttempt();
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
-  const [att, setAtt] = useState({ method: 'phone', result: 'left_voicemail', note: '' });
+  const [att, setAtt] = useState({ method: 'phone', result: 'left_voicemail', note: '', followUp: '', waiting: false });
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['service_task', taskId],
@@ -47,7 +47,8 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
 
   const cfg = task ? (TASK_TYPE_MAP[task.task_type] || { label: task.task_type, icon: '📌', color: '#94A3B8' }) : null;
   const done = task && (task.status === 'done' || task.completed_at);
-  const sla = task && !done ? fmtSla(slaMsLeft(task.created_at)) : null;
+  const waiting = task && task.status === 'blocked';
+  const sla = task && !done && !waiting ? fmtSla(slaMsLeft(task)) : null;
   const needsNote = task && NOTE_REQUIRED.has(task.task_type);
   const policies = task && task.policy_nos && task.policy_nos.length
     ? task.policy_nos : (task && task.policy_no ? [task.policy_no] : []);
@@ -68,8 +69,9 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
     if (logAttempt.isPending) return;
     logAttempt.mutate(
       { taskId, agencyId, employeeId: employee?.id ?? null, method: att.method, result: att.result,
-        note: att.note, prevCount: task?.attempt_count ?? 0, prevStatus: task?.status },
-      { onSuccess: () => { setAtt(a => ({ ...a, note: '' })); onChanged?.(); } }
+        note: att.note, prevCount: task?.attempt_count ?? 0, prevStatus: task?.status, task,
+        followUpAt: att.followUp ? new Date(att.followUp).toISOString() : undefined, waiting: att.waiting },
+      { onSuccess: () => { setAtt({ method: 'phone', result: 'left_voicemail', note: '', followUp: '', waiting: false }); onChanged?.(); } }
     );
   }
 
@@ -118,11 +120,17 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div><div style={lbl}>Status</div><div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
-                {done ? 'Done' : (task.status || 'open').replace(/_/g, ' ')}</div></div>
+              <div><div style={lbl}>Status</div><div style={{ fontSize: 13, color: waiting ? '#FBBF24' : 'var(--qs-text)' }}>
+                {done ? 'Done' : waiting ? '⏸️ Waiting on customer' : (task.status || 'open').replace(/_/g, ' ')}</div></div>
               <div><div style={lbl}>Logged</div><div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
                 {new Date(task.created_at).toLocaleDateString()}</div></div>
               {sla && <div><div style={lbl}>SLA ({SLA_HOURS}h)</div><div style={{ fontSize: 13, fontWeight: 700, color: sla.color }}>{sla.text}</div></div>}
+              {waiting && <div><div style={lbl}>SLA</div><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-muted)' }}>Paused</div></div>}
+              {!done && task.follow_up_at && (
+                <div><div style={lbl}>Follow up</div><div style={{ fontSize: 13, fontWeight: 700,
+                  color: new Date(task.follow_up_at) <= new Date() ? '#FBBF24' : 'var(--qs-text)' }}>
+                  {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</div></div>
+              )}
               {done && task.completion_note && (
                 <div style={{ gridColumn: '1 / -1' }}><div style={lbl}>Completion note</div>
                   <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>{task.completion_note}</div></div>
@@ -145,6 +153,16 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                   <input value={att.note} onChange={e => setAtt(a => ({ ...a, note: e.target.value }))}
                     placeholder="Note (optional) — e.g. tried cell, left VM"
                     style={{ ...ctrl, gridColumn: '1 / -1' }} />
+                  <label style={{ ...lbl, gridColumn: '1 / -1', textTransform: 'none', letterSpacing: 0, fontWeight: 500, color: 'var(--qs-dim)' }}>
+                    Next follow-up (optional)
+                    <input type="datetime-local" value={att.followUp}
+                      onChange={e => setAtt(a => ({ ...a, followUp: e.target.value }))} style={ctrl} />
+                  </label>
+                  <label style={{ gridColumn: '1 / -1', display: 'inline-flex', alignItems: 'center', gap: 6,
+                    fontSize: 12.5, color: 'var(--qs-dim)', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={att.waiting} onChange={e => setAtt(a => ({ ...a, waiting: e.target.checked }))} />
+                    Waiting on customer (pauses the 24h SLA)
+                  </label>
                   <button type="button" onClick={submitAttempt} disabled={logAttempt.isPending}
                     style={{ gridColumn: '1 / -1', padding: '9px', borderRadius: 8, border: '1px solid var(--qs-border)',
                       background: 'var(--qs-elevated)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 700,
