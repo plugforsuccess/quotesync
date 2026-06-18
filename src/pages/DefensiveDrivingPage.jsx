@@ -60,8 +60,8 @@ export default function DefensiveDrivingPage() {
       <p>This course isn’t available right now. {error}</p>
     </div>;
   }
-  if (sentEmail) {
-    return <CheckEmail email={sentEmail} onReset={() => setSentEmail(null)} />;
+  if (sentEmail && !user) {
+    return <CodeEntry email={sentEmail} onReset={() => setSentEmail(null)} />;
   }
 
   const price = formatPrice(course.price_cents, course.currency);
@@ -371,28 +371,78 @@ function BrandLogo() {
 }
 
 // --- Full-page confirmation shown after a magic link is sent ----------------
-function CheckEmail({ email, onReset }) {
+// Full-page 6-digit code entry (works across devices — no need to open the
+// link on the same device). The same email also contains a clickable link.
+function CodeEntry({ email, onReset }) {
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [resent, setResent] = useState(false);
+  const [error, setError] = useState(null);
+
+  const verify = async (e) => {
+    e.preventDefault();
+    setError(null); setBusy(true);
+    try {
+      const { error } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: 'email' });
+      if (error) throw error;
+      // On success, the auth state change re-renders the page into enrollment.
+    } catch {
+      setError('That code didn’t work. Double-check the 6 digits and try again, or resend.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const resend = async () => {
+    setError(null); setResent(false);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: `${window.location.origin}/courses/defensive-driving` },
+      });
+      if (error) throw error;
+      setResent(true);
+    } catch {
+      setError('Could not resend the code. Please try again.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-950 text-gray-50 flex flex-col items-center justify-center px-4 py-16">
       <BrandLogo />
-      <div className="mt-12 w-full max-w-md text-center">
+      <form onSubmit={verify} className="mt-10 w-full max-w-md text-center">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-success-500/15">
           <Mail className="h-7 w-7 text-success-300" />
         </div>
-        <h1 className="text-2xl font-bold text-success-100 mb-4">Check your email</h1>
-        <p className="text-gray-300 leading-relaxed">We sent a secure sign-in link to</p>
-        <p className="my-3 text-lg font-semibold text-white break-words">{email}</p>
-        <p className="text-gray-400 leading-relaxed">
-          Open it on this device to continue enrolling. The link expires shortly for your security.
+        <h1 className="text-2xl font-bold text-success-100 mb-3">Enter your code</h1>
+        <p className="text-base text-gray-300 leading-relaxed">We emailed a 6-digit code to</p>
+        <p className="my-2 text-lg font-semibold text-white break-words">{email}</p>
+        <p className="text-base text-gray-400 leading-relaxed mb-6">
+          Open your email and type the code below. (You can also tap the link in the same email.)
         </p>
-        <div className="mt-10 flex flex-col items-center gap-4">
-          <button type="button" onClick={onReset}
-            className="text-sm font-medium text-gray-300 hover:text-white underline underline-offset-2">
-            Use a different email
-          </button>
-          <Link to="/" className="text-xs text-gray-500 hover:text-gray-300">Back to insuredbycam.com</Link>
+
+        <input
+          inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="6-digit code"
+          value={code}
+          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+          placeholder="------"
+          className="w-56 mx-auto block text-center tracking-[0.5em] text-3xl font-bold rounded-xl bg-white text-gray-900 px-4 py-3 outline-none focus:ring-2 focus:ring-success-400"
+        />
+
+        {error && <p className="mt-4 flex items-center justify-center gap-2 text-sm text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
+        {resent && <p className="mt-4 text-sm text-success-200">A new code is on the way.</p>}
+
+        <button type="submit" disabled={busy || code.length < 6}
+          className="mt-6 px-10 rounded-full py-3.5 text-base font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition inline-flex items-center gap-2">
+          {busy ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying…</> : 'Verify & continue'}
+        </button>
+
+        <div className="mt-8 flex flex-col items-center gap-3">
+          <button type="button" onClick={resend} className="text-sm font-medium text-gray-300 hover:text-white underline underline-offset-2">Resend code</button>
+          <button type="button" onClick={onReset} className="text-sm text-gray-400 hover:text-gray-200">Use a different email</button>
         </div>
-      </div>
+        <p className="mt-8 text-base text-gray-300">Need help? Call <a href="tel:+17707861616" className="text-success-300 font-semibold">(770) 786-1616</a></p>
+      </form>
     </div>
   );
 }
@@ -434,7 +484,7 @@ function AuthPanel({ onSent }) {
   return (
     <form onSubmit={submit} className="space-y-4">
       <p className="text-sm text-gray-200">Sign in to start or continue</p>
-      <p className="text-xs text-gray-400">New or returning, we’ll email you a secure sign-in link — no password needed.</p>
+      <p className="text-xs text-gray-400">New or returning, we’ll email you a 6-digit code — no password needed.</p>
       <Field label="Driver's first name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
       <Field label="Driver's last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
       <Field label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
@@ -442,9 +492,10 @@ function AuthPanel({ onSent }) {
       <div className="pt-4 flex justify-center">
         <button type="submit" disabled={busy}
           className="px-8 rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Email me a sign-in link'}
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Email me a code'}
         </button>
       </div>
+      <p className="text-xs text-gray-400 text-center pt-1">Need help? Call <a href="tel:+17707861616" className="text-success-300 font-semibold">(770) 786-1616</a></p>
     </form>
   );
 }
