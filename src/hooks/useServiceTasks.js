@@ -94,6 +94,29 @@ export const SCOPES = [
   { value: 'unassigned', label: 'Unassigned' },
 ];
 
+// Contact-attempt logging on a service task — so the team can see a task is
+// being actively worked (e.g. "left a voicemail at 10am") before it's done.
+export const TASK_ATTEMPT_METHODS = [
+  { value: 'phone',     label: 'Phone' },
+  { value: 'text',      label: 'Text' },
+  { value: 'email',     label: 'Email' },
+  { value: 'in_person', label: 'In person' },
+  { value: 'portal',    label: 'Portal' },
+  { value: 'other',     label: 'Other' },
+];
+export const TASK_ATTEMPT_RESULTS = [
+  { value: 'no_answer',     label: 'No answer' },
+  { value: 'left_voicemail',label: 'Left voicemail' },
+  { value: 'reached',       label: 'Reached customer' },
+  { value: 'sent',          label: 'Sent (text/email)' },
+  { value: 'in_progress',   label: 'Working on it' },
+  { value: 'wrong_number',  label: 'Wrong number' },
+  { value: 'busy',          label: 'Busy' },
+  { value: 'disconnected',  label: 'Disconnected' },
+  { value: 'other',         label: 'Other' },
+];
+export const TASK_ATTEMPT_RESULT_MAP = Object.fromEntries(TASK_ATTEMPT_RESULTS.map(r => [r.value, r.label]));
+
 // The batch view. Returns the flat active list plus a type-grouped, due-sorted
 // structure ready to render as the Service Batch.
 export function useServiceTasks(agencyId, { assignedTo, includeDone = false, scope = 'all', employeeId } = {}) {
@@ -226,6 +249,57 @@ export function useUpdateServiceTask() {
       qc.invalidateQueries({ queryKey: ['service_tasks'] });
       qc.invalidateQueries({ queryKey: ['service_tasks_done'] });
       qc.invalidateQueries({ queryKey: ['case_service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
+    },
+  });
+}
+
+// The contact-attempt log for one task — newest first. Employee names are
+// resolved by the caller (the modal already has the member roster).
+export function useServiceTaskAttempts(taskId) {
+  return useQuery({
+    queryKey: ['service_task_attempts', taskId],
+    enabled: !!taskId,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('service_task_attempts')
+        .select('id, method, result, note, attempted_at, employee_id')
+        .eq('service_task_id', taskId)
+        .order('attempted_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+}
+
+// Log a contact attempt on a task. Records the attempt and denormalizes the
+// count / last result onto the task (so the batch list shows activity), and
+// flips an untouched 'open' task to 'in_progress' to signal it's being worked.
+export function useLogServiceTaskAttempt() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ taskId, agencyId, employeeId, method, result, note, prevCount = 0, prevStatus }) => {
+      const attemptedAt = new Date().toISOString();
+      const { error } = await supabase.from('service_task_attempts').insert({
+        service_task_id: taskId, agency_id: agencyId, employee_id: employeeId ?? null,
+        method: method || 'phone', result, note: (note || '').trim() || null, attempted_at: attemptedAt,
+      });
+      if (error) throw error;
+      const taskUpdate = {
+        attempt_count: (prevCount || 0) + 1,
+        last_attempt_at: attemptedAt,
+        last_attempt_result: result,
+      };
+      if (prevStatus === 'open') taskUpdate.status = 'in_progress';
+      const { error: uerr } = await supabase.from('service_tasks').update(taskUpdate).eq('id', taskId);
+      if (uerr) throw uerr;
+    },
+    onSuccess: (_d, vars) => {
+      qc.invalidateQueries({ queryKey: ['service_task_attempts', vars.taskId] });
+      qc.invalidateQueries({ queryKey: ['service_task', vars.taskId] });
+      qc.invalidateQueries({ queryKey: ['service_tasks'] });
+      qc.invalidateQueries({ queryKey: ['service_tasks_done'] });
       qc.invalidateQueries({ queryKey: ['household_service_tasks'] });
     },
   });

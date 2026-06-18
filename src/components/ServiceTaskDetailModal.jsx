@@ -10,6 +10,8 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useAssignableMembers } from '../hooks/useEmployees';
 import {
   useUpdateServiceTask, TASK_TYPE_MAP, productShort, slaMsLeft, SLA_HOURS,
+  useServiceTaskAttempts, useLogServiceTaskAttempt,
+  TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
 } from '../hooks/useServiceTasks';
 
 const NOTE_REQUIRED = new Set(['billing', 'coverage', 'premium', 'insurance_review', 'reinstatement', 'terminate', 'claim', 'payment']);
@@ -27,8 +29,11 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
   const { data: employee } = useCurrentEmployee();
   const { data: members = [] } = useAssignableMembers(agencyId);
   const update = useUpdateServiceTask();
+  const { data: attempts = [] } = useServiceTaskAttempts(taskId);
+  const logAttempt = useLogServiceTaskAttempt();
   const [note, setNote] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const [att, setAtt] = useState({ method: 'phone', result: 'left_voicemail', note: '' });
 
   const { data: task, isLoading } = useQuery({
     queryKey: ['service_task', taskId],
@@ -59,8 +64,18 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
   function reassign(id) {
     update.mutate({ id: taskId, updates: { assigned_to_id: id || null } }, { onSuccess: () => onChanged?.() });
   }
+  function submitAttempt() {
+    if (logAttempt.isPending) return;
+    logAttempt.mutate(
+      { taskId, agencyId, employeeId: employee?.id ?? null, method: att.method, result: att.result,
+        note: att.note, prevCount: task?.attempt_count ?? 0, prevStatus: task?.status },
+      { onSuccess: () => { setAtt(a => ({ ...a, note: '' })); onChanged?.(); } }
+    );
+  }
 
   const lbl = { fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase', letterSpacing: '0.05em' };
+  const ctrl = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', borderRadius: 8,
+    padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit', width: '100%', boxSizing: 'border-box' };
 
   return createPortal(
     <div onMouseDown={ev => { if (ev.target === ev.currentTarget) onClose(); }}
@@ -111,6 +126,57 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
               {done && task.completion_note && (
                 <div style={{ gridColumn: '1 / -1' }}><div style={lbl}>Completion note</div>
                   <div style={{ fontSize: 13, color: 'var(--qs-text)' }}>{task.completion_note}</div></div>
+              )}
+            </div>
+
+            {/* Activity — contact attempts, so the team sees the task is being
+                worked (e.g. "left a voicemail at 10am") before it's done. */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ ...lbl, marginBottom: 8 }}>Activity{attempts.length ? ` · ${attempts.length}` : ''}</div>
+
+              {!done && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: attempts.length ? 12 : 0 }}>
+                  <select value={att.method} onChange={e => setAtt(a => ({ ...a, method: e.target.value }))} style={ctrl}>
+                    {TASK_ATTEMPT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </select>
+                  <select value={att.result} onChange={e => setAtt(a => ({ ...a, result: e.target.value }))} style={ctrl}>
+                    {TASK_ATTEMPT_RESULTS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+                  </select>
+                  <input value={att.note} onChange={e => setAtt(a => ({ ...a, note: e.target.value }))}
+                    placeholder="Note (optional) — e.g. tried cell, left VM"
+                    style={{ ...ctrl, gridColumn: '1 / -1' }} />
+                  <button type="button" onClick={submitAttempt} disabled={logAttempt.isPending}
+                    style={{ gridColumn: '1 / -1', padding: '9px', borderRadius: 8, border: '1px solid var(--qs-border)',
+                      background: 'var(--qs-elevated)', color: 'var(--qs-text)', fontSize: 13, fontWeight: 700,
+                      cursor: logAttempt.isPending ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+                    {logAttempt.isPending ? 'Logging…' : '＋ Log attempt'}
+                  </button>
+                </div>
+              )}
+
+              {attempts.length > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {attempts.map(a => (
+                    <div key={a.id} style={{ display: 'flex', gap: 8, alignItems: 'baseline', flexWrap: 'wrap',
+                      fontSize: 12, background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+                      borderRadius: 8, padding: '7px 10px' }}>
+                      <span style={{ color: 'var(--qs-dim)', fontFamily: "'DM Mono', monospace", flexShrink: 0 }}>
+                        {new Date(a.attempted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                      <span style={{ fontWeight: 700, color: 'var(--qs-text)' }}>
+                        {TASK_ATTEMPT_RESULT_MAP[a.result] || a.result}
+                      </span>
+                      <span style={{ color: 'var(--qs-muted)' }}>{a.method}</span>
+                      {nameFor(a.employee_id) && <span style={{ color: 'var(--qs-subtle)' }}>· {nameFor(a.employee_id)}</span>}
+                      {a.note && <span style={{ color: 'var(--qs-muted)', fontStyle: 'italic' }}>“{a.note}”</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {!done && attempts.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginTop: 8 }}>
+                  No attempts logged yet — log a call so the team can see it's being worked.
+                </div>
               )}
             </div>
 
