@@ -12,6 +12,7 @@ import { useActiveEmployees, useAssignableMembers } from '../hooks/useEmployees'
 import {
   useServiceTasks, useUpdateServiceTask, useCreateServiceTask,
   useExpectedCallbacks, useLogCallback, useServiceTaskVelocity, slaMsLeft,
+  useLogServiceTaskAttempt, TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
   TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES, PRODUCTS, PRODUCT_MAP, productShort,
   SLA_HOURS,
 } from '../hooks/useServiceTasks';
@@ -322,7 +323,7 @@ export default function ServiceBatchPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {overdueTasks.map(task => (
               <TaskRow key={task.id} task={task}
-                empName={empName} employees={assignable}
+                agencyId={agencyId} empName={empName} employees={assignable}
                 onAssign={(toId) => assign(task.id, toId)}
                 onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
                 onDone={(note) => markDone(task.id, note)} />
@@ -354,7 +355,7 @@ export default function ServiceBatchPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {group.tasks.map(task => (
                   <TaskRow key={task.id} task={task}
-                    empName={empName} employees={assignable}
+                    agencyId={agencyId} empName={empName} employees={assignable}
                     onAssign={(toId) => assign(task.id, toId)}
                     onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
                     onDone={(note) => markDone(task.id, note)} />
@@ -368,14 +369,27 @@ export default function ServiceBatchPage() {
   );
 }
 
-function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onDone }) {
+function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCustomer, onDone }) {
   const prio = PRIORITY_BADGE[task.priority];
   const product = productShort(task.product);
   const inProgress = task.status === 'in_progress';
   const needsNote = NOTE_REQUIRED_TYPES.has(task.task_type);
 
+  const { data: me } = useCurrentEmployee();
+  const logAttempt = useLogServiceTaskAttempt();
   const [confirming, setConfirming] = useState(false);
   const [note, setNote] = useState('');
+  const [logging, setLogging] = useState(false);
+  const [att, setAtt] = useState({ method: 'phone', result: 'left_voicemail', note: '' });
+
+  function submitAttempt() {
+    if (logAttempt.isPending) return;
+    logAttempt.mutate(
+      { taskId: task.id, agencyId, employeeId: me?.id ?? null, method: att.method, result: att.result,
+        note: att.note, prevCount: task.attempt_count ?? 0, prevStatus: task.status },
+      { onSuccess: () => { setLogging(false); setAtt(a => ({ ...a, note: '' })); } }
+    );
+  }
 
   function handleDone() {
     if (needsNote) { setConfirming(true); return; }
@@ -441,11 +455,50 @@ function TaskRow({ task, empName = {}, employees = [], onAssign, onCustomer, onD
           </span>
         </div>
 
+        {/* Last contact attempt — so the team sees the task is being worked */}
+        {task.attempt_count > 0 && (
+          <div style={{ marginTop: 8, fontSize: 11.5, color: 'var(--qs-subtle)', display: 'flex',
+            gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 700, color: 'var(--qs-dim)' }}>
+              📞 {task.attempt_count} attempt{task.attempt_count > 1 ? 's' : ''}
+            </span>
+            {task.last_attempt_result && (
+              <span>· last: {TASK_ATTEMPT_RESULT_MAP[task.last_attempt_result] || task.last_attempt_result}
+                {task.last_attempt_at ? ` · ${new Date(task.last_attempt_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : ''}</span>
+            )}
+          </div>
+        )}
+
         {/* Actions */}
         <div style={{ display: 'flex', gap: 6, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
+          <button onClick={() => setLogging(v => !v)} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}>📞 Log call</button>
           <button onClick={handleDone} style={btnStyle('#10B981', '#fff')}>Done</button>
         </div>
+
+        {logging && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <select value={att.method} onChange={e => setAtt(a => ({ ...a, method: e.target.value }))}
+              style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8,
+                padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit', cursor: 'pointer' }}>
+              {TASK_ATTEMPT_METHODS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+            <select value={att.result} onChange={e => setAtt(a => ({ ...a, result: e.target.value }))}
+              style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8,
+                padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit', cursor: 'pointer' }}>
+              {TASK_ATTEMPT_RESULTS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
+            </select>
+            <input value={att.note} onChange={e => setAtt(a => ({ ...a, note: e.target.value }))}
+              onKeyDown={e => { if (e.key === 'Enter') submitAttempt(); }}
+              placeholder="Note (optional)"
+              style={{ flex: 1, minWidth: 160, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
+            <button onClick={submitAttempt} disabled={logAttempt.isPending} style={btnStyle('#3B82F6', '#fff')}>
+              {logAttempt.isPending ? 'Logging…' : 'Log'}
+            </button>
+            <button onClick={() => setLogging(false)} style={btnStyle('var(--qs-card)', 'var(--qs-muted)')}>Cancel</button>
+          </div>
+        )}
 
         {confirming && (
           <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
