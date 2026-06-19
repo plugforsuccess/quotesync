@@ -15,7 +15,7 @@ import {
   useLogServiceTaskAttempt, useSetServiceTaskWaiting, useSetServiceTaskFollowUp, useServiceActivity,
   TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
   TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES, PRODUCTS, PRODUCT_MAP, productShort,
-  SLA_HOURS,
+  SLA_HOURS, FOLLOW_UP_QUICK_DAYS, followUpInDays,
 } from '../hooks/useServiceTasks';
 import { usePolicyAutocomplete } from '../hooks/useCustomerSearch';
 import { titleCaseName } from '../lib/names';
@@ -597,6 +597,15 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
               placeholder="Note (optional)"
               style={{ flex: 1, minWidth: 140, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                 borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
+            <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }} title="Quick follow-up from today (9am)">
+              {FOLLOW_UP_QUICK_DAYS.map(days => (
+                <button key={days} type="button" onClick={() => setAtt(a => ({ ...a, followUp: followUpInDays(days) }))}
+                  style={{ cursor: 'pointer', border: '1px solid var(--qs-border)', background: 'var(--qs-card)',
+                    color: 'var(--qs-dim)', borderRadius: 6, padding: '5px 8px', fontSize: 11.5, fontWeight: 700, fontFamily: 'inherit' }}>
+                  +{days}d
+                </button>
+              ))}
+            </span>
             <input type="datetime-local" value={att.followUp} onChange={e => setAtt(a => ({ ...a, followUp: e.target.value }))}
               title="Schedule the next try" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                 borderRadius: 8, padding: '7px 9px', fontSize: 12, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
