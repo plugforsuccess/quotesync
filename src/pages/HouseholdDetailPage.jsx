@@ -41,9 +41,10 @@ const fmtDate = d => {
   return isNaN(date.getTime()) ? d : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
-// Small inline button to copy a value (e.g. an email) to the clipboard.
-function CopyButton({ text, label = 'Copy' }) {
+// Small inline icon button to copy a value (e.g. an email) to the clipboard.
+function CopyButton({ text, label = 'email' }) {
   const [copied, setCopied] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -66,27 +67,23 @@ function CopyButton({ text, label = 'Copy' }) {
     <button
       type="button"
       onClick={copy}
-      title={copied ? 'Copied!' : `Copy ${label.toLowerCase()}`}
-      aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      title={copied ? 'Copied!' : `Copy ${label}`}
+      aria-label={copied ? `${label} copied` : `Copy ${label}`}
       style={{
-        display: 'inline-flex', alignItems: 'center', gap: 4,
-        padding: '1px 6px', borderRadius: 6, cursor: 'pointer',
-        fontSize: 11, fontWeight: 600, lineHeight: 1.4,
-        border: '1px solid var(--qs-border)',
-        background: 'transparent',
-        color: copied ? '#34D399' : 'var(--qs-dim)',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        width: 24, height: 24, padding: 0, borderRadius: 6, cursor: 'pointer',
+        border: '1px solid transparent',
+        background: hovered ? 'var(--qs-hover, rgba(255,255,255,0.06))' : 'transparent',
+        color: copied ? '#34D399' : (hovered ? 'var(--qs-bright)' : 'var(--qs-dim)'),
+        transition: 'background 0.12s, color 0.12s',
       }}
     >
       {copied ? (
-        <>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
-          Copied
-        </>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
       ) : (
-        <>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-          {label}
-        </>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
       )}
     </button>
   );
@@ -188,7 +185,7 @@ export default function HouseholdDetailPage() {
             <>
               {household?.phone && <span style={{ color: 'var(--qs-muted)' }}>·</span>}
               <span>{household.email}</span>
-              <CopyButton text={household.email} label="Copy" />
+              <CopyButton text={household.email} label="email" />
             </>
           )}
           {household?.zip && (
