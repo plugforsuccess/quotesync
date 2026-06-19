@@ -597,7 +597,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
               placeholder="Note (optional)"
               style={{ flex: 1, minWidth: 140, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
                 borderRadius: 8, padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit' }} />
-            <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }} title="Quick follow-up from today (9am)">
+            <span style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }} title="Quick follow-up — N days from now">
               {FOLLOW_UP_QUICK_DAYS.map(days => (
                 <button key={days} type="button" onClick={() => setAtt(a => ({ ...a, followUp: followUpInDays(days) }))}
                   style={{ cursor: 'pointer', border: '1px solid var(--qs-border)', background: 'var(--qs-card)',

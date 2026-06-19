@@ -156,7 +156,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     style={{ ...ctrl, gridColumn: '1 / -1' }} />
                   <label style={{ ...lbl, gridColumn: '1 / -1', textTransform: 'none', letterSpacing: 0, fontWeight: 500, color: 'var(--qs-dim)' }}>
                     Next follow-up (optional)
-                    <div style={{ display: 'flex', gap: 5, margin: '6px 0' }} title="Quick follow-up from today (9am)">
+                    <div style={{ display: 'flex', gap: 5, margin: '6px 0' }} title="Quick follow-up — N days from now">
                       {FOLLOW_UP_QUICK_DAYS.map(days => (
                         <button key={days} type="button" onClick={() => setAtt(a => ({ ...a, followUp: followUpInDays(days) }))}
                           style={{ cursor: 'pointer', border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
