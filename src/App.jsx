@@ -117,6 +117,7 @@ const MyLeadsPage = lazyWithRetry(() => import('./pages/MyLeadsPage'));
 const TodayPage = lazyWithRetry(() => import('./pages/TodayPage'));
 const ServiceBatchPage = lazyWithRetry(() => import('./pages/ServiceBatchPage'));
 const MyScorecardPage = lazyWithRetry(() => import('./pages/MyScorecardPage'));
+const MyActivityPage = lazyWithRetry(() => import('./pages/MyActivityPage'));
 const ChangePasswordPage = lazyWithRetry(() => import('./pages/ChangePasswordPage'));
 
 // Loading fallback component
@@ -194,6 +195,7 @@ function App() {
               <Route path="service-batch" element={<Suspense fallback={<PageLoader />}><ServiceBatchPage /></Suspense>} />
               <Route path="leads" element={<Suspense fallback={<PageLoader />}><MyLeadsPage /></Suspense>} />
               <Route path="scorecard" element={<Suspense fallback={<PageLoader />}><MyScorecardPage /></Suspense>} />
+              <Route path="activity" element={<Suspense fallback={<PageLoader />}><MyActivityPage /></Suspense>} />
               <Route path="customers" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CustomerSearchPage /></Suspense></ErrorBoundary>} />
               <Route path="customers/:householdId" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><HouseholdDetailPage /></Suspense></ErrorBoundary>} />
               <Route path="cross-sell" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><CrossSellPage /></Suspense></ErrorBoundary>} />
