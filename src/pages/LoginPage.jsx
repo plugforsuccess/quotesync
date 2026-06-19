@@ -68,10 +68,19 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      // Guard against an indefinitely-hanging sign-in (e.g. a stuck auth lock
+      // held by a frozen background tab). Without a timeout the button would
+      // spin forever; instead we surface a recoverable error after 15s.
+      const SIGN_IN_TIMEOUT_MS = 15000;
+      const { data, error } = await Promise.race([
+        supabase.auth.signInWithPassword({ email, password }),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error('SIGN_IN_TIMEOUT')),
+            SIGN_IN_TIMEOUT_MS
+          )
+        )
+      ]);
 
       if (error) throw error;
 
@@ -82,7 +91,9 @@ const LoginPage = () => {
       setVerifying(true);
       // AuthContext SIGNED_IN handler takes it from here — don't call resolveAuthz
     } catch (error) {
-      if (error.message?.includes('Failed to fetch') || error.message?.includes('network')) {
+      if (error.message === 'SIGN_IN_TIMEOUT') {
+        setError('Sign-in timed out. Please try again — if it keeps happening, clear this site’s data in your browser settings and reload.');
+      } else if (error.message?.includes('Failed to fetch') || error.message?.includes('network')) {
         setError('Network error: check your connection or disable ad blockers.');
       } else {
         setError(error.message || 'Login failed. Please try again.');
