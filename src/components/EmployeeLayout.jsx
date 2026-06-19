@@ -23,11 +23,14 @@ const SEARCH_ITEM        = { to: '/my/customers',     label: '🔎 Search' };
 // clock isn't in use yet. The route still works if opened directly; re-add
 // { to: '/punch', label: 'Time Clock' } to the tab arrays below to restore it.
 
+const ACTIVITY_ITEM      = { to: '/my/activity',      label: 'Activity' };
+
 const SERVICE_TABS = [
   { to: '/my/today', label: 'Today' },
   { to: '/my/queue', label: 'My Queue' },
   SEARCH_ITEM,
   SERVICE_BATCH_ITEM,
+  ACTIVITY_ITEM,
   SCORECARD_ITEM,
 ];
 
