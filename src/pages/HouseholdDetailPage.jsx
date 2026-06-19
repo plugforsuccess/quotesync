@@ -41,6 +41,57 @@ const fmtDate = d => {
   return isNaN(date.getTime()) ? d : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
+// Small inline button to copy a value (e.g. an email) to the clipboard.
+function CopyButton({ text, label = 'Copy' }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (_) {
+      // Fallback for older browsers / non-secure contexts where the
+      // Clipboard API is unavailable.
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (_) {}
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      title={copied ? 'Copied!' : `Copy ${label.toLowerCase()}`}
+      aria-label={copied ? `${label} copied` : `Copy ${label.toLowerCase()}`}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 4,
+        padding: '1px 6px', borderRadius: 6, cursor: 'pointer',
+        fontSize: 11, fontWeight: 600, lineHeight: 1.4,
+        border: '1px solid var(--qs-border)',
+        background: 'transparent',
+        color: copied ? '#34D399' : 'var(--qs-dim)',
+      }}
+    >
+      {copied ? (
+        <>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+          Copied
+        </>
+      ) : (
+        <>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+          {label}
+        </>
+      )}
+    </button>
+  );
+}
+
 export default function HouseholdDetailPage() {
   const { householdId } = useParams();
   const { currentAgencyId } = useAuth();
@@ -131,8 +182,22 @@ export default function HouseholdDetailPage() {
         <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--qs-bright)' }}>
           {household?.display_name || 'Household'}
         </div>
-        <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 4 }}>
-          {[household?.phone, household?.email, household?.zip].filter(Boolean).join(' · ') || 'No contact on file'}
+        <div style={{ fontSize: 13, color: 'var(--qs-subtle)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {household?.phone && <span>{household.phone}</span>}
+          {household?.email && (
+            <>
+              {household?.phone && <span style={{ color: 'var(--qs-muted)' }}>·</span>}
+              <span>{household.email}</span>
+              <CopyButton text={household.email} label="Copy" />
+            </>
+          )}
+          {household?.zip && (
+            <>
+              {(household?.phone || household?.email) && <span style={{ color: 'var(--qs-muted)' }}>·</span>}
+              <span>{household.zip}</span>
+            </>
+          )}
+          {!household?.phone && !household?.email && !household?.zip && 'No contact on file'}
         </div>
         <div style={{ fontSize: 12, marginTop: 4, color: lastTouch ? 'var(--qs-dim)' : 'var(--qs-muted)' }}>
           {lastTouch
