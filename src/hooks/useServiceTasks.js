@@ -82,10 +82,23 @@ export function slaMsLeft(taskOrCreatedAt) {
   return new Date(t.created_at).getTime() + SLA_HOURS * 3600000 + banked + livePause - Date.now();
 }
 
-// Sort inside a group: priority, then oldest first — the oldest task is closest
-// to breaching its 24h SLA, so it's worked first.
+// Sort inside a group: a follow-up that's come due floats to the very top
+// (soonest first) — a scheduled promise that's now due is the most
+// time-sensitive work in the group, mirroring how the lead queue surfaces due
+// follow-ups. After that: priority, then oldest first — the oldest task is
+// closest to breaching its 24h SLA, so it's worked first.
 function sortTasks(tasks) {
+  const now = Date.now();
+  const followUpDue = t => t.follow_up_at && new Date(t.follow_up_at).getTime() <= now;
   return [...tasks].sort((a, b) => {
+    const da = followUpDue(a);
+    const db = followUpDue(b);
+    if (da !== db) return da ? -1 : 1;
+    if (da && db) {
+      const fa = new Date(a.follow_up_at).getTime();
+      const fb = new Date(b.follow_up_at).getTime();
+      if (fa !== fb) return fa - fb; // soonest-due first
+    }
     const pa = PRIORITY_ORDER[a.priority] ?? 2;
     const pb = PRIORITY_ORDER[b.priority] ?? 2;
     if (pa !== pb) return pa - pb;
