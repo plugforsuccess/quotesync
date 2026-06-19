@@ -137,6 +137,23 @@ export const TASK_ATTEMPT_RESULTS = [
 ];
 export const TASK_ATTEMPT_RESULT_MAP = Object.fromEntries(TASK_ATTEMPT_RESULTS.map(r => [r.value, r.label]));
 
+// Quick-pick follow-up offsets (days from today) for the "set a follow-up"
+// shortcuts on a task — covers the common cadence (tomorrow, a few days, a
+// week, two weeks) so a rep doesn't have to hand-pick a date.
+export const FOLLOW_UP_QUICK_DAYS = [1, 3, 7, 14];
+
+// Build a <input type="datetime-local"> value (YYYY-MM-DDTHH:mm) for N days
+// from now at a sensible default hour (9am local), so the quick-picks land on
+// a workable morning slot. Uses local time components — datetime-local is
+// timezone-naive and rendered in the user's local zone.
+export function followUpInDays(days, hour = 9) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  d.setHours(hour, 0, 0, 0);
+  const pad = n => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 // The batch view. Returns the flat active list plus a type-grouped, due-sorted
 // structure ready to render as the Service Batch.
 export function useServiceTasks(agencyId, { assignedTo, includeDone = false, scope = 'all', employeeId } = {}) {

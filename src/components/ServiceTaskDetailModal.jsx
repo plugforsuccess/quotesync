@@ -12,6 +12,7 @@ import {
   useUpdateServiceTask, TASK_TYPE_MAP, productShort, slaMsLeft, SLA_HOURS,
   useServiceTaskAttempts, useLogServiceTaskAttempt,
   TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
+  FOLLOW_UP_QUICK_DAYS, followUpInDays,
 } from '../hooks/useServiceTasks';
 
 const NOTE_REQUIRED = new Set(['billing', 'coverage', 'premium', 'insurance_review', 'reinstatement', 'terminate', 'claim', 'payment']);
@@ -155,6 +156,15 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     style={{ ...ctrl, gridColumn: '1 / -1' }} />
                   <label style={{ ...lbl, gridColumn: '1 / -1', textTransform: 'none', letterSpacing: 0, fontWeight: 500, color: 'var(--qs-dim)' }}>
                     Next follow-up (optional)
+                    <div style={{ display: 'flex', gap: 5, margin: '6px 0' }} title="Quick follow-up from today (9am)">
+                      {FOLLOW_UP_QUICK_DAYS.map(days => (
+                        <button key={days} type="button" onClick={() => setAtt(a => ({ ...a, followUp: followUpInDays(days) }))}
+                          style={{ cursor: 'pointer', border: '1px solid var(--qs-border)', background: 'var(--qs-elevated)',
+                            color: 'var(--qs-dim)', borderRadius: 6, padding: '5px 9px', fontSize: 12, fontWeight: 700, fontFamily: 'inherit' }}>
+                          +{days}d
+                        </button>
+                      ))}
+                    </div>
                     <input type="datetime-local" value={att.followUp}
                       onChange={e => setAtt(a => ({ ...a, followUp: e.target.value }))} style={ctrl} />
                   </label>
