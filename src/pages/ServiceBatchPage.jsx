@@ -20,6 +20,7 @@ import {
 import { usePolicyAutocomplete } from '../hooks/useCustomerSearch';
 import { titleCaseName } from '../lib/names';
 import CopyButton from '../components/CopyButton';
+import ServiceTaskDetailModal from '../components/ServiceTaskDetailModal';
 import { formatTaskForAllstate } from '../lib/allstateClipboard';
 
 const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
@@ -137,6 +138,9 @@ export default function ServiceBatchPage() {
   }
 
   const [showAdd, setShowAdd] = useState(false);
+  // Open a task in the detail modal (full attempt history + all actions) when
+  // its card is clicked.
+  const [openTaskId, setOpenTaskId] = useState(null);
 
   // Realtime — a task logged by the front desk (or another rep) shows up live
   // while the batch is open, instead of waiting for a refetch.
@@ -329,6 +333,7 @@ export default function ServiceBatchPage() {
                 agencyId={agencyId} empName={empName} employees={assignable}
                 onAssign={(toId) => assign(task.id, toId)}
                 onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
+                onOpen={() => setOpenTaskId(task.id)}
                 onDone={(note) => markDone(task.id, note)} />
             ))}
           </div>
@@ -361,12 +366,22 @@ export default function ServiceBatchPage() {
                     agencyId={agencyId} empName={empName} employees={assignable}
                     onAssign={(toId) => assign(task.id, toId)}
                     onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
+                    onOpen={() => setOpenTaskId(task.id)}
                     onDone={(note) => markDone(task.id, note)} />
                 ))}
               </div>
             </div>
           ))}
         </div>
+      )}
+
+      {openTaskId && (
+        <ServiceTaskDetailModal
+          taskId={openTaskId}
+          agencyId={agencyId}
+          onClose={() => setOpenTaskId(null)}
+          onChanged={() => queryClient.invalidateQueries({ queryKey: ['service_tasks'] })}
+        />
       )}
     </div>
   );
@@ -422,7 +437,7 @@ function ServiceActivityPanel({ agencyId, empName }) {
   );
 }
 
-function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCustomer, onDone }) {
+function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCustomer, onOpen, onDone }) {
   const prio = PRIORITY_BADGE[task.priority];
   const product = productShort(task.product);
   const inProgress = task.status === 'in_progress';
@@ -462,8 +477,10 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
       border: '1px solid', borderColor: inProgress ? '#3B82F633' : 'var(--qs-border)',
       borderRadius: 10, overflow: 'hidden', display: 'flex', alignItems: 'stretch',
     }}>
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0, padding: '16px 18px' }}>
+      {/* Content — click anywhere (outside the controls below) to open the
+          task's full detail + attempt history in a modal. */}
+      <div onClick={onOpen} title="Open task details"
+        style={{ flex: 1, minWidth: 0, padding: '16px 18px', cursor: onOpen ? 'pointer' : 'default' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
           {prio && (
             <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
@@ -493,7 +510,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
         {(task.customer_name || task.policy_no) && (
           <div style={{ fontSize: 12.5, color: 'var(--qs-muted)', marginBottom: 4 }}>
             {task.customer_name && (
-              <button onClick={() => onCustomer?.(task)} title="Open customer"
+              <button onClick={e => { e.stopPropagation(); onCustomer?.(task); }} title="Open customer"
                 style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer',
                   fontFamily: 'inherit', fontSize: 12.5, color: '#60A5FA', fontWeight: 600 }}>
                 {task.customer_name}{task.household_id ? ' ↗' : ''}
@@ -519,7 +536,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
           <span>📝 Logged by {empName[task.created_by_id] || 'Unknown'} · {fmtShortDate(task.created_at)}</span>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <span>👤</span>
-            <select value={task.assigned_to_id || ''} onChange={e => onAssign?.(e.target.value)}
+            <select value={task.assigned_to_id || ''} onClick={e => e.stopPropagation()} onChange={e => onAssign?.(e.target.value)}
               style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 6,
                 color: 'var(--qs-dim)', fontSize: 11, padding: '2px 4px', fontFamily: 'inherit', cursor: 'pointer' }}>
               <option value="">Unassigned</option>
@@ -548,13 +565,13 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
             color: new Date(task.follow_up_at) <= new Date() ? '#FBBF24' : 'var(--qs-dim)',
             display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <span>⏰ Follow up {new Date(task.follow_up_at) <= new Date() ? 'due ·' : '·'} {new Date(task.follow_up_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-            <button onClick={() => setFollowUp.mutate({ id: task.id, followUpAt: null })}
+            <button onClick={e => { e.stopPropagation(); setFollowUp.mutate({ id: task.id, followUpAt: null }); }}
               style={{ background: 'none', border: 'none', color: 'var(--qs-muted)', cursor: 'pointer', fontSize: 11, padding: 0, textDecoration: 'underline' }}>clear</button>
           </div>
         )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 6, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: 6, marginTop: 14, alignItems: 'center', flexWrap: 'wrap' }}>
           <CopyButton getText={() => formatTaskForAllstate(task)} title="Copy for Allstate" />
           <button onClick={() => setLogging(v => !v)} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}>📞 Log call</button>
           {waiting
@@ -564,7 +581,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
         </div>
 
         {logging && (
-          <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div onClick={e => e.stopPropagation()} style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <select value={att.method} onChange={e => setAtt(a => ({ ...a, method: e.target.value }))}
               style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', borderRadius: 8,
                 padding: '8px 10px', fontSize: 13, color: 'var(--qs-text)', fontFamily: 'inherit', cursor: 'pointer' }}>
@@ -595,7 +612,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
         )}
 
         {confirming && (
-          <div style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div onClick={e => e.stopPropagation()} style={{ marginTop: 12, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
             <input autoFocus value={note} onChange={e => setNote(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && note.trim()) onDone(note.trim()); }}
               placeholder="What was done? (required for billing/coverage/premium)"
