@@ -16,10 +16,16 @@ function fmt$(n) {
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
 }
 function localDay(d = new Date()) { return d.toLocaleDateString('en-CA'); }
-function dayLabel(k) {
-  if (k === localDay()) return 'Today';
-  if (k === localDay(new Date(Date.now() - 86400000))) return 'Yesterday';
-  return new Date(k + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+// Every row gets an explicit calendar date; "Today"/"Yesterday" are shown as a
+// relative tag alongside the date rather than replacing it.
+function dayParts(k) {
+  const dateObj = new Date(k + 'T00:00:00');
+  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  let rel;
+  if (k === localDay()) rel = 'Today';
+  else if (k === localDay(new Date(Date.now() - 86400000))) rel = 'Yesterday';
+  else rel = dateObj.toLocaleDateString('en-US', { weekday: 'short' });
+  return { rel, dateStr };
 }
 
 const CANCEL_TERMINAL = '(saved,rewritten,lost,auto_resolved,cancelled,requested_cancellation)';
@@ -227,28 +233,51 @@ export default function MyActivityPage() {
           )}
         </div>
         {isLoading || !data ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div> : (
-          <table>
-            <thead><tr><th>Day</th><th>Calls</th><th>Reached</th><th>Saves</th><th>Premium</th><th>Tasks done</th></tr></thead>
+          <table style={{ width: '100%' }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: 'left' }}>Day</th>
+                <th style={{ textAlign: 'right' }}>Calls</th>
+                <th style={{ textAlign: 'right' }}>Reached</th>
+                <th style={{ textAlign: 'right' }}>Saves</th>
+                <th style={{ textAlign: 'right' }}>Premium</th>
+                <th style={{ textAlign: 'right' }}>Tasks</th>
+              </tr>
+            </thead>
             <tbody>
               {data.series.map(d => {
                 const saves = d.cancelSaves + d.renewalSaves;
                 const idle = d.attempts + saves + d.tasksDone === 0;
                 const expandable = d.worked.length > 0 || d.tasksList.length > 0;
+                const isOpen = openDay === d.date;
+                const { rel, dateStr } = dayParts(d.date);
+                const num = { textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontFamily: "'DM Mono', monospace" };
                 return (
                   <Fragment key={d.date}>
-                    <tr onClick={() => expandable && setOpenDay(openDay === d.date ? null : d.date)}
-                      style={{ cursor: expandable ? 'pointer' : 'default', opacity: idle ? 0.5 : 1 }}>
-                      <td style={{ fontWeight: 600 }}>{dayLabel(d.date)} {expandable ? (openDay === d.date ? '▾' : '▸') : ''}</td>
-                      <td>{d.attempts || '—'}</td>
-                      <td>{d.reached || '—'}</td>
-                      <td style={{ fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-muted)' }}>
+                    <tr onClick={() => expandable && setOpenDay(isOpen ? null : d.date)}
+                      style={{
+                        cursor: expandable ? 'pointer' : 'default',
+                        background: isOpen ? 'var(--qs-elevated)' : 'transparent',
+                      }}>
+                      <td>
+                        <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
+                          <span style={{ width: 12, color: 'var(--qs-muted)', fontSize: 11 }}>
+                            {expandable ? (isOpen ? '▾' : '▸') : ''}
+                          </span>
+                          <span style={{ fontWeight: 700, color: idle ? 'var(--qs-dim)' : 'var(--qs-bright)' }}>{rel}</span>
+                          <span style={{ fontSize: 12, color: 'var(--qs-muted)' }}>{dateStr}</span>
+                        </span>
+                      </td>
+                      <td style={{ ...num, color: d.attempts ? 'var(--qs-text)' : 'var(--qs-subtle)' }}>{d.attempts || '—'}</td>
+                      <td style={{ ...num, color: d.reached ? 'var(--qs-text)' : 'var(--qs-subtle)' }}>{d.reached || '—'}</td>
+                      <td style={{ ...num, fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-subtle)' }}>
                         {saves ? `${saves} (${d.cancelSaves}c/${d.renewalSaves}r)` : '—'}
                       </td>
-                      <td style={{ color: d.premium ? '#10B981' : 'var(--qs-muted)' }}>{d.premium ? fmt$(d.premium) : '—'}</td>
-                      <td>{d.tasksDone || '—'}</td>
+                      <td style={{ ...num, color: d.premium ? '#10B981' : 'var(--qs-subtle)' }}>{d.premium ? fmt$(d.premium) : '—'}</td>
+                      <td style={{ ...num, color: d.tasksDone ? 'var(--qs-text)' : 'var(--qs-subtle)' }}>{d.tasksDone || '—'}</td>
                     </tr>
-                    {openDay === d.date && <WorkedRows worked={d.worked} k={d.date} onCustomer={onCustomer} />}
-                    {openDay === d.date && <TaskDoneRows tasks={d.tasksList} k={d.date} />}
+                    {isOpen && <WorkedRows worked={d.worked} k={d.date} onCustomer={onCustomer} />}
+                    {isOpen && <TaskDoneRows tasks={d.tasksList} k={d.date} />}
                   </Fragment>
                 );
               })}
