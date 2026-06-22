@@ -40,7 +40,7 @@ export default function LogServiceTaskButton({
         sourceCaseType: sourceCaseType ?? null,
         sourceCaseId: sourceCaseId ?? null,
         // On-call: close it immediately, attributed. Batch: leave it open on the
-        // 24h SLA timer (no manual due date).
+        // business-hours SLA timer (no manual due date).
         status: onCall ? 'done' : 'open',
         resolvedOnCall: onCall,
       },

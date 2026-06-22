@@ -68,15 +68,16 @@ export const PRIORITY_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 };
 
 const ACTIVE_STATUSES = ['open', 'in_progress', 'blocked'];
 
-// Service-task SLA: the culture is "finish within 24h, faster if possible." We
-// run a 24h timer from creation — but in BUSINESS hours, not wall-clock. The
-// agency is open Mon–Fri 9am–6pm Eastern (see lib/businessHours), so the clock
-// only burns while the office is open and freezes nights, weekends, and
-// holidays. A task logged Friday afternoon therefore can't drift "overdue"
-// across a closed weekend, which used to inflate the Overdue count and the
-// median-time-to-done curve.
-export const SLA_HOURS = 24; // business hours of runway
-// Business-ms left on the 24h SLA. Accepts a task (preferred — so the timer can
+// Service-task SLA: the culture is "finish within a day, faster if possible."
+// We run the timer in BUSINESS hours, not wall-clock. The agency is open Mon–Fri
+// 9am–6pm Eastern (see lib/businessHours), so the budget is one open day — 9
+// business hours — and the clock only burns while the office is open, freezing
+// nights, weekends, and holidays. A task logged Friday afternoon is due by
+// roughly the same time the next business day, not dragged "overdue" across a
+// closed weekend (which used to inflate the Overdue count and the
+// median-time-to-done curve).
+export const SLA_HOURS = 9; // business hours of runway = one open day (9am–6pm)
+// Business-ms left on the SLA. Accepts a task (preferred — so the timer can
 // be paused while 'waiting on customer') or a bare created_at string. Elapsed is
 // measured in business time, so the countdown stands still off-hours. A manual
 // 'waiting on customer' pause is added back: banked pause (sla_pause_ms, stored
@@ -94,7 +95,7 @@ export function slaMsLeft(taskOrCreatedAt) {
 // (soonest first) — a scheduled promise that's now due is the most
 // time-sensitive work in the group, mirroring how the lead queue surfaces due
 // follow-ups. After that: priority, then oldest first — the oldest task is
-// closest to breaching its 24h SLA, so it's worked first.
+// closest to breaching its SLA, so it's worked first.
 function sortTasks(tasks) {
   const now = Date.now();
   const followUpDue = t => t.follow_up_at && new Date(t.follow_up_at).getTime() <= now;
@@ -200,7 +201,7 @@ export function useServiceTasks(agencyId, { assignedTo, includeDone = false, sco
       });
   })();
 
-  // Past the 24h SLA = overdue. Parked ('waiting on customer') tasks are paused,
+  // Past the SLA = overdue. Parked ('waiting on customer') tasks are paused,
   // so they never count as overdue — the clock is on the customer, not us.
   const overdue = tasks.filter(t => {
     if (t.status === 'blocked') return false;
@@ -363,7 +364,7 @@ export function useLogServiceTaskAttempt() {
 }
 
 // Park a task 'waiting on customer' (pauses the SLA) or resume it. Resuming
-// banks the paused BUSINESS time so the 24h business-hour budget shifts out by
+// banks the paused BUSINESS time so the business-hour budget shifts out by
 // however much open-hours time it waited (off-hours never counted anyway).
 export function useSetServiceTaskWaiting() {
   const qc = useQueryClient();

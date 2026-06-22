@@ -50,10 +50,11 @@ function fmtDur(ms) {
   return `${s}s`;
 }
 
-// 24h SLA countdown from creation — the goal is to clear every service task
-// within a day, faster when possible. Tiers carry a real color at every stage
-// (no dead grey): healthy emerald → amber as it ages → red in the final hour
-// and past breach. `frac` is the share of the 24h window already consumed.
+// SLA countdown in business hours — the goal is to clear every service task
+// within one open day, faster when possible. Tiers carry a real color at every
+// stage (no dead grey): healthy emerald → blue → amber as it ages → rose in the
+// final hour → red past breach. Thresholds are scaled to the 9h business-day
+// budget (≈ first/middle/last third). `frac` is the share already consumed.
 function slaState(createdAt) {
   const ms = slaMsLeft(createdAt);
   if (ms == null) return null;
@@ -63,8 +64,8 @@ function slaState(createdAt) {
   let color, label;
   if (ms < 0)        { color = '#F87171'; label = `Overdue ${fmtDur(-ms)}`; }
   else if (hrs < 1)  { color = '#FB7185'; label = `${fmtDur(ms)} left`; }
-  else if (hrs < 4)  { color = '#FBBF24'; label = `${fmtDur(ms)} left`; }
-  else if (hrs < 12) { color = '#38BDF8'; label = `${fmtDur(ms)} left`; }
+  else if (hrs < 3)  { color = '#FBBF24'; label = `${fmtDur(ms)} left`; }
+  else if (hrs < 6)  { color = '#38BDF8'; label = `${fmtDur(ms)} left`; }
   else               { color = '#34D399'; label = `${fmtDur(ms)} left`; }
   return { ms, frac, color, label, overdue: ms < 0 };
 }
@@ -353,7 +354,7 @@ export default function ServiceBatchPage() {
             borderRadius: 10, border: '1px solid var(--qs-border)' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🎉</div>
             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qs-bright)' }}>No overdue tasks</div>
-            <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 6 }}>Everything's within the 24h SLA.</div>
+            <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 6 }}>Everything's within the SLA.</div>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -701,7 +702,7 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
 
 // Live, self-contained SLA timer. Owns its own 1s tick so only this panel
 // re-renders each second, not the whole task body. A conic progress ring fills
-// as the 24h window burns down and the digits count to the second — the agency
+// as the SLA window burns down and the digits count to the second — the agency
 // watches these complete fast, so the clock is the loudest thing on the row.
 function SlaTimer({ task }) {
   useTick(1000);
