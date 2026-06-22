@@ -18,6 +18,7 @@ import {
   SLA_HOURS, FOLLOW_UP_QUICK_DAYS, followUpInDays,
 } from '../hooks/useServiceTasks';
 import { usePolicyAutocomplete } from '../hooks/useCustomerSearch';
+import { businessMsBetween } from '../lib/businessHours';
 import { titleCaseName } from '../lib/names';
 import CopyButton from '../components/CopyButton';
 import ServiceTaskDetailModal from '../components/ServiceTaskDetailModal';
@@ -90,7 +91,20 @@ export default function ServiceBatchPage() {
   const [scope, setScope] = useState('all');
   const [overdueOnly, setOverdueOnly] = useState(false);
   const [showDone, setShowDone] = useState(false);
+  // How the open batch is ordered. 'type' keeps the default lane-grouped view
+  // (work-order); the others flatten into a single ordered list.
+  const [sortBy, setSortBy] = useState('type');
   const { groups, tasks, overdue, isLoading } = useServiceTasks(agencyId, { scope, employeeId });
+
+  // Flat, sorted list for the non-grouped sort modes. 'overdue' floats the most
+  // time-critical (least SLA left) to the top; created sorts are by log time.
+  const sortedTasks = useMemo(() => {
+    const arr = [...tasks];
+    if (sortBy === 'created_desc') return arr.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    if (sortBy === 'created_asc') return arr.sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    if (sortBy === 'overdue') return arr.sort((a, b) => (slaMsLeft(a) ?? Infinity) - (slaMsLeft(b) ?? Infinity));
+    return arr;
+  }, [tasks, sortBy]);
 
   // Recently completed tasks — the "Done" view, so a cleared task is visible
   // (and auditable) instead of just vanishing from the batch.
@@ -232,6 +246,21 @@ export default function ServiceBatchPage() {
             color: scope === s.value ? '#fff' : 'var(--qs-muted)',
           }}>{s.label}</button>
         ))}
+        {/* Sort — group by type (work-order) or flatten by log time / urgency */}
+        <label title="Sort the open batch" style={{ display: 'inline-flex', alignItems: 'center', gap: 6,
+          fontSize: 12, fontWeight: 700, color: 'var(--qs-muted)' }}>
+          <span style={{ opacity: 0.8 }}>Sort</span>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{
+            cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
+            borderRadius: 999, padding: '5px 12px', border: '1px solid var(--qs-border)',
+            background: 'var(--qs-card)', color: sortBy === 'type' ? 'var(--qs-muted)' : 'var(--qs-bright)',
+          }}>
+            <option value="type">By type</option>
+            <option value="overdue">Most overdue first</option>
+            <option value="created_desc">Newest first</option>
+            <option value="created_asc">Oldest first</option>
+          </select>
+        </label>
         {/* Overdue — pull up only breached tasks, most overdue first */}
         <button onClick={() => { setOverdueOnly(v => !v); setShowDone(false); }} style={{
           cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700,
@@ -329,6 +358,32 @@ export default function ServiceBatchPage() {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {overdueTasks.map(task => (
+              <TaskRow key={task.id} task={task}
+                agencyId={agencyId} empName={empName} employees={assignable}
+                onAssign={(toId) => assign(task.id, toId)}
+                onCustomer={(t) => navigate(t.household_id ? `${customersBase}/${t.household_id}` : `${customersBase}?q=${encodeURIComponent(t.customer_name || '')}`)}
+                onOpen={() => setOpenTaskId(task.id)}
+                onDone={(note) => markDone(task.id, note)} />
+            ))}
+          </div>
+        )
+      ) : sortBy !== 'type' ? (
+        sortedTasks.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '64px 20px', background: 'var(--qs-elevated)',
+            borderRadius: 10, border: '1px solid var(--qs-border)' }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>✅</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--qs-bright)' }}>Service queue is clear</div>
+            <div style={{ fontSize: 13, color: 'var(--qs-muted)', marginTop: 6 }}>
+              No open admin tasks in this view. Log one with “+ Log task” as calls come in.
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ fontSize: 12, color: 'var(--qs-muted)', marginBottom: 2 }}>
+              {sortedTasks.length} open · {sortBy === 'overdue' ? 'most overdue first'
+                : sortBy === 'created_desc' ? 'newest first' : 'oldest first'}
+            </div>
+            {sortedTasks.map(task => (
               <TaskRow key={task.id} task={task}
                 agencyId={agencyId} empName={empName} employees={assignable}
                 onAssign={(toId) => assign(task.id, toId)}
@@ -784,7 +839,9 @@ function CompletionPace({ agencyId, days = 14 }) {
     const allMins = [];
     for (const t of done) {
       if (!t.completed_at || !t.created_at) continue;
-      const mins = (new Date(t.completed_at) - new Date(t.created_at)) / 60000;
+      // Business minutes only — a task that sat over a closed weekend shouldn't
+      // read as a multi-day clear, matching the SLA timer's business-hours clock.
+      const mins = businessMsBetween(t.created_at, t.completed_at) / 60000;
       if (!(mins >= 0)) continue;
       allMins.push(mins);
       const b = byDay.get(startOfDay(t.completed_at).toDateString());
