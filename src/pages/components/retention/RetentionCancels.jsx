@@ -278,6 +278,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // Management (the outcome picker) once the rep has actually spoken to them.
   const [reachedLogged, setReachedLogged] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  // Error shown when a reached call is logged without the (now required) save
+  // tactic — the moat field is captured here, at the moment of the call.
+  const [attemptError, setAttemptError] = useState(null);
   // The save tactic ("What did you do to save them?") — captured in Case
   // Management when recording the save, not on every call attempt.
   const [saveIntervention, setSaveIntervention] = useState(EMPTY_INTERVENTION);
@@ -353,6 +356,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       console.warn('[logAttempt] No employee ID — cannot log attempt');
       return;
     }
+    // Reached the customer → the save tactic is required. This is the one
+    // retention input no Allstate report carries, and it's only knowable now.
+    const reachedNeedsTactic =
+      attemptForm.result === "reached" &&
+      !(attemptForm.intervention?.interventions?.length > 0);
+    if (reachedNeedsTactic) {
+      setAttemptError("Save tactic is required — tap what you did to save them before logging a reached call.");
+      return;
+    }
+    setAttemptError(null);
     setLoggingAttempt(true);
     const { error } = await supabase.from("pending_cancel_attempts").insert({
       pending_case_id: event.id,
@@ -361,6 +374,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       method:          attemptForm.method,
       result:          attemptForm.result,
       note:            attemptForm.note || null,
+      ...(attemptForm.result === "reached" ? interventionInsertFields(attemptForm.intervention) : {}),
     });
     if (!error) {
       await supabase.from("pending_cases").update({
@@ -815,7 +829,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 <select
                   className="dark-select"
                   value={attemptForm.result}
-                  onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}
+                  onChange={e => { setAttemptForm(p => ({ ...p, result: e.target.value })); setAttemptError(null); }}
                 >
                   <option value="no_answer">No Answer</option>
                   <option value="left_voicemail">Left Voicemail</option>
@@ -835,6 +849,28 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
               onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
               style={{ marginBottom: 10 }}
             />
+
+            {/* Reached the customer \u2192 capture the save tactic right here, in the
+                flow. Required: this is the moat field, and the only moment it's
+                knowable. */}
+            {attemptForm.result === "reached" && (
+              <InterventionPicker
+                context={caseContext}
+                filter={tacticFilter}
+                required
+                value={attemptForm.intervention}
+                onChange={(iv) => { setAttemptForm(p => ({ ...p, intervention: iv })); if (iv?.interventions?.length) setAttemptError(null); }}
+              />
+            )}
+
+            {attemptError && (
+              <div style={{
+                fontSize: 12, fontWeight: 600, color: "var(--qs-warn, #F59E0B)",
+                marginBottom: 10,
+              }}>
+                {attemptError}
+              </div>
+            )}
 
             <button
               onClick={logAttempt}
@@ -1215,6 +1251,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // Management (the outcome picker) once the rep has actually spoken to them.
   const [reachedLogged, setReachedLogged] = useState(false);
   const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  // Error shown when a reached call is logged without the (now required) save
+  // tactic — the moat field is captured here, at the moment of the call.
+  const [attemptError, setAttemptError] = useState(null);
   // The save tactic ("What did you do to save them?") — captured in Case
   // Management when recording the save, not on every call attempt.
   const [saveIntervention, setSaveIntervention] = useState(EMPTY_INTERVENTION);
@@ -1281,6 +1320,16 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       console.warn('[logAttempt] No employee ID — cannot log attempt');
       return;
     }
+    // Reached the customer → the save tactic is required. This is the one
+    // retention input no Allstate report carries, and it's only knowable now.
+    const reachedNeedsTactic =
+      attemptForm.result === "reached" &&
+      !(attemptForm.intervention?.interventions?.length > 0);
+    if (reachedNeedsTactic) {
+      setAttemptError("Save tactic is required — tap what you did to save them before logging a reached call.");
+      return;
+    }
+    setAttemptError(null);
     setLoggingAttempt(true);
     const { error } = await supabase.from("renewal_attempts").insert({
       renewal_case_id: event.id,
@@ -1289,6 +1338,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       method: attemptForm.method,
       result: attemptForm.result,
       note: attemptForm.note || null,
+      ...(attemptForm.result === "reached" ? interventionInsertFields(attemptForm.intervention) : {}),
     });
     if (!error) {
       const newCount = (event.attempt_count || 0) + 1;
@@ -1744,7 +1794,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 <select
                   className="dark-select"
                   value={attemptForm.result}
-                  onChange={e => setAttemptForm(p => ({ ...p, result: e.target.value }))}
+                  onChange={e => { setAttemptForm(p => ({ ...p, result: e.target.value })); setAttemptError(null); }}
                 >
                   <option value="no_answer">No Answer</option>
                   <option value="left_voicemail">Left Voicemail</option>
@@ -1764,6 +1814,28 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               onChange={e => setAttemptForm(p => ({ ...p, note: e.target.value }))}
               style={{ marginBottom: 10 }}
             />
+
+            {/* Reached the customer \u2192 capture the save tactic right here, in the
+                flow. Required: this is the moat field, and the only moment it's
+                knowable. */}
+            {attemptForm.result === "reached" && (
+              <InterventionPicker
+                context={caseContext}
+                filter={tacticFilter}
+                required
+                value={attemptForm.intervention}
+                onChange={(iv) => { setAttemptForm(p => ({ ...p, intervention: iv })); if (iv?.interventions?.length) setAttemptError(null); }}
+              />
+            )}
+
+            {attemptError && (
+              <div style={{
+                fontSize: 12, fontWeight: 600, color: "var(--qs-warn, #F59E0B)",
+                marginBottom: 10,
+              }}>
+                {attemptError}
+              </div>
+            )}
 
             <button
               onClick={logAttempt}

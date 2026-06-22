@@ -22,7 +22,7 @@ import { EMPTY_INTERVENTION } from '../lib/interventions';
 // Types tagged `applies_to: 'all'` show everywhere. `filter` is an optional
 // predicate for finer caller-specific rules (e.g. only offer "Reinstated" once
 // the policy has actually cancelled).
-export default function InterventionPicker({ value, onChange, context, filter }) {
+export default function InterventionPicker({ value, onChange, context, filter, required = false }) {
   const { data: allTypes = [] } = useInterventionTypes();
   const types = allTypes
     .filter((t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context)
@@ -47,7 +47,10 @@ export default function InterventionPicker({ value, onChange, context, filter })
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', marginBottom: 8 }}>
-        What did you do to save them? <span style={{ fontWeight: 400 }}>(optional)</span>
+        What did you do to save them?{' '}
+        {required
+          ? <span style={{ fontWeight: 600, color: 'var(--qs-warn, #F59E0B)' }}>(required)</span>
+          : <span style={{ fontWeight: 400 }}>(optional)</span>}
       </div>
 
       {/* Tactic chips */}
