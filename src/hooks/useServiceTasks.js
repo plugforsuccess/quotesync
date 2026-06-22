@@ -5,6 +5,7 @@
 // sorted by due date. Backed by the service_tasks table.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
+import { businessMsBetween } from '../lib/businessHours';
 
 // task_type is the batch key. `lane` groups types by who can do the work and in
 // what order: licensed coverage/price questions first, licensed policy changes
@@ -68,18 +69,25 @@ export const PRIORITY_ORDER = { urgent: 0, high: 1, normal: 2, low: 3 };
 const ACTIVE_STATUSES = ['open', 'in_progress', 'blocked'];
 
 // Service-task SLA: the culture is "finish within 24h, faster if possible." We
-// run a 24h timer from creation rather than a manual due date.
-export const SLA_HOURS = 24;
-// Time left on the 24h SLA. Accepts a task (preferred — so the timer can be
-// paused while 'waiting on customer') or a bare created_at string. While a task
-// is paused (sla_paused_at set), the live pause grows with the clock, freezing
-// the time-left; banked pause (sla_pause_ms) pushes the deadline out.
+// run a 24h timer from creation — but in BUSINESS hours, not wall-clock. The
+// agency is open Mon–Fri 9am–6pm Eastern (see lib/businessHours), so the clock
+// only burns while the office is open and freezes nights, weekends, and
+// holidays. A task logged Friday afternoon therefore can't drift "overdue"
+// across a closed weekend, which used to inflate the Overdue count and the
+// median-time-to-done curve.
+export const SLA_HOURS = 24; // business hours of runway
+// Business-ms left on the 24h SLA. Accepts a task (preferred — so the timer can
+// be paused while 'waiting on customer') or a bare created_at string. Elapsed is
+// measured in business time, so the countdown stands still off-hours. A manual
+// 'waiting on customer' pause is added back: banked pause (sla_pause_ms, stored
+// in business-ms) plus the live pause still accruing while currently parked.
 export function slaMsLeft(taskOrCreatedAt) {
   const t = typeof taskOrCreatedAt === 'string' ? { created_at: taskOrCreatedAt } : (taskOrCreatedAt || {});
   if (!t.created_at) return null;
   const banked = Number(t.sla_pause_ms || 0);
-  const livePause = t.sla_paused_at ? (Date.now() - new Date(t.sla_paused_at).getTime()) : 0;
-  return new Date(t.created_at).getTime() + SLA_HOURS * 3600000 + banked + livePause - Date.now();
+  const livePause = t.sla_paused_at ? businessMsBetween(t.sla_paused_at, new Date()) : 0;
+  const elapsed = businessMsBetween(t.created_at, new Date());
+  return SLA_HOURS * 3600000 - elapsed + banked + livePause;
 }
 
 // Sort inside a group: a follow-up that's come due floats to the very top
@@ -355,7 +363,8 @@ export function useLogServiceTaskAttempt() {
 }
 
 // Park a task 'waiting on customer' (pauses the SLA) or resume it. Resuming
-// banks the paused time so the 24h deadline shifts out by however long it waited.
+// banks the paused BUSINESS time so the 24h business-hour budget shifts out by
+// however much open-hours time it waited (off-hours never counted anyway).
 export function useSetServiceTaskWaiting() {
   const qc = useQueryClient();
   return useMutation({
@@ -367,7 +376,7 @@ export function useSetServiceTaskWaiting() {
       } else {
         updates.status = (task?.attempt_count > 0) ? 'in_progress' : 'open';
         if (task?.sla_paused_at) {
-          updates.sla_pause_ms = Number(task.sla_pause_ms || 0) + (Date.now() - new Date(task.sla_paused_at).getTime());
+          updates.sla_pause_ms = Number(task.sla_pause_ms || 0) + businessMsBetween(task.sla_paused_at, new Date());
           updates.sla_paused_at = null;
         }
       }
@@ -428,7 +437,7 @@ export function useServiceActivity(agencyId, dateStr) {
       for (const a of attempts || []) { if (!a.employee_id) continue; const r = rep(a.employee_id); r.attempts++; if (a.result === 'reached') r.reached++; }
       for (const t of doneToday || []) {
         if (!t.completed_by_id) continue; const r = rep(t.completed_by_id); r.cleared++;
-        if (t.created_at && t.completed_at) r._ttd.push(new Date(t.completed_at) - new Date(t.created_at));
+        if (t.created_at && t.completed_at) r._ttd.push(businessMsBetween(t.created_at, t.completed_at));
       }
       for (const t of active || []) { if (!t.assigned_to_id) continue; if (t.status !== 'blocked') rep(t.assigned_to_id).inProgress++; }
 
