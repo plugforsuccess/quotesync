@@ -171,7 +171,7 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                   <label style={{ gridColumn: '1 / -1', display: 'inline-flex', alignItems: 'center', gap: 6,
                     fontSize: 12.5, color: 'var(--qs-dim)', cursor: 'pointer' }}>
                     <input type="checkbox" checked={att.waiting} onChange={e => setAtt(a => ({ ...a, waiting: e.target.checked }))} />
-                    Waiting on customer (pauses the 24h SLA)
+                    Waiting on customer (pauses the SLA)
                   </label>
                   <button type="button" onClick={submitAttempt} disabled={logAttempt.isPending}
                     style={{ gridColumn: '1 / -1', padding: '9px', borderRadius: 8, border: '1px solid var(--qs-border)',
