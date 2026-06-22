@@ -90,13 +90,14 @@ export default function InterventionPicker({ value, onChange, context, filter, r
         />
       )}
 
-      {/* Competitor detail — when matching a competitor quote */}
+      {/* Competitor detail — churn intel when the customer was shopping. Both
+          fields are optional: customers don't always share who or how much. */}
       {showCompetitor && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <input
             type="text"
             className="dark-input"
-            placeholder="Competitor (e.g. Geico)"
+            placeholder="Competitor, if named (e.g. Geico)"
             value={v.competitorName}
             onChange={(e) => onChange({ ...v, competitorName: e.target.value })}
             style={{ fontSize: 14, padding: '9px 12px', flex: 1, boxSizing: 'border-box' }}
@@ -105,7 +106,7 @@ export default function InterventionPicker({ value, onChange, context, filter, r
             type="number"
             inputMode="decimal"
             className="dark-input"
-            placeholder="Their quote ($)"
+            placeholder="Their quote ($), if shared"
             value={v.competitorQuote}
             onChange={(e) => onChange({ ...v, competitorQuote: e.target.value })}
             style={{ fontSize: 14, padding: '9px 12px', flex: 1, boxSizing: 'border-box' }}

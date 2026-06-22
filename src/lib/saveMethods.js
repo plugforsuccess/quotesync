@@ -16,7 +16,7 @@ export const SAVE_METHODS = [
   { value: 'requote',           label: 'Re-quote (deductible / coverage)' },
   { value: 'bundle',            label: 'Bundled policies' },
   { value: 'discount',          label: 'Applied a discount' },
-  { value: 'competitor_match',  label: 'Matched a competitor' },
+  { value: 'competitor_match',  label: 'Held vs. competitor quote' },
   { value: 'payment_plan',      label: 'Payment plan / EFT' },
   { value: 'reinstatement',     label: 'Reinstated (paid after cancel)', cancelOnly: true, cancelledOnly: true },
   { value: 'rewrite',           label: 'Rewrote the policy', cancelOnly: true },

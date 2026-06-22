@@ -1036,7 +1036,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       <option value="coverage_reduction">Coverage reduction</option>
                       <option value="discount_applied">New discount applied</option>
                       <option value="tier_change">Tier change</option>
-                      <option value="competitor_match">Matched competitor rate</option>
+                      <option value="competitor_match">Held vs. competitor quote</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
