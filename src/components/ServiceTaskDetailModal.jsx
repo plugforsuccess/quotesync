@@ -10,12 +10,15 @@ import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useAssignableMembers } from '../hooks/useEmployees';
 import {
   useUpdateServiceTask, TASK_TYPE_MAP, productShort, slaMsLeft, SLA_HOURS,
+  ATTEMPT_CAP, PARK_CAP_MS, isParkExpired, parkedBusinessMs,
   useServiceTaskAttempts, useLogServiceTaskAttempt,
   TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
   FOLLOW_UP_QUICK_DAYS, followUpInDays,
 } from '../hooks/useServiceTasks';
 
 const NOTE_REQUIRED = new Set(['billing', 'coverage', 'premium', 'insurance_review', 'reinstatement', 'terminate', 'claim', 'payment']);
+
+const fmtHm = ms => { const h = Math.floor(ms / 3600000); const m = Math.floor((ms % 3600000) / 60000); return h ? `${h}h ${m}m` : `${m}m`; };
 
 function fmtSla(ms) {
   if (ms == null) return null;
@@ -48,9 +51,15 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
 
   const cfg = task ? (TASK_TYPE_MAP[task.task_type] || { label: task.task_type, icon: '📌', color: '#94A3B8' }) : null;
   const done = task && (task.status === 'done' || task.completed_at);
-  const waiting = task && task.status === 'blocked';
+  const parkExpired = task ? isParkExpired(task) : false;
+  // Parked, but only while the wait is within the cap — past it the task has
+  // resurfaced and the live SLA shows again.
+  const waiting = task && task.status === 'blocked' && !parkExpired;
   const sla = task && !done && !waiting ? fmtSla(slaMsLeft(task)) : null;
   const needsNote = task && NOTE_REQUIRED.has(task.task_type);
+  // Hit the attempt cap without ever reaching them → offer the final-notice close.
+  const hardToReach = task && (task.attempt_count || 0) >= ATTEMPT_CAP
+    && task.last_attempt_result && task.last_attempt_result !== 'reached';
   const policies = task && task.policy_nos && task.policy_nos.length
     ? task.policy_nos : (task && task.policy_no ? [task.policy_no] : []);
   const nameFor = id => { const m = members.find(x => x.id === id); return m ? m.name : null; };
@@ -60,6 +69,17 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
     update.mutate(
       { id: taskId, updates: { status: 'done', completed_at: new Date().toISOString(),
         completed_by_id: employee?.id ?? null, completion_note: note.trim() || null } },
+      { onSuccess: () => { onChanged?.(); onClose(); } }
+    );
+  }
+  // Give-up path: rep sent the final email, close as unreachable with a
+  // standardized audit note instead of leaving it to keep aging.
+  function finalNotice() {
+    const n = task?.attempt_count || 0;
+    update.mutate(
+      { id: taskId, updates: { status: 'done', completed_at: new Date().toISOString(),
+        completed_by_id: employee?.id ?? null,
+        completion_note: `Final notice sent — unreachable after ${n} attempt${n === 1 ? '' : 's'}` } },
       { onSuccess: () => { onChanged?.(); onClose(); } }
     );
   }
@@ -121,12 +141,16 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
             )}
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
-              <div><div style={lbl}>Status</div><div style={{ fontSize: 13, color: waiting ? '#FBBF24' : 'var(--qs-text)' }}>
-                {done ? 'Done' : waiting ? '⏸️ Waiting on customer' : (task.status || 'open').replace(/_/g, ' ')}</div></div>
+              <div><div style={lbl}>Status</div><div style={{ fontSize: 13, color: (waiting || parkExpired) ? '#FBBF24' : 'var(--qs-text)' }}>
+                {done ? 'Done'
+                  : waiting ? '⏸️ Waiting on customer'
+                  : parkExpired ? '⏰ Resurfaced — waited too long'
+                  : (task.status || 'open').replace(/_/g, ' ')}</div></div>
               <div><div style={lbl}>Logged</div><div style={{ fontSize: 13, color: 'var(--qs-text)' }}>
                 {new Date(task.created_at).toLocaleDateString()}</div></div>
               {sla && <div><div style={lbl}>SLA ({SLA_HOURS}h)</div><div style={{ fontSize: 13, fontWeight: 700, color: sla.color }}>{sla.text}</div></div>}
-              {waiting && <div><div style={lbl}>SLA</div><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-muted)' }}>Paused</div></div>}
+              {waiting && <div><div style={lbl}>SLA</div><div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qs-muted)' }}>
+                Paused · parked {fmtHm(parkedBusinessMs(task))} · back in {fmtHm(Math.max(0, PARK_CAP_MS - parkedBusinessMs(task)))}</div></div>}
               {!done && task.follow_up_at && (
                 <div><div style={lbl}>Follow up</div><div style={{ fontSize: 13, fontWeight: 700,
                   color: new Date(task.follow_up_at) <= new Date() ? '#FBBF24' : 'var(--qs-text)' }}>
@@ -235,6 +259,15 @@ export default function ServiceTaskDetailModal({ taskId, agencyId, onClose, onCh
                     fontSize: 14, fontWeight: 700, cursor: (needsNote && !note.trim()) ? 'not-allowed' : 'pointer' }}>
                   {update.isPending ? 'Saving…' : '✓ Mark done'}
                 </button>
+                {hardToReach && (
+                  <button onClick={finalNotice} disabled={update.isPending}
+                    title={`Sent the final email after ${ATTEMPT_CAP}+ tries? Close it out as unreachable.`}
+                    style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 10,
+                      border: '1px solid #F59E0B55', background: 'transparent', color: '#FBBF24',
+                      fontSize: 13, fontWeight: 700, cursor: update.isPending ? 'not-allowed' : 'pointer' }}>
+                    ✉ Final notice sent → close as unreachable
+                  </button>
+                )}
               </>
             )}
           </>

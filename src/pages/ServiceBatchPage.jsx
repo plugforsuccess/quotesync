@@ -15,7 +15,8 @@ import {
   useLogServiceTaskAttempt, useSetServiceTaskWaiting, useSetServiceTaskFollowUp, useServiceActivity,
   TASK_ATTEMPT_METHODS, TASK_ATTEMPT_RESULTS, TASK_ATTEMPT_RESULT_MAP,
   TASK_TYPES, TASK_TYPE_MAP, LANES, LANE_MAP, SCOPES, PRODUCTS, PRODUCT_MAP, productShort,
-  SLA_HOURS, FOLLOW_UP_QUICK_DAYS, followUpInDays,
+  SLA_HOURS, ATTEMPT_CAP, PARK_CAP_MS, isParkExpired, parkedBusinessMs,
+  FOLLOW_UP_QUICK_DAYS, followUpInDays,
 } from '../hooks/useServiceTasks';
 import { usePolicyAutocomplete } from '../hooks/useCustomerSearch';
 import { businessMsBetween } from '../lib/businessHours';
@@ -25,6 +26,18 @@ import ServiceTaskDetailModal from '../components/ServiceTaskDetailModal';
 import { formatTaskForAllstate } from '../lib/allstateClipboard';
 
 const fmtShortDate = d => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+
+// Compact "how long ago" for a timestamp — d / h / m, coarsest unit that fits.
+function fmtAgo(iso) {
+  if (!iso) return null;
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 0) return 'just now';
+  const d = Math.floor(ms / 86400000);
+  if (d >= 1) return `${d}d ago`;
+  const h = Math.floor(ms / 3600000);
+  if (h >= 1) return `${h}h ago`;
+  return `${Math.max(1, Math.floor(ms / 60000))}m ago`;
+}
 
 // Completing one of these without recording what was done loses the audit trail
 // the agency cares about most — so a completion note is required.
@@ -126,9 +139,10 @@ export default function ServiceBatchPage() {
   const createTask = useCreateServiceTask();
   const updateTask = useUpdateServiceTask();
 
-  // Flat, most-overdue-first list for the Overdue view.
+  // Flat, most-overdue-first list for the Overdue view. Parked tasks stay out
+  // until their wait blows past the cap, then they resurface here too.
   const overdueTasks = useMemo(() =>
-    tasks.filter(t => { if (t.status === 'blocked') return false; const ms = slaMsLeft(t); return ms != null && ms < 0; })
+    tasks.filter(t => { if (t.status === 'blocked' && !isParkExpired(t)) return false; const ms = slaMsLeft(t); return ms != null && ms < 0; })
          .sort((a, b) => (slaMsLeft(a) ?? 0) - (slaMsLeft(b) ?? 0)),
   [tasks]);
 
@@ -499,9 +513,12 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
   const inProgress = task.status === 'in_progress';
   const needsNote = NOTE_REQUIRED_TYPES.has(task.task_type);
 
-  const waiting = task.status === 'blocked';
-  // Hard to reach: 3+ tries and we've still never actually reached them.
-  const hardToReach = (task.attempt_count || 0) >= 3 && task.last_attempt_result && task.last_attempt_result !== 'reached';
+  // Treat as waiting only while the park is within the cap — past it the task
+  // has resurfaced, so the body should read active to match the live timer.
+  const waiting = task.status === 'blocked' && !isParkExpired(task);
+  // Hard to reach: hit the attempt cap and still never actually reached them —
+  // time to send the final notice and close it out rather than keep dialing.
+  const hardToReach = (task.attempt_count || 0) >= ATTEMPT_CAP && task.last_attempt_result && task.last_attempt_result !== 'reached';
 
   const { data: me } = useCurrentEmployee();
   const logAttempt = useLogServiceTaskAttempt();
@@ -525,6 +542,14 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
   function handleDone() {
     if (needsNote) { setConfirming(true); return; }
     onDone(null);
+  }
+
+  // Give-up path: after the attempt cap with no contact, the rep sends the final
+  // "we tried to reach you" email themselves, then closes the task as
+  // unreachable — leaving a standardized audit note instead of a silent drop.
+  function handleFinalNotice() {
+    const n = (task.attempt_count || 0);
+    onDone(`Final notice sent — unreachable after ${n} attempt${n === 1 ? '' : 's'}`);
   }
 
   return (
@@ -633,6 +658,11 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
           {waiting
             ? <button onClick={() => setWaiting.mutate({ id: task.id, waiting: false, task })} style={btnStyle('var(--qs-card)', '#34D399')}>▶ Resume</button>
             : <button onClick={() => setWaiting.mutate({ id: task.id, waiting: true, task })} style={btnStyle('var(--qs-card)', 'var(--qs-dim)')}>⏸ Wait on customer</button>}
+          {hardToReach && (
+            <button onClick={handleFinalNotice}
+              title={`Sent the final email after ${ATTEMPT_CAP}+ tries? Close it out as unreachable.`}
+              style={btnStyle('var(--qs-card)', '#FBBF24')}>✉ Final notice → close</button>
+          )}
           <button onClick={handleDone} style={btnStyle('#10B981', '#fff')}>Done</button>
         </div>
 
@@ -707,14 +737,24 @@ function TaskRow({ task, agencyId, empName = {}, employees = [], onAssign, onCus
 function SlaTimer({ task }) {
   useTick(1000);
   // Parked 'waiting on customer' → the clock is paused; show that instead of a
-  // countdown so the row doesn't look neglected.
-  if (task?.status === 'blocked') {
+  // countdown so the row doesn't look neglected. Once the wait blows past the
+  // cap the task resurfaces, so we stop showing the pause and fall through to
+  // the live (now-overdue) countdown below.
+  if (task?.status === 'blocked' && !isParkExpired(task)) {
+    const parked = parkedBusinessMs(task);
+    const untilBack = Math.max(0, PARK_CAP_MS - parked);
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: 6, minWidth: 132, padding: '0 16px', textAlign: 'center',
+        gap: 4, minWidth: 132, padding: '0 16px', textAlign: 'center',
         background: 'var(--qs-elevated)', borderLeft: '1px solid var(--qs-border)', color: 'var(--qs-muted)' }}>
-        <div style={{ fontSize: 20 }}>⏸️</div>
+        <div style={{ fontSize: 18 }}>⏸️</div>
         <div style={{ fontSize: 11.5, fontWeight: 800, lineHeight: 1.2 }}>Waiting<br/>on customer</div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--qs-subtle)', fontFamily: "'DM Mono', monospace" }}>
+          parked {fmtDur(parked)}
+        </div>
+        <div style={{ fontSize: 9.5, color: 'var(--qs-subtle)' }} title="Auto-resurfaces into the queue if still unanswered">
+          back in {fmtDur(untilBack)}
+        </div>
       </div>
     );
   }
@@ -792,6 +832,16 @@ function ExpectedCallbacks({ agencyId }) {
               <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
                 {cb.customer_phone || 'no phone'} · {cb.reason}
                 {cb.rep_name ? ` · ask for ${cb.rep_name}` : ''}
+              </div>
+              {/* How long we've been waiting to hear back + how many tries — so a
+                  stale, over-contacted callback is visible, not silently aging. */}
+              <div style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 3, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {cb.since
+                  ? <span>⏳ waiting {fmtAgo(cb.since)} · last tried {fmtShortDate(cb.since)}</span>
+                  : <span>⏳ no attempt logged yet</span>}
+                {cb.attempt_count != null && (
+                  <span>· {cb.attempt_count} attempt{cb.attempt_count === 1 ? '' : 's'}</span>
+                )}
               </div>
             </div>
             {cb.customer_phone && (
