@@ -5,7 +5,7 @@
 // sorted by due date. Backed by the service_tasks table.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
-import { businessMsBetween } from '../lib/businessHours';
+import { businessMsBetween, MS_PER_BUSINESS_DAY } from '../lib/businessHours';
 
 // task_type is the batch key. `lane` groups types by who can do the work and in
 // what order: licensed coverage/price questions first, licensed policy changes
@@ -77,16 +77,39 @@ const ACTIVE_STATUSES = ['open', 'in_progress', 'blocked'];
 // closed weekend (which used to inflate the Overdue count and the
 // median-time-to-done curve).
 export const SLA_HOURS = 9; // business hours of runway = one open day (9am–6pm)
+
+// How many no-contact attempts before we send the final notice and close the
+// task as unreachable. Also the threshold for the "hard to reach" warning, so
+// the warning and the give-up line are one and the same number.
+export const ATTEMPT_CAP = 3;
+
+// 'Waiting on customer' must not park a task forever — that just hides stale
+// work. After this much BUSINESS time parked, the task auto-resurfaces (the
+// pause stops crediting, so the SLA clock resumes and it comes back into the
+// queue). Three open days at 9h each.
+export const PARK_CAP_MS = 3 * MS_PER_BUSINESS_DAY;
+
+// Business time a task has been parked 'waiting on customer' (0 when not parked).
+export function parkedBusinessMs(task) {
+  return task?.sla_paused_at ? businessMsBetween(task.sla_paused_at, new Date()) : 0;
+}
+// A parked task whose wait has run past the cap — time to resurface it.
+export function isParkExpired(task) {
+  return task?.status === 'blocked' && parkedBusinessMs(task) >= PARK_CAP_MS;
+}
+
 // Business-ms left on the SLA. Accepts a task (preferred — so the timer can
 // be paused while 'waiting on customer') or a bare created_at string. Elapsed is
 // measured in business time, so the countdown stands still off-hours. A manual
 // 'waiting on customer' pause is added back: banked pause (sla_pause_ms, stored
-// in business-ms) plus the live pause still accruing while currently parked.
+// in business-ms) plus the live pause still accruing while currently parked —
+// but the live pause is capped at PARK_CAP_MS, so a task can't sit paused
+// forever; once the cap is hit the clock resumes and it goes overdue.
 export function slaMsLeft(taskOrCreatedAt) {
   const t = typeof taskOrCreatedAt === 'string' ? { created_at: taskOrCreatedAt } : (taskOrCreatedAt || {});
   if (!t.created_at) return null;
   const banked = Number(t.sla_pause_ms || 0);
-  const livePause = t.sla_paused_at ? businessMsBetween(t.sla_paused_at, new Date()) : 0;
+  const livePause = t.sla_paused_at ? Math.min(businessMsBetween(t.sla_paused_at, new Date()), PARK_CAP_MS) : 0;
   const elapsed = businessMsBetween(t.created_at, new Date());
   return SLA_HOURS * 3600000 - elapsed + banked + livePause;
 }
@@ -201,10 +224,12 @@ export function useServiceTasks(agencyId, { assignedTo, includeDone = false, sco
       });
   })();
 
-  // Past the SLA = overdue. Parked ('waiting on customer') tasks are paused,
-  // so they never count as overdue — the clock is on the customer, not us.
+  // Past the SLA = overdue. Parked ('waiting on customer') tasks are paused, so
+  // they don't count as overdue — the clock is on the customer, not us — UNLESS
+  // the wait has blown past the cap, at which point the task resurfaces and a
+  // breach counts again.
   const overdue = tasks.filter(t => {
-    if (t.status === 'blocked') return false;
+    if (t.status === 'blocked' && !isParkExpired(t)) return false;
     const ms = slaMsLeft(t); return ms != null && ms < 0;
   }).length;
 
