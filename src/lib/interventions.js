@@ -18,6 +18,20 @@ export const LOSS_REASON_CODES = new Set([
   'loss_price', 'loss_switched', 'loss_ineligible', 'loss_other',
 ]);
 
+// The distinct SAVE tactics already captured across a case's call attempts —
+// the single source of truth for "what we did." Loss reasons are excluded. This
+// is what the close screen reads to show "tactic(s) on record" and to ask which
+// one sealed the save, so the tactic is never re-entered.
+export function onRecordSaveTactics(attempts) {
+  const set = new Set();
+  for (const a of attempts || []) {
+    for (const c of a.interventions || []) {
+      if (c && !LOSS_REASON_CODES.has(c)) set.add(c);
+    }
+  }
+  return [...set];
+}
+
 // Normalizes the picker's form value into the attempt-table column shape.
 // Returns only populated fields so untouched attempts stay clean (all-NULL).
 export function interventionInsertFields(value) {
