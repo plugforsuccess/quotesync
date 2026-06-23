@@ -543,6 +543,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // Reinstatement (paying after the policy cancels) only makes sense once it
   // has actually cancelled — hide that chip until then.
   const tacticFilter = (t) => t.code !== "reinstatement" || event.stage === "cancelled";
+  // The save dollars feed the lift/velocity math, so the premium is required on
+  // a save/rewrite outcome — block Save until it's entered.
+  const premiumMissing =
+    (form.status === "saved" && String(savedPremium).trim() === "") ||
+    (form.status === "rewritten" && String(form.rewrite_new_premium ?? "").trim() === "");
   // "What saved them" lives in Case Management (not the call log): the tactic is
   // captured here when recording the save, and the headline becomes save_method.
   const derivedSaveMethod = saveMethodFromCodes(saveIntervention.interventions) || event.save_method || null;
@@ -1056,7 +1061,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Saved premium — only on a straight save (reinstatement) */}
             {form.status === "saved" && (
               <div>
-                <label className="dark-label">Premium saved (annual)</label>
+                <label className="dark-label">Premium saved (annual)<span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
                 <input
                   className="dark-input"
                   inputMode="decimal"
@@ -1170,20 +1175,26 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             <div>
               <button
                 onClick={save}
-                disabled={saving}
+                disabled={saving || premiumMissing}
+                title={premiumMissing ? "Enter the premium before closing this case" : undefined}
                 style={{
                   width: "100%", padding: "12px",
                   borderRadius: 10, border: "none",
-                  background: saving ? "var(--qs-elevated)" : "#10B981",
-                  color: saving ? "var(--qs-muted)" : "#fff",
+                  background: (saving || premiumMissing) ? "var(--qs-elevated)" : "#10B981",
+                  color: (saving || premiumMissing) ? "var(--qs-muted)" : "#fff",
                   fontSize: 15, fontWeight: 700,
-                  cursor: saving ? "not-allowed" : "pointer",
+                  cursor: (saving || premiumMissing) ? "not-allowed" : "pointer",
                   transition: "background 0.15s",
                   marginTop: 4,
                 }}
               >
                 {saving ? "Saving\u2026" : "Save Case"}
               </button>
+              {premiumMissing && (
+                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
+                  Enter the premium amount above to close this case.
+                </div>
+              )}
               {saveError && (
                 <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
                   background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
@@ -1505,6 +1516,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // Scopes the tactic chips — renewals never see the cancel-only tactics.
   const caseContext = "renewal";
   const tacticFilter = undefined; // no extra stage rules on renewals
+  // The renewal-paid premium feeds the lift/velocity math, so it's required to
+  // confirm a renewal — block Save until it's entered.
+  const premiumMissing = form.status === "confirmed" && String(savedPremium).trim() === "";
   // "What saved them" lives in Case Management (not the call log): the tactic is
   // captured here when recording the save, and the headline becomes save_method.
   const derivedSaveMethod = saveMethodFromCodes(saveIntervention.interventions) || event.save_method || null;
@@ -1957,7 +1971,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     </div>
                   </div>
                   <div>
-                    <label className="dark-label">Renewal paid</label>
+                    <label className="dark-label">Renewal paid<span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
                     <input
                       className="dark-input"
                       inputMode="decimal"
@@ -2069,20 +2083,26 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             <div>
               <button
                 onClick={save}
-                disabled={saving}
+                disabled={saving || premiumMissing}
+                title={premiumMissing ? "Enter the premium before closing this case" : undefined}
                 style={{
                   width: "100%", padding: "12px",
                   borderRadius: 10, border: "none",
-                  background: saving ? "var(--qs-elevated)" : "#10B981",
-                  color: saving ? "var(--qs-muted)" : "#fff",
+                  background: (saving || premiumMissing) ? "var(--qs-elevated)" : "#10B981",
+                  color: (saving || premiumMissing) ? "var(--qs-muted)" : "#fff",
                   fontSize: 15, fontWeight: 700,
-                  cursor: saving ? "not-allowed" : "pointer",
+                  cursor: (saving || premiumMissing) ? "not-allowed" : "pointer",
                   transition: "background 0.15s",
                   marginTop: 4,
                 }}
               >
                 {saving ? "Saving\u2026" : "Save Case"}
               </button>
+              {premiumMissing && (
+                <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
+                  Enter the premium amount above to close this case.
+                </div>
+              )}
               {saveError && (
                 <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center",
                   background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.3)",
