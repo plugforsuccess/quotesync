@@ -18,15 +18,20 @@ export const LOSS_REASON_CODES = new Set([
   'loss_price', 'loss_switched', 'loss_ineligible', 'loss_other',
 ]);
 
+// Neutral: reached them but nothing was resolved (still working it). Neither a
+// save tactic nor a loss — satisfies the capture requirement, excluded from both
+// save-rate and loss analytics. Mirrors intervention_types.is_neutral.
+export const NEUTRAL_CODES = new Set(['spoke_no_decision']);
+
 // The distinct SAVE tactics already captured across a case's call attempts —
-// the single source of truth for "what we did." Loss reasons are excluded. This
-// is what the close screen reads to show "tactic(s) on record" and to ask which
-// one sealed the save, so the tactic is never re-entered.
+// the single source of truth for "what we did." Loss reasons and neutral
+// "no-decision" tags are excluded. This is what the close screen reads to show
+// "tactic(s) on record" and to ask which one sealed the save.
 export function onRecordSaveTactics(attempts) {
   const set = new Set();
   for (const a of attempts || []) {
     for (const c of a.interventions || []) {
-      if (c && !LOSS_REASON_CODES.has(c)) set.add(c);
+      if (c && !LOSS_REASON_CODES.has(c) && !NEUTRAL_CODES.has(c)) set.add(c);
     }
   }
   return [...set];

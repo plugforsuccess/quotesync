@@ -9,7 +9,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
-import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics } from '../../../lib/interventions';
+import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, LOSS_REASON_CODES } from '../../../lib/interventions';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
 import { productLabel } from '../../../lib/productLabels';
 import { titleCaseName } from '../../../lib/names';
@@ -405,7 +405,15 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
-      if (attemptForm.result === "reached") setReachedLogged(true);
+      if (attemptForm.result === "reached") {
+        setReachedLogged(true);
+        // A loss reason on a reached call means the case is lost — pre-set the
+        // outcome to Lost so the rep just confirms (Close Case). Save tactics
+        // never auto-resolve: a save isn't real until the customer commits.
+        if ((attemptForm.intervention?.interventions || []).some((c) => LOSS_REASON_CODES.has(c))) {
+          setForm((p) => ({ ...p, status: "lost" }));
+        }
+      }
       setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }
@@ -1414,7 +1422,15 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
-      if (attemptForm.result === "reached") setReachedLogged(true);
+      if (attemptForm.result === "reached") {
+        setReachedLogged(true);
+        // A loss reason on a reached call means the case is lost — pre-set the
+        // outcome to Lost so the rep just confirms (Close Case). Save tactics
+        // never auto-resolve: a save isn't real until the customer commits.
+        if ((attemptForm.intervention?.interventions || []).some((c) => LOSS_REASON_CODES.has(c))) {
+          setForm((p) => ({ ...p, status: "lost" }));
+        }
+      }
       setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
       await onUpdate(event.id, {});
     }

@@ -28,10 +28,10 @@ export function useInterventionEffectiveness(agencyId) {
     },
   });
 
-  // Loss reasons explain why a call didn't save — exclude them so they don't
-  // dilute per-tactic save rates or the learned save-lift.
-  const lossCodes = new Set(types.filter((t) => t.is_loss_reason).map((t) => t.code));
-  const rows = (query.data || []).filter((r) => !lossCodes.has(r.tactic));
+  // Loss reasons and neutral "no decision" tags aren't save tactics — exclude
+  // them so they don't dilute per-tactic save rates or the learned save-lift.
+  const nonTactic = new Set(types.filter((t) => t.is_loss_reason || t.is_neutral).map((t) => t.code));
+  const rows = (query.data || []).filter((r) => !nonTactic.has(r.tactic));
   const labelOf = (code) => types.find((t) => t.code === code)?.display_name || code;
 
   const tactics = rows
