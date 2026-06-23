@@ -546,6 +546,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   const premiumMissing =
     (form.status === "saved" && String(savedPremium).trim() === "") ||
     (form.status === "rewritten" && String(form.rewrite_new_premium ?? "").trim() === "");
+  // Button reflects what the selected outcome does: a terminal outcome closes
+  // (leaves the queue); anything still-open just saves progress.
+  const resolveLabel =
+    ["saved","rewritten","lost","requested_cancellation","cancelled"].includes(form.status)
+      ? "Close Case" : "Save Progress";
   // Single source of truth: the save tactics already tagged on the reached-call
   // attempts. The close screen reads these — it never re-asks.
   const onRecordTactics = onRecordSaveTactics(attempts);
@@ -898,7 +903,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 transition: "background 0.15s",
               }}
             >
-              {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
+              {loggingAttempt ? "Logging\u2026" : "+ Log Call"}
             </button>
           </div>
 
@@ -1210,7 +1215,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   marginTop: 4,
                 }}
               >
-                {saving ? "Saving\u2026" : "Save Case"}
+                {saving ? "Saving\u2026" : resolveLabel}
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
@@ -1536,6 +1541,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // The renewal-paid premium feeds the lift/velocity math, so it's required to
   // confirm a renewal — block Save until it's entered.
   const premiumMissing = form.status === "confirmed" && String(savedPremium).trim() === "";
+  // Button reflects what the selected outcome does: a terminal outcome closes
+  // (leaves the queue); anything still-open just saves progress.
+  const resolveLabel = ["confirmed","lost"].includes(form.status) ? "Close Case" : "Save Progress";
   // Single source of truth: the save tactics already tagged on the reached-call
   // attempts. The close screen reads these — it never re-asks.
   const onRecordTactics = onRecordSaveTactics(attempts);
@@ -1892,7 +1900,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 transition: "background 0.15s",
               }}
             >
-              {loggingAttempt ? "Logging\u2026" : "+ Log Attempt"}
+              {loggingAttempt ? "Logging\u2026" : "+ Log Call"}
             </button>
           </div>
 
@@ -2136,7 +2144,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   marginTop: 4,
                 }}
               >
-                {saving ? "Saving\u2026" : "Save Case"}
+                {saving ? "Saving\u2026" : resolveLabel}
               </button>
               {premiumMissing && (
                 <div style={{ fontSize: 12, color: "#F87171", marginTop: 8, textAlign: "center" }}>
