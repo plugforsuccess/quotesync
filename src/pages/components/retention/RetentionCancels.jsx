@@ -362,7 +362,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       attemptForm.result === "reached" &&
       !(attemptForm.intervention?.interventions?.length > 0);
     if (reachedNeedsTactic) {
-      setAttemptError("Save tactic is required — tap what you did to save them before logging a reached call.");
+      setAttemptError("Tag this reached call — what you did to save them, or why you couldn't — before logging it.");
       return;
     }
     setAttemptError(null);
@@ -858,6 +858,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 context={caseContext}
                 filter={tacticFilter}
                 required
+                includeLoss
                 value={attemptForm.intervention}
                 onChange={(iv) => { setAttemptForm(p => ({ ...p, intervention: iv })); if (iv?.interventions?.length) setAttemptError(null); }}
               />
@@ -1326,7 +1327,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       attemptForm.result === "reached" &&
       !(attemptForm.intervention?.interventions?.length > 0);
     if (reachedNeedsTactic) {
-      setAttemptError("Save tactic is required — tap what you did to save them before logging a reached call.");
+      setAttemptError("Tag this reached call — what you did to save them, or why you couldn't — before logging it.");
       return;
     }
     setAttemptError(null);
@@ -1823,6 +1824,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                 context={caseContext}
                 filter={tacticFilter}
                 required
+                includeLoss
                 value={attemptForm.intervention}
                 onChange={(iv) => { setAttemptForm(p => ({ ...p, intervention: iv })); if (iv?.interventions?.length) setAttemptError(null); }}
               />
