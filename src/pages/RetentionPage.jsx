@@ -13,6 +13,7 @@ import UnifiedAtRiskTab from "./components/retention/RetentionCancels";
 import { EventDetailModal, RenewalDetailModal } from "./components/retention/RetentionCancels";
 import EscalationsInbox from "./components/retention/EscalationsInbox";
 import SaveVelocityPanel from "./components/retention/SaveVelocityPanel";
+import RetentionLiftReport from "./components/retention/RetentionLiftReport";
 import RetentionHealthOverview from "./components/retention/RetentionHealthOverview";
 import SaveIntegrityPanel from "./components/retention/SaveIntegrityPanel";
 import RenewalPremiumAudit from "./components/retention/RenewalPremiumAudit";
@@ -503,9 +504,10 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["health", "at_risk", "activity", "velocity", "integrity", "renewal_audit", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["health", "lift", "at_risk", "activity", "velocity", "integrity", "renewal_audit", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "health"     ? "🩺 Health"         :
+             t === "lift"       ? "📈 Retention Lift" :
              t === "at_risk"    ? "⚡ At Risk"        :
              t === "activity"   ? "🗓️ Activity"       :
              t === "velocity"   ? "🏎️ Velocity"       :
@@ -530,6 +532,9 @@ export default function RetentionPage() {
       {/* Tab Content */}
       {activeTab === "health" && (
         <RetentionHealthOverview agencyId={agencyId} kpis={kpis} onNavigate={setActiveTab} />
+      )}
+      {activeTab === "lift" && (
+        <RetentionLiftReport agencyId={agencyId} />
       )}
       {activeTab === "at_risk" && (
         <UnifiedAtRiskTab

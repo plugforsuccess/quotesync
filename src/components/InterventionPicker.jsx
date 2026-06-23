@@ -22,7 +22,7 @@ import { EMPTY_INTERVENTION } from '../lib/interventions';
 // Types tagged `applies_to: 'all'` show everywhere. `filter` is an optional
 // predicate for finer caller-specific rules (e.g. only offer "Reinstated" once
 // the policy has actually cancelled).
-export default function InterventionPicker({ value, onChange, context, filter }) {
+export default function InterventionPicker({ value, onChange, context, filter, required = false }) {
   const { data: allTypes = [] } = useInterventionTypes();
   const types = allTypes
     .filter((t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context)
@@ -47,7 +47,10 @@ export default function InterventionPicker({ value, onChange, context, filter })
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', marginBottom: 8 }}>
-        What did you do to save them? <span style={{ fontWeight: 400 }}>(optional)</span>
+        What did you do to save them?{' '}
+        {required
+          ? <span style={{ fontWeight: 600, color: 'var(--qs-warn, #F59E0B)' }}>(required)</span>
+          : <span style={{ fontWeight: 400 }}>(optional)</span>}
       </div>
 
       {/* Tactic chips */}
@@ -87,13 +90,14 @@ export default function InterventionPicker({ value, onChange, context, filter })
         />
       )}
 
-      {/* Competitor detail — when matching a competitor quote */}
+      {/* Competitor detail — churn intel when the customer was shopping. Both
+          fields are optional: customers don't always share who or how much. */}
       {showCompetitor && (
         <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
           <input
             type="text"
             className="dark-input"
-            placeholder="Competitor (e.g. Geico)"
+            placeholder="Competitor, if named (e.g. Geico)"
             value={v.competitorName}
             onChange={(e) => onChange({ ...v, competitorName: e.target.value })}
             style={{ fontSize: 14, padding: '9px 12px', flex: 1, boxSizing: 'border-box' }}
@@ -102,7 +106,7 @@ export default function InterventionPicker({ value, onChange, context, filter })
             type="number"
             inputMode="decimal"
             className="dark-input"
-            placeholder="Their quote ($)"
+            placeholder="Their quote ($), if shared"
             value={v.competitorQuote}
             onChange={(e) => onChange({ ...v, competitorQuote: e.target.value })}
             style={{ fontSize: 14, padding: '9px 12px', flex: 1, boxSizing: 'border-box' }}

@@ -10,6 +10,7 @@ import { useBookSnapshots } from '../../../hooks/useBookMetrics';
 import { useSaveVelocity } from '../../../hooks/useSaveVelocity';
 import { useOpenEscalations } from '../../../hooks/useEscalations';
 import { useQueueHygiene } from '../../../hooks/useQueueHygiene';
+import { useTacticCaptureRate } from '../../../hooks/useTacticCaptureRate';
 import { SAVE_METHOD_LABEL } from '../../../lib/saveMethods';
 
 // Headline net-retention target. Below this (and a shrinking book) trips red.
@@ -44,6 +45,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
   const { data: velocity } = useSaveVelocity(agencyId, 8);
   const { data: escalations = [] } = useOpenEscalations(agencyId);
   const { data: hygiene } = useQueueHygiene(agencyId, 7);
+  const { data: capture } = useTacticCaptureRate(agencyId);
 
   const { data: parked = { total: 0, reSnoozed: 0 } } = useQuery({
     queryKey: ['parked_cases', agencyId],
@@ -259,6 +261,14 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           <StatCard label="Parked (snoozed)" value={parked.total}
             sub={parked.reSnoozed > 0 ? `${parked.reSnoozed} re-snoozed ≥2×` : 'deferred cases'}
             color={parked.reSnoozed > 0 ? '#F59E0B' : 'var(--qs-dim)'} />
+          <StatCard label="Tactic Capture"
+            value={capture?.captureRate == null ? '—' : `${Math.round(capture.captureRate * 100)}%`}
+            sub={capture?.total ? `${capture.withTactic}/${capture.total} reached calls logged a tactic` : 'no reached calls yet'}
+            color={capture?.captureRate == null ? 'var(--qs-dim)'
+              : capture.captureRate >= 0.8 ? '#10B981'
+              : capture.captureRate >= 0.5 ? '#F59E0B' : '#EF4444'}
+            accent={capture?.captureRate != null && capture.captureRate < 0.8 ? '#F59E0B' : undefined}
+            onClick={() => onNavigate?.('lift')} />
         </div>
       </div>
 
