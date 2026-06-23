@@ -1,44 +1,48 @@
 // src/components/InterventionPicker.jsx
-// Captures WHAT happened on a reached call: the save tactic when we kept them,
-// or — when `includeLoss` is set — the reason we couldn't. Joins later to
-// premium change + outcome to build the retention-elasticity model.
+// Captures WHAT happened on a reached call: the save tactic(s) when we kept them,
+// a single loss reason when we didn't, or a neutral "no decision yet" when
+// nothing was resolved. Single source of truth for the moat dataset.
+//
+// Selection rules (enforced here so a call can't contradict itself):
+//   • Save tactics  — multi-select (you can do several things to save them).
+//   • Loss reason   — single-select, and clears any save/neutral selection.
+//   • No decision   — single-select, and clears everything else.
+// So a call is EITHER one-or-more saves, OR one loss, OR one "no decision".
 //
 // value = {
-//   interventions: string[],     // intervention_types.code[]
-//   offeredPremium:  string|number|'',
-//   competitorName:  string,
-//   competitorQuote: string|number|'',
-//   discountNote:    string,
+//   interventions: string[], offeredPremium, competitorName, competitorQuote, discountNote
 // }
-//
-// Styled with the app's --qs-* CSS vars so it blends into the dark log-call
-// popover.
 
 import { useInterventionTypes } from '../hooks/useInterventionTypes';
 import { EMPTY_INTERVENTION } from '../lib/interventions';
 
-// `context` ('cancel' | 'renewal') scopes the chips: cancel-only tactics (paid
-// past due, reinstated) never show on a renewal call and vice-versa. Types
-// tagged `applies_to: 'all'` show everywhere. `filter` is an optional predicate
-// for finer rules (e.g. only "Reinstated" once the policy has cancelled).
-// `includeLoss` adds the "couldn't save — why" reasons — used on the call-log
-// surface (a reached call can end in a loss), not when recording a save.
+// `includeLoss` adds the "couldn't save — why" reasons and the neutral
+// "no decision" option — used on the call-log surface (a reached call can end in
+// a loss or a non-event), not when recording a save outcome.
 export default function InterventionPicker({ value, onChange, context, filter, required = false, includeLoss = false }) {
   const { data: allTypes = [] } = useInterventionTypes();
   const base = allTypes
     .filter((t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context)
     .filter((t) => !filter || filter(t));
-  const saveTypes = base.filter((t) => !t.is_loss_reason);
+  const saveTypes = base.filter((t) => !t.is_loss_reason && !t.is_neutral);
+  const neutralTypes = includeLoss ? base.filter((t) => t.is_neutral) : [];
   const lossTypes = includeLoss ? base.filter((t) => t.is_loss_reason) : [];
-  const visibleTypes = [...saveTypes, ...lossTypes];
+  const visibleTypes = [...saveTypes, ...neutralTypes, ...lossTypes];
 
   const v = value || EMPTY_INTERVENTION;
   const selected = v.interventions || [];
+  const isSave = (code) => saveTypes.some((t) => t.code === code);
 
-  const toggle = (code) => {
-    const next = selected.includes(code)
-      ? selected.filter((c) => c !== code)
-      : [...selected, code];
+  const toggle = (code, kind) => {
+    let next;
+    if (kind === 'save') {
+      // Multi-select among save tactics; clears any loss/neutral selection.
+      const saves = selected.filter(isSave);
+      next = saves.includes(code) ? saves.filter((c) => c !== code) : [...saves, code];
+    } else {
+      // Loss / neutral are single-select and exclusive of everything else.
+      next = selected.includes(code) ? [] : [code];
+    }
     onChange({ ...v, interventions: next });
   };
 
@@ -49,22 +53,25 @@ export default function InterventionPicker({ value, onChange, context, filter, r
 
   if (visibleTypes.length === 0) return null;
 
-  const chip = (t, loss) => {
+  const chip = (t, kind) => {
     const on = selected.includes(t.code);
-    const onColor = loss ? 'var(--qs-warn, #F59E0B)' : 'var(--qs-success, #10B981)';
-    const onBg = loss ? 'rgba(245,158,11,0.14)' : 'rgba(16,185,129,0.14)';
+    const palette = kind === 'loss'
+      ? { c: 'var(--qs-warn, #F59E0B)', bg: 'rgba(245,158,11,0.14)' }
+      : kind === 'neutral'
+      ? { c: '#9CA3AF', bg: 'rgba(156,163,175,0.16)' }
+      : { c: 'var(--qs-success, #10B981)', bg: 'rgba(16,185,129,0.14)' };
     return (
       <button
         key={t.code}
         type="button"
         title={t.description || ''}
-        onClick={() => toggle(t.code)}
+        onClick={() => toggle(t.code, kind)}
         style={{
           fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7,
           cursor: 'pointer', border: '1px solid',
-          borderColor: on ? onColor : 'var(--qs-border)',
-          background: on ? onBg : 'var(--qs-elevated)',
-          color: on ? onColor : 'var(--qs-dim)',
+          borderColor: on ? palette.c : 'var(--qs-border)',
+          background: on ? palette.bg : 'var(--qs-elevated)',
+          color: on ? palette.c : 'var(--qs-dim)',
         }}
       >
         {t.display_name}
@@ -72,9 +79,19 @@ export default function InterventionPicker({ value, onChange, context, filter, r
     );
   };
 
-  const groupLabel = (text) => (
-    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)', margin: '2px 0 6px' }}>{text}</div>
+  const groupLabel = (text, hint) => (
+    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)', margin: '2px 0 6px' }}>
+      {text}
+      {hint && <span style={{ fontWeight: 400, fontStyle: 'italic' }}> · {hint}</span>}
+    </div>
   );
+  const chipRow = (types, kind, mb) => (
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: mb }}>
+      {types.map((t) => chip(t, kind))}
+    </div>
+  );
+  const grouped = neutralTypes.length > 0 || lossTypes.length > 0;
+  const tailMb = showPremium || showCompetitor ? 12 : 0;
 
   return (
     <div style={{ marginBottom: 16 }}>
@@ -85,19 +102,23 @@ export default function InterventionPicker({ value, onChange, context, filter, r
           : <span style={{ fontWeight: 400 }}>(optional)</span>}
       </div>
 
-      {/* Save tactics */}
-      {includeLoss && lossTypes.length > 0 && groupLabel('Saved them by')}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: lossTypes.length > 0 ? 10 : (showPremium || showCompetitor ? 12 : 0) }}>
-        {saveTypes.map((t) => chip(t, false))}
-      </div>
+      {/* Save tactics (multi-select) */}
+      {grouped && groupLabel('Saved them by', 'select all that apply')}
+      {chipRow(saveTypes, 'save', grouped ? 10 : tailMb)}
 
-      {/* Loss reasons — only on the call-log surface */}
+      {/* Neutral — reached, nothing resolved */}
+      {neutralTypes.length > 0 && (
+        <>
+          {groupLabel('No decision')}
+          {chipRow(neutralTypes, 'neutral', 10)}
+        </>
+      )}
+
+      {/* Loss reasons (single-select) */}
       {lossTypes.length > 0 && (
         <>
-          {groupLabel("Couldn't save — why")}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: showPremium || showCompetitor ? 12 : 0 }}>
-            {lossTypes.map((t) => chip(t, true))}
-          </div>
+          {groupLabel("Couldn't save — why", 'pick one')}
+          {chipRow(lossTypes, 'loss', tailMb)}
         </>
       )}
 

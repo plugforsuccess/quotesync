@@ -1,5 +1,5 @@
 // src/lib/saveMethods.js
-import { LOSS_REASON_CODES } from './interventions';
+import { LOSS_REASON_CODES, NEUTRAL_CODES } from './interventions';
 // "What saved the customer" — the primary tactic captured at the moment a
 // renewal is confirmed or a cancellation is saved. Stored on the case
 // (renewal_cases.save_method / pending_cases.save_method) so saves are
@@ -80,8 +80,10 @@ const INTERVENTION_PRIORITY = [
 // save them?" chips), return the single "headline" case-level save_method.
 // Null when no tactic was recorded.
 export function saveMethodFromCodes(codes) {
-  // Loss reasons explain why a call DIDN'T save — never a save_method headline.
-  const arr = Array.isArray(codes) ? codes.filter(c => c && !LOSS_REASON_CODES.has(c)) : [];
+  // Loss reasons and neutral "no decision" tags never form a save_method headline.
+  const arr = Array.isArray(codes)
+    ? codes.filter(c => c && !LOSS_REASON_CODES.has(c) && !NEUTRAL_CODES.has(c))
+    : [];
   if (arr.length === 0) return null;
   const primary = INTERVENTION_PRIORITY.find(c => arr.includes(c)) || arr[0];
   return INTERVENTION_TO_SAVE_METHOD[primary] || 'other';
