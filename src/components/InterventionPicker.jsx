@@ -1,7 +1,7 @@
 // src/components/InterventionPicker.jsx
-// Captures WHAT the agent did to save the customer (the save tactic), so it can
-// later be joined to premium change + outcome to build the retention-elasticity
-// model. Controlled component — see `value` shape below.
+// Captures WHAT happened on a reached call: the save tactic when we kept them,
+// or — when `includeLoss` is set — the reason we couldn't. Joins later to
+// premium change + outcome to build the retention-elasticity model.
 //
 // value = {
 //   interventions: string[],     // intervention_types.code[]
@@ -12,21 +12,26 @@
 // }
 //
 // Styled with the app's --qs-* CSS vars so it blends into the dark log-call
-// popover. Optional by design — never blocks saving.
+// popover.
 
 import { useInterventionTypes } from '../hooks/useInterventionTypes';
 import { EMPTY_INTERVENTION } from '../lib/interventions';
 
-// `context` ('cancel' | 'renewal') scopes the tactic chips: cancel-only tactics
-// (paid past due, reinstated) never show on a renewal call and vice-versa.
-// Types tagged `applies_to: 'all'` show everywhere. `filter` is an optional
-// predicate for finer caller-specific rules (e.g. only offer "Reinstated" once
-// the policy has actually cancelled).
-export default function InterventionPicker({ value, onChange, context, filter, required = false }) {
+// `context` ('cancel' | 'renewal') scopes the chips: cancel-only tactics (paid
+// past due, reinstated) never show on a renewal call and vice-versa. Types
+// tagged `applies_to: 'all'` show everywhere. `filter` is an optional predicate
+// for finer rules (e.g. only "Reinstated" once the policy has cancelled).
+// `includeLoss` adds the "couldn't save — why" reasons — used on the call-log
+// surface (a reached call can end in a loss), not when recording a save.
+export default function InterventionPicker({ value, onChange, context, filter, required = false, includeLoss = false }) {
   const { data: allTypes = [] } = useInterventionTypes();
-  const types = allTypes
+  const base = allTypes
     .filter((t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context)
     .filter((t) => !filter || filter(t));
+  const saveTypes = base.filter((t) => !t.is_loss_reason);
+  const lossTypes = includeLoss ? base.filter((t) => t.is_loss_reason) : [];
+  const visibleTypes = [...saveTypes, ...lossTypes];
+
   const v = value || EMPTY_INTERVENTION;
   const selected = v.interventions || [];
 
@@ -37,47 +42,66 @@ export default function InterventionPicker({ value, onChange, context, filter, r
     onChange({ ...v, interventions: next });
   };
 
-  // Show the extra structured fields only when a selected tactic asks for them.
-  const selectedTypes = types.filter((t) => selected.includes(t.code));
+  // Show the extra structured fields only when a selected chip asks for them.
+  const selectedTypes = visibleTypes.filter((t) => selected.includes(t.code));
   const showPremium = selectedTypes.some((t) => t.captures_premium);
   const showCompetitor = selectedTypes.some((t) => t.captures_competitor);
 
-  if (types.length === 0) return null;
+  if (visibleTypes.length === 0) return null;
+
+  const chip = (t, loss) => {
+    const on = selected.includes(t.code);
+    const onColor = loss ? 'var(--qs-warn, #F59E0B)' : 'var(--qs-success, #10B981)';
+    const onBg = loss ? 'rgba(245,158,11,0.14)' : 'rgba(16,185,129,0.14)';
+    return (
+      <button
+        key={t.code}
+        type="button"
+        title={t.description || ''}
+        onClick={() => toggle(t.code)}
+        style={{
+          fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7,
+          cursor: 'pointer', border: '1px solid',
+          borderColor: on ? onColor : 'var(--qs-border)',
+          background: on ? onBg : 'var(--qs-elevated)',
+          color: on ? onColor : 'var(--qs-dim)',
+        }}
+      >
+        {t.display_name}
+      </button>
+    );
+  };
+
+  const groupLabel = (text) => (
+    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--qs-muted)', margin: '2px 0 6px' }}>{text}</div>
+  );
 
   return (
     <div style={{ marginBottom: 16 }}>
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', marginBottom: 8 }}>
-        What did you do to save them?{' '}
+        {includeLoss ? 'What happened on this call?' : 'What did you do to save them?'}{' '}
         {required
           ? <span style={{ fontWeight: 600, color: 'var(--qs-warn, #F59E0B)' }}>(required)</span>
           : <span style={{ fontWeight: 400 }}>(optional)</span>}
       </div>
 
-      {/* Tactic chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: showPremium || showCompetitor ? 12 : 0 }}>
-        {types.map((t) => {
-          const on = selected.includes(t.code);
-          return (
-            <button
-              key={t.code}
-              type="button"
-              title={t.description || ''}
-              onClick={() => toggle(t.code)}
-              style={{
-                fontSize: 12, fontWeight: 600, padding: '6px 10px', borderRadius: 7,
-                cursor: 'pointer', border: '1px solid',
-                borderColor: on ? 'var(--qs-success, #10B981)' : 'var(--qs-border)',
-                background: on ? 'rgba(16,185,129,0.14)' : 'var(--qs-elevated)',
-                color: on ? 'var(--qs-success, #10B981)' : 'var(--qs-dim)',
-              }}
-            >
-              {t.display_name}
-            </button>
-          );
-        })}
+      {/* Save tactics */}
+      {includeLoss && lossTypes.length > 0 && groupLabel('Saved them by')}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: lossTypes.length > 0 ? 10 : (showPremium || showCompetitor ? 12 : 0) }}>
+        {saveTypes.map((t) => chip(t, false))}
       </div>
 
-      {/* Offered premium — for re-quote / bundle / competitor-match tactics */}
+      {/* Loss reasons — only on the call-log surface */}
+      {lossTypes.length > 0 && (
+        <>
+          {groupLabel("Couldn't save — why")}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: showPremium || showCompetitor ? 12 : 0 }}>
+            {lossTypes.map((t) => chip(t, true))}
+          </div>
+        </>
+      )}
+
+      {/* Offered premium — re-quote / bundle / company-transfer style tactics */}
       {showPremium && (
         <input
           type="number"

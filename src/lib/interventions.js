@@ -11,6 +11,13 @@ export const EMPTY_INTERVENTION = {
   discountNote: '',
 };
 
+// Codes that record WHY a reached call did NOT save the customer (not a save
+// tactic). They satisfy the "tag the reached call" requirement and are kept out
+// of per-tactic save-rate analytics. Mirrors intervention_types.is_loss_reason.
+export const LOSS_REASON_CODES = new Set([
+  'loss_price', 'loss_switched', 'loss_ineligible', 'loss_other',
+]);
+
 // Normalizes the picker's form value into the attempt-table column shape.
 // Returns only populated fields so untouched attempts stay clean (all-NULL).
 export function interventionInsertFields(value) {
