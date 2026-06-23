@@ -81,7 +81,7 @@ export default function InterventionPicker({ value, onChange, context, filter, r
       <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-subtle)', marginBottom: 8 }}>
         {includeLoss ? 'What happened on this call?' : 'What did you do to save them?'}{' '}
         {required
-          ? <span style={{ fontWeight: 600, color: 'var(--qs-warn, #F59E0B)' }}>(required)</span>
+          ? <span style={{ fontWeight: 700, color: '#F87171' }} title="required">*</span>
           : <span style={{ fontWeight: 400 }}>(optional)</span>}
       </div>
 
