@@ -23,6 +23,11 @@ export const LOSS_REASON_CODES = new Set([
 // save-rate and loss analytics. Mirrors intervention_types.is_neutral.
 export const NEUTRAL_CODES = new Set(['spoke_no_decision']);
 
+// Positive-but-not-a-save: the customer was already happy and simply confirmed
+// the renewal. Stored is_neutral (excluded from save-tactic analytics), but the
+// renewal resolves as renewed-NOT-credited so it never counts as a rep save.
+export const HAPPY_CODES = new Set(['happy_with_policy']);
+
 // The distinct SAVE tactics already captured across a case's call attempts —
 // the single source of truth for "what we did." Loss reasons and neutral
 // "no-decision" tags are excluded. This is what the close screen reads to show
