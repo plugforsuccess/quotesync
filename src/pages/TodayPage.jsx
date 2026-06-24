@@ -2,7 +2,7 @@
 // logged-in user. The single "what to dial next" view that ignores the
 // persona switcher (cross-role by design).
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
@@ -255,9 +255,24 @@ export default function TodayPage() {
 
   const callsToday   = todayActivity.worked;
   const reachedToday = todayActivity.reached;
-  const targetHit    = callsToday >= dailyTarget;
-  const progressPct  = Math.min(100, Math.round((callsToday / dailyTarget) * 100));
-  const reachedPct   = Math.min(100, Math.round((reachedToday / dailyTarget) * 100));
+
+  // Today's priority focus set — a snapshot of the rep's top-N cases taken once
+  // per day (see snapshot effect below), so "/8" means a FIXED list of priority
+  // cases and a worked case stays counted after it's closed.
+  const { data: focus = [], isLoading: focusLoading } = useQuery({
+    queryKey: ['daily_focus', employeeId, todayStr],
+    enabled: !!employeeId,
+    staleTime: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rep_daily_focus')
+        .select('case_type, case_id, rank')
+        .eq('employee_id', employeeId)
+        .eq('focus_date', todayStr);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 
   // Saved today — a motivational tally of wins (NOT a target, no denominator, so
   // it can't pressure padded saves). Hidden when zero so a no-save day never
@@ -313,6 +328,43 @@ export default function TodayPage() {
 
   const focused = ranked.slice(0, dailyTarget);
   const remainder = ranked.length - focused.length;
+
+  // Snapshot today's top-N priority cases once, the first time the queue loads
+  // with no focus set yet for today. Idempotent (unique index + ignoreDuplicates),
+  // so a second tab or a reload won't double-insert.
+  const snapshotDone = useRef(false);
+  useEffect(() => {
+    if (!employeeId || focusLoading || focus.length > 0) return;
+    if (cancelsLoading || renewalsLoading || ranked.length === 0) return;
+    if (snapshotDone.current) return;
+    snapshotDone.current = true;
+    const rows = ranked.slice(0, dailyTarget).map((c, i) => ({
+      agency_id: c.agency_id ?? null,
+      employee_id: employeeId,
+      focus_date: todayStr,
+      case_type: c._kind,
+      case_id: c.id,
+      rank: i + 1,
+    }));
+    supabase
+      .from('rep_daily_focus')
+      .upsert(rows, { onConflict: 'employee_id,focus_date,case_type,case_id', ignoreDuplicates: true })
+      .then(() => queryClient.invalidateQueries({ queryKey: ['daily_focus', employeeId, todayStr] }));
+  }, [employeeId, focusLoading, focus.length, cancelsLoading, renewalsLoading, ranked, dailyTarget, todayStr, queryClient]);
+
+  // Progress = how many of the FIXED focus set the rep has handled today —
+  // worked (an attempt logged today) or cleared (resolved/snoozed out of the
+  // active list). A handled case stays counted whether or not it's still open,
+  // so closing your top priority never drops the bar.
+  const focusTotal = focus.length || dailyTarget;
+  const focusHandled = focus.filter((f) => {
+    const arr = f.case_type === 'cancel' ? cancels : renewals;
+    const c = arr.find((x) => x.id === f.case_id);
+    if (!c) return true; // gone from the active list → resolved/cleared = handled
+    return c.last_attempt_at?.slice(0, 10) === todayStr; // still open → worked today?
+  }).length;
+  const targetHit   = focus.length > 0 && focusHandled >= focusTotal;
+  const progressPct = Math.min(100, Math.round((focusHandled / focusTotal) * 100));
 
   // Waiting to hear back — voicemails left + scheduled callbacks, so the
   // follow-up Tracy is owed isn't buried in the ranked dial list. Soonest
@@ -399,34 +451,28 @@ export default function TodayPage() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8,
         }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-dim)' }}>
-            Customers worked today
+            Today's focus
           </div>
           <div style={{
             fontSize: 18, fontWeight: 800, fontFamily: "'DM Mono', monospace",
             color: targetHit ? '#10B981' : 'var(--qs-bright)',
           }}>
-            {callsToday}
+            {focusHandled}
             <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--qs-muted)', marginLeft: 3 }}>
-              / {dailyTarget}
+              / {focusTotal}
             </span>
           </div>
         </div>
-        {/* Two-tone: solid green = reached (real conversations), lighter = worked
-            but not yet reached (no-answer / voicemail). */}
-        <div style={{ position: 'relative', height: 6, borderRadius: 3, background: 'var(--qs-card)', overflow: 'hidden' }}>
+        {/* Progress through today's fixed priority list (snapshot at start of day). */}
+        <div style={{ height: 6, borderRadius: 3, background: 'var(--qs-card)', overflow: 'hidden' }}>
           <div style={{
-            position: 'absolute', top: 0, left: 0, height: '100%', width: `${progressPct}%`, borderRadius: 3,
-            background: targetHit ? '#10B98155' : progressPct >= 50 ? '#3B82F655' : '#F59E0B55',
+            height: '100%', width: `${progressPct}%`, borderRadius: 3,
+            background: targetHit ? '#10B981' : progressPct >= 50 ? '#3B82F6' : '#F59E0B',
             transition: 'width 0.4s ease',
-          }} />
-          <div style={{
-            position: 'absolute', top: 0, left: 0, height: '100%', width: `${reachedPct}%`, borderRadius: 3,
-            background: '#10B981', transition: 'width 0.4s ease',
           }} />
         </div>
         <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-          <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} reached</span>
-          {callsToday > reachedToday && <> · {callsToday - reachedToday} attempted, no answer</>}
+          {callsToday} worked · <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} reached</span> today
         </div>
         {savedToday.count > 0 && (
           <div style={{ fontSize: 12, color: '#10B981', fontWeight: 700, marginTop: 6 }}>
@@ -435,7 +481,7 @@ export default function TodayPage() {
         )}
         {targetHit && (
           <div style={{ fontSize: 11, color: '#10B981', marginTop: 6, fontWeight: 600 }}>
-            ✓ Daily target reached — you can stop here or work ahead.
+            ✓ Priority list cleared — you can stop here or work ahead.
           </div>
         )}
       </div>
