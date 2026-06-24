@@ -14,7 +14,7 @@
 // }
 
 import { useInterventionTypes } from '../hooks/useInterventionTypes';
-import { EMPTY_INTERVENTION } from '../lib/interventions';
+import { EMPTY_INTERVENTION, HAPPY_CODES } from '../lib/interventions';
 
 // `includeLoss` adds the "couldn't save — why" reasons and the neutral
 // "no decision" option — used on the call-log surface (a reached call can end in
@@ -25,9 +25,12 @@ export default function InterventionPicker({ value, onChange, context, filter, r
     .filter((t) => !t.applies_to || t.applies_to === 'all' || t.applies_to === context)
     .filter((t) => !filter || filter(t));
   const saveTypes = base.filter((t) => !t.is_loss_reason && !t.is_neutral);
-  const neutralTypes = includeLoss ? base.filter((t) => t.is_neutral) : [];
+  // "Happy with policy" is stored is_neutral but is a positive confirmation, so
+  // it gets its own group rather than sitting under "No decision".
+  const happyTypes = includeLoss ? base.filter((t) => HAPPY_CODES.has(t.code)) : [];
+  const neutralTypes = includeLoss ? base.filter((t) => t.is_neutral && !HAPPY_CODES.has(t.code)) : [];
   const lossTypes = includeLoss ? base.filter((t) => t.is_loss_reason) : [];
-  const visibleTypes = [...saveTypes, ...neutralTypes, ...lossTypes];
+  const visibleTypes = [...saveTypes, ...happyTypes, ...neutralTypes, ...lossTypes];
 
   const v = value || EMPTY_INTERVENTION;
   const selected = v.interventions || [];
@@ -90,7 +93,7 @@ export default function InterventionPicker({ value, onChange, context, filter, r
       {types.map((t) => chip(t, kind))}
     </div>
   );
-  const grouped = neutralTypes.length > 0 || lossTypes.length > 0;
+  const grouped = happyTypes.length > 0 || neutralTypes.length > 0 || lossTypes.length > 0;
   const tailMb = showPremium || showCompetitor ? 12 : 0;
 
   return (
@@ -105,6 +108,14 @@ export default function InterventionPicker({ value, onChange, context, filter, r
       {/* Save tactics (multi-select) */}
       {grouped && groupLabel('Saved them by', 'select all that apply')}
       {chipRow(saveTypes, 'save', grouped ? 10 : tailMb)}
+
+      {/* Happy with policy — positive, but not a save */}
+      {happyTypes.length > 0 && (
+        <>
+          {groupLabel('Renewing — no save needed')}
+          {chipRow(happyTypes, 'neutral', 10)}
+        </>
+      )}
 
       {/* Neutral — reached, nothing resolved */}
       {neutralTypes.length > 0 && (

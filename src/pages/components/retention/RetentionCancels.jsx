@@ -9,7 +9,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
-import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, LOSS_REASON_CODES } from '../../../lib/interventions';
+import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
 import { productLabel } from '../../../lib/productLabels';
 import { titleCaseName } from '../../../lib/names';
@@ -1424,10 +1424,30 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       setAttempts(data || []);
       if (attemptForm.result === "reached") {
         setReachedLogged(true);
+        const tags = attemptForm.intervention?.interventions || [];
+        // Happy with policy → renewed but NOT a save. Resolve as auto_resolved
+        // (renewed, observed, not credited) and close — same bucket as an
+        // already-paid renewal, so it never lands in the save tally.
+        if (tags.some((c) => HAPPY_CODES.has(c))) {
+          await onUpdate(event.id, {
+            status: "auto_resolved",
+            final_outcome: "renewed",
+            outcome_source: "observed",
+            final_outcome_set_by: currentEmployeeId,
+            final_outcome_set_at: new Date().toISOString(),
+            resolution_date: new Date().toISOString().slice(0, 10),
+            closed_by_id: currentEmployeeId,
+            saved_premium: event.premium ?? null,
+          });
+          setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+          setLoggingAttempt(false);
+          onClose();
+          return;
+        }
         // A loss reason on a reached call means the case is lost — pre-set the
         // outcome to Lost so the rep just confirms (Close Case). Save tactics
         // never auto-resolve: a save isn't real until the customer commits.
-        if ((attemptForm.intervention?.interventions || []).some((c) => LOSS_REASON_CODES.has(c))) {
+        if (tags.some((c) => LOSS_REASON_CODES.has(c))) {
           setForm((p) => ({ ...p, status: "lost" }));
         }
       }
