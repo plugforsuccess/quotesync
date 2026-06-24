@@ -93,6 +93,7 @@ export default function TodayPage() {
     }
     queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
     queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+    queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
     if (orgId) {
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
     }
@@ -109,6 +110,7 @@ export default function TodayPage() {
     }
     queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
     queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+    queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
     if (orgId) {
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
     }
@@ -138,6 +140,7 @@ export default function TodayPage() {
         }, () => {
           queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
           queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
         })
         .on('postgres_changes', {
           event: '*',
@@ -147,6 +150,7 @@ export default function TodayPage() {
         }, () => {
           queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
           queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
@@ -254,6 +258,41 @@ export default function TodayPage() {
   const targetHit    = callsToday >= dailyTarget;
   const progressPct  = Math.min(100, Math.round((callsToday / dailyTarget) * 100));
   const reachedPct   = Math.min(100, Math.round((reachedToday / dailyTarget) * 100));
+
+  // Saved today — a motivational tally of wins (NOT a target, no denominator, so
+  // it can't pressure padded saves). Hidden when zero so a no-save day never
+  // reads as failure. Counts cancel saves/rewrites + confirmed renewals this rep
+  // closed today, with premium preserved.
+  const { data: savedToday = { count: 0, premium: 0 } } = useQuery({
+    queryKey: ['today_saves', employeeId, todayStr],
+    enabled: !!employeeId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const [pc, rc] = await Promise.all([
+        supabase.from('pending_cases')
+          .select('saved_premium, premium_at_risk')
+          .eq('closed_by_id', employeeId)
+          .eq('resolution_date', todayStr)
+          .in('status', ['saved', 'rewritten']),
+        supabase.from('renewal_cases')
+          .select('saved_premium, premium')
+          .eq('closed_by_id', employeeId)
+          .eq('resolution_date', todayStr)
+          .eq('status', 'confirmed'),
+      ]);
+      if (pc.error) throw pc.error;
+      if (rc.error) throw rc.error;
+      const cancelRows = pc.data || [];
+      const renewalRows = rc.data || [];
+      const premium =
+        cancelRows.reduce((s, r) => s + Number(r.saved_premium ?? r.premium_at_risk ?? 0), 0) +
+        renewalRows.reduce((s, r) => s + Number(r.saved_premium ?? r.premium ?? 0), 0);
+      return { count: cancelRows.length + renewalRows.length, premium };
+    },
+  });
+  const savedPremiumLabel = savedToday.premium >= 1000
+    ? `$${(savedToday.premium / 1000).toFixed(1)}k`
+    : `$${Math.round(savedToday.premium)}`;
 
   const ranked = useMemo(() => {
     const items = [
@@ -389,6 +428,11 @@ export default function TodayPage() {
           <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} reached</span>
           {callsToday > reachedToday && <> · {callsToday - reachedToday} attempted, no answer</>}
         </div>
+        {savedToday.count > 0 && (
+          <div style={{ fontSize: 12, color: '#10B981', fontWeight: 700, marginTop: 6 }}>
+            🎉 {savedToday.count} saved · {savedPremiumLabel} kept today
+          </div>
+        )}
         {targetHit && (
           <div style={{ fontSize: 11, color: '#10B981', marginTop: 6, fontWeight: 600 }}>
             ✓ Daily target reached — you can stop here or work ahead.
