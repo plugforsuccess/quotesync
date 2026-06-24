@@ -92,6 +92,7 @@ export default function TodayPage() {
       if (error) return error;
     }
     queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
+    queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
     if (orgId) {
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
     }
@@ -107,6 +108,7 @@ export default function TodayPage() {
       if (error) return error;
     }
     queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
+    queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
     if (orgId) {
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
     }
@@ -135,6 +137,7 @@ export default function TodayPage() {
           filter: `assigned_to_id=eq.${employeeId}`,
         }, () => {
           queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
         })
         .on('postgres_changes', {
           event: '*',
@@ -143,6 +146,7 @@ export default function TodayPage() {
           filter: `assigned_to_id=eq.${employeeId}`,
         }, () => {
           queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
         })
         .subscribe((status) => {
           if (status === 'SUBSCRIBED') {
@@ -207,14 +211,49 @@ export default function TodayPage() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const dailyTarget = employee?.daily_call_target ?? 8;
 
-  const callsToday = useMemo(() => {
-    const c = cancels.filter(x  => x.last_attempt_at?.slice(0, 10) === todayStr).length;
-    const r = renewals.filter(x => x.last_attempt_at?.slice(0, 10) === todayStr).length;
-    return c + r;
-  }, [cancels, renewals, todayStr]);
+  // Real call activity today, counted straight from the attempt log so it is
+  // independent of case status — closing a case never lowers it, and re-dialing
+  // one customer doesn't pad it (distinct customers). `reached` is the quality
+  // layer: actual conversations, not just dials. Synthetic close-time rows
+  // (auto_logged) are excluded.
+  const { data: todayActivity = { worked: 0, reached: 0 } } = useQuery({
+    queryKey: ['today_call_activity', employeeId, todayStr],
+    enabled: !!employeeId,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const dayStart = `${todayStr}T00:00:00.000Z`;
+      const grab = (table, caseCol) => supabase
+        .from(table)
+        .select(`${caseCol}, result`)
+        .eq('employee_id', employeeId)
+        .eq('auto_logged', false)
+        .gte('attempted_at', dayStart);
+      const [ca, ra] = await Promise.all([
+        grab('pending_cancel_attempts', 'pending_case_id'),
+        grab('renewal_attempts', 'renewal_case_id'),
+      ]);
+      if (ca.error) throw ca.error;
+      if (ra.error) throw ra.error;
+      const worked = new Set();
+      const reached = new Set();
+      const tally = (rows, col, prefix) => {
+        for (const a of rows || []) {
+          const k = prefix + a[col];
+          worked.add(k);
+          if (a.result === 'reached') reached.add(k);
+        }
+      };
+      tally(ca.data, 'pending_case_id', 'c');
+      tally(ra.data, 'renewal_case_id', 'r');
+      return { worked: worked.size, reached: reached.size };
+    },
+  });
 
-  const targetHit   = callsToday >= dailyTarget;
-  const progressPct = Math.min(100, Math.round((callsToday / dailyTarget) * 100));
+  const callsToday   = todayActivity.worked;
+  const reachedToday = todayActivity.reached;
+  const targetHit    = callsToday >= dailyTarget;
+  const progressPct  = Math.min(100, Math.round((callsToday / dailyTarget) * 100));
+  const reachedPct   = Math.min(100, Math.round((reachedToday / dailyTarget) * 100));
 
   const ranked = useMemo(() => {
     const items = [
@@ -321,7 +360,7 @@ export default function TodayPage() {
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8,
         }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-dim)' }}>
-            Today's calls
+            Customers worked today
           </div>
           <div style={{
             fontSize: 18, fontWeight: 800, fontFamily: "'DM Mono', monospace",
@@ -333,12 +372,22 @@ export default function TodayPage() {
             </span>
           </div>
         </div>
-        <div style={{ height: 6, borderRadius: 3, background: 'var(--qs-card)', overflow: 'hidden' }}>
+        {/* Two-tone: solid green = reached (real conversations), lighter = worked
+            but not yet reached (no-answer / voicemail). */}
+        <div style={{ position: 'relative', height: 6, borderRadius: 3, background: 'var(--qs-card)', overflow: 'hidden' }}>
           <div style={{
-            height: '100%', width: `${progressPct}%`, borderRadius: 3,
-            background: targetHit ? '#10B981' : progressPct >= 50 ? '#3B82F6' : '#F59E0B',
+            position: 'absolute', top: 0, left: 0, height: '100%', width: `${progressPct}%`, borderRadius: 3,
+            background: targetHit ? '#10B98155' : progressPct >= 50 ? '#3B82F655' : '#F59E0B55',
             transition: 'width 0.4s ease',
           }} />
+          <div style={{
+            position: 'absolute', top: 0, left: 0, height: '100%', width: `${reachedPct}%`, borderRadius: 3,
+            background: '#10B981', transition: 'width 0.4s ease',
+          }} />
+        </div>
+        <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
+          <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} reached</span>
+          {callsToday > reachedToday && <> · {callsToday - reachedToday} attempted, no answer</>}
         </div>
         {targetHit && (
           <div style={{ fontSize: 11, color: '#10B981', marginTop: 6, fontWeight: 600 }}>
