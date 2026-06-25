@@ -48,7 +48,7 @@ function CopyButton({ text, label = 'email' }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(text);
-    } catch (_) {
+    } catch {
       // Fallback for older browsers / non-secure contexts where the
       // Clipboard API is unavailable.
       const ta = document.createElement('textarea');
@@ -57,7 +57,7 @@ function CopyButton({ text, label = 'email' }) {
       ta.style.opacity = '0';
       document.body.appendChild(ta);
       ta.select();
-      try { document.execCommand('copy'); } catch (_) {}
+      try { document.execCommand('copy'); } catch { /* ignore */ }
       document.body.removeChild(ta);
     }
     setCopied(true);
@@ -380,6 +380,14 @@ export default function HouseholdDetailPage() {
                     fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
                     background: `${cfg.color}1a`, border: `1px solid ${cfg.color}40`, color: cfg.color,
                   }}>{cfg.label}</span>
+                  {t.product && (
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
+                      background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-dim)',
+                    }}>
+                      {label(t.product)}{t.policy_no ? ` · ${t.policy_no}` : ''}
+                    </span>
+                  )}
                   <span style={{ color: 'var(--qs-text)' }}>
                     {(t.result || 'attempt').replace(/_/g, ' ')}
                     {t.method && t.method !== 'phone' ? ` · ${t.method}` : ''}
