@@ -14,6 +14,7 @@ import { useServiceTasks } from '../hooks/useServiceTasks';
 import { usePersona } from '../hooks/usePersona';
 import { hatForRoles } from '../config/navConfig';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
+import TodayFocusModal from './components/employee/TodayFocusModal';
 import { TIER_ORDER } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
@@ -76,6 +77,7 @@ export default function TodayPage() {
 
   const [selectedCancel,  setSelectedCancel]  = useState(null);
   const [selectedRenewal, setSelectedRenewal] = useState(null);
+  const [showActivity,    setShowActivity]    = useState(false);
 
   // Service-batch glance — open admin tasks waiting for the afternoon block.
   const { tasks: serviceTasks = [], overdue: serviceOverdue = 0 } = useServiceTasks(orgId);
@@ -442,16 +444,19 @@ export default function TodayPage() {
         <ProducerGoalProgress compact orgId={orgId} employee={employee} />
       )}
 
-      {/* Progress */}
-      <div style={{
-        background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
-        borderRadius: 10, padding: '14px 18px', marginBottom: 18,
-      }}>
+      {/* Progress — click to see who was worked / reached / saved today */}
+      <div
+        onClick={() => setShowActivity(true)}
+        title="See who you worked, reached, and saved today"
+        style={{
+          background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+          borderRadius: 10, padding: '14px 18px', marginBottom: 18, cursor: 'pointer',
+        }}>
         <div style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8,
         }}>
           <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--qs-dim)' }}>
-            Today's focus
+            Today's focus <span style={{ color: 'var(--qs-muted)', fontWeight: 400 }}>· tap to see who ›</span>
           </div>
           <div style={{
             fontSize: 18, fontWeight: 800, fontFamily: "'DM Mono', monospace",
@@ -696,6 +701,14 @@ export default function TodayPage() {
           canReassign={false}
         />,
         document.body
+      )}
+
+      {showActivity && (
+        <TodayFocusModal
+          employeeId={employeeId}
+          todayStr={todayStr}
+          onClose={() => setShowActivity(false)}
+        />
       )}
     </div>
   );
