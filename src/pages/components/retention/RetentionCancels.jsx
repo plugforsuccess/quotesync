@@ -280,7 +280,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // Whether a reached attempt has been logged this session — unlocks Case
   // Management (the outcome picker) once the rep has actually spoken to them.
   const [reachedLogged, setReachedLogged] = useState(false);
-  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION, direction: "outbound" });
   // Error shown when a reached call is logged without the (now required) save
   // tactic — the moat field is captured here, at the moment of the call.
   const [attemptError, setAttemptError] = useState(null);
@@ -381,6 +381,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       method:          attemptForm.method,
       result:          attemptForm.result,
       note:            attemptForm.note || null,
+      ...(attemptForm.direction === "inbound" ? { direction: "inbound" } : {}),
       ...(attemptForm.result === "reached" ? interventionInsertFields(attemptForm.intervention) : {}),
     });
     if (!error) {
@@ -415,7 +416,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
           setForm((p) => ({ ...p, status: "lost" }));
         }
       }
-      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION, direction: "outbound" });
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
@@ -835,6 +836,22 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             borderRadius: 10, padding: "14px 16px",
             marginBottom: 12,
           }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              {[{ v: "outbound", label: "📞 We called" }, { v: "inbound", label: "📲 They called (inbound)" }].map(opt => {
+                const on = attemptForm.direction === opt.v;
+                return (
+                  <button key={opt.v} type="button"
+                    onClick={() => setAttemptForm(p => ({ ...p, direction: opt.v }))}
+                    style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: "7px 8px", borderRadius: 7,
+                      cursor: "pointer", border: "1px solid",
+                      borderColor: on ? "#3B82F6" : "var(--qs-border)",
+                      background: on ? "rgba(59,130,246,0.14)" : "var(--qs-elevated)",
+                      color: on ? "#60A5FA" : "var(--qs-dim)", fontFamily: "inherit" }}>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
               <div>
                 <label className="dark-label">Method</label>
@@ -1319,7 +1336,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // Whether a reached attempt has been logged this session — unlocks Case
   // Management (the outcome picker) once the rep has actually spoken to them.
   const [reachedLogged, setReachedLogged] = useState(false);
-  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+  const [attemptForm, setAttemptForm] = useState({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION, direction: "outbound" });
   // Error shown when a reached call is logged without the (now required) save
   // tactic — the moat field is captured here, at the moment of the call.
   const [attemptError, setAttemptError] = useState(null);
@@ -1410,6 +1427,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       method: attemptForm.method,
       result: attemptForm.result,
       note: attemptForm.note || null,
+      ...(attemptForm.direction === "inbound" ? { direction: "inbound" } : {}),
       ...(attemptForm.result === "reached" ? interventionInsertFields(attemptForm.intervention) : {}),
     });
     if (!error) {
@@ -1465,7 +1483,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             closed_by_id: currentEmployeeId,
             saved_premium: null,
           });
-          setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+          setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION, direction: "outbound" });
           setLoggingAttempt(false);
           onClose();
           return;
@@ -1477,7 +1495,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
           setForm((p) => ({ ...p, status: "lost" }));
         }
       }
-      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
+      setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION, direction: "outbound" });
       await onUpdate(event.id, {});
     }
     setLoggingAttempt(false);
@@ -1908,6 +1926,22 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             borderRadius: 10, padding: "14px 16px",
             marginBottom: 12,
           }}>
+            <div style={{ display: "flex", gap: 6, marginBottom: 10 }}>
+              {[{ v: "outbound", label: "📞 We called" }, { v: "inbound", label: "📲 They called (inbound)" }].map(opt => {
+                const on = attemptForm.direction === opt.v;
+                return (
+                  <button key={opt.v} type="button"
+                    onClick={() => setAttemptForm(p => ({ ...p, direction: opt.v }))}
+                    style={{ flex: 1, fontSize: 12, fontWeight: 700, padding: "7px 8px", borderRadius: 7,
+                      cursor: "pointer", border: "1px solid",
+                      borderColor: on ? "#3B82F6" : "var(--qs-border)",
+                      background: on ? "rgba(59,130,246,0.14)" : "var(--qs-elevated)",
+                      color: on ? "#60A5FA" : "var(--qs-dim)", fontFamily: "inherit" }}>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 10 }}>
               <div>
                 <label className="dark-label">Method</label>

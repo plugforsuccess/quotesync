@@ -103,6 +103,7 @@ export default function TodayPage() {
     }
     queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
     queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_inbound_activity', employeeId] });
     queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
     if (orgId) {
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
@@ -120,6 +121,7 @@ export default function TodayPage() {
     }
     queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
     queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_inbound_activity', employeeId] });
     queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
     if (orgId) {
       queryClient.invalidateQueries({ queryKey: ['policy_retention_status', orgId] });
@@ -150,6 +152,7 @@ export default function TodayPage() {
         }, () => {
           queryClient.invalidateQueries({ queryKey: ['today_cancels', employeeId] });
           queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_inbound_activity', employeeId] });
           queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
         })
         .on('postgres_changes', {
@@ -160,6 +163,7 @@ export default function TodayPage() {
         }, () => {
           queryClient.invalidateQueries({ queryKey: ['today_renewals', employeeId] });
           queryClient.invalidateQueries({ queryKey: ['today_call_activity', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['today_inbound_activity', employeeId] });
           queryClient.invalidateQueries({ queryKey: ['today_saves', employeeId] });
         })
         .subscribe((status) => {
@@ -263,8 +267,46 @@ export default function TodayPage() {
     },
   });
 
-  const callsToday   = todayActivity.worked;
-  const reachedToday = todayActivity.reached;
+  // Inbound calls (customer called us) — split out so they don't inflate the
+  // proactive worked/reached numbers. Separate, retry-free query so if the
+  // `direction` column hasn't been applied yet it just returns 0 inbound rather
+  // than breaking the strip for everyone.
+  const { data: inboundActivity = { worked: 0, reached: 0 } } = useQuery({
+    queryKey: ['today_inbound_activity', employeeId, todayStr],
+    enabled: !!employeeId,
+    staleTime: 30_000,
+    retry: false,
+    queryFn: async () => {
+      const dayStart = `${todayStr}T00:00:00.000Z`;
+      const grab = (table, caseCol) => supabase
+        .from(table)
+        .select(`${caseCol}, result`)
+        .eq('employee_id', employeeId)
+        .eq('auto_logged', false)
+        .eq('direction', 'inbound')
+        .gte('attempted_at', dayStart);
+      const [ra, ca] = await Promise.all([
+        grab('renewal_attempts', 'renewal_case_id'),
+        grab('pending_cancel_attempts', 'pending_case_id'),
+      ]);
+      if (ra.error) throw ra.error;
+      if (ca.error) throw ca.error;
+      const worked = new Set();
+      const reached = new Set();
+      const tally = (rows, col, p) => {
+        for (const r of rows || []) { const k = p + r[col]; worked.add(k); if (r.result === 'reached') reached.add(k); }
+      };
+      tally(ra.data, 'renewal_case_id', 'r');
+      tally(ca.data, 'pending_case_id', 'c');
+      return { worked: worked.size, reached: reached.size };
+    },
+  });
+
+  // Proactive = total minus inbound. The "worked/reached" target measures the
+  // effort the rep initiated, not calls the customer made.
+  const inboundToday = inboundActivity.worked;
+  const callsToday   = Math.max(0, todayActivity.worked - inboundActivity.worked);
+  const reachedToday = Math.max(0, todayActivity.reached - inboundActivity.reached);
 
   // Today's priority focus set — a snapshot of the rep's top-N cases taken once
   // per day (see snapshot effect below), so "/8" means a FIXED list of priority
@@ -485,7 +527,8 @@ export default function TodayPage() {
           }} />
         </div>
         <div style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 6 }}>
-          {callsToday} worked · <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} reached</span> today
+          {callsToday} worked · <span style={{ color: '#10B981', fontWeight: 600 }}>{reachedToday} reached</span>
+          {inboundToday > 0 && <> · <span style={{ color: '#60A5FA', fontWeight: 600 }}>{inboundToday} inbound</span></>} today
         </div>
         {savedToday.count > 0 && (
           <div style={{ fontSize: 12, color: '#10B981', fontWeight: 700, marginTop: 6 }}>

@@ -53,13 +53,27 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose }) {
     staleTime: 30_000,
     queryFn: async () => {
       const dayStart = `${todayStr}T00:00:00.000Z`;
-      const [ra, ca, savedR, savedC] = await Promise.all([
-        supabase.from('renewal_attempts')
-          .select('result, renewal_case_id, renewal_cases(customer_name, product)')
-          .eq('employee_id', employeeId).eq('auto_logged', false).gte('attempted_at', dayStart),
-        supabase.from('pending_cancel_attempts')
-          .select('result, pending_case_id, pending_cases(customer_name, product)')
-          .eq('employee_id', employeeId).eq('auto_logged', false).gte('attempted_at', dayStart),
+
+      // Attempt fetch with a fallback: include `direction` if the column exists,
+      // otherwise re-run without it (everything reads as outbound).
+      const loadAttempts = async (withDir) => {
+        const sel = (caseCol, embed) =>
+          `result, ${caseCol}${withDir ? ', direction' : ''}, ${embed}(customer_name, product)`;
+        const [ra, ca] = await Promise.all([
+          supabase.from('renewal_attempts').select(sel('renewal_case_id', 'renewal_cases'))
+            .eq('employee_id', employeeId).eq('auto_logged', false).gte('attempted_at', dayStart),
+          supabase.from('pending_cancel_attempts').select(sel('pending_case_id', 'pending_cases'))
+            .eq('employee_id', employeeId).eq('auto_logged', false).gte('attempted_at', dayStart),
+        ]);
+        if (ra.error) throw ra.error;
+        if (ca.error) throw ca.error;
+        return [ra.data || [], ca.data || []];
+      };
+      let raData, caData;
+      try { [raData, caData] = await loadAttempts(true); }
+      catch { [raData, caData] = await loadAttempts(false); }
+
+      const [savedR, savedC] = await Promise.all([
         supabase.from('renewal_cases')
           .select('customer_name, product, premium, saved_premium')
           .eq('closed_by_id', employeeId).eq('resolution_date', todayStr).eq('status', 'confirmed'),
@@ -68,31 +82,33 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose }) {
           .eq('closed_by_id', employeeId).eq('resolution_date', todayStr).in('status', ['saved', 'rewritten']),
       ]);
 
-      // Distinct customers worked today, flagged reached if any attempt reached.
+      // Distinct customers worked today, flagged reached / inbound.
       const byCase = new Map();
       const add = (rows, idKey, caseKey) => {
         for (const r of rows || []) {
           const c = r[caseKey];
           if (!c) continue;
           const k = idKey + r[idKey];
-          const prev = byCase.get(k) || { name: c.customer_name, product: c.product, reached: false };
+          const prev = byCase.get(k) || { name: c.customer_name, product: c.product, reached: false, inbound: false };
           if (r.result === 'reached') prev.reached = true;
+          if (r.direction === 'inbound') prev.inbound = true;
           byCase.set(k, prev);
         }
       };
-      add(ra.data, 'renewal_case_id', 'renewal_cases');
-      add(ca.data, 'pending_case_id', 'pending_cases');
+      add(raData, 'renewal_case_id', 'renewal_cases');
+      add(caData, 'pending_case_id', 'pending_cases');
 
       const all = [...byCase.values()];
-      const reached = all.filter((c) => c.reached);
-      const noAnswer = all.filter((c) => !c.reached);
+      const inbound  = all.filter((c) => c.inbound);
+      const reached  = all.filter((c) => c.reached && !c.inbound);
+      const noAnswer = all.filter((c) => !c.reached && !c.inbound);
 
       const saved = [
         ...(savedR.data || []).map((r) => ({ name: r.customer_name, product: r.product, premium: Number(r.saved_premium ?? r.premium ?? 0) })),
         ...(savedC.data || []).map((r) => ({ name: r.customer_name, product: r.product, premium: Number(r.saved_premium ?? r.premium_at_risk ?? 0) })),
       ];
 
-      return { reached, noAnswer, saved };
+      return { inbound, reached, noAnswer, saved };
     },
   });
 
@@ -117,7 +133,8 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose }) {
               renderRight={(it) => (
                 <span style={{ color: '#10B981', fontWeight: 700, fontSize: 12 }}>{fmt$(it.premium)} kept</span>
               )} />
-            <Section title="✅ Reached" color="#10B981" items={data.reached} />
+            <Section title="✅ Reached (proactive)" color="#10B981" items={data.reached} />
+            <Section title="📲 Inbound — they called us" color="#60A5FA" items={data.inbound} />
             <Section title="📞 Attempted — no answer" color="var(--qs-subtle)" items={data.noAnswer} />
           </>
         )}
