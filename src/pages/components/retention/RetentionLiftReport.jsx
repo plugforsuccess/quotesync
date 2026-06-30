@@ -108,7 +108,7 @@ export default function RetentionLiftReport({ agencyId }) {
     return <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading retention-lift proof…</div>;
   }
 
-  const { worked, untouched, liftPoints, quarantined } = data;
+  const { worked, untouched, liftPoints, quarantined, inboundOnly } = data;
   const smallSample = worked.resolved < 20;
   const selectionBias =
     worked.avgRateChange != null && untouched.avgRateChange != null &&
@@ -120,8 +120,9 @@ export default function RetentionLiftReport({ agencyId }) {
         <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--qs-text)' }}>Retention lift — worked vs. untouched</div>
         <div style={{ fontSize: 13, color: 'var(--qs-dim)', marginTop: 4, maxWidth: 760 }}>
           The honest cohort comparison: of the renewals that reached an outcome, how the ones the desk
-          actually called compare to the ones it never got to. Easy-pay auto-resolved renewals are
-          excluded — they renewed without a human, so they can't count as saves.
+          proactively called compare to the ones it never got to. Easy-pay auto-resolved renewals and
+          inbound-only renewals (the customer called us) are excluded — neither was driven by the desk's
+          outreach, so they can't count as proactive saves.
         </div>
       </div>
 
@@ -145,7 +146,7 @@ export default function RetentionLiftReport({ agencyId }) {
 
       {/* Cohorts */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-        <CohortCard title="✅ Worked (≥1 real call)" c={worked} accent="#10B981" highlight />
+        <CohortCard title="✅ Worked (≥1 outbound call)" c={worked} accent="#10B981" highlight />
         <CohortCard title="◻️ Untouched (never called)" c={untouched} accent="#6B7280" />
       </div>
 
@@ -160,6 +161,20 @@ export default function RetentionLiftReport({ agencyId }) {
           outside the comparison above.
         </div>
       </div>
+
+      {/* Inbound-only note — only when there are such cases */}
+      {inboundOnly && inboundOnly.cases > 0 && (
+        <div className="card" style={{ borderLeft: '3px solid #60A5FA' }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#60A5FA', marginBottom: 4 }}>
+            {inboundOnly.cases.toLocaleString()} inbound-only renewals ({fmt$(inboundOnly.premiumRetained)} retained) excluded
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--qs-dim)' }}>
+            The only logged calls on these were inbound — the <em>customer</em> reached out. The desk handled
+            them, but it didn't drive the retention, so they're kept out of the proactive worked cohort to
+            avoid crediting outreach we didn't initiate.
+          </div>
+        </div>
+      )}
 
       {/* Honesty caveats — what keeps this defensible */}
       <div className="card">
@@ -190,8 +205,8 @@ export default function RetentionLiftReport({ agencyId }) {
       <ProofReadiness agencyId={agencyId} capture={capture} />
 
       <p style={{ fontSize: 11, color: 'var(--qs-muted)' }}>
-        "Worked" = at least one genuine (non-auto-logged) attempt on the renewal. Premium retained sums the
-        continuing premium on confirmed renewals. Numbers update live from the book.
+        "Worked" = at least one genuine (non-auto-logged) outbound attempt on the renewal. Premium retained
+        sums the continuing premium on confirmed renewals. Numbers update live from the book.
       </p>
     </div>
   );

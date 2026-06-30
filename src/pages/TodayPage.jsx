@@ -329,20 +329,23 @@ export default function TodayPage() {
   // Saved today — a motivational tally of wins (NOT a target, no denominator, so
   // it can't pressure padded saves). Hidden when zero so a no-save day never
   // reads as failure. Counts cancel saves/rewrites + confirmed renewals this rep
-  // closed today, with premium preserved.
-  const { data: savedToday = { count: 0, premium: 0 } } = useQuery({
+  // closed today, with premium preserved. Inbound-driven saves (the only genuine
+  // calls on the case were calls the customer placed) are split OUT of the
+  // proactive tally — a customer who phoned in to pay shouldn't pad the rep's
+  // outreach wins — and surfaced on their own line.
+  const { data: savedToday = { count: 0, premium: 0, inboundCount: 0, inboundPremium: 0 } } = useQuery({
     queryKey: ['today_saves', employeeId, todayStr],
     enabled: !!employeeId,
     staleTime: 30_000,
     queryFn: async () => {
       const [pc, rc] = await Promise.all([
         supabase.from('pending_cases')
-          .select('saved_premium, premium_at_risk')
+          .select('id, saved_premium, premium_at_risk')
           .eq('closed_by_id', employeeId)
           .eq('resolution_date', todayStr)
           .in('status', ['saved', 'rewritten']),
         supabase.from('renewal_cases')
-          .select('saved_premium, premium')
+          .select('id, saved_premium, premium')
           .eq('closed_by_id', employeeId)
           .eq('resolution_date', todayStr)
           .eq('status', 'confirmed'),
@@ -351,15 +354,50 @@ export default function TodayPage() {
       if (rc.error) throw rc.error;
       const cancelRows = pc.data || [];
       const renewalRows = rc.data || [];
-      const premium =
-        cancelRows.reduce((s, r) => s + Number(r.saved_premium ?? r.premium_at_risk ?? 0), 0) +
-        renewalRows.reduce((s, r) => s + Number(r.saved_premium ?? r.premium ?? 0), 0);
-      return { count: cancelRows.length + renewalRows.length, premium };
+
+      // For each saved case, was it inbound-driven? It is iff it has genuine
+      // attempts but none of them are outbound. Resilient: if the `direction`
+      // column isn't available yet, the select errors and we treat every save
+      // as proactive (empty inbound set) rather than breaking the tally.
+      const inboundSet = async (table, caseCol, ids) => {
+        if (!ids.length) return new Set();
+        const { data, error } = await supabase
+          .from(table)
+          .select(`${caseCol}, direction`)
+          .eq('auto_logged', false)
+          .in(caseCol, ids);
+        if (error) return new Set();
+        const any = new Set(), outbound = new Set();
+        for (const a of data || []) {
+          any.add(a[caseCol]);
+          if (a.direction !== 'inbound') outbound.add(a[caseCol]);
+        }
+        const inbound = new Set();
+        for (const id of any) if (!outbound.has(id)) inbound.add(id);
+        return inbound;
+      };
+      const [cIn, rIn] = await Promise.all([
+        inboundSet('pending_cancel_attempts', 'pending_case_id', cancelRows.map((r) => r.id)),
+        inboundSet('renewal_attempts', 'renewal_case_id', renewalRows.map((r) => r.id)),
+      ]);
+
+      let count = 0, premium = 0, inboundCount = 0, inboundPremium = 0;
+      for (const r of cancelRows) {
+        const p = Number(r.saved_premium ?? r.premium_at_risk ?? 0);
+        if (cIn.has(r.id)) { inboundCount++; inboundPremium += p; }
+        else { count++; premium += p; }
+      }
+      for (const r of renewalRows) {
+        const p = Number(r.saved_premium ?? r.premium ?? 0);
+        if (rIn.has(r.id)) { inboundCount++; inboundPremium += p; }
+        else { count++; premium += p; }
+      }
+      return { count, premium, inboundCount, inboundPremium };
     },
   });
-  const savedPremiumLabel = savedToday.premium >= 1000
-    ? `$${(savedToday.premium / 1000).toFixed(1)}k`
-    : `$${Math.round(savedToday.premium)}`;
+  const fmtK = (n) => (n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`);
+  const savedPremiumLabel = fmtK(savedToday.premium);
+  const inboundSavedLabel = fmtK(savedToday.inboundPremium);
 
   const ranked = useMemo(() => {
     const items = [
@@ -533,6 +571,11 @@ export default function TodayPage() {
         {savedToday.count > 0 && (
           <div style={{ fontSize: 12, color: '#10B981', fontWeight: 700, marginTop: 6 }}>
             🎉 {savedToday.count} saved · {savedPremiumLabel} kept today
+          </div>
+        )}
+        {savedToday.inboundCount > 0 && (
+          <div style={{ fontSize: 11, color: '#60A5FA', fontWeight: 600, marginTop: 4 }}>
+            📲 {savedToday.inboundCount} inbound save{savedToday.inboundCount === 1 ? '' : 's'} · {inboundSavedLabel} kept (customer called in)
           </div>
         )}
         {targetHit && (
