@@ -422,9 +422,9 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
   // Already paid before we reached them → auto_resolved (system close, no save
   // credit, exempt from the reached-attempt rule). Allstate is the system of
-  // record; this just clears our queue without faking a call. The customer paid
-  // the amount at risk in full (no discount earned), so we still log that paid
-  // premium — premium difference is $0, distinguishing "paid full" from a save.
+  // record; this just clears our queue without faking a call. saved_premium
+  // stays NULL — it denotes a credited save, and paying the bill in full is not
+  // one. (The at-risk amount is still on the row for reference.)
   async function markAlreadyPaid() {
     setSaving(true);
     setSaveError(null);
@@ -432,7 +432,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       status: "auto_resolved",
       resolution_date: new Date().toISOString().slice(0, 10),
       closed_by_id: currentEmployeeId,
-      saved_premium: event.premium_at_risk ?? null,
+      saved_premium: null,
     });
     if (err) {
       setSaveError(`Couldn't clear the case: ${err.message || err}`);
@@ -1262,6 +1262,27 @@ const RENEWAL_STATUS_CONFIG = {
   auto_resolved:    { label: "Auto-Resolved",    color: "var(--qs-dim)", bg: "#F1F5F9" },
 };
 
+// Resolved-state banner copy for a renewal. `auto_resolved` is overloaded: the
+// nightly cron uses it for system-INFERRED renewals (easy-pay/age — nobody
+// called), while the work surface reuses it for a rep who reached a happy or
+// already-paid customer (renewed, OBSERVED, not a save). `outcome_source` is the
+// disambiguator — surface it so a closed case never reads as "the system did
+// it" when a rep actually confirmed it, or vice-versa.
+function renewalResolutionBanner(status, outcomeSource) {
+  if (status === "confirmed")
+    return { label: "Renewed — saved", sub: "rep-confirmed", color: "#10B981", bg: "#D1FAE5" };
+  if (status === "lost")
+    return { label: "Lost — did not renew", sub: null, color: "#6B7280", bg: "#F3F4F6" };
+  if (status === "unreachable")
+    return { label: "Unreachable", sub: "no contact made", color: "var(--qs-subtle)", bg: "#F1F5F9" };
+  if (status === "auto_resolved") {
+    return (outcomeSource === "observed" || outcomeSource === "rep")
+      ? { label: "Renewed — confirmed by rep", sub: "not credited as a save", color: "#10B981", bg: "#D1FAE5" }
+      : { label: "Auto-resolved — system-inferred", sub: "no call logged", color: "var(--qs-dim)", bg: "#F1F5F9" };
+  }
+  return null;
+}
+
 const RENEWAL_CONTACT_METHODS = ["phone", "text", "email", "other"];
 
 function daysUntilRenewal(dateStr) {
@@ -1428,6 +1449,10 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         // Happy with policy → renewed but NOT a save. Resolve as auto_resolved
         // (renewed, observed, not credited) and close — same bucket as an
         // already-paid renewal, so it never lands in the save tally.
+        // saved_premium stays NULL: it means "premium credited as a save", and
+        // there was nothing to save here. The premium audit derives the paid
+        // amount from the offer for auto-resolved rows, so leaving it NULL loses
+        // nothing and keeps the "saved_premium ⇒ credited save" invariant true.
         if (tags.some((c) => HAPPY_CODES.has(c))) {
           await onUpdate(event.id, {
             status: "auto_resolved",
@@ -1437,7 +1462,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
             final_outcome_set_at: new Date().toISOString(),
             resolution_date: new Date().toISOString().slice(0, 10),
             closed_by_id: currentEmployeeId,
-            saved_premium: event.premium ?? null,
+            saved_premium: null,
           });
           setAttemptForm({ method: "phone", result: "no_answer", note: "", intervention: EMPTY_INTERVENTION });
           setLoggingAttempt(false);
@@ -1459,8 +1484,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
   // Already paid before we reached them → auto_resolved (renewed, but observed
   // not rep-driven, so it's exempt from the reached-attempt rule and earns no
-  // save credit). The customer paid the renewal offer in full, so we log that
-  // paid premium = the offer (premium difference $0) — tracked, not credited.
+  // save credit). saved_premium stays NULL — it denotes a credited save, and
+  // this isn't one. The customer paid the offer in full (premium difference $0);
+  // the premium audit reconstructs that from the offer for auto-resolved rows.
   async function markAlreadyPaid() {
     setSaving(true);
     setSaveError(null);
@@ -1472,7 +1498,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       final_outcome_set_at: new Date().toISOString(),
       resolution_date: new Date().toISOString().slice(0, 10),
       closed_by_id: currentEmployeeId,
-      saved_premium: event.premium ?? null,
+      saved_premium: null,
     });
     if (err) {
       setSaveError(`Couldn't clear the case: ${err.message || err}`);
@@ -1652,6 +1678,28 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         <div style={{ padding: "20px 24px", overflowY: "auto" }}>
 
           <OtherCasesWarning cases={otherCases} />
+
+          {/* Resolved-state banner — for a closed case, say plainly HOW it
+              resolved and (for auto_resolved) WHO: a rep-confirmed renewal vs a
+              system-inferred one. Reading the status alone, "Auto-Resolved" hides
+              that distinction. */}
+          {(() => {
+            const banner = renewalResolutionBanner(event.status, event.outcome_source);
+            if (!banner) return null;
+            return (
+              <div style={{
+                display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap",
+                background: banner.bg, border: `1px solid ${banner.color}33`,
+                color: banner.color, borderRadius: 10, padding: "10px 14px", marginBottom: 16,
+                fontSize: 13, fontWeight: 700,
+              }}>
+                <span>{banner.label}</span>
+                {banner.sub && (
+                  <span style={{ fontWeight: 400, color: "var(--qs-subtle)" }}>· {banner.sub}</span>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ── KPI strip ───────────────────────────────────── */}
           <div style={{
