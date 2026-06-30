@@ -414,6 +414,13 @@ export default function MyQueuePage() {
         return renewalCases.filter(r => r.rate_shock_flag || (parseFloat(r.premium_change_pct) || 0) >= 15);
       case 'untouched':
         return renewalCases.filter(r => !r.attempt_count);
+      case 'xsell_monoline':
+        // Renewing customers on the cross-sell list who aren't already bundled —
+        // the bundle pitch list (single-line + a cross-sell gap).
+        return renewalCases.filter(r =>
+          r.cross_sell_opportunity && r.cross_sell_product &&
+          !r.has_active_cancel && r.multi_line !== 'Yes'
+        );
       case 'callbacks':
         return renewalCases
           .filter(r => r.callback_at)
@@ -1524,6 +1531,18 @@ export default function MyQueuePage() {
             sub:   'scheduled',
             filter: 'callbacks', isOn: renewalFilter === 'callbacks',
             apply: () => setRenewalFilter(f => f === 'callbacks' ? 'all' : 'callbacks'),
+          },
+          {
+            label: '💡 Cross-sell',
+            value: renewalCases.filter(r =>
+              r.cross_sell_opportunity && r.cross_sell_product &&
+              !r.has_active_cancel && r.multi_line !== 'Yes').length,
+            color: renewalCases.some(r =>
+              r.cross_sell_opportunity && r.cross_sell_product &&
+              !r.has_active_cancel && r.multi_line !== 'Yes') ? '#A78BFA' : 'var(--qs-dim)',
+            sub:   'monoline · bundle pitch',
+            filter: 'xsell_monoline', isOn: renewalFilter === 'xsell_monoline',
+            apply: () => setRenewalFilter(f => f === 'xsell_monoline' ? 'all' : 'xsell_monoline'),
           },
         ]).map(stat => {
           const clickable = !!stat.apply;
