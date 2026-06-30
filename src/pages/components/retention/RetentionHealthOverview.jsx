@@ -13,15 +13,23 @@ import { useQueueHygiene } from '../../../hooks/useQueueHygiene';
 import { useTacticCaptureRate } from '../../../hooks/useTacticCaptureRate';
 import { SAVE_METHOD_LABEL } from '../../../lib/saveMethods';
 
-// Headline net-retention target. Below this (and a shrinking book) trips red.
-const NET_RETENTION_TARGET = 0.85;
+// Headline net-retention target, on the same percent scale (0–100) as the
+// book-health figures — the parser stores retention with the % stripped, so
+// "84.38%" lives as 84.38, not 0.8438.
+const NET_RETENTION_TARGET = 85;
 
 function fmt$(n) {
   if (!n) return '$0';
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
 }
+// Operational ratios (e.g. save rate) come through as 0–1 fractions.
 function fmtPct(r) {
   return r == null ? '—' : `${Math.round(r * 100)}%`;
+}
+// Book-health retention values are already percent-scale (0–100); format them
+// as-is so a real 84% doesn't render as 8438%.
+function fmtBookPct(n) {
+  return n == null ? '—' : `${Math.round(n)}%`;
 }
 
 function StatCard({ label, value, sub, color, accent, onClick }) {
@@ -125,9 +133,9 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
         </div>
         <div style={{ textAlign: 'right' }}>
           <div style={{ fontSize: 26, fontWeight: 800, color: status.color, lineHeight: 1 }}>
-            {fmtPct(netRet)}
+            {fmtBookPct(netRet)}
           </div>
-          <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}>net retention · {Math.round(NET_RETENTION_TARGET * 100)}% target</div>
+          <div style={{ fontSize: 11, color: 'var(--qs-muted)' }}>net retention · {NET_RETENTION_TARGET}% target</div>
         </div>
       </div>
 
@@ -199,10 +207,10 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
         <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-subtle)', textTransform: 'uppercase',
           letterSpacing: '0.06em', marginBottom: 10 }}>Book health {book?.latestMonth ? `· as of ${book.latestMonth}` : ''}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: 12 }}>
-          <StatCard label="Net Retention" value={fmtPct(netRet)}
+          <StatCard label="Net Retention" value={fmtBookPct(netRet)}
             sub="rewrites counted as kept" color={netRet != null && netRet >= NET_RETENTION_TARGET ? '#10B981' : '#F59E0B'}
             accent={status.color} onClick={() => onNavigate?.('book')} />
-          <StatCard label="Policy Retention" value={fmtPct(totals?.blendedRetention)}
+          <StatCard label="Policy Retention" value={fmtBookPct(totals?.blendedRetention)}
             sub="excludes rewrites" onClick={() => onNavigate?.('book')} />
           <StatCard label="Policies in Force"
             value={totals?.pifCurrent != null ? totals.pifCurrent.toLocaleString() : '—'}
@@ -220,7 +228,7 @@ export default function RetentionHealthOverview({ agencyId, kpis, onNavigate }) 
           <div className="card" style={{ marginTop: 12 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 6, height: 70 }}>
               {trend.map(t => (
-                <div key={t.month} title={`${t.month}: ${fmtPct(t.netRetention)}`}
+                <div key={t.month} title={`${t.month}: ${fmtBookPct(t.netRetention)}`}
                   style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                   <div style={{ width: '100%', maxWidth: 30,
                     height: Math.max(2, ((t.netRetention || 0) / maxNet) * 54),
