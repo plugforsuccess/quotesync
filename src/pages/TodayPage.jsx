@@ -15,6 +15,8 @@ import { usePersona } from '../hooks/usePersona';
 import { hatForRoles } from '../config/navConfig';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import TodayFocusModal from './components/employee/TodayFocusModal';
+import MultiVehicleBadge from '../components/MultiVehicleBadge';
+import { useWinbackLapses, winbackFor } from '../hooks/useWinbackLapses';
 import { TIER_ORDER } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
@@ -41,12 +43,16 @@ function rankOf(item) {
   }
   // renewal: convert days-until to a rank score
   const d = daysUntil(item.renewal_date);
-  if (d == null)        return 50;
-  if (d <= 3)           return 12;  // beats P2 cancels
-  if (d <= 7)           return 22;  // beats P3 cancels
-  if (d <= 14)          return 32;
-  if (d <= 30)          return 40;
-  return 60;
+  const base =
+    d == null ? 50 :
+    d <= 3    ? 12 :  // beats P2 cancels
+    d <= 7    ? 22 :  // beats P3 cancels
+    d <= 14   ? 32 :
+    d <= 30   ? 40 : 60;
+  // Multi-vehicle households outrank comparable single-car renewals (lower rank
+  // = called first): up to a full bucket (-12) for a 4+ car household.
+  const mv = Math.min(((item.item_count || 1) - 1) * 4, 12);
+  return base - mv;
 }
 
 const TYPE_BADGE = {
@@ -68,6 +74,8 @@ export default function TodayPage() {
   // Needed so the detail modal can resolve the rep's name for the script
   // (agent name) and the assignee — mirrors My Queue.
   const { data: employees = [] } = useActiveEmployees(orgId);
+  // Lost-line lookup so a renewal row can flag a win-back (bundle) pitch.
+  const winbackMap = useWinbackLapses(orgId);
   // The dial list is cross-role by design, but the production goal strip is a
   // sales overlay — only show it when the sales hat is active (a dual-role
   // producer wearing Service shouldn't see it).
@@ -654,6 +662,7 @@ export default function TodayPage() {
                 index={idx + 1}
                 item={item}
                 todayStr={todayStr}
+                winbackMap={winbackMap}
                 onOpen={() => {
                   if (item._kind === 'cancel') setSelectedCancel(item);
                   else setSelectedRenewal(item);
@@ -714,10 +723,11 @@ export default function TodayPage() {
   );
 }
 
-function TodayRow({ index, item, todayStr, onOpen }) {
+function TodayRow({ index, item, todayStr, winbackMap, onOpen }) {
   const touched = item.last_attempt_at?.slice(0, 10) === todayStr;
 
   const isCancel = item._kind === 'cancel';
+  const winback  = isCancel ? null : winbackFor(winbackMap, item.customer_name, item.zip, item.product);
   const typeBadge = TYPE_BADGE[item._kind];
   const tierBadge = isCancel ? TIER_BADGE[item.priority_tier] : null;
 
@@ -781,6 +791,16 @@ function TodayRow({ index, item, todayStr, onOpen }) {
             whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {titleCaseName(item.customer_name) || '—'}
           </span>
+          {!isCancel && <MultiVehicleBadge count={item.item_count} product={item.product} />}
+          {winback && (
+            <span
+              title={`Lost their ${productLabel(winback.product)} ${winback.months}mo ago. While you have them on the renewal, pitch adding it back — the bundle discount lowers this premium too.`}
+              style={{ fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                background: 'rgba(16,185,129,0.14)', border: '1px solid rgba(16,185,129,0.35)',
+                color: '#34D399', letterSpacing: '0.04em' }}>
+              ♻ WIN BACK {productLabel(winback.product).toUpperCase()}
+            </span>
+          )}
         </div>
         <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>
           {dateLabel} · {fmt$(premium)}
