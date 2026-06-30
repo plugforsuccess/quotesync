@@ -19,6 +19,7 @@ import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript 
 import { titleCaseName } from '../lib/names';
 import { productLabel } from '../lib/productLabels';
 import MultiVehicleBadge from '../components/MultiVehicleBadge';
+import { useWinbackLapses, winbackFor } from '../hooks/useWinbackLapses';
 
 // Snooze guardrails: a case can't be deferred once its deadline is within 14
 // days, and a snooze can never PARK it to within 14 days of the deadline — so a
@@ -287,6 +288,9 @@ export default function MyQueuePage() {
   // which depend on it) to avoid a temporal-dead-zone reference error.
   const { data: book } = useBookSnapshots(orgId);
   const { effectiveSaveLift } = useInterventionEffectiveness(orgId);
+  // Lost-line lookup so the renewal card can flag a win-back (bundle) pitch to
+  // make while the rep already has the customer on the renewal call.
+  const winbackMap = useWinbackLapses(orgId);
   const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
 
   const focusStats = useMemo(() => {
@@ -1130,6 +1134,7 @@ export default function MyQueuePage() {
     const rateShock = event.rate_shock_flag || changePct >= 15;
     const phone     = event.phone || event.customer_phone;
     const lastAtt   = lastAttemptSummary(event.last_attempt_result, event.last_attempt_at);
+    const winback   = winbackFor(winbackMap, event.customer_name, event.zip, event.product);
 
     return (
       <div style={{
@@ -1150,6 +1155,16 @@ export default function MyQueuePage() {
               </span>
 
               <MultiVehicleBadge count={event.item_count} product={event.product} />
+
+              {winback && (
+                <span
+                  title={`Lost their ${productLabel(winback.product)} ${winback.months}mo ago${winback.reason ? ` (${winback.reason})` : ''}. While you have them on the renewal, pitch adding it back — the bundle discount lowers this premium too.`}
+                  style={{ fontSize: 13, background: 'rgba(16,185,129,0.14)', color: '#34D399',
+                    border: '1px solid rgba(16,185,129,0.35)',
+                    borderRadius: 4, padding: '2px 8px', fontWeight: 700, flexShrink: 0, cursor: 'help' }}>
+                  ♻ Win back {productLabel(winback.product)} · lost {winback.months}mo
+                </span>
+              )}
 
               {rateShock && (
                 <span style={{ fontSize: 13, background: 'rgba(239,68,68,0.15)', color: '#F87171',
