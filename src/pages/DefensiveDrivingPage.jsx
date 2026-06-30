@@ -5,7 +5,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  ShieldCheck, Clock, FileText, Loader2, AlertCircle, RefreshCw, Mail,
+  ShieldCheck, Clock, FileText, Loader2, AlertCircle, RefreshCw,
   Check, ChevronDown, Award, BadgeCheck, GraduationCap, CreditCard,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -23,7 +23,6 @@ export default function DefensiveDrivingPage() {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sentEmail, setSentEmail] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -60,10 +59,6 @@ export default function DefensiveDrivingPage() {
       <p>This course isn’t available right now. {error}</p>
     </div>;
   }
-  if (sentEmail && !user) {
-    return <CodeEntry email={sentEmail} onReset={() => setSentEmail(null)} />;
-  }
-
   const price = formatPrice(course.price_cents, course.currency);
 
   return (
@@ -101,7 +96,7 @@ export default function DefensiveDrivingPage() {
                 Checkout was canceled. You can start again whenever you’re ready.
               </div>
             )}
-            <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} onSent={setSentEmail} />
+            <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} />
           </div>
         </div>
       </section>
@@ -126,7 +121,7 @@ export default function DefensiveDrivingPage() {
         <div className="max-w-6xl mx-auto px-4 py-16">
           <SectionHeading eyebrow="How it works" title="From sign-in to certificate in four steps" />
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Step n={1} icon={Mail} title="Sign in" body="No password — we email you a secure sign-in link." />
+            <Step n={1} icon={ShieldCheck} title="Create your login" body="Just an email and a password — no codes or links to chase down." />
             <Step n={2} icon={GraduationCap} title="Complete the modules" body="Seven short modules with quick section checks." />
             <Step n={3} icon={BadgeCheck} title="Pass the final exam" body={`${course.exam_question_count} questions · ${course.pass_threshold_pct}% to pass.`} />
             <Step n={4} icon={FileText} title="Get your certificate" body="Download it instantly — and it’s forwarded to the agency." />
@@ -287,7 +282,7 @@ function FAQ({ items }) {
 }
 
 // ---- Enrollment card (price + auth/checkout) -------------------------------
-function EnrollCard({ course, enrollment, user, profile, onSent }) {
+function EnrollCard({ course, enrollment, user, profile }) {
   const hasAccess = enrollment && (enrollment.status === 'active' || enrollment.status === 'completed');
   return (
     <div className="rounded-2xl border border-success-500/30 bg-gradient-to-br from-success-500/10 to-gray-900/60 p-6 shadow-xl">
@@ -306,7 +301,7 @@ function EnrollCard({ course, enrollment, user, profile, onSent }) {
       ) : user ? (
         <EnrollForm course={course} defaultName={profile?.full_name || ''} />
       ) : (
-        <AuthPanel onSent={onSent} />
+        <AuthPanel />
       )}
     </div>
   );
@@ -350,132 +345,67 @@ function EnrollForm({ course, defaultName }) {
   );
 }
 
-// --- Large centered brand mark (matches the nav logo) -----------------------
-function BrandLogo() {
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <div className="relative">
-        <div className="absolute -inset-1.5 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-2xl opacity-70 blur-md" />
-        <div className="relative w-20 h-20 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl">
-          <svg className="w-11 h-11 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-      </div>
-      <div className="text-center">
-        <div className="font-black text-3xl tracking-tight text-white">insuredbycam</div>
-        <div className="text-sm text-gray-400">Insurance shopping, simplified</div>
-      </div>
-    </div>
-  );
-}
-
-// --- Full-page confirmation shown after a magic link is sent ----------------
-// Full-page 6-digit code entry (works across devices — no need to open the
-// link on the same device). The same email also contains a clickable link.
-function CodeEntry({ email, onReset }) {
-  const [code, setCode] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [resent, setResent] = useState(false);
-  const [error, setError] = useState(null);
-
-  const verify = async (e) => {
-    e.preventDefault();
-    setError(null); setBusy(true);
-    try {
-      const { error } = await supabase.auth.verifyOtp({ email, token: code.trim(), type: 'email' });
-      if (error) throw error;
-      // On success, the auth state change re-renders the page into enrollment.
-    } catch {
-      setError('That code didn’t work. Double-check the 6 digits and try again, or resend.');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const resend = async () => {
-    setError(null); setResent(false);
-    try {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${window.location.origin}/courses/defensive-driving` },
-      });
-      if (error) throw error;
-      setResent(true);
-    } catch {
-      setError('Could not resend the code. Please try again.');
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-950 text-gray-50 flex flex-col items-center justify-center px-4 py-16">
-      <BrandLogo />
-      <form onSubmit={verify} className="mt-10 w-full max-w-md text-center">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-success-500/15">
-          <Mail className="h-7 w-7 text-success-300" />
-        </div>
-        <h1 className="text-2xl font-bold text-success-100 mb-3">Enter your code</h1>
-        <p className="text-base text-gray-300 leading-relaxed">We emailed a 6-digit code to</p>
-        <p className="my-2 text-lg font-semibold text-white break-words">{email}</p>
-        <p className="text-base text-gray-400 leading-relaxed mb-6">
-          Open your email and type the code below. (You can also tap the link in the same email.)
-        </p>
-
-        <input
-          inputMode="numeric" autoComplete="one-time-code" maxLength={6} aria-label="6-digit code"
-          value={code}
-          onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-          placeholder="------"
-          className="w-56 mx-auto block text-center tracking-[0.5em] text-3xl font-bold rounded-xl bg-white text-gray-900 px-4 py-3 outline-none focus:ring-2 focus:ring-success-400"
-        />
-
-        {error && <p className="mt-4 flex items-center justify-center gap-2 text-sm text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
-        {resent && <p className="mt-4 text-sm text-success-200">A new code is on the way.</p>}
-
-        <button type="submit" disabled={busy || code.length < 6}
-          className="mt-6 px-10 rounded-full py-3.5 text-base font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-50 text-gray-950 transition inline-flex items-center gap-2">
-          {busy ? <><Loader2 className="w-5 h-5 animate-spin" /> Verifying…</> : 'Verify & continue'}
-        </button>
-
-        <div className="mt-8 flex flex-col items-center gap-3">
-          <button type="button" onClick={resend} className="text-sm font-medium text-gray-300 hover:text-white underline underline-offset-2">Resend code</button>
-          <button type="button" onClick={onReset} className="text-sm text-gray-400 hover:text-gray-200">Use a different email</button>
-        </div>
-        <p className="mt-8 text-base text-gray-300">Need help? Call <a href="tel:+17707861616" className="text-success-300 font-semibold">(770) 786-1616</a></p>
-      </form>
-    </div>
-  );
-}
-
-// --- Passwordless magic-link auth for customers (role: 'insured') -----------
-function AuthPanel({ onSent }) {
+// --- Email + password auth for customers (role: 'insured') ------------------
+// No email verification code and no magic link — older customers struggle with
+// those. New customers create a simple email + password; returning customers
+// sign in with the same. (Requires "Confirm email" turned OFF in Supabase Auth
+// so sign-up logs the customer straight in.)
+function AuthPanel() {
+  const [mode, setMode] = useState('create'); // 'create' | 'signin'
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
+  const isCreate = mode === 'create';
+
   const submit = async (e) => {
     e.preventDefault();
-    setError(null); setBusy(true);
+    setError(null);
+    if (password.trim().length < 6) {
+      setError('Your password needs to be at least 6 characters.');
+      return;
+    }
+    setBusy(true);
     try {
-      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          data: {
-            role: 'insured',
-            full_name: fullName || undefined,
-            first_name: firstName.trim() || undefined,
-            last_name: lastName.trim() || undefined,
+      if (isCreate) {
+        const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: {
+            data: {
+              role: 'insured',
+              full_name: fullName || undefined,
+              first_name: firstName.trim() || undefined,
+              last_name: lastName.trim() || undefined,
+            },
           },
-          emailRedirectTo: `${window.location.origin}/courses/defensive-driving`,
-        },
-      });
-      if (error) throw error;
-      onSent(email);
+        });
+        if (error) throw error;
+        // With email confirmation off, sign-up returns a session and the auth
+        // state change re-renders this page straight into enrollment.
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
+        if (error) throw error;
+      }
     } catch (err) {
-      setError(err.message || 'Could not send the sign-in link.');
+      const msg = String(err?.message || '');
+      if (/already registered|already exists/i.test(msg)) {
+        setError('You already have an account with this email. Switch to “Sign in” below.');
+      } else if (/invalid login credentials/i.test(msg)) {
+        setError('That email or password didn’t match. Try again, or create an account.');
+      } else if (/email not confirmed/i.test(msg)) {
+        setError('This account isn’t active yet. Please call the agency so we can finish setting it up.');
+      } else {
+        setError(msg || 'Something went wrong. Please try again.');
+      }
     } finally {
       setBusy(false);
     }
@@ -483,18 +413,56 @@ function AuthPanel({ onSent }) {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <p className="text-sm text-gray-200">Sign in to start or continue</p>
-      <p className="text-xs text-gray-400">New or returning, we’ll email you a 6-digit code — no password needed.</p>
-      <Field label="Driver's first name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
-      <Field label="Driver's last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
+      <p className="text-sm text-gray-200">{isCreate ? 'Create your account to start' : 'Sign in to continue'}</p>
+      <p className="text-xs text-gray-400">
+        {isCreate
+          ? 'Just an email and a password — no codes to look up.'
+          : 'Enter the email and password you set up.'}
+      </p>
+
+      {isCreate && (
+        <>
+          <Field label="Driver's first name" value={firstName} onChange={setFirstName} autoComplete="given-name" />
+          <Field label="Driver's last name" value={lastName} onChange={setLastName} autoComplete="family-name" />
+        </>
+      )}
       <Field label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
+
+      <label className="block">
+        <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1">Password</span>
+        <div className="relative">
+          <input
+            type={showPw ? 'text' : 'password'}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            autoComplete={isCreate ? 'new-password' : 'current-password'}
+            className="w-full rounded-lg bg-white text-gray-900 px-3 py-2.5 pr-16 text-sm outline-none focus:ring-2 focus:ring-success-400"
+          />
+          <button type="button" onClick={() => setShowPw((s) => !s)}
+            className="absolute inset-y-0 right-2 my-auto h-7 px-2 text-xs font-semibold text-gray-500 hover:text-gray-800">
+            {showPw ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        {isCreate && <span className="mt-1 block text-[11px] text-gray-500">At least 6 characters. Write it down somewhere safe.</span>}
+      </label>
+
       {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
-      <div className="pt-4 flex justify-center">
+
+      <div className="pt-2 flex justify-center">
         <button type="submit" disabled={busy}
           className="px-8 rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
-          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Email me a code'}
+          {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (isCreate ? 'Create account & start' : 'Sign in')}
         </button>
       </div>
+
+      <p className="text-xs text-gray-400 text-center">
+        {isCreate ? 'Already have an account?' : 'New here?'}{' '}
+        <button type="button"
+          onClick={() => { setMode(isCreate ? 'signin' : 'create'); setError(null); }}
+          className="text-success-300 font-semibold underline underline-offset-2">
+          {isCreate ? 'Sign in' : 'Create an account'}
+        </button>
+      </p>
       <p className="text-xs text-gray-400 text-center pt-1">Need help? Call <a href="tel:+17707861616" className="text-success-300 font-semibold">(770) 786-1616</a></p>
     </form>
   );
