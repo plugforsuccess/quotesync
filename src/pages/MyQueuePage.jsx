@@ -18,6 +18,7 @@ import ReadingColumn from '../components/ReadingColumn';
 import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript } from '../components/RetentionScripts';
 import { titleCaseName } from '../lib/names';
 import { productLabel } from '../lib/productLabels';
+import MultiVehicleBadge from '../components/MultiVehicleBadge';
 
 // Snooze guardrails: a case can't be deferred once its deadline is within 14
 // days, and a snooze can never PARK it to within 14 days of the deadline — so a
@@ -1147,6 +1148,8 @@ export default function MyQueuePage() {
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {titleCaseName(event.customer_name)}
               </span>
+
+              <MultiVehicleBadge count={event.item_count} product={event.product} />
 
               {rateShock && (
                 <span style={{ fontSize: 13, background: 'rgba(239,68,68,0.15)', color: '#F87171',

@@ -9,6 +9,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
+import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
 import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
 import { productLabel } from '../../../lib/productLabels';
@@ -2548,6 +2549,12 @@ function calcUnifiedPriority(row) {
         original_year:      row.original_year,
         premium:            row.renewal_premium,
         easy_pay:           row.easy_pay,
+        // Multi-vehicle households must outrank single-car renewals — pass the
+        // item count + product so the value factor and multi-item boost apply
+        // (previously omitted, so every renewal scored as a single item).
+        item_count:         row.renewal_item_count,
+        product:            row.product,
+        multi_line:         row.multi_line,
       })
     : 0;
 
@@ -2748,6 +2755,11 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
         const aTier = TIER_ORDER[a._priority_tier] ?? 4;
         const bTier = TIER_ORDER[b._priority_tier] ?? 4;
         if (aTier !== bTier) return (aTier - bTier) * dir;
+
+        // Within a tier, rank by the computed priority score — which now carries
+        // the multi-vehicle boost, so multi-car renewals outrank single-car ones
+        // (renewal-only rows share tier 4, so this is their primary ordering).
+        if (a._priority !== b._priority) return (b._priority - a._priority) * dir;
 
         const aPrem = parseFloat(a.premium_at_risk) || parseFloat(a.renewal_premium) || 0;
         const bPrem = parseFloat(b.premium_at_risk) || parseFloat(b.renewal_premium) || 0;
@@ -3044,6 +3056,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                     {row.risk_type === 'dual_risk' && (
                       <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--qs-danger)' }}>⚡</span>
                     )}
+                    <MultiVehicleBadge count={row.renewal_item_count} product={row.product} style={{ marginLeft: 6 }} />
                   </td>
 
                   {/* Cancel urgency cell */}

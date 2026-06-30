@@ -126,6 +126,13 @@ export function calcRenewalPriority(event) {
   // Easy Pay modifier: autopay = renewal inertia, deprioritize slightly
   const paymentModifier = event.easy_pay === true ? -15 : 0;
 
+  // Multi-item boost: a multi-vehicle household is worth far more (more premium,
+  // more lines to lose, stickier once retained), so it must outrank comparable
+  // single-car renewals. Scales with vehicle/item count and is large enough to
+  // dominate in normal cases, while urgency (timeFactor, 40% weight) can still
+  // surface an imminent single-car lapse. +12 per extra item, capped at +36.
+  const multiItemBoost = itemCount >= 2 ? Math.min((itemCount - 1) * 12, 36) : 0;
+
   // Weights: time 40%, shopping 25%, tenure 20%, value 10%, modifiers flat
   // Weights sum to 0.95 — remaining 0.05 absorbed by modifiers (capped at 100)
   return Math.min(100, Math.round(
@@ -134,7 +141,8 @@ export function calcRenewalPriority(event) {
     (tenureFactor  * 0.20) +
     (valueFactor   * 0.10) +
     multiLineModifier +
-    paymentModifier
+    paymentModifier +
+    multiItemBoost
   ));
 }
 
