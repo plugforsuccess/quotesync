@@ -27,7 +27,7 @@ function SectionHeader({ children }) {
   );
 }
 
-export default function CrossSellQueue({ cases, tab, onUpdate, emptyLabel }) {
+export default function CrossSellQueue({ cases, tab, onUpdate, onOpenCase, emptyLabel }) {
   if (!cases || cases.length === 0) {
     return (
       <div style={{ textAlign: 'center', color: 'var(--qs-muted)', padding: '48px 0' }}>
@@ -42,7 +42,7 @@ export default function CrossSellQueue({ cases, tab, onUpdate, emptyLabel }) {
   const standard = cases.filter(c => !c.lostLine);
 
   const renderCards = (list) => list.map(c => (
-    <CrossSellCard key={c.id} cs={c} tab={tab} onUpdate={(updates) => onUpdate(c.id, updates)} />
+    <CrossSellCard key={c.id} cs={c} tab={tab} onUpdate={(updates) => onUpdate(c.id, updates)} onOpenCase={onOpenCase} />
   ));
 
   return (
@@ -63,9 +63,13 @@ export default function CrossSellQueue({ cases, tab, onUpdate, emptyLabel }) {
   );
 }
 
-function CrossSellCard({ cs, tab, onUpdate }) {
+function CrossSellCard({ cs, tab, onUpdate, onOpenCase }) {
   const renewal = cs.renewal_cases;
   const cancel  = cs.pending_cases;
+  const chipBtn = {
+    fontSize: 11, padding: '4px 10px', borderRadius: 6, cursor: 'pointer',
+    fontFamily: 'inherit', fontWeight: 600, textAlign: 'left',
+  };
 
   return (
     <div style={{
@@ -137,25 +141,33 @@ function CrossSellCard({ cs, tab, onUpdate }) {
 
       <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
         {renewal && (
-          <div style={{
-            fontSize: 11, padding: '4px 10px', borderRadius: 6,
-            background: 'rgba(59,130,246,0.08)',
-            border: '1px solid rgba(59,130,246,0.2)',
-            color: '#60A5FA',
-          }}>
-            🔄 Renewal: {renewal.product?.toUpperCase()} · {renewal.renewal_date}
-          </div>
+          <button
+            type="button"
+            onClick={() => onOpenCase?.('renewal', renewal.id)}
+            title="Open and work this renewal case — log the call and pitch the win-back"
+            style={{ ...chipBtn,
+              background: 'rgba(59,130,246,0.08)',
+              border: '1px solid rgba(59,130,246,0.35)',
+              color: '#60A5FA',
+            }}
+          >
+            🔄 Open renewal: {renewal.product?.toUpperCase()} · {renewal.renewal_date} →
+          </button>
         )}
         {cancel && (
-          <div style={{
-            fontSize: 11, padding: '4px 10px', borderRadius: 6,
-            background: 'rgba(239,68,68,0.08)',
-            border: '1px solid rgba(239,68,68,0.2)',
-            color: '#F87171',
-          }}>
-            ⚠ Cancel: {cancel.product?.toUpperCase()} · due {cancel.cancel_effective_date}
-            {cancel.amount_due ? ` · $${Number(cancel.amount_due).toLocaleString()} owed` : ''}
-          </div>
+          <button
+            type="button"
+            onClick={() => onOpenCase?.('cancel', cancel.id)}
+            title="Open and work this pending-cancel case"
+            style={{ ...chipBtn,
+              background: 'rgba(239,68,68,0.08)',
+              border: '1px solid rgba(239,68,68,0.35)',
+              color: '#F87171',
+            }}
+          >
+            ⚠ Open cancel: {cancel.product?.toUpperCase()} · due {cancel.cancel_effective_date}
+            {cancel.amount_due ? ` · $${Number(cancel.amount_due).toLocaleString()} owed` : ''} →
+          </button>
         )}
         {cs.match_type === 'new_lead' && cs.lead_id && (
           <div style={{

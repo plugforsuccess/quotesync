@@ -1,13 +1,16 @@
 // src/pages/CrossSellPage.jsx
 import { useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCrossSellCases, useCrossSellUploads, useUpdateCrossSellCase } from '../hooks/useCrossSell';
 import CrossSellUploadModal from './components/cross-sell/CrossSellUploadModal';
 import CrossSellQueue from './components/cross-sell/CrossSellQueue';
 import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
+import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useActiveEmployees } from '../hooks/useEmployees';
 import { usePermissions } from '../hooks/usePermissions';
 
 // Household key for matching a customer across policies (no customer ID yet):
@@ -42,9 +45,29 @@ export default function CrossSellPage() {
         : 'No new winback candidates — all eligible terminations already have leads.');
   }
 
-  const { data: rawCases = [], isLoading } = useCrossSellCases(currentAgencyId);
+  const { data: rawCases = [], isLoading, refetch: refetchCases } = useCrossSellCases(currentAgencyId);
   const { data: uploads = [] } = useCrossSellUploads(currentAgencyId);
+  const { data: producers = [] } = useActiveEmployees(employee?.org_id);
   const updateCase = useUpdateCrossSellCase(currentAgencyId, employee?.id ?? null);
+
+  // Open the underlying renewal/cancel case in its full work modal, so a rep can
+  // log the call and pitch the win-back from here — no hunting for the customer.
+  const [openCase, setOpenCase] = useState(null);
+  async function openCaseById(kind, id) {
+    if (!id) return;
+    const table = kind === 'renewal' ? 'renewal_cases' : 'pending_cases';
+    const { data, error } = await supabase.from(table).select('*').eq('id', id).single();
+    if (!error && data) setOpenCase({ kind, data });
+  }
+  async function updateCaseRow(kind, id, updates) {
+    const table = kind === 'renewal' ? 'renewal_cases' : 'pending_cases';
+    if (updates && Object.keys(updates).length) {
+      const { error } = await supabase.from(table).update(updates).eq('id', id);
+      if (error) return error;
+    }
+    refetchCases();
+    return null;
+  }
 
   // Recent terminations (last 18 months) — used to flag a cross-sell customer
   // who is still active on one line but LOST another. That's a warm re-add (the
@@ -242,6 +265,7 @@ export default function CrossSellPage() {
           tab={tab}
           emptyLabel={emptyLabel}
           onUpdate={(id, updates) => updateCase.mutate({ id, updates })}
+          onOpenCase={openCaseById}
         />
       )}
 
@@ -251,6 +275,31 @@ export default function CrossSellPage() {
           uploadedBy={user?.id}
           onClose={() => setShowUpload(false)}
         />
+      )}
+
+      {openCase?.kind === 'renewal' && createPortal(
+        <RenewalDetailModal
+          event={openCase.data}
+          onClose={() => setOpenCase(null)}
+          onUpdate={(id, updates) => updateCaseRow('renewal', id, updates)}
+          agencyId={currentAgencyId}
+          currentEmployeeId={employee?.id}
+          producers={producers}
+          canReassign={false}
+        />,
+        document.body
+      )}
+      {openCase?.kind === 'cancel' && createPortal(
+        <EventDetailModal
+          event={openCase.data}
+          onClose={() => setOpenCase(null)}
+          onUpdate={(id, updates) => updateCaseRow('cancel', id, updates)}
+          agencyId={currentAgencyId}
+          currentEmployeeId={employee?.id}
+          producers={producers}
+          canReassign={false}
+        />,
+        document.body
       )}
     </div>
   );
