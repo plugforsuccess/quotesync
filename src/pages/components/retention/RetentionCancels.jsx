@@ -12,7 +12,7 @@ import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
 import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
-import { productLabel } from '../../../lib/productLabels';
+import { productLabel, premiumTermLabel } from '../../../lib/productLabels';
 import { titleCaseName } from '../../../lib/names';
 import { CallScriptBox, VoicemailScriptBox, renewalCallScript, cancelCallScript } from '../../../components/RetentionScripts';
 import CaseNotesFeed from './CaseNotesFeed';
@@ -1042,7 +1042,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
                     <label className="dark-label">
-                      New Premium <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>(as billed)</span>
+                      New Premium <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span>
                       <span style={{ color: "#F87171", marginLeft: 2 }}>*</span>
                     </label>
                     <input
@@ -1098,7 +1098,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Saved premium — only on a straight save (reinstatement) */}
             {form.status === "saved" && (
               <div>
-                <label className="dark-label">Premium saved<span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
+                <label className="dark-label">Premium saved <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
                 <input
                   className="dark-input"
                   inputMode="decimal"
@@ -1107,7 +1107,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   onChange={ev => setSavedPremium(ev.target.value)}
                 />
                 <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
-                  What the policy continues at after the save — as billed (auto is a 6-month term).
+                  What the policy continues at after the save.
                   {event.premium_at_risk ? (
                     <button type="button"
                       onClick={() => setSavedPremium(String(event.premium_at_risk))}
@@ -2123,7 +2123,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     </div>
                   </div>
                   <div>
-                    <label className="dark-label">Renewal paid<span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
+                    <label className="dark-label">Renewal paid <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
                     <input
                       className="dark-input"
                       inputMode="decimal"
