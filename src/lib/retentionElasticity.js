@@ -43,9 +43,19 @@ function tenureBand(originalYear) {
 // `products` is the array returned by useBookSnapshots().products.
 export function buildChurnModel(products = []) {
   const model = {};
+  const chosenPif = {};                                // highest pif_current kept per product_key
+  const toChurn = (pct) => (pct == null ? null : Math.max(0, Math.min(1, (100 - pct) / 100)));
   for (const p of products) {
     if (!p.product_key || p.is_rollup) continue;       // skip the auto rollup row
-    const toChurn = (pct) => (pct == null ? null : Math.max(0, Math.min(1, (100 - pct) / 100)));
+    // A single month can carry several rows for one product_key: the real
+    // aggregate plus empty sub-line stubs (pif_current 0, a meaningless 0%
+    // retention). Keep only the highest-PIF row per product so the real number
+    // wins — otherwise last-write-wins can pick an empty stub and resolve the
+    // whole product to 100% churn.
+    const pif = p.pif_current || 0;
+    if (pif <= 0) continue;                            // no in-force policies → retention is meaningless
+    if (p.product_key in chosenPif && chosenPif[p.product_key] >= pif) continue;
+    chosenPif[p.product_key] = pif;
     model[p.product_key] = {
       overall: toChurn(p.policy_retention_pct),
       '0_2':   toChurn(p.tenure_ret_0_2),
