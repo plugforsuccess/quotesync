@@ -10,7 +10,7 @@ import { useActiveEmployees } from '../../../hooks/useEmployees';
 import { useRepActivity } from '../../../hooks/useRepActivity';
 import { useDailyTeamActivity } from '../../../hooks/useDailyTeamActivity';
 import { useQueueCoverage } from '../../../hooks/useQueueCoverage';
-import { titleCaseName } from '../../../lib/names';
+import { titleCaseName, displayName } from '../../../lib/names';
 
 // Live: when a rep logs a call, saves a case, or completes a task, refresh the
 // activity views within seconds — a live action feed, not a manual refresh.
@@ -46,7 +46,9 @@ function empName(e) { return e.preferred_name || `${e.first_name || ''} ${e.last
 // Cases the rep worked (touched) — saved ones tagged, others show the outcome.
 // The customer name links into their full household (all cases, touches, notes).
 function WorkedRows({ worked, k, onCustomer }) {
-  return worked.map((w, i) => (
+  return worked.map((w, i) => {
+    const nm = displayName(w.name);
+    return (
     <tr key={`${k}-${i}`} style={{ background: 'var(--qs-elevated)' }}>
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
@@ -54,11 +56,13 @@ function WorkedRows({ worked, k, onCustomer }) {
           color: w.kind === 'cancel' ? '#F87171' : '#60A5FA' }}>
           {w.kind === 'cancel' ? 'CANCEL' : 'RENEWAL'}
         </span>
-        <button type="button" onClick={() => w.name && onCustomer?.(w.name)} title="Open customer"
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
-            fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
-          {titleCaseName(w.name) || '—'} ↗
-        </button>
+        {nm
+          ? <button type="button" onClick={() => onCustomer?.(w.name)} title="Open customer"
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
+              {nm} ↗
+            </button>
+          : <span style={{ color: 'var(--qs-muted)' }} title="No customer name on this case">—</span>}
         {' · '}
         {w.saved
           ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
@@ -66,7 +70,20 @@ function WorkedRows({ worked, k, onCustomer }) {
         {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
       </td>
     </tr>
-  ));
+    );
+  });
+}
+
+// One-line explainer for the Saves column's "N (Xc/Yr)" coding, shared by both
+// timeline tables so the notation isn't a mystery.
+function SavesLegend() {
+  return (
+    <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
+      Saves shows the day's total, split as <strong>cancels saved (c)</strong> /{' '}
+      <strong>renewals confirmed (r)</strong> — e.g. “1 (1c/0r)” is one save, a rescued cancellation.
+      Tap a row to see the cases worked.
+    </p>
+  );
 }
 
 // Service tasks the rep completed that day.
@@ -115,7 +132,9 @@ function RepTimeline({ agencyId, employees }) {
       </div>
       {isLoading || !data ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div> : (
         <table>
-          <thead><tr><th>Day</th><th>Calls</th><th>Reached</th><th>Saves</th><th>Premium</th><th>Tasks done</th></tr></thead>
+          <thead><tr><th>Day</th><th>Calls</th><th>Reached</th>
+            <th title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
+            <th>Premium</th><th>Tasks done</th></tr></thead>
           <tbody>
             {data.series.map(d => {
               const saves = d.cancelSaves + d.renewalSaves;
@@ -142,6 +161,7 @@ function RepTimeline({ agencyId, employees }) {
           </tbody>
         </table>
       )}
+      {data && <SavesLegend />}
     </>
   );
 }
@@ -180,7 +200,9 @@ function DailyTeam({ agencyId, employees }) {
       {isLoading ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>
         : rows.length === 0 ? <div style={{ color: 'var(--qs-muted)', fontSize: 13 }}>No recorded activity on {dayLabel(date)}.</div> : (
         <table>
-          <thead><tr><th>Rep</th><th>Calls</th><th>Reached</th><th>Saves</th><th>Premium</th><th>Tasks done</th></tr></thead>
+          <thead><tr><th>Rep</th><th>Calls</th><th>Reached</th>
+            <th title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
+            <th>Premium</th><th>Tasks done</th></tr></thead>
           <tbody>
             {rows.map(({ e, a }) => {
               const saves = a.cancelSaves + a.renewalSaves;
@@ -206,6 +228,7 @@ function DailyTeam({ agencyId, employees }) {
           </tbody>
         </table>
       )}
+      {rows.length > 0 && <SavesLegend />}
     </>
   );
 }
