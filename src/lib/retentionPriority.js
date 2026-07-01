@@ -126,12 +126,14 @@ export function calcRenewalPriority(event) {
   // Easy Pay modifier: autopay = renewal inertia, deprioritize slightly
   const paymentModifier = event.easy_pay === true ? -15 : 0;
 
-  // Multi-item boost: a multi-vehicle household is worth far more (more premium,
-  // more lines to lose, stickier once retained), so it must outrank comparable
-  // single-car renewals. Scales with vehicle/item count and is large enough to
-  // dominate in normal cases, while urgency (timeFactor, 40% weight) can still
-  // surface an imminent single-car lapse. +12 per extra item, capped at +36.
-  const multiItemBoost = itemCount >= 2 ? Math.min((itemCount - 1) * 12, 36) : 0;
+  // Multi-item boost: a genuinely multi-vehicle household (3+ cars) gets a
+  // modest tiebreaker nudge — not a line-jump. A 2-car policy is the median auto
+  // household, so it stays at baseline; boosting it would let "normal" outrank a
+  // real rate-shock or short-tenure single-car case. Note item count is ALREADY
+  // credited in valueFactor (getPortfolioPoints × itemCount), so this is a small
+  // top-up for large households, deliberately kept below the weighted rate-shock
+  // (25%) and tenure (20%) signals. +8 per extra car above 2, capped at +20.
+  const multiItemBoost = itemCount >= 3 ? Math.min((itemCount - 2) * 8, 20) : 0;
 
   // Weights: time 40%, shopping 25%, tenure 20%, value 10%, modifiers flat
   // Weights sum to 0.95 — remaining 0.05 absorbed by modifiers (capped at 100)
