@@ -472,6 +472,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     // an unset method comes through as "" from the form — coerce it to null so
     // the write doesn't trip `pending_cancel_events_contact_method_check`.
     updates.contact_method = form.contact_method || null;
+    // promise_date is a DATE column; an unset field comes through as "" from the
+    // form and Postgres rejects it ("invalid input syntax for type date"). Coerce
+    // empty to null — this is what blocked closing a lost case with no pay promise.
+    updates.promise_date = form.promise_date || null;
     if (["contacted","promise_to_pay","payment_plan_requested"].includes(form.status) && !event.contacted_at) {
       updates.contacted_at = new Date().toISOString();
     }
