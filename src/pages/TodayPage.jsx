@@ -17,7 +17,7 @@ import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import TodayFocusModal from './components/employee/TodayFocusModal';
 import MultiVehicleBadge from '../components/MultiVehicleBadge';
 import { useWinbackLapses, winbackFor } from '../hooks/useWinbackLapses';
-import { TIER_ORDER } from '../lib/retentionPriority';
+import { TIER_ORDER, isCancelPastDue } from '../lib/retentionPriority';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
 function fmt$(n) {
@@ -39,7 +39,11 @@ function rankOf(item) {
   if (item._kind === 'cancel') {
     const tier = TIER_ORDER[item.priority_tier] ?? 4;
     // P0=0 P1=10 P2=20 P3=30  (room for renewals to slot between tiers)
-    return tier * 10;
+    // Past-due cases (deadline passed, not yet lapsed) are the most urgent in
+    // their tier — about to permanently lapse — so nudge them ahead of
+    // not-yet-due cases in the same tier without crossing into the tier above.
+    const pastDueNudge = isCancelPastDue(item) ? 5 : 0;
+    return tier * 10 - pastDueNudge;
   }
   // renewal: convert days-until to a rank score
   const d = daysUntil(item.renewal_date);
