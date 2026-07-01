@@ -1098,16 +1098,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {/* Saved premium — only on a straight save (reinstatement) */}
             {form.status === "saved" && (
               <div>
-                <label className="dark-label">Premium saved (annual)<span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
+                <label className="dark-label">Premium saved<span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
                 <input
                   className="dark-input"
                   inputMode="decimal"
-                  placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Annual premium preserved"}
+                  placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Premium the policy continues at"}
                   value={savedPremium}
                   onChange={ev => setSavedPremium(ev.target.value)}
                 />
                 <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
-                  What the policy continues at after the save.
+                  What the policy continues at after the save — as billed (auto is a 6-month term).
                   {event.premium_at_risk ? (
                     <button type="button"
                       onClick={() => setSavedPremium(String(event.premium_at_risk))}
@@ -2127,7 +2127,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                     <input
                       className="dark-input"
                       inputMode="decimal"
-                      placeholder="Annual premium paid"
+                      placeholder="Premium paid (as billed)"
                       value={savedPremium}
                       onChange={ev => setSavedPremium(ev.target.value)}
                     />
