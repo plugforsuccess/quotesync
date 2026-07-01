@@ -15,6 +15,15 @@ function fmt$(n) {
   if (!n) return '$0';
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
 }
+// Call-outcome color: blue = reached, amber = tried but missed / deferred,
+// red = negative, muted = neutral/unknown. (Saves render separately in green.)
+function outcomeColor(result) {
+  const r = String(result || '').toLowerCase();
+  if (/(lost|wrong|disconnect|declin|refus|dead)/.test(r)) return '#F87171';
+  if (/(no[_ ]?answer|voicemail|\bvm\b|left|busy|callback|call[_ ]?back|scheduled|snooz)/.test(r)) return '#FBBF24';
+  if (/(reach|answered|spoke|contacted|connected)/.test(r)) return '#60A5FA';
+  return 'var(--qs-dim)';
+}
 function localDay(d = new Date()) { return d.toLocaleDateString('en-CA'); }
 // Every row gets an explicit calendar date; "Today"/"Yesterday" are shown as a
 // relative tag alongside the date rather than replacing it.
@@ -122,7 +131,7 @@ function WorkedRows({ worked, k, onCustomer }) {
         {' · '}
         {w.saved
           ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
-          : <span>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
+          : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
         {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
       </td>
     </tr>

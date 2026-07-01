@@ -35,6 +35,17 @@ function fmt$(n) {
   if (!n) return '$0';
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
 }
+// Right-aligned tabular figures so numeric columns line up down the table.
+const NUM = { textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontFamily: "'DM Mono', monospace" };
+// Call-outcome color: blue = reached, amber = tried but missed / deferred,
+// red = negative, muted = neutral/unknown. (Saves render separately in green.)
+function outcomeColor(result) {
+  const r = String(result || '').toLowerCase();
+  if (/(lost|wrong|disconnect|declin|refus|dead)/.test(r)) return '#F87171';
+  if (/(no[_ ]?answer|voicemail|\bvm\b|left|busy|callback|call[_ ]?back|scheduled|snooz)/.test(r)) return '#FBBF24';
+  if (/(reach|answered|spoke|contacted|connected)/.test(r)) return '#60A5FA';
+  return 'var(--qs-dim)';
+}
 function localDay(d = new Date()) { return d.toLocaleDateString('en-CA'); }
 function dayLabel(k) {
   if (k === localDay()) return 'Today';
@@ -66,7 +77,7 @@ function WorkedRows({ worked, k, onCustomer }) {
         {' · '}
         {w.saved
           ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
-          : <span>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
+          : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
         {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
       </td>
     </tr>
@@ -131,10 +142,12 @@ function RepTimeline({ agencyId, employees }) {
         )}
       </div>
       {isLoading || !data ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div> : (
-        <table>
-          <thead><tr><th>Day</th><th>Calls</th><th>Reached</th>
-            <th title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
-            <th>Premium</th><th>Tasks done</th></tr></thead>
+        <table style={{ width: '100%' }}>
+          <thead><tr><th style={{ textAlign: 'left' }}>Day</th>
+            <th style={{ textAlign: 'right' }}>Calls</th><th style={{ textAlign: 'right' }}>Reached</th>
+            <th style={{ textAlign: 'right' }}
+              title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
+            <th style={{ textAlign: 'right' }}>Premium</th><th style={{ textAlign: 'right' }}>Tasks done</th></tr></thead>
           <tbody>
             {data.series.map(d => {
               const saves = d.cancelSaves + d.renewalSaves;
@@ -145,13 +158,13 @@ function RepTimeline({ agencyId, employees }) {
                   <tr onClick={() => expandable && setOpenDay(openDay === d.date ? null : d.date)}
                     style={{ cursor: expandable ? 'pointer' : 'default', opacity: idle ? 0.5 : 1 }}>
                     <td style={{ fontWeight: 600 }}>{dayLabel(d.date)} {expandable ? (openDay === d.date ? '▾' : '▸') : ''}</td>
-                    <td>{d.attempts || '—'}</td>
-                    <td>{d.reached || '—'}</td>
-                    <td style={{ fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-muted)' }}>
+                    <td style={NUM}>{d.attempts || '—'}</td>
+                    <td style={NUM}>{d.reached || '—'}</td>
+                    <td style={{ ...NUM, fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-muted)' }}>
                       {saves ? `${saves} (${d.cancelSaves}c/${d.renewalSaves}r)` : '—'}
                     </td>
-                    <td style={{ color: d.premium ? '#10B981' : 'var(--qs-muted)' }}>{d.premium ? fmt$(d.premium) : '—'}</td>
-                    <td>{d.tasksDone || '—'}</td>
+                    <td style={{ ...NUM, color: d.premium ? '#10B981' : 'var(--qs-muted)' }}>{d.premium ? fmt$(d.premium) : '—'}</td>
+                    <td style={NUM}>{d.tasksDone || '—'}</td>
                   </tr>
                   {openDay === d.date && <WorkedRows worked={d.worked} k={d.date} onCustomer={onCustomer} />}
                   {openDay === d.date && <TaskDoneRows tasks={d.tasksList} k={d.date} />}
@@ -199,10 +212,12 @@ function DailyTeam({ agencyId, employees }) {
       </div>
       {isLoading ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>
         : rows.length === 0 ? <div style={{ color: 'var(--qs-muted)', fontSize: 13 }}>No recorded activity on {dayLabel(date)}.</div> : (
-        <table>
-          <thead><tr><th>Rep</th><th>Calls</th><th>Reached</th>
-            <th title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
-            <th>Premium</th><th>Tasks done</th></tr></thead>
+        <table style={{ width: '100%' }}>
+          <thead><tr><th style={{ textAlign: 'left' }}>Rep</th>
+            <th style={{ textAlign: 'right' }}>Calls</th><th style={{ textAlign: 'right' }}>Reached</th>
+            <th style={{ textAlign: 'right' }}
+              title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">Saves</th>
+            <th style={{ textAlign: 'right' }}>Premium</th><th style={{ textAlign: 'right' }}>Tasks done</th></tr></thead>
           <tbody>
             {rows.map(({ e, a }) => {
               const saves = a.cancelSaves + a.renewalSaves;
@@ -212,13 +227,13 @@ function DailyTeam({ agencyId, employees }) {
                   <tr onClick={() => expandable && setOpenRep(openRep === e.id ? null : e.id)}
                     style={{ cursor: expandable ? 'pointer' : 'default' }}>
                     <td style={{ fontWeight: 600 }}>{empName(e)} {expandable ? (openRep === e.id ? '▾' : '▸') : ''}</td>
-                    <td>{a.attempts || '—'}</td>
-                    <td>{a.reached || '—'}</td>
-                    <td style={{ fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-muted)' }}>
+                    <td style={NUM}>{a.attempts || '—'}</td>
+                    <td style={NUM}>{a.reached || '—'}</td>
+                    <td style={{ ...NUM, fontWeight: 700, color: saves ? '#10B981' : 'var(--qs-muted)' }}>
                       {saves ? `${saves} (${a.cancelSaves}c/${a.renewalSaves}r)` : '—'}
                     </td>
-                    <td style={{ color: a.premium ? '#10B981' : 'var(--qs-muted)' }}>{a.premium ? fmt$(a.premium) : '—'}</td>
-                    <td>{a.tasksDone || '—'}</td>
+                    <td style={{ ...NUM, color: a.premium ? '#10B981' : 'var(--qs-muted)' }}>{a.premium ? fmt$(a.premium) : '—'}</td>
+                    <td style={NUM}>{a.tasksDone || '—'}</td>
                   </tr>
                   {openRep === e.id && <WorkedRows worked={a.worked} k={e.id} onCustomer={onCustomer} />}
                   {openRep === e.id && <TaskDoneRows tasks={a.tasksList} k={e.id} />}
