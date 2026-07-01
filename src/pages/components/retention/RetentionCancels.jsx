@@ -1042,7 +1042,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div>
                     <label className="dark-label">
-                      New Annual Premium
+                      New Premium <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>(as billed)</span>
                       <span style={{ color: "#F87171", marginLeft: 2 }}>*</span>
                     </label>
                     <input
