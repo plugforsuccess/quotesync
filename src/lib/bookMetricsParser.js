@@ -62,6 +62,10 @@ function findMeta(rows, labelIncludes) {
 export function normalizeProductKey(raw = '') {
   const v = String(raw).toLowerCase().trim();
   if (v.includes('specialty auto') || v.includes('motorcycle') || v.includes('recreational')) return 'specialty_auto';
+  // Business / non-auto lines (e.g. "ABI - Non Auto", "Non-Auto") — guard before
+  // the generic auto catch below, which would otherwise misfile them as personal
+  // auto. "Non Standard Auto" is real auto and doesn't contain "non auto".
+  if (v.includes('non auto') || v.includes('non-auto')) return 'other';
   if (v.includes('non standard auto') || v.includes('nonstandard')) return 'auto';
   if (v.includes('voluntary auto')) return 'auto_rollup';
   if (v.includes('auto')) return 'auto';
@@ -140,12 +144,21 @@ export function parsePremiumProfitability(rows) {
     if (product.toLowerCase().startsWith('total')) continue;
 
     const row = rows[r];
+    const pifCurrent = intOrNull(at(row, idx.pif_current));
+    const pifPye     = intOrNull(at(row, idx.pif_pye));
+    // Skip structurally-empty product lines. Allstate lists every possible
+    // product (Flood, BOP, Ivantage, "Undefined", "Theft - Regular", …); rows
+    // with no policies in force this year OR last carry no retention signal and
+    // just clutter the book (and, keyed by product_key, could crowd out the real
+    // aggregate downstream). A line that dropped to zero this year but had PIF
+    // last year (pif_pye) is kept — that's a real retention collapse.
+    if (!pifCurrent && !pifPye) continue;
     records.push({
       production_month: productionMonth,
       product,
       product_key: normalizeProductKey(product),
-      pif_current:           intOrNull(at(row, idx.pif_current)),
-      pif_pye:               intOrNull(at(row, idx.pif_pye)),
+      pif_current:           pifCurrent,
+      pif_pye:               pifPye,
       pif_variance:          intOrNull(at(row, idx.pif_variance)),
       pif_ye_est_growth_pct: num(at(row, idx.pif_growth)),
       policy_retention_pct:  num(at(row, idx.ret_cur)),
