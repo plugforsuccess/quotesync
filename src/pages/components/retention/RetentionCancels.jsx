@@ -7,6 +7,8 @@ import { supabase } from "../../../lib/supabase";
 import { calcRenewalPriority, calcCancelPriority, computePriorityTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
 import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
+import { useBookSnapshots } from '../../../hooks/useBookMetrics';
+import { buildChurnModel } from '../../../lib/retentionElasticity';
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
@@ -1325,6 +1327,10 @@ function renewalUrgencyColor(days) {
 
 function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true }) {
   const days = daysUntilRenewal(event.renewal_date);
+  // Observed retention model so the Priority readout matches the queue ranking
+  // (product × tenure churn) regardless of which surface opened this modal.
+  const { data: book } = useBookSnapshots(agencyId);
+  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
   // Script inputs — same source the queue list uses, so the words match.
   const firstName = event.customer_name?.split(' ')[0] || 'there';
   const scriptChangePct = parseFloat(event.premium_change_pct) || 0;
@@ -1757,7 +1763,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
               { label: "Tenure",        value: event.original_year
                   ? `${CURRENT_YEAR - event.original_year} yrs (${event.original_year})`
                   : "\u2014" },
-              { label: "Priority",      value: String(event._priority ?? calcRenewalPriority(event)) },
+              { label: "Priority",      value: String(event._priority ?? calcRenewalPriority(event, { churnModel })) },
             ].map(({ label, value, color }) => (
               <div key={label} style={{
                 background: "var(--qs-elevated)",
@@ -2568,7 +2574,7 @@ function calcRowPoints(row, portfolioPoints) {
   return pts * items;
 }
 
-function calcUnifiedPriority(row) {
+function calcUnifiedPriority(row, churnModel) {
   const cancelScore = row.cancel_event_id
     ? calcCancelPriority({
         cancel_effective_date: row.cancel_effective_date,
@@ -2593,7 +2599,7 @@ function calcUnifiedPriority(row) {
         item_count:         row.renewal_item_count,
         product:            row.product,
         multi_line:         row.multi_line,
-      })
+      }, { churnModel })
     : 0;
 
   const base = Math.max(cancelScore, renewalScore);
@@ -2604,6 +2610,12 @@ function calcUnifiedPriority(row) {
 function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, onClearUrgentFilter }) {
   const { config: productConfig } = useAgencyProductConfig(agencyId);
   const queryClient = useQueryClient();
+
+  // Observed retention model (product × tenure) so priority reflects the agency's
+  // real churn history, not just the static tenure brackets. Falls back to the
+  // brackets per-segment when a product/tenure band has no snapshot data.
+  const { data: book } = useBookSnapshots(agencyId);
+  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
 
   const { data: rows = [], isLoading } = useQuery({
     queryKey: ['policy_retention_status', agencyId],
@@ -2751,7 +2763,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
   const filteredRows = useMemo(() => {
     let list = rows.map(r => ({
       ...r,
-      _priority: calcUnifiedPriority(r),
+      _priority: calcUnifiedPriority(r, churnModel),
       // policy_retention_status doesn't expose priority_tier, so derive it
       // client-side for cancel-side rows from the same inputs the DB uses.
       _priority_tier: r.cancel_event_id
@@ -2844,7 +2856,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           return sortDir === 'asc' ? a._priority - b._priority : b._priority - a._priority;
       }
     });
-  }, [rows, riskFilter, myCasesOnly, currentEmployeeId, sortCol, sortDir, urgentFilter]);
+  }, [rows, riskFilter, myCasesOnly, currentEmployeeId, sortCol, sortDir, urgentFilter, churnModel]);
 
   const kpiFilteredRows = useMemo(() => {
     if (kpiFilter === null) return filteredRows;

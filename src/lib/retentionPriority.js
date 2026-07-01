@@ -20,6 +20,31 @@ export function getTenureFactor(originalYear) {
   return 20;
 }
 
+// Observed churn (0-1) for a product × tenure segment, pulled from the agency's
+// book-snapshot churn model (see buildChurnModel in retentionElasticity.js).
+// This is the *base* segment churn only — NOT rate-shock adjusted — so priority
+// doesn't double-count the rate increase, which is already its own signal
+// (shoppingFactor). Returns null when the model has no observed number for this
+// segment, so callers fall back to the static tenure brackets.
+// NOTE: the band keys ('0_2' / '2_5' / '5plus') and their ≤2 / ≤5 boundaries are
+// the churn model's contract (buildChurnModel + the tenure_ret_* columns) — keep
+// them in sync with retentionElasticity.js's tenureBand().
+function observedSegmentChurn(product, originalYear, churnModel) {
+  if (!churnModel) return null;
+  const seg = churnModel[product];
+  if (!seg) return null;
+  const t = originalYear ? CURRENT_YEAR - originalYear : null;
+  const band = t == null ? null : t <= 2 ? '0_2' : t <= 5 ? '2_5' : '5plus';
+  const val = (band && seg[band] != null) ? seg[band] : seg.overall;
+  return val == null ? null : Math.max(0, Math.min(1, val));
+}
+
+// Maps observed segment churn (0-1) onto the same 0-100 scale as the static
+// tenure brackets so the two sources are interchangeable. Calibrated so a
+// ~0.35 churn segment (very high for personal lines) lands near the static
+// peak-churn factor (~90); typical auto (~0.18) → ~47, sticky HO (~0.12) → ~31.
+const OBSERVED_CHURN_TO_FACTOR = 260;
+
 function daysUntilRenewal(dateStr) {
   const d = new Date(dateStr);
   const today = new Date();
@@ -71,7 +96,11 @@ export function compareByTier(a, b) {
   return (a.cancel_effective_date || '').localeCompare(b.cancel_effective_date || '');
 }
 
-export function calcRenewalPriority(event) {
+// opts.churnModel — optional book-snapshot churn model (buildChurnModel output).
+// When provided and it has an observed number for this case's product × tenure
+// segment, the tenure factor is driven by the agency's REAL retention history
+// instead of the generic static brackets.
+export function calcRenewalPriority(event, opts = {}) {
   const days        = daysUntilRenewal(event.renewal_date);
   const changePct   = event.premium_change_pct || 0;
   const tenure      = event.original_year ? CURRENT_YEAR - event.original_year : 0;
@@ -100,14 +129,20 @@ export function calcRenewalPriority(event) {
     changePct >= 5  ? 30  :
     changePct > 0   ? 10  : 0;
 
-  // Tenure churn risk (0-100) — short tenure = highest risk, long tenure = inertia
+  // Tenure churn risk (0-100) — short tenure = highest risk, long tenure = inertia.
+  // Prefer the agency's OBSERVED retention for this product × tenure segment when
+  // a book-snapshot churn model is supplied; fall back to the static brackets
+  // (generic priors) when there's no observed number for the segment.
+  const observedChurn = observedSegmentChurn(product, event.original_year, opts.churnModel);
   const tenureFactor =
-    tenure <= 1  ? 85 :  // 0-1 yr: highest churn risk
-    tenure <= 2  ? 90 :  // 1-2 yr: peak churn window
-    tenure <= 5  ? 75 :  // 2-5 yr: still elevated
-    tenure <= 10 ? 50 :  // 5-10 yr: loyalty building
-    tenure <= 20 ? 35 :  // 10-20 yr: established relationship
-                   20;   // 20+ yr: strong inertia
+    observedChurn != null
+      ? Math.min(100, Math.round(observedChurn * OBSERVED_CHURN_TO_FACTOR))
+      : tenure <= 1  ? 85 :  // 0-1 yr: highest churn risk
+        tenure <= 2  ? 90 :  // 1-2 yr: peak churn window
+        tenure <= 5  ? 75 :  // 2-5 yr: still elevated
+        tenure <= 10 ? 50 :  // 5-10 yr: loyalty building
+        tenure <= 20 ? 35 :  // 10-20 yr: established relationship
+                       20;   // 20+ yr: strong inertia
 
   // Portfolio value factor (0-100) — based on points at risk, not raw premium.
   // Points incorporate both product weight (HO=20, auto=10 per item) and item count.
