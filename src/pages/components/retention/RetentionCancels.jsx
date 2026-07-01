@@ -2657,6 +2657,21 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
   const [riskFilter, setRiskFilter] = useState('all');
   const [kpiFilter, setKpiFilter] = useState(null);
   const [myCasesOnly, setMyCasesOnly] = useState(false);
+  const [assignedFilter, setAssignedFilter] = useState('all'); // 'all' | 'unassigned' | employeeId
+
+  // Assignees that actually have cases in the list — drives the "Assigned"
+  // filter dropdown. Built from the rows (not just the service-role producer
+  // list) so anyone with a case assigned can be filtered on.
+  const assigneeOptions = useMemo(() => {
+    const ids = new Set();
+    for (const r of rows) {
+      if (r.cancel_assigned_to_id) ids.add(r.cancel_assigned_to_id);
+      if (r.renewal_assigned_to_id) ids.add(r.renewal_assigned_to_id);
+    }
+    return [...ids]
+      .map(id => ({ id, name: employeeMap[id] || 'Unknown' }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [rows, employeeMap]);
   const [sortCol, setSortCol] = useState('priority');
   const [sortDir, setSortDir] = useState('desc');
   // Drilldown: { event, side: 'cancel'|'renewal' } — opens the full detail modal with logging
@@ -2786,6 +2801,15 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       );
     }
 
+    if (assignedFilter !== 'all') {
+      list = assignedFilter === 'unassigned'
+        ? list.filter(r => !r.cancel_assigned_to_id && !r.renewal_assigned_to_id)
+        : list.filter(r =>
+            r.cancel_assigned_to_id === assignedFilter ||
+            r.renewal_assigned_to_id === assignedFilter
+          );
+    }
+
     // Urgent filter — cases with cancel date ≤ 3 days away or past due
     if (urgentFilter) {
       const today = new Date();
@@ -2856,7 +2880,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           return sortDir === 'asc' ? a._priority - b._priority : b._priority - a._priority;
       }
     });
-  }, [rows, riskFilter, myCasesOnly, currentEmployeeId, sortCol, sortDir, urgentFilter, churnModel]);
+  }, [rows, riskFilter, myCasesOnly, assignedFilter, currentEmployeeId, sortCol, sortDir, urgentFilter, churnModel]);
 
   const kpiFilteredRows = useMemo(() => {
     if (kpiFilter === null) return filteredRows;
@@ -3004,11 +3028,25 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           </div>
         )}
 
+        {/* Assigned-to filter */}
+        <select
+          className="dark-select"
+          value={assignedFilter}
+          onChange={e => setAssignedFilter(e.target.value)}
+          title="Filter by assigned rep"
+          style={{ marginLeft: 'auto' }}
+        >
+          <option value="all">Assigned: Anyone</option>
+          <option value="unassigned">Unassigned</option>
+          {assigneeOptions.map(a => (
+            <option key={a.id} value={a.id}>{a.name}</option>
+          ))}
+        </select>
+
         {/* My Cases toggle */}
         <button
           onClick={() => setMyCasesOnly(v => !v)}
           className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
-          style={{ marginLeft: 'auto' }}
         >
           👤 My Cases
         </button>
