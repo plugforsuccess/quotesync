@@ -1,7 +1,8 @@
 // src/pages/components/retention/RetentionCancels.jsx
 // Extracted from BookHealthPage.jsx — UnifiedAtRiskTab + all modal dependencies.
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
 import { calcRenewalPriority, calcCancelPriority, computePriorityTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
@@ -2656,8 +2657,12 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
 
   const [riskFilter, setRiskFilter] = useState('all');
   const [kpiFilter, setKpiFilter] = useState(null);
-  const [myCasesOnly, setMyCasesOnly] = useState(false);
-  const [assignedFilter, setAssignedFilter] = useState('all'); // 'all' | 'unassigned' | employeeId
+  // Assigned-rep filter, driven by a popover on the "Assigned" column header.
+  // 'all' | 'me' | 'unassigned' | employeeId
+  const [assignedFilter, setAssignedFilter] = useState('all');
+  const [assignMenuOpen, setAssignMenuOpen] = useState(false);
+  const [assignMenuPos, setAssignMenuPos] = useState(null);
+  const assignBtnRef = useRef(null);
 
   // Assignees that actually have cases in the list — drives the "Assigned"
   // filter dropdown. Built from the rows (not just the service-role producer
@@ -2672,6 +2677,26 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       .map(id => ({ id, name: employeeMap[id] || 'Unknown' }))
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [rows, employeeMap]);
+
+  // Short label for the active assigned-rep filter, shown on the column header.
+  const activeAssignLabel =
+    assignedFilter === 'all'        ? null :
+    assignedFilter === 'me'         ? 'Me' :
+    assignedFilter === 'unassigned' ? 'Unassigned' :
+    (employeeMap[assignedFilter] || 'Unknown');
+
+  // Open the header filter popover anchored under the caret (portal-rendered so
+  // it isn't clipped by the table's horizontal scroll container).
+  function toggleAssignMenu() {
+    if (assignMenuOpen) { setAssignMenuOpen(false); return; }
+    const r = assignBtnRef.current?.getBoundingClientRect();
+    if (r) setAssignMenuPos({ top: r.bottom + 4, left: Math.max(8, r.right - 210) });
+    setAssignMenuOpen(true);
+  }
+  function pickAssign(value) {
+    setAssignedFilter(value);
+    setAssignMenuOpen(false);
+  }
   const [sortCol, setSortCol] = useState('priority');
   const [sortDir, setSortDir] = useState('desc');
   // Drilldown: { event, side: 'cancel'|'renewal' } — opens the full detail modal with logging
@@ -2794,20 +2819,18 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       list = list.filter(r => r.risk_type === riskFilter);
     }
 
-    if (myCasesOnly && currentEmployeeId) {
-      list = list.filter(r =>
-        r.cancel_assigned_to_id === currentEmployeeId ||
-        r.renewal_assigned_to_id === currentEmployeeId
-      );
-    }
-
     if (assignedFilter !== 'all') {
-      list = assignedFilter === 'unassigned'
-        ? list.filter(r => !r.cancel_assigned_to_id && !r.renewal_assigned_to_id)
-        : list.filter(r =>
-            r.cancel_assigned_to_id === assignedFilter ||
-            r.renewal_assigned_to_id === assignedFilter
+      if (assignedFilter === 'unassigned') {
+        list = list.filter(r => !r.cancel_assigned_to_id && !r.renewal_assigned_to_id);
+      } else {
+        const target = assignedFilter === 'me' ? currentEmployeeId : assignedFilter;
+        if (target) {
+          list = list.filter(r =>
+            r.cancel_assigned_to_id === target ||
+            r.renewal_assigned_to_id === target
           );
+        }
+      }
     }
 
     // Urgent filter — cases with cancel date ≤ 3 days away or past due
@@ -2880,7 +2903,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           return sortDir === 'asc' ? a._priority - b._priority : b._priority - a._priority;
       }
     });
-  }, [rows, riskFilter, myCasesOnly, assignedFilter, currentEmployeeId, sortCol, sortDir, urgentFilter, churnModel]);
+  }, [rows, riskFilter, assignedFilter, currentEmployeeId, sortCol, sortDir, urgentFilter, churnModel]);
 
   const kpiFilteredRows = useMemo(() => {
     if (kpiFilter === null) return filteredRows;
@@ -3028,28 +3051,6 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           </div>
         )}
 
-        {/* Assigned-to filter */}
-        <select
-          className="dark-select"
-          value={assignedFilter}
-          onChange={e => setAssignedFilter(e.target.value)}
-          title="Filter by assigned rep"
-          style={{ marginLeft: 'auto' }}
-        >
-          <option value="all">Assigned: Anyone</option>
-          <option value="unassigned">Unassigned</option>
-          {assigneeOptions.map(a => (
-            <option key={a.id} value={a.id}>{a.name}</option>
-          ))}
-        </select>
-
-        {/* My Cases toggle */}
-        <button
-          onClick={() => setMyCasesOnly(v => !v)}
-          className={`btn-ghost ${myCasesOnly ? 'active' : ''}`}
-        >
-          👤 My Cases
-        </button>
       </div>
 
       {/* Urgent filter banner */}
@@ -3100,7 +3101,30 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               <SortTh col="premium_change_pct" label="Δ%"        sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <SortTh col="product"            label="Product"   sortCol={sortCol} sortDir={sortDir} onSort={handleSort} />
               <th>Attempts</th>
-              <th>Assigned</th>
+              <th style={{ whiteSpace: 'nowrap' }}>
+                <button
+                  ref={assignBtnRef}
+                  onClick={toggleAssignMenu}
+                  title="Filter by assigned rep"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    padding: 0, font: 'inherit', letterSpacing: 'inherit',
+                    textTransform: 'inherit',
+                    color: activeAssignLabel ? 'var(--qs-info)' : 'inherit',
+                  }}
+                >
+                  Assigned
+                  {activeAssignLabel && (
+                    <span style={{ fontWeight: 700, textTransform: 'none' }}>
+                      : {activeAssignLabel}
+                    </span>
+                  )}
+                  <span style={{ fontSize: 9, opacity: activeAssignLabel ? 1 : 0.6 }}>
+                    {activeAssignLabel ? '⏷' : '▾'}
+                  </span>
+                </button>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -3220,6 +3244,67 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           </tbody>
         </table>
       </div>
+
+      {/* Assigned-rep filter popover — anchored under the "Assigned" header caret */}
+      {assignMenuOpen && assignMenuPos && createPortal(
+        <>
+          <div
+            onClick={() => setAssignMenuOpen(false)}
+            style={{ position: 'fixed', inset: 0, zIndex: 60 }}
+          />
+          <div
+            role="menu"
+            style={{
+              position: 'fixed', top: assignMenuPos.top, left: assignMenuPos.left,
+              width: 210, maxHeight: 320, overflowY: 'auto', zIndex: 61,
+              background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)',
+              borderRadius: 8, padding: 4, boxShadow: '0 8px 24px rgba(0,0,0,0.35)',
+            }}
+          >
+            {[
+              ...(currentEmployeeId ? [{ value: 'me', label: '👤 Me (my cases)' }] : []),
+              { value: 'all',        label: 'Anyone' },
+              { value: 'unassigned', label: 'Unassigned' },
+            ].map(opt => (
+              <button
+                key={opt.value}
+                role="menuitem"
+                onClick={() => pickAssign(opt.value)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
+                  border: 'none', borderRadius: 6, padding: '7px 10px', fontSize: 13,
+                  background: assignedFilter === opt.value ? 'var(--qs-info-subtle)' : 'transparent',
+                  color: assignedFilter === opt.value ? 'var(--qs-info)' : 'var(--qs-text)',
+                  fontWeight: assignedFilter === opt.value ? 700 : 500,
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+            {assigneeOptions.length > 0 && (
+              <div style={{ borderTop: '1px solid var(--qs-border)', margin: '4px 0' }} />
+            )}
+            {assigneeOptions.map(a => (
+              <button
+                key={a.id}
+                role="menuitem"
+                onClick={() => pickAssign(a.id)}
+                style={{
+                  display: 'block', width: '100%', textAlign: 'left', cursor: 'pointer',
+                  border: 'none', borderRadius: 6, padding: '7px 10px', fontSize: 13,
+                  background: assignedFilter === a.id ? 'var(--qs-info-subtle)' : 'transparent',
+                  color: assignedFilter === a.id ? 'var(--qs-info)' : 'var(--qs-text)',
+                  fontWeight: assignedFilter === a.id ? 700 : 500,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}
+              >
+                {a.name}
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
 
       {/* Drilldown detail modal — opens the full cancel or renewal modal with logging */}
       {drilldown && drilldown.side === 'cancel' && (
