@@ -9,6 +9,7 @@ import { useRetentionLift } from '../../../hooks/useRetentionLift';
 import { useTacticCaptureRate } from '../../../hooks/useTacticCaptureRate';
 import { useProofReadiness } from '../../../hooks/useProofReadiness';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
+import CancelSaveProof from './CancelSaveProof';
 
 function fmt$(n) {
   if (!n) return '$0';
@@ -200,6 +201,10 @@ export default function RetentionLiftReport({ agencyId }) {
           </li>
         </ul>
       </div>
+
+      {/* Cancel-side proof — the softer half of the book, held to the same bar */}
+      <div style={{ height: 1, background: 'var(--qs-border)', margin: '4px 0' }} />
+      <CancelSaveProof agencyId={agencyId} />
 
       {/* When is the next proof artifact buildable? */}
       <ProofReadiness agencyId={agencyId} capture={capture} />
