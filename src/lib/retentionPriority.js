@@ -85,10 +85,22 @@ export function computePriorityTier(row, today = new Date()) {
 
 export const TIER_ORDER = { P0: 0, P1: 1, P2: 2, P3: 3 };
 
-// Sort comparator: priority tier (P0 first), then premium desc, then cancel date asc.
+// A pending cancel whose cancel date has passed but that hasn't lapsed yet
+// (stage still pending). These are the most urgent in their tier — about to
+// permanently lapse — and are the prime reinstatement/rewrite window.
+export function isCancelPastDue(row) {
+  if (!row?.cancel_effective_date || row.stage === 'cancelled') return false;
+  return daysUntilCancel(row.cancel_effective_date) < 0;
+}
+
+// Sort comparator: priority tier (P0 first), then past-due first within the
+// tier, then premium desc, then cancel date asc.
 export function compareByTier(a, b) {
   const tierDiff = (TIER_ORDER[a.priority_tier] ?? 4) - (TIER_ORDER[b.priority_tier] ?? 4);
   if (tierDiff !== 0) return tierDiff;
+
+  const pastDueA = isCancelPastDue(a), pastDueB = isCancelPastDue(b);
+  if (pastDueA !== pastDueB) return pastDueA ? -1 : 1;
 
   const premDiff = (parseFloat(b.premium_at_risk) || 0) - (parseFloat(a.premium_at_risk) || 0);
   if (premDiff !== 0) return premDiff;
