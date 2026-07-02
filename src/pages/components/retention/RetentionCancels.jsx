@@ -203,7 +203,9 @@ function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
   const all = [
     { id: current.id, product: current.product, policy_no: current.policy_no,
       renewal_date: current.renewal_date, status: current.status, active: true },
-    ...siblings.map(s => ({ ...s, active: false })),
+    // Siblings come from useOtherActiveCases, which maps the renewal date onto
+    // a generic `date` field — normalize it so every tab gets its days chip.
+    ...siblings.map(s => ({ ...s, renewal_date: s.renewal_date ?? s.date, active: false })),
   ].sort((a, b) =>
     (productLabel(a.product) || String(a.product || '')).localeCompare(productLabel(b.product) || String(b.product || '')) ||
     String(a.policy_no || '').localeCompare(String(b.policy_no || '')));
