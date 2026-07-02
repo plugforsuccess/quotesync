@@ -198,7 +198,7 @@ export default function HouseholdDetailPage() {
         </div>
         <div style={{ fontSize: 12, marginTop: 4, color: lastTouch ? 'var(--qs-dim)' : 'var(--qs-muted)' }}>
           {lastTouch
-            ? <>Last touched {new Date(lastTouch.touched_at).toLocaleDateString()}{lastTouch.employee_name ? ` by ${lastTouch.employee_name}` : ''} · {lastTouch.source.replace('_', '-')}{lastTouch.result ? ` (${lastTouch.result.replace(/_/g, ' ')})` : ''}</>
+            ? <>Last touched {new Date(lastTouch.touched_at).toLocaleDateString()}{lastTouch.employee_name ? ` by ${lastTouch.employee_name}` : ''} · {lastTouch.source.replace('_', '-')}{lastTouch.result ? ` (${lastTouch.result.replace(/_/g, ' ')})` : ''}{lastTouch.direction === 'inbound' ? ' · customer called in' : ''}</>
             : 'Never touched — no logged contact on any queue.'}
         </div>
         {household && (
@@ -388,6 +388,20 @@ export default function HouseholdDetailPage() {
                       {label(t.product)}{t.policy_no ? ` · ${t.policy_no}` : ''}
                     </span>
                   )}
+                  {/* Direction — who initiated the call. Only rendered when the
+                      attempt recorded it (renewal/cancel calls since the
+                      direction column landed); inbound is the standout. */}
+                  {t.direction && (
+                    <span title={t.direction === 'inbound' ? 'Customer called the agency' : 'Rep called the customer'}
+                      style={{
+                        fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 4,
+                        background: t.direction === 'inbound' ? 'rgba(96,165,250,0.14)' : 'var(--qs-elevated)',
+                        border: `1px solid ${t.direction === 'inbound' ? 'rgba(96,165,250,0.45)' : 'var(--qs-border)'}`,
+                        color: t.direction === 'inbound' ? '#60A5FA' : 'var(--qs-dim)',
+                      }}>
+                      {t.direction === 'inbound' ? '↙ CALLED IN' : '↗ OUTBOUND'}
+                    </span>
+                  )}
                   <span style={{ color: 'var(--qs-text)' }}>
                     {(t.result || 'attempt').replace(/_/g, ' ')}
                     {t.method && t.method !== 'phone' ? ` · ${t.method}` : ''}
@@ -395,6 +409,15 @@ export default function HouseholdDetailPage() {
                   {t.employee_name && (
                     <span style={{ color: 'var(--qs-subtle)' }}>by {t.employee_name}</span>
                   )}
+                  {/* Tactic tags — required on reached calls, so show them here:
+                      a tagged call without a free-text note is not an empty one. */}
+                  {(t.interventions || []).map(code => (
+                    <span key={code} style={{
+                      fontSize: 10, fontWeight: 600, padding: '1px 7px', borderRadius: 4,
+                      background: 'rgba(167,139,250,0.12)', border: '1px solid rgba(167,139,250,0.35)',
+                      color: '#A78BFA',
+                    }}>🏷 {String(code).replace(/_/g, ' ')}</span>
+                  ))}
                   {t.note && (
                     <span style={{ color: 'var(--qs-muted)', fontStyle: 'italic' }}>“{t.note}”</span>
                   )}

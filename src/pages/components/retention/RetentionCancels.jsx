@@ -356,7 +356,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   useEffect(() => {
     supabase
       .from("pending_cancel_attempts")
-      .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
       .eq("pending_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -407,7 +407,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       }
       const { data } = await supabase
         .from("pending_cancel_attempts")
-        .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -966,6 +966,22 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       <span style={{ fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
                         via {a.method}
                       </span>
+                      {a.direction === "inbound" && (
+                        <span title="Customer called the agency — not an outbound dial" style={{
+                          fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 4, marginLeft: 8,
+                          background: "rgba(96,165,250,0.14)", border: "1px solid rgba(96,165,250,0.45)", color: "#60A5FA",
+                        }}>↙ CALLED IN</span>
+                      )}
+                      {(a.interventions || []).length > 0 && (
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                          {a.interventions.map(code => (
+                            <span key={code} style={{
+                              fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 4,
+                              background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.35)", color: "#A78BFA",
+                            }}>🏷 {String(code).replace(/_/g, " ")}</span>
+                          ))}
+                        </div>
+                      )}
                       {a.note && (
                         <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
                           {a.note}
@@ -1410,7 +1426,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   useEffect(() => {
     supabase
       .from("renewal_attempts")
-      .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
       .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -1470,7 +1486,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
       const { data } = await supabase
         .from("renewal_attempts")
-        .select("id, attempted_at, method, result, note, interventions, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
         .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -2075,6 +2091,22 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       <span style={{ fontSize: 12, color: "var(--qs-subtle)", marginLeft: 8 }}>
                         via {a.method}
                       </span>
+                      {a.direction === "inbound" && (
+                        <span title="Customer called the agency — not an outbound dial" style={{
+                          fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 4, marginLeft: 8,
+                          background: "rgba(96,165,250,0.14)", border: "1px solid rgba(96,165,250,0.45)", color: "#60A5FA",
+                        }}>↙ CALLED IN</span>
+                      )}
+                      {(a.interventions || []).length > 0 && (
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap", marginTop: 4 }}>
+                          {a.interventions.map(code => (
+                            <span key={code} style={{
+                              fontSize: 10, fontWeight: 600, padding: "1px 7px", borderRadius: 4,
+                              background: "rgba(167,139,250,0.12)", border: "1px solid rgba(167,139,250,0.35)", color: "#A78BFA",
+                            }}>🏷 {String(code).replace(/_/g, " ")}</span>
+                          ))}
+                        </div>
+                      )}
                       {a.note && (
                         <div style={{ fontSize: 12, color: "var(--qs-dim)", marginTop: 3 }}>
                           {a.note}
