@@ -17,7 +17,9 @@ import ProducerGoalProgress from './components/employee/ProducerGoalProgress';
 import TodayFocusModal from './components/employee/TodayFocusModal';
 import MultiVehicleBadge from '../components/MultiVehicleBadge';
 import { useWinbackLapses, winbackFor } from '../hooks/useWinbackLapses';
-import { TIER_ORDER, isCancelPastDue } from '../lib/retentionPriority';
+import { TIER_ORDER, isCancelPastDue, calcRenewalPriority } from '../lib/retentionPriority';
+import { buildChurnModel } from '../lib/retentionElasticity';
+import { useBookSnapshots } from '../hooks/useBookMetrics';
 import { EventDetailModal, RenewalDetailModal } from './components/retention/RetentionCancels';
 
 function fmt$(n) {
@@ -33,9 +35,9 @@ function daysUntil(dateStr) {
   return Math.ceil((d - today) / 86400000);
 }
 
-// Unified rank (lower = call first). Combines cancel priority_tier and
-// renewal days-until so a "renewal due in 2 days" beats a "P3 cancel".
-function rankOf(item) {
+// Unified rank (lower = call first). Combines cancel priority_tier and the
+// shared renewal churn score so both interleave on one scale.
+function rankOf(item, churnModel) {
   if (item._kind === 'cancel') {
     const tier = TIER_ORDER[item.priority_tier] ?? 4;
     // P0=0 P1=10 P2=20 P3=30  (room for renewals to slot between tiers)
@@ -45,18 +47,15 @@ function rankOf(item) {
     const pastDueNudge = isCancelPastDue(item) ? 5 : 0;
     return tier * 10 - pastDueNudge;
   }
-  // renewal: convert days-until to a rank score
-  const d = daysUntil(item.renewal_date);
-  const base =
-    d == null ? 50 :
-    d <= 3    ? 12 :  // beats P2 cancels
-    d <= 7    ? 22 :  // beats P3 cancels
-    d <= 14   ? 32 :
-    d <= 30   ? 40 : 60;
-  // Multi-vehicle households outrank comparable single-car renewals (lower rank
-  // = called first): up to a full bucket (-12) for a 4+ car household.
-  const mv = Math.min(((item.item_count || 1) - 1) * 4, 12);
-  return base - mv;
+  // Renewal: rank by the shared churn scorer (same model as /my/queue and the
+  // agency At-Risk tab — billing timeline, rate shock, tenure/observed churn,
+  // easy-pay penalty, bundling), mapped onto the cancel-tier scale. 52 - s/2:
+  // a ~85 hot renewal ranks ~10 (P1 territory), ~60 ranks ~22 (beats P3), a
+  // sleepy autopay-bundled case ranks ~45+ (below every cancel tier). Item
+  // count/multi-vehicle is already credited inside the scorer, so the old
+  // separate multi-vehicle nudge is gone (it would double-count).
+  const score = calcRenewalPriority(item, { churnModel });
+  return 52 - score / 2;
 }
 
 const TYPE_BADGE = {
@@ -80,6 +79,11 @@ export default function TodayPage() {
   const { data: employees = [] } = useActiveEmployees(orgId);
   // Lost-line lookup so a renewal row can flag a win-back (bundle) pitch.
   const winbackMap = useWinbackLapses(orgId);
+
+  // Observed retention model (product × tenure) feeding the renewal churn
+  // scorer, same as /my/queue and the agency At-Risk tab.
+  const { data: book } = useBookSnapshots(orgId);
+  const churnModel = useMemo(() => buildChurnModel(book?.products || []), [book]);
   // The dial list is cross-role by design, but the production goal strip is a
   // sales overlay — only show it when the sales hat is active (a dual-role
   // producer wearing Service shouldn't see it).
@@ -409,7 +413,7 @@ export default function TodayPage() {
       ...renewals.map(r => ({ ...r, _kind: 'renewal' })),
     ];
     return items.sort((a, b) => {
-      const ra = rankOf(a), rb = rankOf(b);
+      const ra = rankOf(a, churnModel), rb = rankOf(b, churnModel);
       if (ra !== rb) return ra - rb;
       const pa = parseFloat(a._kind === 'cancel' ? a.premium_at_risk : a.premium) || 0;
       const pb = parseFloat(b._kind === 'cancel' ? b.premium_at_risk : b.premium) || 0;
@@ -418,7 +422,7 @@ export default function TodayPage() {
       const db = b._kind === 'cancel' ? b.cancel_effective_date : b.renewal_date;
       return (da || '').localeCompare(db || '');
     });
-  }, [cancels, renewals]);
+  }, [cancels, renewals, churnModel]);
 
   const focused = ranked.slice(0, dailyTarget);
   const remainder = ranked.length - focused.length;

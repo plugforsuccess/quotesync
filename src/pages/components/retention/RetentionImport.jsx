@@ -1250,8 +1250,14 @@ function TerminationUploadZone({ agencyId, currentUserId }) {
   const queryClient = useQueryClient();
   const [lapseFile, setLapseFile] = useState(null);
   const [reportMonth, setReportMonth] = useState(() => {
+    // Terminations are reported in arrears — in early July you upload JUNE's
+    // report — and the upload checklist + auto-paid closeout both look for a
+    // committed upload tagged with the PRIOR month. Defaulting to the current
+    // month made correctly-timed uploads invisible to those checks, so default
+    // to the prior month instead (still user-adjustable).
     const now = new Date();
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+    const prior = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return `${prior.getFullYear()}-${String(prior.getMonth() + 1).padStart(2, "0")}-01`;
   });
   const [parsedRows, setParsedRows] = useState(null);
   const [isCommitting, setIsCommitting] = useState(false);
