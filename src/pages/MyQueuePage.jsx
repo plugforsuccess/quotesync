@@ -2085,6 +2085,7 @@ export default function MyQueuePage() {
       )}
       {selectedRenewal && createPortal(
         <RenewalDetailModal
+          key={selectedRenewal.id}
           event={selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
           onUpdate={updateRenewalCase}
@@ -2092,6 +2093,7 @@ export default function MyQueuePage() {
           currentEmployeeId={employeeId}
           producers={employees}
           canReassign={false}
+          onOpenSibling={setSelectedRenewal}
         />,
         document.body
       )}
