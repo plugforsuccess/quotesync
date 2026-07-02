@@ -399,7 +399,14 @@ export default function MyQueuePage() {
       (s, r) => s + expectedSaveablePremium(r, churnModel, effectiveSaveLift), 0
     );
     const untouched = renewalCases.filter(r => !r.attempt_count).length;
-    return { closingCount, rateShockCount, totalSaveable, untouched };
+    // The 21-day backstop: untouched cases about to cross into the bill window
+    // (bill posts at 21 days out). These get called before anything else so no
+    // customer hears from the bill before they hear from us.
+    const crossingCount = renewalCases.filter(r => {
+      const d = daysOf(r);
+      return !r.attempt_count && !isNaN(d) && d >= 21 && d <= 28;
+    }).length;
+    return { closingCount, rateShockCount, totalSaveable, untouched, crossingCount };
   }, [renewalCases, churnModel, effectiveSaveLift, closingMode]);
 
   // Multi-policy flag lookup — same customer appearing in >1 case
@@ -496,6 +503,12 @@ export default function MyQueuePage() {
         // Bundle-pitch list: audit-flagged cross-sell gaps + carrier-flagged
         // single-line customers, in one place (see isBundleTarget).
         return renewalCases.filter(isBundleTarget);
+      case 'crossing':
+        // The 21-day backstop list: untouched, about to cross into the bill
+        // window. Closest deadline first — these are today's must-calls.
+        return renewalCases
+          .filter(r => { const d = daysOf(r); return !r.attempt_count && !isNaN(d) && d >= 21 && d <= 28; })
+          .sort((a, b) => daysOf(a) - daysOf(b));
       case 'callbacks':
         return renewalCases
           .filter(r => r.callback_at)
@@ -517,12 +530,23 @@ export default function MyQueuePage() {
   const focusRenewalCases = useMemo(() => {
     const byPriority = (a, b) =>
       calcRenewalPriority(b, { churnModel }) - calcRenewalPriority(a, { churnModel });
+    const daysOf = (r) => {
+      const d = new Date(r.renewal_date);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return Math.ceil((d - today) / 86400000);
+    };
+    // 21-day backstop: never-attempted cases about to cross into the bill
+    // window are pinned above the churn ranking (closest deadline first), so
+    // coverage is guaranteed and can't be starved by higher-scoring cases.
+    const isCrossing = (r) => {
+      const d = daysOf(r);
+      return !r.attempt_count && !isNaN(d) && d >= 21 && d <= 28;
+    };
     const touched = filteredRenewalCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
-    const untouched = filteredRenewalCases
-      .filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr)
-      .slice()
-      .sort(byPriority);
-    return [...touched, ...untouched].slice(0, dailyTarget);
+    const rest = filteredRenewalCases.filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr);
+    const crossing = rest.filter(isCrossing).sort((a, b) => daysOf(a) - daysOf(b));
+    const scored = rest.filter(c => !isCrossing(c)).sort(byPriority);
+    return [...touched, ...crossing, ...scored].slice(0, dailyTarget);
   }, [filteredRenewalCases, dailyTarget, todayStr, churnModel]);
   const displayRenewalCases = (focusMode && renewalFilter !== 'callbacks') ? focusRenewalCases : filteredRenewalCases;
   const groupedRenewals = groupRenewalsByHousehold(displayRenewalCases);
@@ -1634,6 +1658,14 @@ export default function MyQueuePage() {
             sub:   'scheduled',
             filter: 'callbacks', isOn: renewalFilter === 'callbacks',
             apply: () => setRenewalFilter(f => f === 'callbacks' ? 'all' : 'callbacks'),
+          },
+          {
+            label: '⏳ Crossing 21d',
+            value: renewalStats.crossingCount,
+            color: renewalStats.crossingCount > 0 ? '#F87171' : '#34D399',
+            sub:   'untouched · call before the bill',
+            filter: 'crossing', isOn: renewalFilter === 'crossing',
+            apply: () => setRenewalFilter(f => f === 'crossing' ? 'all' : 'crossing'),
           },
           {
             label: '💡 Bundle pitch',
