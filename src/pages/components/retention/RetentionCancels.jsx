@@ -193,29 +193,53 @@ function CustomerDrilldownModal({ event, onClose }) {
 // Tabs across the household's open renewal cases (auto + home renewing in the
 // same window), so one call can work every policy without closing the modal
 // and searching for the sibling case. Clicking a sibling swaps the modal to it.
+// Tabs hold a FIXED, deterministic order (product, then policy number) with the
+// active one highlighted in place — switching must never reorder the row. Each
+// tab carries its days-until so the rep sees the household's timing at a
+// glance; a ✓ marks a case already confirmed.
 
 function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
   if (!siblings?.length) return null;
+  const all = [
+    { id: current.id, product: current.product, policy_no: current.policy_no,
+      renewal_date: current.renewal_date, status: current.status, active: true },
+    ...siblings.map(s => ({ ...s, active: false })),
+  ].sort((a, b) =>
+    (productLabel(a.product) || String(a.product || '')).localeCompare(productLabel(b.product) || String(b.product || '')) ||
+    String(a.policy_no || '').localeCompare(String(b.policy_no || '')));
   const tab = {
     fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8,
     border: '1px solid', display: 'inline-flex', gap: 6, alignItems: 'center',
+  };
+  const daysChip = (c) => {
+    const d = daysUntilRenewal(c.renewal_date);
+    if (isNaN(d)) return null;
+    return d < 0 ? 'past' : d === 0 ? 'today' : `${d}d`;
   };
   return (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
       <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--qs-subtle)',
         textTransform: 'uppercase', letterSpacing: '0.08em' }}>Household</span>
-      <span style={{ ...tab, cursor: 'default',
-        background: 'rgba(59,130,246,0.14)', borderColor: '#3B82F6', color: '#60A5FA' }}>
-        {productLabel(current.product) || current.product} · {current.policy_no}
-      </span>
-      {siblings.map(s => (
-        <button key={s.id} type="button" onClick={() => onOpen(s)} disabled={busyId === s.id}
-          title={`Open the ${productLabel(s.product) || s.product} case — same customer, same call`}
-          style={{ ...tab, cursor: 'pointer', fontFamily: 'inherit',
-            background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)', color: 'var(--qs-text)' }}>
-          {busyId === s.id ? 'Opening…' : <>{productLabel(s.product) || s.product} · {s.policy_no} →</>}
-        </button>
-      ))}
+      {all.map(c => {
+        const label = <>
+          {productLabel(c.product) || c.product} · {c.policy_no}
+          {daysChip(c) && <span style={{ fontWeight: 600, opacity: 0.75 }}>· {daysChip(c)}</span>}
+          {c.status === 'confirmed' && <span style={{ color: '#34D399' }}>✓</span>}
+        </>;
+        return c.active ? (
+          <span key={c.id} aria-current="true" style={{ ...tab, cursor: 'default',
+            background: 'rgba(59,130,246,0.14)', borderColor: '#3B82F6', color: '#60A5FA' }}>
+            {label}
+          </span>
+        ) : (
+          <button key={c.id} type="button" onClick={() => onOpen(c)} disabled={busyId === c.id}
+            title={`Open the ${productLabel(c.product) || c.product} case — same customer, same call`}
+            style={{ ...tab, cursor: 'pointer', fontFamily: 'inherit',
+              background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)', color: 'var(--qs-text)' }}>
+            {busyId === c.id ? 'Opening…' : label}
+          </button>
+        );
+      })}
     </div>
   );
 }

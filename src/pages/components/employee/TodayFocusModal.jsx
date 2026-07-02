@@ -14,7 +14,7 @@ function fmt$(n) {
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
 }
 
-function Section({ title, color, items, renderRight }) {
+function Section({ title, color, items, renderRight, onOpen }) {
   return (
     <div style={{ marginBottom: 18 }}>
       <div style={{ fontSize: 11, fontWeight: 700, color, textTransform: 'uppercase',
@@ -25,28 +25,40 @@ function Section({ title, color, items, renderRight }) {
         <div style={{ fontSize: 12, color: 'var(--qs-muted)' }}>None yet today.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {items.map((it, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 10, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
-              borderRadius: 8, padding: '8px 12px', fontSize: 13 }}>
-              <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>
-                {titleCaseName(it.name) || 'Unknown'}
-                {it.product && (
-                  <span style={{ color: 'var(--qs-muted)', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
-                    {productLabel(it.product)}
-                  </span>
-                )}
-              </span>
-              {renderRight && renderRight(it)}
-            </div>
-          ))}
+          {items.map((it, i) => {
+            // Rows with a case id open the corresponding case detail modal.
+            const clickable = !!(onOpen && it.caseId);
+            const Tag = clickable ? 'button' : 'div';
+            return (
+              <Tag key={i}
+                {...(clickable ? { type: 'button', onClick: () => onOpen(it), title: 'Open case detail' } : {})}
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 10, background: 'var(--qs-card)', border: '1px solid var(--qs-border)',
+                  borderRadius: 8, padding: '8px 12px', fontSize: 13, width: '100%',
+                  textAlign: 'left', fontFamily: 'inherit',
+                  cursor: clickable ? 'pointer' : 'default' }}>
+                <span style={{ color: 'var(--qs-text)', fontWeight: 600 }}>
+                  {titleCaseName(it.name) || 'Unknown'}
+                  {it.product && (
+                    <span style={{ color: 'var(--qs-muted)', fontWeight: 400, marginLeft: 6, fontSize: 11 }}>
+                      {productLabel(it.product)}
+                    </span>
+                  )}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {renderRight && renderRight(it)}
+                  {clickable && <span style={{ color: 'var(--qs-dim)', fontSize: 12 }}>›</span>}
+                </span>
+              </Tag>
+            );
+          })}
         </div>
       )}
     </div>
   );
 }
 
-export default function TodayFocusModal({ employeeId, todayStr, onClose }) {
+export default function TodayFocusModal({ employeeId, todayStr, onClose, onOpenCase = null }) {
   const { data, isLoading } = useQuery({
     queryKey: ['today_focus_detail', employeeId, todayStr],
     enabled: !!employeeId,
@@ -75,28 +87,29 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose }) {
 
       const [savedR, savedC] = await Promise.all([
         supabase.from('renewal_cases')
-          .select('customer_name, product, premium, saved_premium')
+          .select('id, customer_name, product, premium, saved_premium')
           .eq('closed_by_id', employeeId).eq('resolution_date', todayStr).eq('status', 'confirmed'),
         supabase.from('pending_cases')
-          .select('customer_name, product, premium_at_risk, saved_premium')
+          .select('id, customer_name, product, premium_at_risk, saved_premium')
           .eq('closed_by_id', employeeId).eq('resolution_date', todayStr).in('status', ['saved', 'rewritten']),
       ]);
 
       // Distinct customers worked today, flagged reached / inbound.
       const byCase = new Map();
-      const add = (rows, idKey, caseKey) => {
+      const add = (rows, idKey, caseKey, kind) => {
         for (const r of rows || []) {
           const c = r[caseKey];
           if (!c) continue;
           const k = idKey + r[idKey];
-          const prev = byCase.get(k) || { name: c.customer_name, product: c.product, reached: false, inbound: false };
+          const prev = byCase.get(k) || { name: c.customer_name, product: c.product,
+            caseId: r[idKey], kind, reached: false, inbound: false };
           if (r.result === 'reached') prev.reached = true;
           if (r.direction === 'inbound') prev.inbound = true;
           byCase.set(k, prev);
         }
       };
-      add(raData, 'renewal_case_id', 'renewal_cases');
-      add(caData, 'pending_case_id', 'pending_cases');
+      add(raData, 'renewal_case_id', 'renewal_cases', 'renewal');
+      add(caData, 'pending_case_id', 'pending_cases', 'cancel');
 
       const all = [...byCase.values()];
       const inbound  = all.filter((c) => c.inbound);
@@ -104,8 +117,8 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose }) {
       const noAnswer = all.filter((c) => !c.reached && !c.inbound);
 
       const saved = [
-        ...(savedR.data || []).map((r) => ({ name: r.customer_name, product: r.product, premium: Number(r.saved_premium ?? r.premium ?? 0) })),
-        ...(savedC.data || []).map((r) => ({ name: r.customer_name, product: r.product, premium: Number(r.saved_premium ?? r.premium_at_risk ?? 0) })),
+        ...(savedR.data || []).map((r) => ({ name: r.customer_name, product: r.product, caseId: r.id, kind: 'renewal', premium: Number(r.saved_premium ?? r.premium ?? 0) })),
+        ...(savedC.data || []).map((r) => ({ name: r.customer_name, product: r.product, caseId: r.id, kind: 'cancel', premium: Number(r.saved_premium ?? r.premium_at_risk ?? 0) })),
       ];
 
       return { inbound, reached, noAnswer, saved };
@@ -129,13 +142,13 @@ export default function TodayFocusModal({ employeeId, todayStr, onClose }) {
           <div style={{ color: 'var(--qs-subtle)', fontSize: 13, padding: '24px 0', textAlign: 'center' }}>Loading…</div>
         ) : (
           <>
-            <Section title="🎉 Saved" color="#10B981" items={data.saved}
+            <Section title="🎉 Saved" color="#10B981" items={data.saved} onOpen={onOpenCase}
               renderRight={(it) => (
                 <span style={{ color: '#10B981', fontWeight: 700, fontSize: 12 }}>{fmt$(it.premium)} kept</span>
               )} />
-            <Section title="✅ Reached (proactive)" color="#10B981" items={data.reached} />
-            <Section title="📲 Inbound — they called us" color="#60A5FA" items={data.inbound} />
-            <Section title="📞 Attempted — no answer" color="var(--qs-subtle)" items={data.noAnswer} />
+            <Section title="✅ Reached (proactive)" color="#10B981" items={data.reached} onOpen={onOpenCase} />
+            <Section title="📲 Inbound — they called us" color="#60A5FA" items={data.inbound} onOpen={onOpenCase} />
+            <Section title="📞 Attempted — no answer" color="var(--qs-subtle)" items={data.noAnswer} onOpen={onOpenCase} />
           </>
         )}
       </div>

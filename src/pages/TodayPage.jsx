@@ -440,11 +440,17 @@ export default function TodayPage() {
   // "this household has other open cases" (e.g. auto + home renewing the same
   // day where only the auto made the focus cut) — one call should work all of
   // them. Keyed by normalized name, same as the queue's household grouping.
-  const householdCounts = useMemo(() => {
+  // Carries kind + product so the badge can name the sibling ("⌂ +HOME")
+  // instead of an abstract count.
+  const householdItems = useMemo(() => {
     const m = {};
-    for (const c of [...cancels, ...renewals]) {
+    for (const c of cancels) {
       const k = (c.customer_name || '').trim().toLowerCase();
-      if (k) m[k] = (m[k] || 0) + 1;
+      if (k) (m[k] ||= []).push({ id: c.id, kind: 'cancel', product: c.product });
+    }
+    for (const r of renewals) {
+      const k = (r.customer_name || '').trim().toLowerCase();
+      if (k) (m[k] ||= []).push({ id: r.id, kind: 'renewal', product: r.product });
     }
     return m;
   }, [cancels, renewals]);
@@ -779,7 +785,8 @@ export default function TodayPage() {
                 item={item}
                 todayStr={todayStr}
                 winbackMap={winbackMap}
-                householdExtra={(householdCounts[(item.customer_name || '').trim().toLowerCase()] || 1) - 1}
+                householdSiblings={(householdItems[(item.customer_name || '').trim().toLowerCase()] || [])
+                  .filter(x => !(x.id === item.id && x.kind === item._kind))}
                 onOpen={() => {
                   if (item._kind === 'cancel') setSelectedCancel(item);
                   else setSelectedRenewal(item);
@@ -836,13 +843,23 @@ export default function TodayPage() {
           employeeId={employeeId}
           todayStr={todayStr}
           onClose={() => setShowActivity(false)}
+          onOpenCase={async ({ kind, caseId }) => {
+            // Route an activity row to its case's work surface: fetch the full
+            // row (the modal needs every field) and swap modals.
+            const table = kind === 'cancel' ? 'pending_cases' : 'renewal_cases';
+            const { data } = await supabase.from(table).select('*').eq('id', caseId).maybeSingle();
+            if (!data) return;
+            setShowActivity(false);
+            if (kind === 'cancel') setSelectedCancel(data);
+            else setSelectedRenewal(data);
+          }}
         />
       )}
     </div>
   );
 }
 
-function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdExtra = 0 }) {
+function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdSiblings = [] }) {
   const touched = item.last_attempt_at?.slice(0, 10) === todayStr;
 
   const isCancel = item._kind === 'cancel';
@@ -894,14 +911,20 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdExtra = 
               background: tierBadge.bg, color: tierBadge.color, letterSpacing: '0.05em',
             }}>{tierBadge.label}</span>
           )}
-          {householdExtra > 0 && (
+          {householdSiblings.length > 0 && (
             <span
-              title={`This customer has ${householdExtra + 1} open cases (another policy cancelling or renewing). One call — work them all; the case detail has tabs to switch between them.`}
+              title={`Also open for this customer: ${householdSiblings
+                .map(s => `${productLabel(s.product) || s.product || 'policy'} (${s.kind === 'cancel' ? 'pending cancel' : 'renewal'})`)
+                .join(', ')}. One call covers the household — the case detail has tabs to switch between policies.`}
               style={{
                 fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                 background: '#F59E0B22', color: '#FBBF24', letterSpacing: '0.05em',
                 border: '1px solid #F59E0B44', cursor: 'help',
-              }}>⌂ {householdExtra + 1} POLICIES · 1 CALL</span>
+              }}>
+              ⌂ {householdSiblings.map(s =>
+                `+${String(productLabel(s.product) || s.product || '?').toUpperCase()}${s.kind === 'cancel' ? ' ⚠' : ''}`
+              ).join(' ')}
+            </span>
           )}
           {touched && (
             <span style={{
