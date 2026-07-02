@@ -2982,6 +2982,12 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
   const kpiFilteredRows = useMemo(() => {
     if (kpiFilter === null) return filteredRows;
     if (kpiFilter === 'multi_line') return filteredRows.filter(r => r.multi_line === 'Yes');
+    if (kpiFilter === 'uncovered21') {
+      // Renewals already inside the 21-day bill window with zero attempts —
+      // the coverage-gap list behind the 21-Day Coverage KPI.
+      return filteredRows.filter(r =>
+        r.renewal_event_id && daysUntilRenewal(r.renewal_date) <= 21 && !r.renewal_attempts);
+    }
     return filteredRows.filter(r => r.risk_type === kpiFilter);
   }, [filteredRows, kpiFilter]);
 
@@ -3007,8 +3013,31 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           const countPendingCancel = rows.filter(r => r.risk_type === 'pending_cancel').length;
           const countDualRisk      = rows.filter(r => r.risk_type === 'dual_risk').length;
 
+          // 21-day coverage — the agency goal is a first touch on every renewal
+          // BEFORE the bill posts at 21 days out. Measured on open renewal-side
+          // cases already inside the bill window: what share got at least one
+          // attempt. The uncovered count is the actionable number (it drives
+          // the click-through filter).
+          const inside21 = rows.filter(r =>
+            r.renewal_event_id && daysUntilRenewal(r.renewal_date) <= 21);
+          const uncovered21 = inside21.filter(r => !r.renewal_attempts).length;
+          const coveragePct = inside21.length
+            ? Math.round(((inside21.length - uncovered21) / inside21.length) * 100)
+            : 100;
+
           // KpiCard color prop — hex intentionally
           const kpis = [
+            {
+              key:        'coverage21',
+              label:      '21-Day Coverage',
+              rawValue:   uncovered21,
+              display:    `${coveragePct}%`,
+              sub:        uncovered21
+                ? `${uncovered21} untouched inside 21d`
+                : 'all inside-21d renewals touched',
+              color:      uncovered21 ? '#EF4444' : '#10B981',
+              filterKey:  uncovered21 ? 'uncovered21' : null,
+            },
             {
               key:        'premium',
               label:      'Premium Exposed',
@@ -3114,7 +3143,8 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
               kpiFilter === 'renewal'        ? 'Renewals'        :
               kpiFilter === 'pending_cancel' ? 'Pending Cancel'  :
               kpiFilter === 'dual_risk'      ? 'Dual Risk'       :
-              kpiFilter === 'multi_line'     ? 'Multi-Line'      : kpiFilter
+              kpiFilter === 'multi_line'     ? 'Multi-Line'      :
+              kpiFilter === 'uncovered21'    ? 'Untouched inside 21d' : kpiFilter
             }
             <button
               onClick={() => setKpiFilter(null)}

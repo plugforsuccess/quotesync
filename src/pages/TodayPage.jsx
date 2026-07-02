@@ -55,7 +55,16 @@ function rankOf(item, churnModel) {
   // count/multi-vehicle is already credited inside the scorer, so the old
   // separate multi-vehicle nudge is gone (it would double-count).
   const score = calcRenewalPriority(item, { churnModel });
-  return 52 - score / 2;
+  const natural = 52 - score / 2;
+  // 21-day backstop: a never-attempted renewal about to cross into the bill
+  // window (bill posts at 21d) pins at ~14 — below P0/P1 cancels (genuine
+  // emergencies) but above P2/P3 and ordinary renewals — closest deadline
+  // first, so coverage can't be starved by higher-scoring cases.
+  const d = daysUntil(item.renewal_date);
+  if (!item.attempt_count && d != null && d >= 21 && d <= 28) {
+    return Math.min(natural, 14 + (d - 21) / 10);
+  }
+  return natural;
 }
 
 const TYPE_BADGE = {
