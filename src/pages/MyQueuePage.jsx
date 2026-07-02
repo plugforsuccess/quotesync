@@ -273,6 +273,66 @@ export default function MyQueuePage() {
 
   const roles = employee?.roles || [];
 
+  // Realtime: when a case assigned to me changes — a new assignment, a
+  // principal reassigning it in the agency portal, or a status flip from another
+  // tab — refetch the affected list so the queue stays in sync without a manual
+  // refresh. Mirrors the auto-reconnecting channel used on /my/today so this
+  // queue behaves the same way. (Note: Supabase delivers the "now matches me"
+  // event to the new assignee; a reassigned-away case clears on the previous
+  // rep's next refetch.)
+  useEffect(() => {
+    if (!employeeId) return;
+
+    let reconnectTimer = null;
+    let isReconnecting = false;
+    let currentChannel = null;
+
+    function subscribe() {
+      const channel = supabase
+        .channel(`my-queue-cases-${employeeId}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'pending_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['my_cancel_cases', employeeId] });
+          queryClient.invalidateQueries({ queryKey: ['my_cancel_cases_snoozed', employeeId] });
+        })
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'renewal_cases',
+          filter: `assigned_to_id=eq.${employeeId}`,
+        }, () => {
+          queryClient.invalidateQueries({ queryKey: ['my_renewal_cases', employeeId] });
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            isReconnecting = false;
+          } else if ((status === 'CLOSED' || status === 'CHANNEL_ERROR') && !isReconnecting) {
+            isReconnecting = true;
+            reconnectTimer = setTimeout(() => {
+              supabase.removeChannel(channel);
+              currentChannel = null;
+              subscribe();
+            }, 5000);
+          }
+        });
+
+      currentChannel = channel;
+    }
+
+    subscribe();
+
+    return () => {
+      clearTimeout(reconnectTimer);
+      if (currentChannel) {
+        supabase.removeChannel(currentChannel);
+      }
+    };
+  }, [employeeId, queryClient]);
+
   // Track stale refresh
   useEffect(() => {
     if (!cancelLoading && !renewalLoading) setLastRefreshed(Date.now());
