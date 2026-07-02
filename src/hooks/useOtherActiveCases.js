@@ -1,35 +1,33 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 
-export function useOtherActiveCases({ agencyId, customerName, policyNo, excludeEventId, excludeRenewalId }) {
-  // Policy prefix — first 7 chars identify the Allstate customer account
-  const policyPrefix = policyNo?.slice(0, 7) || '';
-
-  // Name fallback — require both first AND last name to reduce false positives
+// NOTE: `policyNo` is accepted for call-site compatibility but deliberately
+// unused. A previous version matched siblings on the first 7 chars of the
+// policy number, assuming the prefix identified one customer's account — it
+// doesn't. Allstate policy numbers are issued sequentially, so two strangers
+// who bought policies around the same time share a prefix (e.g. 885537743 /
+// 885537765 belonged to two different customers and rendered each other's
+// cases as household siblings). A live-book audit found the prefix never tied
+// one customer's differently-named policies together — zero value, real false
+// positives — so household identity here is the customer name, same as
+// household_members.name_key and every other household mechanism in the app.
+export function useOtherActiveCases({ agencyId, customerName, policyNo, excludeEventId, excludeRenewalId }) { // eslint-disable-line no-unused-vars
+  // Require both first AND last name to reduce false positives
   const parts = customerName?.trim().split(/\s+/) || [];
   const firstName = parts.length > 1 ? parts[0] : '';
   const lastName  = parts.length > 1 ? parts[parts.length - 1] : '';
 
-  const hasPolicyMatch = policyPrefix.length >= 7;
-  const hasNameMatch   = firstName.length >= 2 && lastName.length >= 2;
+  const hasNameMatch = firstName.length >= 2 && lastName.length >= 2;
 
   return useQuery({
-    queryKey: ['other_active_cases', agencyId, policyPrefix, lastName, firstName, excludeEventId, excludeRenewalId],
+    queryKey: ['other_active_cases', agencyId, lastName, firstName, excludeEventId, excludeRenewalId],
     queryFn: async () => {
-      if (!agencyId || (!hasPolicyMatch && !hasNameMatch)) return [];
+      if (!agencyId || !hasNameMatch) return [];
 
       const TERMINAL         = ['saved', 'lost', 'auto_resolved', 'requested_cancellation', 'cancelled'];
       const RENEWAL_TERMINAL = ['confirmed', 'lost', 'auto_resolved', 'unreachable'];
 
-      // Match on policy prefix OR full name — BOTH when available. The prefix
-      // only finds sibling policies in the same number series; a customer's
-      // auto and property policies are different series entirely (this hid a
-      // same-day home renewal from an auto case's detail), so the name match
-      // must run alongside the prefix, not as a fallback.
-      const matchFilter = [
-        hasPolicyMatch ? `policy_no.ilike.${policyPrefix}%` : null,
-        hasNameMatch   ? `customer_name.ilike.${firstName} ${lastName}` : null,
-      ].filter(Boolean).join(',');
+      const matchFilter = `customer_name.ilike.${firstName} ${lastName}`;
 
       const [{ data: cancelCases }, { data: renewalCases }] = await Promise.all([
         supabase
@@ -73,7 +71,7 @@ export function useOtherActiveCases({ agencyId, customerName, policyNo, excludeE
 
       return results;
     },
-    enabled: !!agencyId && (hasPolicyMatch || hasNameMatch),
+    enabled: !!agencyId && hasNameMatch,
     staleTime: 2 * 60 * 1000,
   });
 }
