@@ -137,7 +137,7 @@ function RepTimeline({ agencyId, employees }) {
         {data && (
           <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
             last 14 days · <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> saves ·{' '}
-            <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} calls · {data.totals.tasksDone} tasks
+            <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> · {data.totals.attempts} calls{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} tasks
           </div>
         )}
       </div>
@@ -207,7 +207,7 @@ function DailyTeam({ agencyId, employees }) {
         <button onClick={() => shiftDay(1)} disabled={date >= localDay()} className="btn-ghost" style={{ padding: '6px 10px' }}>›</button>
         <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--qs-bright)' }}>{dayLabel(date)}</span>
         <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
-          team: <strong style={{ color: '#10B981' }}>{totals.saves}</strong> saves · <strong style={{ color: '#10B981' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} calls · {totals.tasksDone} tasks
+          team: <strong style={{ color: '#10B981' }}>{totals.saves}</strong> saves · <strong style={{ color: '#10B981' }}>{fmt$(totals.premium)}</strong> · {totals.attempts} calls{totals.attempts ? ` (${Math.round((totals.reached / totals.attempts) * 100)}% reached)` : ''} · {totals.tasksDone} tasks
         </div>
       </div>
       {isLoading ? <div style={{ color: 'var(--qs-subtle)', fontSize: 13 }}>Loading…</div>

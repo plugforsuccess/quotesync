@@ -242,7 +242,7 @@ export default function MyActivityPage() {
             <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
               <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> saves ·{' '}
               <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> ·{' '}
-              {data.totals.attempts} calls · {data.totals.tasksDone} tasks
+              {data.totals.attempts} calls{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} tasks
             </div>
           )}
         </div>
