@@ -21,10 +21,15 @@ export function useOtherActiveCases({ agencyId, customerName, policyNo, excludeE
       const TERMINAL         = ['saved', 'lost', 'auto_resolved', 'requested_cancellation', 'cancelled'];
       const RENEWAL_TERMINAL = ['confirmed', 'lost', 'auto_resolved', 'unreachable'];
 
-      // Build the match filter — policy prefix takes priority over name
-      const matchFilter = hasPolicyMatch
-        ? `policy_no.ilike.${policyPrefix}%`
-        : `customer_name.ilike.${firstName} ${lastName}`;
+      // Match on policy prefix OR full name — BOTH when available. The prefix
+      // only finds sibling policies in the same number series; a customer's
+      // auto and property policies are different series entirely (this hid a
+      // same-day home renewal from an auto case's detail), so the name match
+      // must run alongside the prefix, not as a fallback.
+      const matchFilter = [
+        hasPolicyMatch ? `policy_no.ilike.${policyPrefix}%` : null,
+        hasNameMatch   ? `customer_name.ilike.${firstName} ${lastName}` : null,
+      ].filter(Boolean).join(',');
 
       const [{ data: cancelCases }, { data: renewalCases }] = await Promise.all([
         supabase
