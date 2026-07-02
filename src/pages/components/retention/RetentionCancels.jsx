@@ -10,6 +10,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import { useBookSnapshots } from '../../../hooks/useBookMetrics';
 import { buildChurnModel } from '../../../lib/retentionElasticity';
+import { reassignRenewalHousehold } from '../../../lib/householdAssign';
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
@@ -1602,6 +1603,21 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       setSaving(false);
       return;
     }
+    // House rule: a household's active renewals are never split across reps —
+    // if this save changed the assignee, carry the customer's other open
+    // renewal cases to the same rep.
+    if (updates.assigned_to_id && updates.assigned_to_id !== event.assigned_to_id) {
+      try {
+        await reassignRenewalHousehold(supabase, agencyId, {
+          caseId: event.id,
+          customerName: event.customer_name,
+          phone: event.phone,
+          employeeId: updates.assigned_to_id,
+        });
+      } catch (e) {
+        console.error('[household reassign]', e.message);
+      }
+    }
     setSaving(false);
     onClose();
   }
@@ -2329,6 +2345,14 @@ function UnifiedDetailModal({ row, onClose, agencyId, producers = [], onReassign
           .update({ assigned_to_id: employeeId || null })
           .eq('id', r.renewal_event_id);
         if (error) throw error;
+        // House rule: a household's active renewals are never split across
+        // reps — move the customer's other open renewal cases along with it.
+        await reassignRenewalHousehold(supabase, agencyId, {
+          caseId: r.renewal_event_id,
+          customerName: r.customer_name,
+          phone: r.phone,
+          employeeId: employeeId || null,
+        });
         setLocalRow(prev => ({ ...prev, renewal_assigned_to_id: employeeId || null }));
       }
       if (onReassign) onReassign(localRow);
