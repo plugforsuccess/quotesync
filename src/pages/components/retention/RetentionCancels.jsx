@@ -2859,6 +2859,19 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
     return pos;
   }, [rows]);
 
+  // Per-side assignment lines (rep name + queue position), so the Assigned and
+  // Queue columns render the same rows in the same order and stay row-aligned.
+  const assignmentLines = (row) => {
+    const cId = row.cancel_assigned_to_id;
+    const rId = row.renewal_assigned_to_id;
+    const lines = [];
+    if (cId && row.cancel_event_id)
+      lines.push({ key: 'c', name: employeeMap[cId] || '✓', pos: cancelQueuePos[row.cancel_event_id], side: 'cancel' });
+    if (rId && row.renewal_event_id)
+      lines.push({ key: 'r', name: employeeMap[rId] || '✓', pos: renewalQueuePos[row.renewal_event_id], side: 'renewal' });
+    return lines;
+  };
+
   const filteredRows = useMemo(() => {
     let list = rows.map(r => ({
       ...r,
@@ -3186,12 +3199,14 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                   </span>
                 </button>
               </th>
+              <th style={{ whiteSpace: 'nowrap' }} title="Where each case sits in the assigned rep's call order (priority order)">Queue</th>
             </tr>
           </thead>
           <tbody>
             {kpiFilteredRows.map(row => {
               const cancelDays = row.cancel_effective_date ? daysUntilCancel(row.cancel_effective_date) : null;
               const renewalDays = row.renewal_date ? daysUntilRenewal(row.renewal_date) : null;
+              const lines = assignmentLines(row);
 
               return (
                 <tr key={`${row.cancel_event_id || ''}-${row.renewal_event_id || ''}`}
@@ -3283,45 +3298,53 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                     {((row.cancel_attempts || 0) + (row.renewal_attempts || 0)) || 0}
                   </td>
 
+                  {/* Assigned — rep name(s), one line per side */}
                   <td style={{ color: 'var(--qs-subtle)', fontSize: 12 }}>
                     {(() => {
                       const cId = row.cancel_assigned_to_id;
                       const rId = row.renewal_assigned_to_id;
                       if (!cId && !rId) return '—';
-                      // One line per assigned side, each showing where the case
-                      // sits in that rep's queue (#n/total). Top-3 highlighted.
-                      const lines = [];
-                      if (cId && row.cancel_event_id)
-                        lines.push({ key: 'c', name: employeeMap[cId] || '✓', pos: cancelQueuePos[row.cancel_event_id], side: 'cancel' });
-                      if (rId && row.renewal_event_id)
-                        lines.push({ key: 'r', name: employeeMap[rId] || '✓', pos: renewalQueuePos[row.renewal_event_id], side: 'renewal' });
                       if (!lines.length) return employeeMap[cId] || employeeMap[rId] || '✓';
-                      const showSide = lines.length > 1;
                       return (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                           {lines.map(l => (
-                            <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
-                              <span>{l.name}</span>
-                              {l.pos && (
-                                <span title={`#${l.pos.n} of ${l.pos.total} in ${l.name}'s ${l.side} queue (priority order)`}
-                                  style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700,
-                                    color: l.pos.n <= 3 ? '#F59E0B' : 'var(--qs-dim)',
-                                    background: l.pos.n <= 3 ? 'rgba(245,158,11,0.12)' : 'var(--qs-elevated)',
-                                    border: '1px solid var(--qs-border)', borderRadius: 4, padding: '0 5px' }}>
-                                  {showSide ? (l.side === 'cancel' ? 'C ' : 'R ') : ''}#{l.pos.n}/{l.pos.total}
-                                </span>
-                              )}
+                            <span key={l.key} style={{ display: 'flex', alignItems: 'center', minHeight: 18, whiteSpace: 'nowrap' }}>
+                              {l.name}
                             </span>
                           ))}
                         </div>
                       );
                     })()}
                   </td>
+
+                  {/* Queue — where the case sits in each assigned rep's call order
+                      (#n/total, top-3 highlighted). Lines align with Assigned. */}
+                  <td style={{ fontSize: 12 }}>
+                    {lines.length === 0
+                      ? <span style={{ color: 'var(--qs-dim)' }}>—</span>
+                      : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {lines.map(l => (
+                            <span key={l.key} style={{ display: 'flex', alignItems: 'center', minHeight: 18 }}>
+                              {l.pos ? (
+                                <span title={`#${l.pos.n} of ${l.pos.total} in ${l.name}'s ${l.side} queue (priority order)`}
+                                  style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700,
+                                    color: l.pos.n <= 3 ? '#F59E0B' : 'var(--qs-dim)',
+                                    background: l.pos.n <= 3 ? 'rgba(245,158,11,0.12)' : 'var(--qs-elevated)',
+                                    border: '1px solid var(--qs-border)', borderRadius: 4, padding: '0 5px', whiteSpace: 'nowrap' }}>
+                                  {lines.length > 1 ? (l.side === 'cancel' ? 'C ' : 'R ') : ''}#{l.pos.n}/{l.pos.total}
+                                </span>
+                              ) : <span style={{ color: 'var(--qs-dim)' }}>—</span>}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                  </td>
                 </tr>
               );
             })}
             {kpiFilteredRows.length === 0 && (
-              <tr><td colSpan={10} style={{ textAlign: 'center', color: 'var(--qs-muted)', padding: '32px 0' }}>
+              <tr><td colSpan={11} style={{ textAlign: 'center', color: 'var(--qs-muted)', padding: '32px 0' }}>
                 No at-risk policies in this filter
               </td></tr>
             )}
