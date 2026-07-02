@@ -9,11 +9,20 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useRepActivity } from '../hooks/useRepActivity';
-import { titleCaseName } from '../lib/names';
+import { titleCaseName, displayName } from '../lib/names';
 
 function fmt$(n) {
   if (!n) return '$0';
   return n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`;
+}
+// Call-outcome color: blue = reached, amber = tried but missed / deferred,
+// red = negative, muted = neutral/unknown. (Saves render separately in green.)
+function outcomeColor(result) {
+  const r = String(result || '').toLowerCase();
+  if (/(lost|wrong|disconnect|declin|refus|dead)/.test(r)) return '#F87171';
+  if (/(no[_ ]?answer|voicemail|\bvm\b|left|busy|callback|call[_ ]?back|scheduled|snooz)/.test(r)) return '#FBBF24';
+  if (/(reach|answered|spoke|contacted|connected)/.test(r)) return '#60A5FA';
+  return 'var(--qs-dim)';
 }
 function localDay(d = new Date()) { return d.toLocaleDateString('en-CA'); }
 // Every row gets an explicit calendar date; "Today"/"Yesterday" are shown as a
@@ -102,7 +111,9 @@ function Bar({ pct, color }) {
 // Cases I worked that day — saved ones tagged, others show the outcome. The
 // customer name links into their full household.
 function WorkedRows({ worked, k, onCustomer }) {
-  return worked.map((w, i) => (
+  return worked.map((w, i) => {
+    const nm = displayName(w.name);
+    return (
     <tr key={`${k}-${i}`} style={{ background: 'var(--qs-elevated)' }}>
       <td colSpan={6} style={{ fontSize: 12, color: 'var(--qs-dim)', paddingLeft: 24 }}>
         <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, marginRight: 8,
@@ -110,19 +121,22 @@ function WorkedRows({ worked, k, onCustomer }) {
           color: w.kind === 'cancel' ? '#F87171' : '#60A5FA' }}>
           {w.kind === 'cancel' ? 'CANCEL' : 'RENEWAL'}
         </span>
-        <button type="button" onClick={() => w.name && onCustomer?.(w.name)} title="Open customer"
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
-            fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
-          {titleCaseName(w.name) || '—'} ↗
-        </button>
+        {nm
+          ? <button type="button" onClick={() => onCustomer?.(w.name)} title="Open customer"
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'inherit',
+                fontSize: 12, color: '#60A5FA', fontWeight: 600 }}>
+              {nm} ↗
+            </button>
+          : <span style={{ color: 'var(--qs-muted)' }} title="No customer name on this case">—</span>}
         {' · '}
         {w.saved
           ? <span style={{ color: '#34D399', fontWeight: 600 }}>✓ saved{w.premium ? ` · ${fmt$(w.premium)}` : ''}</span>
-          : <span>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
+          : <span style={{ color: outcomeColor(w.result), fontWeight: 600 }}>{(w.result || 'attempt').replace(/_/g, ' ')}</span>}
         {w.note && <span style={{ fontStyle: 'italic', color: 'var(--qs-muted)', marginLeft: 8 }}>“{w.note}”</span>}
       </td>
     </tr>
-  ));
+    );
+  });
 }
 
 // Service tasks I completed that day.
@@ -228,7 +242,7 @@ export default function MyActivityPage() {
             <div style={{ marginLeft: 'auto', fontSize: 13, color: 'var(--qs-dim)' }}>
               <strong style={{ color: '#10B981' }}>{data.totals.saves}</strong> saves ·{' '}
               <strong style={{ color: '#10B981' }}>{fmt$(data.totals.premium)}</strong> ·{' '}
-              {data.totals.attempts} calls · {data.totals.tasksDone} tasks
+              {data.totals.attempts} calls{data.totals.attempts ? ` (${Math.round((data.totals.reached / data.totals.attempts) * 100)}% reached)` : ''} · {data.totals.tasksDone} tasks
             </div>
           )}
         </div>
@@ -239,7 +253,10 @@ export default function MyActivityPage() {
                 <th style={{ textAlign: 'left' }}>Day</th>
                 <th style={{ textAlign: 'right' }}>Calls</th>
                 <th style={{ textAlign: 'right' }}>Reached</th>
-                <th style={{ textAlign: 'right' }}>Saves</th>
+                <th style={{ textAlign: 'right' }}
+                  title="Total saves that day, split as cancels saved (c) / renewals confirmed (r) — e.g. 1 (1c/0r)">
+                  Saves
+                </th>
                 <th style={{ textAlign: 'right' }}>Premium</th>
                 <th style={{ textAlign: 'right' }}>Tasks</th>
               </tr>
@@ -286,7 +303,9 @@ export default function MyActivityPage() {
         )}
         <p style={{ fontSize: 11, color: 'var(--qs-muted)', marginTop: 10 }}>
           Calls = attempts you logged (auto-logged dials excluded). Reached = customer answered.
-          Saves = cancels saved + renewals confirmed, with the premium preserved. Tap a day to see the cases.
+          Saves = cancels saved + renewals confirmed, with the premium preserved — shown as the day's total
+          with the split <strong>cancels saved (c) / renewals confirmed (r)</strong>, e.g. “1 (1c/0r)” is one
+          save, a rescued cancellation. Tap a day to see the cases.
         </p>
       </div>
     </div>
