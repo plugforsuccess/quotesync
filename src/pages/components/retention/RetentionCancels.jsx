@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../../../lib/supabase";
-import { calcRenewalPriority, calcCancelPriority, computePriorityTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
+import { calcRenewalPriority, calcCancelPriority, computePriorityTier, compareByTier, TIER_ORDER, CURRENT_YEAR } from '../../../lib/retentionPriority';
 import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import { useBookSnapshots } from '../../../hooks/useBookMetrics';
@@ -2575,34 +2575,52 @@ function calcRowPoints(row, portfolioPoints) {
   return pts * items;
 }
 
+// Field maps from a policy_retention_status row onto the shared scorers. Shared
+// by calcUnifiedPriority (table ranking) AND the per-rep queue-position calc
+// below, so the two can never drift out of sync.
+function renewalScoreInput(row) {
+  return {
+    renewal_date:       row.renewal_date,
+    premium_change_pct: row.premium_change_pct,
+    original_year:      row.original_year,
+    premium:            row.renewal_premium,
+    easy_pay:           row.easy_pay,
+    // Multi-vehicle households must outrank single-car renewals — pass the
+    // item count + product so the value factor and multi-item boost apply.
+    item_count:         row.renewal_item_count,
+    product:            row.product,
+    multi_line:         row.multi_line,
+  };
+}
+function cancelScoreInput(row) {
+  return {
+    cancel_effective_date: row.cancel_effective_date,
+    premium_at_risk:       row.premium_at_risk,
+    attempt_count:         row.cancel_attempts,
+    cycle:                 row.cycle,
+    status:                row.cancel_status,
+    promise_date:          row.promise_date,
+  };
+}
+// Shape a row for compareByTier — the EXACT ordering a rep's cancel queue uses
+// (tier → past-due → premium desc → date asc), so a principal-side position
+// index matches what the rep actually sees.
+function cancelSortInput(row) {
+  return {
+    priority_tier: computePriorityTier({
+      stage:                 row.cancel_stage,
+      cancel_effective_date: row.cancel_effective_date,
+      premium_at_risk:       row.premium_at_risk,
+    }),
+    premium_at_risk:       row.premium_at_risk,
+    cancel_effective_date: row.cancel_effective_date,
+    stage:                 row.cancel_stage,
+  };
+}
+
 function calcUnifiedPriority(row, churnModel) {
-  const cancelScore = row.cancel_event_id
-    ? calcCancelPriority({
-        cancel_effective_date: row.cancel_effective_date,
-        premium_at_risk:       row.premium_at_risk,
-        attempt_count:         row.cancel_attempts,
-        cycle:                 row.cycle,
-        status:                row.cancel_status,
-        promise_date:          row.promise_date,
-      })
-    : 0;
-
-  const renewalScore = row.renewal_event_id
-    ? calcRenewalPriority({
-        renewal_date:       row.renewal_date,
-        premium_change_pct: row.premium_change_pct,
-        original_year:      row.original_year,
-        premium:            row.renewal_premium,
-        easy_pay:           row.easy_pay,
-        // Multi-vehicle households must outrank single-car renewals — pass the
-        // item count + product so the value factor and multi-item boost apply
-        // (previously omitted, so every renewal scored as a single item).
-        item_count:         row.renewal_item_count,
-        product:            row.product,
-        multi_line:         row.multi_line,
-      }, { churnModel })
-    : 0;
-
+  const cancelScore  = row.cancel_event_id  ? calcCancelPriority(cancelScoreInput(row)) : 0;
+  const renewalScore = row.renewal_event_id ? calcRenewalPriority(renewalScoreInput(row), { churnModel }) : 0;
   const base = Math.max(cancelScore, renewalScore);
   // Dual risk adds 15 — one call needs to handle both cancel AND renewal
   return row.risk_type === 'dual_risk' ? Math.min(base + 15, 100) : base;
@@ -2796,9 +2814,50 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       setSortDir(d => d === 'asc' ? 'desc' : 'asc');
     } else {
       setSortCol(col);
-      setSortDir('asc');
+      // Dollar / urgency columns read best biggest-first; text and dates start
+      // ascending. (So clicking "Premium" surfaces the largest exposures, not
+      // the smallest.)
+      setSortDir(col === 'priority' || col === 'premium' || col === 'premium_change_pct' ? 'desc' : 'asc');
     }
   }
+
+  // Faithful per-rep queue positions — where each case sits in the ASSIGNED
+  // rep's call order, computed the same way each rep's own queue orders its
+  // work: renewals by calcRenewalPriority (desc), cancels by compareByTier
+  // (tier → past-due → premium desc → date asc). Because /my/queue now ranks
+  // renewals by calcRenewalPriority too, these indices match what the rep sees.
+  // Keyed by event id → { n, total }. Built from the full agency row set (each
+  // rep's whole queue), so it reflects priority order — not a rep's session-
+  // local focus/daily-cap view, which can't be reproduced here.
+  const renewalQueuePos = useMemo(() => {
+    const byRep = {};
+    for (const r of rows) {
+      if (!r.renewal_event_id || !r.renewal_assigned_to_id) continue;
+      (byRep[r.renewal_assigned_to_id] ||= []).push(r);
+    }
+    const pos = {};
+    for (const repId in byRep) {
+      const sorted = byRep[repId].slice().sort((a, b) =>
+        calcRenewalPriority(renewalScoreInput(b), { churnModel }) -
+        calcRenewalPriority(renewalScoreInput(a), { churnModel }));
+      sorted.forEach((r, i) => { pos[r.renewal_event_id] = { n: i + 1, total: sorted.length }; });
+    }
+    return pos;
+  }, [rows, churnModel]);
+
+  const cancelQueuePos = useMemo(() => {
+    const byRep = {};
+    for (const r of rows) {
+      if (!r.cancel_event_id || !r.cancel_assigned_to_id) continue;
+      (byRep[r.cancel_assigned_to_id] ||= []).push(r);
+    }
+    const pos = {};
+    for (const repId in byRep) {
+      const sorted = byRep[repId].slice().sort((a, b) => compareByTier(cancelSortInput(a), cancelSortInput(b)));
+      sorted.forEach((r, i) => { pos[r.cancel_event_id] = { n: i + 1, total: sorted.length }; });
+    }
+    return pos;
+  }, [rows]);
 
   const filteredRows = useMemo(() => {
     let list = rows.map(r => ({
@@ -2892,8 +2951,10 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           bVal = b.renewal_date || '9999';
           return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
         case 'premium':
-          aVal = a.risk_type === 'renewal' ? (a.renewal_premium || 0) : (a.premium_at_risk || 0);
-          bVal = b.risk_type === 'renewal' ? (b.renewal_premium || 0) : (b.premium_at_risk || 0);
+          // Rank by the larger of the two sides so a dual-risk row sorts by its
+          // true dollar exposure, not just whichever field happens to be set.
+          aVal = Math.max(parseFloat(a.premium_at_risk) || 0, parseFloat(a.renewal_premium) || 0);
+          bVal = Math.max(parseFloat(b.premium_at_risk) || 0, parseFloat(b.renewal_premium) || 0);
           return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
         case 'premium_change_pct':
           aVal = a.premium_change_pct || 0;
@@ -3227,10 +3288,33 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
                       const cId = row.cancel_assigned_to_id;
                       const rId = row.renewal_assigned_to_id;
                       if (!cId && !rId) return '—';
-                      const cName = cId ? employeeMap[cId] : null;
-                      const rName = rId ? employeeMap[rId] : null;
-                      if (cId && rId && cId !== rId) return `${cName || '✓'} / ${rName || '✓'}`;
-                      return cName || rName || '✓';
+                      // One line per assigned side, each showing where the case
+                      // sits in that rep's queue (#n/total). Top-3 highlighted.
+                      const lines = [];
+                      if (cId && row.cancel_event_id)
+                        lines.push({ key: 'c', name: employeeMap[cId] || '✓', pos: cancelQueuePos[row.cancel_event_id], side: 'cancel' });
+                      if (rId && row.renewal_event_id)
+                        lines.push({ key: 'r', name: employeeMap[rId] || '✓', pos: renewalQueuePos[row.renewal_event_id], side: 'renewal' });
+                      if (!lines.length) return employeeMap[cId] || employeeMap[rId] || '✓';
+                      const showSide = lines.length > 1;
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {lines.map(l => (
+                            <span key={l.key} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, whiteSpace: 'nowrap' }}>
+                              <span>{l.name}</span>
+                              {l.pos && (
+                                <span title={`#${l.pos.n} of ${l.pos.total} in ${l.name}'s ${l.side} queue (priority order)`}
+                                  style={{ fontFamily: "'DM Mono', monospace", fontSize: 10, fontWeight: 700,
+                                    color: l.pos.n <= 3 ? '#F59E0B' : 'var(--qs-dim)',
+                                    background: l.pos.n <= 3 ? 'rgba(245,158,11,0.12)' : 'var(--qs-elevated)',
+                                    border: '1px solid var(--qs-border)', borderRadius: 4, padding: '0 5px' }}>
+                                  {showSide ? (l.side === 'cancel' ? 'C ' : 'R ') : ''}#{l.pos.n}/{l.pos.total}
+                                </span>
+                              )}
+                            </span>
+                          ))}
+                        </div>
+                      );
                     })()}
                   </td>
                 </tr>

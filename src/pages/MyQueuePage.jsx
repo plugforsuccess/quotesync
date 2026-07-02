@@ -9,7 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
 import { useActiveEmployees } from '../hooks/useEmployees';
-import { calcCancelPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
+import { calcCancelPriority, calcRenewalPriority, daysUntilCancel, compareByTier } from '../lib/retentionPriority';
 import { buildChurnModel, expectedSaveablePremium } from '../lib/retentionElasticity';
 import { useBookSnapshots } from '../hooks/useBookMetrics';
 import { useInterventionEffectiveness } from '../hooks/useInterventionEffectiveness';
@@ -440,31 +440,24 @@ export default function MyQueuePage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [renewalCases, renewalFilter, closingMode]);
 
-  // Renewal focus — same daily-target cap as the cancel queue, but ordered by
-  // expected saveable premium so reps work the highest-value calls first.
-  // Touched-today float up so cards don't jump after a call. The full-queue
-  // view keeps its soonest-first order for browsing.
+  // Renewal focus — same daily-target cap as the cancel queue. Ordered by the
+  // shared churn-priority scorer (calcRenewalPriority), so it matches the agency
+  // At-Risk tab exactly: the billing timeline, rate shock, tenure/observed churn,
+  // portfolio value, an easy-pay penalty and bundling all factor in — instead of
+  // raw saveable dollars, which was surfacing big-but-sticky bundled autopay
+  // accounts. Using the same scorer here also lets the principal view reproduce
+  // each rep's queue position faithfully. Touched-today float up so cards don't
+  // jump after a call. The full-queue view keeps its soonest-first order.
   const focusRenewalCases = useMemo(() => {
-    // Monoline renewals hit with a rate shock are a double-threat: the rate jump
-    // raises churn on a customer with no bundle anchor to hold them, and saving
-    // one is a cross-sell opening (bundle back the missing line). Monoline alone
-    // is lower churn risk (so it isn't boosted), but the rate-shock intersection
-    // earns a nudge up the focus order. Scoped to this queue's ordering only —
-    // the shared retention scorer (retentionPriority.js) is left untouched.
-    const MONOLINE_SHOCK_BOOST = 1.5;
-    const rank = (c) => {
-      const base = expectedSaveablePremium(c, churnModel, effectiveSaveLift);
-      const shock = c.rate_shock_flag || (parseFloat(c.premium_change_pct) || 0) >= 15;
-      return c.multi_line === 'No' && shock ? base * MONOLINE_SHOCK_BOOST : base;
-    };
-    const bySaveable = (a, b) => rank(b) - rank(a);
+    const byPriority = (a, b) =>
+      calcRenewalPriority(b, { churnModel }) - calcRenewalPriority(a, { churnModel });
     const touched = filteredRenewalCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
     const untouched = filteredRenewalCases
       .filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr)
       .slice()
-      .sort(bySaveable);
+      .sort(byPriority);
     return [...touched, ...untouched].slice(0, dailyTarget);
-  }, [filteredRenewalCases, dailyTarget, todayStr, churnModel, effectiveSaveLift]);
+  }, [filteredRenewalCases, dailyTarget, todayStr, churnModel]);
   const displayRenewalCases = (focusMode && renewalFilter !== 'callbacks') ? focusRenewalCases : filteredRenewalCases;
   const groupedRenewals = groupRenewalsByHousehold(displayRenewalCases);
 
