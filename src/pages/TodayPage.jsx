@@ -436,6 +436,19 @@ export default function TodayPage() {
   const focused = ranked.slice(0, dailyTarget);
   const remainder = ranked.length - focused.length;
 
+  // Active cases per customer across BOTH lists, so a focus card can flag
+  // "this household has other open cases" (e.g. auto + home renewing the same
+  // day where only the auto made the focus cut) — one call should work all of
+  // them. Keyed by normalized name, same as the queue's household grouping.
+  const householdCounts = useMemo(() => {
+    const m = {};
+    for (const c of [...cancels, ...renewals]) {
+      const k = (c.customer_name || '').trim().toLowerCase();
+      if (k) m[k] = (m[k] || 0) + 1;
+    }
+    return m;
+  }, [cancels, renewals]);
+
   // Snapshot today's top-N priority cases once, the first time the queue loads
   // with no focus set yet for today. Idempotent (unique index + ignoreDuplicates),
   // so a second tab or a reload won't double-insert.
@@ -766,6 +779,7 @@ export default function TodayPage() {
                 item={item}
                 todayStr={todayStr}
                 winbackMap={winbackMap}
+                householdExtra={(householdCounts[(item.customer_name || '').trim().toLowerCase()] || 1) - 1}
                 onOpen={() => {
                   if (item._kind === 'cancel') setSelectedCancel(item);
                   else setSelectedRenewal(item);
@@ -826,7 +840,7 @@ export default function TodayPage() {
   );
 }
 
-function TodayRow({ index, item, todayStr, winbackMap, onOpen }) {
+function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdExtra = 0 }) {
   const touched = item.last_attempt_at?.slice(0, 10) === todayStr;
 
   const isCancel = item._kind === 'cancel';
@@ -877,6 +891,15 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen }) {
               fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
               background: tierBadge.bg, color: tierBadge.color, letterSpacing: '0.05em',
             }}>{tierBadge.label}</span>
+          )}
+          {householdExtra > 0 && (
+            <span
+              title={`This customer has ${householdExtra} other open case${householdExtra > 1 ? 's' : ''} (another policy cancelling or renewing). One call — work them all. Open the case to see the full household.`}
+              style={{
+                fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
+                background: '#F59E0B22', color: '#FBBF24', letterSpacing: '0.05em',
+                border: '1px solid #F59E0B44', cursor: 'help',
+              }}>⌂ +{householdExtra} HOUSEHOLD</span>
           )}
           {touched && (
             <span style={{
