@@ -10,7 +10,7 @@ import { useOtherActiveCases } from '../../../hooks/useOtherActiveCases';
 import { useAgencyProductConfig } from '../../../hooks/useAgencyProductConfig';
 import { useBookSnapshots } from '../../../hooks/useBookMetrics';
 import { buildChurnModel } from '../../../lib/retentionElasticity';
-import { reassignRenewalHousehold } from '../../../lib/householdAssign';
+import { reassignRenewalHousehold, RENEWAL_ACTIVE_EXCLUDED } from '../../../lib/householdAssign';
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
@@ -1404,6 +1404,7 @@ function renewalUrgencyColor(days) {
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
 
 function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true, onOpenSibling = null }) {
+  const queryClient = useQueryClient();
   const days = daysUntilRenewal(event.renewal_date);
   // Observed retention model so the Priority readout matches the queue ranking
   // (product × tenure churn) regardless of which surface opened this modal.
@@ -1704,6 +1705,27 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         });
       } catch (e) {
         console.error('[household reassign]', e.message);
+      }
+    }
+    // The sibling list caches for 2 minutes — refresh it so a just-closed case
+    // immediately drops off the household tabs instead of lingering as open.
+    queryClient.invalidateQueries({ queryKey: ['other_active_cases'] });
+    // Auto-advance: if this save CLOSED the case (terminal status) and the
+    // household still has an open renewal, swap the modal to it (soonest
+    // first) instead of dismissing — the customer is still on the phone, and
+    // dumping the rep back to the list mid-call breaks the one-call-per-
+    // household flow. The ✕ button still just closes; this only runs on saves.
+    if (onOpenSibling && RENEWAL_ACTIVE_EXCLUDED.includes(updates.status)) {
+      const next = [...renewalSiblings]
+        .sort((a, b) => String(a.date || '9999').localeCompare(String(b.date || '9999')))[0];
+      if (next) {
+        const { data } = await supabase.from('renewal_cases').select('*').eq('id', next.id).maybeSingle();
+        // Re-check openness — the sibling list can be stale.
+        if (data && !RENEWAL_ACTIVE_EXCLUDED.includes(data.status)) {
+          setSaving(false);
+          onOpenSibling(data);
+          return;
+        }
       }
     }
     setSaving(false);
