@@ -1470,6 +1470,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       contacted_at:        event.contacted_at || new Date().toISOString(),
       callback_at:         callbackAt,
       callback_note:       cbNote || null,
+      // Scheduling a callback on a CLOSED case reopens it — a closed status
+      // (esp. the inferred auto_resolved) filters the case out of every queue,
+      // so the callback would be invisible and silently missed. A live
+      // conversation that ends in "call me back" means the case is active.
+      ...(RENEWAL_ACTIVE_EXCLUDED.includes(event.status)
+        ? { status: "contacted", resolution_date: null }
+        : {}),
     });
     setCbSaving(false);
     setCbTime(""); setCbNote("");
@@ -1535,6 +1542,14 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       const newCount = (event.attempt_count || 0) + 1;
       const statusUpdate = {};
       if (event.status === "pending") statusUpdate.status = "attempting";
+      // Working a CLOSED case reopens it — auto_resolved is an inference (easy
+      // pay + date passed), and a new attempt means reality disagrees (e.g. the
+      // customer called in to cancel). Without this the case stays filtered out
+      // of every queue and any follow-up on it is invisible.
+      if (RENEWAL_ACTIVE_EXCLUDED.includes(event.status)) {
+        statusUpdate.status = attemptForm.result === "reached" ? "contacted" : "attempting";
+        statusUpdate.resolution_date = null;
+      }
       if (attemptForm.result === "left_voicemail") { statusUpdate.status = "left_voicemail"; statusUpdate.awaiting_callback = true; }
       if (attemptForm.result === "reached") { statusUpdate.contacted_at = event.contacted_at || new Date().toISOString(); statusUpdate.awaiting_callback = false; }
       // Suggest unreachable after 3+ non-reached attempts
