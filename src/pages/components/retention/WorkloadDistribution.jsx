@@ -12,6 +12,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../../../lib/supabase';
 import { useActiveEmployees } from '../../../hooks/useEmployees';
+import { householdKey } from '../../../lib/householdAssign';
 
 // Statuses considered "closed" — mirrors the exclusions in MyQueuePage so the
 // counts here match what reps actually see in their queue.
@@ -106,15 +107,39 @@ export default function WorkloadDistribution({ agencyId }) {
 
   async function moveCases(table, dateCol, excluded, k) {
     if (k <= 0) return 0;
-    let q = supabase.from(table).select('id')
+    let q = supabase.from(table).select('id, customer_name, phone')
       .eq('agency_id', agencyId)
       .not('status', 'in', `(${excluded.join(',')})`)
       .order(dateCol, { ascending: true });
     q = sourceId === 'unassigned' ? q.is('assigned_to_id', null) : q.eq('assigned_to_id', sourceId);
     const { data, error } = await q;
     if (error) throw error;
-    const ids = (data || []).map(r => r.id);
-    const picked = stratifiedSample(ids, Math.min(k, ids.length));
+
+    // House rule: a household's active renewals move as a unit — sampling
+    // individual case ids could hand a customer's auto to the target rep while
+    // their home renewal stays behind. Group renewals by household, sample
+    // whole households, and stop once ~k cases are gathered. (Cancels are
+    // effectively one-per-customer, so plain id sampling is fine there.)
+    let picked;
+    if (table === 'renewal_cases') {
+      const byKey = new Map();
+      const groups = [];
+      for (const r of (data || [])) {
+        const key = householdKey(r.customer_name, r.phone) || `solo:${r.id}`;
+        if (!byKey.has(key)) { const g = []; byKey.set(key, g); groups.push(g); }
+        byKey.get(key).push(r.id);
+      }
+      // Sample whole households, spread across the date-sorted list like the
+      // id sampler. Household count is sized so the flattened case total lands
+      // close to k (± a household when sizes vary).
+      const avgSize = groups.length ? (data || []).length / groups.length : 1;
+      const nGroups = Math.min(groups.length, Math.max(1, Math.round(k / avgSize)));
+      picked = stratifiedSample(groups, nGroups).flat();
+    } else {
+      const ids = (data || []).map(r => r.id);
+      picked = stratifiedSample(ids, Math.min(k, ids.length));
+    }
+
     for (let i = 0; i < picked.length; i += 200) {
       const chunk = picked.slice(i, i + 200);
       const { error: upErr } = await supabase.from(table)

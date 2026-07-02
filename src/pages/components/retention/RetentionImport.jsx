@@ -8,16 +8,12 @@ import { supabase } from "../../../lib/supabase";
 import { computePriorityTier } from "../../../lib/retentionPriority";
 import { isRewriteReason } from "../../../lib/retentionRewrite";
 import CrossSellUploadModal from "../cross-sell/CrossSellUploadModal";
-
 // Household grouping key for assignment — so every policy in a household is
 // worked by ONE rep (no customer getting calls from two reps). Phone is the
-// strongest signal; fall back to the normalized name.
-function householdKey(name, phone) {
-  const d = String(phone || "").replace(/\D/g, "");
-  if (d.length >= 10) return "p:" + d.slice(-10);
-  const n = String(name || "").trim().toLowerCase().replace(/\s+/g, " ");
-  return n ? "n:" + n : null;
-}
+// strongest signal; fall back to the normalized name. Shared with the manual
+// reassignment + workload-rebalance paths so all of them agree on what a
+// household is.
+import { householdKey } from "../../../lib/householdAssign";
 
 
 async function syncRetentionQueue(supabase) {
@@ -844,23 +840,53 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       // 3. Build assignment rotation — seed with existing caseloads for balanced distribution
       const runningCount = {};
       const householdRep = {}; // household key -> rep id, so a household stays with one rep
+      let healedSplits = 0;   // existing split households repaired this upload
       if (activeReps.length > 0) {
         const { data: caseloads } = await supabase
           .from('renewal_cases')
-          .select('assigned_to_id, customer_name, phone')
+          .select('id, assigned_to_id, customer_name, phone')
           .eq('agency_id', agencyId)
           .not('assigned_to_id', 'is', null)
           .not('status', 'in', '(confirmed,lost,auto_resolved,unreachable)');
 
         activeReps.forEach(r => { runningCount[r.id] = 0; });
+        const householdRows = {}; // key -> rows, to detect already-split households
         (caseloads || []).forEach(c => {
           if (runningCount[c.assigned_to_id] !== undefined) {
             runningCount[c.assigned_to_id]++;
           }
           // Seed so a new policy joins the rep already handling that household.
           const k = householdKey(c.customer_name, c.phone);
-          if (k && c.assigned_to_id && !householdRep[k]) householdRep[k] = c.assigned_to_id;
+          if (!k || !c.assigned_to_id) return;
+          if (!householdRep[k]) householdRep[k] = c.assigned_to_id;
+          (householdRows[k] ||= []).push(c);
         });
+
+        // Heal households already split across reps (the rule is one household,
+        // one caller — a split means two reps dialing the same customer). The
+        // majority rep keeps the household; minority cases move to them.
+        const healByRep = {}; // winner rep id -> case ids to move to them
+        for (const k in householdRows) {
+          const rows = householdRows[k];
+          const reps = new Set(rows.map(c => c.assigned_to_id));
+          if (reps.size <= 1) continue;
+          const tally = {};
+          rows.forEach(c => { tally[c.assigned_to_id] = (tally[c.assigned_to_id] || 0) + 1; });
+          const winner = [...reps].sort((a, b) => tally[b] - tally[a])[0];
+          householdRep[k] = winner;
+          rows.filter(c => c.assigned_to_id !== winner)
+            .forEach(c => { (healByRep[winner] ||= []).push(c.id); healedSplits++; });
+        }
+        for (const repId in healByRep) {
+          const ids = healByRep[repId];
+          for (let i = 0; i < ids.length; i += 200) {
+            const { error: healErr } = await supabase
+              .from('renewal_cases')
+              .update({ assigned_to_id: repId })
+              .in('id', ids.slice(i, i + 200));
+            if (healErr) throw new Error(healErr.message);
+          }
+        }
       }
 
       function pickNextRep() {
@@ -1079,7 +1105,8 @@ function RenewalUploadZone({ agencyId, currentUserId, currentEmployeeId }) {
       const autoResolved = updateRecords.filter(r => r.status === 'auto_resolved').length;
       const autoResolvedMsg = autoResolved > 0 ? ` · ${autoResolved} auto-resolved` : '';
       const crossRefSummary = crossRefMsg ? ` · ${crossRefMsg}` : '';
-      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated${autoResolvedMsg}${crossRefSummary} · ${assignmentSummary}`);
+      const healedMsg = healedSplits > 0 ? ` · ${healedSplits} split-household case${healedSplits > 1 ? 's' : ''} re-united` : '';
+      setUploadMsg(`${toAdd.length} added · ${updatedCount} updated${autoResolvedMsg}${crossRefSummary} · ${assignmentSummary}${healedMsg}`);
       setParsedRows(null);
       setExcludedCount(0);
       setUploadFile(null);
