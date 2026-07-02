@@ -426,6 +426,10 @@ export default function MyQueuePage() {
           r.cross_sell_opportunity && r.cross_sell_product &&
           !r.has_active_cancel && r.multi_line !== 'Yes'
         );
+      case 'monoline':
+        // Every renewing monoline customer (single line, explicitly not bundled) —
+        // the bundle-target list, independent of the latest cross-sell audit.
+        return renewalCases.filter(r => r.multi_line === 'No');
       case 'callbacks':
         return renewalCases
           .filter(r => r.callback_at)
@@ -441,9 +445,19 @@ export default function MyQueuePage() {
   // Touched-today float up so cards don't jump after a call. The full-queue
   // view keeps its soonest-first order for browsing.
   const focusRenewalCases = useMemo(() => {
-    const bySaveable = (a, b) =>
-      expectedSaveablePremium(b, churnModel, effectiveSaveLift)
-      - expectedSaveablePremium(a, churnModel, effectiveSaveLift);
+    // Monoline renewals hit with a rate shock are a double-threat: the rate jump
+    // raises churn on a customer with no bundle anchor to hold them, and saving
+    // one is a cross-sell opening (bundle back the missing line). Monoline alone
+    // is lower churn risk (so it isn't boosted), but the rate-shock intersection
+    // earns a nudge up the focus order. Scoped to this queue's ordering only —
+    // the shared retention scorer (retentionPriority.js) is left untouched.
+    const MONOLINE_SHOCK_BOOST = 1.5;
+    const rank = (c) => {
+      const base = expectedSaveablePremium(c, churnModel, effectiveSaveLift);
+      const shock = c.rate_shock_flag || (parseFloat(c.premium_change_pct) || 0) >= 15;
+      return c.multi_line === 'No' && shock ? base * MONOLINE_SHOCK_BOOST : base;
+    };
+    const bySaveable = (a, b) => rank(b) - rank(a);
     const touched = filteredRenewalCases.filter(c => c.last_attempt_at?.slice(0, 10) === todayStr);
     const untouched = filteredRenewalCases
       .filter(c => c.last_attempt_at?.slice(0, 10) !== todayStr)
@@ -1180,6 +1194,18 @@ export default function MyQueuePage() {
                 </span>
               )}
 
+              {event.multi_line === 'No' && (
+                <span title={rateShock
+                  ? 'Monoline + rate shock — elevated churn risk with no bundle anchor, and a bundle-back opportunity. Boosted in your focus queue.'
+                  : 'Monoline (single line) — bundle-pitch target.'}
+                  style={{ fontSize: 13, color: '#A78BFA', borderRadius: 4, padding: '2px 8px',
+                    background: rateShock ? 'rgba(167,139,250,0.22)' : 'rgba(167,139,250,0.12)',
+                    border: rateShock ? '1px solid rgba(167,139,250,0.5)' : 'none',
+                    fontWeight: rateShock ? 700 : 600, flexShrink: 0, cursor: 'help' }}>
+                  Monoline{rateShock ? ' ⚡' : ''}
+                </span>
+              )}
+
               {event.easy_pay && (
                 <span style={{ fontSize: 13, background: 'rgba(52,211,153,0.12)', color: '#34D399',
                   borderRadius: 4, padding: '2px 8px', fontWeight: 600, flexShrink: 0 }}>
@@ -1561,6 +1587,14 @@ export default function MyQueuePage() {
             sub:   'monoline · bundle pitch',
             filter: 'xsell_monoline', isOn: renewalFilter === 'xsell_monoline',
             apply: () => setRenewalFilter(f => f === 'xsell_monoline' ? 'all' : 'xsell_monoline'),
+          },
+          {
+            label: '🎯 Monoline',
+            value: renewalCases.filter(r => r.multi_line === 'No').length,
+            color: renewalCases.some(r => r.multi_line === 'No') ? '#A78BFA' : 'var(--qs-dim)',
+            sub:   'single line · rate-shock boosted',
+            filter: 'monoline', isOn: renewalFilter === 'monoline',
+            apply: () => setRenewalFilter(f => f === 'monoline' ? 'all' : 'monoline'),
           },
         ]).map(stat => {
           const clickable = !!stat.apply;
