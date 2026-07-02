@@ -610,12 +610,14 @@ export default function RetentionPage() {
       )}
       {selectedRenewal && createPortal(
         <RenewalDetailModal
+          key={selectedRenewal.id}
           event={selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
           onUpdate={updateRenewalCase}
           agencyId={agencyId}
           currentEmployeeId={currentEmployee?.id ?? null}
           producers={producers}
+          onOpenSibling={setSelectedRenewal}
         />,
         document.body
       )}

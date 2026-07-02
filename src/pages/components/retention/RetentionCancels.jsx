@@ -189,10 +189,44 @@ function CustomerDrilldownModal({ event, onClose }) {
   );
 }
 
+// ─── Household case tabs ─────────────────────────────────────────────────────
+// Tabs across the household's open renewal cases (auto + home renewing in the
+// same window), so one call can work every policy without closing the modal
+// and searching for the sibling case. Clicking a sibling swaps the modal to it.
+
+function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
+  if (!siblings?.length) return null;
+  const tab = {
+    fontSize: 12, fontWeight: 700, padding: '5px 12px', borderRadius: 8,
+    border: '1px solid', display: 'inline-flex', gap: 6, alignItems: 'center',
+  };
+  return (
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--qs-subtle)',
+        textTransform: 'uppercase', letterSpacing: '0.08em' }}>Household</span>
+      <span style={{ ...tab, cursor: 'default',
+        background: 'rgba(59,130,246,0.14)', borderColor: '#3B82F6', color: '#60A5FA' }}>
+        {productLabel(current.product) || current.product} · {current.policy_no}
+      </span>
+      {siblings.map(s => (
+        <button key={s.id} type="button" onClick={() => onOpen(s)} disabled={busyId === s.id}
+          title={`Open the ${productLabel(s.product) || s.product} case — same customer, same call`}
+          style={{ ...tab, cursor: 'pointer', fontFamily: 'inherit',
+            background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)', color: 'var(--qs-text)' }}>
+          {busyId === s.id ? 'Opening…' : <>{productLabel(s.product) || s.product} · {s.policy_no} →</>}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 // ─── Other Cases Warning ─────────────────────────────────────────────────────
 
 function OtherCasesWarning({ cases }) {
-  if (!cases || cases.length < 2) return null;
+  // `cases` already EXCLUDES the case being viewed (the hook filters it out),
+  // so a single entry is a real sibling worth surfacing — the old `< 2` guard
+  // hid the most common situation, a customer with exactly one other case.
+  if (!cases || cases.length < 1) return null;
 
   return (
     <div style={{
@@ -204,7 +238,7 @@ function OtherCasesWarning({ cases }) {
     }}>
       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qs-warning)',
         textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>
-        ⚠ {cases.length} Active {cases.length === 1 ? 'Case' : 'Cases'} — Same Customer
+        ⚠ Same customer has {cases.length} other active {cases.length === 1 ? 'case' : 'cases'}
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
         {cases.map(c => (
@@ -1343,7 +1377,7 @@ function renewalUrgencyColor(days) {
 
 // ─── Renewal Detail Modal ───────────────────────────────────────────────────
 
-function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true }) {
+function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, currentEmployeeId, canReassign = true, onOpenSibling = null }) {
   const days = daysUntilRenewal(event.renewal_date);
   // Observed retention model so the Priority readout matches the queue ranking
   // (product × tenure churn) regardless of which surface opened this modal.
@@ -1422,6 +1456,18 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     excludeEventId: null,
     excludeRenewalId: event.id,
   });
+
+  // Household case switching — the customer's other open renewals become tabs
+  // (see HouseholdCaseTabs) so a rep can work auto + home on the same call.
+  // Fetch the full case row here; the parent swaps its selected case with it.
+  const renewalSiblings = onOpenSibling ? otherCases.filter(c => c.type === 'renewal') : [];
+  const [openingSiblingId, setOpeningSiblingId] = useState(null);
+  async function openSibling(s) {
+    setOpeningSiblingId(s.id);
+    const { data, error } = await supabase.from('renewal_cases').select('*').eq('id', s.id).single();
+    setOpeningSiblingId(null);
+    if (!error && data) onOpenSibling(data);
+  }
 
   useEffect(() => {
     supabase
@@ -1739,7 +1785,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
         <div style={{ padding: "20px 24px", overflowY: "auto" }}>
 
-          <OtherCasesWarning cases={otherCases} />
+          <HouseholdCaseTabs current={event} siblings={renewalSiblings}
+            onOpen={openSibling} busyId={openingSiblingId} />
+          {/* Sibling renewals are covered by the tabs above (when switching is
+              wired); the warning then only needs to flag cancel-side cases. */}
+          <OtherCasesWarning cases={renewalSiblings.length > 0
+            ? otherCases.filter(c => c.type !== 'renewal')
+            : otherCases} />
 
           {/* Resolved-state banner — for a closed case, say plainly HOW it
               resolved and (for auto_resolved) WHO: a rep-confirmed renewal vs a
@@ -3512,12 +3564,14 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       )}
       {drilldown && drilldown.side === 'renewal' && (
         <RenewalDetailModal
+          key={drilldown.event.id}
           event={drilldown.event}
           onClose={() => setDrilldown(null)}
           onUpdate={updateRenewalEvent}
           producers={producers}
           agencyId={agencyId}
           currentEmployeeId={currentEmployeeId}
+          onOpenSibling={(row) => setDrilldown(d => ({ ...d, event: row }))}
         />
       )}
       {/* For dual_risk rows, show a switch button inside the modal overlay */}

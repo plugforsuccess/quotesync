@@ -818,6 +818,7 @@ export default function TodayPage() {
       )}
       {selectedRenewal && createPortal(
         <RenewalDetailModal
+          key={selectedRenewal.id}
           event={selectedRenewal}
           onClose={() => setSelectedRenewal(null)}
           onUpdate={updateRenewal}
@@ -825,6 +826,7 @@ export default function TodayPage() {
           currentEmployeeId={employeeId}
           producers={employees}
           canReassign={false}
+          onOpenSibling={setSelectedRenewal}
         />,
         document.body
       )}
@@ -894,12 +896,12 @@ function TodayRow({ index, item, todayStr, winbackMap, onOpen, householdExtra = 
           )}
           {householdExtra > 0 && (
             <span
-              title={`This customer has ${householdExtra} other open case${householdExtra > 1 ? 's' : ''} (another policy cancelling or renewing). One call — work them all. Open the case to see the full household.`}
+              title={`This customer has ${householdExtra + 1} open cases (another policy cancelling or renewing). One call — work them all; the case detail has tabs to switch between them.`}
               style={{
                 fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
                 background: '#F59E0B22', color: '#FBBF24', letterSpacing: '0.05em',
                 border: '1px solid #F59E0B44', cursor: 'help',
-              }}>⌂ +{householdExtra} HOUSEHOLD</span>
+              }}>⌂ {householdExtra + 1} POLICIES · 1 CALL</span>
           )}
           {touched && (
             <span style={{

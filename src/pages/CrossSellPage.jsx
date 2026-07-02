@@ -279,6 +279,7 @@ export default function CrossSellPage() {
 
       {openCase?.kind === 'renewal' && createPortal(
         <RenewalDetailModal
+          key={openCase.data.id}
           event={openCase.data}
           onClose={() => setOpenCase(null)}
           onUpdate={(id, updates) => updateCaseRow('renewal', id, updates)}
@@ -286,6 +287,7 @@ export default function CrossSellPage() {
           currentEmployeeId={employee?.id}
           producers={producers}
           canReassign={false}
+          onOpenSibling={(row) => setOpenCase({ kind: 'renewal', data: row })}
         />,
         document.body
       )}

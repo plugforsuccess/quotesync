@@ -430,6 +430,7 @@ export default function HouseholdDetailPage() {
 
       {openCase?.kind === 'renewal' && createPortal(
         <RenewalDetailModal
+          key={openCase.data.id}
           event={openCase.data}
           onClose={() => setOpenCase(null)}
           onUpdate={(id, updates) => updateCase('renewal_cases', id, updates)}
@@ -437,6 +438,7 @@ export default function HouseholdDetailPage() {
           currentEmployeeId={employee?.id}
           producers={employees}
           canReassign={false}
+          onOpenSibling={(row) => setOpenCase({ kind: 'renewal', data: row })}
         />,
         document.body
       )}
