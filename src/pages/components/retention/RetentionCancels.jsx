@@ -1191,16 +1191,37 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   onChange={ev => setSavedPremium(ev.target.value)}
                 />
                 <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
-                  What the policy continues at after the save.
+                  What the policy continues at after the save — on an endorsement save, enter the NEW (post-endorsement) premium.
                   {event.premium_at_risk ? (
                     <button type="button"
                       onClick={() => setSavedPremium(String(event.premium_at_risk))}
                       style={{ marginLeft: 6, background: "none", border: "none", padding: 0,
                         color: "#34D399", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
-                      use at-risk amount
+                      premium unchanged — use at-risk
                     </button>
                   ) : null}
                 </div>
+                {/* Live delta vs at-risk — mirrors the renewal modal's offer-vs-paid
+                    readout, so an endorsement save's concession is visible as you
+                    type (and pasting the at-risk amount after an endorsement looks
+                    obviously wrong: "$0 difference"). */}
+                {savedPremium !== "" && event.premium_at_risk != null && (() => {
+                  const cont = parseFloat(String(savedPremium).replace(/[$,]/g, ""));
+                  const ar = parseFloat(event.premium_at_risk);
+                  if (Number.isNaN(cont) || !(ar > 0)) return null;
+                  const diff = cont - ar; // − continues below at-risk (concession), + above
+                  const pct = (Math.abs(diff) / ar) * 100;
+                  return (
+                    <div style={{ fontSize: 12, marginTop: 6, color: "var(--qs-muted)" }}>
+                      vs at-risk:{" "}
+                      <strong style={{ color: diff < 0 ? "#FBBF24" : diff > 0 ? "#34D399" : "var(--qs-dim)" }}>
+                        {diff === 0
+                          ? "unchanged"
+                          : `${diff > 0 ? "+" : "−"}${fmtFull$(Math.abs(diff))} (${pct.toFixed(0)}%) ${diff < 0 ? "concession" : "above"}`}
+                      </strong>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
