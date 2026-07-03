@@ -3097,11 +3097,18 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       }
     }
 
-    // Urgent filter — cases with cancel date ≤ 3 days away or past due
+    // Urgent filter — OPEN cancel cases whose cancel date is ≤ 3 days away or
+    // past due. Must exclude rows whose cancel is already RESOLVED: a dual-risk
+    // policy whose cancel was paid/auto-resolved months ago still sits in the
+    // at-risk view via its renewal side, and its stale (long-past) cancel date
+    // would otherwise leak into "urgent" — inflating the count past the card's.
+    // A closed cancel is never urgent.
     if (urgentFilter) {
+      const CANCEL_RESOLVED = ['saved', 'rewritten', 'lost', 'auto_resolved', 'requested_cancellation'];
       const today = new Date();
       list = list.filter(r => {
-        if (!r.cancel_effective_date) return false;
+        if (!r.cancel_event_id || !r.cancel_effective_date) return false;
+        if (CANCEL_RESOLVED.includes(r.cancel_status)) return false;
         const days = (new Date(r.cancel_effective_date) - today) / 86400000;
         return days <= 3;
       });
