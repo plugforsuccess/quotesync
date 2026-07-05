@@ -133,17 +133,26 @@ export default function InterventionPicker({ value, onChange, context, filter, r
         </>
       )}
 
-      {/* Offered premium — re-quote / bundle / company-transfer style tactics */}
+      {/* Offered premium — re-quote / bundle / competitor-match style tactics.
+          Captured here because it's the only place the LOST quote can ever be
+          recorded (a save writes saved_premium at close; a loss writes nothing).
+          On the save path it pre-fills the close screen, so this is typed once. */}
       {showPremium && (
-        <input
-          type="number"
-          inputMode="decimal"
-          className="dark-input"
-          placeholder="Premium you quoted them ($)"
-          value={v.offeredPremium}
-          onChange={(e) => onChange({ ...v, offeredPremium: e.target.value })}
-          style={{ marginBottom: 8, fontSize: 14, padding: '9px 12px', width: '100%', boxSizing: 'border-box' }}
-        />
+        <>
+          <input
+            type="number"
+            inputMode="decimal"
+            className="dark-input"
+            placeholder="Premium you quoted them ($)"
+            value={v.offeredPremium}
+            onChange={(e) => onChange({ ...v, offeredPremium: e.target.value })}
+            style={{ marginBottom: 2, fontSize: 14, padding: '9px 12px', width: '100%', boxSizing: 'border-box' }}
+          />
+          <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginBottom: 8 }}>
+            Kept even if the call ends lost — it's the price that didn't save them (Offers report).
+            On a save it pre-fills the close screen, so you won't retype it.
+          </div>
+        </>
       )}
 
       {/* Competitor detail — churn intel when the customer was shopping. Both

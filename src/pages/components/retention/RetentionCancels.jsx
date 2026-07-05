@@ -14,7 +14,7 @@ import { reassignRenewalHousehold, RENEWAL_ACTIVE_EXCLUDED } from '../../../lib/
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
-import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
+import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, latestOfferedPremium, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
 import { productLabel, premiumTermLabel } from '../../../lib/productLabels';
 import { titleCaseName } from '../../../lib/names';
@@ -368,6 +368,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // Kept out of `form` so it's only written on the saved (reinstatement) path —
   // the column it targets is pending_cases.saved_premium.
   const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
+  // Pre-fill the close screen from the quote captured at the call, so the rep
+  // never types the number twice. Only while the field is untouched and empty —
+  // an explicit entry (or clearing it) always wins.
+  const [premiumTouched, setPremiumTouched] = useState(false);
+  useEffect(() => {
+    if (premiumTouched || String(savedPremium).trim() !== "") return;
+    const offered = latestOfferedPremium(attempts);
+    if (offered != null) setSavedPremium(String(offered));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempts]);
 
   // Script + contact inputs (mirrors the queue card).
   const firstName = event.customer_name?.split(" ")[0] || "there";
@@ -416,7 +426,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   useEffect(() => {
     supabase
       .from("pending_cancel_attempts")
-      .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
       .eq("pending_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -467,7 +477,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       }
       const { data } = await supabase
         .from("pending_cancel_attempts")
-        .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -1188,7 +1198,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   inputMode="decimal"
                   placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Premium the policy continues at"}
                   value={savedPremium}
-                  onChange={ev => setSavedPremium(ev.target.value)}
+                  onChange={ev => { setPremiumTouched(true); setSavedPremium(ev.target.value); }}
                 />
                 <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
                   What the policy continues at after the save — on an endorsement save, enter the NEW (post-endorsement) premium.
@@ -1470,6 +1480,17 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   const [savedPremium, setSavedPremium] = useState(
     event.saved_premium ?? (event.premium != null ? String(event.premium) : "")
   );
+  // A quote captured at the call supersedes the report's offer as the pre-fill —
+  // on a re-quote save, what the customer accepted is the re-quoted amount, not
+  // the original offer. The rep's own typing always wins (touched flag), and the
+  // stored saved_premium on an already-closed case is never overridden.
+  const [premiumTouched, setPremiumTouched] = useState(event.saved_premium != null);
+  useEffect(() => {
+    if (premiumTouched) return;
+    const offered = latestOfferedPremium(attempts);
+    if (offered != null) setSavedPremium(String(offered));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempts]);
   // Callback scheduling (moved off the list card into the work surface).
   const [cbTime, setCbTime] = useState("");
   const [cbNote, setCbNote] = useState("");
@@ -1527,7 +1548,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   useEffect(() => {
     supabase
       .from("renewal_attempts")
-      .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
       .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -1595,7 +1616,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
       const { data } = await supabase
         .from("renewal_attempts")
-        .select("id, attempted_at, method, result, note, direction, interventions, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
         .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -2324,7 +2345,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       inputMode="decimal"
                       placeholder="Premium paid (as billed)"
                       value={savedPremium}
-                      onChange={ev => setSavedPremium(ev.target.value)}
+                      onChange={ev => { setPremiumTouched(true); setSavedPremium(ev.target.value); }}
                     />
                   </div>
                 </div>

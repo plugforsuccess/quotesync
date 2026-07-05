@@ -31,6 +31,7 @@ import WorkloadDistribution from './components/retention/WorkloadDistribution';
 import BookMetricsPanel from './components/retention/BookMetricsPanel';
 import SaveablePremiumTargeting from './components/retention/SaveablePremiumTargeting';
 import ElasticityCurveChart from './components/retention/ElasticityCurveChart';
+import OfferOutcomesPanel from './components/retention/OfferOutcomesPanel';
 import NotesSearch from './components/retention/NotesSearch';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -504,7 +505,7 @@ export default function RetentionPage() {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20, flexWrap: "wrap" }}>
-        {["health", "lift", "at_risk", "activity", "velocity", "integrity", "renewal_audit", "targeting", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
+        {["health", "lift", "at_risk", "activity", "velocity", "integrity", "renewal_audit", "targeting", "offers", "renewals", "ai_perf", "resolved", "notes", "attrition", "reasons", "growth", "trends", "import", "book", ...(canDistribute ? ["distribute"] : [])].map(t => (
           <button key={t} className={`tab ${activeTab === t ? "active" : ""}`} onClick={() => setActiveTab(t)}>
             {t === "health"     ? "🩺 Health"         :
              t === "lift"       ? "📈 Retention Lift" :
@@ -514,6 +515,7 @@ export default function RetentionPage() {
              t === "integrity"  ? "🛡️ Integrity"      :
              t === "renewal_audit" ? "📑 Renewal Audit" :
              t === "targeting"  ? "🎯 Targeting"      :
+             t === "offers"     ? "💵 Offers"         :
              t === "renewals"   ? "🔄 Renewals"       :
              t === "ai_perf"    ? "📊 AI Performance" :
              t === "resolved"   ? "✅ Outcomes"       :
@@ -562,6 +564,9 @@ export default function RetentionPage() {
           <ElasticityCurveChart agencyId={agencyId} />
           <SaveablePremiumTargeting agencyId={agencyId} />
         </>
+      )}
+      {activeTab === "offers" && (
+        <OfferOutcomesPanel agencyId={agencyId} />
       )}
       {activeTab === "renewals" && (
         <RetentionRenewals agencyId={agencyId} />

@@ -42,6 +42,18 @@ export function onRecordSaveTactics(attempts) {
   return [...set];
 }
 
+// The most recent at-call quote on a case, read from its attempt log (callers
+// order attempts newest-first). Used to pre-fill the close screen's saved
+// premium so the rep who quoted at the call never types the number twice —
+// which was the friction that got the capture switched off in the first place.
+export function latestOfferedPremium(attempts) {
+  for (const a of attempts || []) {
+    const v = Number(a?.offered_premium);
+    if (Number.isFinite(v) && v > 0) return v;
+  }
+  return null;
+}
+
 // Normalizes the picker's form value into the attempt-table column shape.
 // Returns only populated fields so untouched attempts stay clean (all-NULL).
 export function interventionInsertFields(value) {
