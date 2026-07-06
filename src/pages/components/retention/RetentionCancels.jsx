@@ -15,6 +15,7 @@ import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
 import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, latestOfferedPremium, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
+import { sanitizeMoneyInput, parseMoney } from '../../../lib/money';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
 import { productLabel, premiumTermLabel } from '../../../lib/productLabels';
 import { titleCaseName } from '../../../lib/names';
@@ -370,12 +371,14 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   const [savedPremium, setSavedPremium] = useState(event.saved_premium ?? "");
   // Pre-fill the close screen from the quote captured at the call, so the rep
   // never types the number twice. Only while the field is untouched and empty —
-  // an explicit entry (or clearing it) always wins.
+  // an explicit entry (or clearing it) always wins. prefilledFromCall drives the
+  // "where did this number come from" hint under the input.
   const [premiumTouched, setPremiumTouched] = useState(false);
+  const [prefilledFromCall, setPrefilledFromCall] = useState(null);
   useEffect(() => {
     if (premiumTouched || String(savedPremium).trim() !== "") return;
     const offered = latestOfferedPremium(attempts);
-    if (offered != null) setSavedPremium(String(offered));
+    if (offered != null) { setSavedPremium(String(offered)); setPrefilledFromCall(offered); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempts]);
 
@@ -630,10 +633,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // has actually cancelled — hide that chip until then.
   const tacticFilter = (t) => t.code !== "reinstatement" || event.stage === "cancelled";
   // The save dollars feed the lift/velocity math, so the premium is required on
-  // a save/rewrite outcome — block Save until it's entered.
+  // a save/rewrite outcome — block Save until it PARSES (a bare "." or an
+  // emptied field must not close the case with a silent null saved_premium).
   const premiumMissing =
-    (form.status === "saved" && String(savedPremium).trim() === "") ||
-    (form.status === "rewritten" && String(form.rewrite_new_premium ?? "").trim() === "");
+    (form.status === "saved" && parseMoney(savedPremium) == null) ||
+    (form.status === "rewritten" && parseMoney(form.rewrite_new_premium) == null);
   // Button reflects what the selected outcome does: a terminal outcome closes
   // (leaves the queue); anything still-open just saves progress.
   const resolveLabel =
@@ -1198,13 +1202,18 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                   inputMode="decimal"
                   placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Premium the policy continues at"}
                   value={savedPremium}
-                  onChange={ev => { setPremiumTouched(true); setSavedPremium(ev.target.value); }}
+                  onChange={ev => { setPremiumTouched(true); setSavedPremium(sanitizeMoneyInput(ev.target.value)); }}
                 />
+                {prefilledFromCall != null && !premiumTouched && (
+                  <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
+                    Pre-filled from the {fmtFull$(prefilledFromCall)} you quoted on the call — edit if they committed at a different amount.
+                  </div>
+                )}
                 <div style={{ fontSize: 11, color: "var(--qs-muted)", marginTop: 4 }}>
                   What the policy continues at after the save — on an endorsement save, enter the NEW (post-endorsement) premium.
                   {event.premium_at_risk ? (
                     <button type="button"
-                      onClick={() => setSavedPremium(String(event.premium_at_risk))}
+                      onClick={() => { setPremiumTouched(true); setSavedPremium(String(event.premium_at_risk)); }}
                       style={{ marginLeft: 6, background: "none", border: "none", padding: 0,
                         color: "#34D399", fontWeight: 600, cursor: "pointer", fontSize: 11 }}>
                       premium unchanged — use at-risk
@@ -1485,10 +1494,11 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   // the original offer. The rep's own typing always wins (touched flag), and the
   // stored saved_premium on an already-closed case is never overridden.
   const [premiumTouched, setPremiumTouched] = useState(event.saved_premium != null);
+  const [prefilledFromCall, setPrefilledFromCall] = useState(null);
   useEffect(() => {
     if (premiumTouched) return;
     const offered = latestOfferedPremium(attempts);
-    if (offered != null) setSavedPremium(String(offered));
+    if (offered != null) { setSavedPremium(String(offered)); setPrefilledFromCall(offered); }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempts]);
   // Callback scheduling (moved off the list card into the work surface).
@@ -1815,7 +1825,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   const tacticFilter = undefined; // no extra stage rules on renewals
   // The renewal-paid premium feeds the lift/velocity math, so it's required to
   // confirm a renewal — block Save until it's entered.
-  const premiumMissing = form.status === "confirmed" && String(savedPremium).trim() === "";
+  const premiumMissing = form.status === "confirmed" && parseMoney(savedPremium) == null;
   // Button reflects what the selected outcome does: a terminal outcome closes
   // (leaves the queue); anything still-open just saves progress.
   const resolveLabel = ["confirmed","lost"].includes(form.status) ? "Close Case" : "Save Progress";
@@ -2345,8 +2355,13 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                       inputMode="decimal"
                       placeholder="Premium paid (as billed)"
                       value={savedPremium}
-                      onChange={ev => { setPremiumTouched(true); setSavedPremium(ev.target.value); }}
+                      onChange={ev => { setPremiumTouched(true); setSavedPremium(sanitizeMoneyInput(ev.target.value)); }}
                     />
+                    {prefilledFromCall != null && !premiumTouched && (
+                      <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
+                        Pre-filled from the {fmtFull$(prefilledFromCall)} you quoted on the call.
+                      </div>
+                    )}
                   </div>
                 </div>
                 {savedPremium !== "" && event.premium != null && (() => {
