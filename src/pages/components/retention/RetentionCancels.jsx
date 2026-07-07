@@ -16,6 +16,8 @@ import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
 import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, latestOfferedPremium, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
 import { sanitizeMoneyInput, parseMoney } from '../../../lib/money';
+import { caseHasRecord } from '../../../lib/caseRecord';
+import { useCaseNotes } from '../../../hooks/useCaseNotes';
 import { useInterventionTypes } from '../../../hooks/useInterventionTypes';
 import { productLabel, premiumTermLabel } from '../../../lib/productLabels';
 import { titleCaseName } from '../../../lib/names';
@@ -356,6 +358,10 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   // The "closer": which single tactic sealed the save, when 2+ were used.
   const [closer, setCloser] = useState("");
   const { data: itypes = [] } = useInterventionTypes();
+  // Case-log feed — closes are blocked unless the case has a record somewhere
+  // (case-log comment, genuine attempt note, or the Notes field). Same query
+  // key as CaseNotesFeed below, so this costs no extra fetch.
+  const { data: caseLog = [], add: addCaseNote } = useCaseNotes('cancel', event.id);
   const [form, setForm] = useState({
     status:              event.status,
     assigned_to_id:      event.assigned_to_id || "",
@@ -429,7 +435,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   useEffect(() => {
     supabase
       .from("pending_cancel_attempts")
-      .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, auto_logged, employees(first_name, last_name)")
       .eq("pending_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -480,7 +486,7 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       }
       const { data } = await supabase
         .from("pending_cancel_attempts")
-        .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, auto_logged, employees(first_name, last_name)")
         .eq("pending_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -507,6 +513,21 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   async function markAlreadyPaid() {
     setSaving(true);
     setSaveError(null);
+    // Bookkeeping close: the action fully describes itself, so the record the
+    // no-blank-close rule demands is auto-written rather than typed.
+    if (!caseHasRecord({ caseNotes: caseLog, attempts, caseNotesField: form.notes })) {
+      try {
+        await addCaseNote.mutateAsync({
+          agencyId, policyNo: event.policy_no, customerName: event.customer_name,
+          noteType: 'billing',
+          body: 'Cleared without contact — payment already posted (verified in Allstate).',
+        });
+      } catch (e) {
+        setSaveError(`Couldn't write the close note: ${e.message}`);
+        setSaving(false);
+        return;
+      }
+    }
     const err = await onUpdate(event.id, {
       status: "auto_resolved",
       resolution_date: new Date().toISOString().slice(0, 10),
@@ -525,6 +546,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
   async function save() {
     setSaving(true);
     setSaveError(null);
+    // No undocumented closes: a terminal outcome needs a record somewhere on
+    // the case — a Case Log comment, a genuine call note, or the Notes field
+    // (which saves with this update). Mirrored by the DB trigger
+    // enforce_case_record_on_close, so this is the friendly layer of a hard rule.
+    if (["saved", "rewritten", "lost", "requested_cancellation", "cancelled"].includes(form.status) &&
+        !caseHasRecord({ caseNotes: caseLog, attempts, caseNotesField: form.notes })) {
+      setSaveError("This case has no notes anywhere — write what happened (Notes field below, or a Case Log comment) before closing it.");
+      setSaving(false);
+      return;
+    }
     // Single source of truth: the tactic is captured on the reached call, so the
     // common path here is a plain status update — no second write to fail. The
     // only time we insert is when the case has NO attempt at all, which the
@@ -1482,6 +1513,9 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     notes: event.notes || "",
     shopping_reason: event.shopping_reason || "",
   });
+  // Case-log feed for the no-blank-close rule (same query key as CaseNotesFeed
+  // below — no extra fetch).
+  const { data: caseLog = [], add: addCaseNote } = useCaseNotes('renewal', event.id);
   // Kept out of `form` so it's only written to renewal_cases on the confirmed
   // (saved) path — the column it targets is the new saved_premium field.
   // Pre-fill with the renewal offer from the report so the rep doesn't retype it;
@@ -1558,7 +1592,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   useEffect(() => {
     supabase
       .from("renewal_attempts")
-      .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
+      .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, auto_logged, employees(first_name, last_name)")
       .eq("renewal_case_id", event.id)
       .order("attempted_at", { ascending: false })
       .then(({ data }) => setAttempts(data || []));
@@ -1576,6 +1610,16 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       !(attemptForm.intervention?.interventions?.length > 0);
     if (reachedNeedsTactic) {
       setAttemptError("Tag this reached call — what you did to save them, or why you couldn't — before logging it.");
+      return;
+    }
+    // "Happy — staying" closes the case the moment it's logged, so if the case
+    // has no record anywhere yet, this call's note IS the record — require it.
+    const closesAsHappy =
+      attemptForm.result === "reached" &&
+      (attemptForm.intervention?.interventions || []).some((c) => HAPPY_CODES.has(c));
+    if (closesAsHappy &&
+        !caseHasRecord({ caseNotes: caseLog, attempts, caseNotesField: form.notes, extraNote: attemptForm.note })) {
+      setAttemptError("This closes the case, and it has no notes on record — add a quick note (who you spoke to / what they said) before logging.");
       return;
     }
     setAttemptError(null);
@@ -1626,7 +1670,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
       const { data } = await supabase
         .from("renewal_attempts")
-        .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, employees(first_name, last_name)")
+        .select("id, attempted_at, method, result, note, direction, interventions, offered_premium, auto_logged, employees(first_name, last_name)")
         .eq("renewal_case_id", event.id)
         .order("attempted_at", { ascending: false });
       setAttempts(data || []);
@@ -1677,6 +1721,20 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   async function markAlreadyPaid() {
     setSaving(true);
     setSaveError(null);
+    // Bookkeeping close — auto-write the record the no-blank-close rule demands.
+    if (!caseHasRecord({ caseNotes: caseLog, attempts, caseNotesField: form.notes })) {
+      try {
+        await addCaseNote.mutateAsync({
+          agencyId, policyNo: event.policy_no, customerName: event.customer_name,
+          noteType: 'billing',
+          body: 'Cleared — renewal already paid in Allstate; no contact made.',
+        });
+      } catch (e) {
+        setSaveError(`Couldn't write the close note: ${e.message}`);
+        setSaving(false);
+        return;
+      }
+    }
     const err = await onUpdate(event.id, {
       status: "auto_resolved",
       final_outcome: "renewed",
@@ -1699,6 +1757,29 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
   async function save() {
     setSaving(true);
     setSaveError(null);
+    // No undocumented closes (mirrors enforce_case_record_on_close in the DB):
+    // a rep-confirmed renewal or loss needs a record; marking unreachable is a
+    // bookkeeping close whose story is the attempt log, so its record is
+    // auto-written rather than typed.
+    const bare = !caseHasRecord({ caseNotes: caseLog, attempts, caseNotesField: form.notes });
+    if (["confirmed", "lost"].includes(form.status) && bare) {
+      setSaveError("This case has no notes anywhere — write what happened (Notes field below, or a Case Log comment) before closing it.");
+      setSaving(false);
+      return;
+    }
+    if (form.status === "unreachable" && bare) {
+      try {
+        await addCaseNote.mutateAsync({
+          agencyId, policyNo: event.policy_no, customerName: event.customer_name,
+          noteType: 'general',
+          body: `Marked unreachable — ${event.attempt_count || attempts.length || 0} attempts without contact.`,
+        });
+      } catch (e) {
+        setSaveError(`Couldn't write the close note: ${e.message}`);
+        setSaving(false);
+        return;
+      }
+    }
     // Single source of truth: the tactic is captured on the reached call, so the
     // common path here is a plain status update — no second write to fail. The
     // only time we insert is when the case has NO attempt at all, which the
