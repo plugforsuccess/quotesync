@@ -438,12 +438,13 @@ export default function HouseholdDetailPage() {
           currentEmployeeId={employee?.id}
           producers={employees}
           canReassign={false}
-          onOpenSibling={(row) => setOpenCase({ kind: 'renewal', data: row })}
+          onOpenSibling={(row, kind) => setOpenCase({ kind, data: row })}
         />,
         document.body
       )}
       {openCase?.kind === 'cancel' && createPortal(
         <EventDetailModal
+          key={openCase.data.id}
           event={openCase.data}
           onClose={() => setOpenCase(null)}
           onUpdate={(id, updates) => updateCase('pending_cases', id, updates)}
@@ -451,6 +452,7 @@ export default function HouseholdDetailPage() {
           currentEmployeeId={employee?.id}
           producers={employees}
           canReassign={false}
+          onOpenSibling={(row, kind) => setOpenCase({ kind, data: row })}
         />,
         document.body
       )}

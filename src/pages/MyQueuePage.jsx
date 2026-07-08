@@ -2073,6 +2073,7 @@ export default function MyQueuePage() {
       {/* ── Detail Modals (existing — unchanged) ─────────────────────── */}
       {selectedEvent && createPortal(
         <EventDetailModal
+          key={selectedEvent.id}
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
           onUpdate={updateCancelCase}
@@ -2080,6 +2081,9 @@ export default function MyQueuePage() {
           currentEmployeeId={employeeId}
           producers={employees}
           canReassign={false}
+          onOpenSibling={(row, kind) => kind === 'cancel'
+            ? (setSelectedRenewal(null), setSelectedEvent(row))
+            : (setSelectedEvent(null), setSelectedRenewal(row))}
         />,
         document.body
       )}
@@ -2093,7 +2097,9 @@ export default function MyQueuePage() {
           currentEmployeeId={employeeId}
           producers={employees}
           canReassign={false}
-          onOpenSibling={setSelectedRenewal}
+          onOpenSibling={(row, kind) => kind === 'cancel'
+            ? (setSelectedRenewal(null), setSelectedEvent(row))
+            : (setSelectedEvent(null), setSelectedRenewal(row))}
         />,
         document.body
       )}

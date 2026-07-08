@@ -604,12 +604,16 @@ export default function RetentionPage() {
       {/* Detail Modal */}
       {selectedEvent && createPortal(
         <EventDetailModal
+          key={selectedEvent.id}
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
           onUpdate={updateEvent}
           agencyId={agencyId}
           currentEmployeeId={currentEmployee?.id ?? null}
           producers={producers}
+          onOpenSibling={(row, kind) => kind === 'cancel'
+            ? (setSelectedRenewal(null), setSelectedEvent(row))
+            : (setSelectedEvent(null), setSelectedRenewal(row))}
         />,
         document.body
       )}
@@ -622,7 +626,9 @@ export default function RetentionPage() {
           agencyId={agencyId}
           currentEmployeeId={currentEmployee?.id ?? null}
           producers={producers}
-          onOpenSibling={setSelectedRenewal}
+          onOpenSibling={(row, kind) => kind === 'cancel'
+            ? (setSelectedRenewal(null), setSelectedEvent(row))
+            : (setSelectedEvent(null), setSelectedRenewal(row))}
         />,
         document.body
       )}
