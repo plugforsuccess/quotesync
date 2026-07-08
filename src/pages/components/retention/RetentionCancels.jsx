@@ -215,15 +215,21 @@ function CustomerDrilldownModal({ event, onClose }) {
 // tab carries its days-until so the rep sees the household's timing at a
 // glance; a ✓ marks a case already confirmed.
 
+// Type-aware: `current` and `siblings` may each be a cancel OR a renewal case
+// (a customer's auto renewal + home pending-cancel work on one call). Cancel
+// tabs render amber, renewals blue; clicking any sibling opens it in its own
+// modal (the parent routes on `type`). Cancels sort first (more urgent).
+const TAB_TYPE = {
+  cancel:  { color: '#F59E0B', bg: 'rgba(245,158,11,0.14)' },
+  renewal: { color: '#3B82F6', bg: 'rgba(59,130,246,0.14)' },
+};
 function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
   if (!siblings?.length) return null;
   const all = [
-    { id: current.id, product: current.product, policy_no: current.policy_no,
-      renewal_date: current.renewal_date, status: current.status, active: true },
-    // Siblings come from useOtherActiveCases, which maps the renewal date onto
-    // a generic `date` field — normalize it so every tab gets its days chip.
-    ...siblings.map(s => ({ ...s, renewal_date: s.renewal_date ?? s.date, active: false })),
+    { ...current, active: true },
+    ...siblings.map(s => ({ ...s, active: false })),
   ].sort((a, b) =>
+    String(a.type || '').localeCompare(String(b.type || '')) ||
     (productLabel(a.product) || String(a.product || '')).localeCompare(productLabel(b.product) || String(b.product || '')) ||
     String(a.policy_no || '').localeCompare(String(b.policy_no || '')));
   const tab = {
@@ -231,28 +237,34 @@ function HouseholdCaseTabs({ current, siblings, onOpen, busyId }) {
     border: '1px solid', display: 'inline-flex', gap: 6, alignItems: 'center',
   };
   const daysChip = (c) => {
-    const d = daysUntilRenewal(c.renewal_date);
+    const d = daysUntilRenewal(c.date);
     if (isNaN(d)) return null;
-    return d < 0 ? 'past' : d === 0 ? 'today' : `${d}d`;
+    return d < 0 ? 'past due' : d === 0 ? 'today' : `${d}d`;
   };
+  const glyph = (c) => c.type === 'cancel'
+    ? (c.stage === 'cancelled' ? '🚫' : '⚠')
+    : '🔄';
+  const done = (c) => ['confirmed', 'saved', 'rewritten'].includes(c.status);
   return (
     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
       <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--qs-subtle)',
         textTransform: 'uppercase', letterSpacing: '0.08em' }}>Household</span>
       {all.map(c => {
+        const t = TAB_TYPE[c.type] || TAB_TYPE.renewal;
         const label = <>
+          <span>{glyph(c)}</span>
           {productLabel(c.product) || c.product} · {c.policy_no}
           {daysChip(c) && <span style={{ fontWeight: 600, opacity: 0.75 }}>· {daysChip(c)}</span>}
-          {c.status === 'confirmed' && <span style={{ color: '#34D399' }}>✓</span>}
+          {done(c) && <span style={{ color: '#34D399' }}>✓</span>}
         </>;
         return c.active ? (
           <span key={c.id} aria-current="true" style={{ ...tab, cursor: 'default',
-            background: 'rgba(59,130,246,0.14)', borderColor: '#3B82F6', color: '#60A5FA' }}>
+            background: t.bg, borderColor: t.color, color: t.color }}>
             {label}
           </span>
         ) : (
           <button key={c.id} type="button" onClick={() => onOpen(c)} disabled={busyId === c.id}
-            title={`Open the ${productLabel(c.product) || c.product} case — same customer, same call`}
+            title={`Open the ${productLabel(c.product) || c.product} ${c.type} case — same customer, same call`}
             style={{ ...tab, cursor: 'pointer', fontFamily: 'inherit',
               background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)', color: 'var(--qs-text)' }}>
             {busyId === c.id ? 'Opening…' : label}
@@ -352,7 +364,7 @@ function AlreadyPaidAction({ onConfirm, busy }) {
 
 // ─── Event Detail Modal ──────────────────────────────────────────────────────
 
-function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [], canReassign = true }) {
+function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeId, producers = [], canReassign = true, onOpenSibling = null }) {
   const days = daysUntilCancel(event.cancel_effective_date);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -445,6 +457,20 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
     excludeEventId:   event.id,
     excludeRenewalId: null,
   });
+
+  // Household case switching — same as the renewal modal, spanning both types.
+  const siblings = onOpenSibling ? otherCases : [];
+  const [openingSiblingId, setOpeningSiblingId] = useState(null);
+  async function openSibling(s) {
+    setOpeningSiblingId(s.id);
+    const table = s.type === 'cancel' ? 'pending_cases' : 'renewal_cases';
+    const { data, error } = await supabase.from(table).select('*').eq('id', s.id).single();
+    setOpeningSiblingId(null);
+    if (!error && data) onOpenSibling(data, s.type);
+  }
+  const currentTab = { id: event.id, type: 'cancel', product: event.product,
+    policy_no: event.policy_no, date: event.cancel_effective_date,
+    status: event.status, stage: event.stage };
 
   useEffect(() => {
     supabase
@@ -764,8 +790,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
 
         <div style={{ padding: "20px 24px", overflowY: "auto" }}>
 
-          {/* ── Other cases warning ─────────────────────────── */}
-          <OtherCasesWarning cases={otherCases} />
+          {/* ── Household cases ─────────────────────────────── */}
+          {onOpenSibling
+            ? <HouseholdCaseTabs current={currentTab} siblings={siblings}
+                onOpen={openSibling} busyId={openingSiblingId} />
+            : <OtherCasesWarning cases={otherCases} />}
 
           {/* ── Lapsed banner ───────────────────────────────── */}
           {event.stage === 'cancelled' && (
@@ -1602,17 +1631,22 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
     excludeRenewalId: event.id,
   });
 
-  // Household case switching — the customer's other open renewals become tabs
-  // (see HouseholdCaseTabs) so a rep can work auto + home on the same call.
-  // Fetch the full case row here; the parent swaps its selected case with it.
-  const renewalSiblings = onOpenSibling ? otherCases.filter(c => c.type === 'renewal') : [];
+  // Household case switching — the customer's OTHER open cases (renewals AND
+  // cancels) become tabs so a rep can work the whole household on one call.
+  // Fetch the full case row from the right table and let the parent route to
+  // the matching modal. renewalSiblings drives the renewal-only auto-advance.
+  const siblings = onOpenSibling ? otherCases : [];
+  const renewalSiblings = siblings.filter(c => c.type === 'renewal');
   const [openingSiblingId, setOpeningSiblingId] = useState(null);
   async function openSibling(s) {
     setOpeningSiblingId(s.id);
-    const { data, error } = await supabase.from('renewal_cases').select('*').eq('id', s.id).single();
+    const table = s.type === 'cancel' ? 'pending_cases' : 'renewal_cases';
+    const { data, error } = await supabase.from(table).select('*').eq('id', s.id).single();
     setOpeningSiblingId(null);
-    if (!error && data) onOpenSibling(data);
+    if (!error && data) onOpenSibling(data, s.type);
   }
+  const currentTab = { id: event.id, type: 'renewal', product: event.product,
+    policy_no: event.policy_no, date: event.renewal_date, status: event.status };
 
   useEffect(() => {
     supabase
@@ -1901,7 +1935,7 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
         // Re-check openness — the sibling list can be stale.
         if (data && !RENEWAL_ACTIVE_EXCLUDED.includes(data.status)) {
           setSaving(false);
-          onOpenSibling(data);
+          onOpenSibling(data, 'renewal');
           return;
         }
       }
@@ -2011,13 +2045,12 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
 
         <div style={{ padding: "20px 24px", overflowY: "auto" }}>
 
-          <HouseholdCaseTabs current={event} siblings={renewalSiblings}
-            onOpen={openSibling} busyId={openingSiblingId} />
-          {/* Sibling renewals are covered by the tabs above (when switching is
-              wired); the warning then only needs to flag cancel-side cases. */}
-          <OtherCasesWarning cases={renewalSiblings.length > 0
-            ? otherCases.filter(c => c.type !== 'renewal')
-            : otherCases} />
+          {/* Tabs cover every active household case (both types) when switching
+              is wired; fall back to the read-only warning otherwise. */}
+          {onOpenSibling
+            ? <HouseholdCaseTabs current={currentTab} siblings={siblings}
+                onOpen={openSibling} busyId={openingSiblingId} />
+            : <OtherCasesWarning cases={otherCases} />}
 
           {/* Resolved-state banner — for a closed case, say plainly HOW it
               resolved and (for auto_resolved) WHO: a rep-confirmed renewal vs a
@@ -3795,12 +3828,14 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
       {/* Drilldown detail modal — opens the full cancel or renewal modal with logging */}
       {drilldown && drilldown.side === 'cancel' && (
         <EventDetailModal
+          key={drilldown.event.id}
           event={drilldown.event}
           onClose={() => setDrilldown(null)}
           onUpdate={updateCancelEvent}
           agencyId={agencyId}
           currentEmployeeId={currentEmployeeId}
           producers={producers}
+          onOpenSibling={(row, kind) => setDrilldown(d => ({ ...d, side: kind, event: row }))}
         />
       )}
       {drilldown && drilldown.side === 'renewal' && (
@@ -3812,7 +3847,7 @@ function UnifiedAtRiskTab({ agencyId, currentEmployeeId, urgentFilter = false, o
           producers={producers}
           agencyId={agencyId}
           currentEmployeeId={currentEmployeeId}
-          onOpenSibling={(row) => setDrilldown(d => ({ ...d, event: row }))}
+          onOpenSibling={(row, kind) => setDrilldown(d => ({ ...d, side: kind, event: row }))}
         />
       )}
       {/* For dual_risk rows, show a switch button inside the modal overlay */}

@@ -813,6 +813,7 @@ export default function TodayPage() {
 
       {selectedCancel && createPortal(
         <EventDetailModal
+          key={selectedCancel.id}
           event={selectedCancel}
           onClose={() => setSelectedCancel(null)}
           onUpdate={updateCancel}
@@ -820,6 +821,9 @@ export default function TodayPage() {
           currentEmployeeId={employeeId}
           producers={employees}
           canReassign={false}
+          onOpenSibling={(row, kind) => kind === 'cancel'
+            ? (setSelectedRenewal(null), setSelectedCancel(row))
+            : (setSelectedCancel(null), setSelectedRenewal(row))}
         />,
         document.body
       )}
@@ -833,7 +837,9 @@ export default function TodayPage() {
           currentEmployeeId={employeeId}
           producers={employees}
           canReassign={false}
-          onOpenSibling={setSelectedRenewal}
+          onOpenSibling={(row, kind) => kind === 'cancel'
+            ? (setSelectedRenewal(null), setSelectedCancel(row))
+            : (setSelectedCancel(null), setSelectedRenewal(row))}
         />,
         document.body
       )}
