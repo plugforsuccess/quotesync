@@ -52,6 +52,19 @@ function fmtFull$(n) {
   return `$${Number(n).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
 }
 
+// Fixed "$" inside premium inputs so a typed value still reads as a premium
+// (matches InterventionPicker's money inputs).
+const DOLLAR_ADORNMENT = {
+  position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+  color: "var(--qs-dim)", fontSize: 14, pointerEvents: "none",
+};
+const dollarInput = (input) => (
+  <div style={{ position: "relative" }}>
+    <span style={DOLLAR_ADORNMENT}>$</span>
+    {input}
+  </div>
+);
+
 function maskCustomerName(name) {
   if (!name) return "—";
   const parts = titleCaseName(name).trim().split(/\s+/);
@@ -1179,15 +1192,18 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
                       New Premium <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span>
                       <span style={{ color: "#F87171", marginLeft: 2 }}>*</span>
                     </label>
-                    <input
-                      className="dark-input"
-                      type="number"
-                      placeholder="e.g. 1850"
-                      min="0"
-                      step="1"
-                      value={form.rewrite_new_premium}
-                      onChange={ev => setForm(p => ({ ...p, rewrite_new_premium: ev.target.value }))}
-                    />
+                    {dollarInput(
+                      <input
+                        className="dark-input"
+                        type="number"
+                        placeholder="e.g. 1850"
+                        min="0"
+                        step="1"
+                        style={{ paddingLeft: 26 }}
+                        value={form.rewrite_new_premium}
+                        onChange={ev => setForm(p => ({ ...p, rewrite_new_premium: ev.target.value }))}
+                      />
+                    )}
                     {form.rewrite_new_premium && event.premium_at_risk && (
                       <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
                         {(() => {
@@ -1233,13 +1249,16 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
             {form.status === "saved" && (
               <div>
                 <label className="dark-label">Premium saved <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
-                <input
-                  className="dark-input"
-                  inputMode="decimal"
-                  placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Premium the policy continues at"}
-                  value={savedPremium}
-                  onChange={ev => { setPremiumTouched(true); setSavedPremium(sanitizeMoneyInput(ev.target.value)); }}
-                />
+                {dollarInput(
+                  <input
+                    className="dark-input"
+                    inputMode="decimal"
+                    placeholder={event.premium_at_risk ? `At risk was ${fmtFull$(event.premium_at_risk)}` : "Premium the policy continues at"}
+                    style={{ paddingLeft: 26 }}
+                    value={savedPremium}
+                    onChange={ev => { setPremiumTouched(true); setSavedPremium(sanitizeMoneyInput(ev.target.value)); }}
+                  />
+                )}
                 {prefilledFromCall != null && !premiumTouched && (
                   <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
                     Pre-filled from the {fmtFull$(prefilledFromCall)} you quoted on the call — edit if they committed at a different amount.
@@ -2441,13 +2460,16 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
                   </div>
                   <div>
                     <label className="dark-label">Renewal paid <span style={{ fontWeight: 400, color: "var(--qs-muted)" }}>({premiumTermLabel(event.product)})</span><span style={{ color: "#F87171", marginLeft: 2 }}>*</span></label>
-                    <input
-                      className="dark-input"
-                      inputMode="decimal"
-                      placeholder="Premium paid (as billed)"
-                      value={savedPremium}
-                      onChange={ev => { setPremiumTouched(true); setSavedPremium(sanitizeMoneyInput(ev.target.value)); }}
-                    />
+                    {dollarInput(
+                      <input
+                        className="dark-input"
+                        inputMode="decimal"
+                        placeholder="Premium paid (as billed)"
+                        style={{ paddingLeft: 26 }}
+                        value={savedPremium}
+                        onChange={ev => { setPremiumTouched(true); setSavedPremium(sanitizeMoneyInput(ev.target.value)); }}
+                      />
+                    )}
                     {prefilledFromCall != null && !premiumTouched && (
                       <div style={{ fontSize: 11, color: "#34D399", marginTop: 4 }}>
                         Pre-filled from the {fmtFull$(prefilledFromCall)} you quoted on the call.
