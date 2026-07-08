@@ -56,7 +56,8 @@ function fmtFull$(n) {
 // (matches InterventionPicker's money inputs).
 const DOLLAR_ADORNMENT = {
   position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
-  color: "var(--qs-dim)", fontSize: 14, pointerEvents: "none",
+  // Same token as .dark-input's text color, so the $ matches the typed number.
+  color: "var(--qs-text)", fontSize: 14, pointerEvents: "none",
 };
 const dollarInput = (input) => (
   <div style={{ position: "relative" }}>

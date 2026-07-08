@@ -22,7 +22,8 @@ import { EMPTY_INTERVENTION, HAPPY_CODES } from '../lib/interventions';
 // Fixed "$" inside the money inputs so a typed value still reads as a premium.
 const dollarAdornment = {
   position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
-  color: 'var(--qs-dim)', fontSize: 14, pointerEvents: 'none',
+  // Same token as .dark-input's text color, so the $ matches the typed number.
+  color: 'var(--qs-text)', fontSize: 14, pointerEvents: 'none',
 };
 
 export default function InterventionPicker({ value, onChange, context, filter, required = false, includeLoss = false }) {
