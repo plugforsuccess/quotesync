@@ -19,6 +19,12 @@ import { EMPTY_INTERVENTION, HAPPY_CODES } from '../lib/interventions';
 // `includeLoss` adds the "couldn't save — why" reasons and the neutral
 // "no decision" option — used on the call-log surface (a reached call can end in
 // a loss or a non-event), not when recording a save outcome.
+// Fixed "$" inside the money inputs so a typed value still reads as a premium.
+const dollarAdornment = {
+  position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)',
+  color: 'var(--qs-dim)', fontSize: 14, pointerEvents: 'none',
+};
+
 export default function InterventionPicker({ value, onChange, context, filter, required = false, includeLoss = false }) {
   const { data: allTypes = [] } = useInterventionTypes();
   const base = allTypes
@@ -139,15 +145,18 @@ export default function InterventionPicker({ value, onChange, context, filter, r
           On the save path it pre-fills the close screen, so this is typed once. */}
       {showPremium && (
         <>
-          <input
-            type="number"
-            inputMode="decimal"
-            className="dark-input"
-            placeholder="Premium quoted on this call ($) — required"
-            value={v.offeredPremium}
-            onChange={(e) => onChange({ ...v, offeredPremium: e.target.value })}
-            style={{ marginBottom: 2, fontSize: 14, padding: '9px 12px', width: '100%', boxSizing: 'border-box' }}
-          />
+          <div style={{ position: 'relative', marginBottom: 2 }}>
+            <span style={dollarAdornment}>$</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              className="dark-input"
+              placeholder="Premium quoted on this call — required"
+              value={v.offeredPremium}
+              onChange={(e) => onChange({ ...v, offeredPremium: e.target.value })}
+              style={{ fontSize: 14, padding: '9px 12px 9px 26px', width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
           <div style={{ fontSize: 11, color: 'var(--qs-dim)', marginBottom: 8 }}>
             Kept even if the call ends lost — it's the price that didn't save them (Offers report).
             On a save it pre-fills the close screen, so you won't retype it.
@@ -167,15 +176,18 @@ export default function InterventionPicker({ value, onChange, context, filter, r
             onChange={(e) => onChange({ ...v, competitorName: e.target.value })}
             style={{ fontSize: 14, padding: '9px 12px', flex: 1, boxSizing: 'border-box' }}
           />
-          <input
-            type="number"
-            inputMode="decimal"
-            className="dark-input"
-            placeholder="Their quote ($), if shared"
-            value={v.competitorQuote}
-            onChange={(e) => onChange({ ...v, competitorQuote: e.target.value })}
-            style={{ fontSize: 14, padding: '9px 12px', flex: 1, boxSizing: 'border-box' }}
-          />
+          <div style={{ position: 'relative', flex: 1 }}>
+            <span style={dollarAdornment}>$</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              className="dark-input"
+              placeholder="Their quote, if shared"
+              value={v.competitorQuote}
+              onChange={(e) => onChange({ ...v, competitorQuote: e.target.value })}
+              style={{ fontSize: 14, padding: '9px 12px 9px 26px', width: '100%', boxSizing: 'border-box' }}
+            />
+          </div>
         </div>
       )}
     </div>
