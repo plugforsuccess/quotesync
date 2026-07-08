@@ -42,6 +42,20 @@ export function onRecordSaveTactics(attempts) {
   return [...set];
 }
 
+// Tagging a quote-claiming tactic (captures_premium in intervention_types —
+// re-quote / bundle / competitor match) asserts a number was put in front of
+// the customer, so that number is required to log the call. Tactics that don't
+// inherently quote (discount, payment plan, explained increase) stay exempt,
+// and "haven't quoted yet" has its own correct tag: spoke_no_decision.
+export function missingRequiredQuote(value, types = []) {
+  const v = value || EMPTY_INTERVENTION;
+  const selected = v.interventions || [];
+  const claimsQuote = types.some((t) => selected.includes(t.code) && t.captures_premium);
+  if (!claimsQuote) return false;
+  const n = Number(v.offeredPremium);
+  return !(Number.isFinite(n) && n > 0);
+}
+
 // The most recent at-call quote on a case, read from its attempt log (callers
 // order attempts newest-first). Used to pre-fill the close screen's saved
 // premium so the rep who quoted at the call never types the number twice —

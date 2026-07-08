@@ -14,7 +14,7 @@ import { reassignRenewalHousehold, RENEWAL_ACTIVE_EXCLUDED } from '../../../lib/
 import InterventionPicker from '../../../components/InterventionPicker';
 import CloserPicker from '../../../components/CloserPicker';
 import MultiVehicleBadge from '../../../components/MultiVehicleBadge';
-import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, latestOfferedPremium, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
+import { EMPTY_INTERVENTION, interventionInsertFields, onRecordSaveTactics, latestOfferedPremium, missingRequiredQuote, LOSS_REASON_CODES, HAPPY_CODES } from '../../../lib/interventions';
 import { sanitizeMoneyInput, parseMoney } from '../../../lib/money';
 import { caseHasRecord } from '../../../lib/caseRecord';
 import { useCaseNotes } from '../../../hooks/useCaseNotes';
@@ -453,6 +453,11 @@ function EventDetailModal({ event, onClose, onUpdate, agencyId, currentEmployeeI
       !(attemptForm.intervention?.interventions?.length > 0);
     if (reachedNeedsTactic) {
       setAttemptError("Tag this reached call — what you did to save them, or why you couldn't — before logging it.");
+      return;
+    }
+    // A quote tactic asserts a number was quoted — that number is required.
+    if (attemptForm.result === "reached" && missingRequiredQuote(attemptForm.intervention, itypes)) {
+      setAttemptError("You tagged a quote tactic — enter the premium you quoted, or use “Spoke — no decision yet” if you haven't quoted a number.");
       return;
     }
     setAttemptError(null);
@@ -1610,6 +1615,11 @@ function RenewalDetailModal({ event, onClose, onUpdate, producers, agencyId, cur
       !(attemptForm.intervention?.interventions?.length > 0);
     if (reachedNeedsTactic) {
       setAttemptError("Tag this reached call — what you did to save them, or why you couldn't — before logging it.");
+      return;
+    }
+    // A quote tactic asserts a number was quoted — that number is required.
+    if (attemptForm.result === "reached" && missingRequiredQuote(attemptForm.intervention, itypes)) {
+      setAttemptError("You tagged a quote tactic — enter the premium you quoted, or use “Spoke — no decision yet” if you haven't quoted a number.");
       return;
     }
     // "Happy — staying" closes the case the moment it's logged, so if the case

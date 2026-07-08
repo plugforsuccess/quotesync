@@ -143,7 +143,7 @@ export default function InterventionPicker({ value, onChange, context, filter, r
             type="number"
             inputMode="decimal"
             className="dark-input"
-            placeholder="Premium quoted on this call ($)"
+            placeholder="Premium quoted on this call ($) — required"
             value={v.offeredPremium}
             onChange={(e) => onChange({ ...v, offeredPremium: e.target.value })}
             style={{ marginBottom: 2, fontSize: 14, padding: '9px 12px', width: '100%', boxSizing: 'border-box' }}
