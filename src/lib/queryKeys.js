@@ -25,6 +25,19 @@ export const queryKeys = {
     slaMetrics: (agencyId) => ['agency_sla_metrics', agencyId],
   },
 
+  // ── Rate Checks (dec-page scanner) ──────────────────────────────────────────
+  rateChecks: {
+    all: () => ['rate_checks'],
+    list: (agencyId, statuses) => ['rate_checks', 'list', agencyId, statuses],
+    image: (imagePath) => ['rate_checks', 'image', imagePath],
+    winMap: (agencyId) => ['rate_checks', 'win_map', agencyId],
+  },
+
+  // ── Feature permissions ─────────────────────────────────────────────────────
+  featurePermissions: {
+    enabled: (agencyId) => ['feature_permissions', 'enabled', agencyId],
+  },
+
   // ── Stories / Newsroom ──────────────────────────────────────────────────────
   stories: {
     all: () => ['stories'],

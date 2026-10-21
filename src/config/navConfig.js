@@ -22,6 +22,8 @@ export const consumerNav = [
 const primaryItems = {
   funnel:           { to: '/agency/dashboard',         label: 'Dashboard',   icon: '📊' },
   leads:            { to: '/agency/leads',             label: 'Leads',       icon: '📋' },
+  // featureKey: hidden unless feature_permissions has it enabled for the agency (filtered in Layout)
+  rateChecks:       { to: '/agency/leads/rate-checks', label: 'Rate Checks', icon: '📸', featureKey: 'rate_checks' },
   timeAttendance:   { to: '/agency/time-attendance',   label: 'Attendance',  icon: '⏱️' },
   staffPerformance: { to: '/agency/staff-performance', label: 'Performance', icon: '📈' },
   planning:         { to: '/agency/planning',          label: 'Planning',    icon: '📊' },
@@ -120,6 +122,7 @@ export const agencyNav = {
       primaryItems.planning,
     ],
     secondary: [
+      primaryItems.rateChecks,
       primaryItems.staffPerformance,
       primaryItems.crossSell,
       primaryItems.customers,
@@ -134,6 +137,7 @@ export const agencyNav = {
   producer: {
     primary: [
       primaryItems.leads,
+      primaryItems.rateChecks,
       primaryItems.timeAttendance,
     ],
     secondary: [

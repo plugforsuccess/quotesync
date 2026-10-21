@@ -18,6 +18,7 @@ import { useManagementCadence } from '../hooks/useManagementCadence';
 import { useAuth } from '../contexts/AuthContext';
 import { useAutoSyncPersona } from '../hooks/usePersona';
 import { useCurrentEmployee } from '../hooks/useCurrentEmployee';
+import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import { PLANES, getNavItems, roleDisplayNames } from '../config/navConfig';
 
 function Layout({ forcePlane = null }) {
@@ -96,9 +97,16 @@ function Layout({ forcePlane = null }) {
 
   // Get navigation items based on active plane, role, the active persona, and
   // (for rep employees) their roles. Returns { primary: [...], secondary: [...] }.
-  const { primary: primaryNav, secondary: secondaryNav } = getNavItems(
+  const { primary: rawPrimaryNav, secondary: rawSecondaryNav } = getNavItems(
     activePlane, platformRole, currentAgencyRole, persona, repRoles,
   );
+  // Items with a featureKey only show when feature_permissions enables it for the agency.
+  const { data: enabledFeatures } = useEnabledFeatures(
+    activePlane === PLANES.AGENCY ? currentAgencyId : null
+  );
+  const featureAllowed = (item) => !item.featureKey || !!enabledFeatures?.has(item.featureKey);
+  const primaryNav = rawPrimaryNav.filter(featureAllowed);
+  const secondaryNav = rawSecondaryNav.filter(featureAllowed);
   // Plane-aware role label: when browsing the agency plane the agency role
   // takes priority (so a platform_editor like Logan with a producer
   // membership shows 'Producer' instead of 'Editor'); platform plane always

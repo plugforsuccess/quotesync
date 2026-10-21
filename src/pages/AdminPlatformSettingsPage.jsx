@@ -17,6 +17,7 @@ const FEATURE_KEYS = [
   { key: 'newsroom',          label: 'Newsroom',          description: 'Content and news management' },
   { key: 'canopy_connect',    label: 'Canopy Connect',    description: 'Policy data import via Canopy' },
   { key: 'time_attendance',   label: 'Time & Attendance', description: 'Employee punch clock and hours' },
+  { key: 'rate_checks',       label: 'Rate Checks',       description: 'Dec-page scanner inbox (insuredbycam.com/ratecheck)' },
 ];
 
 const ROLE_OPTIONS = ['producer', 'manager', 'principal'];

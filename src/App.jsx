@@ -91,6 +91,7 @@ const TimeAttendancePage = lazyWithRetry(() => import('./pages/TimeAttendancePag
 const StaffPerformancePage = lazyWithRetry(() => import('./pages/StaffPerformancePage'));
 const AgencyLeadsPage = lazyWithRetry(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage'));
+const RateChecksPage = lazyWithRetry(() => import('./pages/RateChecksPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
 const AgencySetupPage = lazyWithRetry(() => import('./pages/AgencySetupPage'));
@@ -354,6 +355,19 @@ function App() {
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencyLeadsPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            {/* Rate Checks inbox (dec-page scanner); also gated by feature_permissions 'rate_checks' in-page */}
+            <Route
+              path="agency/leads/rate-checks"
+              element={
+                <ProtectedRoute requiredAgencyRole="producer">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <RateChecksPage />
                     </Suspense>
                   </ErrorBoundary>
                 </ProtectedRoute>
