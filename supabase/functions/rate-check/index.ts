@@ -307,6 +307,13 @@ function leadFieldsFor(policyType: string | null, carrier: string | null, annual
   return fields
 }
 
+// audit_log.event_type is allowlisted (see the *_audit_log_rate_check_events
+// migration); log instead of failing silently if an insert is rejected.
+async function audit(supabase: any, row: Record<string, unknown>) {
+  const { error } = await supabase.from('audit_log').insert(row)
+  if (error) console.error('[RATE_CHECK] audit insert failed:', row.event_type, error.message)
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
 
@@ -405,7 +412,7 @@ Deno.serve(async (req) => {
     if (insErr) throw insErr
     const rateCheckId = rc.id
 
-    await supabase.from('audit_log').insert({
+    await audit(supabase, {
       event_type: 'RATE_CHECK_RECEIVED',
       agency_id: agencyId,
       ip_address: consentIp,
@@ -459,7 +466,7 @@ Deno.serve(async (req) => {
     const policyType = flat?.policy_type ?? null
     const annualPremium = flat?.annual_premium ?? null
 
-    await supabase.from('audit_log').insert({
+    await audit(supabase, {
       event_type: flat ? 'RATE_CHECK_EXTRACTED' : 'RATE_CHECK_FAILED',
       agency_id: agencyId,
       metadata: {

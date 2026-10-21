@@ -47,6 +47,13 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
 const money = (n: number | null | undefined) =>
   n == null ? '?' : Math.round(Number(n)).toLocaleString('en-US')
 
+// audit_log.event_type is allowlisted (see the *_audit_log_rate_check_events
+// migration); log instead of failing silently if an insert is rejected.
+async function audit(supabase: any, row: Record<string, unknown>) {
+  const { error } = await supabase.from('audit_log').insert(row)
+  if (error) console.error('[RATE_CHECK_OUTCOME] audit insert failed:', row.event_type, error.message)
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req)
 
@@ -189,7 +196,7 @@ Deno.serve(async (req) => {
       result.sms = sms
     }
 
-    await supabase.from('audit_log').insert({
+    await audit(supabase, {
       event_type: 'RATE_CHECK_QUOTED',
       lead_id: rc.lead_id,
       agency_id: rc.agency_id,

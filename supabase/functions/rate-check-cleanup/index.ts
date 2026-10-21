@@ -16,6 +16,13 @@ const BUCKET = 'dec-pages'
 const RETENTION_DAYS = 90
 const BATCH = 100
 
+// audit_log.event_type is allowlisted (see the *_audit_log_rate_check_events
+// migration); log instead of failing silently if an insert is rejected.
+async function audit(supabase: any, row: Record<string, unknown>) {
+  const { error } = await supabase.from('audit_log').insert(row)
+  if (error) console.error('[RATE_CHECK_CLEANUP] audit insert failed:', row.event_type, error.message)
+}
+
 Deno.serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -58,7 +65,7 @@ Deno.serve(async (req) => {
     }
 
     if (deleted > 0) {
-      await supabase.from('audit_log').insert({
+      await audit(supabase, {
         event_type: 'RATE_CHECK_IMAGES_PURGED',
         metadata: { deleted, cutoff, retention_days: RETENTION_DAYS },
       })
