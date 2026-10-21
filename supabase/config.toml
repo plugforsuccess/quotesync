@@ -13,3 +13,17 @@ verify_jwt = false
 # Stripe-Signature header, not a Supabase JWT.
 [functions.dd-stripe-webhook]
 verify_jwt = false
+
+# Public /ratecheck page posts dec-page photos here with the publishable key;
+# guarded by consent validation + DB rate limiting, not a JWT.
+[functions.rate-check]
+verify_jwt = false
+
+# Agent-only: records the Allstate quote; requires a user JWT.
+[functions.rate-check-outcome]
+verify_jwt = true
+
+# Invoked daily by pg_cron (no secret in the DB); input-free and idempotent —
+# it only purges dec-page images older than 90 days.
+[functions.rate-check-cleanup]
+verify_jwt = false
