@@ -1,5 +1,10 @@
 """Generate synthetic declarations pages for Rate Check verification.
 
+The .png.b64 copies next to them are the same images base64-encoded, so a
+live end-to-end scan can be driven from SQL (pg_net fetches the text from the
+repository and posts it to the rate-check function). Regenerate them with:
+    base64 -w0 state_farm_auto_6mo.png > state_farm_auto_6mo.png.b64
+
 Fake names/addresses/policy numbers only. Run:
   python3 -I supabase/functions/rate-check/fixtures/generate.py
 Writes state_farm_auto_6mo.png and progressive_home_12mo.png next to this file.
