@@ -13,7 +13,7 @@ import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
-  driverRows, discountsOf, headsUp, vehicleTitle, caps, insuredName,
+  driverRows, discountsOf, headsUp, vehicleTitle, caps, insuredName, vehiclesNewestFirst,
 } from './policyView';
 
 const AUTO = ['auto', 'commercial_auto'];
@@ -83,10 +83,15 @@ function VehicleCard({ rc, v, index }) {
         </div>
       )}
       {lien && (
-        <p className="mt-1 flex items-center gap-1 text-sm" style={{ color: 'var(--qs-text)' }}>
-          <span style={{ color: 'var(--qs-subtle)' }}>Lienholder</span> {lien}
-          <CopyButton text={lien} label={`Copy lienholder for ${vehicleTitle(v)}`} />
-        </p>
+        <>
+          <p className="mt-1 flex items-center gap-1 text-sm" style={{ color: 'var(--qs-text)' }}>
+            <span style={{ color: 'var(--qs-subtle)' }}>Lienholder</span> {lien}
+            <CopyButton text={lien} label={`Copy lienholder for ${vehicleTitle(v)}`} />
+          </p>
+          <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--qs-warning)' }}>
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Ask loan payoff year — not on the dec page
+          </p>
+        </>
       )}
     </li>
   );
@@ -146,7 +151,7 @@ export default function PolicySheet({ rc, warning }) {
 
       {isAuto && vehicles.length > 0 && (
         <Section title={`Vehicles · ${vehicles.length}`}>
-          <ul>{vehicles.map((v, i) => <VehicleCard key={i} rc={rc} v={v} index={i} />)}</ul>
+          <ul>{vehiclesNewestFirst(rc).map(({ v, index }) => <VehicleCard key={index} rc={rc} v={v} index={index} />)}</ul>
         </Section>
       )}
 

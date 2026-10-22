@@ -4,7 +4,7 @@
 
 import { money, formatPhone } from './ui';
 import {
-  caps, insuredName, vehicleTitle, vehicleCoverages, lienholderFor, autoCoverageGroups, propertyFacts,
+  caps, insuredName, vehicleTitle, vehicleCoverages, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
   homeCoverageRows, endorsementsOf, driverRows, discountsOf,
 } from './policyView';
 
@@ -186,14 +186,14 @@ export function quoteSheet(rc) {
   const vehicles = Array.isArray(rc.vehicles) ? rc.vehicles : [];
   if (vehicles.length) {
     push('', 'Vehicles:');
-    vehicles.forEach((v, i) => {
+    vehiclesNewestFirst(rc).forEach(({ v, index: i }) => {
       const vin = v.vin ? (v.vin_complete === false ? `VIN ends ${v.vin}` : `VIN ${v.vin}`) : null;
       push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}`);
       if (v.annual_mileage) push(`    ${v.annual_mileage} mi/yr`);
       const own = vehicleCoverages(rc, i);
       if (own.length) push(`    ${own.map(r => `${r.label} ${r.value}`).join(' · ')}`);
       const lien = lienholderFor(rc, i);
-      if (lien) push(`    Lienholder: ${lien}`);
+      if (lien) push(`    Lienholder: ${lien} — ask loan payoff year`);
     });
   }
 

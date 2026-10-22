@@ -286,6 +286,23 @@ export function lienholderFor(rc, index) {
   return null;
 }
 
+/** Vehicles newest model year first (unknown years last), keeping each one's index in rc.vehicles. */
+export function vehiclesNewestFirst(rc) {
+  const list = Array.isArray(rc?.vehicles) ? rc.vehicles : [];
+  return list.map((v, index) => ({ v, index }))
+    .sort((a, b) => (Number(b.v?.year) || -Infinity) - (Number(a.v?.year) || -Infinity) || a.index - b.index);
+}
+
+/**
+ * What the dec page can't tell us but the quote needs: the loan payoff year for
+ * every financed vehicle (newest first), e.g. "Loan payoff year for the ’21 LAND ROVER VELAR".
+ */
+export function vehicleQuestions(rc) {
+  return vehiclesNewestFirst(rc)
+    .filter(({ index }) => lienholderFor(rc, index))
+    .map(({ v }) => `Loan payoff year for the ${vehicleShort(v)}`);
+}
+
 /** { year_built, construction, roof_material, roof_year, mortgagee, loan_number, paid_by_mortgagee, … } */
 export function propertyFacts(rc) {
   const p = rc?.property && typeof rc.property === 'object' ? { ...rc.property } : {};

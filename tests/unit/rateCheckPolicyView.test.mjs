@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   caps, insuredName, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames,
+  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -84,9 +84,15 @@ test('drivers: named insured, spouse, then the rest oldest to youngest', () => {
   assert.deepEqual(driverRows({ drivers: fam.drivers }).map(d => d.age), [45, 44, 19, 16]);
 });
 
-test('lienholder lands on the right vehicle', () => {
+test('lienholder lands on the right vehicle, and its payoff year is flagged to ask', () => {
   assert.equal(lienholderFor(auto, 0), null);
   assert.equal(lienholderFor(auto, 2), 'TD AUTO FINANCE');
+  assert.deepEqual(vehicleQuestions(auto), ['Loan payoff year for the ’21 LAND ROVER VELAR']);
+});
+
+test('vehicles newest to oldest, keeping their original index', () => {
+  assert.deepEqual(vehiclesNewestFirst(auto).map(({ v, index }) => [v.year, index]), [[2022, 1], [2021, 2], [2015, 0]]);
+  assert.deepEqual(vehiclesNewestFirst({ vehicles: [{ year: null }, { year: 2019 }] }).map(x => x.index), [1, 0]);
 });
 
 test('drivers with the same name are told apart; discounts are short tags', () => {
