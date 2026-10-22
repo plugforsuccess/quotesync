@@ -31,5 +31,5 @@ export const BOOK_OWNERSHIP = {
 };
 
 // Add-ons and endorsements the producer must match on the quote (rental, roadside, every endorsement).
-export const ADD_ON_CLS = 'inline-block rounded-md px-1.5 py-0.5 font-semibold';
-export const ADD_ON_STYLE = { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' };
+export const ADD_ON_CLS = 'font-semibold';
+export const ADD_ON_STYLE = { color: 'var(--qs-warning)' };

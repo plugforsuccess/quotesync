@@ -6,7 +6,7 @@
 // endorsements → discounts. A short summary closes the sheet.
 // All formatting lives in policyView.js.
 
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, CircleHelp } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
 import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
@@ -62,10 +62,10 @@ function VehicleCard({ rc, v, index }) {
   const lien = lienholderFor(rc, index);
   return (
     <li className="py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-baseline justify-between gap-3">
         <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{vehicleTitle(v)}</p>
         {vin && (
-          <span className="flex items-center gap-1">
+          <span className="inline-flex items-center gap-1">
             <span className="select-text font-mono text-sm" style={{ color: 'var(--qs-bright)' }}>{vin}</span>
             {v.vin && v.vin_complete !== false && <CopyButton text={v.vin} label={`Copy VIN for ${vehicleTitle(v)}`} />}
           </span>
@@ -88,8 +88,9 @@ function VehicleCard({ rc, v, index }) {
             <span style={{ color: 'var(--qs-subtle)' }}>Lienholder</span> {lien}
             <CopyButton text={lien} label={`Copy lienholder for ${vehicleTitle(v)}`} />
           </p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--qs-warning)' }}>
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Ask loan payoff year — not on the dec page
+          <p className="mt-0.5 flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-text)' }}>
+            <span style={{ color: 'var(--qs-subtle)' }}>Loan payoff year</span>
+            <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
         </>
       )}
@@ -108,18 +109,8 @@ export default function PolicySheet({ rc, warning }) {
   const termHint = TERM_HINT[rc.term_source];
   const insured = insuredName(x.insured_name);
 
-  const hasAddOns = endorsementsOf(rc).length > 0
-    || vehicles.some((_, i) => vehicleCoverages(rc, i).some(r => r.addOn))
-    || (isAuto && autoCoverageGroups(rc).some(g => g.rows.some(r => r.addOn)));
-
   return (
     <div className="space-y-6">
-      {hasAddOns && (
-        <p className="-mt-1 flex items-center gap-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-          <span className={ADD_ON_CLS} style={ADD_ON_STYLE}>Yellow</span>
-          Add-ons and endorsements — quote them the same, or the price won&apos;t compare.
-        </p>
-      )}
       <Section title="Insured">
         <dl>
           <Field label="Name on policy" value={insured} copy />
