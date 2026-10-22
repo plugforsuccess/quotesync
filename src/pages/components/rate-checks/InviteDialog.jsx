@@ -10,7 +10,7 @@ import { useCreateRateCheckInvite, useRateCheckEvents } from '../../../hooks/use
 import { formatPhoneInput } from '../../../lib/rateCheckApi';
 import { inputStyle, formatPhone } from './ui';
 import { CopyTextButton } from './Copyable';
-import { inviteUrl, inviteMessage } from './invite';
+import { inviteUrl, inviteMessage, smsUrl } from './invite';
 
 export default function InviteDialog({ agencyId, userId, producerName, onClose, onCreated }) {
   const create = useCreateRateCheckInvite();
@@ -87,6 +87,8 @@ export default function InviteDialog({ agencyId, userId, producerName, onClose, 
 
 export function InviteShare({ invite, producerName, onDone }) {
   const canvas = useRef(null);
+  const smsCanvas = useRef(null);
+  const [showSmsQr, setShowSmsQr] = useState(false);
   const [shareError, setShareError] = useState('');
   const url = inviteUrl(invite.code);
   const producerFirst = (producerName || '').split(' ')[0];
@@ -96,6 +98,9 @@ export function InviteShare({ invite, producerName, onDone }) {
   useEffect(() => {
     if (canvas.current) QRCode.toCanvas(canvas.current, url, { width: 180, margin: 1 }).catch(() => {});
   }, [url]);
+  useEffect(() => {
+    if (showSmsQr && smsCanvas.current) QRCode.toCanvas(smsCanvas.current, smsUrl(invite, message), { width: 200, margin: 1 }).catch(() => {});
+  }, [showSmsQr, invite, message]);
 
   const share = async () => {
     try { await navigator.share({ text: message }); } catch (e) { if (e?.name !== 'AbortError') setShareError('Couldn’t open the share sheet — copy the message instead.'); }
@@ -115,15 +120,9 @@ export function InviteShare({ invite, producerName, onDone }) {
       </div>
 
       <div className="grid grid-cols-2 gap-2">
-        {invite.phone ? (
-          <a href={`sms:+1${invite.phone}?&body=${encodeURIComponent(message)}`} className={`${btn} bg-primary-600 text-white`}>
-            <MessageSquare className="h-4 w-4" /> Text it
-          </a>
-        ) : (
-          <a href={`sms:?&body=${encodeURIComponent(message)}`} className={`${btn} bg-primary-600 text-white`}>
-            <MessageSquare className="h-4 w-4" /> Text it
-          </a>
-        )}
+        <a href={smsUrl(invite, message)} className={`${btn} bg-primary-600 text-white`}>
+          <MessageSquare className="h-4 w-4" /> Text it
+        </a>
         <a href={`mailto:?subject=${encodeURIComponent('Your Allstate rate check')}&body=${encodeURIComponent(message)}`} className={btn} style={inputStyle}>
           <Mail className="h-4 w-4" /> Email it
         </a>
@@ -133,6 +132,21 @@ export function InviteShare({ invite, producerName, onDone }) {
         <CopyTextButton text={message} className={`${btn} justify-center`} style={inputStyle}>Copy message</CopyTextButton>
       </div>
       {shareError && <p className="text-sm text-red-600">{shareError}</p>}
+
+      {/* Tablets that can't text: the producer scans this with their own phone and Messages opens, text written. */}
+      <div>
+        <button type="button" onClick={() => setShowSmsQr(v => !v)} className="text-sm text-primary-600 hover:underline">
+          {showSmsQr ? 'Hide' : 'On a tablet? Text it from your phone instead'}
+        </button>
+        {showSmsQr && (
+          <div className="mt-2 flex items-center gap-4">
+            <canvas ref={smsCanvas} className="rounded-lg bg-white p-1" aria-label="QR code that opens Messages on your phone" />
+            <p className="text-sm" style={{ color: 'var(--qs-text)' }}>
+              Point your phone’s camera at this. Messages opens with the text already written{invite.phone ? ' and addressed' : ''} — just hit send.
+            </p>
+          </div>
+        )}
+      </div>
 
       <div className="rounded-lg p-3 text-sm" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>“{message}”</div>
 
