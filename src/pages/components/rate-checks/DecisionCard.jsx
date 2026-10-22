@@ -31,9 +31,9 @@ export default function DecisionCard({ rc, compact = false }) {
           {reasons.map((r, i) => (
             <li key={i} className="flex gap-2">
               <span aria-hidden="true" style={{ color: 'var(--qs-subtle)' }}>•</span>
-              <span>
+              <span style={r.decision === 'info' ? { color: 'var(--qs-subtle)' } : undefined}>
                 <span className="font-medium">{r.name}</span>
-                {r.detail && <span style={{ color: 'var(--qs-text)' }}> — {r.detail}</span>}
+                {r.detail && <span style={{ color: r.decision === 'info' ? 'var(--qs-subtle)' : 'var(--qs-text)' }}> — {r.detail}</span>}
               </span>
             </li>
           ))}

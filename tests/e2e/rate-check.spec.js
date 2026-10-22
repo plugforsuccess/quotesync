@@ -76,6 +76,7 @@ test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page
   await page.getByLabel('Mobile number').fill('4045551212');
   await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
   await page.getByLabel('ZIP code').fill('30094');
+  await page.getByLabel('Where do you live?').selectOption('own');
   await expect(submit).toBeDisabled(); // consent still unchecked
   // First checkbox = required call/text consent; second = optional partner referral (left unchecked).
   await page.getByRole('checkbox').nth(0).check();

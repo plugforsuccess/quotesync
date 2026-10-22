@@ -8,7 +8,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Camera } from 'lucide-react';
-import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite } from '../lib/rateCheckApi';
+import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, HOUSING_OPTIONS } from '../lib/rateCheckApi';
 
 const CONSENT_TEXT =
   'I agree to receive a call and text messages about my insurance quote from Wiley-Wilson Agency / ' +
@@ -33,6 +33,7 @@ export default function RateCheckPage() {
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
   const [zip, setZip] = useState('');
+  const [housing, setHousing] = useState('');
   const [consent, setConsent] = useState(false);
   const [referralConsent, setReferralConsent] = useState(false);
   const [stage, setStage] = useState('form'); // form | sending | done
@@ -77,6 +78,7 @@ export default function RateCheckPage() {
     !firstName.trim() && 'your first name',
     phoneDigits.length !== 10 && 'your mobile number',
     !/^\d{5}$/.test(zip) && 'your ZIP code',
+    !housing && 'where you live',
   ].filter(Boolean);
   const canSubmit = missing.length === 0 && consent;
   const missingText = missing.length
@@ -95,6 +97,7 @@ export default function RateCheckPage() {
         firstName,
         phone: phoneDigits,
         zip,
+        housingSituation: housing,
         consentGivenAt: new Date().toISOString(),
         referralConsentGivenAt: referralConsent ? new Date().toISOString() : null,
         inviteCode: invite ? inviteCode : null,
@@ -214,6 +217,12 @@ export default function RateCheckPage() {
         <Field label="ZIP code" htmlFor="rc-zip">
           <input id="rc-zip" inputMode="numeric" autoComplete="postal-code" maxLength={5} placeholder="30094"
             value={zip} onChange={e => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))} className={inputCls} disabled={sending} required />
+        </Field>
+        <Field label="Where do you live?" htmlFor="rc-housing">
+          <select id="rc-housing" value={housing} onChange={e => setHousing(e.target.value)} className={inputCls} disabled={sending} required>
+            <option value="">Choose one</option>
+            {HOUSING_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+          </select>
         </Field>
 
         <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">

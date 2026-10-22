@@ -17,6 +17,7 @@ import {
   useEnterRateCheckQuote, useRateCheckWinMap, annualize, useRescanRateCheck, useBindRateCheck,
 } from '../hooks/useRateChecks';
 import { sanitizeMoneyInput, parseMoney } from '../lib/money';
+import { HOUSING_LABEL } from '../lib/rateCheckApi';
 import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone } from './components/rate-checks/ui';
 import {
@@ -692,6 +693,7 @@ function PolicyDetails({ rc, onRescan, rescanning }) {
           <dl>
             <Field label="Name on policy" value={x.insured_name} copy />
             <Field label="Address" value={rc.insured_address || (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address || rc.zip} />
+            {rc.housing_situation && <Field label="Lives" value={HOUSING_LABEL[rc.housing_situation] || rc.housing_situation} />}
             <Field label="Carrier" value={carrierLabel(rc)} />
             <Field label="Policy number" value={rc.policy_number} copy mono />
             <Field label="Policy period" value={policyPeriod(rc)} />

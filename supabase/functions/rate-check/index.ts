@@ -647,6 +647,7 @@ Deno.serve(async (req) => {
   if (!staff && (!body.consent_given_at || Number.isNaN(Date.parse(body.consent_given_at)))) {
     errors.push('consent_given_at is required')
   }
+  if (!staff && !['own', 'rent', 'family', 'retirement'].includes(String(body.housing_situation || ''))) errors.push('housing_situation is required')
   if (!MEDIA_TYPES[mediaType]) errors.push('media_type not allowed')
   if (!imageBase64) errors.push('image_base64 is required')
   else if (base64DecodedSize(imageBase64) > MAX_IMAGE_BYTES) errors.push('image exceeds 10 MB')
@@ -655,6 +656,9 @@ Deno.serve(async (req) => {
   }
 
   const firstName = cleanText(body.first_name, 80)
+  // Where they live (asked on the form; optional on staff uploads). Drives rules and the lead.
+  const HOUSING = ['own', 'rent', 'family', 'retirement']
+  const housing = HOUSING.includes(String(body.housing_situation || '')) ? String(body.housing_situation) : null
   const consentIp = clientIp !== 'unknown' ? clientIp : null
   const sanitizedUtm = {
     utm_source: sanitizeUtm(body.utm_source),
@@ -712,6 +716,7 @@ Deno.serve(async (req) => {
         zip: zip || null,
         upload_source: staff ? 'agent' : 'consumer',
         uploaded_by: staff?.userId ?? null,
+        housing_situation: housing,
         ...origin,
         ...consent,
         ...referralConsent,
@@ -770,6 +775,11 @@ Deno.serve(async (req) => {
     try {
       const policyFields = flat ? leadFieldsFor(policyType, carrier, annualPremium) : {}
       if (flat) policyFields.vehicle_count = flat.vehicle_count
+      // What the customer told us about where they live beats what the policy implies.
+      if (housing) {
+        policyFields.housing_situation = housing
+        policyFields.owns_home = housing === 'own'
+      }
 
       const { data: existingLeads } = await supabase
         .from('leads')
@@ -812,7 +822,7 @@ Deno.serve(async (req) => {
             landing_page: landingPage,
             session_id: sessionId,
             ...(origin.producer_id ? { assigned_to_id: origin.producer_id } : {}),
-            ...(flat ? policyFields : { product_intent: 'bundle' }),
+            ...(flat ? policyFields : { product_intent: 'bundle', ...(housing ? { housing_situation: housing, owns_home: housing === 'own' } : {}) }),
           })
           .select('id')
           .single()

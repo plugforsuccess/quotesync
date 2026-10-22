@@ -163,7 +163,7 @@ export default function RulesTab({ agencyId, canEdit }) {
                     {r.note && <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{r.note}</span>}
                   </span>
                   <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${d?.cls || ''}`}>
-                    {r.decision === 'umbrella' ? 'Offer umbrella' : d?.label}{r.carrier ? ` — ${r.carrier}` : ''}
+                    {r.decision === 'umbrella' ? 'Counts toward PUP' : d?.label}{r.carrier ? ` — ${r.carrier}` : ''}
                   </span>
                   {!r.enabled && <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>off</span>}
                   {canEdit && (

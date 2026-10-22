@@ -7,7 +7,7 @@
 import { useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { useAgentUploadDecPage } from '../../../hooks/useRateChecks';
-import { formatPhoneInput } from '../../../lib/rateCheckApi';
+import { formatPhoneInput, HOUSING_OPTIONS } from '../../../lib/rateCheckApi';
 import { inputStyle } from './ui';
 
 export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
@@ -17,6 +17,7 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
   const [zip, setZip] = useState('');
+  const [housing, setHousing] = useState('');
 
   const phoneDigits = phone.replace(/\D/g, '');
   const canSubmit = file && phoneDigits.length === 10 && (!zip || /^\d{5}$/.test(zip)) && !upload.isPending;
@@ -24,7 +25,7 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
   const submit = (e) => {
     e.preventDefault();
     if (!canSubmit) return;
-    upload.mutate({ agencyId, file, firstName, phone: phoneDigits, zip }, {
+    upload.mutate({ agencyId, file, firstName, phone: phoneDigits, zip, housing }, {
       onSuccess: (data) => onCreated?.(data),
     });
   };
@@ -62,6 +63,12 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
           <label className="space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}>ZIP</span>
             <input className={field} style={inputStyle} inputMode="numeric" maxLength={5} value={zip}
               onChange={e => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))} />
+          </label>
+          <label className="col-span-2 space-y-1 text-sm"><span style={{ color: 'var(--qs-subtle)' }}>Where they live (if known)</span>
+            <select className={field} style={inputStyle} value={housing} onChange={e => setHousing(e.target.value)}>
+              <option value="">Not sure</option>
+              {HOUSING_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
           </label>
         </div>
 

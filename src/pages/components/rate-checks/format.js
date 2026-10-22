@@ -19,7 +19,7 @@ export const STATUS = {
 // rate_checks.decision → the card. `cls` is the badge; `tone` picks the card colours.
 export const DECISION = {
   quote_allstate:          { label: 'Quote Allstate',            tone: 'success', cls: 'bg-green-100 text-green-700' },
-  quote_allstate_umbrella: { label: 'Quote Allstate + umbrella', tone: 'success', cls: 'bg-green-100 text-green-700' },
+  quote_allstate_umbrella: { label: 'Quote Allstate Auto + HO + PUP', tone: 'success', cls: 'bg-green-100 text-green-700' },
   expanded_market:         { label: 'Expanded market',           tone: 'info',    cls: 'bg-primary-100 text-primary-700' },
   double_check:            { label: 'Double check',              tone: 'warning', cls: 'bg-yellow-100 text-yellow-700' },
   manual_review:           { label: 'Manual Review',             tone: 'warning', cls: 'bg-orange-100 text-orange-700' },
@@ -48,6 +48,7 @@ export const RULE_FIELDS = [
   { value: 'carrier', label: 'Carrier', kind: 'text' },
   { value: 'policy_type', label: 'Policy type', kind: 'text' },
   { value: 'zip', label: 'ZIP', kind: 'text' },
+  { value: 'housing_situation', label: 'Where they live (own, rent, family, retirement)', kind: 'text' },
 ];
 export const RULE_OPS = {
   money:  [['gt', 'is over'], ['gte', 'is at least'], ['lt', 'is under'], ['lte', 'is at most'], ['missing', 'is not on the page']],
@@ -55,7 +56,7 @@ export const RULE_OPS = {
   text:   [['eq', 'is'], ['neq', 'is not'], ['in', 'is one of'], ['not_in', 'is not one of'], ['starts_with', 'starts with'], ['missing', 'is not on the page']],
 };
 export const RULE_DECISIONS = [
-  ['umbrella', 'Offer an umbrella'],
+  ['umbrella', 'Counts toward a PUP (needs auto + home)'],
   ['expanded_market', 'Expanded market'],
   ['double_check', 'Double check'],
   ['manual_review', 'Manual Review'],

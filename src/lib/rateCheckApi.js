@@ -106,7 +106,7 @@ export async function prepareDecPage(file) {
  * POST the dec page + contact + consent to the rate-check edge function.
  * Resolves to { status, rate_check_id, carrier, policy_type, annual_premium }.
  */
-export async function submitRateCheck({ prepared, firstName, phone, zip, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
+export async function submitRateCheck({ prepared, firstName, phone, zip, housingSituation, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
   const utm = getUtmParams();
   const res = await fetch(RATE_CHECK_URL, {
     method: 'POST',
@@ -120,6 +120,7 @@ export async function submitRateCheck({ prepared, firstName, phone, zip, consent
       first_name: firstName.trim(),
       phone: phone.replace(/\D/g, ''),
       zip,
+      housing_situation: housingSituation,
       consent_given_at: consentGivenAt,
       consent_version: RATE_CHECK_CONSENT_VERSION,
       consent_user_agent: navigator.userAgent,
@@ -166,3 +167,12 @@ export function formatPhoneInput(value) {
   if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
+
+// Where the customer lives — asked on the form, shown in the inbox, usable in rules.
+export const HOUSING_OPTIONS = [
+  ['own', 'I own my home'],
+  ['rent', 'I rent'],
+  ['family', 'I live with family'],
+  ['retirement', 'Retirement community'],
+];
+export const HOUSING_LABEL = { own: 'Owns home', rent: 'Rents', family: 'Lives with family', retirement: 'Retirement community' };
