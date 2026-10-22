@@ -245,7 +245,7 @@ const CARRIER_AUTO_TERM_MONTHS: Record<string, 6 | 12> = {
   'Liberty Mutual': 6,
   'Nationwide': 6,
   'Travelers': 6,
-  'Georgia Farm Bureau': 6,
+  'Georgia Farm Bureau': 12, // confirmed by the agency
   'Auto-Owners': 12,
   'Erie': 12,
 }
