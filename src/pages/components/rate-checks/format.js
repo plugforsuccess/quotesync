@@ -189,7 +189,6 @@ export function quoteSheet(rc) {
     vehiclesNewestFirst(rc).forEach(({ v, index: i }) => {
       const vin = v.vin ? (v.vin_complete === false ? `VIN ends ${v.vin}` : `VIN ${v.vin}`) : null;
       push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}`);
-      if (v.annual_mileage) push(`    ${v.annual_mileage} mi/yr`);
       const lien = lienholderFor(rc, i);
       if (lien) push(`    Lienholder: ${lien} — ask loan payoff year`);
       const own = vehicleCoverages(rc, i);

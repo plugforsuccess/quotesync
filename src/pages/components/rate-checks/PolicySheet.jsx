@@ -59,7 +59,6 @@ function VehicleCard({ rc, v, index }) {
   const vin = v.vin ? (v.vin_complete === false ? `…${v.vin}` : v.vin) : (v.vin_last4 ? `…${v.vin_last4}` : null);
   const vinWarn = v.vin_complete === false ? 'Only part of the VIN is on the page'
     : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo' : null;
-  const miles = v.annual_mileage ? `${Number(v.annual_mileage).toLocaleString('en-US')} mi/yr` : null;
   const own = vehicleCoverages(rc, index);
   const lien = lienholderFor(rc, index);
   return (
@@ -74,7 +73,6 @@ function VehicleCard({ rc, v, index }) {
         )}
       </div>
       {vinWarn && <p className="text-xs text-yellow-600">{vinWarn}</p>}
-      {miles && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{miles}</p>}
       {lien && (
         <>
           <p className="mt-1 flex items-center gap-1 text-sm" style={{ color: 'var(--qs-text)' }}>
