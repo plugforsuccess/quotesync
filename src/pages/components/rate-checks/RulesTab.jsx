@@ -7,9 +7,9 @@ import { useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import { useRateCheckRules, useSaveRateCheckRule, useDeleteRateCheckRule, useSeedRateCheckRules } from '../../../hooks/useRateChecks';
 import { inputStyle, money } from './ui';
-import { RULE_FIELDS, RULE_OPS, RULE_DECISIONS, DECISION } from './format';
+import { RULE_FIELDS, RULE_OPS, RULE_DECISIONS, DECISION, POLICY_TYPE_LABEL } from './format';
 
-const LINES = [['', 'Any policy'], ['auto', 'Auto'], ['home', 'Home'], ['condo', 'Condo'], ['renters', 'Renters'], ['umbrella', 'Umbrella'], ['other', 'Other']];
+const LINES = [['', 'Any policy'], ...Object.entries(POLICY_TYPE_LABEL)];
 const BLANK = { name: '', line: '', field: 'dwelling', op: 'gt', value_num: '', value_text: '', decision: 'double_check', carrier: '', note: '', enabled: true, priority: 100 };
 
 const fieldDef = (f) => RULE_FIELDS.find(x => x.value === f) || RULE_FIELDS[0];
@@ -156,7 +156,7 @@ export default function RulesTab({ agencyId, canEdit }) {
               const d = DECISION[r.decision === 'umbrella' ? 'quote_allstate_umbrella' : r.decision];
               return (
                 <li key={r.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3 text-sm" style={{ borderTop: '1px solid var(--qs-border)', opacity: r.enabled ? 1 : 0.5 }}>
-                  <span className="w-20 shrink-0 text-xs uppercase" style={{ color: 'var(--qs-subtle)' }}>{r.line || 'any'}</span>
+                  <span className="w-28 shrink-0 text-xs uppercase" style={{ color: 'var(--qs-subtle)' }}>{r.line ? POLICY_TYPE_LABEL[r.line] || r.line : 'any'}</span>
                   <span className="min-w-0 flex-1">
                     <span className="font-medium" style={{ color: 'var(--qs-bright)' }}>{r.name}</span>
                     <span style={{ color: 'var(--qs-text)' }}> · {sentence(r)}</span>

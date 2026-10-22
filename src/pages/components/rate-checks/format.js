@@ -34,14 +34,14 @@ export function decisionLabel(rc) {
 // Rule editor vocab (mirrors rate_check_rules check constraints).
 export const RULE_FIELDS = [
   { value: 'dwelling', label: 'Dwelling limit', kind: 'money', lines: ['home'] },
-  { value: 'home_liability', label: 'Home liability limit', kind: 'money', lines: ['home', 'condo', 'renters'] },
+  { value: 'home_liability', label: 'Liability limit', kind: 'money', lines: ['home', 'condo', 'renters', 'commercial', 'umbrella'] },
   { value: 'personal_property', label: 'Personal property limit', kind: 'money', lines: ['home', 'condo', 'renters'] },
-  { value: 'bi_per_person', label: 'Bodily injury per person', kind: 'money', lines: ['auto'] },
-  { value: 'bi_per_accident', label: 'Bodily injury per accident', kind: 'money', lines: ['auto'] },
-  { value: 'pd', label: 'Property damage', kind: 'money', lines: ['auto'] },
+  { value: 'bi_per_person', label: 'Bodily injury per person', kind: 'money', lines: ['auto', 'commercial_auto'] },
+  { value: 'bi_per_accident', label: 'Bodily injury per accident', kind: 'money', lines: ['auto', 'commercial_auto'] },
+  { value: 'pd', label: 'Property damage', kind: 'money', lines: ['auto', 'commercial_auto'] },
   { value: 'um_uim', label: 'Uninsured motorist', kind: 'money', lines: ['auto'] },
-  { value: 'vehicle_count', label: 'Number of cars', kind: 'number', lines: ['auto'] },
-  { value: 'driver_count', label: 'Number of drivers', kind: 'number', lines: ['auto'] },
+  { value: 'vehicle_count', label: 'Number of vehicles', kind: 'number', lines: ['auto', 'commercial_auto'] },
+  { value: 'driver_count', label: 'Number of drivers', kind: 'number', lines: ['auto', 'commercial_auto'] },
   { value: 'annual_premium', label: 'Premium per year', kind: 'money' },
   { value: 'term_months', label: 'Term (months)', kind: 'number' },
   { value: 'carrier', label: 'Carrier', kind: 'text' },
@@ -109,6 +109,13 @@ export function coverageValue(v) {
   return String(v);
 }
 
+export const POLICY_TYPE_LABEL = {
+  auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', umbrella: 'Umbrella',
+  commercial_auto: 'Commercial auto', commercial: 'Commercial', other: 'Other',
+};
+export const POLICY_TYPES = Object.keys(POLICY_TYPE_LABEL);
+export const policyTypeLabel = (t) => POLICY_TYPE_LABEL[t] || t || '';
+
 export function vehicleName(v) {
   return [v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle';
 }
@@ -143,7 +150,7 @@ export function quoteSheet(rc) {
   if (rc.phone) lines.push(formatPhone(rc.phone));
   lines.push('');
 
-  const type = rc.policy_type ? `${rc.policy_type} ` : '';
+  const type = rc.policy_type ? `${policyTypeLabel(rc.policy_type).toLowerCase()} ` : '';
   lines.push(`Current: ${rc.carrier || 'Unknown carrier'} ${type}policy`.replace(/\s+/g, ' '));
   if (rc.policy_number) lines.push(`Policy #: ${rc.policy_number}`);
   const period = policyPeriod(rc);

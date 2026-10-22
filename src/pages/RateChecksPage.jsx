@@ -20,7 +20,7 @@ import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone } from './components/rate-checks/ui';
 import {
   STATUS, CONFIDENCE_WARNING, TERM_HINT, coverageLabel, coverageValue, vehicleName,
-  policyPeriod, termPrice, quoteSheet, isSelectingText,
+  policyPeriod, termPrice, quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel,
 } from './components/rate-checks/format';
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
@@ -44,7 +44,6 @@ const CARRIERS = [
   'State Farm', 'GEICO', 'Progressive', 'Allstate', 'USAA', 'Farmers', 'Liberty Mutual',
   'Nationwide', 'Travelers', 'Auto-Owners', 'Georgia Farm Bureau', 'Erie', 'Other',
 ];
-const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'other'];
 
 const heading = 'mb-1 text-base font-semibold';
 
@@ -252,7 +251,7 @@ export default function RateChecksPage() {
                               {r.first_name || 'No name'}{r.upload_source === 'agent' && <StaffTag />}
                             </div>
                             <div className="text-sm" style={{ color: 'var(--qs-text)' }}>
-                              {[r.carrier, r.policy_type].filter(Boolean).join(' · ') || 'Policy not read yet'}
+                              {[r.carrier, policyTypeLabel(r.policy_type)].filter(Boolean).join(' · ') || 'Policy not read yet'}
                               {r.annual_premium != null && ` · ${money(r.annual_premium)}/yr`}
                             </div>
                             <div className="mt-0.5 text-xs"><Age rc={r} now={now} /></div>
@@ -294,7 +293,7 @@ export default function RateChecksPage() {
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm"><Age rc={r} now={now} /></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>
-                              {r.carrier ? <>{r.carrier} <span className="capitalize" style={{ color: 'var(--qs-subtle)' }}>{r.policy_type}</span></> : '—'}
+                              {r.carrier ? <>{r.carrier} <span style={{ color: 'var(--qs-subtle)' }}>{policyTypeLabel(r.policy_type)}</span></> : '—'}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(r.annual_premium)}</td>
                             <td className="px-4 py-3 whitespace-nowrap">{r.decision ? <DecisionChip rc={r} /> : <span style={{ color: 'var(--qs-subtle)' }}>—</span>}</td>
@@ -353,7 +352,7 @@ function RateCheckDrawer({ rc, now, onClose, onQuoted }) {
             <div className="min-w-0">
               <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{rc.first_name || insuredName || 'Rate check'}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-                {[rc.carrier, rc.policy_type].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
+                {[rc.carrier, policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -636,9 +635,9 @@ function PolicyForm({ rc, onDone }) {
           </select>
         </label>
         <label className="space-y-1">{label('Policy type')}
-          <select className={`${field} capitalize`} style={inputStyle} value={form.policy_type} onChange={e => set('policy_type', e.target.value)}>
+          <select className={field} style={inputStyle} value={form.policy_type} onChange={e => set('policy_type', e.target.value)}>
             <option value="">—</option>
-            {POLICY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+            {POLICY_TYPES.map(t => <option key={t} value={t}>{policyTypeLabel(t)}</option>)}
           </select>
         </label>
         <label className="space-y-1">{label('Price on the page')}
@@ -729,7 +728,7 @@ function WinMap({ agencyId }) {
               {rows.map(r => (
                 <tr key={`${r.carrier}-${r.policy_type}-${r.zip5}`} style={{ borderTop: '1px solid var(--qs-border)' }}>
                   <td className="px-4 py-3 text-sm" style={{ color: 'var(--qs-bright)' }}>{r.carrier || '—'}</td>
-                  <td className="px-4 py-3 text-sm capitalize" style={{ color: 'var(--qs-text)' }}>{r.policy_type || '—'}</td>
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--qs-text)' }}>{policyTypeLabel(r.policy_type) || '—'}</td>
                   <td className="px-4 py-3 text-sm" style={{ color: 'var(--qs-text)' }}>{r.zip5 || '—'}</td>
                   <td className="px-4 py-3 text-sm" style={{ color: 'var(--qs-text)' }}>{r.quoted}</td>
                   <td className="px-4 py-3 text-sm" style={{ color: 'var(--qs-text)' }}>{r.wins}</td>

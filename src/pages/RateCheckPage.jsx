@@ -20,7 +20,7 @@ const REFERRAL_CONSENT_TEXT =
   "Optional: if Allstate can't help, Wiley-Wilson Agency may share my name, number and policy details " +
   'with a trusted partner agency so they can quote me.';
 
-const POLICY_LABELS = { auto: 'auto', home: 'home', renters: 'renters', condo: 'condo', umbrella: 'umbrella' };
+const POLICY_LABELS = { auto: 'auto', home: 'home', renters: 'renters', condo: 'condo', umbrella: 'umbrella', commercial_auto: 'commercial auto', commercial: 'business' };
 
 export default function RateCheckPage() {
   const cameraInput = useRef(null);

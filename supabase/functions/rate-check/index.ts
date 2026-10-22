@@ -64,7 +64,7 @@ const CARRIERS = [
   'State Farm', 'GEICO', 'Progressive', 'Allstate', 'USAA', 'Farmers', 'Liberty Mutual',
   'Nationwide', 'Travelers', 'Auto-Owners', 'Georgia Farm Bureau', 'Erie', 'Other',
 ]
-const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'other']
+const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial', 'other']
 
 function sanitizeUtm(val: string | null | undefined): string | null {
   if (!val) return null
@@ -130,7 +130,10 @@ const EXTRACTION_TOOL = {
     properties: {
       carrier: { type: 'string', enum: CARRIERS, description: 'Normalized carrier name; "Other" if not in the list.' },
       carrier_raw: { type: 'string', description: 'Carrier / company name exactly as printed.' },
-      policy_type: { type: 'string', enum: POLICY_TYPES },
+      policy_type: {
+        type: 'string', enum: POLICY_TYPES,
+        description: 'commercial_auto = business vehicles (named insured is a business, or vehicles are commercial); commercial = BOP, general liability, commercial property or workers comp.',
+      },
       policy_number: nullable('string', { description: 'Full policy number exactly as printed (all characters, including dashes/spaces). Null if not visible.' }),
       premium: nullable('number', { description: 'TOTAL premium for the whole policy term, in USD — not a monthly/installment amount and not a per-vehicle line.' }),
       term_months: {
@@ -173,7 +176,8 @@ const EXTRACTION_TOOL = {
         description:
           'Auto: bi_per_person, bi_per_accident, pd, um_uim, med_pay, comp_deductible, coll_deductible, ' +
           'rental, roadside (per vehicle ok). Home: dwelling, other_structures, personal_property, ' +
-          'loss_of_use, liability, med_pay, deductible, wind_hail_deductible. Values as printed.',
+          'loss_of_use, liability, med_pay, deductible, wind_hail_deductible. ' +
+          'Commercial: liability (per occurrence), aggregate, property, business_income, hired_non_owned, workers_comp. Values as printed.',
       },
       discounts: { type: 'array', items: { type: 'string' } },
       confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
@@ -193,6 +197,7 @@ const INSTRUCTION =
   'character for character. Auto policies run 6 or 12 months depending on the carrier, so read the ' +
   'policy period carefully: report term_months 6 or 12 only when the page says so or the effective and ' +
   'expiration dates show it, and report the premium for that whole term (not a monthly installment). ' +
+  'If the named insured is a business, or the page is a business owners, general liability or commercial auto policy, use the commercial policy types. ' +
   'Record the servicing agent or agency block exactly as printed, if there is one. ' +
   'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
 
@@ -268,7 +273,7 @@ const CARRIER_AUTO_TERM_MONTHS: Record<string, 6 | 12> = {
   'Auto-Owners': 12,
   'Erie': 12,
 }
-const ANNUAL_LINES = new Set(['home', 'renters', 'condo', 'umbrella'])
+const ANNUAL_LINES = new Set(['home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial'])
 
 // Whole months between two ISO dates, snapped to a 6- or 12-month term.
 function termFromDates(eff: string | null, exp: string | null): 6 | 12 | null {
