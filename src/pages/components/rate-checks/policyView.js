@@ -57,7 +57,9 @@ export function vehicleByRef(vehicles, ref) {
   return byNumber || list[n - 1] || null;
 }
 
-const VEHICLE_REF = /\b(?:vehicles?|veh\.?)\s*#?\s*((?:\d{1,3})(?:\s*(?:,|&|and)\s*#?\s*\d{1,3})*)/gi;
+// An optional "(2021 Land Rover Velar)" right after the number is dropped on replace,
+// since the replacement already names the vehicle.
+const VEHICLE_REF = /\b(?:vehicles?|veh\.?)\s*#?\s*((?:\d{1,3})(?:\s*(?:,|&|and)\s*#?\s*\d{1,3})*)(?:\s*\(\s*(?:19|20)\d{2}\b[^)]*\))?/gi;
 
 /** Indexes (into vehicles) a text refers to, e.g. "(vehicles 002, 003)" → [1, 2]. */
 export function vehicleIndexesIn(text, vehicles) {
@@ -412,6 +414,6 @@ export function discountsOf(rc) {
 
 /** What to tell the producer in a sentence or two: the scan's summary, else leftover notes. */
 export function headsUp(rc) {
-  if (rc?.summary) return [rc.summary];
-  return remainingNotes(rc);
+  const lines = rc?.summary ? [rc.summary] : remainingNotes(rc);
+  return lines.map(l => replaceVehicleRefs(l, rc?.vehicles || rc?.extracted?.vehicles));
 }

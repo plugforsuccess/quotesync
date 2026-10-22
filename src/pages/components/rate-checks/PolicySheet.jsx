@@ -13,7 +13,7 @@ import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
-  driverRows, discountsOf, headsUp, vehicleTitle, caps, insuredName, vehiclesNewestFirst,
+  driverRows, discountsOf, headsUp, vehicleTitle, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
 } from './policyView';
 
 const AUTO = ['auto', 'commercial_auto'];
@@ -205,7 +205,7 @@ export default function PolicySheet({ rc, warning }) {
       {x.notes && (
         <details className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
           <summary className="cursor-pointer font-medium">Everything the scan noted</summary>
-          <p className="mt-2 select-text" style={{ color: 'var(--qs-text)' }}>{x.notes}</p>
+          <p className="mt-2 select-text" style={{ color: 'var(--qs-text)' }}>{replaceVehicleRefs(x.notes, rc.vehicles || x.vehicles)}</p>
         </details>
       )}
     </div>

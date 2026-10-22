@@ -264,7 +264,7 @@ const EXTRACTION_TOOL = {
         },
       },
       discounts: { type: 'array', items: { type: 'string' }, description: 'Short discount names only, e.g. "Multicar", "Good student", "Accident-free 2 yrs". No explanations.' },
-      summary: nullable('string', { description: 'One or two short sentences a producer must know before quoting that are NOT already in the fields above (e.g. "Mid-term change adding a car; renews for a full term next time."). Null if nothing.' }),
+      summary: nullable('string', { description: 'One or two short, plain sentences a producer must know before quoting that are NOT already in the fields above. Name vehicles by year, make and model, never by the page\'s vehicle number, and don\'t copy carrier boilerplate (e.g. "Added the 2021 Land Rover Velar mid-term, so this is a short term (Feb 4 – Jul 25, 2026). All vehicles renew together for a full term after that."). Null if nothing.' }),
       confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
       notes: nullable('string', { description: 'Anything odd: multiple policies on page, cut-off, unreadable.' }),
     },

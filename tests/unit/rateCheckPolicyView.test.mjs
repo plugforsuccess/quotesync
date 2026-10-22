@@ -132,3 +132,14 @@ test('what is left of the notes is only what no field shows', () => {
   ]);
   assert.deepEqual(headsUp({ ...auto, summary: 'Mid-term change.' }), ['Mid-term change.']);
 });
+
+test('summary names vehicles instead of page numbers', () => {
+  assert.deepEqual(
+    headsUp({ ...auto, summary: 'Mid-term change adding a car (Vehicle 003); short term.' }),
+    ['Mid-term change adding a car (’21 LAND ROVER VELAR); short term.'],
+  );
+  assert.deepEqual(
+    headsUp({ ...auto, summary: 'Adds Vehicle 003 (2021 Land Rover Velar) mid-term.' }),
+    ['Adds ’21 LAND ROVER VELAR mid-term.'],
+  );
+});
