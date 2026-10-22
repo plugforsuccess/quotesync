@@ -35,6 +35,8 @@ export const queryKeys = {
     partners: (agencyId) => ['rate_checks', 'partners', agencyId],
     referrals: (rateCheckId) => ['rate_checks', 'referrals', rateCheckId],
     rules: (agencyId) => ['rate_checks', 'rules', agencyId],
+    invites: (agencyId) => ['rate_checks', 'invites', agencyId],
+    events: (agencyId) => ['rate_checks', 'events', agencyId],
   },
 
   // ── Feature permissions ─────────────────────────────────────────────────────

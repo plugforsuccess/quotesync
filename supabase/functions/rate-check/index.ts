@@ -87,6 +87,7 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
 // table as create-lead), but via the atomic rate_limit_hit() upsert — the
 // read-then-increment pattern loses counts when requests arrive concurrently.
 const RATE_LIMIT = 5 // public requests per minute per IP
+const LOOKUP_RATE_LIMIT = 30 // invite-link opens per minute per IP
 const AGENT_RATE_LIMIT = 30 // staff uploads per minute per user
 const RATE_WINDOW_SECONDS = 60
 
@@ -422,6 +423,19 @@ function leadFieldsFor(policyType: string | null, carrier: string | null, annual
   return fields
 }
 
+// Invite by code, only while it's live. Codes are 8 chars from an unambiguous alphabet.
+async function resolveInvite(supabase: any, code: unknown) {
+  const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (c.length !== 8) return null
+  const { data } = await supabase
+    .from('rate_check_invites')
+    .select('id, agency_id, created_by, producer_name, event_name, first_name, phone, expires_at, opened_at, open_count, upload_count')
+    .eq('code', c)
+    .gt('expires_at', new Date().toISOString())
+    .maybeSingle()
+  return data ?? null
+}
+
 // audit_log.event_type is allowlisted (see the *_audit_log_rate_check_events
 // migration); log instead of failing silently if an insert is rejected.
 async function audit(supabase: any, row: Record<string, unknown>) {
@@ -452,8 +466,26 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400, corsHeaders)
   }
 
+  // ── Invite link opened: pre-fill the page. Public, by unguessable code. ──
+  if (body?.mode === 'invite_lookup') {
+    if (!(await checkRateLimit(supabase, `rate_check_lookup:${clientIp}`, LOOKUP_RATE_LIMIT))) {
+      return jsonResponse({ error: 'Rate limit exceeded' }, 429, corsHeaders)
+    }
+    const invite = await resolveInvite(supabase, body.code)
+    if (!invite) return jsonResponse({ error: 'This link has expired' }, 404, corsHeaders)
+    await supabase.from('rate_check_invites')
+      .update({ opened_at: invite.opened_at ?? new Date().toISOString(), open_count: (invite.open_count ?? 0) + 1 })
+      .eq('id', invite.id)
+    return jsonResponse({
+      first_name: invite.first_name,
+      phone: invite.phone,
+      event_name: invite.event_name,
+      producer_name: invite.producer_name,
+    }, 200, corsHeaders)
+  }
+
   // ── Staff upload (Rate Checks inbox): verify the caller and their agency ──
-  let staff: { userId: string; agencyId: string } | null = null
+  let staff: { userId: string; agencyId: string; name: string | null } | null = null
   if (body?.mode === 'agent') {
     const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
     const { data: authData } = token ? await supabase.auth.getUser(token) : { data: { user: null } }
@@ -468,8 +500,12 @@ Deno.serve(async (req) => {
     if (body.agency_id) mq = mq.eq('agency_id', body.agency_id)
     const { data: memberships } = await mq.limit(1)
     if (!memberships?.length) return jsonResponse({ error: 'Access denied' }, 403, corsHeaders)
-    staff = { userId: user.id, agencyId: memberships[0].agency_id }
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
+    staff = { userId: user.id, agencyId: memberships[0].agency_id, name: profile?.full_name ?? null }
   }
+
+  // ── Tagged invite link (consumer upload from /r/CODE) ──
+  const invite = !staff && body.invite_code ? await resolveInvite(supabase, body.invite_code) : null
 
   const limited = staff
     ? !(await checkRateLimit(supabase, `rate_check_agent:${staff.userId}`, AGENT_RATE_LIMIT))
@@ -526,16 +562,24 @@ Deno.serve(async (req) => {
     : {}
   const sessionId = cleanText(body.session_id, 64) || crypto.randomUUID()
   const landingPage = staff ? 'agent_upload' : cleanText(body.landing_page, 512)
+  // Who gets credit: the producer who sent the link, or the staff member uploading.
+  const origin = invite
+    ? { invite_id: invite.id, producer_id: invite.created_by, producer_name: invite.producer_name, event_name: invite.event_name }
+    : staff
+      ? { producer_id: staff.userId, producer_name: staff.name }
+      : {}
 
   try {
     // ── Resolve agency ──
     // routing: rate checks currently all land on the default agency. When
     // multi-agency Rate Check ships, route here (e.g. by landing domain or
     // routing_rules state/zip, like create-lead's routeLead) before inserting.
-    // Staff uploads go to the uploader's own agency.
+    // Staff uploads go to the uploader's own agency; invite uploads to the inviter's.
     const { data: defaultAgency } = staff
       ? { data: { id: staff.agencyId } }
-      : await supabase.from('agencies').select('id').eq('is_default', true).single()
+      : invite
+        ? { data: { id: invite.agency_id } }
+        : await supabase.from('agencies').select('id').eq('is_default', true).single()
     const agencyId = defaultAgency?.id
     if (!agencyId) throw new Error('No default agency configured')
 
@@ -550,6 +594,7 @@ Deno.serve(async (req) => {
         zip: zip || null,
         upload_source: staff ? 'agent' : 'consumer',
         uploaded_by: staff?.userId ?? null,
+        ...origin,
         ...consent,
         ...referralConsent,
         ...sanitizedUtm,
@@ -704,6 +749,21 @@ Deno.serve(async (req) => {
       console.error('[RATE_CHECK] Lead create/update failed:', (e as Error).message)
     }
 
+    // ── 4b. Credit the invite and tell the producer who sent it ──
+    if (invite) {
+      await supabase.from('rate_check_invites')
+        .update({ upload_count: (invite.upload_count ?? 0) + 1, last_rate_check_id: rateCheckId })
+        .eq('id', invite.id)
+      const premiumText = annualPremium != null ? `$${Math.round(annualPremium).toLocaleString('en-US')}/yr` : 'price not read'
+      await supabase.from('notifications').insert({
+        user_id: invite.created_by,
+        type: 'RATE_CHECK_INVITE_UPLOAD',
+        title: `${firstName || 'Your invite'} uploaded a policy`,
+        message: `${firstName || 'Someone'}${invite.event_name ? ` from ${invite.event_name}` : ''} · ${carrier || 'Unknown carrier'} ${policyType || 'policy'} · ${premiumText}`,
+        metadata: { rate_check_id: rateCheckId, lead_id: leadId, invite_id: invite.id, event_name: invite.event_name },
+      })
+    }
+
     // ── 5. Notify agency staff (in-app) ──
     const { data: members } = await supabase
       .from('agency_memberships')
@@ -716,8 +776,8 @@ Deno.serve(async (req) => {
     if (!staff && members && members.length > 0) {
       const premiumText = annualPremium != null ? `$${Math.round(annualPremium).toLocaleString('en-US')}/yr` : '$?/yr'
       const message = `${firstName || 'Someone'} · ${carrier || 'Unknown carrier'} ${policyType || 'policy'} · ${premiumText} · ${zip}`
-      const uniqueUsers = [...new Set(members.map((m: any) => m.user_id))]
-      await supabase.from('notifications').insert(uniqueUsers.map(userId => ({
+      const uniqueUsers = [...new Set(members.map((m: any) => m.user_id))].filter(u => u !== invite?.created_by)
+      if (uniqueUsers.length) await supabase.from('notifications').insert(uniqueUsers.map(userId => ({
         user_id: userId,
         type: 'NEW_RATE_CHECK',
         title: 'New Rate Check',

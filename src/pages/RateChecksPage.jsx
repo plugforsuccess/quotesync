@@ -6,9 +6,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, Camera, ExternalLink, Handshake, Map as MapIcon,
-  MessageSquare, Pencil, Phone, Search, SlidersHorizontal, Upload, Users, X,
+  AlertCircle, AlertTriangle, Camera, ExternalLink, Handshake, Link2, Map as MapIcon,
+  MessageSquare, Pencil, Phone, Search, Send, SlidersHorizontal, Upload, Users, X,
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import {
@@ -29,6 +30,8 @@ import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExt
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
 import RulesTab from './components/rate-checks/RulesTab';
+import InviteDialog from './components/rate-checks/InviteDialog';
+import InvitesTab from './components/rate-checks/InvitesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
 const FILTERS = [
@@ -102,7 +105,19 @@ function StaffTag() {
   );
 }
 
+// "via Marcus · Gwinnett expo" — where a rate check came from.
+function OriginTag({ rc, className = '' }) {
+  if (!rc.producer_name && !rc.event_name) return null;
+  const text = [rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
+  return (
+    <span className={`inline-flex items-center gap-1 text-xs ${className}`} style={{ color: 'var(--qs-subtle)' }} title={[rc.event_name, rc.producer_name].filter(Boolean).join(' — ')}>
+      <Link2 className="h-3 w-3" /> {text}
+    </span>
+  );
+}
+
 export default function RateChecksPage() {
+  const { user, profile } = useAuth();
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
   const canEditRules = ['owner', 'principal', 'manager'].includes(currentAgency?.agency_role);
@@ -115,7 +130,9 @@ export default function RateChecksPage() {
   // script) must stay open until the agent closes it.
   const [openRow, setOpenRow] = useState(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   const [pendingOpenId, setPendingOpenId] = useState(null);
+  const producerName = profile?.full_name || user?.email || null;
   const now = useNow();
 
   const enabled = features?.has('rate_checks');
@@ -136,7 +153,7 @@ export default function RateChecksPage() {
     return allRows
       .filter(r => !statuses || statuses.includes(r.status))
       .filter(r => !q
-        || [r.first_name, r.extracted?.insured_name, r.carrier, r.zip, r.policy_number, r.decision_carrier].some(v => v && String(v).toLowerCase().includes(q))
+        || [r.first_name, r.extracted?.insured_name, r.carrier, r.zip, r.policy_number, r.decision_carrier, r.event_name, r.producer_name].some(v => v && String(v).toLowerCase().includes(q))
         || (qDigits.length >= 3 && (r.phone || '').includes(qDigits)));
   }, [allRows, filter, search]);
 
@@ -176,15 +193,22 @@ export default function RateChecksPage() {
               <Link to="/agency/leads" className="text-primary-600 hover:underline">All leads</Link>
             </p>
           </div>
-          <button onClick={() => setUploadOpen(true)}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white">
-            <Upload className="w-4 h-4" /> Upload dec page
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setInviteOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white">
+              <Send className="w-4 h-4" /> Send a link
+            </button>
+            <button onClick={() => setUploadOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold" style={inputStyle}>
+              <Upload className="w-4 h-4" /> Upload dec page
+            </button>
+          </div>
         </div>
 
         <div className="mb-4 flex gap-1 overflow-x-auto" role="tablist">
           {[
             { v: 'inbox', label: 'Inbox', Icon: Camera },
+            { v: 'invites', label: 'Links sent', Icon: Send },
             { v: 'map', label: 'Where we win', Icon: MapIcon },
             { v: 'agents', label: 'Competing agents', Icon: Users },
             { v: 'partners', label: 'Referral partners', Icon: Handshake },
@@ -202,6 +226,8 @@ export default function RateChecksPage() {
           : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} />
           : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />
           : tab === 'rules' ? <RulesTab agencyId={agencyId} canEdit={canEditRules} />
+          : tab === 'invites' ? <InvitesTab agencyId={agencyId} producerName={producerName}
+              onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); else { setFilter('all'); setTab('inbox'); setPendingOpenId(id); } }} />
           : (
           <>
             {overdue > 0 && (
@@ -254,7 +280,7 @@ export default function RateChecksPage() {
                               {[r.carrier, policyTypeLabel(r.policy_type)].filter(Boolean).join(' · ') || 'Policy not read yet'}
                               {r.annual_premium != null && ` · ${money(r.annual_premium)}/yr`}
                             </div>
-                            <div className="mt-0.5 text-xs"><Age rc={r} now={now} /></div>
+                            <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs"><Age rc={r} now={now} /><OriginTag rc={r} /></div>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1.5">
                             {OPEN_STATUSES.includes(r.status) && r.decision ? <DecisionChip rc={r} /> : <StatusChip status={r.status} />}
@@ -290,6 +316,7 @@ export default function RateChecksPage() {
                                   {formatPhone(r.phone)}
                                 </a>
                               )}
+                              <OriginTag rc={r} className="block" />
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm"><Age rc={r} now={now} /></td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>
@@ -312,6 +339,9 @@ export default function RateChecksPage() {
         )}
       </div>
 
+      {inviteOpen && (
+        <InviteDialog agencyId={agencyId} userId={user?.id} producerName={producerName} onClose={() => setInviteOpen(false)} />
+      )}
       {uploadOpen && (
         <AgentUploadDialog agencyId={agencyId} onClose={() => setUploadOpen(false)}
           onCreated={(data) => {
@@ -354,6 +384,7 @@ function RateCheckDrawer({ rc, now, onClose, onQuoted }) {
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
                 {[rc.carrier, policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
+              <OriginTag rc={rc} className="mt-0.5" />
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <StatusChip status={rc.status} />

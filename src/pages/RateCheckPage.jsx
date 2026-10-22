@@ -6,9 +6,9 @@
 /* COPY REVIEW: submit this page to Allstate marketing compliance before paid traffic */
 
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Camera } from 'lucide-react';
-import { prepareDecPage, submitRateCheck, formatPhoneInput } from '../lib/rateCheckApi';
+import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite } from '../lib/rateCheckApi';
 
 const CONSENT_TEXT =
   'I agree to receive a call and text messages about my insurance quote from Wiley-Wilson Agency / ' +
@@ -23,6 +23,9 @@ const REFERRAL_CONSENT_TEXT =
 const POLICY_LABELS = { auto: 'auto', home: 'home', renters: 'renters', condo: 'condo', umbrella: 'umbrella', commercial_auto: 'commercial auto', commercial: 'business' };
 
 export default function RateCheckPage() {
+  const { inviteCode } = useParams();
+  const [invite, setInvite] = useState(null); // { first_name, phone, event_name, producer_name } from a producer's link
+  const [inviteExpired, setInviteExpired] = useState(false);
   const cameraInput = useRef(null);
   const fileInput = useRef(null);
   const [file, setFile] = useState(null);
@@ -40,6 +43,20 @@ export default function RateCheckPage() {
     document.title = 'Rate Check — Are you overpaying for insurance? | insuredbycam';
     window.scrollTo(0, 0);
   }, []);
+
+  // A producer's tagged link: pre-fill what they typed at the booth.
+  useEffect(() => {
+    if (!inviteCode) return;
+    let cancelled = false;
+    lookupInvite(inviteCode).then(data => {
+      if (cancelled) return;
+      if (!data) { setInviteExpired(true); return; }
+      setInvite(data);
+      if (data.first_name) setFirstName(f => f || data.first_name);
+      if (data.phone) setPhone(p => p || formatPhoneInput(data.phone));
+    });
+    return () => { cancelled = true; };
+  }, [inviteCode]);
 
   // Revoke the thumbnail object URL when it changes or the page unmounts.
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -80,6 +97,7 @@ export default function RateCheckPage() {
         zip,
         consentGivenAt: new Date().toISOString(),
         referralConsentGivenAt: referralConsent ? new Date().toISOString() : null,
+        inviteCode: invite ? inviteCode : null,
       });
       setResult(data);
       setStage('done');
@@ -107,6 +125,14 @@ export default function RateCheckPage() {
           <li className="flex gap-3"><Step n={2} /> If we can save you money, Cam texts you the number.</li>
           <li className="flex gap-3"><Step n={3} /> If we can&apos;t, we&apos;ll say so. No spam, no pressure.</li>
         </ol>
+        <div className="mt-6 text-center">
+          <p className="text-sm text-gray-600">Have another policy — a car, your home, a second car?</p>
+          <button type="button" onClick={() => { setFile(null); setPreview(null); setResult(null); setStage('form'); window.scrollTo(0, 0); }}
+            className="mt-2 rounded-xl border border-blue-700 px-4 py-3 text-base font-bold text-blue-700">
+            Add another policy
+          </button>
+          <p className="mt-2 text-xs text-gray-500">Your name and number are kept. Bundling both often saves the most.</p>
+        </div>
       </Shell>
     );
   }
@@ -115,6 +141,15 @@ export default function RateCheckPage() {
 
   return (
     <Shell>
+      {invite && (
+        <p className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-900">
+          {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+          {invite.event_name ? ` after ${invite.event_name}` : ''}.{result ? '' : ' Takes about a minute.'}
+        </p>
+      )}
+      {inviteExpired && (
+        <p className="mb-4 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700">That link has expired, but you can still check your rate below.</p>
+      )}
       <h1 className="text-3xl font-extrabold leading-tight text-gray-900">
         Overpaying for insurance? Find out in 60 seconds.
       </h1>

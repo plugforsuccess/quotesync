@@ -103,7 +103,7 @@ export async function prepareDecPage(file) {
  * POST the dec page + contact + consent to the rate-check edge function.
  * Resolves to { status, rate_check_id, carrier, policy_type, annual_premium }.
  */
-export async function submitRateCheck({ prepared, firstName, phone, zip, consentGivenAt, referralConsentGivenAt = null }) {
+export async function submitRateCheck({ prepared, firstName, phone, zip, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
   const utm = getUtmParams();
   const res = await fetch(RATE_CHECK_URL, {
     method: 'POST',
@@ -124,6 +124,7 @@ export async function submitRateCheck({ prepared, firstName, phone, zip, consent
         referral_consent_given_at: referralConsentGivenAt,
         referral_consent_version: RATE_CHECK_REFERRAL_CONSENT_VERSION,
       } : {}),
+      ...(inviteCode ? { invite_code: inviteCode } : {}),
       session_id: getSessionId(),
       landing_page: window.location.pathname,
       utm_source: utm.utm_source,
@@ -138,6 +139,21 @@ export async function submitRateCheck({ prepared, firstName, phone, zip, consent
   if (res.status === 429) throw new Error('Too many tries in a minute — please wait a moment and try again.');
   if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
   return data;
+}
+
+/**
+ * A producer's tagged link (/r/CODE): who sent it and what to pre-fill.
+ * Resolves to { first_name, phone, event_name, producer_name }, or null if the
+ * link is unknown or expired (the page still works, just untagged).
+ */
+export async function lookupInvite(code) {
+  const res = await fetch(RATE_CHECK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
+    body: JSON.stringify({ mode: 'invite_lookup', code }),
+  });
+  if (!res.ok) return null;
+  return res.json().catch(() => null);
 }
 
 /** "(404) 555-1212" as the user types. */
