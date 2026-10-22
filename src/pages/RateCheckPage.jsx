@@ -274,15 +274,54 @@ export default function RateCheckPage() {
     const read = sent.filter(i => i.status === 'read');
     const priced = read.filter(i => i.result?.annual_premium != null);
     const total = priced.reduce((s, i) => s + i.result.annual_premium, 0);
+    const policySlide = {
+      key: 'policies',
+      label: sent.length === 1 ? 'Your policy' : `Your ${sent.length} policies`,
+      content: (
+        <ul className="max-h-[15.5rem] divide-y divide-slate-100 overflow-y-auto overscroll-contain">
+          {sent.map((it, n) => (
+            <ResultRow key={it.id} item={it} index={n} onRetake={() => openCamera(it.id)} onRetry={() => sendQueue([it.id], given)} />
+          ))}
+        </ul>
+      ),
+    };
+    const slides = reading ? [policySlide] : [
+      policySlide,
+      {
+        key: 'next',
+        label: 'Next steps',
+        content: (
+          <ol className="space-y-2.5 text-[15px] leading-snug text-slate-700">
+            <li className="flex gap-3"><Step n={1} /> We price the same coverage with Allstate.</li>
+            <li className="flex gap-3"><Step n={2} /> If we can save you money, Cam texts you the number.</li>
+            <li className="flex gap-3"><Step n={3} /> If we can&apos;t, we&apos;ll say so. No spam, no pressure.</li>
+          </ol>
+        ),
+      },
+      {
+        key: 'more',
+        label: 'Add more',
+        content: (
+          <div className="flex h-full flex-col items-center justify-center text-center">
+            <p className="font-semibold text-slate-900">Got another policy?</p>
+            <p className="mt-1 text-sm text-slate-600">A second car, your home, a boat. Bundling often saves the most.</p>
+            <button type="button" onClick={() => { setStep('policies'); window.scrollTo(0, 0); }}
+              className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white shadow-sm active:bg-blue-800">
+              <Plus className="h-5 w-5" aria-hidden="true" /> Add more policies
+            </button>
+          </div>
+        ),
+      },
+    ];
     return (
-      <Shell step={3}>
+      <Shell step={3} center>
         {fileInputs}
         {banner}
-        <div role="status" aria-live="polite">
+        <div role="status" aria-live="polite" className="text-center">
           <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">
             {reading ? 'Reading your policies…' : 'Got it — Cam is on it.'}
           </h1>
-          <p className="mt-2 text-slate-600">
+          <p className="mx-auto mt-2 max-w-xs text-slate-600">
             {reading
               ? 'Each one takes about 10–20 seconds. Keep this screen open.'
               : 'If we can beat what you pay, Cam texts you within the hour.'}
@@ -290,40 +329,21 @@ export default function RateCheckPage() {
         </div>
 
         {priced.length > 0 && (
-          <div className="mt-5 rounded-2xl bg-slate-900 p-5 text-white">
+          <div className="mt-5 rounded-2xl bg-slate-900 px-5 py-4 text-center text-white">
             <p className="text-sm text-slate-300">You pay today</p>
-            <p className="mt-1 text-4xl font-extrabold tracking-tight tabular-nums"><span data-testid="rc-total">{money(total)}</span><span className="text-lg font-semibold text-slate-300"> /yr</span></p>
+            <p className="mt-0.5 text-4xl font-extrabold tracking-tight tabular-nums"><span data-testid="rc-total">{money(total)}</span><span className="text-lg font-semibold text-slate-300"> /yr</span></p>
             <p className="mt-1 text-sm text-slate-300">
-              across {priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''}. That&apos;s the number we&apos;re trying to beat.
+              across {priced.length} {priced.length === 1 ? 'policy' : 'policies'}{reading ? ' so far' : ''} · the price to beat
             </p>
           </div>
         )}
 
-        <ul className="mt-5 space-y-3">
-          {sent.map((it, n) => (
-            <ResultCard key={it.id} item={it} index={n} onRetake={() => openCamera(it.id)} onRetry={() => sendQueue([it.id], given)} />
-          ))}
-        </ul>
+        <Carousel slides={slides} className="mt-5" />
 
         {!reading && (
-          <>
-            <ol className="mt-6 space-y-3 rounded-2xl border border-slate-200 bg-white p-5 text-slate-700">
-              <li className="flex gap-3"><Step n={1} /> We price the same coverage with Allstate.</li>
-              <li className="flex gap-3"><Step n={2} /> If we can save you money, Cam texts you the number.</li>
-              <li className="flex gap-3"><Step n={3} /> If we can&apos;t, we&apos;ll say so. No spam, no pressure.</li>
-            </ol>
-            <div className="mt-6 rounded-2xl border-2 border-dashed border-blue-200 bg-blue-50/60 p-5 text-center">
-              <p className="font-semibold text-slate-900">Got another policy?</p>
-              <p className="mt-1 text-sm text-slate-600">A second car, your home, a boat — bundling often saves the most.</p>
-              <button type="button" onClick={() => { setStep('policies'); window.scrollTo(0, 0); }}
-                className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-5 py-3 font-bold text-white shadow-sm active:bg-blue-800">
-                <Plus className="h-5 w-5" aria-hidden="true" /> Add more policies
-              </button>
-            </div>
-            <p className="mt-6 text-center text-sm text-slate-500">
-              Not {fields.firstName || 'you'}? <button type="button" onClick={startOver} className="font-semibold underline">Start over</button>
-            </p>
-          </>
+          <p className="mt-5 text-center text-sm text-slate-500">
+            Not {fields.firstName || 'you'}? <button type="button" onClick={startOver} className="font-semibold underline">Start over</button>
+          </p>
         )}
       </Shell>
     );
@@ -526,9 +546,9 @@ async function submitWithRetry(send, tries = 4) {
 
 // ── Pieces ──
 
-function Thumb({ item, scanning = false }) {
+function Thumb({ item, scanning = false, small = false }) {
   return (
-    <div className="relative h-[72px] w-14 shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
+    <div className={`relative ${small ? 'h-14 w-11' : 'h-[72px] w-14'} shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-50`}>
       {item.preview
         ? <img src={item.preview} alt="" className="h-full w-full object-cover" />
         : <div className="flex h-full w-full items-center justify-center text-slate-400"><FileText className="h-6 w-6" aria-hidden="true" /></div>}
@@ -572,64 +592,103 @@ function DraftCard({ item, index, onRetake, onRemove }) {
   );
 }
 
-function ResultCard({ item, index, onRetake, onRetry }) {
+// One policy on the results screen: a compact row that goes queued → reading → what it found.
+function ResultRow({ item, index, onRetake, onRetry }) {
   const r = item.result;
   const active = isActive(item.status);
   const line = POLICY_LABELS[r?.policy_type];
   const carrier = r?.carrier && r.carrier !== 'Other' ? r.carrier : null;
-  const border = item.status === 'read' ? 'border-emerald-200' : item.status === 'unreadable' ? 'border-amber-300' : item.status === 'failed' ? 'border-red-300' : 'border-slate-200';
+  let title = `Policy ${index + 1}`;
+  let detail = null;
+  if (item.status === 'read') {
+    title = carrier || 'Policy read';
+    detail = <span className="text-slate-600">{[line, r?.annual_premium != null ? `${money(r.annual_premium)}/yr` : null].filter(Boolean).join(' · ') || 'Received'}</span>;
+  } else if (active) {
+    detail = <span className="inline-flex items-center gap-1.5 text-blue-700"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />{item.status === 'queued' ? 'Waiting…' : 'Reading…'}</span>;
+  } else if (item.status === 'unreadable') {
+    title = 'Couldn’t read it';
+    detail = <span className="text-slate-600">Cam will check by hand</span>;
+  } else if (item.status === 'failed') {
+    title = `Policy ${index + 1} didn’t send`;
+    detail = <span className="text-red-700">{item.error}</span>;
+  }
   return (
-    <li className={`rounded-2xl border bg-white p-3 shadow-sm transition-colors ${border}`}>
-      <div className="flex items-center gap-3">
-        {item.status === 'read' && !item.preview
-          ? <Monogram name={carrier || line || 'Policy'} />
-          : <Thumb item={item} scanning={active} />}
-        <div className="min-w-0 flex-1">
-          {active && (
-            <>
-              <p className="font-semibold text-slate-900">Policy {index + 1}</p>
-              <p className="mt-0.5 inline-flex items-center gap-1.5 text-sm text-blue-700">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                {item.status === 'queued' ? 'Waiting…' : 'Reading…'}
-              </p>
-            </>
-          )}
-          {item.status === 'read' && (
-            <>
-              <p className="truncate font-semibold text-slate-900">{carrier || 'Policy read'}</p>
-              <p className="mt-0.5 text-sm text-slate-600">
-                {[line, r?.annual_premium != null ? `${money(r.annual_premium)}/yr` : null].filter(Boolean).join(' · ') || 'We have what we need'}
-              </p>
-            </>
-          )}
-          {item.status === 'unreadable' && (
-            <>
-              <p className="font-semibold text-slate-900">We couldn&apos;t read this one</p>
-              <p className="mt-0.5 text-sm text-slate-600">Cam will look at it by hand — or retake it now.</p>
-            </>
-          )}
-          {item.status === 'failed' && (
-            <>
-              <p className="font-semibold text-slate-900">Policy {index + 1} didn&apos;t send</p>
-              <p className="mt-0.5 text-sm text-red-700">{item.error}</p>
-            </>
-          )}
-        </div>
-        {item.status === 'read' && (
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700" aria-label="Received">
-            <Check className="h-5 w-5" aria-hidden="true" />
-          </span>
-        )}
-        {item.status === 'unreadable' && (
-          <button type="button" onClick={onRetake} className="shrink-0 rounded-xl bg-amber-100 px-3 py-2 text-sm font-semibold text-amber-900">Retake</button>
-        )}
-        {item.status === 'failed' && (
-          item.file
-            ? <button type="button" onClick={onRetry} className="shrink-0 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-800">Try again</button>
-            : <button type="button" onClick={onRetake} className="shrink-0 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-800">Retake</button>
-        )}
+    <li className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
+      {item.status === 'read' && !item.preview
+        ? <Monogram name={carrier || line || 'Policy'} />
+        : <Thumb item={item} scanning={active} small />}
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold text-slate-900">{title}</p>
+        <p className="truncate text-sm">{detail}</p>
       </div>
+      {item.status === 'read' && (
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700" aria-label="Received">
+          <Check className="h-4 w-4" aria-hidden="true" />
+        </span>
+      )}
+      {item.status === 'unreadable' && (
+        <button type="button" onClick={onRetake} className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900">Retake</button>
+      )}
+      {item.status === 'failed' && (
+        <button type="button" onClick={item.file ? onRetry : onRetake} className="shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-800">
+          {item.file ? 'Try again' : 'Retake'}
+        </button>
+      )}
     </li>
+  );
+}
+
+// Swipeable sections (native scroll-snap, so touch, trackpad and keyboard all work).
+// The next slide peeks in from the right so it reads as swipeable; tabs and dots jump.
+function Carousel({ slides, className = '' }) {
+  const track = useRef(null);
+  const [active, setActive] = useState(0);
+  const onScroll = () => {
+    const el = track.current;
+    if (!el) return;
+    const kids = [...el.children];
+    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 4) { setActive(kids.length - 1); return; }
+    let best = 0;
+    kids.forEach((k, i) => { if (Math.abs(k.offsetLeft - el.scrollLeft) < Math.abs(kids[best].offsetLeft - el.scrollLeft)) best = i; });
+    setActive(best);
+  };
+  const go = (i) => {
+    const el = track.current;
+    const kid = el?.children[i];
+    if (kid) el.scrollTo({ left: kid.offsetLeft, behavior: 'smooth' });
+    setActive(i);
+  };
+  const many = slides.length > 1;
+  return (
+    <section className={className} aria-roledescription="carousel" aria-label="Your rate check">
+      {many && (
+        <div className="mb-3 flex justify-center gap-1 rounded-xl bg-slate-200/70 p-1" role="tablist">
+          {slides.map((s, i) => (
+            <button key={s.key} type="button" role="tab" aria-selected={i === active} onClick={() => go(i)}
+              className={`flex-1 truncate rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${i === active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <div ref={track} onScroll={onScroll}
+        className={`rc-track relative flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto ${many ? '' : 'justify-center'}`}>
+        {slides.map((s, i) => (
+          <div key={s.key} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}: ${s.label}`}
+            className={`${many ? 'w-[88%]' : 'w-full'} shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm`}>
+            {!many && <p className="mb-3 text-sm font-semibold text-slate-900">{s.label}</p>}
+            {s.content}
+          </div>
+        ))}
+      </div>
+      {many && (
+        <div className="mt-3 flex justify-center gap-1.5" aria-hidden="true">
+          {slides.map((s, i) => (
+            <span key={s.key} className={`h-1.5 rounded-full transition-all ${i === active ? 'w-5 bg-blue-700' : 'w-1.5 bg-slate-300'}`} />
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
@@ -637,7 +696,7 @@ const MONO_TONES = ['bg-blue-100 text-blue-800', 'bg-emerald-100 text-emerald-80
 function Monogram({ name }) {
   const initials = name.split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
   const tone = MONO_TONES[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % MONO_TONES.length];
-  return <div className={`flex h-[72px] w-14 shrink-0 items-center justify-center rounded-lg text-lg font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
+  return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
 function Trust({ icon: Icon, label }) {
@@ -680,10 +739,10 @@ function Field({ label, htmlFor, children }) {
 }
 
 const STEPS = ['Policies', 'You', 'Results'];
-function Shell({ children, step, bar }) {
+function Shell({ children, step, bar, center = false }) {
   return (
     <div className="min-h-screen bg-slate-50">
-      <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>
+      <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}.rc-track{scrollbar-width:none}.rc-track::-webkit-scrollbar{display:none}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>
       <header className="mx-auto flex max-w-md items-center justify-between px-4 pt-5">
         <span className="text-sm font-extrabold tracking-tight text-slate-900">insuredbycam <span className="font-semibold text-slate-400">· Rate Check</span></span>
         {step && (
@@ -694,7 +753,9 @@ function Shell({ children, step, bar }) {
           </ol>
         )}
       </header>
-      <main className="mx-auto max-w-md px-4 pt-6 pb-10">{children}</main>
+      <main className={center
+        ? 'mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-md flex-col justify-center px-4 py-6'
+        : 'mx-auto max-w-md px-4 pt-6 pb-10'}>{children}</main>
       <RateCheckFooter padForBar={!!bar} />
       {bar}
     </div>
