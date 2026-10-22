@@ -28,8 +28,8 @@ export default function RateCheckPage() {
   const [inviteExpired, setInviteExpired] = useState(false);
   const cameraInput = useRef(null);
   const fileInput = useRef(null);
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+  // Every policy the customer adds — no cap. Each is sent (and read) on its own.
+  const [policies, setPolicies] = useState([]); // [{ id, file, preview, error }]
   const [firstName, setFirstName] = useState('');
   const [phone, setPhone] = useState('');
   const [zip, setZip] = useState('');
@@ -37,8 +37,9 @@ export default function RateCheckPage() {
   const [consent, setConsent] = useState(false);
   const [referralConsent, setReferralConsent] = useState(false);
   const [stage, setStage] = useState('form'); // form | sending | done
+  const [progress, setProgress] = useState(null); // { current, total, waiting }
   const [error, setError] = useState('');
-  const [result, setResult] = useState(null);
+  const [results, setResults] = useState([]); // every policy received this visit
 
   useEffect(() => {
     document.title = 'Rate Check — Are you overpaying for insurance? | insuredbycam';
@@ -59,22 +60,34 @@ export default function RateCheckPage() {
     return () => { cancelled = true; };
   }, [inviteCode]);
 
-  // Revoke the thumbnail object URL when it changes or the page unmounts.
-  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
+  // Revoke thumbnail object URLs when the page unmounts.
+  const previewsRef = useRef(new Set());
+  useEffect(() => () => { previewsRef.current.forEach(u => URL.revokeObjectURL(u)); }, []);
 
   const onPick = (e) => {
-    const picked = e.target.files?.[0];
+    const picked = Array.from(e.target.files || []);
     e.target.value = '';
-    if (!picked) return;
+    if (!picked.length) return;
     setError('');
-    setFile(picked);
-    const isImage = picked.type.startsWith('image/') && !/heic|heif/i.test(picked.type);
-    setPreview(isImage ? URL.createObjectURL(picked) : null);
+    setPolicies(list => [...list, ...picked.map(file => {
+      const isImage = file.type.startsWith('image/') && !/heic|heif/i.test(file.type);
+      const preview = isImage ? URL.createObjectURL(file) : null;
+      if (preview) previewsRef.current.add(preview);
+      return { id: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`, file, preview, error: null };
+    })]);
+  };
+
+  const removePolicy = (id) => {
+    setPolicies(list => {
+      const gone = list.find(p => p.id === id);
+      if (gone?.preview) { URL.revokeObjectURL(gone.preview); previewsRef.current.delete(gone.preview); }
+      return list.filter(p => p.id !== id);
+    });
   };
 
   const phoneDigits = phone.replace(/\D/g, '');
   const missing = [
-    !file && 'a photo of your policy',
+    !policies.length && 'a photo of your policy',
     !firstName.trim() && 'your first name',
     phoneDigits.length !== 10 && 'your mobile number',
     !/^\d{5}$/.test(zip) && 'your ZIP code',
@@ -90,38 +103,57 @@ export default function RateCheckPage() {
     if (!canSubmit || stage === 'sending') return;
     setError('');
     setStage('sending');
-    try {
-      const prepared = await prepareDecPage(file);
-      const data = await submitRateCheck({
-        prepared,
-        firstName,
-        phone: phoneDigits,
-        zip,
-        housingSituation: housing,
-        consentGivenAt: new Date().toISOString(),
-        referralConsentGivenAt: referralConsent ? new Date().toISOString() : null,
-        inviteCode: invite ? inviteCode : null,
-      });
-      setResult(data);
+    const consentGivenAt = new Date().toISOString();
+    const referralConsentGivenAt = referralConsent ? consentGivenAt : null;
+    const queue = policies;
+    const sent = [];
+    const failed = [];
+    for (let i = 0; i < queue.length; i++) {
+      const item = queue[i];
+      setProgress({ current: i + 1, total: queue.length, waiting: false });
+      try {
+        const prepared = await prepareDecPage(item.file);
+        const data = await submitWithRetry(() => submitRateCheck({
+          prepared, firstName, phone: phoneDigits, zip, housingSituation: housing,
+          consentGivenAt, referralConsentGivenAt, inviteCode: invite ? inviteCode : null,
+        }), () => setProgress({ current: i + 1, total: queue.length, waiting: true }));
+        sent.push({ id: item.id, data });
+      } catch (err) {
+        failed.push({ ...item, error: err.message || 'Something went wrong. Please try again.' });
+      }
+    }
+    setProgress(null);
+    if (sent.length) setResults(r => [...r, ...sent.map(s => s.data)]);
+    // Sent policies leave the list; anything that failed stays so it can be retried.
+    const sentIds = new Set(sent.map(s => s.id));
+    setPolicies(list => list.filter(p => !sentIds.has(p.id)).map(p => failed.find(f => f.id === p.id) || p));
+    if (failed.length) {
+      setError(sent.length
+        ? `We got ${sent.length} of ${queue.length}. ${failed.length === 1 ? 'One didn’t go through' : `${failed.length} didn’t go through`} — tap the button to try ${failed.length === 1 ? 'it' : 'them'} again.`
+        : failed[0].error);
+      setStage('form');
+    } else {
       setStage('done');
       window.scrollTo(0, 0);
-    } catch (err) {
-      setError(err.message || 'Something went wrong. Please try again.');
-      setStage('form');
     }
   };
 
   if (stage === 'done') {
-    const policy = POLICY_LABELS[result?.policy_type];
-    const what = result?.carrier && result.carrier !== 'Other'
-      ? `your ${result.carrier}${policy ? ` ${policy}` : ''} policy`
-      : `your${policy ? ` ${policy}` : ''} policy`;
+    const named = results.map(policyName);
+    const heading = results.length === 1
+      ? `Got it — we're checking ${named[0]} now.`
+      : `Got it — we're checking your ${results.length} policies now.`;
     return (
       <Shell>
         <div className="text-center py-10" role="status">
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl" aria-hidden="true">✓</div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-3">Got it — we&apos;re checking {what} now.</h1>
-          <p className="text-gray-700">If we can beat it, Cam will text you within the hour.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-3">{heading}</h1>
+          {results.length > 1 && (
+            <ul className="mb-3 space-y-1 text-gray-700">
+              {named.map((n, i) => <li key={i}>{n.charAt(0).toUpperCase() + n.slice(1)}</li>)}
+            </ul>
+          )}
+          <p className="text-gray-700">If we can beat {results.length === 1 ? 'it' : 'them'}, Cam will text you within the hour.</p>
         </div>
         <ol className="space-y-3 rounded-2xl bg-white p-5 text-left text-gray-700 shadow-sm">
           <li className="flex gap-3"><Step n={1} /> We price the same coverage with Allstate.</li>
@@ -129,55 +161,85 @@ export default function RateCheckPage() {
           <li className="flex gap-3"><Step n={3} /> If we can&apos;t, we&apos;ll say so. No spam, no pressure.</li>
         </ol>
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">Have another policy — a car, your home, a second car?</p>
-          <button type="button" onClick={() => { setFile(null); setPreview(null); setResult(null); setStage('form'); window.scrollTo(0, 0); }}
+          <p className="text-sm text-gray-600">Forgot one — a car, your home, a boat?</p>
+          <button type="button" onClick={() => { setPolicies([]); setError(''); setStage('form'); window.scrollTo(0, 0); }}
             className="mt-2 rounded-xl border border-blue-700 px-4 py-3 text-base font-bold text-blue-700">
-            Add another policy
+            Add more policies
           </button>
-          <p className="mt-2 text-xs text-gray-500">Your name and number are kept. Bundling both often saves the most.</p>
+          <p className="mt-2 text-xs text-gray-500">Your name and number are kept. Bundling often saves the most.</p>
         </div>
       </Shell>
     );
   }
 
   const sending = stage === 'sending';
+  const count = policies.length;
 
   return (
     <Shell>
       {invite && (
         <p className="mb-4 rounded-lg bg-blue-50 px-3 py-2 text-sm text-blue-900">
           {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
-          {invite.event_name ? ` after ${invite.event_name}` : ''}.{result ? '' : ' Takes about a minute.'}
+          {invite.event_name ? ` after ${invite.event_name}` : ''}.{results.length ? '' : ' Takes about a minute.'}
         </p>
       )}
       {inviteExpired && (
         <p className="mb-4 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700">That link has expired, but you can still check your rate below.</p>
       )}
-      <h1 className="text-3xl font-extrabold leading-tight text-gray-900">
-        Overpaying for insurance? Find out in 60 seconds.
-      </h1>
-      <p className="mt-3 text-gray-700">
-        Take a photo of your policy&apos;s first page. A local Allstate agent compares it and texts you only if we can save you money.
-      </p>
+      {results.length > 0 ? (
+        <h1 className="text-2xl font-extrabold leading-tight text-gray-900">Add more policies</h1>
+      ) : (
+        <>
+          <h1 className="text-3xl font-extrabold leading-tight text-gray-900">
+            Overpaying for insurance? Find out in 60 seconds.
+          </h1>
+          <p className="mt-3 text-gray-700">
+            Take a photo of each policy&apos;s first page — car, home, renters, all of them. A local Allstate agent compares
+            them and texts you only if we can save you money.
+          </p>
+        </>
+      )}
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
-        {/* Camera / file */}
+        {/* Camera / files. The upload picker takes several at once. */}
         <input ref={cameraInput} type="file" accept="image/*,application/pdf" capture="environment" className="hidden" onChange={onPick} />
-        <input ref={fileInput} type="file" accept="image/*,application/pdf" className="hidden" onChange={onPick} />
+        <input ref={fileInput} type="file" accept="image/*,application/pdf" multiple className="hidden" onChange={onPick} />
 
-        {file ? (
-          <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3">
-            {preview ? (
-              <img src={preview} alt="Your declarations page" className="h-20 w-16 rounded object-cover border" />
-            ) : (
-              <div className="flex h-20 w-16 items-center justify-center rounded border bg-gray-50 text-xs font-semibold text-gray-500">
-                {/pdf/i.test(file.type) ? 'PDF' : 'PHOTO'}
-              </div>
-            )}
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-gray-900">{file.name || 'Declarations page'}</p>
-              <button type="button" onClick={() => cameraInput.current?.click()} className="text-sm font-semibold text-blue-700 underline" disabled={sending}>
-                Retake
+        {count > 0 ? (
+          <div>
+            <p className="mb-2 text-sm font-semibold text-gray-800">
+              {count === 1 ? '1 policy added' : `${count} policies added`}
+            </p>
+            <ul className="space-y-2">
+              {policies.map((p, i) => (
+                <li key={p.id} className={`flex items-center gap-3 rounded-xl border bg-white p-3 ${p.error ? 'border-red-300' : 'border-gray-200'}`}>
+                  {p.preview ? (
+                    <img src={p.preview} alt={`Policy ${i + 1}`} className="h-16 w-12 rounded border object-cover" />
+                  ) : (
+                    <div className="flex h-16 w-12 items-center justify-center rounded border bg-gray-50 text-xs font-semibold text-gray-500">
+                      {/pdf/i.test(p.file.type) ? 'PDF' : 'PHOTO'}
+                    </div>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">Policy {i + 1}</p>
+                    <p className="truncate text-xs text-gray-500">{p.file.name || 'Declarations page'}</p>
+                    {p.error && <p className="text-xs text-red-700">{p.error}</p>}
+                  </div>
+                  <button type="button" onClick={() => removePolicy(p.id)} disabled={sending}
+                    className="rounded-lg px-2 py-2 text-sm font-semibold text-gray-600 underline" aria-label={`Remove policy ${i + 1}`}>
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => cameraInput.current?.click()} disabled={sending}
+                className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 px-3 py-3 text-sm font-bold text-blue-800">
+                <Camera className="h-5 w-5" aria-hidden="true" /> Add another policy
+              </button>
+              <button type="button" onClick={() => fileInput.current?.click()} disabled={sending}
+                className="rounded-xl border border-gray-300 bg-white px-3 py-3 text-sm font-semibold text-gray-700">
+                Upload more
               </button>
             </div>
           </div>
@@ -190,10 +252,10 @@ export default function RateCheckPage() {
             >
               <Camera className="h-10 w-10" aria-hidden="true" strokeWidth={1.75} />
               <span className="text-lg font-bold">Take a photo of your policy</span>
-              <span className="text-sm text-blue-700">The page with your price and coverages</span>
+              <span className="text-sm text-blue-700">The page with your price and coverages. You can add more after.</span>
             </button>
             <button type="button" onClick={() => fileInput.current?.click()} className="mt-2 w-full text-center text-sm font-medium text-gray-600 underline">
-              or upload a photo or PDF
+              or upload photos or PDFs
             </button>
             <details className="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-gray-700">
               <summary className="cursor-pointer font-medium text-gray-800">Which page do I need?</summary>
@@ -242,14 +304,38 @@ export default function RateCheckPage() {
           disabled={!canSubmit || sending}
           className="w-full rounded-xl bg-blue-700 px-4 py-4 text-lg font-bold text-white shadow disabled:cursor-not-allowed disabled:bg-gray-300"
         >
-          {sending ? 'Reading your policy…' : 'Check my rate'}
+          {sending
+            ? (progress?.total > 1 ? `Reading policy ${progress.current} of ${progress.total}…` : 'Reading your policy…')
+            : count > 1 ? `Check my ${count} policies` : 'Check my rate'}
         </button>
         {sending
-          ? <p className="text-center text-sm text-gray-500" aria-live="polite">This usually takes 10–20 seconds.</p>
+          ? <p className="text-center text-sm text-gray-500" aria-live="polite">
+              {progress?.waiting ? 'Almost there — finishing the rest in a few seconds.' : 'Each one takes about 10–20 seconds.'}
+            </p>
           : !canSubmit && <p className="text-center text-sm text-gray-500" aria-live="polite">{missingText}</p>}
       </form>
     </Shell>
   );
+}
+
+function policyName(result) {
+  const policy = POLICY_LABELS[result?.policy_type];
+  return result?.carrier && result.carrier !== 'Other'
+    ? `your ${result.carrier}${policy ? ` ${policy}` : ''} policy`
+    : `your${policy ? ` ${policy}` : ''} policy`;
+}
+
+// A big household sent back to back can hit the per-minute limit; wait it out rather than fail.
+async function submitWithRetry(send, onWait, tries = 4) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await send();
+    } catch (err) {
+      if (!err?.rateLimited || attempt >= tries) throw err;
+      onWait?.();
+      await new Promise(r => setTimeout(r, 20_000));
+    }
+  }
 }
 
 const inputCls =
