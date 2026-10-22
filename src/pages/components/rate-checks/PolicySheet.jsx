@@ -45,13 +45,35 @@ function Chip({ children, tone }) {
   );
 }
 
-function Rows({ rows }) {
+const DEDUCTIBLES = ['comp_deductible', 'coll_deductible'];
+
+const TILE_LABEL = { Comprehensive: 'Comp', Collision: 'Collision' };
+
+function DeductibleTile({ label, value }) {
   return (
-    <dl>
-      {rows.map(r => (
-        <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} addOn={r.addOn} wide />
-      ))}
-    </dl>
+    <div className="rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_LABEL[label] || label} deductible</p>
+      <p className="text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{value}</p>
+    </div>
+  );
+}
+
+function Rows({ rows }) {
+  const tiles = rows.filter(r => DEDUCTIBLES.includes(r.key));
+  const rest = rows.filter(r => !DEDUCTIBLES.includes(r.key));
+  return (
+    <>
+      {tiles.length > 0 && (
+        <div className="grid grid-cols-2 gap-2 pt-2 pb-1" style={{ borderTop: '1px solid var(--qs-border)' }}>
+          {tiles.map(r => <DeductibleTile key={r.key} label={r.label} value={r.value} />)}
+        </div>
+      )}
+      <dl>
+        {rest.map(r => (
+          <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} addOn={r.addOn} wide />
+        ))}
+      </dl>
+    </>
   );
 }
 
@@ -60,6 +82,9 @@ function VehicleCard({ rc, v, index }) {
   const vinWarn = v.vin_complete === false ? 'Only part of the VIN is on the page'
     : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo' : null;
   const own = vehicleCoverages(rc, index);
+  // Comp and collision deductibles drive the price most — shown as tiles; add-ons one per line.
+  const deductibles = own.filter(r => DEDUCTIBLES.includes(r.key));
+  const extras = own.filter(r => !DEDUCTIBLES.includes(r.key));
   const lien = lienholderFor(rc, index);
   return (
     <li className="py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
@@ -85,15 +110,16 @@ function VehicleCard({ rc, v, index }) {
           </p>
         </>
       )}
-      {own.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5 text-sm">
-          {own.map(r => (
-            <span key={r.key} className={r.addOn ? ADD_ON_CLS : 'inline-block'} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
-              {r.label} {r.value}
-            </span>
-          ))}
+      {deductibles.length > 0 && (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {deductibles.map(r => <DeductibleTile key={r.key} label={r.label} value={r.value} />)}
         </div>
       )}
+      {extras.map(r => (
+        <p key={r.key} className={`mt-1.5 text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
+          {r.label} {r.value}
+        </p>
+      ))}
     </li>
   );
 }
