@@ -301,6 +301,7 @@ export default function RateCheckPage() {
       {
         key: 'more',
         label: 'Add more',
+        untitled: true,
         content: (
           <div className="flex h-full flex-col items-center justify-center text-center">
             <p className="font-semibold text-slate-900">Got another policy?</p>
@@ -419,7 +420,7 @@ export default function RateCheckPage() {
   };
   return (
     <Shell step={1} bar={drafts.length > 0 && (
-      <ActionBar hint={drafts.some(d => d.quality?.issue) ? 'Some photos may be hard to read. You can still send them.' : null}>
+      <ActionBar hint={drafts.some(d => d.quality?.issue) ? 'Blurry or dark? Retake, or send anyway.' : null}>
         <button type="button" onClick={() => openCamera()} aria-label="Take another photo"
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700">
           <Plus className="h-6 w-6" aria-hidden="true" />
@@ -565,10 +566,10 @@ function Thumb({ item, scanning = false, small = false }) {
 function QualityLine({ item }) {
   const q = item.quality;
   if (!q) return <span className="inline-flex items-center gap-1.5 text-slate-500"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Checking photo…</span>;
-  if (q.issue === 'dark') return <span className="inline-flex items-center gap-1.5 text-amber-700"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Too dark — retake in better light</span>;
-  if (q.issue === 'blurry') return <span className="inline-flex items-center gap-1.5 text-amber-700"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Looks blurry — hold steady and retake</span>;
+  if (q.issue === 'dark') return <span className="inline-flex items-center gap-1.5 text-amber-700"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Too dark</span>;
+  if (q.issue === 'blurry') return <span className="inline-flex items-center gap-1.5 text-amber-700"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Blurry</span>;
   if (!q.checked) return <span className="text-slate-500">{/pdf/i.test(item.file?.type || '') ? 'PDF ready' : 'Ready'}</span>;
-  return <span className="inline-flex items-center gap-1.5 text-emerald-700"><Check className="h-3.5 w-3.5" aria-hidden="true" /> Clear photo</span>;
+  return <span className="inline-flex items-center gap-1.5 text-emerald-700"><Check className="h-3.5 w-3.5" aria-hidden="true" /> Clear</span>;
 }
 
 function DraftCard({ item, index, onRetake, onRemove }) {
@@ -607,7 +608,7 @@ function ResultRow({ item, index, onRetake, onRetry }) {
     detail = <span className="inline-flex items-center gap-1.5 text-blue-700"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />{item.status === 'queued' ? 'Waiting…' : 'Reading…'}</span>;
   } else if (item.status === 'unreadable') {
     title = 'Couldn’t read it';
-    detail = <span className="text-slate-600">Cam will check by hand</span>;
+    detail = <span className="text-slate-600">Cam will check it</span>;
   } else if (item.status === 'failed') {
     title = `Policy ${index + 1} didn’t send`;
     detail = <span className="text-red-700">{item.error}</span>;
@@ -639,7 +640,7 @@ function ResultRow({ item, index, onRetake, onRetry }) {
 }
 
 // Swipeable sections (native scroll-snap, so touch, trackpad and keyboard all work).
-// The next slide peeks in from the right so it reads as swipeable; tabs and dots jump.
+// The next slide peeks in from the right so it reads as swipeable; the dots jump.
 function Carousel({ slides, className = '' }) {
   const track = useRef(null);
   const [active, setActive] = useState(0);
@@ -661,30 +662,23 @@ function Carousel({ slides, className = '' }) {
   const many = slides.length > 1;
   return (
     <section className={className} aria-roledescription="carousel" aria-label="Your rate check">
-      {many && (
-        <div className="mb-3 flex justify-center gap-1 rounded-xl bg-slate-200/70 p-1" role="tablist">
-          {slides.map((s, i) => (
-            <button key={s.key} type="button" role="tab" aria-selected={i === active} onClick={() => go(i)}
-              className={`flex-1 truncate rounded-lg px-2 py-1.5 text-xs font-semibold transition-colors ${i === active ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'}`}>
-              {s.label}
-            </button>
-          ))}
-        </div>
-      )}
       <div ref={track} onScroll={onScroll}
         className={`rc-track relative flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto ${many ? '' : 'justify-center'}`}>
         {slides.map((s, i) => (
           <div key={s.key} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}: ${s.label}`}
             className={`${many ? 'w-[88%]' : 'w-full'} shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm`}>
-            {!many && <p className="mb-3 text-sm font-semibold text-slate-900">{s.label}</p>}
+            {!s.untitled && <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{s.label}</p>}
             {s.content}
           </div>
         ))}
       </div>
       {many && (
-        <div className="mt-3 flex justify-center gap-1.5" aria-hidden="true">
+        <div className="mt-2 flex justify-center">
           {slides.map((s, i) => (
-            <span key={s.key} className={`h-1.5 rounded-full transition-all ${i === active ? 'w-5 bg-blue-700' : 'w-1.5 bg-slate-300'}`} />
+            <button key={s.key} type="button" onClick={() => go(i)} aria-label={`Show ${s.label}`} aria-current={i === active}
+              className="flex h-8 items-center px-1">
+              <span className={`block h-1.5 rounded-full transition-all ${i === active ? 'w-5 bg-blue-700' : 'w-1.5 bg-slate-300'}`} />
+            </button>
           ))}
         </div>
       )}
