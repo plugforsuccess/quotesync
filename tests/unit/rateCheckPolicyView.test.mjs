@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   nameCase, addressCase, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, usageFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, glance, headsUp, insuredFirstNames,
+  lienholderFor, usageFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -128,9 +128,4 @@ test('what is left of the notes is only what no field shows', () => {
     'The page notes that beginning at next renewal all vehicles will be renewed for full policy term.',
   ]);
   assert.deepEqual(headsUp({ ...auto, summary: 'Mid-term change.' }), ['Mid-term change.']);
-});
-
-test('at a glance', () => {
-  assert.deepEqual(glance(auto).map(c => c.text), ['3 vehicles', '3 drivers', 'Driver age 22', '$250k / $500k liability', '1 financed']);
-  assert.deepEqual(glance(home).map(c => c.text), ['$1.13M dwelling', '$100k liability', 'Built 2023', 'Masonry Veneer', 'Composition Shingle roof', 'Paid from escrow']);
 });

@@ -412,39 +412,7 @@ export function discountsOf(rc) {
   return [...new Set(list.map(cleanDiscount).filter(Boolean))];
 }
 
-// ── At a glance ───────────────────────────────────────────────────────────────
-
-/** The handful of facts that change the quote, as short chips. */
-export function glance(rc) {
-  const chips = [];
-  const add = (text, tone) => text && chips.push({ text, tone });
-  if (['auto', 'commercial_auto'].includes(rc?.policy_type)) {
-    const vehicles = Array.isArray(rc.vehicles) ? rc.vehicles : [];
-    const drivers = driverRows(rc);
-    if (vehicles.length) add(`${vehicles.length} ${vehicles.length === 1 ? 'vehicle' : 'vehicles'}`);
-    if (drivers.length || rc.driver_count) add(`${drivers.length || rc.driver_count} ${(drivers.length || rc.driver_count) === 1 ? 'driver' : 'drivers'}`);
-    const young = drivers.filter(d => d.young).sort((a, b) => a.age - b.age)[0];
-    if (young) add(`Driver age ${young.age}`, 'warn');
-    if (drivers.some(d => d.excluded)) add('Excluded driver', 'warn');
-    const bi = autoCoverageGroups(rc)[0]?.rows.find(r => r.key === 'bi');
-    if (bi) add(`${bi.value} liability`);
-    const financed = vehicles.filter((_, i) => lienholderFor(rc, i)).length;
-    if (financed) add(`${financed} financed`);
-    const record = (rc.surcharges?.length || 0) + (rc.claims?.length || 0);
-    if (record) add(`${record} on record`, 'warn');
-  } else if (['home', 'condo', 'renters'].includes(rc?.policy_type)) {
-    const p = propertyFacts(rc) || {};
-    const cov = rc.coverages || {};
-    if (parseAmount(cov.dwelling)) add(`${short(parseAmount(cov.dwelling))} dwelling`);
-    if (parseAmount(cov.liability)) add(`${short(parseAmount(cov.liability))} liability`);
-    if (p.year_built) add(`Built ${p.year_built}`);
-    if (p.construction) add(vehicleWords(p.construction));
-    if (p.roof_material) add(`${vehicleWords(p.roof_material)} roof${p.roof_year ? ` (${p.roof_year})` : ''}`);
-    if (p.paid_by_mortgagee) add('Paid from escrow');
-    if (rc.claims?.length) add(`${rc.claims.length} ${rc.claims.length === 1 ? 'claim' : 'claims'}`, 'warn');
-  }
-  return chips;
-}
+// ── Summary ───────────────────────────────────────────────────────────────────
 
 /** What to tell the producer in a sentence or two: the scan's summary, else leftover notes. */
 export function headsUp(rc) {

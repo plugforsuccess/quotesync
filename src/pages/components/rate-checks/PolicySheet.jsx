@@ -5,13 +5,13 @@
 // A–F → endorsements → discounts. Current-policy reference sits last.
 // All formatting lives in policyView.js.
 
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, usageFor, propertyFacts, endorsementsOf,
-  driverRows, discountsOf, glance, headsUp, vehicleTitle, vehicleWords, nameCase, addressCase,
+  driverRows, discountsOf, headsUp, vehicleTitle, vehicleWords, nameCase, addressCase,
 } from './policyView';
 
 const AUTO = ['auto', 'commercial_auto'];
@@ -38,29 +38,6 @@ function Chip({ children, tone }) {
         : { background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
       {children}
     </span>
-  );
-}
-
-/** The few facts that change the quote, then anything the producer must know. */
-export function AtAGlance({ rc, warning }) {
-  const chips = glance(rc);
-  const notes = headsUp(rc);
-  if (!chips.length && !notes.length && !warning) return null;
-  return (
-    <section className="rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-      <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>At a glance</h3>
-      {chips.length > 0 && <div className="mt-2 flex flex-wrap gap-1.5">{chips.map((c, i) => <Chip key={i} tone={c.tone}>{c.text}</Chip>)}</div>}
-      {(warning || notes.length > 0) && (
-        <ul className="mt-3 space-y-1.5 text-sm" style={{ color: 'var(--qs-text)' }}>
-          {warning && (
-            <li className="flex gap-2"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" aria-hidden="true" />{warning}</li>
-          )}
-          {notes.map((n, i) => (
-            <li key={i} className="flex gap-2"><Info className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />{n}</li>
-          ))}
-        </ul>
-      )}
-    </section>
   );
 }
 
@@ -109,7 +86,7 @@ function VehicleCard({ rc, v, index }) {
   );
 }
 
-export default function PolicySheet({ rc }) {
+export default function PolicySheet({ rc, warning }) {
   const x = rc.extracted || {};
   const isAuto = AUTO.includes(rc.policy_type);
   const isProperty = PROPERTY.includes(rc.policy_type);
@@ -176,6 +153,8 @@ export default function PolicySheet({ rc }) {
         </Section>
       )}
 
+      <SummarySection rc={rc} warning={warning} />
+
       <Section title="Current policy">
         <dl>
           <Field label="Carrier" value={carrierLabel(rc)} />
@@ -192,6 +171,23 @@ export default function PolicySheet({ rc }) {
         </details>
       )}
     </div>
+  );
+}
+
+// What the producer should know that the fields above don't say: the scan's
+// summary (or, for older scans, what's left of its note), plus a read-quality warning.
+function SummarySection({ rc, warning }) {
+  const lines = headsUp(rc);
+  if (!lines.length && !warning) return null;
+  return (
+    <Section title="Summary">
+      <div className="space-y-2 text-sm leading-relaxed" style={{ color: 'var(--qs-text)' }}>
+        {warning && (
+          <p className="flex gap-2 text-yellow-600"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{warning}</p>
+        )}
+        {lines.length > 0 && <p className="select-text">{lines.join(' ')}</p>}
+      </div>
+    </Section>
   );
 }
 

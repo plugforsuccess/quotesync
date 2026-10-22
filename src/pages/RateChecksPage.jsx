@@ -30,7 +30,7 @@ import ReferralPartners from './components/rate-checks/ReferralPartners';
 import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
-import PolicySheet, { AtAGlance } from './components/rate-checks/PolicySheet';
+import PolicySheet from './components/rate-checks/PolicySheet';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import InvitesTab from './components/rate-checks/InvitesTab';
@@ -503,14 +503,13 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
           )}
           {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
           {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info">Scanned again — check the details below.</Notice>}
-          {/* 1. What to quote, 2. the price, 3. what matters, 4. the quote sheet, 5. reference */}
+          {/* 1. What to quote, 2. the price, 3. the quote sheet (ends with a summary), 4. reference */}
           <DecisionCard rc={rc} />
           <QuoteBox rc={rc} onQuoted={onQuoted} />
           {rc.upload_source === 'agent' && (
             <p className="-mt-3 text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
           )}
-          {!rc.extract_error && <AtAGlance rc={rc} warning={warning} />}
-          <PolicyDetails rc={rc} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
+          <PolicyDetails rc={rc} warning={!rc.extract_error ? warning : null} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
           {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
@@ -661,7 +660,7 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
 }
 
 // The quote sheet (PolicySheet) with Scan again / Fix details; "Fix details" swaps in the form.
-function PolicyDetails({ rc, onRescan, rescanning }) {
+function PolicyDetails({ rc, warning, onRescan, rescanning }) {
   const [editing, setEditing] = useState(false);
   return (
     <section>
@@ -680,7 +679,7 @@ function PolicyDetails({ rc, onRescan, rescanning }) {
           </div>
         )}
       </div>
-      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : <PolicySheet rc={rc} />}
+      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : <PolicySheet rc={rc} warning={warning} />}
     </section>
   );
 }
