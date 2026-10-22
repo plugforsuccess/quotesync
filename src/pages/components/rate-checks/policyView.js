@@ -243,6 +243,49 @@ export function vehicleCoverages(rc, index) {
   return rows;
 }
 
+const LEVEL_LABEL = { full: 'Full coverage', comp_only: 'Comp only', coll_only: 'Collision only', liability: 'Liability only' };
+
+/**
+ * Physical damage laid out the way it's keyed: Allstate changes a coverage on several
+ * vehicles at once only when the change is the same for all of them. So for each of
+ * comp, collision, rental and roadside: which vehicles share which value, and which
+ * have none. Plus each vehicle's level (full coverage vs liability only).
+ * Vehicles are newest first; `same` means one value on every vehicle.
+ */
+export function vehicleCoverageSetup(rc) {
+  const cov = rc?.coverages && typeof rc.coverages === 'object' ? rc.coverages : {};
+  const list = Array.isArray(rc?.vehicles) ? rc.vehicles : [];
+  const order = vehiclesNewestFirst(rc);
+  // Policy-level lines that don't name vehicles apply to every vehicle.
+  const everywhere = {};
+  for (const k of AUTO_PHYSICAL) {
+    if (cov[k] == null || vehicleIndexesIn(cov[k], list).length) continue;
+    const r = row(k, splitNote(cov[k]).value, list);
+    if (r) everywhere[k] = r.value;
+  }
+  const values = order.map(({ index }) => {
+    const own = Object.fromEntries(vehicleCoverages(rc, index).map(r => [r.key, r.value]));
+    return Object.fromEntries(AUTO_PHYSICAL.map(k => [k, own[k] ?? everywhere[k] ?? null]));
+  });
+  const vehicles = order.map(({ v, index }, i) => {
+    const comp = values[i].comp_deductible != null, coll = values[i].coll_deductible != null;
+    const level = comp && coll ? 'full' : comp ? 'comp_only' : coll ? 'coll_only' : 'liability';
+    return { v, index, level, levelLabel: LEVEL_LABEL[level] };
+  });
+  const coverages = AUTO_PHYSICAL.map(key => {
+    const groups = [];
+    const none = [];
+    values.forEach((vals, i) => {
+      const value = vals[key];
+      if (value == null) { none.push(order[i].index); return; }
+      const g = groups.find(x => x.value === value);
+      if (g) g.indexes.push(order[i].index); else groups.push({ value, indexes: [order[i].index] });
+    });
+    return { key, label: coverageName(key), addOn: isAddOn(key), groups, none, same: groups.length === 1 && none.length === 0 };
+  }).filter(c => c.groups.length);
+  return { vehicles, coverages };
+}
+
 /** Home / condo / renters coverages A–F then deductibles, with % deductibles spelled out. */
 export function homeCoverageRows(rc) {
   const cov = rc?.coverages && typeof rc.coverages === 'object' ? rc.coverages : {};

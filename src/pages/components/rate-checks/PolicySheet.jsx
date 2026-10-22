@@ -6,14 +6,15 @@
 // endorsements → discounts. A short summary closes the sheet.
 // All formatting lives in policyView.js.
 
-import { AlertTriangle, CircleHelp } from 'lucide-react';
+import { AlertTriangle, Check, CircleHelp } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
 import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
-  driverRows, discountsOf, headsUp, vehicleTitle, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
+  driverRows, discountsOf, headsUp, vehicleTitle, vehicleShort, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
+  vehicleCoverageSetup,
 } from './policyView';
 
 const AUTO = ['auto', 'commercial_auto'];
@@ -46,6 +47,7 @@ function Chip({ children, tone }) {
 }
 
 const DEDUCTIBLES = ['comp_deductible', 'coll_deductible'];
+const PHYSICAL = [...DEDUCTIBLES, 'rental', 'roadside'];
 
 const TILE_LABEL = { Comprehensive: 'Comp', Collision: 'Collision' };
 
@@ -77,14 +79,85 @@ function Rows({ rows }) {
   );
 }
 
-function VehicleCard({ rc, v, index }) {
+const TILE = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' };
+const TILE_NAME = { comp_deductible: 'Comp deductible', coll_deductible: 'Collision deductible' };
+const LEVEL_TONE = {
+  full: { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' },
+  liability: { color: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)' },
+};
+
+// "$50/day · $1,500 max" → "$50/day" large with "$1,500 max" under it, so long
+// values still fit a half-width tile.
+function TileValue({ value, addOn, size = 'text-xl' }) {
+  const [main, ...rest] = String(value).split(' · ');
+  return (
+    <span className="block">
+      <span className={`block ${size} font-bold tabular-nums`} style={addOn ? ADD_ON_STYLE : { color: 'var(--qs-bright)' }}>{main}</span>
+      {rest.length > 0 && <span className="block text-xs font-medium" style={addOn ? ADD_ON_STYLE : { color: 'var(--qs-subtle)' }}>{rest.join(' · ')}</span>}
+    </span>
+  );
+}
+
+// One coverage across the vehicles. Same on all → one value, "All 3" (change them
+// together in Allstate). Different → each value with the vehicles that have it.
+function CoverageTile({ c, rc, total, wide }) {
+  const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(', ');
+  return (
+    <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
+      <div className="flex items-center justify-between gap-2">
+        <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
+        {total > 1 && !c.same && <span className="shrink-0 text-[11px] font-semibold" style={{ color: 'var(--qs-warning)' }}>Differs</span>}
+      </div>
+      {c.same ? (
+        <div className="flex items-end justify-between gap-2">
+          <TileValue value={c.groups[0].value} addOn={c.addOn} />
+          {total > 1 && (
+            <span className="mb-1 inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold" style={{ color: 'var(--qs-success)' }}>
+              <Check className="h-3 w-3" aria-hidden="true" />All {total}
+            </span>
+          )}
+        </div>
+      ) : (
+        <ul className="mt-1 space-y-1.5">
+          {c.groups.map(g => (
+            <li key={g.value} className="flex items-baseline justify-between gap-3">
+              <TileValue value={g.value} addOn={c.addOn} size="text-lg" />
+              <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(g.indexes)}</span>
+            </li>
+          ))}
+          {c.none.length > 0 && (
+            <li className="flex items-baseline justify-between gap-3">
+              <span className="text-lg font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
+              <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(c.none)}</span>
+            </li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function VehicleCoverages({ rc, setup }) {
+  const total = setup.vehicles.length;
+  // Shared values pair up two per row; anything that differs gets the full width.
+  const same = setup.coverages.filter(c => c.same || total === 1);
+  const split = setup.coverages.filter(c => !(c.same || total === 1));
+  return (
+    <Section title="Vehicle coverages" ruled>
+      <div className="grid grid-cols-2 gap-2">
+        {same.map((c, i) => <CoverageTile key={c.key} c={c} rc={rc} total={total} wide={i === same.length - 1 && same.length % 2 === 1} />)}
+        {split.map(c => <CoverageTile key={c.key} c={c} rc={rc} total={total} wide />)}
+      </div>
+    </Section>
+  );
+}
+
+function VehicleCard({ rc, v, index, level }) {
   const vin = v.vin ? (v.vin_complete === false ? `…${v.vin}` : v.vin) : (v.vin_last4 ? `…${v.vin_last4}` : null);
   const vinWarn = v.vin_complete === false ? 'Only part of the VIN is on the page'
     : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo' : null;
-  const own = vehicleCoverages(rc, index);
-  // Comp and collision deductibles drive the price most — shown as tiles; add-ons one per line.
-  const deductibles = own.filter(r => DEDUCTIBLES.includes(r.key));
-  const extras = own.filter(r => !DEDUCTIBLES.includes(r.key));
+  // Comp, collision, rental and roadside are grouped across vehicles below; only other lines stay here.
+  const extras = vehicleCoverages(rc, index).filter(r => !PHYSICAL.includes(r.key));
   const lien = lienholderFor(rc, index);
   return (
     <li className="py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
@@ -97,6 +170,12 @@ function VehicleCard({ rc, v, index }) {
           </span>
         )}
       </div>
+      {level && (
+        <span className="mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
+          style={LEVEL_TONE[level.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
+          {level.levelLabel}
+        </span>
+      )}
       {vinWarn && <p className="text-xs text-yellow-600">{vinWarn}</p>}
       {lien && (
         <>
@@ -109,11 +188,6 @@ function VehicleCard({ rc, v, index }) {
             <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
         </>
-      )}
-      {deductibles.length > 0 && (
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {deductibles.map(r => <DeductibleTile key={r.key} label={r.label} value={r.value} />)}
-        </div>
       )}
       {extras.map(r => (
         <p key={r.key} className={`mt-1.5 text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
@@ -134,6 +208,10 @@ export default function PolicySheet({ rc, warning }) {
   const record = [...(rc.surcharges || []), ...(rc.claims || [])];
   const termHint = TERM_HINT[rc.term_source];
   const insured = insuredName(x.insured_name);
+  const setup = isAuto && vehicles.length ? vehicleCoverageSetup(rc) : null;
+  // With vehicles listed, comp / collision / rental / roadside live in "Vehicle coverages".
+  const coverageGroups = isAuto ? autoCoverageGroups(rc).filter(g => !(setup && g.title === 'Every vehicle')) : [];
+  const levelOf = (index) => setup?.coverages.length ? setup.vehicles.find(s => s.index === index) : null;
 
   return (
     <div className="space-y-6">
@@ -168,14 +246,16 @@ export default function PolicySheet({ rc, warning }) {
 
       {isAuto && vehicles.length > 0 && (
         <Section title={`Vehicles · ${vehicles.length}`}>
-          <ul>{vehiclesNewestFirst(rc).map(({ v, index }) => <VehicleCard key={index} rc={rc} v={v} index={index} />)}</ul>
+          <ul>{vehiclesNewestFirst(rc).map(({ v, index }) => <VehicleCard key={index} rc={rc} v={v} index={index} level={levelOf(index)} />)}</ul>
         </Section>
       )}
 
-      {isAuto && autoCoverageGroups(rc).map(g => (
-        <Section key={g.title} title={g.title === 'Liability' ? 'Liability' : g.title === 'Every vehicle' ? 'Coverage on every vehicle' : g.title}>
-          <Rows rows={g.rows} />
-        </Section>
+      {isAuto && coverageGroups.filter(g => g.title === 'Liability').map(g => (
+        <Section key={g.title} title="Liability"><Rows rows={g.rows} /></Section>
+      ))}
+      {setup?.coverages.length > 0 && <VehicleCoverages rc={rc} setup={setup} />}
+      {isAuto && coverageGroups.filter(g => g.title !== 'Liability').map(g => (
+        <Section key={g.title} title={g.title === 'Every vehicle' ? 'Coverage on every vehicle' : g.title}><Rows rows={g.rows} /></Section>
       ))}
 
       {isProperty && <PropertySection rc={rc} />}

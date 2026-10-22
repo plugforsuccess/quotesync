@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   caps, insuredName, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions,
+  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -142,4 +142,20 @@ test('summary names vehicles instead of page numbers', () => {
     headsUp({ ...auto, summary: 'Adds Vehicle 003 (2021 Land Rover Velar) mid-term.' }),
     ['Adds ’21 LAND ROVER VELAR mid-term.'],
   );
+});
+
+test('vehicle coverages group vehicles that share a value', () => {
+  const { vehicles, coverages } = vehicleCoverageSetup(auto);
+  assert.deepEqual(vehicles.map(v => [v.index, v.level]), [[1, 'full'], [2, 'full'], [0, 'full']]);
+  const by = Object.fromEntries(coverages.map(c => [c.key, c]));
+  assert.equal(by.comp_deductible.same, true);
+  assert.equal(by.comp_deductible.groups[0].value, '$200');
+  assert.equal(by.coll_deductible.same, true);
+  assert.equal(by.roadside.same, true);
+  assert.equal(by.rental.same, false);
+  assert.deepEqual(by.rental.groups, [{ value: '$50/day · $1,500 max', indexes: [1, 2] }]);
+  assert.deepEqual(by.rental.none, [0]);
+
+  const liabilityCar = { ...auto, coverages: { ...auto.coverages, comp_deductible: '200 (vehicles 002, 003)', coll_deductible: '1000 (vehicles 002, 003)' } };
+  assert.equal(vehicleCoverageSetup(liabilityCar).vehicles.find(v => v.index === 0).level, 'liability');
 });
