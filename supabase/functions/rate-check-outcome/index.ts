@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
       .from('rate_checks')
       .update({ allstate_premium: allstatePremium, quote_note: quoteNote, quoted_by: user.id })
       .eq('id', rateCheckId)
-      .select('id, agency_id, lead_id, first_name, carrier, policy_type, annual_premium, allstate_premium, delta, delta_pct, status')
+      .select('id, agency_id, lead_id, first_name, carrier, policy_type, annual_premium, allstate_premium, delta, delta_pct, status, consent_given_at')
       .single()
     if (updErr) throw updErr
 
@@ -167,7 +167,11 @@ Deno.serve(async (req) => {
       ])
 
       let sms: Record<string, unknown>
-      if (lead?.sms_opted_out) {
+      // TCPA: only text customers who consented on the Rate Check page. Dec pages an
+      // agent uploaded on a customer's behalf carry no consent, so they're never auto-texted.
+      if (!rc.consent_given_at) {
+        sms = { attempted: false, reason: 'no texting consent on file (agent-uploaded rate check)' }
+      } else if (lead?.sms_opted_out) {
         sms = { attempted: false, reason: 'sms_opted_out' }
       } else if (!agency?.twilio_from_number) {
         sms = { attempted: false, reason: 'agency has no twilio_from_number' }

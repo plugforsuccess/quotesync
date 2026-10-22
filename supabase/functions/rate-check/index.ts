@@ -1,6 +1,10 @@
 // Supabase Edge Function: rate-check
 // POST /functions/v1/rate-check   (verify_jwt = false — called from the public /ratecheck page)
 //
+// Also accepts staff uploads from the Rate Checks inbox ({ mode: 'agent' } plus the
+// agent's own JWT): the caller's agency membership is verified, no consumer consent
+// is recorded (so no auto-texts), and the lead's existing consent is never touched.
+//
 // A consumer uploads a photo/PDF of their current declarations page. We:
 //   1. store a rate_checks row (status 'pending') + the image in the private dec-pages bucket,
 //   2. extract the policy with Claude (forced tool use → guaranteed JSON),
@@ -82,13 +86,14 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
 // Rate limiting: DB-backed to survive Edge Function cold starts (same rate_limits
 // table as create-lead), but via the atomic rate_limit_hit() upsert — the
 // read-then-increment pattern loses counts when requests arrive concurrently.
-const RATE_LIMIT = 5 // requests per minute
+const RATE_LIMIT = 5 // public requests per minute per IP
+const AGENT_RATE_LIMIT = 30 // staff uploads per minute per user
 const RATE_WINDOW_SECONDS = 60
 
-async function checkRateLimit(supabase: any, ip: string): Promise<boolean> {
+async function checkRateLimit(supabase: any, key: string, limit: number): Promise<boolean> {
   const { data, error } = await supabase.rpc('rate_limit_hit', {
-    p_key: `rate_check:${ip}`,
-    p_limit: RATE_LIMIT,
+    p_key: key,
+    p_limit: limit,
     p_window_seconds: RATE_WINDOW_SECONDS,
   })
   if (error) {
@@ -435,11 +440,6 @@ Deno.serve(async (req) => {
   const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY')
   const supabase = createClient(supabaseUrl, supabaseKey)
 
-  if (!(await checkRateLimit(supabase, clientIp))) {
-    return jsonResponse({ error: 'Rate limit exceeded' }, 429, corsHeaders)
-  }
-
-  // ── Validate ──
   let body: any
   try {
     body = await req.json()
@@ -447,6 +447,33 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: 'Invalid JSON body' }, 400, corsHeaders)
   }
 
+  // ── Staff upload (Rate Checks inbox): verify the caller and their agency ──
+  let staff: { userId: string; agencyId: string } | null = null
+  if (body?.mode === 'agent') {
+    const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
+    const { data: authData } = token ? await supabase.auth.getUser(token) : { data: { user: null } }
+    const user = authData?.user
+    if (!user) return jsonResponse({ error: 'Unauthorized' }, 401, corsHeaders)
+    let mq = supabase
+      .from('agency_memberships')
+      .select('agency_id')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .in('agency_role', ['owner', 'principal', 'manager', 'producer'])
+    if (body.agency_id) mq = mq.eq('agency_id', body.agency_id)
+    const { data: memberships } = await mq.limit(1)
+    if (!memberships?.length) return jsonResponse({ error: 'Access denied' }, 403, corsHeaders)
+    staff = { userId: user.id, agencyId: memberships[0].agency_id }
+  }
+
+  const limited = staff
+    ? !(await checkRateLimit(supabase, `rate_check_agent:${staff.userId}`, AGENT_RATE_LIMIT))
+    : !(await checkRateLimit(supabase, `rate_check:${clientIp}`, RATE_LIMIT))
+  if (limited) {
+    return jsonResponse({ error: 'Rate limit exceeded' }, 429, corsHeaders)
+  }
+
+  // ── Validate ──
   const phone = String(body.phone || '').replace(/\D/g, '').replace(/^1(\d{10})$/, '$1')
   const zip = String(body.zip || '').trim()
   const mediaType = String(body.media_type || '').toLowerCase()
@@ -456,8 +483,9 @@ Deno.serve(async (req) => {
 
   const errors: string[] = []
   if (phone.length !== 10) errors.push('phone must be a 10-digit US number')
-  if (!/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
-  if (!body.consent_given_at || Number.isNaN(Date.parse(body.consent_given_at))) {
+  // ZIP is optional for staff uploads (an emailed dec page may not need it typed in).
+  if (staff ? (zip && !/^\d{5}$/.test(zip)) : !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
+  if (!staff && (!body.consent_given_at || Number.isNaN(Date.parse(body.consent_given_at)))) {
     errors.push('consent_given_at is required')
   }
   if (!MEDIA_TYPES[mediaType]) errors.push('media_type not allowed')
@@ -476,14 +504,15 @@ Deno.serve(async (req) => {
     utm_content: sanitizeUtm(body.utm_content),
     utm_term: sanitizeUtm(body.utm_term),
   }
-  const consent = {
+  // Staff uploads carry no consumer consent — never record (or overwrite) any.
+  const consent = staff ? {} : {
     consent_given_at: new Date(body.consent_given_at).toISOString(),
     consent_ip: consentIp,
     consent_version: cleanText(body.consent_version, 64),
     consent_user_agent: cleanText(body.consent_user_agent || req.headers.get('user-agent'), 512),
   }
   // Separate, optional opt-in for partner referrals (#5) — never implied by the call/text consent.
-  const referralConsent = body.referral_consent_given_at && !Number.isNaN(Date.parse(body.referral_consent_given_at))
+  const referralConsent = !staff && body.referral_consent_given_at && !Number.isNaN(Date.parse(body.referral_consent_given_at))
     ? {
         referral_consent_given_at: new Date(body.referral_consent_given_at).toISOString(),
         referral_consent_version: cleanText(body.referral_consent_version, 64),
@@ -491,18 +520,17 @@ Deno.serve(async (req) => {
       }
     : {}
   const sessionId = cleanText(body.session_id, 64) || crypto.randomUUID()
-  const landingPage = cleanText(body.landing_page, 512)
+  const landingPage = staff ? 'agent_upload' : cleanText(body.landing_page, 512)
 
   try {
     // ── Resolve agency ──
     // routing: rate checks currently all land on the default agency. When
     // multi-agency Rate Check ships, route here (e.g. by landing domain or
     // routing_rules state/zip, like create-lead's routeLead) before inserting.
-    const { data: defaultAgency } = await supabase
-      .from('agencies')
-      .select('id')
-      .eq('is_default', true)
-      .single()
+    // Staff uploads go to the uploader's own agency.
+    const { data: defaultAgency } = staff
+      ? { data: { id: staff.agencyId } }
+      : await supabase.from('agencies').select('id').eq('is_default', true).single()
     const agencyId = defaultAgency?.id
     if (!agencyId) throw new Error('No default agency configured')
 
@@ -514,7 +542,9 @@ Deno.serve(async (req) => {
         session_id: sessionId,
         first_name: firstName,
         phone,
-        zip,
+        zip: zip || null,
+        upload_source: staff ? 'agent' : 'consumer',
+        uploaded_by: staff?.userId ?? null,
         ...consent,
         ...referralConsent,
         ...sanitizedUtm,
@@ -628,7 +658,7 @@ Deno.serve(async (req) => {
           .from('leads')
           .update({
             ...(firstName ? { first_name: firstName } : {}),
-            zip,
+            ...(zip ? { zip } : {}),
             ...consent,
             ...policyFields,
             ...(existing.status === 'partial' ? { status: 'new' } : {}),
@@ -641,10 +671,10 @@ Deno.serve(async (req) => {
           .from('leads')
           .insert({
             agency_id: agencyId,
-            source: 'rate_check',
+            source: staff ? 'rate_check_agent' : 'rate_check',
             status: 'new',
             state: 'GA',
-            zip,
+            zip: zip || null,
             first_name: firstName,
             phone,
             ...consent,
@@ -677,7 +707,8 @@ Deno.serve(async (req) => {
       .eq('status', 'active')
       .in('agency_role', ['owner', 'principal', 'manager', 'producer'])
 
-    if (members && members.length > 0) {
+    // The uploading agent is already working a staff upload — only notify for consumer uploads.
+    if (!staff && members && members.length > 0) {
       const premiumText = annualPremium != null ? `$${Math.round(annualPremium).toLocaleString('en-US')}/yr` : '$?/yr'
       const message = `${firstName || 'Someone'} · ${carrier || 'Unknown carrier'} ${policyType || 'policy'} · ${premiumText} · ${zip}`
       const uniqueUsers = [...new Set(members.map((m: any) => m.user_id))]

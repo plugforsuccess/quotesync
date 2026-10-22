@@ -3,9 +3,9 @@
 // Agents review Claude's extraction, correct it, enter the Allstate quote, and
 // the outcome (won → call, lost → polite auto-text) is handled by rate-check-outcome.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, Camera, ExternalLink, Handshake, Map as MapIcon, Phone, Users, X } from 'lucide-react';
+import { AlertCircle, Camera, ExternalLink, Handshake, Map as MapIcon, Phone, Upload, Users, X } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import {
@@ -18,6 +18,7 @@ import { thCls, thStyle, inputStyle, money, formatPhone } from './components/rat
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
 import ReferralPartners from './components/rate-checks/ReferralPartners';
 import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
+import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 
 const FILTERS = [
   { value: 'open', label: 'Needs quote', statuses: ['extracted', 'pending', 'extract_failed'] },
@@ -91,11 +92,20 @@ export default function RateChecksPage() {
   // drops it out of the default 'Needs quote' list — the drawer (and its call
   // script) must stay open until the agent closes it.
   const [openRow, setOpenRow] = useState(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [pendingOpenId, setPendingOpenId] = useState(null);
 
   const statuses = FILTERS.find(f => f.value === filter)?.statuses;
   const enabled = features?.has('rate_checks');
   const { data: rows = [], isLoading, error } = useRateChecks(enabled ? agencyId : null, statuses);
   const open = openRow ? (rows.find(r => r.id === openRow.id) || openRow) : null;
+
+  // After a staff upload, open its drawer once the new row arrives in the list.
+  useEffect(() => {
+    if (!pendingOpenId) return;
+    const row = rows.find(r => r.id === pendingOpenId);
+    if (row) { setOpenRow(row); setPendingOpenId(null); }
+  }, [pendingOpenId, rows]);
 
   if (agencyLoading || (agencyId && featuresLoading)) return <PageSpinner />;
 
@@ -117,7 +127,13 @@ export default function RateChecksPage() {
     <div className="dark-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="dark-header rounded-xl mb-6">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
+            <button onClick={() => setUploadOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white">
+              <Upload className="w-4 h-4" /> Upload dec page
+            </button>
+          </div>
           <div className="flex flex-wrap items-center gap-4 mt-1">
             <p style={{ color: 'var(--qs-dim)' }}>Dec pages from insuredbycam.com/ratecheck — enter the Allstate quote to tag won / lost.</p>
             <Link to="/agency/leads" className="text-sm text-primary-600 hover:text-primary-800">← All leads</Link>
@@ -175,7 +191,9 @@ export default function RateChecksPage() {
                           onMouseEnter={e => { e.currentTarget.style.background = 'var(--qs-elevated)'; }}
                           onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
                           <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{formatReceived(r.created_at)}</td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>{r.first_name || '—'}</td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium" style={{ color: 'var(--qs-bright)' }}>{r.first_name || '—'}
+                            {r.upload_source === 'agent' && <span className="ml-1.5 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-subtle)' }}>staff upload</span>}
+                          </td>
                           <td className="px-4 py-3 whitespace-nowrap text-sm">
                             {r.phone ? (
                               <a href={`tel:+1${r.phone}`} onClick={e => e.stopPropagation()} className="inline-flex items-center gap-1 text-primary-600 hover:underline">
@@ -200,6 +218,16 @@ export default function RateChecksPage() {
           </>
         )}
       </div>
+
+      {uploadOpen && (
+        <AgentUploadDialog agencyId={agencyId} onClose={() => setUploadOpen(false)}
+          onCreated={(data) => {
+            setUploadOpen(false);
+            setTab('inbox');
+            setFilter('all');
+            if (data?.rate_check_id) setPendingOpenId(data.rate_check_id);
+          }} />
+      )}
 
       {open && <RateCheckDrawer key={open.id} rc={open} onClose={() => setOpenRow(null)}
         onQuoted={(res) => setOpenRow(r => (r ? { ...r, ...res } : r))} />}

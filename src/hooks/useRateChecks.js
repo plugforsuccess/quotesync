@@ -7,6 +7,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
+import { prepareDecPage } from '../lib/rateCheckApi';
 
 export const RATE_CHECK_LIST_COLUMNS = `
   id, agency_id, lead_id, created_at, first_name, phone, zip, status,
@@ -15,7 +16,7 @@ export const RATE_CHECK_LIST_COLUMNS = `
   image_path, image_media_type, policy_number, policy_number_last4, term_source, effective_date,
   expiration_date, vehicle_count, driver_count, vehicles, coverages,
   insured_address, extracted, quote_note, quoted_at, outcome_at,
-  competitor_agent_id, current_agent, referral_consent_given_at
+  competitor_agent_id, current_agent, referral_consent_given_at, upload_source, consent_given_at
 `;
 
 // Rate checks for an agency, newest first. `statuses` empty/undefined = all.
@@ -234,5 +235,38 @@ export const useCreateReferral = () => {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};
+
+// Staff upload: a dec page a customer emailed/texted in. Runs the same scan via
+// the rate-check function in 'agent' mode (caller's JWT + agency verified
+// server-side). No consumer consent is recorded, so it's never auto-texted.
+export const useAgentUploadDecPage = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ agencyId, file, firstName, phone, zip }) => {
+      const prepared = await prepareDecPage(file);
+      const { data, error } = await supabase.functions.invoke('rate-check', {
+        body: {
+          mode: 'agent',
+          agency_id: agencyId,
+          image_base64: prepared.base64,
+          media_type: prepared.mediaType,
+          first_name: firstName.trim(),
+          phone: phone.replace(/\D/g, ''),
+          zip: zip || '',
+        },
+      });
+      if (error) {
+        let message = error.message;
+        try { message = (await error.context?.json())?.error || message; } catch { /* keep default */ }
+        throw new Error(message);
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads.all() });
+    },
   });
 };
