@@ -4,7 +4,7 @@
 
 import { money, formatPhone } from './ui';
 import {
-  nameCase, addressCase, vehicleTitle, usageFor, vehicleCoverages, lienholderFor, autoCoverageGroups, propertyFacts,
+  caps, insuredName, vehicleTitle, vehicleCoverages, lienholderFor, autoCoverageGroups, propertyFacts,
   homeCoverageRows, endorsementsOf, driverRows, discountsOf,
 } from './policyView';
 
@@ -163,9 +163,9 @@ export function quoteSheet(rc) {
   const x = rc.extracted || {};
   const lines = [];
   const push = (...l) => lines.push(...l);
-  const name = nameCase(x.insured_name) || rc.first_name;
+  const name = insuredName(x.insured_name) || caps(rc.first_name);
   if (name) push(name);
-  if (rc.insured_address) push(addressCase(rc.insured_address));
+  if (rc.insured_address) push(caps(rc.insured_address));
   else if (rc.zip) push(`ZIP ${rc.zip}`);
   if (rc.phone) push(formatPhone(rc.phone));
 
@@ -189,8 +189,7 @@ export function quoteSheet(rc) {
     vehicles.forEach((v, i) => {
       const vin = v.vin ? (v.vin_complete === false ? `VIN ends ${v.vin}` : `VIN ${v.vin}`) : null;
       push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}`);
-      const use = [usageFor(rc, i), v.annual_mileage ? `${v.annual_mileage} mi/yr` : null].filter(Boolean).join(', ');
-      if (use) push(`    Use: ${use}`);
+      if (v.annual_mileage) push(`    ${v.annual_mileage} mi/yr`);
       const own = vehicleCoverages(rc, i);
       if (own.length) push(`    ${own.map(r => `${r.label} ${r.value}`).join(' · ')}`);
       const lien = lienholderFor(rc, i);
@@ -208,10 +207,10 @@ export function quoteSheet(rc) {
     if (p) {
       push('', 'Property:');
       if (p.year_built) push(`  Year built: ${p.year_built}`);
-      if (p.construction) push(`  Construction: ${p.construction}`);
-      if (p.roof_material || p.roof_year) push(`  Roof: ${[p.roof_material, p.roof_year ? `installed ${p.roof_year}` : null].filter(Boolean).join(', ')}`);
+      if (p.construction) push(`  Construction: ${caps(p.construction)}`);
+      if (p.roof_material || p.roof_year) push(`  Roof: ${[caps(p.roof_material), p.roof_year ? `INSTALLED ${p.roof_year}` : null].filter(Boolean).join(', ')}`);
       if (p.square_feet) push(`  Square feet: ${p.square_feet}`);
-      if (p.mortgagee) push(`  Mortgagee: ${p.mortgagee}${p.loan_number ? ` — loan ${p.loan_number}` : ''}`);
+      if (p.mortgagee) push(`  Mortgagee: ${caps(p.mortgagee)}${p.loan_number ? ` — loan ${p.loan_number}` : ''}`);
       if (p.paid_by_mortgagee) push('  Paid from escrow');
     }
     const rows = homeCoverageRows(rc);

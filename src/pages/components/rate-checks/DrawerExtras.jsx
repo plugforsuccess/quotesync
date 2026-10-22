@@ -7,7 +7,7 @@ import { useCompetitorAgents, useReferralPartners, useReferrals, useCreateReferr
 import { OwnershipChip } from './CompetitorAgents';
 import { inputStyle, formatPhone, formatDate } from './ui';
 import { Field } from './Copyable';
-import { addressCase } from './policyView';
+import { caps } from './policyView';
 
 const heading = 'mb-1 text-base font-semibold';
 
@@ -20,7 +20,7 @@ export function CurrentAgentBox({ rc }) {
   const person = stats?.agent_name || a?.agent_name;
   const phone = stats?.phone || a?.phone;
   const email = stats?.email || a?.email;
-  const address = addressCase(stats?.address || a?.address);
+  const address = caps(stats?.address || a?.address);
 
   return (
     <section>

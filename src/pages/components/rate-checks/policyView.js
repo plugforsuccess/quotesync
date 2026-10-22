@@ -1,8 +1,8 @@
 // src/pages/components/rate-checks/policyView.js
 // Turns what the scan stored into what a producer reads and keys into Allstate:
-// money that reads like money ("$250k / $500k"), names in normal case, coverages
+// money that reads like money ("$250k / $500k"), data in capitals, coverages
 // in the order they're quoted, per-vehicle coverages and lienholders on the
-// vehicle they belong to ("’22 Jaguar XF", not "vehicle 002"), home facts and
+// vehicle they belong to ("’22 JAGUAR XF", not "vehicle 002"), home facts and
 // endorsements as their own lists, and short discount tags.
 //
 // Newer scans return these as structured fields. For older scans the same facts
@@ -14,51 +14,36 @@
 
 const hasLower = (s) => /[a-z]/.test(s);
 
-/** "JOCELYN PEARSON" → "Jocelyn Pearson"; leaves mixed-case input alone. */
-export function nameCase(s) {
-  if (!s) return s;
-  const str = String(s).trim();
-  if (hasLower(str)) return str;
-  return str.toLowerCase().replace(/(^|[\s\-'’.])([a-z])/g, (_, p, c) => p + c.toUpperCase())
-    .replace(/\b(Ii|Iii|Iv)\b/g, m => m.toUpperCase())
-    .replace(/\bMc([a-z])/g, (_, c) => `Mc${c.toUpperCase()}`);
+/** Data reads in capitals, the way Allstate's system shows it. */
+export function caps(s) {
+  return s == null || s === '' ? s : String(s).replace(/\s+/g, ' ').trim().toUpperCase();
 }
-
-/** Make/model words: "LAND ROVER" → "Land Rover", but "S550", "XF", "BMW", "F-150" stay. */
-const STATES = new Set(('AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH ' +
-  'OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY PR').split(' '));
 
 /**
- * "255 WALTHAM WAY, FAYETTEVILLE GA 30214" → "255 Waltham Way, Fayetteville GA 30214".
- * The state is always two capitals ("Atlanta, Ga" → "Atlanta, GA"), however the
- * address was typed; street words like "La Vista Rd" are left alone.
+ * Name on policy as first name(s) then last name, in capitals:
+ * "PEARSON, STEPHEN & JOCELYN" → "STEPHEN & JOCELYN PEARSON";
+ * "PEARSON JR, STEPHEN" → "STEPHEN PEARSON JR". Names without a comma are already in that order.
  */
-export function addressCase(s) {
+export function insuredName(s) {
   if (!s) return s;
-  let out = String(s).trim();
-  if (!hasLower(out)) {
-    out = nameCase(out).replace(/\b(Ne|Nw|Se|Sw|Po)\b/g, m => m.toUpperCase());
-  }
-  // A state code sits after a comma or space and is followed by a ZIP or the end.
-  return out.replace(/(^|[\s,])([A-Za-z]{2})(?=,?\s+\d{5}(?:-\d{4})?\b|\s*$)/g,
-    (m, pre, st) => (STATES.has(st.toUpperCase()) ? pre + st.toUpperCase() : m));
-}
-
-export function vehicleWords(s) {
-  if (!s) return s;
-  const str = String(s).trim();
-  if (hasLower(str)) return str;
-  return str.split(/\s+/).map(w => (/\d/.test(w) || w.length <= 3 ? w : w.charAt(0) + w.slice(1).toLowerCase())).join(' ');
+  const str = caps(s);
+  const i = str.indexOf(',');
+  if (i < 0) return str;
+  const last = str.slice(0, i).trim();
+  const first = str.slice(i + 1).replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!first || !last) return str.replace(/,/g, '').trim();
+  const sfx = last.match(/^(.*?)\s+(JR\.?|SR\.?|II|III|IV)$/);
+  return sfx ? `${first} ${sfx[1]} ${sfx[2]}` : `${first} ${last}`;
 }
 
 export function vehicleTitle(v) {
-  return [v?.year, vehicleWords(v?.make), vehicleWords(v?.model)].filter(Boolean).join(' ') || 'Vehicle';
+  return caps([v?.year, v?.make, v?.model].filter(Boolean).join(' ')) || 'VEHICLE';
 }
 
-/** "’15 Mercedes S550" — for referring to a vehicle inside other text. */
+/** "’15 MERCEDES S550" — for referring to a vehicle inside other text. */
 export function vehicleShort(v) {
   const yr = v?.year ? `’${String(v.year).slice(-2)}` : null;
-  return [yr, vehicleWords(v?.make), vehicleWords(v?.model)].filter(Boolean).join(' ') || 'Vehicle';
+  return caps([yr, v?.make, v?.model].filter(Boolean).join(' ')) || 'VEHICLE';
 }
 
 // ── Vehicles referenced by number ("002") ─────────────────────────────────────
@@ -287,20 +272,12 @@ const DRIVERS_HINT = /there appear to be .* named|drivers? listed/i;
 /** Lienholder for a vehicle: the scan's field, else "X listed as creditor for Vehicle 003". */
 export function lienholderFor(rc, index) {
   const v = (rc?.vehicles || [])[index];
-  if (v?.lienholder) return v.lienholder;
+  if (v?.lienholder) return caps(v.lienholder);
   for (const s of noteSentences(rc?.extracted?.notes)) {
     const m = s.match(LIEN);
-    if (m && vehicleIndexesIn(m[2], rc.vehicles).includes(index)) return m[1].replace(/^(?:and|also)\s+/i, '').trim();
+    if (m && vehicleIndexesIn(m[2], rc.vehicles).includes(index)) return caps(m[1].replace(/^(?:and|also)\s+/i, ''));
   }
   return null;
-}
-
-/** Usage for a vehicle: the scan's field, else "Usage is stated as … for all vehicles". */
-export function usageFor(rc, index) {
-  const v = (rc?.vehicles || [])[index];
-  if (v?.usage) return v.usage;
-  const m = String(rc?.extracted?.notes || '').match(USAGE);
-  return m ? m[1].trim() : null;
 }
 
 /** { year_built, construction, roof_material, roof_year, mortgagee, loan_number, paid_by_mortgagee, … } */
@@ -314,14 +291,10 @@ export function propertyFacts(rc) {
   p.roof_material ??= pick(/roof material(?: is|:)?\s+([^,.;]+)/i);
   p.roof_year ??= year(/roof (?:year|installed|replaced)[:\s]+(\d{4})/i);
   const mort = notes.match(/mortgage(?:e)? (?:is |held by |:)\s*(.+?)(?:\s+with loan (?:number|#)\s*([\w-]+))?\./i);
-  p.mortgagee ??= mort ? nameCaseCompany(mort[1]) : null;
+  p.mortgagee ??= mort ? caps(mort[1]) : null;
   p.loan_number ??= mort?.[2] || null;
   if (p.paid_by_mortgagee == null && /paid by (?:the )?mortgagee|escrow/i.test(notes)) p.paid_by_mortgagee = true;
   return Object.values(p).some(v => v != null && v !== '') ? p : null;
-}
-
-function nameCaseCompany(s) {
-  return hasLower(s) ? s.trim() : s.trim().split(/\s+/).map(w => (/^(LLC|NA|FSB|USA|N\.A\.)$/i.test(w) ? w.toUpperCase() : /^(INC|CO|CORP)\.?$/i.test(w) ? w.charAt(0) + w.slice(1).toLowerCase() : w.charAt(0) + w.slice(1).toLowerCase())).join(' ');
 }
 
 /** [{ code, name, limit }] — the scan's list, else parsed from "endorsements including A, B, and C". */
@@ -374,7 +347,7 @@ const byAgeDesc = (a, b) => (b.age ?? -1) - (a.age ?? -1);
  * one is the insured. Two people with one name are told apart by age.
  */
 export function driverRows(rc) {
-  const list = (Array.isArray(rc?.drivers) ? rc.drivers : []).map((d, i) => ({ ...d, i, display: nameCase(d.name) || 'Driver' }));
+  const list = (Array.isArray(rc?.drivers) ? rc.drivers : []).map((d, i) => ({ ...d, i, display: caps(d.name) || 'DRIVER' }));
   const [insuredFirst, spouseFirst] = insuredFirstNames(rc?.extracted?.insured_name);
   const pick = (pred) => list.filter(d => !d.role && pred(d)).sort(byAgeDesc)[0];
   const insured = insuredFirst ? pick(d => firstName(d.display) === insuredFirst) : null;
@@ -391,7 +364,7 @@ export function driverRows(rc) {
     display: d.display,
     role: d.role || null,
     age: d.age ?? null,
-    status: d.status ? nameCase(d.status) : null,
+    status: d.status ? caps(d.status) : null,
     usage: d.usage || null,
     young: d.age != null && d.age < 25,
     excluded: /exclud/i.test(d.status || ''),

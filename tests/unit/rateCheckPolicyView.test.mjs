@@ -4,8 +4,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  nameCase, addressCase, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, usageFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames,
+  caps, insuredName, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
+  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -35,18 +35,15 @@ const home = {
   },
 };
 
-test('names and vehicles read in normal case', () => {
-  assert.equal(nameCase('JOCELYN PEARSON'), 'Jocelyn Pearson');
-  assert.equal(nameCase("MARY O'NEIL-SMITH"), "Mary O'Neil-Smith");
-  assert.equal(addressCase('255 WALTHAM WAY, FAYETTEVILLE GA 30214-3536'), '255 Waltham Way, Fayetteville GA 30214-3536');
-  assert.equal(addressCase('88 RIDGE RD NW, ATLANTA, GA 30327'), '88 Ridge Rd NW, Atlanta, GA 30327');
-  assert.equal(addressCase('10 Main St, Lawrenceville Ga 30044'), '10 Main St, Lawrenceville GA 30044');
-  assert.equal(addressCase('10 Main St, Lawrenceville, ga'), '10 Main St, Lawrenceville, GA');
-  assert.equal(addressCase('3100 LA VISTA RD, DECATUR GA 30033'), '3100 La Vista Rd, Decatur GA 30033');
-  assert.equal(addressCase('200 Oak Rd, Snellville GA'), '200 Oak Rd, Snellville GA');
-  assert.equal(vehicleTitle(auto.vehicles[0]), '2015 Mercedes S550');
-  assert.equal(vehicleTitle(auto.vehicles[2]), '2021 Land Rover Velar');
-  assert.equal(vehicleShort(auto.vehicles[1]), '’22 Jaguar XF');
+test('data reads in capitals; name on policy is first name then last name', () => {
+  assert.equal(insuredName('PEARSON, STEPHEN & JOCELYN'), 'STEPHEN & JOCELYN PEARSON');
+  assert.equal(insuredName('Pearson, Stephen J'), 'STEPHEN J PEARSON');
+  assert.equal(insuredName('PEARSON JR, STEPHEN'), 'STEPHEN PEARSON JR');
+  assert.equal(insuredName('Keisha T. Example'), 'KEISHA T. EXAMPLE');
+  assert.equal(caps('255 Waltham Way,  Fayetteville Ga 30214'), '255 WALTHAM WAY, FAYETTEVILLE GA 30214');
+  assert.equal(vehicleTitle(auto.vehicles[0]), '2015 MERCEDES S550');
+  assert.equal(vehicleTitle({ year: 2021, make: 'Land Rover', model: 'Velar' }), '2021 LAND ROVER VELAR');
+  assert.equal(vehicleShort(auto.vehicles[1]), '’22 JAGUAR XF');
 });
 
 test('limits read like money', () => {
@@ -81,19 +78,18 @@ test('drivers: named insured, spouse, then the rest oldest to youngest', () => {
     extracted: { insured_name: 'DANA REYES' },
     drivers: [{ name: 'MAYA REYES', age: 16 }, { name: 'LUIS REYES', age: 44, status: 'Spouse' }, { name: 'ANA REYES', age: 19 }, { name: 'DANA REYES', age: 45 }],
   };
-  assert.deepEqual(driverRows(fam).map(d => d.name), ['Dana Reyes', 'Luis Reyes', 'Ana Reyes', 'Maya Reyes']);
+  assert.deepEqual(driverRows(fam).map(d => d.name), ['DANA REYES', 'LUIS REYES', 'ANA REYES', 'MAYA REYES']);
   // No name on the policy: oldest first.
   assert.deepEqual(driverRows({ drivers: fam.drivers }).map(d => d.age), [45, 44, 19, 16]);
 });
 
-test('lienholder and usage land on the right vehicle', () => {
+test('lienholder lands on the right vehicle', () => {
   assert.equal(lienholderFor(auto, 0), null);
-  assert.equal(lienholderFor(auto, 2), 'TD Auto Finance');
-  assert.equal(usageFor(auto, 1), 'To work, school, or pleasure');
+  assert.equal(lienholderFor(auto, 2), 'TD AUTO FINANCE');
 });
 
 test('drivers with the same name are told apart; discounts are short tags', () => {
-  assert.deepEqual(driverRows(auto).map(d => d.name), ['Stephen Pearson (60)', 'Jocelyn Pearson', 'Stephen Pearson (22)']);
+  assert.deepEqual(driverRows(auto).map(d => d.name), ['STEPHEN PEARSON (60)', 'JOCELYN PEARSON', 'STEPHEN PEARSON (22)']);
   assert.deepEqual(driverRows(auto).map(d => d.role), ['insured', 'spouse', null]);
   assert.equal(driverRows(auto)[2].young, true);
   assert.deepEqual(discountsOf(auto), ['Multicar', 'Multiple Lines', 'Vehicle Safety', 'Tenure 2 yrs', 'Accident Free 2 yrs', 'Good Student']);
@@ -108,9 +104,9 @@ test('home: coverages A–F, % deductible, property facts and endorsements', () 
   assert.equal(homeCoverageRows(home).find(r => r.key === 'deductible').note, '1% of dwelling');
   const p = propertyFacts(home);
   assert.equal(p.year_built, 2023);
-  assert.equal(p.construction, 'Masonry Veneer');
+  assert.equal(p.construction, 'Masonry Veneer'); // shown in capitals by the sheet
   assert.equal(p.roof_material, 'Composition Shingle');
-  assert.equal(p.mortgagee, 'Select Portfolio Servicing Inc');
+  assert.equal(p.mortgagee, 'SELECT PORTFOLIO SERVICING INC');
   assert.equal(p.loan_number, '0031397854');
   assert.equal(p.paid_by_mortgagee, true);
   const e = endorsementsOf(home);

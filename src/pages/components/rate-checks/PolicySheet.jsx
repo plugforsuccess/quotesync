@@ -11,8 +11,8 @@ import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
-  autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, usageFor, propertyFacts, endorsementsOf,
-  driverRows, discountsOf, headsUp, vehicleTitle, vehicleWords, nameCase, addressCase,
+  autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
+  driverRows, discountsOf, headsUp, vehicleTitle, caps, insuredName,
 } from './policyView';
 
 const AUTO = ['auto', 'commercial_auto'];
@@ -56,7 +56,7 @@ function VehicleCard({ rc, v, index }) {
   const vin = v.vin ? (v.vin_complete === false ? `…${v.vin}` : v.vin) : (v.vin_last4 ? `…${v.vin_last4}` : null);
   const vinWarn = v.vin_complete === false ? 'Only part of the VIN is on the page'
     : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo' : null;
-  const usage = [usageFor(rc, index), v.annual_mileage ? `${Number(v.annual_mileage).toLocaleString('en-US')} mi/yr` : null].filter(Boolean).join(' · ');
+  const miles = v.annual_mileage ? `${Number(v.annual_mileage).toLocaleString('en-US')} mi/yr` : null;
   const own = vehicleCoverages(rc, index);
   const lien = lienholderFor(rc, index);
   return (
@@ -71,7 +71,7 @@ function VehicleCard({ rc, v, index }) {
         )}
       </div>
       {vinWarn && <p className="text-xs text-yellow-600">{vinWarn}</p>}
-      {usage && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{usage}</p>}
+      {miles && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{miles}</p>}
       {own.length > 0 && (
         <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
           {own.map(r => `${r.label} ${r.value}`).join(' · ')}
@@ -96,14 +96,14 @@ export default function PolicySheet({ rc, warning }) {
   const discounts = discountsOf(rc);
   const record = [...(rc.surcharges || []), ...(rc.claims || [])];
   const termHint = TERM_HINT[rc.term_source];
-  const insured = nameCase(x.insured_name);
+  const insured = insuredName(x.insured_name);
 
   return (
     <div className="space-y-6">
       <Section title="Insured">
         <dl>
           <Field label="Name on policy" value={insured} copy />
-          <Field label="Address" value={rc.insured_address ? addressCase(rc.insured_address) : (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address ? addressCase(rc.insured_address) : rc.zip} />
+          <Field label="Address" value={rc.insured_address ? caps(rc.insured_address) : (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address ? caps(rc.insured_address) : rc.zip} />
           {rc.housing_situation && <Field label="Lives" value={HOUSING_LABEL[rc.housing_situation] || rc.housing_situation} />}
         </dl>
       </Section>
@@ -195,16 +195,16 @@ function SummarySection({ rc, warning }) {
 function PropertySection({ rc }) {
   const p = propertyFacts(rc);
   if (!p) return null;
-  const roof = [p.roof_material ? vehicleWords(p.roof_material) : null, p.roof_year ? `installed ${p.roof_year}` : null].filter(Boolean).join(', ');
+  const roof = [caps(p.roof_material), p.roof_year ? `INSTALLED ${p.roof_year}` : null].filter(Boolean).join(', ');
   return (
     <Section title="Property">
       <dl>
         {p.year_built && <Field label="Year built" value={String(p.year_built)} />}
-        {p.construction && <Field label="Construction" value={vehicleWords(p.construction)} />}
+        {p.construction && <Field label="Construction" value={caps(p.construction)} />}
         {roof && <Field label="Roof" value={roof} />}
         {p.square_feet && <Field label="Square feet" value={Number(p.square_feet).toLocaleString('en-US')} />}
         {p.stories && <Field label="Stories" value={String(p.stories)} />}
-        {p.mortgagee && <Field label="Mortgagee" value={p.mortgagee} copy />}
+        {p.mortgagee && <Field label="Mortgagee" value={caps(p.mortgagee)} copy />}
         {p.loan_number && <Field label="Loan number" value={p.loan_number} copy mono />}
         {p.paid_by_mortgagee != null && <Field label="Paid by" value={p.paid_by_mortgagee ? 'Mortgage company (escrow)' : 'Customer'} />}
       </dl>
