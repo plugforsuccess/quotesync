@@ -9,6 +9,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
+import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
@@ -46,7 +47,7 @@ function Rows({ rows }) {
   return (
     <dl>
       {rows.map(r => (
-        <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} wide />
+        <Field key={r.key || r.label} label={r.label} value={r.value} hint={r.note || undefined} addOn={r.addOn} wide />
       ))}
     </dl>
   );
@@ -73,9 +74,13 @@ function VehicleCard({ rc, v, index }) {
       {vinWarn && <p className="text-xs text-yellow-600">{vinWarn}</p>}
       {miles && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{miles}</p>}
       {own.length > 0 && (
-        <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
-          {own.map(r => `${r.label} ${r.value}`).join(' · ')}
-        </p>
+        <div className="mt-1.5 flex flex-wrap gap-1.5 text-sm">
+          {own.map(r => (
+            <span key={r.key} className={r.addOn ? ADD_ON_CLS : 'inline-block'} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
+              {r.label} {r.value}
+            </span>
+          ))}
+        </div>
       )}
       {lien && (
         <p className="mt-1 flex items-center gap-1 text-sm" style={{ color: 'var(--qs-text)' }}>
@@ -98,8 +103,18 @@ export default function PolicySheet({ rc, warning }) {
   const termHint = TERM_HINT[rc.term_source];
   const insured = insuredName(x.insured_name);
 
+  const hasAddOns = endorsementsOf(rc).length > 0
+    || vehicles.some((_, i) => vehicleCoverages(rc, i).some(r => r.addOn))
+    || (isAuto && autoCoverageGroups(rc).some(g => g.rows.some(r => r.addOn)));
+
   return (
     <div className="space-y-6">
+      {hasAddOns && (
+        <p className="-mt-1 flex items-center gap-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+          <span className={ADD_ON_CLS} style={ADD_ON_STYLE}>Yellow</span>
+          Add-ons and endorsements — quote them the same, or the price won&apos;t compare.
+        </p>
+      )}
       <Section title="Insured">
         <dl>
           <Field label="Name on policy" value={insured} copy />
@@ -221,10 +236,10 @@ function EndorsementsSection({ rc }) {
         {list.map((e, i) => (
           <li key={i} className="flex items-start justify-between gap-3 py-2 text-sm" style={{ borderTop: '1px solid var(--qs-border)' }}>
             <span>
-              <span style={{ color: 'var(--qs-bright)' }}>{e.name}</span>
+              <span className="font-semibold" style={{ color: 'var(--qs-warning)' }}>{e.name}</span>
               {e.code && <span className="ml-1.5 font-mono text-xs" style={{ color: 'var(--qs-subtle)' }}>{e.code}</span>}
             </span>
-            {e.limit && <span className="shrink-0 text-right" style={{ color: 'var(--qs-bright)' }}>{e.limit}</span>}
+            {e.limit && <span className="shrink-0 text-right font-semibold" style={{ color: 'var(--qs-bright)' }}>{e.limit}</span>}
           </li>
         ))}
       </ul>

@@ -66,7 +66,8 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
   assert.deepEqual(vehicleCoverages(auto, 0), []);
-  assert.deepEqual(vehicleCoverages(auto, 1).map(r => [r.label, r.value]), [['Rental', '$50/day · $1,500 max']]);
+  assert.deepEqual(vehicleCoverages(auto, 1).map(r => [r.label, r.value, r.addOn]), [['Rental', '$50/day · $1,500 max', true]]);
+  assert.deepEqual(every.rows.map(r => r.addOn), [false, false, true]); // roadside is an add-on
   assert.equal(vehicleCoverages(auto, 2).length, 1);
 });
 

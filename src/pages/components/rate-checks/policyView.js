@@ -150,7 +150,8 @@ const NAMES = {
   bi: 'Bodily injury', bi_per_person: 'Bodily injury (per person)', bi_per_accident: 'Bodily injury (per accident)',
   pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist (property)', med_pay: 'Medical payments',
   pip: 'Personal injury protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
-  rental: 'Rental', roadside: 'Roadside',
+  rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
+  custom_equipment: 'Custom equipment', sound_equipment: 'Sound equipment', glass: 'Glass',
   dwelling: 'Dwelling (A)', other_structures: 'Other structures (B)', personal_property: 'Personal property (C)',
   loss_of_use: 'Loss of use (D)', liability: 'Personal liability (E)', home_med_pay: 'Medical payments (F)',
   deductible: 'Deductible', wind_hail_deductible: 'Wind / hail deductible', hurricane_deductible: 'Hurricane deductible',
@@ -167,9 +168,14 @@ const AUTO_LIABILITY = ['pd', 'um_uim', 'umpd', 'med_pay', 'pip'];
 const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside'];
 const HOME_ORDER = ['dwelling', 'other_structures', 'personal_property', 'loss_of_use', 'liability', 'med_pay', 'deductible', 'wind_hail_deductible', 'hurricane_deductible'];
 
+// Optional add-ons: easy to leave off an Allstate quote, which makes the price look
+// better than it is. The sheet shows these (and every endorsement) in yellow.
+export const ADD_ONS = new Set(['rental', 'roadside', 'towing', 'gap', 'loan_lease', 'rideshare', 'custom_equipment', 'sound_equipment', 'glass']);
+export const isAddOn = (key) => ADD_ONS.has(key) || /rental|roadside|towing|gap|rideshare|custom|glass|loan.?lease/i.test(String(key || ''));
+
 function row(key, raw, vehicles, label) {
   const f = formatCoverage(raw, key, vehicles);
-  return f ? { key, label: label || coverageName(key), value: f.value, note: f.note } : null;
+  return f ? { key, label: label || coverageName(key), value: f.value, note: f.note, addOn: isAddOn(key) } : null;
 }
 
 /**

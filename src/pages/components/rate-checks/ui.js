@@ -29,3 +29,7 @@ export const BOOK_OWNERSHIP = {
   not_acquirable: { label: 'Carrier owns it', cls: 'bg-gray-200 text-gray-600', hint: 'Can’t be bought — you could recruit the agent instead' },
   check:          { label: 'Not sure',        cls: 'bg-yellow-100 text-yellow-700', hint: 'Depends on the agent’s contract — confirm first' },
 };
+
+// Add-ons and endorsements the producer must match on the quote (rental, roadside, every endorsement).
+export const ADD_ON_CLS = 'inline-block rounded-md px-1.5 py-0.5 font-semibold';
+export const ADD_ON_STYLE = { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' };
