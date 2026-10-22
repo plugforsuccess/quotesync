@@ -10,6 +10,7 @@ import { useCompetitorAgents, useUpdateCompetitorAgent } from '../../../hooks/us
 import { thCls, thStyle, inputStyle, money, formatPhone, formatDate, BOOK_OWNERSHIP } from './ui';
 import { isSelectingText } from './format';
 import { Field } from './Copyable';
+import { addressCase } from './policyView';
 
 export function OwnershipChip({ value }) {
   const o = BOOK_OWNERSHIP[value] || BOOK_OWNERSHIP.check;
@@ -139,7 +140,7 @@ function FragmentRow({ r, open, onToggle, update }) {
                   {r.agency_name && r.agent_name && <Field label="Agent" value={r.agent_name} />}
                   <Field label="Phone" value={r.phone ? formatPhone(r.phone) : null} copy />
                   {r.email && <Field label="Email" value={r.email} copy />}
-                  {r.address && <Field label="Address" value={r.address} copy />}
+                  {r.address && <Field label="Address" value={addressCase(r.address)} copy />}
                   {r.agent_code && <Field label="Agent code" value={r.agent_code} copy mono />}
                 </dl>
                 <p className="mt-2" style={{ color: 'var(--qs-subtle)' }}>

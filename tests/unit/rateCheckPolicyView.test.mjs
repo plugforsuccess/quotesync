@@ -39,6 +39,10 @@ test('names and vehicles read in normal case', () => {
   assert.equal(nameCase("MARY O'NEIL-SMITH"), "Mary O'Neil-Smith");
   assert.equal(addressCase('255 WALTHAM WAY, FAYETTEVILLE GA 30214-3536'), '255 Waltham Way, Fayetteville GA 30214-3536');
   assert.equal(addressCase('88 RIDGE RD NW, ATLANTA, GA 30327'), '88 Ridge Rd NW, Atlanta, GA 30327');
+  assert.equal(addressCase('10 Main St, Lawrenceville Ga 30044'), '10 Main St, Lawrenceville GA 30044');
+  assert.equal(addressCase('10 Main St, Lawrenceville, ga'), '10 Main St, Lawrenceville, GA');
+  assert.equal(addressCase('3100 LA VISTA RD, DECATUR GA 30033'), '3100 La Vista Rd, Decatur GA 30033');
+  assert.equal(addressCase('200 Oak Rd, Snellville GA'), '200 Oak Rd, Snellville GA');
   assert.equal(vehicleTitle(auto.vehicles[0]), '2015 Mercedes S550');
   assert.equal(vehicleTitle(auto.vehicles[2]), '2021 Land Rover Velar');
   assert.equal(vehicleShort(auto.vehicles[1]), '’22 Jaguar XF');

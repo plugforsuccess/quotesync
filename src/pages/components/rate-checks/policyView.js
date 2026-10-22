@@ -25,12 +25,23 @@ export function nameCase(s) {
 }
 
 /** Make/model words: "LAND ROVER" → "Land Rover", but "S550", "XF", "BMW", "F-150" stay. */
-/** "255 WALTHAM WAY, FAYETTEVILLE GA 30214" → "255 Waltham Way, Fayetteville GA 30214". */
+const STATES = new Set(('AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH ' +
+  'OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY PR').split(' '));
+
+/**
+ * "255 WALTHAM WAY, FAYETTEVILLE GA 30214" → "255 Waltham Way, Fayetteville GA 30214".
+ * The state is always two capitals ("Atlanta, Ga" → "Atlanta, GA"), however the
+ * address was typed; street words like "La Vista Rd" are left alone.
+ */
 export function addressCase(s) {
-  if (!s || hasLower(String(s))) return s;
-  return nameCase(s)
-    .replace(/\b([A-Z][a-z])(?=,?\s+\d{5})/g, m => m.toUpperCase())
-    .replace(/\b(Ne|Nw|Se|Sw|Po|Apt|Ste)\b/g, m => (m.length === 2 ? m.toUpperCase() : m));
+  if (!s) return s;
+  let out = String(s).trim();
+  if (!hasLower(out)) {
+    out = nameCase(out).replace(/\b(Ne|Nw|Se|Sw|Po)\b/g, m => m.toUpperCase());
+  }
+  // A state code sits after a comma or space and is followed by a ZIP or the end.
+  return out.replace(/(^|[\s,])([A-Za-z]{2})(?=,?\s+\d{5}(?:-\d{4})?\b|\s*$)/g,
+    (m, pre, st) => (STATES.has(st.toUpperCase()) ? pre + st.toUpperCase() : m));
 }
 
 export function vehicleWords(s) {
