@@ -1,8 +1,9 @@
 // src/pages/components/rate-checks/PolicySheet.jsx
 // The scanned policy laid out the way a producer keys it into Allstate:
-// who's insured → drivers → vehicles (each with its own coverages and
-// lienholder) → liability → discounts; or for a home: property → coverages
-// A–F → endorsements → discounts. Current-policy reference sits last.
+// who's insured → current policy (prior carrier, expiration, premium) →
+// drivers → vehicles (each with its own coverages and lienholder) →
+// liability → discounts; or for a home: property → coverages A–F →
+// endorsements → discounts. A short summary closes the sheet.
 // All formatting lives in policyView.js.
 
 import { AlertTriangle } from 'lucide-react';
@@ -107,6 +108,15 @@ export default function PolicySheet({ rc, warning }) {
         </dl>
       </Section>
 
+      <Section title="Current policy">
+        <dl>
+          <Field label="Carrier" value={carrierLabel(rc)} />
+          <Field label="Policy number" value={rc.policy_number} copy mono />
+          <Field label="Policy period" value={policyPeriod(rc)} />
+          <Field label="Premium" value={termPrice(rc)} hint={termHint?.text} hintTone={termHint?.tone} />
+        </dl>
+      </Section>
+
       {isAuto && drivers.length > 0 && (
         <Section title={`Drivers · ${drivers.length}`}>
           <dl>
@@ -154,15 +164,6 @@ export default function PolicySheet({ rc, warning }) {
       )}
 
       <SummarySection rc={rc} warning={warning} />
-
-      <Section title="Current policy">
-        <dl>
-          <Field label="Carrier" value={carrierLabel(rc)} />
-          <Field label="Policy number" value={rc.policy_number} copy mono />
-          <Field label="Policy period" value={policyPeriod(rc)} />
-          <Field label="Premium" value={termPrice(rc)} hint={termHint?.text} hintTone={termHint?.tone} />
-        </dl>
-      </Section>
 
       {x.notes && (
         <details className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
