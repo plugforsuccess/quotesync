@@ -14,7 +14,8 @@ export const RATE_CHECK_LIST_COLUMNS = `
   allstate_premium, delta, delta_pct, extract_confidence, extract_error,
   image_path, image_media_type, policy_number, policy_number_last4, term_source, effective_date,
   expiration_date, vehicle_count, driver_count, vehicles, coverages,
-  insured_address, extracted, quote_note, quoted_at, outcome_at
+  insured_address, extracted, quote_note, quoted_at, outcome_at,
+  competitor_agent_id, current_agent, referral_consent_given_at
 `;
 
 // Rate checks for an agency, newest first. `statuses` empty/undefined = all.
@@ -136,3 +137,102 @@ export function annualize(premium, termMonths) {
   const t = Number(termMonths);
   return t > 0 ? Math.round(p * (12 / t) * 100) / 100 : p;
 }
+
+// ── Competing agents (internal market intel) ─────────────────────────────────
+
+export const useCompetitorAgents = (agencyId) => {
+  return useQuery({
+    queryKey: queryKeys.rateChecks.competitors(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('competitor_agent_stats')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('rate_checks', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+};
+
+// Agents can only change the watchlist fields (column grants enforce this).
+export const useUpdateCompetitorAgent = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, updates }) => {
+      const allowed = {};
+      for (const k of ['starred', 'notes', 'book_ownership']) if (k in updates) allowed[k] = updates[k];
+      const { error } = await supabase
+        .from('competitor_agents')
+        .update({ ...allowed, updated_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};
+
+// ── Referral partners + referrals (customer opt-in only) ─────────────────────
+
+export const useReferralPartners = (agencyId) => {
+  return useQuery({
+    queryKey: queryKeys.rateChecks.partners(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('referral_partners')
+        .select('id, name, contact_name, phone, email, lines, notes, active, created_at')
+        .eq('agency_id', agencyId)
+        .order('active', { ascending: false })
+        .order('name');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+};
+
+export const useSaveReferralPartner = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, agencyId, values }) => {
+      const row = { ...values, updated_at: new Date().toISOString() };
+      const { error } = id
+        ? await supabase.from('referral_partners').update(row).eq('id', id)
+        : await supabase.from('referral_partners').insert({ ...row, agency_id: agencyId });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};
+
+export const useReferrals = (rateCheckId) => {
+  return useQuery({
+    queryKey: queryKeys.rateChecks.referrals(rateCheckId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('referrals')
+        .select('id, line, note, created_at, referral_partners(name)')
+        .eq('rate_check_id', rateCheckId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!rateCheckId,
+  });
+};
+
+// The DB trigger rejects this unless the customer opted in to referrals.
+export const useCreateReferral = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ agencyId, rateCheckId, leadId, partnerId, line, note }) => {
+      const { error } = await supabase.from('referrals').insert({
+        agency_id: agencyId, rate_check_id: rateCheckId, lead_id: leadId || null,
+        partner_id: partnerId, line: line || null, note: note || null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};

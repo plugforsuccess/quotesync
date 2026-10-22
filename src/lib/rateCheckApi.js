@@ -10,6 +10,8 @@ const RATE_CHECK_URL = import.meta.env.VITE_SUPABASE_URL
   : '/functions/v1/rate-check';
 
 export const RATE_CHECK_CONSENT_VERSION = 'ratecheck-v1';
+// Separate, optional opt-in for partner referrals — never bundled with the call/text consent.
+export const RATE_CHECK_REFERRAL_CONSENT_VERSION = 'ratecheck-referral-v1';
 
 const DOWNSCALE_OVER_BYTES = 2 * 1024 * 1024;
 const MAX_LONG_EDGE = 1600;
@@ -101,7 +103,7 @@ export async function prepareDecPage(file) {
  * POST the dec page + contact + consent to the rate-check edge function.
  * Resolves to { status, rate_check_id, carrier, policy_type, annual_premium }.
  */
-export async function submitRateCheck({ prepared, firstName, phone, zip, consentGivenAt }) {
+export async function submitRateCheck({ prepared, firstName, phone, zip, consentGivenAt, referralConsentGivenAt = null }) {
   const utm = getUtmParams();
   const res = await fetch(RATE_CHECK_URL, {
     method: 'POST',
@@ -118,6 +120,10 @@ export async function submitRateCheck({ prepared, firstName, phone, zip, consent
       consent_given_at: consentGivenAt,
       consent_version: RATE_CHECK_CONSENT_VERSION,
       consent_user_agent: navigator.userAgent,
+      ...(referralConsentGivenAt ? {
+        referral_consent_given_at: referralConsentGivenAt,
+        referral_consent_version: RATE_CHECK_REFERRAL_CONSENT_VERSION,
+      } : {}),
       session_id: getSessionId(),
       landing_page: window.location.pathname,
       utm_source: utm.utm_source,

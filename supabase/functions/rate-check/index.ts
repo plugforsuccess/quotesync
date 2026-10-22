@@ -150,6 +150,19 @@ const EXTRACTION_TOOL = {
         },
       },
       driver_count: nullable('integer'),
+      current_agent: {
+        type: ['object', 'null'],
+        description: 'The servicing agent / agency block printed on the page (often labelled Agent, Your Agent, Producer or Agency). Null if none is printed.',
+        properties: {
+          agent_name: nullable('string', { description: 'Individual agent name.' }),
+          agency_name: nullable('string', { description: 'Agency / business name.' }),
+          phone: nullable('string'),
+          email: nullable('string'),
+          address: nullable('string'),
+          agent_code: nullable('string', { description: 'Agent / producer code or number, if printed.' }),
+        },
+        required: ['agent_name', 'agency_name', 'phone', 'email', 'address', 'agent_code'],
+      },
       coverages: {
         type: 'object',
         description:
@@ -164,7 +177,7 @@ const EXTRACTION_TOOL = {
     required: [
       'carrier', 'carrier_raw', 'policy_type', 'policy_number', 'premium', 'term_months',
       'effective_date', 'expiration_date', 'insured_name', 'insured_address', 'vehicles',
-      'driver_count', 'coverages', 'discounts', 'confidence', 'notes',
+      'driver_count', 'current_agent', 'coverages', 'discounts', 'confidence', 'notes',
     ],
   },
 }
@@ -175,6 +188,7 @@ const INSTRUCTION =
   'character for character. Auto policies run 6 or 12 months depending on the carrier, so read the ' +
   'policy period carefully: report term_months 6 or 12 only when the page says so or the effective and ' +
   'expiration dates show it, and report the premium for that whole term (not a monthly installment). ' +
+  'Record the servicing agent or agency block exactly as printed, if there is one. ' +
   'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
 
 async function extractDecPage(apiKey: string, base64: string, mediaType: string) {
@@ -355,8 +369,22 @@ function flatten(x: any) {
     vehicles,
     coverages: x.coverages && typeof x.coverages === 'object' ? x.coverages : null,
     insured_address: cleanText(x.insured_address, 500),
+    current_agent: cleanAgent(x.current_agent),
     extract_confidence: confidence,
   }
+}
+
+function cleanAgent(a: any) {
+  if (!a || typeof a !== 'object') return null
+  const out = {
+    agent_name: cleanText(a.agent_name, 120),
+    agency_name: cleanText(a.agency_name, 160),
+    phone: cleanText(a.phone, 40),
+    email: cleanText(a.email, 160),
+    address: cleanText(a.address, 300),
+    agent_code: cleanText(a.agent_code, 40),
+  }
+  return Object.values(out).some(Boolean) ? out : null
 }
 
 // ── Lead mapping ─────────────────────────────────────────────────────────────
@@ -454,6 +482,14 @@ Deno.serve(async (req) => {
     consent_version: cleanText(body.consent_version, 64),
     consent_user_agent: cleanText(body.consent_user_agent || req.headers.get('user-agent'), 512),
   }
+  // Separate, optional opt-in for partner referrals (#5) — never implied by the call/text consent.
+  const referralConsent = body.referral_consent_given_at && !Number.isNaN(Date.parse(body.referral_consent_given_at))
+    ? {
+        referral_consent_given_at: new Date(body.referral_consent_given_at).toISOString(),
+        referral_consent_version: cleanText(body.referral_consent_version, 64),
+        referral_consent_ip: consentIp,
+      }
+    : {}
   const sessionId = cleanText(body.session_id, 64) || crypto.randomUUID()
   const landingPage = cleanText(body.landing_page, 512)
 
@@ -480,6 +516,7 @@ Deno.serve(async (req) => {
         phone,
         zip,
         ...consent,
+        ...referralConsent,
         ...sanitizedUtm,
         landing_page: landingPage,
         status: 'pending',
@@ -529,6 +566,20 @@ Deno.serve(async (req) => {
         })
         .eq('id', rateCheckId)
       if (updErr) throw updErr
+
+      // Competing-agent intel (internal only): match/create the agent and link it.
+      if (flat.current_agent) {
+        const ca = flat.current_agent
+        const { data: competitorId, error: caErr } = await supabase.rpc('upsert_competitor_agent', {
+          p_agency_id: agencyId, p_carrier: flat.carrier, p_agent_name: ca.agent_name,
+          p_agency_name: ca.agency_name, p_phone: ca.phone, p_email: ca.email,
+          p_address: ca.address, p_agent_code: ca.agent_code,
+        })
+        if (caErr) console.error('[RATE_CHECK] competitor agent upsert failed:', caErr.message)
+        else if (competitorId) {
+          await supabase.from('rate_checks').update({ competitor_agent_id: competitorId }).eq('id', rateCheckId)
+        }
+      }
     } catch (e) {
       extractError = (e as Error).message || 'Extraction failed'
       console.error('[RATE_CHECK] Extraction failed:', extractError)

@@ -77,7 +77,9 @@ test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page
   await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
   await page.getByLabel('ZIP code').fill('30094');
   await expect(submit).toBeDisabled(); // consent still unchecked
-  await page.getByRole('checkbox').check();
+  // First checkbox = required call/text consent; second = optional partner referral (left unchecked).
+  await page.getByRole('checkbox').nth(0).check();
+  await expect(page.getByRole('checkbox').nth(1)).not.toBeChecked();
 
   const started = Date.now();
   await submit.click();
@@ -97,6 +99,7 @@ test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page
   expect(posted.session_id).toMatch(/^[0-9a-f-]{36}$/);
   expect(posted.landing_page).toBe('/ratecheck');
   expect(posted.utm_source).toBe('e2e');
+  expect(posted.referral_consent_given_at).toBeUndefined(); // opt-in only
 
   console.log(`[rate-check e2e] ${photoBytes} B PNG 2400x1800 -> ${jpeg.length} B JPEG ${size.width}x${size.height}; ` +
     `client prep + (mocked) round trip ${elapsedMs} ms`);

@@ -5,7 +5,7 @@
 
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { AlertCircle, Camera, ExternalLink, Map as MapIcon, Phone, X } from 'lucide-react';
+import { AlertCircle, Camera, ExternalLink, Handshake, Map as MapIcon, Phone, Users, X } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import {
@@ -14,6 +14,10 @@ import {
 } from '../hooks/useRateChecks';
 import { sanitizeMoneyInput, parseMoney } from '../lib/money';
 import PageSpinner from '../components/PageSpinner';
+import { thCls, thStyle, inputStyle, money, formatPhone } from './components/rate-checks/ui';
+import CompetitorAgents from './components/rate-checks/CompetitorAgents';
+import ReferralPartners from './components/rate-checks/ReferralPartners';
+import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
 
 const FILTERS = [
   { value: 'open', label: 'Needs quote', statuses: ['extracted', 'pending', 'extract_failed'] },
@@ -53,22 +57,6 @@ const TERM_SOURCE_LABEL = {
   agent: 'set by agent',
   unknown: 'not shown — verify',
 };
-
-const thCls = 'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider';
-const thStyle = { color: 'var(--qs-subtle)' };
-const inputStyle = { background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' };
-
-function money(n, { cents = false } = {}) {
-  if (n == null || n === '') return '—';
-  return `$${Number(n).toLocaleString('en-US', {
-    minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: cents ? 2 : 0,
-  })}`;
-}
-
-function formatPhone(p) {
-  if (!p || p.length !== 10) return p || '—';
-  return `(${p.slice(0, 3)}) ${p.slice(3, 6)}-${p.slice(6)}`;
-}
 
 function formatReceived(ts) {
   if (!ts) return '—';
@@ -137,7 +125,12 @@ export default function RateChecksPage() {
         </div>
 
         <div className="flex gap-2 mb-4">
-          {[{ v: 'inbox', label: 'Inbox', Icon: Camera }, { v: 'map', label: 'Win map', Icon: MapIcon }].map(({ v, label, Icon }) => (
+          {[
+            { v: 'inbox', label: 'Inbox', Icon: Camera },
+            { v: 'map', label: 'Win map', Icon: MapIcon },
+            { v: 'agents', label: 'Competing agents', Icon: Users },
+            { v: 'partners', label: 'Partners', Icon: Handshake },
+          ].map(({ v, label, Icon }) => (
             <button key={v} onClick={() => setTab(v)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${tab === v ? 'bg-primary-600 text-white' : ''}`}
               style={tab === v ? undefined : { ...inputStyle }}>
@@ -146,7 +139,10 @@ export default function RateChecksPage() {
           ))}
         </div>
 
-        {tab === 'map' ? <WinMap agencyId={agencyId} /> : (
+        {tab === 'map' ? <WinMap agencyId={agencyId} />
+          : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} />
+          : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />
+          : (
           <>
             <div className="dark-card mb-4 flex items-center gap-3" style={{ padding: 12 }}>
               <select value={filter} onChange={e => setFilter(e.target.value)} className="dark-select" style={{ width: 'auto', ...inputStyle }}>
@@ -281,6 +277,8 @@ function RateCheckDrawer({ rc, onClose, onQuoted }) {
             )}
           </section>
 
+          <CurrentAgentBox rc={rc} />
+
           <ExtractedForm rc={rc} />
 
           {rc.coverages && Object.keys(rc.coverages).length > 0 && (
@@ -317,6 +315,8 @@ function RateCheckDrawer({ rc, onClose, onQuoted }) {
               {rc.driver_count != null && <p className="mt-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>{rc.driver_count} driver{rc.driver_count === 1 ? '' : 's'}</p>}
             </section>
           )}
+
+          <ReferralBox rc={rc} />
         </div>
       </div>
     </div>

@@ -31,6 +31,9 @@ export const queryKeys = {
     list: (agencyId, statuses) => ['rate_checks', 'list', agencyId, statuses],
     image: (imagePath) => ['rate_checks', 'image', imagePath],
     winMap: (agencyId) => ['rate_checks', 'win_map', agencyId],
+    competitors: (agencyId) => ['rate_checks', 'competitors', agencyId],
+    partners: (agencyId) => ['rate_checks', 'partners', agencyId],
+    referrals: (rateCheckId) => ['rate_checks', 'referrals', rateCheckId],
   },
 
   // ── Feature permissions ─────────────────────────────────────────────────────

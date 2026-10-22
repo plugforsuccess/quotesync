@@ -25,7 +25,7 @@ export default function RateCheckPrivacyPage() {
           <li>The photo or PDF of the declarations page you upload.</li>
           <li>
             Policy details we read from it: carrier, policy number, policy type, premium and term, dates,
-            coverages, and vehicles (year, make, model and VIN).
+            coverages, vehicles (year, make, model and VIN), and the agent or agency listed on the page.
           </li>
           <li>Your consent to be contacted, with the time, your IP address, and your browser.</li>
         </ul>
@@ -33,7 +33,17 @@ export default function RateCheckPrivacyPage() {
         <h2 className="mt-6 font-semibold text-gray-900">How we use it</h2>
         <p className="mt-2 text-sm">
           Only to compare your current policy with an Allstate quote and to contact you about it. We use an AI
-          service to read the document. We don&apos;t sell your information.
+          service to read the document. We don&apos;t sell your information. We also use the agent and agency
+          listed on dec pages, combined across many customers, to understand our local market; we never contact
+          another agent about you.
+        </p>
+
+        <h2 className="mt-6 font-semibold text-gray-900">Partner referrals (only if you opt in)</h2>
+        <p className="mt-2 text-sm">
+          If you check the optional referral box and Allstate can&apos;t cover what you need, we may share your
+          name, number and policy details with one partner agency so they can contact you about a quote. If you
+          don&apos;t check it, we never share your information with anyone else. Text <strong>STOP</strong> or
+          ask us at any time to withdraw it.
         </p>
 
         <h2 className="mt-6 font-semibold text-gray-900">How long we keep the image</h2>

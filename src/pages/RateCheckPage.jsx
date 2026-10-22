@@ -14,6 +14,11 @@ const CONSENT_TEXT =
   'Allstate at the number provided. Msg & data rates may apply. Reply STOP to opt out. Consent is not ' +
   'a condition of purchase.';
 
+// Optional, unchecked by default, and not required to submit.
+const REFERRAL_CONSENT_TEXT =
+  "Optional: if Allstate can't cover what I need, Wiley-Wilson Agency may share my name, number and " +
+  'policy details with a partner agency they trust so that partner can contact me about a quote.';
+
 const POLICY_LABELS = { auto: 'auto', home: 'home', renters: 'renters', condo: 'condo', umbrella: 'umbrella' };
 
 export default function RateCheckPage() {
@@ -25,6 +30,7 @@ export default function RateCheckPage() {
   const [phone, setPhone] = useState('');
   const [zip, setZip] = useState('');
   const [consent, setConsent] = useState(false);
+  const [referralConsent, setReferralConsent] = useState(false);
   const [stage, setStage] = useState('form'); // form | sending | done
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -63,6 +69,7 @@ export default function RateCheckPage() {
         phone: phoneDigits,
         zip,
         consentGivenAt: new Date().toISOString(),
+        referralConsentGivenAt: referralConsent ? new Date().toISOString() : null,
       });
       setResult(data);
       setStage('done');
@@ -155,6 +162,11 @@ export default function RateCheckPage() {
         <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
           <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" disabled={sending} required />
           <span>{CONSENT_TEXT}</span>
+        </label>
+
+        <label className="flex items-start gap-3 text-xs leading-relaxed text-gray-600">
+          <input type="checkbox" checked={referralConsent} onChange={e => setReferralConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0" disabled={sending} />
+          <span>{REFERRAL_CONSENT_TEXT}</span>
         </label>
 
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">{error}</p>}
