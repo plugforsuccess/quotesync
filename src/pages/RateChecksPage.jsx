@@ -44,6 +44,16 @@ const CARRIERS = [
 ];
 const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'other'];
 
+// Where the scan got the policy term (rate_checks.term_source).
+const TERM_SOURCE_LABEL = {
+  dates: 'from policy dates',
+  printed: 'printed on page',
+  carrier_default: "carrier's usual term — verify",
+  line_default: 'annual line',
+  agent: 'set by agent',
+  unknown: 'not shown — verify',
+};
+
 const thCls = 'px-4 py-3 text-left text-xs font-medium uppercase tracking-wider';
 const thStyle = { color: 'var(--qs-subtle)' };
 const inputStyle = { background: 'var(--qs-elevated)', color: 'var(--qs-text)', border: '1px solid var(--qs-border)' };
@@ -294,7 +304,13 @@ function RateCheckDrawer({ rc, onClose, onQuoted }) {
                 {rc.vehicles.map((v, i) => (
                   <li key={i} style={{ color: 'var(--qs-bright)' }}>
                     {[v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle'}
-                    {v.vin_last4 && <span style={{ color: 'var(--qs-subtle)' }}> · VIN …{v.vin_last4}</span>}
+                    {v.vin ? (
+                      <span style={{ color: 'var(--qs-subtle)' }}>
+                        {' · VIN '}<span className="font-mono" style={{ color: 'var(--qs-bright)' }}>{v.vin_complete === false ? `…${v.vin}` : v.vin}</span>
+                        {v.vin_complete === false && <span className="ml-1.5 text-xs text-yellow-600">partial on dec page</span>}
+                        {v.vin_complete && v.vin_valid === false && <span className="ml-1.5 text-xs text-red-500">check digit fails — verify</span>}
+                      </span>
+                    ) : v.vin_last4 && <span style={{ color: 'var(--qs-subtle)' }}> · VIN …{v.vin_last4}</span>}
                   </li>
                 ))}
               </ul>
@@ -323,7 +339,7 @@ function ExtractedForm({ rc }) {
     policy_type: rc.policy_type || '',
     current_premium: rc.current_premium != null ? String(rc.current_premium) : '',
     term_months: rc.term_months != null ? String(rc.term_months) : '',
-    policy_number_last4: rc.policy_number_last4 || '',
+    policy_number: rc.policy_number || '',
     effective_date: rc.effective_date || '',
     expiration_date: rc.expiration_date || '',
   });
@@ -339,7 +355,11 @@ function ExtractedForm({ rc }) {
         current_premium: parseMoney(form.current_premium),
         term_months: form.term_months ? Number(form.term_months) : null,
         annual_premium: annual,
-        policy_number_last4: form.policy_number_last4 || null,
+        policy_number: form.policy_number.trim() || null,
+        policy_number_last4: form.policy_number.replace(/[^A-Za-z0-9]/g, '').slice(-4) || null,
+        // An agent-picked term is authoritative; otherwise keep how the scan got it.
+        term_source: form.term_months !== (rc.term_months != null ? String(rc.term_months) : '')
+          ? 'agent' : (rc.term_source || null),
         effective_date: form.effective_date || null,
         expiration_date: form.expiration_date || null,
       },
@@ -367,7 +387,14 @@ function ExtractedForm({ rc }) {
           <input className={field} style={inputStyle} inputMode="decimal" value={form.current_premium}
             onChange={e => set('current_premium', sanitizeMoneyInput(e.target.value))} placeholder="780.00" />
         </label>
-        <label className="space-y-1"><span style={{ color: 'var(--qs-subtle)' }}>Term</span>
+        <label className="space-y-1">
+          <span style={{ color: 'var(--qs-subtle)' }}>Term</span>
+          {TERM_SOURCE_LABEL[rc.term_source] && (
+            <span className={`ml-1.5 text-xs ${rc.term_source === 'carrier_default' || rc.term_source === 'unknown' ? 'text-yellow-600' : ''}`}
+              style={rc.term_source === 'carrier_default' || rc.term_source === 'unknown' ? undefined : { color: 'var(--qs-subtle)' }}>
+              ({TERM_SOURCE_LABEL[rc.term_source]})
+            </span>
+          )}
           <select className={field} style={inputStyle} value={form.term_months} onChange={e => set('term_months', e.target.value)}>
             <option value="">Unknown</option>
             <option value="6">6 months</option>
@@ -380,8 +407,8 @@ function ExtractedForm({ rc }) {
         <label className="space-y-1"><span style={{ color: 'var(--qs-subtle)' }}>Expires</span>
           <input type="date" className={field} style={inputStyle} value={form.expiration_date} onChange={e => set('expiration_date', e.target.value)} />
         </label>
-        <label className="space-y-1"><span style={{ color: 'var(--qs-subtle)' }}>Policy # (last 4)</span>
-          <input className={field} style={inputStyle} maxLength={4} value={form.policy_number_last4} onChange={e => set('policy_number_last4', e.target.value)} />
+        <label className="space-y-1"><span style={{ color: 'var(--qs-subtle)' }}>Policy #</span>
+          <input className={`${field} font-mono`} style={inputStyle} maxLength={64} value={form.policy_number} onChange={e => set('policy_number', e.target.value)} />
         </label>
         <div className="space-y-1"><span style={{ color: 'var(--qs-subtle)' }}>Annual premium</span>
           <div className="py-1.5 text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>{money(annual, { cents: true })}</div>

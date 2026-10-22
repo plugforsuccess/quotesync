@@ -24,8 +24,8 @@ export default function RateCheckPrivacyPage() {
           <li>Your first name, mobile number, and ZIP code.</li>
           <li>The photo or PDF of the declarations page you upload.</li>
           <li>
-            Policy details we read from it: carrier, policy type, premium and term, dates, coverages, vehicles
-            (year/make/model and the last 4 of the VIN), and the last 4 of the policy number.
+            Policy details we read from it: carrier, policy number, policy type, premium and term, dates,
+            coverages, and vehicles (year, make, model and VIN).
           </li>
           <li>Your consent to be contacted, with the time, your IP address, and your browser.</li>
         </ul>

@@ -46,6 +46,17 @@ def section(d, y, label):
     return y + 52
 
 
+_VIN_VALUES = dict(zip("ABCDEFGHJKLMNPRSTUVWXYZ", [1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 7, 9, 2, 3, 4, 5, 6, 7, 8, 9]))
+_VIN_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2]
+
+
+def with_check_digit(vin):
+    """Return the 17-char VIN with a correct position-9 check digit (fake but well-formed)."""
+    total = sum((int(c) if c.isdigit() else _VIN_VALUES[c]) * w for c, w in zip(vin, _VIN_WEIGHTS))
+    r = total % 11
+    return vin[:8] + ("X" if r == 10 else str(r)) + vin[9:]
+
+
 def state_farm_auto():
     img, d = page((200, 16, 46), "State Farm", "AUTO POLICY DECLARATIONS")
     y = rows(d, 210, [
@@ -57,8 +68,8 @@ def state_farm_auto():
     ])
     y = section(d, y + 10, "VEHICLES")
     y = rows(d, y, [
-        ("Veh 1:", "2021 Honda CR-V EX     VIN ...........4821"),
-        ("Veh 2:", "2018 Toyota Camry SE   VIN ...........9137"),
+        ("Veh 1:", f"2021 Honda CR-V EX     VIN {with_check_digit('7FARW2H50ME004821')}"),
+        ("Veh 2:", f"2018 Toyota Camry SE   VIN {with_check_digit('4T1B11HK0JU609137')}"),
     ], x2=200)
     y = section(d, y + 10, "DRIVERS")
     y = rows(d, y, [("Driver 1:", "Keisha T. Example"), ("Driver 2:", "Marcus L. Example")], x2=230)

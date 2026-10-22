@@ -12,7 +12,7 @@ export const RATE_CHECK_LIST_COLUMNS = `
   id, agency_id, lead_id, created_at, first_name, phone, zip, status,
   carrier, policy_type, current_premium, term_months, annual_premium,
   allstate_premium, delta, delta_pct, extract_confidence, extract_error,
-  image_path, image_media_type, policy_number_last4, effective_date,
+  image_path, image_media_type, policy_number, policy_number_last4, term_source, effective_date,
   expiration_date, vehicle_count, driver_count, vehicles, coverages,
   insured_address, extracted, quote_note, quoted_at, outcome_at
 `;

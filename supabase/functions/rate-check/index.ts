@@ -126,11 +126,14 @@ const EXTRACTION_TOOL = {
       carrier: { type: 'string', enum: CARRIERS, description: 'Normalized carrier name; "Other" if not in the list.' },
       carrier_raw: { type: 'string', description: 'Carrier / company name exactly as printed.' },
       policy_type: { type: 'string', enum: POLICY_TYPES },
-      policy_number_last4: nullable('string', { description: 'Last 4 characters of the policy number only.' }),
-      premium: nullable('number', { description: 'Total premium printed for the policy term, in USD.' }),
-      term_months: { type: ['integer', 'null'], enum: [6, 12, null], description: 'Policy term length in months.' },
-      effective_date: nullable('string', { description: 'YYYY-MM-DD' }),
-      expiration_date: nullable('string', { description: 'YYYY-MM-DD' }),
+      policy_number: nullable('string', { description: 'Full policy number exactly as printed (all characters, including dashes/spaces). Null if not visible.' }),
+      premium: nullable('number', { description: 'TOTAL premium for the whole policy term, in USD — not a monthly/installment amount and not a per-vehicle line.' }),
+      term_months: {
+        type: ['integer', 'null'], enum: [6, 12, null],
+        description: 'Policy term in months ONLY if the page states it (e.g. "6 Month Policy", "Annual") or it is evident from the policy period dates. Null if not shown — do not assume from the carrier.',
+      },
+      effective_date: nullable('string', { description: 'Policy period start, YYYY-MM-DD.' }),
+      expiration_date: nullable('string', { description: 'Policy period end, YYYY-MM-DD.' }),
       insured_name: nullable('string'),
       insured_address: nullable('string'),
       vehicles: {
@@ -141,9 +144,9 @@ const EXTRACTION_TOOL = {
             year: nullable('integer'),
             make: nullable('string'),
             model: nullable('string'),
-            vin_last4: nullable('string'),
+            vin: nullable('string', { description: 'Full VIN exactly as printed (normally 17 characters). If the page masks or truncates it, return only the visible characters, e.g. "XXXX4821" -> "4821".' }),
           },
-          required: ['year', 'make', 'model', 'vin_last4'],
+          required: ['year', 'make', 'model', 'vin'],
         },
       },
       driver_count: nullable('integer'),
@@ -159,7 +162,7 @@ const EXTRACTION_TOOL = {
       notes: nullable('string', { description: 'Anything odd: multiple policies on page, cut-off, unreadable.' }),
     },
     required: [
-      'carrier', 'carrier_raw', 'policy_type', 'policy_number_last4', 'premium', 'term_months',
+      'carrier', 'carrier_raw', 'policy_type', 'policy_number', 'premium', 'term_months',
       'effective_date', 'expiration_date', 'insured_name', 'insured_address', 'vehicles',
       'driver_count', 'coverages', 'discounts', 'confidence', 'notes',
     ],
@@ -168,9 +171,11 @@ const EXTRACTION_TOOL = {
 
 const INSTRUCTION =
   'This is a photo of an insurance declarations page. Extract the fields precisely as printed. ' +
-  'Do not guess a value that is not visible; use null. If the page shows a 6-month term, report ' +
-  'term_months 6. If more than one policy appears, pick the primary auto or home policy and ' +
-  'mention the others in notes.'
+  'Do not guess a value that is not visible; use null. Copy the policy number and every VIN in full, ' +
+  'character for character. Auto policies run 6 or 12 months depending on the carrier, so read the ' +
+  'policy period carefully: report term_months 6 or 12 only when the page says so or the effective and ' +
+  'expiration dates show it, and report the premium for that whole term (not a monthly installment). ' +
+  'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
 
 async function extractDecPage(apiKey: string, base64: string, mediaType: string) {
   const fileBlock = mediaType === 'application/pdf'
@@ -226,6 +231,69 @@ async function extractDecPage(apiKey: string, base64: string, mediaType: string)
   return { input: toolUse.input, usage: result.usage ?? null }
 }
 
+// Usual auto policy term by carrier (Georgia), used ONLY when the dec page shows
+// neither a term nor a full policy period. Agents can override in the inbox.
+// Property lines (home / renters / condo / umbrella) are annual.
+// Confirm these against your own book; change here and redeploy.
+const CARRIER_AUTO_TERM_MONTHS: Record<string, 6 | 12> = {
+  'State Farm': 6,
+  'GEICO': 6,
+  'Progressive': 6,
+  'Allstate': 6,
+  'USAA': 6,
+  'Farmers': 6,
+  'Liberty Mutual': 6,
+  'Nationwide': 6,
+  'Travelers': 6,
+  'Georgia Farm Bureau': 6,
+  'Auto-Owners': 12,
+  'Erie': 12,
+}
+const ANNUAL_LINES = new Set(['home', 'renters', 'condo', 'umbrella'])
+
+// Whole months between two ISO dates, snapped to a 6- or 12-month term.
+function termFromDates(eff: string | null, exp: string | null): 6 | 12 | null {
+  if (!eff || !exp) return null
+  const a = new Date(eff + 'T00:00:00Z'), b = new Date(exp + 'T00:00:00Z')
+  const months = (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth())
+    + (b.getUTCDate() - a.getUTCDate()) / 30
+  if (months >= 5 && months <= 7) return 6
+  if (months >= 11 && months <= 13) return 12
+  return null
+}
+
+// VIN check digit (position 9) per 49 CFR 565 — catches misreads like 8↔B, 5↔S.
+const VIN_VALUES: Record<string, number> = {
+  A: 1, B: 2, C: 3, D: 4, E: 5, F: 6, G: 7, H: 8, J: 1, K: 2, L: 3, M: 4, N: 5, P: 7, R: 9,
+  S: 2, T: 3, U: 4, V: 5, W: 6, X: 7, Y: 8, Z: 9,
+}
+const VIN_WEIGHTS = [8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2]
+function vinCheckDigitOk(vin: string): boolean {
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/.test(vin)) return false
+  let sum = 0
+  for (let i = 0; i < 17; i++) {
+    const c = vin[i]
+    sum += (/[0-9]/.test(c) ? Number(c) : VIN_VALUES[c]) * VIN_WEIGHTS[i]
+  }
+  const r = sum % 11
+  return vin[8] === (r === 10 ? 'X' : String(r))
+}
+
+function cleanVehicle(v: any) {
+  let vin = v?.vin ? String(v.vin).toUpperCase().replace(/[^A-Z0-9]/g, '') : null
+  // Masked VINs ("XXXXXXXXXXXXX9137"): keep only the visible tail.
+  if (vin && /^X{4,}/.test(vin) && !vinCheckDigitOk(vin)) vin = vin.replace(/^X+/, '')
+  return {
+    year: Number.isInteger(v?.year) ? v.year : null,
+    make: cleanText(v?.make, 40),
+    model: cleanText(v?.model, 60),
+    vin: vin || null,
+    vin_last4: vin ? vin.slice(-4) : null,
+    vin_complete: !!vin && vin.length === 17,
+    vin_valid: !!vin && vin.length === 17 && vinCheckDigitOk(vin),
+  }
+}
+
 function isoDateOrNull(v: unknown): string | null {
   if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null
   return Number.isNaN(Date.parse(v)) ? null : v
@@ -239,28 +307,49 @@ function numOrNull(v: unknown): number | null {
 // Flatten the tool input onto rate_checks columns.
 function flatten(x: any) {
   const premium = numOrNull(x.premium)
-  const term = x.term_months === 6 || x.term_months === 12 ? x.term_months : null
+  const carrier = CARRIERS.includes(x.carrier) ? x.carrier : 'Other'
+  const policyType = POLICY_TYPES.includes(x.policy_type) ? x.policy_type : 'other'
+  const effective = isoDateOrNull(x.effective_date)
+  const expiration = isoDateOrNull(x.expiration_date)
   let confidence = ['high', 'medium', 'low'].includes(x.confidence) ? x.confidence : 'low'
+
+  // Term: the printed policy period wins, then a printed term, then the carrier's
+  // usual auto term, then annual for property lines.
+  const printedTerm = x.term_months === 6 || x.term_months === 12 ? x.term_months : null
+  const datesTerm = termFromDates(effective, expiration)
+  let term: 6 | 12 | null = null
+  let termSource = 'unknown'
+  if (datesTerm) { term = datesTerm; termSource = 'dates' }
+  else if (printedTerm) { term = printedTerm; termSource = 'printed' }
+  else if (policyType === 'auto' && CARRIER_AUTO_TERM_MONTHS[carrier]) {
+    term = CARRIER_AUTO_TERM_MONTHS[carrier]; termSource = 'carrier_default'
+    if (confidence === 'high') confidence = 'medium'
+  } else if (ANNUAL_LINES.has(policyType)) { term = 12; termSource = 'line_default' }
+
   let annual: number | null = null
   if (premium != null && term) {
     annual = Math.round(premium * (12 / term) * 100) / 100
   } else if (premium != null) {
-    // Term not visible — assume the printed premium is annual, but flag it.
+    // No term at all — treat the printed premium as annual, but flag it.
     annual = premium
     confidence = 'low'
   }
-  const vehicles = Array.isArray(x.vehicles) ? x.vehicles : []
-  const last4 = x.policy_number_last4 ? String(x.policy_number_last4).replace(/\s/g, '').slice(-4) : null
+
+  const vehicles = Array.isArray(x.vehicles) ? x.vehicles.map(cleanVehicle) : []
+  const policyNumber = x.policy_number ? String(x.policy_number).trim().slice(0, 64) : null
+  const policyAlnum = policyNumber ? policyNumber.replace(/[^A-Za-z0-9]/g, '') : ''
 
   return {
-    carrier: CARRIERS.includes(x.carrier) ? x.carrier : 'Other',
-    policy_type: POLICY_TYPES.includes(x.policy_type) ? x.policy_type : 'other',
-    policy_number_last4: last4,
+    carrier,
+    policy_type: policyType,
+    policy_number: policyNumber,
+    policy_number_last4: policyAlnum ? policyAlnum.slice(-4) : null,
     current_premium: premium,
     term_months: term,
+    term_source: termSource,
     annual_premium: annual,
-    effective_date: isoDateOrNull(x.effective_date),
-    expiration_date: isoDateOrNull(x.expiration_date),
+    effective_date: effective,
+    expiration_date: expiration,
     vehicle_count: vehicles.length || null,
     driver_count: Number.isInteger(x.driver_count) ? x.driver_count : null,
     vehicles,
