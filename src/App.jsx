@@ -71,6 +71,8 @@ const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
 const PunchPage = lazyWithRetry(() => import('./pages/PunchPage'));
 const SaveWizardPage = lazyWithRetry(() => import('./pages/SaveWizardPage'));
 const SaveConfirmationPage = lazyWithRetry(() => import('./pages/SaveConfirmationPage'));
+const RateCheckPage = lazyWithRetry(() => import('./pages/RateCheckPage'));
+const RateCheckPrivacyPage = lazyWithRetry(() => import('./pages/RateCheckPrivacyPage'));
 const AgencyApplyPage = lazyWithRetry(() => import('./pages/AgencyApplyPage'));
 
 // Admin & agency pages — lazy loaded
@@ -89,6 +91,7 @@ const TimeAttendancePage = lazyWithRetry(() => import('./pages/TimeAttendancePag
 const StaffPerformancePage = lazyWithRetry(() => import('./pages/StaffPerformancePage'));
 const AgencyLeadsPage = lazyWithRetry(() => import('./pages/AgencyLeadsPage'));
 const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage'));
+const RateChecksPage = lazyWithRetry(() => import('./pages/RateChecksPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
 const AgencySettingsPage = lazyWithRetry(() => import('./pages/AgencySettingsPage'));
 const AgencySetupPage = lazyWithRetry(() => import('./pages/AgencySetupPage'));
@@ -170,6 +173,11 @@ function App() {
 
           {/* Employee punch clock — public, no auth required */}
           <Route path="/punch" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PunchPage /></Suspense></ErrorBoundary>} />
+
+          {/* Rate Check — public dec-page scanner landing page; standalone (no site Layout) to stay light on mobile */}
+          <Route path="/ratecheck" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPage /></Suspense></ErrorBoundary>} />
+          <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPage /></Suspense></ErrorBoundary>} />
+          <Route path="/ratecheck-privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPrivacyPage /></Suspense></ErrorBoundary>} />
 
           {/* Defensive Driving course — full-screen, no consumer nav (its own chrome) */}
           <Route path="/courses/defensive-driving/portal" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPortalPage /></Suspense></ErrorBoundary>} />
@@ -348,6 +356,19 @@ function App() {
                   <ErrorBoundary fallback={<PageError />}>
                     <Suspense fallback={<PageLoader />}>
                       <AgencyLeadsPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
+            {/* Rate Checks inbox (dec-page scanner); also gated by feature_permissions 'rate_checks' in-page */}
+            <Route
+              path="agency/leads/rate-checks"
+              element={
+                <ProtectedRoute requiredAgencyRole="producer">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <RateChecksPage />
                     </Suspense>
                   </ErrorBoundary>
                 </ProtectedRoute>

@@ -14,22 +14,29 @@ export default defineConfig({
     // Code splitting for better caching
     rollupOptions: {
       output: {
-        manualChunks: {
+        // Function form, node_modules only. The object form pulled every
+        // dependency of a listed module into that chunk — shared app code
+        // included — so the entry statically imported pdf/xlsx/charts/
+        // planning/staff-performance and every public page (/, /ratecheck)
+        // downloaded ~1 MB of admin + PDF code up front. App pages are
+        // lazy-loaded in App.jsx, so they split on their own.
+        manualChunks(id) {
+          // Rollup/Vite virtual helpers (commonjsHelpers, preload-helper) are
+          // shared by everything; left unassigned they get absorbed into the
+          // first manual chunk that needs them (pdf), dragging it into the entry.
+          if (id === '\0commonjsHelpers.js' || id.startsWith('\0vite/')) return 'runtime-helpers';
+          if (!id.includes('node_modules')) return undefined;
+          // Same for generic transpiler helpers shared across libraries.
+          if (/node_modules\/(tslib|@swc\/helpers|@babel\/runtime)\//.test(id)) return 'runtime-helpers';
           // Separate vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'icons': ['lucide-react'],
+          if (/node_modules\/(react|react-dom|react-router|react-router-dom|scheduler)\//.test(id)) return 'react-vendor';
+          if (id.includes('node_modules/lucide-react/')) return 'icons';
           // Heavy libraries used on 1-2 pages — keep out of shared chunks
-          'charts': ['recharts'],
-          'pdf': ['@react-pdf/renderer'],
-          'xlsx': ['xlsx'],
-          'stripe': ['@stripe/stripe-js'],
-          // Large admin pages in isolated chunks
-          'planning': [
-            './src/pages/PlanningHubPage.jsx',
-            './src/pages/components/planning/ServiceStaffingTab.jsx',
-            './src/pages/components/revenue/RevenueProjectionsDashboard.jsx',
-          ],
-          'staff-performance': ['./src/pages/StaffPerformancePage.jsx'],
+          if (id.includes('node_modules/recharts/')) return 'charts';
+          if (id.includes('node_modules/@react-pdf/')) return 'pdf';
+          if (id.includes('node_modules/xlsx/')) return 'xlsx';
+          if (id.includes('node_modules/@stripe/stripe-js/')) return 'stripe';
+          return undefined;
         }
       }
     },

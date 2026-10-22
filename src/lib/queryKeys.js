@@ -25,6 +25,26 @@ export const queryKeys = {
     slaMetrics: (agencyId) => ['agency_sla_metrics', agencyId],
   },
 
+  // ── Rate Checks (dec-page scanner) ──────────────────────────────────────────
+  rateChecks: {
+    all: () => ['rate_checks'],
+    list: (agencyId, statuses) => ['rate_checks', 'list', agencyId, statuses],
+    image: (imagePath) => ['rate_checks', 'image', imagePath],
+    winMap: (agencyId) => ['rate_checks', 'win_map', agencyId],
+    competitors: (agencyId) => ['rate_checks', 'competitors', agencyId],
+    partners: (agencyId) => ['rate_checks', 'partners', agencyId],
+    referrals: (rateCheckId) => ['rate_checks', 'referrals', rateCheckId],
+    rules: (agencyId) => ['rate_checks', 'rules', agencyId],
+    invites: (agencyId) => ['rate_checks', 'invites', agencyId],
+    events: (agencyId) => ['rate_checks', 'events', agencyId],
+    inviteStats: (agencyId) => ['rate_checks', 'invite_stats', agencyId],
+  },
+
+  // ── Feature permissions ─────────────────────────────────────────────────────
+  featurePermissions: {
+    enabled: (agencyId) => ['feature_permissions', 'enabled', agencyId],
+  },
+
   // ── Stories / Newsroom ──────────────────────────────────────────────────────
   stories: {
     all: () => ['stories'],
