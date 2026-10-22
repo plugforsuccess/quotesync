@@ -19,14 +19,16 @@ import {
 const AUTO = ['auto', 'commercial_auto'];
 const PROPERTY = ['home', 'condo', 'renters'];
 
-export function Section({ title, aside, children }) {
+// `ruled` draws the line under the title for content that isn't label/value rows
+// (rows already start with their own top border), so every section looks the same.
+export function Section({ title, aside, ruled = false, children }) {
   return (
     <section>
       <div className="mb-1 flex items-baseline justify-between gap-3">
         <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>{title}</h3>
         {aside}
       </div>
-      {children}
+      {ruled ? <div className="pt-3" style={{ borderTop: '1px solid var(--qs-border)' }}>{children}</div> : children}
     </section>
   );
 }
@@ -163,13 +165,13 @@ export default function PolicySheet({ rc, warning }) {
       )}
 
       {record.length > 0 && (
-        <Section title={isAuto ? 'Driving record on the page' : 'Claims on the page'}>
+        <Section title={isAuto ? 'Driving record on the page' : 'Claims on the page'} ruled>
           <ul className="space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>{record.map((t, i) => <li key={i}>{t}</li>)}</ul>
         </Section>
       )}
 
       {discounts.length > 0 && (
-        <Section title="Discounts they have now">
+        <Section title="Discounts they have now" ruled>
           <div className="flex flex-wrap gap-1.5">{discounts.map(d => <Chip key={d}>{d}</Chip>)}</div>
         </Section>
       )}
@@ -192,7 +194,7 @@ function SummarySection({ rc, warning }) {
   const lines = headsUp(rc);
   if (!lines.length && !warning) return null;
   return (
-    <Section title="Summary">
+    <Section title="Summary" ruled>
       <div className="space-y-2 text-sm leading-relaxed" style={{ color: 'var(--qs-text)' }}>
         {warning && (
           <p className="flex gap-2 text-yellow-600"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{warning}</p>
