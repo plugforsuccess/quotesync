@@ -89,12 +89,15 @@ export default function RateChecksPage() {
   const { data: features, isLoading: featuresLoading } = useEnabledFeatures(agencyId);
   const [tab, setTab] = useState('inbox');
   const [filter, setFilter] = useState('open');
-  const [openId, setOpenId] = useState(null);
+  // Snapshot of the clicked row: entering a quote flips it to won/lost, which
+  // drops it out of the default 'Needs quote' list — the drawer (and its call
+  // script) must stay open until the agent closes it.
+  const [openRow, setOpenRow] = useState(null);
 
   const statuses = FILTERS.find(f => f.value === filter)?.statuses;
   const enabled = features?.has('rate_checks');
   const { data: rows = [], isLoading, error } = useRateChecks(enabled ? agencyId : null, statuses);
-  const open = rows.find(r => r.id === openId) || null;
+  const open = openRow ? (rows.find(r => r.id === openRow.id) || openRow) : null;
 
   if (agencyLoading || (agencyId && featuresLoading)) return <PageSpinner />;
 
@@ -161,7 +164,7 @@ export default function RateChecksPage() {
                     </thead>
                     <tbody>
                       {rows.map(r => (
-                        <tr key={r.id} onClick={() => setOpenId(r.id)} className="cursor-pointer"
+                        <tr key={r.id} onClick={() => setOpenRow(r)} className="cursor-pointer"
                           style={{ borderTop: '1px solid var(--qs-border)' }}
                           onMouseEnter={e => { e.currentTarget.style.background = 'var(--qs-elevated)'; }}
                           onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
@@ -192,14 +195,15 @@ export default function RateChecksPage() {
         )}
       </div>
 
-      {open && <RateCheckDrawer key={open.id} rc={open} onClose={() => setOpenId(null)} />}
+      {open && <RateCheckDrawer key={open.id} rc={open} onClose={() => setOpenRow(null)}
+        onQuoted={(res) => setOpenRow(r => (r ? { ...r, ...res } : r))} />}
     </div>
   );
 }
 
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
-function RateCheckDrawer({ rc, onClose }) {
+function RateCheckDrawer({ rc, onClose, onQuoted }) {
   const { data: imageUrl, isLoading: imageLoading } = useRateCheckImageUrl(rc.image_path);
   const isPdf = rc.image_media_type === 'application/pdf';
   const notes = rc.extracted?.notes;
@@ -235,7 +239,7 @@ function RateCheckDrawer({ rc, onClose }) {
         </div>
 
         <div className="space-y-6 p-5">
-          <QuoteBox rc={rc} />
+          <QuoteBox rc={rc} onQuoted={onQuoted} />
 
           {rc.extract_error && (
             <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
@@ -396,7 +400,7 @@ function ExtractedForm({ rc }) {
 }
 
 // Allstate quote entry → won/lost + call script.
-function QuoteBox({ rc }) {
+function QuoteBox({ rc, onQuoted }) {
   const enterQuote = useEnterRateCheckQuote();
   const [premium, setPremium] = useState(rc.allstate_premium != null ? String(rc.allstate_premium) : '');
   const [note, setNote] = useState(rc.quote_note || '');
@@ -410,7 +414,11 @@ function QuoteBox({ rc }) {
     e.preventDefault();
     const n = parseMoney(premium);
     if (!n || n <= 0) return;
-    enterQuote.mutate({ rateCheckId: rc.id, allstatePremium: n, quoteNote: note });
+    enterQuote.mutate(
+      { rateCheckId: rc.id, allstatePremium: n, quoteNote: note },
+      // Keep the drawer's snapshot current (status chip, delta) once the row leaves the list.
+      { onSuccess: (res) => onQuoted?.({ status: res.status, allstate_premium: res.allstate_premium, delta: res.delta, delta_pct: res.delta_pct }) },
+    );
   };
 
   const script = `Hi ${rc.first_name || 'there'}, it's Cam with Allstate. You sent your ${rc.carrier || 'current'} policy over — ` +
