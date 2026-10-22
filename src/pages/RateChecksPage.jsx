@@ -439,6 +439,12 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
                 {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
               <OriginTag rc={rc} className="mt-0.5" />
+              {rc.resubmitted_at && (
+                <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+                  Sent again {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  {rc.resubmit_count > 1 ? ` · ${rc.resubmit_count} times` : ''}
+                </p>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <StatusChip status={rc.status} />

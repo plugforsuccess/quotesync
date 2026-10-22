@@ -11,6 +11,8 @@
 //   3. create/update a lead (source 'rate_check') WITHOUT firing the SMS/Bland
 //      automation that create-lead triggers,
 //   4. audit + notify the agency.
+// The same policy sent twice (same phone + policy number, or carrier + price) stays one
+// card: the existing one is marked "sent again" and the new row is hidden as a duplicate.
 // The consumer only ever gets back carrier / policy type / annual premium — never PII
 // or the full extraction. Extraction failures still return 200 so no lead is lost.
 //
@@ -628,6 +630,50 @@ async function extractAndStore(supabase: any, anthropicKey: string | undefined, 
   return { flat, extractError }
 }
 
+// Same policy sent twice? An open (not declined, not itself a duplicate) rate check
+// for this phone and line with the same policy number — or, when either side has no
+// number, the same carrier and a price within 2%. Two different cars with the same
+// carrier and price but different policy numbers are NOT duplicates.
+async function findDuplicate(supabase: any, rateCheckId: string, agencyId: string, phone: string, flat: ReturnType<typeof flatten>) {
+  const { data } = await supabase
+    .from('rate_checks')
+    .select('id, status, policy_number, carrier, annual_premium, resubmit_count')
+    .eq('agency_id', agencyId)
+    .eq('phone', phone)
+    .eq('policy_type', flat.policy_type)
+    .neq('id', rateCheckId)
+    .neq('status', 'declined')
+    .is('duplicate_of', null)
+    .order('created_at', { ascending: true })
+  const norm = (v: unknown) => String(v || '').replace(/[^A-Za-z0-9]/g, '').toUpperCase()
+  const pn = norm(flat.policy_number)
+  return (data || []).find((o: any) => {
+    const on = norm(o.policy_number)
+    if (pn && on) return pn === on
+    const a = Number(o.annual_premium), b = Number(flat.annual_premium)
+    return o.carrier === flat.carrier && a > 0 && b > 0 && Math.abs(a - b) <= Math.max(5, 0.02 * b)
+  }) || null
+}
+
+// Keep one card: stamp the existing one "sent again" (refreshed with the newer scan
+// while nobody has quoted it), and park the new row as a hidden duplicate.
+async function foldDuplicate(supabase: any, dup: any, rateCheckId: string, flat: ReturnType<typeof flatten>) {
+  const now = new Date().toISOString()
+  const stamp = { resubmitted_at: now, resubmit_count: (dup.resubmit_count ?? 0) + 1 }
+  if (['pending', 'extracted', 'extract_failed'].includes(dup.status)) {
+    const { data: fresh } = await supabase.from('rate_checks')
+      .select('extracted, extracted_at, image_path, image_media_type').eq('id', rateCheckId).single()
+    await supabase.from('rate_checks').update({
+      ...flat, ...stamp, status: 'extracted', extract_error: null,
+      extracted: fresh?.extracted ?? null, extracted_at: fresh?.extracted_at ?? now,
+      ...(fresh?.image_path ? { image_path: fresh.image_path, image_media_type: fresh.image_media_type } : {}),
+    }).eq('id', dup.id)
+  } else {
+    await supabase.from('rate_checks').update(stamp).eq('id', dup.id)
+  }
+  await supabase.from('rate_checks').update({ status: 'declined', duplicate_of: dup.id }).eq('id', rateCheckId)
+}
+
 function bytesToBase64(bytes: Uint8Array): string {
   let binary = ''
   const chunk = 0x8000
@@ -900,6 +946,10 @@ Deno.serve(async (req) => {
     // ── 3. Extract ──
     const { flat, extractError } = await extractAndStore(supabase, anthropicKey, rateCheckId, agencyId, imageBase64, mediaType)
 
+    // ── 3b. Same policy sent twice → one card ──
+    const duplicate = flat ? await findDuplicate(supabase, rateCheckId, agencyId, phone, flat) : null
+    if (duplicate) await foldDuplicate(supabase, duplicate, rateCheckId, flat!)
+
     const carrier = flat?.carrier ?? null
     const policyType = flat?.policy_type ?? null
     const annualPremium = flat?.annual_premium ?? null
@@ -913,6 +963,7 @@ Deno.serve(async (req) => {
         policy_type: policyType,
         annual_premium: annualPremium,
         confidence: flat?.extract_confidence ?? null,
+        ...(duplicate ? { duplicate_of: duplicate.id } : {}),
         ...(extractError ? { error: extractError.slice(0, 300) } : {}),
       },
     })
@@ -978,6 +1029,7 @@ Deno.serve(async (req) => {
       }
 
       await supabase.from('rate_checks').update({ lead_id: leadId }).eq('id', rateCheckId)
+      if (duplicate) await supabase.from('rate_checks').update({ lead_id: leadId }).eq('id', duplicate.id).is('lead_id', null)
       await supabase.from('audit_log').update({ lead_id: leadId })
         .eq('agency_id', agencyId)
         .in('event_type', ['RATE_CHECK_RECEIVED', 'RATE_CHECK_EXTRACTED', 'RATE_CHECK_FAILED'])
@@ -988,7 +1040,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 4b. Credit the invite and tell the producer who sent it ──
-    if (invite) {
+    if (invite && !duplicate) {
       await supabase.from('rate_check_invites')
         .update({ upload_count: (invite.upload_count ?? 0) + 1, last_rate_check_id: rateCheckId })
         .eq('id', invite.id)
@@ -1016,7 +1068,7 @@ Deno.serve(async (req) => {
       .in('agency_role', ['owner', 'principal', 'manager', 'producer'])
 
     // The uploading agent is already working a staff upload — only notify for consumer uploads.
-    if (!staff && members && members.length > 0) {
+    if (!staff && !duplicate && members && members.length > 0) {
       const premiumText = annualPremium != null ? `$${Math.round(annualPremium).toLocaleString('en-US')}/yr` : '$?/yr'
       const message = `${firstName || 'Someone'} · ${carrier || 'Unknown carrier'} ${policyType || 'policy'} · ${premiumText} · ${zip}`
       const uniqueUsers = [...new Set(members.map((m: any) => m.user_id))].filter(u => u !== invite?.created_by)
