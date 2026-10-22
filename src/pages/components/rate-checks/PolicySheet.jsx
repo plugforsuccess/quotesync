@@ -136,7 +136,7 @@ export default function PolicySheet({ rc }) {
             {drivers.map((d, i) => (
               <Field key={i} label={d.display} wide
                 value={[d.age != null ? `Age ${d.age}` : null, d.status, d.usage].filter(Boolean).join(' · ') || 'Listed'}
-                hint={d.excluded ? 'Excluded driver' : d.young ? 'Under 25' : undefined} hintTone="warn" />
+                hint={d.excluded ? 'Excluded driver' : undefined} hintTone="warn" />
             ))}
           </dl>
         </Section>
