@@ -21,8 +21,8 @@ import { HOUSING_LABEL } from '../lib/rateCheckApi';
 import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone } from './components/rate-checks/ui';
 import {
-  STATUS, CONFIDENCE_WARNING, TERM_HINT, coverageLabel, coverageValue, vehicleName,
-  policyPeriod, termPrice, quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
+  STATUS, CONFIDENCE_WARNING, TERM_HINT,
+  termPrice, quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
 } from './components/rate-checks/format';
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
@@ -30,6 +30,7 @@ import ReferralPartners from './components/rate-checks/ReferralPartners';
 import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
+import PolicySheet, { AtAGlance } from './components/rate-checks/PolicySheet';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import InvitesTab from './components/rate-checks/InvitesTab';
@@ -409,7 +410,6 @@ export default function RateChecksPage() {
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
 function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
-  const notes = rc.extracted?.notes;
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
   const insuredName = rc.extracted?.insured_name;
   const rescan = useRescanRateCheck();
@@ -503,18 +503,17 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
           )}
           {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
           {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info">Scanned again — check the details below.</Notice>}
-          {!rc.extract_error && !rc.decision && warning && <Notice tone="warning">{warning}</Notice>}
-          {notes && <Notice tone="info"><span className="font-semibold">From the scan:</span> {notes}</Notice>}
+          {/* 1. What to quote, 2. the price, 3. what matters, 4. the quote sheet, 5. reference */}
           <DecisionCard rc={rc} />
-          {rc.upload_source === 'agent' && (
-            <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff. No texting consent on file, so no automatic texts go out — follow up yourself.</p>
-          )}
-
           <QuoteBox rc={rc} onQuoted={onQuoted} />
+          {rc.upload_source === 'agent' && (
+            <p className="-mt-3 text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
+          )}
+          {!rc.extract_error && <AtAGlance rc={rc} warning={warning} />}
           <PolicyDetails rc={rc} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
-          <ReferralBox rc={rc} />
+          {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
         </div>
       </div>
     </div>
@@ -661,19 +660,13 @@ function BindForm({ rc, market, defaultPremium, onBound }) {
   );
 }
 
-// Read view with copy buttons; "Edit" switches to the correction form.
+// The quote sheet (PolicySheet) with Scan again / Fix details; "Fix details" swaps in the form.
 function PolicyDetails({ rc, onRescan, rescanning }) {
   const [editing, setEditing] = useState(false);
-  const x = rc.extracted || {};
-  const vehicles = Array.isArray(rc.vehicles) ? rc.vehicles : [];
-  const coverages = rc.coverages && typeof rc.coverages === 'object' ? Object.entries(rc.coverages) : [];
-  const termHint = TERM_HINT[rc.term_source];
-  const term = rc.term_months ? `${rc.term_months} months` : null;
-
   return (
     <section>
-      <div className="flex items-center justify-between">
-        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}>Policy</h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className={heading} style={{ color: 'var(--qs-bright)' }}>Quote sheet</h3>
         {!editing && (
           <div className="flex items-center gap-3">
             {onRescan && (
@@ -687,70 +680,7 @@ function PolicyDetails({ rc, onRescan, rescanning }) {
           </div>
         )}
       </div>
-
-      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : (
-        <>
-          <dl>
-            <Field label="Name on policy" value={x.insured_name} copy />
-            <Field label="Address" value={rc.insured_address || (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address || rc.zip} />
-            {rc.housing_situation && <Field label="Lives" value={HOUSING_LABEL[rc.housing_situation] || rc.housing_situation} />}
-            <Field label="Carrier" value={carrierLabel(rc)} />
-            <Field label="Policy number" value={rc.policy_number} copy mono />
-            <Field label="Policy period" value={policyPeriod(rc)} />
-            <Field label="Term" value={term} hint={termHint?.text} hintTone={termHint?.tone} />
-            {rc.driver_count != null && <Field label="Drivers" value={String(rc.driver_count)} />}
-          </dl>
-
-          {vehicles.length > 0 && (
-            <>
-              <h4 className="mt-4 mb-1 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Vehicles</h4>
-              <dl>
-                {vehicles.map((v, i) => (
-                  <Field key={i} label={vehicleName(v)} wide mono
-                    value={v.vin ? (v.vin_complete === false ? `…${v.vin}` : v.vin) : (v.vin_last4 ? `…${v.vin_last4}` : null)}
-                    copy={v.vin && v.vin_complete !== false ? v.vin : false}
-                    hint={v.vin_complete === false ? 'Only part of the VIN is on the page'
-                      : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo'
-                      : [v.usage, v.annual_mileage ? `${Number(v.annual_mileage).toLocaleString('en-US')} mi/yr` : null].filter(Boolean).join(' · ') || null}
-                    hintTone={v.vin_complete === false || (v.vin_complete && v.vin_valid === false) ? 'warn' : undefined} />
-                ))}
-              </dl>
-            </>
-          )}
-
-          {Array.isArray(rc.drivers) && rc.drivers.length > 0 && (
-            <>
-              <h4 className="mt-4 mb-1 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Drivers</h4>
-              <dl>
-                {rc.drivers.map((d, i) => (
-                  <Field key={i} label={d.name || `Driver ${i + 1}`} wide
-                    value={[d.age ? `${d.age}` : null, d.status, d.usage].filter(Boolean).join(' · ') || 'Listed'}
-                    hint={d.status && /exclud/i.test(d.status) ? 'Excluded driver' : null} hintTone="warn" />
-                ))}
-              </dl>
-            </>
-          )}
-
-          {((Array.isArray(rc.surcharges) && rc.surcharges.length > 0) || (Array.isArray(rc.claims) && rc.claims.length > 0)) && (
-            <>
-              <h4 className="mt-4 mb-1 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Surcharges &amp; claims on the page</h4>
-              <ul className="space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
-                {[...(rc.surcharges || []), ...(rc.claims || [])].map((t, i) => <li key={i}>{t}</li>)}
-              </ul>
-            </>
-          )}
-
-          {coverages.length > 0 && (
-            <>
-              <h4 className="mt-4 mb-1 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Coverages</h4>
-              <dl>{coverages.map(([k, v]) => <Field key={k} label={coverageLabel(k)} value={coverageValue(v)} />)}</dl>
-            </>
-          )}
-          {Array.isArray(x.discounts) && x.discounts.length > 0 && (
-            <p className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}>Discounts: <span style={{ color: 'var(--qs-text)' }}>{x.discounts.join(', ')}</span></p>
-          )}
-        </>
-      )}
+      {editing ? <PolicyForm rc={rc} onDone={() => setEditing(false)} /> : <PolicySheet rc={rc} />}
     </section>
   );
 }

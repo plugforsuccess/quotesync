@@ -176,10 +176,16 @@ const EXTRACTION_TOOL = {
             make: nullable('string'),
             model: nullable('string'),
             vin: nullable('string', { description: 'Full VIN exactly as printed (normally 17 characters). If the page masks or truncates it, return only the visible characters, e.g. "XXXX4821" -> "4821".' }),
-            usage: nullable('string', { description: 'How the vehicle is rated, as printed: e.g. "Pleasure", "Commute 12 mi", "Business", "Farm".' }),
+            number: nullable('string', { description: 'Vehicle number as printed (e.g. "001", "Veh 2"). Null if none.' }),
+            usage: nullable('string', { description: 'How the vehicle is rated, as printed: e.g. "Pleasure", "Commute 12 mi", "Business", "Farm". If one usage is printed for all vehicles, repeat it on each.' }),
             annual_mileage: nullable('integer', { description: 'Annual miles if printed.' }),
+            lienholder: nullable('string', { description: 'Lienholder / loss payee / creditor / lessor for THIS vehicle, name only, e.g. "TD Auto Finance".' }),
+            coverages: {
+              type: ['object', 'null'],
+              description: 'Coverages printed for THIS vehicle, values as printed: comp_deductible, coll_deductible, rental, roadside. Null if none are printed per vehicle.',
+            },
           },
-          required: ['year', 'make', 'model', 'vin', 'usage', 'annual_mileage'],
+          required: ['year', 'make', 'model', 'vin', 'number', 'usage', 'annual_mileage', 'lienholder', 'coverages'],
         },
       },
       driver_count: nullable('integer'),
@@ -189,7 +195,7 @@ const EXTRACTION_TOOL = {
         items: {
           type: 'object',
           properties: {
-            name: nullable('string'),
+            name: nullable('string', { description: 'Full name as printed, including Jr / Sr / II if shown.' }),
             age: nullable('integer', { description: 'Age if printed, or derived from a printed date of birth.' }),
             status: nullable('string', { description: 'As printed: rated, listed, excluded, occasional, principal.' }),
             usage: nullable('string', { description: 'Driver-level usage or assigned vehicle, if printed.' }),
@@ -221,19 +227,49 @@ const EXTRACTION_TOOL = {
       coverages: {
         type: 'object',
         description:
-          'Auto: bi_per_person, bi_per_accident, pd, um_uim, med_pay, comp_deductible, coll_deductible, ' +
-          'rental, roadside (per vehicle ok). Home: dwelling, other_structures, personal_property, ' +
+          'Auto: bi_per_person, bi_per_accident, pd, um_uim, med_pay, and comp_deductible, coll_deductible, rental, roadside ' +
+          'only when they are the same for every vehicle (otherwise put them on each vehicle). Home: dwelling, other_structures, personal_property, ' +
           'loss_of_use, liability, med_pay, deductible, wind_hail_deductible. ' +
           'Commercial: liability (per occurrence), aggregate, property, business_income, hired_non_owned, workers_comp. Values as printed.',
       },
-      discounts: { type: 'array', items: { type: 'string' } },
+      property: {
+        type: ['object', 'null'],
+        description: 'Home / condo / renters only: facts about the building. Null for other policies.',
+        properties: {
+          year_built: nullable('integer'),
+          construction: nullable('string', { description: 'As printed, e.g. "Masonry Veneer", "Frame".' }),
+          roof_material: nullable('string'),
+          roof_year: nullable('integer', { description: 'Year the roof was installed / replaced, if printed.' }),
+          square_feet: nullable('integer'),
+          stories: nullable('number'),
+          mortgagee: nullable('string', { description: 'First mortgagee / lender name.' }),
+          loan_number: nullable('string'),
+          paid_by_mortgagee: nullable('boolean', { description: 'True if the premium is paid by the mortgagee (escrow).' }),
+        },
+        required: ['year_built', 'construction', 'roof_material', 'roof_year', 'square_feet', 'stories', 'mortgagee', 'loan_number', 'paid_by_mortgagee'],
+      },
+      endorsements: {
+        type: 'array',
+        description: 'Every endorsement, option or rider printed, one each. Empty if none.',
+        items: {
+          type: 'object',
+          properties: {
+            code: nullable('string', { description: 'Form or option code as printed, e.g. "HO-2444.2", "Option OL".' }),
+            name: { type: 'string', description: 'Plain name, e.g. "Back-up of sewer or drain".' },
+            limit: nullable('string', { description: 'Limit or amount as printed, e.g. "5% of Coverage A / $56,515".' }),
+          },
+          required: ['code', 'name', 'limit'],
+        },
+      },
+      discounts: { type: 'array', items: { type: 'string' }, description: 'Short discount names only, e.g. "Multicar", "Good student", "Accident-free 2 yrs". No explanations.' },
+      summary: nullable('string', { description: 'One or two short sentences a producer must know before quoting that are NOT already in the fields above (e.g. "Mid-term change adding a car; renews for a full term next time."). Null if nothing.' }),
       confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
       notes: nullable('string', { description: 'Anything odd: multiple policies on page, cut-off, unreadable.' }),
     },
     required: [
       'carrier', 'carrier_raw', 'policy_type', 'policy_number', 'premium', 'term_months',
       'effective_date', 'expiration_date', 'insured_name', 'insured_address', 'vehicles',
-      'driver_count', 'drivers', 'surcharges', 'claims', 'current_agent', 'coverages', 'discounts', 'confidence', 'notes',
+      'driver_count', 'drivers', 'surcharges', 'claims', 'current_agent', 'coverages', 'property', 'endorsements', 'discounts', 'summary', 'confidence', 'notes',
     ],
   },
 }
@@ -247,6 +283,8 @@ const INSTRUCTION =
   'If the named insured is a business, or the page is a business owners, general liability or commercial auto policy, use the commercial policy types. ' +
   'List every driver on the page with their status (rated, listed, excluded) and age if shown, each vehicle\'s usage ' +
   'and annual miles if shown, and any surcharges (accidents, violations, points) or claims printed, with dates. ' +
+  'Put anything printed per vehicle (deductibles, rental, roadside, lienholder) on that vehicle. ' +
+  'For home policies, record the building facts, mortgagee and every endorsement in their own fields, not in notes. ' +
   'Record the servicing agent or agency block exactly as printed, if there is one. ' +
   'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
 
@@ -269,7 +307,7 @@ async function extractDecPage(apiKey: string, base64: string, mediaType: string)
         },
         body: JSON.stringify({
           model: ANTHROPIC_MODEL,
-          max_tokens: 1500,
+          max_tokens: 3000,
           tools: [EXTRACTION_TOOL],
           tool_choice: toolChoice,
           messages: [{ role: 'user', content: [fileBlock, { type: 'text', text: INSTRUCTION }] }],
@@ -375,9 +413,47 @@ function cleanVehicle(v: any) {
     vin_last4: vin ? vin.slice(-4) : null,
     vin_complete: !!vin && vin.length === 17,
     vin_valid: !!vin && vin.length === 17 && vinCheckDigitOk(vin),
+    number: cleanText(v?.number, 20),
     usage: cleanText(v?.usage, 80),
     annual_mileage: Number.isInteger(v?.annual_mileage) && v.annual_mileage > 0 ? v.annual_mileage : null,
+    lienholder: cleanText(v?.lienholder, 120),
+    coverages: cleanCoverages(v?.coverages),
   }
+}
+
+function cleanCoverages(c: any): Record<string, string> | null {
+  if (!c || typeof c !== 'object' || Array.isArray(c)) return null
+  const out: Record<string, string> = {}
+  for (const [k, v] of Object.entries(c)) {
+    if (v == null || v === '') continue
+    out[String(k).slice(0, 40)] = cleanText(typeof v === 'object' ? JSON.stringify(v) : v, 120) as string
+  }
+  return Object.keys(out).length ? out : null
+}
+
+function cleanProperty(p: any) {
+  if (!p || typeof p !== 'object') return null
+  const int = (v: unknown, lo: number, hi: number) => Number.isInteger(v) && (v as number) >= lo && (v as number) <= hi ? v : null
+  const out = {
+    year_built: int(p.year_built, 1700, 2100),
+    construction: cleanText(p.construction, 80),
+    roof_material: cleanText(p.roof_material, 80),
+    roof_year: int(p.roof_year, 1900, 2100),
+    square_feet: int(p.square_feet, 100, 100000),
+    stories: typeof p.stories === 'number' && p.stories > 0 && p.stories < 20 ? p.stories : null,
+    mortgagee: cleanText(p.mortgagee, 160),
+    loan_number: cleanText(p.loan_number, 40),
+    paid_by_mortgagee: typeof p.paid_by_mortgagee === 'boolean' ? p.paid_by_mortgagee : null,
+  }
+  return Object.values(out).some(v => v != null) ? out : null
+}
+
+function cleanEndorsements(v: unknown) {
+  if (!Array.isArray(v)) return []
+  return v
+    .map((e: any) => ({ code: cleanText(e?.code, 40), name: cleanText(e?.name, 160), limit: cleanText(e?.limit, 120) }))
+    .filter(e => e.name)
+    .slice(0, 40)
 }
 
 function cleanDriver(d: any) {
@@ -457,6 +533,9 @@ function flatten(x: any) {
     drivers,
     surcharges: cleanList(x.surcharges),
     claims: cleanList(x.claims),
+    property: cleanProperty(x.property),
+    endorsements: cleanEndorsements(x.endorsements),
+    summary: cleanText(x.summary, 600),
     coverages: x.coverages && typeof x.coverages === 'object' ? x.coverages : null,
     insured_address: cleanText(x.insured_address, 500),
     current_agent: cleanAgent(x.current_agent),

@@ -35,7 +35,7 @@ export default function DecisionCard({ rc, compact = false }) {
           ))}
         </ul>
       )}
-      {reasons.length === 0 && <p className="mt-3 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page trips a rule.</p>}
+      {reasons.length === 0 && <p className="mt-3 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page needs special handling.</p>}
 
       {hints.map((r, i) => (
         <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>
