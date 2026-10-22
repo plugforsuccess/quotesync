@@ -34,6 +34,7 @@ export const queryKeys = {
     competitors: (agencyId) => ['rate_checks', 'competitors', agencyId],
     partners: (agencyId) => ['rate_checks', 'partners', agencyId],
     referrals: (rateCheckId) => ['rate_checks', 'referrals', rateCheckId],
+    rules: (agencyId) => ['rate_checks', 'rules', agencyId],
   },
 
   // ── Feature permissions ─────────────────────────────────────────────────────

@@ -16,7 +16,8 @@ export const RATE_CHECK_LIST_COLUMNS = `
   image_path, image_media_type, policy_number, policy_number_last4, term_source, effective_date,
   expiration_date, vehicle_count, driver_count, vehicles, coverages,
   insured_address, extracted, quote_note, quoted_at, outcome_at,
-  competitor_agent_id, current_agent, referral_consent_given_at, upload_source, consent_given_at
+  competitor_agent_id, current_agent, referral_consent_given_at, upload_source, consent_given_at,
+  decision, decision_carrier, decision_reasons, decision_questions, decided_at
 `;
 
 // Rate checks for an agency, newest first. `statuses` empty/undefined = all.
@@ -268,5 +269,67 @@ export const useAgentUploadDecPage = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
       queryClient.invalidateQueries({ queryKey: queryKeys.leads.all() });
     },
+  });
+};
+
+// ── Routing rules (Rules tab) ────────────────────────────────────────────────
+
+export const useRateCheckRules = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.rules(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rate_check_rules')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('priority')
+        .order('created_at');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+
+// Insert (no id) or update one rule, then re-run the rules on open rate checks.
+export const useSaveRateCheckRule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, agencyId, values }) => {
+      const row = { ...values, agency_id: agencyId, updated_at: new Date().toISOString() };
+      const q = id
+        ? supabase.from('rate_check_rules').update(row).eq('id', id)
+        : supabase.from('rate_check_rules').insert(row);
+      const { data, error } = await q.select().single();
+      if (error) throw error;
+      await supabase.rpc('rate_check_redecide', { p_agency_id: agencyId });
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};
+
+export const useDeleteRateCheckRule = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, agencyId }) => {
+      const { error } = await supabase.from('rate_check_rules').delete().eq('id', id);
+      if (error) throw error;
+      await supabase.rpc('rate_check_redecide', { p_agency_id: agencyId });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};
+
+// Add the default rule set (only if the agency has none).
+export const useSeedRateCheckRules = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (agencyId) => {
+      const { data, error } = await supabase.rpc('rate_check_rules_seed', { p_agency_id: agencyId });
+      if (error) throw error;
+      await supabase.rpc('rate_check_redecide', { p_agency_id: agencyId });
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
   });
 };

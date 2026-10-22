@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, Camera, ExternalLink, Handshake, Map as MapIcon,
-  MessageSquare, Pencil, Phone, Search, Upload, Users, X,
+  MessageSquare, Pencil, Phone, Search, SlidersHorizontal, Upload, Users, X,
 } from 'lucide-react';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
@@ -27,6 +27,8 @@ import CompetitorAgents from './components/rate-checks/CompetitorAgents';
 import ReferralPartners from './components/rate-checks/ReferralPartners';
 import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
+import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
+import RulesTab from './components/rate-checks/RulesTab';
 
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
 const FILTERS = [
@@ -104,6 +106,7 @@ function StaffTag() {
 export default function RateChecksPage() {
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
   const agencyId = currentAgency?.agency_id;
+  const canEditRules = ['owner', 'principal', 'manager'].includes(currentAgency?.agency_role);
   const { data: features, isLoading: featuresLoading } = useEnabledFeatures(agencyId);
   const [tab, setTab] = useState('inbox');
   const [filter, setFilter] = useState('open');
@@ -134,7 +137,7 @@ export default function RateChecksPage() {
     return allRows
       .filter(r => !statuses || statuses.includes(r.status))
       .filter(r => !q
-        || [r.first_name, r.extracted?.insured_name, r.carrier, r.zip, r.policy_number].some(v => v && String(v).toLowerCase().includes(q))
+        || [r.first_name, r.extracted?.insured_name, r.carrier, r.zip, r.policy_number, r.decision_carrier].some(v => v && String(v).toLowerCase().includes(q))
         || (qDigits.length >= 3 && (r.phone || '').includes(qDigits)));
   }, [allRows, filter, search]);
 
@@ -186,6 +189,7 @@ export default function RateChecksPage() {
             { v: 'map', label: 'Where we win', Icon: MapIcon },
             { v: 'agents', label: 'Competing agents', Icon: Users },
             { v: 'partners', label: 'Referral partners', Icon: Handshake },
+            { v: 'rules', label: 'Rules', Icon: SlidersHorizontal },
           ].map(({ v, label, Icon }) => (
             <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)}
               className={`inline-flex shrink-0 items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${tab === v ? 'bg-primary-600 text-white' : ''}`}
@@ -198,6 +202,7 @@ export default function RateChecksPage() {
         {tab === 'map' ? <WinMap agencyId={agencyId} />
           : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} />
           : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />
+          : tab === 'rules' ? <RulesTab agencyId={agencyId} canEdit={canEditRules} />
           : (
           <>
             {overdue > 0 && (
@@ -253,7 +258,7 @@ export default function RateChecksPage() {
                             <div className="mt-0.5 text-xs"><Age rc={r} now={now} /></div>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1.5">
-                            <StatusChip status={r.status} />
+                            {OPEN_STATUSES.includes(r.status) && r.decision ? <DecisionChip rc={r} /> : <StatusChip status={r.status} />}
                             {r.delta != null && <span className="text-sm"><Savings delta={r.delta} /></span>}
                           </div>
                         </div>
@@ -266,7 +271,7 @@ export default function RateChecksPage() {
                     <table className="min-w-full">
                       <thead>
                         <tr style={{ background: 'var(--qs-elevated)' }}>
-                          {['Customer', 'Sent', 'Current policy', 'Pays / yr', 'Allstate / yr', 'Saves / yr', 'Status'].map(h => (
+                          {['Customer', 'Sent', 'Current policy', 'Pays / yr', 'Next', 'Allstate / yr', 'Saves / yr', 'Status'].map(h => (
                             <th key={h} className={thCls} style={thStyle}>{h}</th>
                           ))}
                         </tr>
@@ -292,6 +297,7 @@ export default function RateChecksPage() {
                               {r.carrier ? <>{r.carrier} <span className="capitalize" style={{ color: 'var(--qs-subtle)' }}>{r.policy_type}</span></> : '—'}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(r.annual_premium)}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">{r.decision ? <DecisionChip rc={r} /> : <span style={{ color: 'var(--qs-subtle)' }}>—</span>}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(r.allstate_premium)}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm"><Savings delta={r.delta} /></td>
                             <td className="px-4 py-3 whitespace-nowrap"><StatusChip status={r.status} /></td>
@@ -377,8 +383,9 @@ function RateCheckDrawer({ rc, now, onClose, onQuoted }) {
           {rc.extract_error && (
             <Notice tone="danger">We couldn&apos;t read this photo. Look at it below and fill in the policy details by hand.</Notice>
           )}
-          {!rc.extract_error && warning && <Notice tone="warning">{warning}</Notice>}
+          {!rc.extract_error && !rc.decision && warning && <Notice tone="warning">{warning}</Notice>}
           {notes && <Notice tone="info"><span className="font-semibold">From the scan:</span> {notes}</Notice>}
+          <DecisionCard rc={rc} />
           {rc.upload_source === 'agent' && (
             <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff. No texting consent on file, so no automatic texts go out — follow up yourself.</p>
           )}
@@ -414,6 +421,8 @@ function QuoteBox({ rc, onQuoted }) {
   const deltaPct = result?.delta_pct ?? rc.delta_pct;
   const declined = rc.status === 'declined';
   const sheet = quoteSheet(rc);
+  // An expanded-market risk is quoted with that carrier; the price box compares the same way.
+  const market = rc.decision === 'expanded_market' && rc.decision_carrier ? rc.decision_carrier : 'Allstate';
 
   const submit = (e) => {
     e.preventDefault();
@@ -433,7 +442,7 @@ function QuoteBox({ rc, onQuoted }) {
     <section className="rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{termPrice(rc) || ''}</p>
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{Number(rc.term_months) === 6 ? termPrice(rc) : ''}</p>
       </div>
       <p className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>
         {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}> /yr</span></> : 'Price not read yet'}
@@ -441,12 +450,12 @@ function QuoteBox({ rc, onQuoted }) {
 
       {!outcome && (
         <CopyTextButton text={sheet} className="mt-3 rounded-lg px-3 py-2 text-sm font-medium" style={inputStyle}>
-          Copy details for Allstate quote
+          Copy details for {market} quote
         </CopyTextButton>
       )}
 
       <form onSubmit={submit} className="mt-4 space-y-2">
-        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>Allstate price per year</label>
+        <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} price per year</label>
         <div className="flex gap-2">
           <div className="relative flex-1">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>
@@ -477,7 +486,7 @@ function QuoteBox({ rc, onQuoted }) {
       {outcome === 'lost' && (
         <div className="mt-4 text-sm">
           <div className="font-semibold" style={{ color: 'var(--qs-bright)' }}>
-            Allstate can&apos;t beat {money(rc.annual_premium)}/yr (quoted {money(result?.allstate_premium ?? rc.allstate_premium)}). Lead closed.
+            {market} can&apos;t beat {money(rc.annual_premium)}/yr (quoted {money(result?.allstate_premium ?? rc.allstate_premium)}). Lead closed.
           </div>
           {result?.sms && (
             result.sms.attempted && result.sms.ok

@@ -15,6 +15,52 @@ export const STATUS = {
   declined:       { label: 'Declined',     cls: 'bg-gray-100 text-gray-500' },
 };
 
+// rate_checks.decision → the card. `cls` is the badge; `tone` picks the card colours.
+export const DECISION = {
+  quote_allstate:          { label: 'Quote Allstate',            tone: 'success', cls: 'bg-green-100 text-green-700' },
+  quote_allstate_umbrella: { label: 'Quote Allstate + umbrella', tone: 'success', cls: 'bg-green-100 text-green-700' },
+  expanded_market:         { label: 'Expanded market',           tone: 'info',    cls: 'bg-primary-100 text-primary-700' },
+  double_check:            { label: 'Double check',              tone: 'warning', cls: 'bg-yellow-100 text-yellow-700' },
+  manual_review:           { label: 'Manual Review',             tone: 'warning', cls: 'bg-orange-100 text-orange-700' },
+  refer:                   { label: 'Refer',                     tone: 'neutral', cls: 'bg-gray-200 text-gray-700' },
+};
+
+export function decisionLabel(rc) {
+  const d = DECISION[rc.decision];
+  if (!d) return null;
+  return rc.decision === 'expanded_market' && rc.decision_carrier ? `${d.label} — ${rc.decision_carrier}` : d.label;
+}
+
+// Rule editor vocab (mirrors rate_check_rules check constraints).
+export const RULE_FIELDS = [
+  { value: 'dwelling', label: 'Dwelling limit', kind: 'money', lines: ['home'] },
+  { value: 'home_liability', label: 'Home liability limit', kind: 'money', lines: ['home', 'condo', 'renters'] },
+  { value: 'personal_property', label: 'Personal property limit', kind: 'money', lines: ['home', 'condo', 'renters'] },
+  { value: 'bi_per_person', label: 'Bodily injury per person', kind: 'money', lines: ['auto'] },
+  { value: 'bi_per_accident', label: 'Bodily injury per accident', kind: 'money', lines: ['auto'] },
+  { value: 'pd', label: 'Property damage', kind: 'money', lines: ['auto'] },
+  { value: 'um_uim', label: 'Uninsured motorist', kind: 'money', lines: ['auto'] },
+  { value: 'vehicle_count', label: 'Number of cars', kind: 'number', lines: ['auto'] },
+  { value: 'driver_count', label: 'Number of drivers', kind: 'number', lines: ['auto'] },
+  { value: 'annual_premium', label: 'Premium per year', kind: 'money' },
+  { value: 'term_months', label: 'Term (months)', kind: 'number' },
+  { value: 'carrier', label: 'Carrier', kind: 'text' },
+  { value: 'policy_type', label: 'Policy type', kind: 'text' },
+  { value: 'zip', label: 'ZIP', kind: 'text' },
+];
+export const RULE_OPS = {
+  money:  [['gt', 'is over'], ['gte', 'is at least'], ['lt', 'is under'], ['lte', 'is at most'], ['missing', 'is not on the page']],
+  number: [['gt', 'is more than'], ['gte', 'is at least'], ['lt', 'is less than'], ['lte', 'is at most'], ['eq', 'is'], ['missing', 'is not on the page']],
+  text:   [['eq', 'is'], ['neq', 'is not'], ['in', 'is one of'], ['not_in', 'is not one of'], ['starts_with', 'starts with'], ['missing', 'is not on the page']],
+};
+export const RULE_DECISIONS = [
+  ['umbrella', 'Offer an umbrella'],
+  ['expanded_market', 'Expanded market'],
+  ['double_check', 'Double check'],
+  ['manual_review', 'Manual Review'],
+  ['refer', 'Refer'],
+];
+
 // Only worth saying when the scan wasn't sure.
 export const CONFIDENCE_WARNING = {
   medium: 'Double-check the price and term against the photo.',
