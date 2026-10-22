@@ -61,8 +61,8 @@ async function downscaleToJpeg(file) {
 
 /**
  * Turn the picked file into { base64, mediaType, bytes, downscaled }.
- * PDFs and small JPEG/PNG/WebP go up as-is; HEIC or anything over 2 MB is
- * downscaled to JPEG first. Throws an Error with a user-facing message.
+ * PDFs go up as-is; every image is re-encoded to JPEG (downscaled when over
+ * 2 MB or larger than 1600px). Throws an Error with a user-facing message.
  */
 export async function prepareDecPage(file) {
   if (!file) throw new Error('Please add a photo of your declarations page.');
@@ -72,7 +72,10 @@ export async function prepareDecPage(file) {
   let mediaType = isPdf ? 'application/pdf' : file.type;
   let downscaled = false;
 
-  if (!isPdf && (isHeic(file) || file.size > DOWNSCALE_OVER_BYTES || !PASSTHROUGH_TYPES.includes(file.type))) {
+  // Every raster image is re-encoded to a plain JPEG (and downscaled when big):
+  // the API rejects unusual PNGs (palette, 16-bit) outright, and a phone camera's
+  // rotation metadata gets baked in. PDFs go up as-is.
+  if (!isPdf) {
     try {
       blob = await downscaleToJpeg(file);
       mediaType = 'image/jpeg';

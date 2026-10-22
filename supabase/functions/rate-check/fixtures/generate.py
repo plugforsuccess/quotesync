@@ -142,7 +142,9 @@ def compact(name):
     path = os.path.join(HERE, name)
     im = Image.open(path).convert("L").resize((850, 1100), Image.LANCZOS)
     im = im.point(lambda p: 0 if p < 90 else (110 if p < 170 else (200 if p < 235 else 255)))
-    im.convert("P", palette=Image.ADAPTIVE, colors=4).save(path, optimize=True, bits=2)
+    # 8-bit grayscale: small, and a format Claude's image input accepts (it rejects
+    # 2-bit palette PNGs with "Could not process image").
+    im.save(path, optimize=True)
 
 
 if __name__ == "__main__":
