@@ -31,7 +31,7 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
 
   const field = 'w-full rounded-md px-3 py-2 text-sm';
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Upload dec page">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label="Upload dec page">
       <div className="absolute inset-0 bg-black/50" onClick={upload.isPending ? undefined : onClose} />
       <form onSubmit={submit} className="relative w-full max-w-md space-y-4 rounded-xl p-5 shadow-xl"
         style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-text)' }}>
@@ -66,8 +66,8 @@ export default function AgentUploadDialog({ agencyId, onClose, onCreated }) {
         </div>
 
         <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-          No texting consent is recorded for staff uploads, so the automatic “we couldn’t beat it” text won’t be sent —
-          follow up yourself. An existing open lead with this number is updated instead of duplicated.
+          We won’t send this customer automatic texts, because they haven’t agreed to them. If they already have an open
+          lead, it gets updated instead of duplicated.
         </p>
 
         {upload.isError && <p className="rounded bg-red-50 px-3 py-2 text-sm text-red-700">{upload.error.message}</p>}

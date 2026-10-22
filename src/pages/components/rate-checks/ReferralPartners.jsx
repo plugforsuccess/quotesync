@@ -41,14 +41,13 @@ export default function ReferralPartners({ agencyId }) {
   return (
     <div className="space-y-4">
       <div className="dark-card text-sm" style={{ padding: 12, color: 'var(--qs-subtle)' }}>
-        Refer only customers who ticked the optional referral box on the Rate Check page — the inbox shows a
-        “Refer to partner” option only for them. Confirm Georgia’s rules on referral fees with your attorney before paying or
-        accepting any (fees to unlicensed people are restricted and generally can’t depend on a sale).
+        You can only refer customers who said yes to referrals on the Rate Check page. Before paying or accepting a
+        referral fee, check Georgia’s rules with your attorney.
       </div>
 
       <div className="dark-card overflow-hidden" style={{ padding: 0 }}>
         <div className="flex items-center justify-between p-3" style={{ borderBottom: '1px solid var(--qs-border)' }}>
-          <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Referral partners</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Agencies you refer to</span>
           <button onClick={() => start(null)} className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">Add partner</button>
         </div>
 
@@ -76,7 +75,7 @@ export default function ReferralPartners({ agencyId }) {
         ) : error ? (
           <div className="p-8 text-center text-red-600">Error loading partners.</div>
         ) : data.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>No partners yet.</div>
+          <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>No partners yet. Add an agency that writes what Allstate can’t, like SR-22 or commercial.</div>
         ) : (
           <table className="min-w-full">
             <thead>

@@ -7,6 +7,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Camera } from 'lucide-react';
 import { prepareDecPage, submitRateCheck, formatPhoneInput } from '../lib/rateCheckApi';
 
 const CONSENT_TEXT =
@@ -16,8 +17,8 @@ const CONSENT_TEXT =
 
 // Optional, unchecked by default, and not required to submit.
 const REFERRAL_CONSENT_TEXT =
-  "Optional: if Allstate can't cover what I need, Wiley-Wilson Agency may share my name, number and " +
-  'policy details with a partner agency they trust so that partner can contact me about a quote.';
+  "Optional: if Allstate can't help, Wiley-Wilson Agency may share my name, number and policy details " +
+  'with a trusted partner agency so they can quote me.';
 
 const POLICY_LABELS = { auto: 'auto', home: 'home', renters: 'renters', condo: 'condo', umbrella: 'umbrella' };
 
@@ -54,7 +55,16 @@ export default function RateCheckPage() {
   };
 
   const phoneDigits = phone.replace(/\D/g, '');
-  const canSubmit = file && firstName.trim() && phoneDigits.length === 10 && /^\d{5}$/.test(zip) && consent;
+  const missing = [
+    !file && 'a photo of your policy',
+    !firstName.trim() && 'your first name',
+    phoneDigits.length !== 10 && 'your mobile number',
+    !/^\d{5}$/.test(zip) && 'your ZIP code',
+  ].filter(Boolean);
+  const canSubmit = missing.length === 0 && consent;
+  const missingText = missing.length
+    ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}${consent ? '' : ', then tick the box above'}.`
+    : !consent ? 'Tick the box above so we can text you.' : '';
 
   const onSubmit = async (e) => {
     e.preventDefault();
@@ -91,8 +101,12 @@ export default function RateCheckPage() {
           <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl" aria-hidden="true">✓</div>
           <h1 className="text-2xl font-bold text-gray-900 mb-3">Got it — we&apos;re checking {what} now.</h1>
           <p className="text-gray-700">If we can beat it, Cam will text you within the hour.</p>
-          <p className="mt-6 text-sm text-gray-500">No spam, no pressure. If we can&apos;t save you money, we&apos;ll tell you that too.</p>
         </div>
+        <ol className="space-y-3 rounded-2xl bg-white p-5 text-left text-gray-700 shadow-sm">
+          <li className="flex gap-3"><Step n={1} /> We price the same coverage with Allstate.</li>
+          <li className="flex gap-3"><Step n={2} /> If we can save you money, Cam texts you the number.</li>
+          <li className="flex gap-3"><Step n={3} /> If we can&apos;t, we&apos;ll say so. No spam, no pressure.</li>
+        </ol>
       </Shell>
     );
   }
@@ -105,7 +119,7 @@ export default function RateCheckPage() {
         Overpaying for insurance? Find out in 60 seconds.
       </h1>
       <p className="mt-3 text-gray-700">
-        Snap a photo of your current policy&apos;s declarations page. We&apos;ll check it against Allstate and text you only if we can save you money.
+        Take a photo of your policy&apos;s first page. A local Allstate agent compares it and texts you only if we can save you money.
       </p>
 
       <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
@@ -136,13 +150,21 @@ export default function RateCheckPage() {
               onClick={() => cameraInput.current?.click()}
               className="flex w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50 px-4 py-8 text-blue-800 active:bg-blue-100"
             >
-              <span className="text-4xl" aria-hidden="true">📷</span>
-              <span className="text-lg font-bold">Snap your declarations page</span>
-              <span className="text-sm text-blue-700">The page that lists your premium &amp; coverages</span>
+              <Camera className="h-10 w-10" aria-hidden="true" strokeWidth={1.75} />
+              <span className="text-lg font-bold">Take a photo of your policy</span>
+              <span className="text-sm text-blue-700">The page with your price and coverages</span>
             </button>
             <button type="button" onClick={() => fileInput.current?.click()} className="mt-2 w-full text-center text-sm font-medium text-gray-600 underline">
-              or upload a photo / PDF
+              or upload a photo or PDF
             </button>
+            <details className="mt-3 rounded-lg bg-white px-3 py-2 text-sm text-gray-700">
+              <summary className="cursor-pointer font-medium text-gray-800">Which page do I need?</summary>
+              <p className="mt-2">
+                The one insurers call the <em>declarations page</em>, usually page 1. It shows your name, your cars or home,
+                your coverages and your total price. Find it in your insurer&apos;s app, or in the email they sent when your
+                policy started or renewed. A screenshot works.
+              </p>
+            </details>
           </div>
         )}
 
@@ -178,7 +200,9 @@ export default function RateCheckPage() {
         >
           {sending ? 'Reading your policy…' : 'Check my rate'}
         </button>
-        {sending && <p className="text-center text-sm text-gray-500" aria-live="polite">This usually takes 10–20 seconds.</p>}
+        {sending
+          ? <p className="text-center text-sm text-gray-500" aria-live="polite">This usually takes 10–20 seconds.</p>
+          : !canSubmit && <p className="text-center text-sm text-gray-500" aria-live="polite">{missingText}</p>}
       </form>
     </Shell>
   );
@@ -186,6 +210,10 @@ export default function RateCheckPage() {
 
 const inputCls =
   'w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-base text-gray-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-200';
+
+function Step({ n }) {
+  return <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-800" aria-hidden="true">{n}</span>;
+}
 
 function Field({ label, htmlFor, children }) {
   return (

@@ -27,4 +27,5 @@ dist-ssr
 .env
 .env.local
 .env.production
-.env.developmenttest-results/
+.env.development
+test-results/

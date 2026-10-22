@@ -8,6 +8,8 @@ import { useMemo, useState } from 'react';
 import { Star } from 'lucide-react';
 import { useCompetitorAgents, useUpdateCompetitorAgent } from '../../../hooks/useRateChecks';
 import { thCls, thStyle, inputStyle, money, formatPhone, formatDate, BOOK_OWNERSHIP } from './ui';
+import { isSelectingText } from './format';
+import { Field } from './Copyable';
 
 export function OwnershipChip({ value }) {
   const o = BOOK_OWNERSHIP[value] || BOOK_OWNERSHIP.check;
@@ -50,13 +52,14 @@ export default function CompetitorAgents({ agencyId }) {
         </select>
         <input value={zip} onChange={e => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))} placeholder="ZIP"
           className="w-20 rounded px-2 py-1" style={inputStyle} inputMode="numeric" />
-        <label>Seen at least{' '}
+        <label>At least{' '}
           <input type="number" min={1} value={minSeen} onChange={e => setMinSeen(Math.max(1, Number(e.target.value) || 1))}
-            className="ml-1 w-14 rounded px-2 py-1" style={inputStyle} />
+            className="mx-1 w-14 rounded px-2 py-1" style={inputStyle} />
+          customers
         </label>
-        <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={acquirableOnly} onChange={e => setAcquirableOnly(e.target.checked)} /> Acquirable only</label>
-        <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={starredOnly} onChange={e => setStarredOnly(e.target.checked)} /> Watchlist</label>
-        <span className="ml-auto text-xs">Internal only — never contact an agent about a specific customer.</span>
+        <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={acquirableOnly} onChange={e => setAcquirableOnly(e.target.checked)} /> Books we could buy</label>
+        <label className="inline-flex items-center gap-1.5"><input type="checkbox" checked={starredOnly} onChange={e => setStarredOnly(e.target.checked)} /> Starred</label>
+        <span className="ml-auto text-xs">Internal only. Never mention a customer to their agent.</span>
       </div>
 
       {isLoading ? (
@@ -65,7 +68,7 @@ export default function CompetitorAgents({ agencyId }) {
         <div className="p-8 text-center text-red-600">Error loading competing agents.</div>
       ) : rows.length === 0 ? (
         <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>
-          {data.length === 0 ? 'No agents yet — they appear as dec pages with an agent block come in.' : 'No agents match these filters.'}
+          {data.length === 0 ? 'No agents yet. They show up here when a policy lists the customer’s agent.' : 'No agents match these filters.'}
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -73,14 +76,14 @@ export default function CompetitorAgents({ agencyId }) {
             <thead>
               <tr style={{ background: 'var(--qs-elevated)' }}>
                 <th className={thCls} style={thStyle}></th>
-                <th className={thCls} style={thStyle}>Agent / agency</th>
+                <th className={thCls} style={thStyle}>Agency</th>
                 <th className={thCls} style={thStyle}>Carrier</th>
-                <th className={thCls} style={thStyle}>Book</th>
+                <th className={thCls} style={thStyle}>Who owns the book</th>
                 <th className={thCls} style={thStyle}>ZIPs</th>
-                <SortTh k="rate_checks">Seen</SortTh>
-                <SortTh k="avg_annual_premium">Avg $/yr</SortTh>
-                <SortTh k="win_rate_pct">Win rate</SortTh>
-                <SortTh k="avg_savings_when_won">Avg save</SortTh>
+                <SortTh k="rate_checks">Customers</SortTh>
+                <SortTh k="avg_annual_premium">Avg premium</SortTh>
+                <SortTh k="win_rate_pct">We win</SortTh>
+                <SortTh k="avg_savings_when_won">Avg savings</SortTh>
                 <th className={thCls} style={thStyle}>Last seen</th>
               </tr>
             </thead>
@@ -101,7 +104,7 @@ function FragmentRow({ r, open, onToggle, update }) {
   const name = r.agency_name || r.agent_name || 'Unknown agent';
   return (
     <>
-      <tr className="cursor-pointer" style={{ borderTop: '1px solid var(--qs-border)' }} onClick={onToggle}
+      <tr className="cursor-pointer" style={{ borderTop: '1px solid var(--qs-border)' }} onClick={() => { if (!isSelectingText()) onToggle(); }} aria-expanded={open}
         onMouseEnter={e => { e.currentTarget.style.background = 'var(--qs-elevated)'; }}
         onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
         <td className="px-4 py-3">
@@ -123,7 +126,7 @@ function FragmentRow({ r, open, onToggle, update }) {
           {r.win_rate_pct != null ? `${r.win_rate_pct}%` : '—'}
           {Number(r.quoted) > 0 && <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}> ({r.wins}/{r.quoted})</span>}
         </td>
-        <td className="px-4 py-3 text-sm text-green-600">{money(r.avg_savings_when_won)}</td>
+        <td className="px-4 py-3 text-sm text-green-600">{r.avg_savings_when_won != null ? `${money(r.avg_savings_when_won)}/yr` : '—'}</td>
         <td className="px-4 py-3 text-sm" style={{ color: 'var(--qs-text)' }}>{formatDate(r.last_seen_at)}</td>
       </tr>
       {open && (
@@ -131,26 +134,30 @@ function FragmentRow({ r, open, onToggle, update }) {
           <td></td>
           <td colSpan={9} className="px-4 py-4 text-sm">
             <div className="grid gap-4 md:grid-cols-3">
-              <div className="space-y-1" style={{ color: 'var(--qs-text)' }}>
-                {r.phone && <div>📞 {formatPhone(r.phone)}</div>}
-                {r.email && <div>✉️ {r.email}</div>}
-                {r.address && <div>📍 {r.address}</div>}
-                {r.agent_code && <div>Agent code: <span className="font-mono">{r.agent_code}</span></div>}
-                <div style={{ color: 'var(--qs-subtle)' }}>
-                  Lines: {(r.policy_types || []).join(', ') || '—'} · Premium seen: {money(r.total_annual_premium_seen)}/yr · First seen {formatDate(r.first_seen_at)}
-                </div>
+              <div>
+                <dl>
+                  {r.agency_name && r.agent_name && <Field label="Agent" value={r.agent_name} />}
+                  <Field label="Phone" value={r.phone ? formatPhone(r.phone) : null} copy />
+                  {r.email && <Field label="Email" value={r.email} copy />}
+                  {r.address && <Field label="Address" value={r.address} copy />}
+                  {r.agent_code && <Field label="Agent code" value={r.agent_code} copy mono />}
+                </dl>
+                <p className="mt-2" style={{ color: 'var(--qs-subtle)' }}>
+                  Writes {(r.policy_types || []).join(' and ') || '—'}. Their customers we&apos;ve seen pay {money(r.total_annual_premium_seen)}/yr in total. First seen {formatDate(r.first_seen_at)}.
+                </p>
               </div>
               <label className="space-y-1">
-                <span style={{ color: 'var(--qs-subtle)' }}>Book ownership</span>
+                <span style={{ color: 'var(--qs-subtle)' }}>Who owns the book</span>
                 <select value={r.book_ownership} onChange={e => update.mutate({ id: r.id, updates: { book_ownership: e.target.value } })}
                   className="w-full rounded px-2 py-1.5" style={inputStyle}>
-                  {Object.entries(BOOK_OWNERSHIP).map(([k, o]) => <option key={k} value={k}>{o.label} — {o.hint}</option>)}
+                  {Object.entries(BOOK_OWNERSHIP).map(([k, o]) => <option key={k} value={k}>{o.label}</option>)}
                 </select>
+                <span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>{(BOOK_OWNERSHIP[r.book_ownership] || BOOK_OWNERSHIP.check).hint}</span>
               </label>
               <div className="space-y-1">
                 <span style={{ color: 'var(--qs-subtle)' }}>Notes</span>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={3} className="w-full rounded px-2 py-1.5" style={inputStyle}
-                  placeholder="e.g. met at chamber event; retiring in 2027?" />
+                  placeholder="e.g. met at a chamber event; may retire in 2027" />
                 <button onClick={() => update.mutate({ id: r.id, updates: { notes: notes.trim() || null } })}
                   disabled={update.isPending || notes === (r.notes || '')}
                   className="rounded bg-primary-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-50">Save notes</button>

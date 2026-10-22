@@ -11,7 +11,7 @@ const RATE_CHECK_URL = import.meta.env.VITE_SUPABASE_URL
 
 export const RATE_CHECK_CONSENT_VERSION = 'ratecheck-v1';
 // Separate, optional opt-in for partner referrals — never bundled with the call/text consent.
-export const RATE_CHECK_REFERRAL_CONSENT_VERSION = 'ratecheck-referral-v1';
+export const RATE_CHECK_REFERRAL_CONSENT_VERSION = 'ratecheck-referral-v2';
 
 const DOWNSCALE_OVER_BYTES = 2 * 1024 * 1024;
 const MAX_LONG_EDGE = 1600;
