@@ -3,6 +3,7 @@
 // Shows why, what the page already tells us, and what still has to be asked.
 
 import { DECISION, decisionLabel } from './format';
+import { vehicleQuestions } from './policyView';
 
 const TONE = {
   success: { background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' },
@@ -18,7 +19,8 @@ export default function DecisionCard({ rc, compact = false }) {
   const reasons = all.filter(r => r.decision !== 'info' && r.decision !== 'fact');
   const hints = all.filter(r => r.decision === 'info');
   const facts = all.filter(r => r.decision === 'fact');
-  const questions = Array.isArray(rc.decision_questions) ? rc.decision_questions : [];
+  // The rules' questions, plus what only the producer can find out (loan payoff year per financed car).
+  const questions = [...(Array.isArray(rc.decision_questions) ? rc.decision_questions : []), ...vehicleQuestions(rc)];
 
   return (
     <section className="rounded-xl p-5" style={{ ...TONE[d.tone], color: 'var(--qs-bright)' }} aria-label="Routing decision">
@@ -35,7 +37,7 @@ export default function DecisionCard({ rc, compact = false }) {
           ))}
         </ul>
       )}
-      {reasons.length === 0 && <p className="mt-3 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page trips a rule.</p>}
+      {reasons.length === 0 && <p className="mt-3 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page needs special handling.</p>}
 
       {hints.map((r, i) => (
         <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>

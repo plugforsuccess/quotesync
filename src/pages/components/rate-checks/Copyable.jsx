@@ -4,6 +4,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 
 async function writeClipboard(text) {
   try {
@@ -65,14 +66,16 @@ export function CopyTextButton({ text, children, className = '', style }) {
 }
 
 // Label / value row with a copy button. Value stays plain selectable text.
-export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone }) {
+// `addOn` marks something the producer must match on the quote (shown in yellow).
+export function Field({ label, value, copy, mono = false, wide = false, hint, hintTone, addOn = false }) {
   const empty = value == null || value === '';
   return (
     <div className="flex items-start justify-between gap-3 py-2" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <dt className={`${wide ? 'w-36 sm:w-52' : 'w-32'} shrink-0 text-sm`} style={{ color: 'var(--qs-subtle)' }}>{label}</dt>
       <dd className="flex min-w-0 flex-1 items-start justify-end gap-1 text-right text-sm">
         <span className="min-w-0">
-          <span className={`select-text break-words ${mono ? 'font-mono' : ''}`} style={{ color: empty ? 'var(--qs-subtle)' : 'var(--qs-bright)' }}>
+          <span className={`select-text break-words ${mono ? 'font-mono' : ''} ${addOn && !empty ? ADD_ON_CLS : ''}`}
+            style={addOn && !empty ? ADD_ON_STYLE : { color: empty ? 'var(--qs-subtle)' : 'var(--qs-bright)' }}>
             {empty ? 'Not on page' : value}
           </span>
           {hint && <span className={`block text-xs ${hintTone === 'warn' ? 'text-yellow-600' : ''}`} style={hintTone === 'warn' ? undefined : { color: 'var(--qs-subtle)' }}>{hint}</span>}

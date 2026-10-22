@@ -3,6 +3,10 @@
 // an agent pastes alongside the Allstate quote.
 
 import { money, formatPhone } from './ui';
+import {
+  caps, insuredName, vehicleTitle, vehicleCoverages, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
+  homeCoverageRows, endorsementsOf, driverRows, discountsOf,
+} from './policyView';
 
 // rate_checks.status → what an agent should read.
 export const STATUS = {
@@ -153,48 +157,71 @@ export function termPrice(rc) {
   return money(rc.current_premium, { cents: true });
 }
 
-// Everything needed to run the Allstate quote, as plain text to paste.
+// Everything needed to run the Allstate quote, as plain text to paste, in the
+// order it's keyed in. Same normalization as the drawer (policyView.js).
 export function quoteSheet(rc) {
   const x = rc.extracted || {};
   const lines = [];
-  const name = x.insured_name || rc.first_name;
-  if (name) lines.push(name);
-  if (rc.insured_address) lines.push(rc.insured_address);
-  else if (rc.zip) lines.push(`ZIP ${rc.zip}`);
-  if (rc.phone) lines.push(formatPhone(rc.phone));
-  lines.push('');
+  const push = (...l) => lines.push(...l);
+  const name = insuredName(x.insured_name) || caps(rc.first_name);
+  if (name) push(name);
+  if (rc.insured_address) push(caps(rc.insured_address));
+  else if (rc.zip) push(`ZIP ${rc.zip}`);
+  if (rc.phone) push(formatPhone(rc.phone));
 
   const type = rc.policy_type ? `${policyTypeLabel(rc.policy_type).toLowerCase()} ` : '';
-  lines.push(`Current: ${rc.carrier || 'Unknown carrier'} ${type}policy`.replace(/\s+/g, ' '));
-  if (rc.policy_number) lines.push(`Policy #: ${rc.policy_number}`);
-  const period = policyPeriod(rc);
-  if (period) lines.push(`Policy period: ${period}`);
+  push('', `Current: ${carrierLabel(rc) || 'Unknown carrier'} ${type}policy`.replace(/\s+/g, ' '));
   const price = termPrice(rc);
-  if (price) lines.push(`Premium: ${price}${rc.annual_premium != null && Number(rc.term_months) !== 12 ? ` (${money(rc.annual_premium)}/yr)` : ''}`);
+  if (price) push(`Premium: ${price}${rc.annual_premium != null && Number(rc.term_months) !== 12 ? ` (${money(rc.annual_premium)}/yr)` : ''}`);
+  const period = policyPeriod(rc);
+  if (period) push(`Policy period: ${period}`);
+  if (rc.policy_number) push(`Policy #: ${rc.policy_number}`);
+
+  const drivers = driverRows(rc);
+  if (drivers.length) {
+    push('', 'Drivers:');
+    drivers.forEach(d => push(`  ${[d.name, d.age != null ? `age ${d.age}` : null, d.status, d.usage].filter(Boolean).join(' — ')}`));
+  } else if (rc.driver_count != null) push('', `Drivers: ${rc.driver_count}`);
 
   const vehicles = Array.isArray(rc.vehicles) ? rc.vehicles : [];
   if (vehicles.length) {
-    lines.push('', 'Vehicles:');
-    vehicles.forEach(v => {
-      const vin = v.vin ? (v.vin_complete === false ? ` — VIN ends ${v.vin}` : ` — VIN ${v.vin}`) : '';
-      const use = [v.usage, v.annual_mileage ? `${v.annual_mileage} mi/yr` : null].filter(Boolean).join(', ');
-      lines.push(`  ${vehicleName(v)}${vin}${use ? ` (${use})` : ''}`);
+    push('', 'Vehicles:');
+    vehiclesNewestFirst(rc).forEach(({ v, index: i }) => {
+      const vin = v.vin ? (v.vin_complete === false ? `VIN ends ${v.vin}` : `VIN ${v.vin}`) : null;
+      push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}`);
+      const lien = lienholderFor(rc, i);
+      if (lien) push(`    Lienholder: ${lien} — ask loan payoff year`);
+      const own = vehicleCoverages(rc, i);
+      if (own.length) push(`    ${own.map(r => `${r.label} ${r.value}`).join(' · ')}`);
     });
   }
-  const drivers = Array.isArray(rc.drivers) ? rc.drivers : [];
-  if (drivers.length) {
-    lines.push('', 'Drivers:');
-    drivers.forEach(d => lines.push(`  ${[d.name || 'Driver', d.age ? `age ${d.age}` : null, d.status, d.usage].filter(Boolean).join(' — ')}`));
-  } else if (rc.driver_count != null) lines.push(`Drivers: ${rc.driver_count}`);
-  const record = [...(Array.isArray(rc.surcharges) ? rc.surcharges : []), ...(Array.isArray(rc.claims) ? rc.claims : [])];
-  if (record.length) { lines.push('', 'Surcharges / claims on the page:'); record.forEach(t => lines.push(`  ${t}`)); }
 
-  const cov = rc.coverages && typeof rc.coverages === 'object' ? Object.entries(rc.coverages) : [];
-  if (cov.length) {
-    lines.push('', 'Coverages:');
-    cov.forEach(([k, v]) => lines.push(`  ${coverageLabel(k)}: ${coverageValue(v)}`));
+  if (['auto', 'commercial_auto'].includes(rc.policy_type)) {
+    autoCoverageGroups(rc).forEach(g => {
+      push('', `${g.title === 'Every vehicle' ? 'On every vehicle' : g.title}:`);
+      g.rows.forEach(r => push(`  ${r.label}: ${r.value}${r.note ? ` (${r.note})` : ''}`));
+    });
+  } else {
+    const p = propertyFacts(rc);
+    if (p) {
+      push('', 'Property:');
+      if (p.year_built) push(`  Year built: ${p.year_built}`);
+      if (p.construction) push(`  Construction: ${caps(p.construction)}`);
+      if (p.roof_material || p.roof_year) push(`  Roof: ${[caps(p.roof_material), p.roof_year ? `INSTALLED ${p.roof_year}` : null].filter(Boolean).join(', ')}`);
+      if (p.square_feet) push(`  Square feet: ${p.square_feet}`);
+      if (p.mortgagee) push(`  Mortgagee: ${caps(p.mortgagee)}${p.loan_number ? ` — loan ${p.loan_number}` : ''}`);
+      if (p.paid_by_mortgagee) push('  Paid from escrow');
+    }
+    const rows = homeCoverageRows(rc);
+    if (rows.length) { push('', 'Coverages:'); rows.forEach(r => push(`  ${r.label}: ${r.value}${r.note ? ` (${r.note})` : ''}`)); }
+    const ends = endorsementsOf(rc);
+    if (ends.length) { push('', 'Endorsements:'); ends.forEach(e => push(`  ${[e.code, e.name].filter(Boolean).join(' ')}${e.limit ? `: ${e.limit}` : ''}`)); }
   }
-  if (Array.isArray(x.discounts) && x.discounts.length) lines.push('', `Discounts: ${x.discounts.join(', ')}`);
+
+  const record = [...(Array.isArray(rc.surcharges) ? rc.surcharges : []), ...(Array.isArray(rc.claims) ? rc.claims : [])];
+  if (record.length) { push('', 'On the record:'); record.forEach(t => push(`  ${t}`)); }
+  const discounts = discountsOf(rc);
+  if (discounts.length) push('', `Discounts now: ${discounts.join(', ')}`);
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 }
 

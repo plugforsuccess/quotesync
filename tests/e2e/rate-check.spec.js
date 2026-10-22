@@ -76,7 +76,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
 
   await page.getByTestId('rc-files').setInputFiles(photoPath);
-  await expect(page.getByText('Clear photo')).toBeVisible();
+  await expect(page.getByText('Clear', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: /Continue/ }).click();
 
   await expect(page.getByRole('heading', { name: 'Where should Cam text you?' })).toBeVisible();
@@ -191,9 +191,9 @@ test('saves progress on the device and warns about dark or blurry photos', async
 
   await page.goto('/ratecheck');
   await page.getByTestId('rc-files').setInputFiles([dark, flat]);
-  await expect(page.getByText('Too dark — retake in better light')).toBeVisible();
-  await expect(page.getByText('Looks blurry — hold steady and retake')).toBeVisible();
-  await expect(page.getByText('Some photos may be hard to read. You can still send them.')).toBeVisible();
+  await expect(page.getByText('Too dark', { exact: true })).toBeVisible();
+  await expect(page.getByText('Blurry', { exact: true })).toBeVisible();
+  await expect(page.getByText('Blurry or dark? Retake, or send anyway.')).toBeVisible();
   await page.getByRole('button', { name: /Continue/ }).click();
   await page.getByLabel('First name').fill('Dre');
 
