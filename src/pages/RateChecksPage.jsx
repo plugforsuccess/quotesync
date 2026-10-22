@@ -710,10 +710,33 @@ function PolicyDetails({ rc, onRescan, rescanning }) {
                     value={v.vin ? (v.vin_complete === false ? `…${v.vin}` : v.vin) : (v.vin_last4 ? `…${v.vin_last4}` : null)}
                     copy={v.vin && v.vin_complete !== false ? v.vin : false}
                     hint={v.vin_complete === false ? 'Only part of the VIN is on the page'
-                      : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo' : null}
-                    hintTone="warn" />
+                      : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo'
+                      : [v.usage, v.annual_mileage ? `${Number(v.annual_mileage).toLocaleString('en-US')} mi/yr` : null].filter(Boolean).join(' · ') || null}
+                    hintTone={v.vin_complete === false || (v.vin_complete && v.vin_valid === false) ? 'warn' : undefined} />
                 ))}
               </dl>
+            </>
+          )}
+
+          {Array.isArray(rc.drivers) && rc.drivers.length > 0 && (
+            <>
+              <h4 className="mt-4 mb-1 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Drivers</h4>
+              <dl>
+                {rc.drivers.map((d, i) => (
+                  <Field key={i} label={d.name || `Driver ${i + 1}`} wide
+                    value={[d.age ? `${d.age}` : null, d.status, d.usage].filter(Boolean).join(' · ') || 'Listed'}
+                    hint={d.status && /exclud/i.test(d.status) ? 'Excluded driver' : null} hintTone="warn" />
+                ))}
+              </dl>
+            </>
+          )}
+
+          {((Array.isArray(rc.surcharges) && rc.surcharges.length > 0) || (Array.isArray(rc.claims) && rc.claims.length > 0)) && (
+            <>
+              <h4 className="mt-4 mb-1 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>Surcharges &amp; claims on the page</h4>
+              <ul className="space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
+                {[...(rc.surcharges || []), ...(rc.claims || [])].map((t, i) => <li key={i}>{t}</li>)}
+              </ul>
             </>
           )}
 

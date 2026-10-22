@@ -19,7 +19,7 @@ export const RATE_CHECK_LIST_COLUMNS = `
   competitor_agent_id, current_agent, referral_consent_given_at, upload_source, consent_given_at,
   decision, decision_carrier, decision_reasons, decision_questions, decided_at,
   invite_id, producer_id, producer_name, event_name, carrier_raw,
-  bound_carrier, bound_premium, bound_at, housing_situation
+  bound_carrier, bound_premium, bound_at, housing_situation, drivers, surcharges, claims
 `;
 
 // Rate checks for an agency, newest first. `statuses` empty/undefined = all.

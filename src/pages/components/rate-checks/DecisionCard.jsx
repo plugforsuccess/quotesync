@@ -1,6 +1,6 @@
 // src/pages/components/rate-checks/DecisionCard.jsx
 // Where this rate check goes, per the agency's rules (rate_checks.decision).
-// Shows why, and what the dec page can't tell us so the producer asks first.
+// Shows why, what the page already tells us, and what still has to be asked.
 
 import { DECISION, decisionLabel } from './format';
 
@@ -14,39 +14,46 @@ const TONE = {
 export default function DecisionCard({ rc, compact = false }) {
   const d = DECISION[rc.decision];
   if (!d) return null;
-  const reasons = Array.isArray(rc.decision_reasons) ? rc.decision_reasons : [];
+  const all = Array.isArray(rc.decision_reasons) ? rc.decision_reasons : [];
+  const reasons = all.filter(r => r.decision !== 'info' && r.decision !== 'fact');
+  const hints = all.filter(r => r.decision === 'info');
+  const facts = all.filter(r => r.decision === 'fact');
   const questions = Array.isArray(rc.decision_questions) ? rc.decision_questions : [];
-  // The umbrella prompt rides on an Allstate quote; show it as a reason line.
-  const umbrella = rc.decision === 'quote_allstate_umbrella';
 
   return (
-    <section className="rounded-xl p-4" style={{ ...TONE[d.tone], color: 'var(--qs-bright)' }} aria-label="Routing decision">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-xl font-bold">{decisionLabel(rc)}</h3>
-        <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>From the rules — not an underwriting approval</span>
-      </div>
+    <section className="rounded-xl p-5" style={{ ...TONE[d.tone], color: 'var(--qs-bright)' }} aria-label="Routing decision">
+      <h3 className="text-xl font-bold leading-tight">{decisionLabel(rc)}</h3>
+      <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>From the rules — not an underwriting approval</p>
 
       {reasons.length > 0 && (
-        <ul className="mt-2 space-y-1 text-sm">
+        <ul className="mt-4 space-y-2 text-sm">
           {reasons.map((r, i) => (
-            <li key={i} className="flex gap-2">
-              <span aria-hidden="true" style={{ color: 'var(--qs-subtle)' }}>•</span>
-              <span style={r.decision === 'info' ? { color: 'var(--qs-subtle)' } : undefined}>
-                <span className="font-medium">{r.name}</span>
-                {r.detail && <span style={{ color: r.decision === 'info' ? 'var(--qs-subtle)' : 'var(--qs-text)' }}> — {r.detail}</span>}
-              </span>
+            <li key={i} className="flex gap-2.5">
+              <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--qs-subtle)' }} />
+              <span><span className="font-semibold">{r.name}</span>{r.detail && <span style={{ color: 'var(--qs-text)' }}> — {r.detail}</span>}</span>
             </li>
           ))}
         </ul>
       )}
-      {reasons.length === 0 && !umbrella && (
-        <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page trips a rule.</p>
+      {reasons.length === 0 && <p className="mt-3 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page trips a rule.</p>}
+
+      {hints.map((r, i) => (
+        <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>
+      ))}
+
+      {!compact && facts.length > 0 && (
+        <div className="mt-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>On the page</p>
+          <ul className="mt-1.5 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
+            {facts.flatMap(f => String(f.detail || '').split('; ')).filter(Boolean).map((t, i) => <li key={i}>{t}</li>)}
+          </ul>
+        </div>
       )}
 
       {!compact && questions.length > 0 && (
-        <div className="mt-3">
-          <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--qs-subtle)' }}>Ask before quoting</p>
-          <ul className="mt-1 grid gap-x-4 gap-y-0.5 text-sm sm:grid-cols-2" style={{ color: 'var(--qs-text)' }}>
+        <div className="mt-5">
+          <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>Still to ask</p>
+          <ul className="mt-1.5 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             {questions.map((q, i) => <li key={i}>{q}</li>)}
           </ul>
         </div>
@@ -60,7 +67,7 @@ export function DecisionChip({ rc }) {
   if (!d) return null;
   return (
     <span className={`inline-flex items-center whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${d.cls}`}
-      title={(rc.decision_reasons || []).map(r => r.name).join(' · ') || undefined}>
+      title={(rc.decision_reasons || []).filter(r => r.decision !== 'info' && r.decision !== 'fact').map(r => r.name).join(' · ') || undefined}>
       {decisionLabel(rc)}
     </span>
   );

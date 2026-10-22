@@ -177,10 +177,17 @@ export function quoteSheet(rc) {
     lines.push('', 'Vehicles:');
     vehicles.forEach(v => {
       const vin = v.vin ? (v.vin_complete === false ? ` — VIN ends ${v.vin}` : ` — VIN ${v.vin}`) : '';
-      lines.push(`  ${vehicleName(v)}${vin}`);
+      const use = [v.usage, v.annual_mileage ? `${v.annual_mileage} mi/yr` : null].filter(Boolean).join(', ');
+      lines.push(`  ${vehicleName(v)}${vin}${use ? ` (${use})` : ''}`);
     });
   }
-  if (rc.driver_count != null) lines.push(`Drivers: ${rc.driver_count}`);
+  const drivers = Array.isArray(rc.drivers) ? rc.drivers : [];
+  if (drivers.length) {
+    lines.push('', 'Drivers:');
+    drivers.forEach(d => lines.push(`  ${[d.name || 'Driver', d.age ? `age ${d.age}` : null, d.status, d.usage].filter(Boolean).join(' — ')}`));
+  } else if (rc.driver_count != null) lines.push(`Drivers: ${rc.driver_count}`);
+  const record = [...(Array.isArray(rc.surcharges) ? rc.surcharges : []), ...(Array.isArray(rc.claims) ? rc.claims : [])];
+  if (record.length) { lines.push('', 'Surcharges / claims on the page:'); record.forEach(t => lines.push(`  ${t}`)); }
 
   const cov = rc.coverages && typeof rc.coverages === 'object' ? Object.entries(rc.coverages) : [];
   if (cov.length) {

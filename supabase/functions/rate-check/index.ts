@@ -159,11 +159,35 @@ const EXTRACTION_TOOL = {
             make: nullable('string'),
             model: nullable('string'),
             vin: nullable('string', { description: 'Full VIN exactly as printed (normally 17 characters). If the page masks or truncates it, return only the visible characters, e.g. "XXXX4821" -> "4821".' }),
+            usage: nullable('string', { description: 'How the vehicle is rated, as printed: e.g. "Pleasure", "Commute 12 mi", "Business", "Farm".' }),
+            annual_mileage: nullable('integer', { description: 'Annual miles if printed.' }),
           },
-          required: ['year', 'make', 'model', 'vin'],
+          required: ['year', 'make', 'model', 'vin', 'usage', 'annual_mileage'],
         },
       },
       driver_count: nullable('integer'),
+      drivers: {
+        type: 'array',
+        description: 'Every driver listed on the page (rated, listed, or excluded).',
+        items: {
+          type: 'object',
+          properties: {
+            name: nullable('string'),
+            age: nullable('integer', { description: 'Age if printed, or derived from a printed date of birth.' }),
+            status: nullable('string', { description: 'As printed: rated, listed, excluded, occasional, principal.' }),
+            usage: nullable('string', { description: 'Driver-level usage or assigned vehicle, if printed.' }),
+          },
+          required: ['name', 'age', 'status', 'usage'],
+        },
+      },
+      surcharges: {
+        type: 'array', items: { type: 'string' },
+        description: 'Accident / violation / at-fault surcharges or points printed on the page, one string each with the date if shown, e.g. "At-fault accident 03/2024", "Speeding 11/2023". Empty if none printed.',
+      },
+      claims: {
+        type: 'array', items: { type: 'string' },
+        description: 'Claims or losses printed on the page, one string each with date and amount if shown, e.g. "Hail claim 06/2023 $4,200". Empty if none printed.',
+      },
       current_agent: {
         type: ['object', 'null'],
         description: 'The servicing agent / agency block printed on the page (often labelled Agent, Your Agent, Producer or Agency). Null if none is printed.',
@@ -192,7 +216,7 @@ const EXTRACTION_TOOL = {
     required: [
       'carrier', 'carrier_raw', 'policy_type', 'policy_number', 'premium', 'term_months',
       'effective_date', 'expiration_date', 'insured_name', 'insured_address', 'vehicles',
-      'driver_count', 'current_agent', 'coverages', 'discounts', 'confidence', 'notes',
+      'driver_count', 'drivers', 'surcharges', 'claims', 'current_agent', 'coverages', 'discounts', 'confidence', 'notes',
     ],
   },
 }
@@ -204,6 +228,8 @@ const INSTRUCTION =
   'policy period carefully: report term_months 6 or 12 only when the page says so or the effective and ' +
   'expiration dates show it, and report the premium for that whole term (not a monthly installment). ' +
   'If the named insured is a business, or the page is a business owners, general liability or commercial auto policy, use the commercial policy types. ' +
+  'List every driver on the page with their status (rated, listed, excluded) and age if shown, each vehicle\'s usage ' +
+  'and annual miles if shown, and any surcharges (accidents, violations, points) or claims printed, with dates. ' +
   'Record the servicing agent or agency block exactly as printed, if there is one. ' +
   'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
 
@@ -332,7 +358,22 @@ function cleanVehicle(v: any) {
     vin_last4: vin ? vin.slice(-4) : null,
     vin_complete: !!vin && vin.length === 17,
     vin_valid: !!vin && vin.length === 17 && vinCheckDigitOk(vin),
+    usage: cleanText(v?.usage, 80),
+    annual_mileage: Number.isInteger(v?.annual_mileage) && v.annual_mileage > 0 ? v.annual_mileage : null,
   }
+}
+
+function cleanDriver(d: any) {
+  return {
+    name: cleanText(d?.name, 80),
+    age: Number.isInteger(d?.age) && d.age > 0 && d.age < 120 ? d.age : null,
+    status: cleanText(d?.status, 40),
+    usage: cleanText(d?.usage, 80),
+  }
+}
+
+function cleanList(v: unknown, max = 20): string[] {
+  return Array.isArray(v) ? v.map(x => cleanText(x, 200)).filter((x): x is string => !!x).slice(0, max) : []
 }
 
 function isoDateOrNull(v: unknown): string | null {
@@ -377,6 +418,7 @@ function flatten(x: any) {
   }
 
   const vehicles = Array.isArray(x.vehicles) ? x.vehicles.map(cleanVehicle) : []
+  const drivers = Array.isArray(x.drivers) ? x.drivers.map(cleanDriver).filter((d: any) => d.name || d.age || d.status) : []
   const policyNumber = x.policy_number ? String(x.policy_number).trim().slice(0, 64) : null
   const policyAlnum = policyNumber ? policyNumber.replace(/[^A-Za-z0-9]/g, '') : ''
 
@@ -393,8 +435,11 @@ function flatten(x: any) {
     effective_date: effective,
     expiration_date: expiration,
     vehicle_count: vehicles.length || null,
-    driver_count: Number.isInteger(x.driver_count) ? x.driver_count : null,
+    driver_count: Number.isInteger(x.driver_count) ? x.driver_count : (drivers.length || null),
     vehicles,
+    drivers,
+    surcharges: cleanList(x.surcharges),
+    claims: cleanList(x.claims),
     coverages: x.coverages && typeof x.coverages === 'object' ? x.coverages : null,
     insured_address: cleanText(x.insured_address, 500),
     current_agent: cleanAgent(x.current_agent),
