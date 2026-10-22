@@ -3,8 +3,8 @@
 // and a per-event / per-producer tally so a booth day can be scored.
 
 import { useMemo, useState } from 'react';
-import { useRateCheckInvites } from '../../../hooks/useRateChecks';
-import { thCls, thStyle, inputStyle, formatPhone, formatDate } from './ui';
+import { useRateCheckInvites, useRateCheckInviteStats } from '../../../hooks/useRateChecks';
+import { thCls, thStyle, inputStyle, formatPhone, formatDate, money } from './ui';
 import { InviteShare } from './InviteDialog';
 
 function ago(ts) {
@@ -16,6 +16,7 @@ function ago(ts) {
 
 export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) {
   const { data: invites = [], isLoading, error } = useRateCheckInvites(agencyId);
+  const { data: stats = [] } = useRateCheckInviteStats(agencyId);
   const [filter, setFilter] = useState('all'); // all | waiting | uploaded
   const [event, setEvent] = useState('');
   const [resend, setResend] = useState(null);
@@ -26,17 +27,12 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
     .filter(i => filter === 'all' || (filter === 'waiting' ? i.upload_count === 0 : i.upload_count > 0)),
   [invites, filter, event]);
 
-  // Scoreboard: event × producer.
-  const tally = useMemo(() => {
-    const m = new Map();
-    invites.filter(i => !event || i.event_name === event).forEach(i => {
-      const k = `${i.event_name || '(no event)'}|${i.producer_name || 'Unknown'}`;
-      const t = m.get(k) || { event: i.event_name || '(no event)', producer: i.producer_name || 'Unknown', sent: 0, opened: 0, uploaded: 0 };
-      t.sent += 1; if (i.opened_at) t.opened += 1; if (i.upload_count > 0) t.uploaded += 1;
-      m.set(k, t);
-    });
-    return [...m.values()].sort((a, b) => b.uploaded - a.uploaded || b.sent - a.sent);
-  }, [invites, event]);
+  // Scoreboard: event × producer, through to bound premium (rate_check_invite_stats).
+  const tally = useMemo(() => stats
+    .filter(t => !event || t.event_name === event)
+    .map(t => ({ ...t, event: t.event_name || '(no event)', producer: t.producer_name || 'Unknown' }))
+    .sort((a, b) => Number(b.bound) - Number(a.bound) || Number(b.won) - Number(a.won) || Number(b.uploaded) - Number(a.uploaded)),
+  [stats, event]);
 
   const waiting = invites.filter(i => i.upload_count === 0 && new Date(i.expires_at) > new Date()).length;
 
@@ -47,17 +43,20 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
           <div className="px-3 py-2 text-sm font-semibold" style={{ borderBottom: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>Scoreboard</div>
           <table className="min-w-full">
             <thead><tr style={{ background: 'var(--qs-elevated)' }}>
-              {['Event', 'Producer', 'Links sent', 'Opened', 'Uploaded', 'Upload rate'].map(h => <th key={h} className={thCls} style={thStyle}>{h}</th>)}
+              {['Event', 'Producer', 'Links', 'Opened', 'Uploaded', 'Quoted', 'Won', 'Bound', 'Bound premium'].map(h => <th key={h} className={thCls} style={thStyle}>{h}</th>)}
             </tr></thead>
             <tbody>
               {tally.map(t => (
                 <tr key={`${t.event}|${t.producer}`} style={{ borderTop: '1px solid var(--qs-border)' }}>
                   <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-bright)' }}>{t.event}</td>
                   <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.producer}</td>
-                  <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.sent}</td>
+                  <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.invites}</td>
                   <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.opened}</td>
-                  <td className="px-4 py-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{t.uploaded}</td>
-                  <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.sent ? `${Math.round((t.uploaded / t.sent) * 100)}%` : '—'}</td>
+                  <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.uploaded}</td>
+                  <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.quoted}</td>
+                  <td className="px-4 py-2 text-sm" style={{ color: 'var(--qs-text)' }}>{t.won}</td>
+                  <td className="px-4 py-2 text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{t.bound}</td>
+                  <td className="px-4 py-2 text-sm font-semibold text-green-600">{Number(t.bound_premium) > 0 ? `${money(t.bound_premium)}/yr` : '—'}</td>
                 </tr>
               ))}
             </tbody>

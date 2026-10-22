@@ -11,6 +11,7 @@ export const STATUS = {
   extract_failed: { label: 'Couldn’t read', cls: 'bg-red-100 text-red-700' },
   quoted:         { label: 'Quoted',       cls: 'bg-purple-100 text-purple-700' },
   won:            { label: 'We win',       cls: 'bg-green-100 text-green-700' },
+  bound:          { label: 'Bound',        cls: 'bg-green-600 text-white' },
   lost:           { label: 'Can’t beat',   cls: 'bg-gray-200 text-gray-600' },
   declined:       { label: 'Declined',     cls: 'bg-gray-100 text-gray-500' },
 };
@@ -108,6 +109,18 @@ export function coverageValue(v) {
   }
   return String(v);
 }
+
+// Mirrors the edge function's list. 'Other' keeps the printed name in carrier_raw.
+export const CARRIERS = [
+  'State Farm', 'GEICO', 'Progressive', 'Allstate', 'USAA', 'Farmers', 'Liberty Mutual',
+  'Nationwide', 'Travelers', 'Auto-Owners', 'Georgia Farm Bureau', 'Erie',
+  'American Family', 'Country Financial', 'Safeco', 'Mercury', 'National General', 'The Hartford',
+  'Amica', 'Kemper', 'Direct Auto', 'The General', 'Root', 'Lemonade', 'Chubb', 'Cincinnati',
+  'Encompass', 'Foremost', 'Grange', 'The Hanover', 'Shelter', 'Homesite', 'Openly', 'Branch',
+  'Bristol West', 'Infinity', 'Esurance', 'Other',
+];
+// What to show for the carrier: the printed name when we didn't recognise it.
+export const carrierLabel = (rc) => (rc.carrier === 'Other' && rc.carrier_raw ? rc.carrier_raw : rc.carrier) || null;
 
 export const POLICY_TYPE_LABEL = {
   auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', umbrella: 'Umbrella',

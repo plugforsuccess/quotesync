@@ -6,22 +6,22 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, Camera, ExternalLink, Handshake, Link2, Map as MapIcon,
-  MessageSquare, Pencil, Phone, Search, Send, SlidersHorizontal, Upload, Users, X,
+  AlertCircle, AlertTriangle, Bell, Camera, ExternalLink, Handshake, Link2, Map as MapIcon,
+  MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import {
   useRateChecks, useRateCheckImageUrl, useUpdateRateCheck,
-  useEnterRateCheckQuote, useRateCheckWinMap, annualize,
+  useEnterRateCheckQuote, useRateCheckWinMap, annualize, useRescanRateCheck, useBindRateCheck,
 } from '../hooks/useRateChecks';
 import { sanitizeMoneyInput, parseMoney } from '../lib/money';
 import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone } from './components/rate-checks/ui';
 import {
   STATUS, CONFIDENCE_WARNING, TERM_HINT, coverageLabel, coverageValue, vehicleName,
-  policyPeriod, termPrice, quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel,
+  policyPeriod, termPrice, quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
 } from './components/rate-checks/format';
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
@@ -36,17 +36,13 @@ import InvitesTab from './components/rate-checks/InvitesTab';
 const OPEN_STATUSES = ['extracted', 'pending', 'extract_failed'];
 const FILTERS = [
   { value: 'open', label: 'Needs quote', statuses: OPEN_STATUSES },
-  { value: 'won', label: 'Wins', statuses: ['won'] },
+  { value: 'won', label: 'Wins', statuses: ['won', 'bound'] },
   { value: 'lost', label: 'Can’t beat', statuses: ['lost'] },
   { value: 'all', label: 'All', statuses: null },
 ];
 // The consumer page promises a text "within the hour".
 const OVERDUE_MINUTES = 60;
 
-const CARRIERS = [
-  'State Farm', 'GEICO', 'Progressive', 'Allstate', 'USAA', 'Farmers', 'Liberty Mutual',
-  'Nationwide', 'Travelers', 'Auto-Owners', 'Georgia Farm Bureau', 'Erie', 'Other',
-];
 
 const heading = 'mb-1 text-base font-semibold';
 
@@ -116,6 +112,48 @@ function OriginTag({ rc, className = '' }) {
   );
 }
 
+// Everyone with the same mobile number is one household: auto with one carrier,
+// home with another. The inbox shows one row per household; the drawer switches
+// between their policies and totals them, because the bundle decides the win.
+const DECISION_RANK = { refer: 6, expanded_market: 5, manual_review: 4, double_check: 3, quote_allstate_umbrella: 2, quote_allstate: 1 };
+const STATUS_RANK = { extract_failed: 6, pending: 5, extracted: 4, quoted: 3, won: 2, bound: 1, lost: 0, declined: 0 };
+
+function groupHouseholds(rows) {
+  const map = new Map();
+  rows.forEach(r => {
+    const key = r.phone || r.id;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  });
+  return [...map.values()].map(policies => {
+    const lead = policies[0];
+    const sum = (f) => policies.some(p => p[f] != null) ? policies.reduce((t, p) => t + (Number(p[f]) || 0), 0) : null;
+    const allQuoted = policies.every(p => p.allstate_premium != null);
+    return {
+      key: lead.phone || lead.id,
+      lead,
+      policies,
+      pays: sum('annual_premium'),
+      allstate: allQuoted ? sum('allstate_premium') : null,
+      delta: allQuoted && policies.every(p => p.delta != null) ? sum('delta') : null,
+      decision: policies.filter(p => p.decision).sort((a, b) => (DECISION_RANK[b.decision] || 0) - (DECISION_RANK[a.decision] || 0))[0] || null,
+      status: policies.slice().sort((a, b) => (STATUS_RANK[b.status] ?? 0) - (STATUS_RANK[a.status] ?? 0))[0].status,
+      newest: policies.reduce((t, p) => (p.created_at > t ? p.created_at : t), lead.created_at),
+    };
+  });
+}
+
+function NotifyButton() {
+  const [perm, setPerm] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'));
+  if (perm !== 'default') return null;
+  return (
+    <button onClick={() => Notification.requestPermission().then(setPerm)} title="Get a heads-up on this device when a policy comes in"
+      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold" style={inputStyle}>
+      <Bell className="w-4 h-4" /> Alert me here
+    </button>
+  );
+}
+
 export default function RateChecksPage() {
   const { user, profile } = useAuth();
   const { data: currentAgency, isLoading: agencyLoading } = useCurrentAgency();
@@ -157,6 +195,10 @@ export default function RateChecksPage() {
         || (qDigits.length >= 3 && (r.phone || '').includes(qDigits)));
   }, [allRows, filter, search]);
 
+  const households = useMemo(() => groupHouseholds(rows), [rows]);
+  // Every policy for the open row's household (across all statuses), for the drawer.
+  const openHousehold = useMemo(() => (open ? allRows.filter(r => r.phone && r.phone === open.phone) : []), [allRows, open]);
+
   // After a staff upload, open its drawer once the new row arrives in the list.
   useEffect(() => {
     if (!pendingOpenId) return;
@@ -193,7 +235,8 @@ export default function RateChecksPage() {
               <Link to="/agency/leads" className="text-primary-600 hover:underline">All leads</Link>
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <NotifyButton />
             <button onClick={() => setInviteOpen(true)}
               className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white">
               <Send className="w-4 h-4" /> Send a link
@@ -269,22 +312,22 @@ export default function RateChecksPage() {
                 <>
                   {/* Phones: cards */}
                   <ul className="md:hidden">
-                    {rows.map(r => (
-                      <li key={r.id} onClick={() => openRowFromList(r)} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
+                    {households.map(h => (
+                      <li key={h.key} onClick={() => openRowFromList(h.lead)} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
                         <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
                             <div className="font-semibold" style={{ color: 'var(--qs-bright)' }}>
-                              {r.first_name || 'No name'}{r.upload_source === 'agent' && <StaffTag />}
+                              {h.lead.first_name || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} policies</span>}{h.lead.upload_source === 'agent' && <StaffTag />}
                             </div>
                             <div className="text-sm" style={{ color: 'var(--qs-text)' }}>
-                              {[r.carrier, policyTypeLabel(r.policy_type)].filter(Boolean).join(' · ') || 'Policy not read yet'}
-                              {r.annual_premium != null && ` · ${money(r.annual_premium)}/yr`}
+                              {h.policies.map(p => [carrierLabel(p), policyTypeLabel(p.policy_type)].filter(Boolean).join(' ')).filter(Boolean).join(' + ') || 'Policy not read yet'}
+                              {h.pays != null && ` · ${money(h.pays)}/yr`}
                             </div>
-                            <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs"><Age rc={r} now={now} /><OriginTag rc={r} /></div>
+                            <div className="mt-0.5 flex flex-wrap gap-x-2 text-xs"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /><OriginTag rc={h.lead} /></div>
                           </div>
                           <div className="flex shrink-0 flex-col items-end gap-1.5">
-                            {OPEN_STATUSES.includes(r.status) && r.decision ? <DecisionChip rc={r} /> : <StatusChip status={r.status} />}
-                            {r.delta != null && <span className="text-sm"><Savings delta={r.delta} /></span>}
+                            {OPEN_STATUSES.includes(h.status) && h.decision ? <DecisionChip rc={h.decision} /> : <StatusChip status={h.status} />}
+                            {h.delta != null && <span className="text-sm"><Savings delta={h.delta} /></span>}
                           </div>
                         </div>
                       </li>
@@ -302,31 +345,33 @@ export default function RateChecksPage() {
                         </tr>
                       </thead>
                       <tbody>
-                        {rows.map(r => (
-                          <tr key={r.id} onClick={() => openRowFromList(r)} className="cursor-pointer"
+                        {households.map(h => (
+                          <tr key={h.key} onClick={() => openRowFromList(h.lead)} className="cursor-pointer"
                             style={{ borderTop: '1px solid var(--qs-border)' }}
                             onMouseEnter={e => { e.currentTarget.style.background = 'var(--qs-elevated)'; }}
                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
                             <td className="px-4 py-3 text-sm">
                               <div className="font-medium whitespace-nowrap" style={{ color: 'var(--qs-bright)' }}>
-                                {r.first_name || 'No name'}{r.upload_source === 'agent' && <StaffTag />}
+                                {h.lead.first_name || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} policies</span>}{h.lead.upload_source === 'agent' && <StaffTag />}
                               </div>
-                              {r.phone && (
-                                <a href={`tel:+1${r.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-primary-600 hover:underline whitespace-nowrap">
-                                  {formatPhone(r.phone)}
+                              {h.lead.phone && (
+                                <a href={`tel:+1${h.lead.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-primary-600 hover:underline whitespace-nowrap">
+                                  {formatPhone(h.lead.phone)}
                                 </a>
                               )}
-                              <OriginTag rc={r} className="block" />
+                              <OriginTag rc={h.lead} className="block" />
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm"><Age rc={r} now={now} /></td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>
-                              {r.carrier ? <>{r.carrier} <span style={{ color: 'var(--qs-subtle)' }}>{policyTypeLabel(r.policy_type)}</span></> : '—'}
+                            <td className="px-4 py-3 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></td>
+                            <td className="px-4 py-3 text-sm" style={{ color: 'var(--qs-text)' }}>
+                              {h.policies.map(p => (
+                                <div key={p.id} className="whitespace-nowrap">{carrierLabel(p) ? <>{carrierLabel(p)} <span style={{ color: 'var(--qs-subtle)' }}>{policyTypeLabel(p.policy_type)}</span></> : '—'}</div>
+                              ))}
                             </td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(r.annual_premium)}</td>
-                            <td className="px-4 py-3 whitespace-nowrap">{r.decision ? <DecisionChip rc={r} /> : <span style={{ color: 'var(--qs-subtle)' }}>—</span>}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(r.allstate_premium)}</td>
-                            <td className="px-4 py-3 whitespace-nowrap text-sm"><Savings delta={r.delta} /></td>
-                            <td className="px-4 py-3 whitespace-nowrap"><StatusChip status={r.status} /></td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(h.pays)}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">{h.decision ? <DecisionChip rc={h.decision} /> : <span style={{ color: 'var(--qs-subtle)' }}>—</span>}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(h.allstate)}</td>
+                            <td className="px-4 py-3 whitespace-nowrap text-sm"><Savings delta={h.delta} /></td>
+                            <td className="px-4 py-3 whitespace-nowrap"><StatusChip status={h.status} /></td>
                           </tr>
                         ))}
                       </tbody>
@@ -353,7 +398,8 @@ export default function RateChecksPage() {
           }} />
       )}
 
-      {open && <RateCheckDrawer key={open.id} rc={open} now={now} onClose={() => setOpenRow(null)}
+      {open && <RateCheckDrawer key={open.phone || open.id} rc={open} household={openHousehold.length ? openHousehold : [open]} now={now}
+        onClose={() => setOpenRow(null)} onSelect={(r) => setOpenRow(r)}
         onQuoted={(res) => setOpenRow(r => (r ? { ...r, ...res } : r))} />}
     </div>
   );
@@ -361,10 +407,17 @@ export default function RateChecksPage() {
 
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
-function RateCheckDrawer({ rc, now, onClose, onQuoted }) {
+function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
   const notes = rc.extracted?.notes;
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
   const insuredName = rc.extracted?.insured_name;
+  const rescan = useRescanRateCheck();
+  const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
+  const multi = household.length > 1;
+  const sum = (f) => household.some(p => p[f] != null) ? household.reduce((t, p) => t + (Number(p[f]) || 0), 0) : null;
+  const hhPays = sum('annual_premium');
+  const hhAllstate = household.every(p => p.allstate_premium != null) ? sum('allstate_premium') : null;
+  const hhDelta = hhPays != null && hhAllstate != null ? hhPays - hhAllstate : null;
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -382,7 +435,7 @@ function RateCheckDrawer({ rc, now, onClose, onQuoted }) {
             <div className="min-w-0">
               <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{rc.first_name || insuredName || 'Rate check'}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-                {[rc.carrier, policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
+                {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
               <OriginTag rc={rc} className="mt-0.5" />
             </div>
@@ -409,10 +462,46 @@ function RateCheckDrawer({ rc, now, onClose, onQuoted }) {
           )}
         </div>
 
+        {multi && (
+          <div className="px-5 pt-4">
+            <div className="rounded-xl p-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
+                <span style={{ color: 'var(--qs-subtle)' }}>Household · {household.length} policies</span>
+                <span style={{ color: 'var(--qs-bright)' }}>
+                  Pays <b>{money(hhPays)}</b>/yr
+                  {hhAllstate != null && <> · Allstate <b>{money(hhAllstate)}</b></>}
+                  {hhDelta != null && <> · {hhDelta > 0 ? <b className="text-green-600">saves {money(hhDelta)}</b> : <b className="text-red-500">{money(Math.abs(hhDelta))} more</b>}</>}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5" role="tablist" aria-label="Policies in this household">
+                {household.map(p => (
+                  <button key={p.id} role="tab" aria-selected={p.id === rc.id} onClick={() => onSelect?.(p)}
+                    className={`rounded-lg px-2.5 py-1 text-sm ${p.id === rc.id ? 'bg-primary-600 text-white' : ''}`}
+                    style={p.id === rc.id ? undefined : { ...inputStyle }}>
+                    {[carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Not read yet'}
+                    {p.annual_premium != null && <span className={p.id === rc.id ? ' opacity-80' : ''} style={p.id === rc.id ? undefined : { color: 'var(--qs-subtle)' }}> {money(p.annual_premium)}</span>}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Quote each policy; the bundle decides the win. No “can’t beat it” text goes out while another policy here is open or won.</p>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-6 p-5">
           {rc.extract_error && (
-            <Notice tone="danger">We couldn&apos;t read this photo. Look at it below and fill in the policy details by hand.</Notice>
+            <Notice tone="danger">
+              We couldn&apos;t read this photo. Look at it below and fill in the policy details by hand.
+              {canRescan && (
+                <button onClick={() => rescan.mutate({ rateCheckId: rc.id })} disabled={rescan.isPending}
+                  className="ml-2 inline-flex items-center gap-1 font-semibold text-primary-600 hover:underline disabled:opacity-50">
+                  <RefreshCw className={`h-3.5 w-3.5 ${rescan.isPending ? 'animate-spin' : ''}`} /> {rescan.isPending ? 'Scanning…' : 'Scan again'}
+                </button>
+              )}
+            </Notice>
           )}
+          {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
+          {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info">Scanned again — check the details below.</Notice>}
           {!rc.extract_error && !rc.decision && warning && <Notice tone="warning">{warning}</Notice>}
           {notes && <Notice tone="info"><span className="font-semibold">From the scan:</span> {notes}</Notice>}
           <DecisionCard rc={rc} />
@@ -421,7 +510,7 @@ function RateCheckDrawer({ rc, now, onClose, onQuoted }) {
           )}
 
           <QuoteBox rc={rc} onQuoted={onQuoted} />
-          <PolicyDetails rc={rc} />
+          <PolicyDetails rc={rc} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
           <ReferralBox rc={rc} />
@@ -446,10 +535,14 @@ function QuoteBox({ rc, onQuoted }) {
   const [premium, setPremium] = useState(rc.allstate_premium != null ? String(rc.allstate_premium) : '');
   const [note, setNote] = useState(rc.quote_note || '');
   const result = enterQuote.data;
-  const outcome = result?.status || (['won', 'lost'].includes(rc.status) ? rc.status : null);
+  const outcome = result?.status || (['won', 'lost', 'bound'].includes(rc.status) ? rc.status : null);
   const delta = result?.delta ?? rc.delta;
   const deltaPct = result?.delta_pct ?? rc.delta_pct;
   const declined = rc.status === 'declined';
+  // Bound locally the moment the agent marks it, before the row refetches.
+  const [localBound, setLocalBound] = useState(null);
+  const bound = rc.status === 'bound' || !!localBound;
+  const boundInfo = localBound || rc;
   const sheet = quoteSheet(rc);
   // An expanded-market risk is quoted with that carrier; the price box compares the same way.
   const market = rc.decision === 'expanded_market' && rc.decision_carrier ? rc.decision_carrier : 'Allstate';
@@ -478,13 +571,19 @@ function QuoteBox({ rc, onQuoted }) {
         {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}> /yr</span></> : 'Price not read yet'}
       </p>
 
-      {!outcome && (
+      {!outcome && !bound && (
         <CopyTextButton text={sheet} className="mt-3 rounded-lg px-3 py-2 text-sm font-medium" style={inputStyle}>
           Copy details for {market} quote
         </CopyTextButton>
       )}
 
-      <form onSubmit={submit} className="mt-4 space-y-2">
+      {bound && (
+        <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
+          <div className="text-xl font-extrabold text-green-600">Bound with {boundInfo.bound_carrier || 'Allstate'}{boundInfo.bound_premium != null ? ` at ${money(boundInfo.bound_premium)}/yr` : ''}</div>
+          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
+        </div>
+      )}
+      {!bound && <form onSubmit={submit} className="mt-4 space-y-2">
         <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} price per year</label>
         <div className="flex gap-2">
           <div className="relative flex-1">
@@ -499,18 +598,20 @@ function QuoteBox({ rc, onQuoted }) {
         </div>
         <input className="w-full rounded-md px-2 py-2 text-sm" style={inputStyle} value={note} onChange={e => setNote(e.target.value)}
           placeholder="Note, e.g. same limits, $500 deductibles (optional)" aria-label="Quote note" disabled={declined} />
-      </form>
+      </form>}
       {rc.annual_premium == null && !declined && (
         <p className="mt-2 text-xs text-yellow-600">Fill in their current price under Policy first — otherwise we can&apos;t tell if Allstate wins.</p>
       )}
       {enterQuote.isError && <p className="mt-2 text-sm text-red-600">{enterQuote.error.message}</p>}
 
-      {outcome === 'won' && (
+      {outcome === 'won' && !bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
           <div className="text-2xl font-extrabold text-green-600">Saves {money(delta)}/yr{deltaPct != null ? ` (${Math.round(deltaPct)}%)` : ''}</div>
           <p className="text-sm" style={{ color: 'var(--qs-text)' }}>Call now. The lead is marked Interested.</p>
           <p className="mt-3 select-text text-sm" style={{ color: 'var(--qs-bright)' }}>“{script}”</p>
           <CopyTextButton text={script} className="mt-2 text-xs font-semibold text-primary-600 hover:underline">Copy script</CopyTextButton>
+          <BindForm rc={rc} market={market} defaultPremium={result?.allstate_premium ?? rc.allstate_premium}
+            onBound={(b) => { setLocalBound(b); onQuoted?.(b); }} />
         </div>
       )}
       {outcome === 'lost' && (
@@ -529,8 +630,38 @@ function QuoteBox({ rc, onQuoted }) {
   );
 }
 
+// Step 3: the policy was written. Closes the lead as won and feeds the scoreboard.
+function BindForm({ rc, market, defaultPremium, onBound }) {
+  const bind = useBindRateCheck();
+  const [carrier, setCarrier] = useState(market);
+  const [other, setOther] = useState('');
+  const [premium, setPremium] = useState(defaultPremium != null ? String(defaultPremium) : '');
+  const chosen = carrier === '__other' ? other.trim() : carrier;
+  const options = [...new Set([market, 'Allstate', rc.decision_carrier].filter(Boolean))];
+  return (
+    <form className="mt-3 flex flex-wrap items-end gap-2 border-t pt-3" style={{ borderColor: 'var(--qs-border)' }}
+      onSubmit={e => { e.preventDefault(); if (!chosen) return; bind.mutate({ rateCheckId: rc.id, carrier: chosen, premium: parseMoney(premium) },
+        { onSuccess: (res) => onBound?.({ status: 'bound', bound_carrier: res.bound_carrier, bound_premium: res.bound_premium, bound_at: new Date().toISOString() }) }); }}>
+      <label className="text-sm"><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>Bound with</span>
+        <select value={carrier} onChange={e => setCarrier(e.target.value)} className="rounded-md px-2 py-1.5" style={inputStyle}>
+          {options.map(o => <option key={o} value={o}>{o}</option>)}
+          <option value="__other">Other…</option>
+        </select>
+      </label>
+      {carrier === '__other' && <input value={other} onChange={e => setOther(e.target.value)} placeholder="Carrier" className="rounded-md px-2 py-1.5 text-sm" style={inputStyle} />}
+      <label className="text-sm"><span className="block text-xs" style={{ color: 'var(--qs-subtle)' }}>Premium / yr</span>
+        <input value={premium} onChange={e => setPremium(sanitizeMoneyInput(e.target.value))} inputMode="decimal" className="w-28 rounded-md px-2 py-1.5" style={inputStyle} />
+      </label>
+      <button type="submit" disabled={!chosen || bind.isPending} className="rounded-lg bg-green-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">
+        {bind.isPending ? 'Saving…' : 'Mark bound'}
+      </button>
+      {bind.isError && <span className="text-sm text-red-600">{bind.error.message}</span>}
+    </form>
+  );
+}
+
 // Read view with copy buttons; "Edit" switches to the correction form.
-function PolicyDetails({ rc }) {
+function PolicyDetails({ rc, onRescan, rescanning }) {
   const [editing, setEditing] = useState(false);
   const x = rc.extracted || {};
   const vehicles = Array.isArray(rc.vehicles) ? rc.vehicles : [];
@@ -543,9 +674,16 @@ function PolicyDetails({ rc }) {
       <div className="flex items-center justify-between">
         <h3 className={heading} style={{ color: 'var(--qs-bright)' }}>Policy</h3>
         {!editing && (
-          <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
-            <Pencil className="h-3.5 w-3.5" /> Fix details
-          </button>
+          <div className="flex items-center gap-3">
+            {onRescan && (
+              <button onClick={onRescan} disabled={rescanning} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline disabled:opacity-50">
+                <RefreshCw className={`h-3.5 w-3.5 ${rescanning ? 'animate-spin' : ''}`} /> {rescanning ? 'Scanning…' : 'Scan again'}
+              </button>
+            )}
+            <button onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-sm text-primary-600 hover:underline">
+              <Pencil className="h-3.5 w-3.5" /> Fix details
+            </button>
+          </div>
         )}
       </div>
 
@@ -554,7 +692,7 @@ function PolicyDetails({ rc }) {
           <dl>
             <Field label="Name on policy" value={x.insured_name} copy />
             <Field label="Address" value={rc.insured_address || (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address || rc.zip} />
-            <Field label="Carrier" value={rc.carrier} />
+            <Field label="Carrier" value={carrierLabel(rc)} />
             <Field label="Policy number" value={rc.policy_number} copy mono />
             <Field label="Policy period" value={policyPeriod(rc)} />
             <Field label="Term" value={term} hint={termHint?.text} hintTone={termHint?.tone} />

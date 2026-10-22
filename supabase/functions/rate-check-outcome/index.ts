@@ -1,6 +1,7 @@
 // Supabase Edge Function: rate-check-outcome
 // POST /functions/v1/rate-check-outcome   (verify_jwt = true — agents only)
 // Body: { rate_check_id, allstate_premium, quote_note? }
+//   or  { action: 'bound', rate_check_id, bound_carrier, bound_premium? }  → status 'bound', lead closed_won
 //
 // Records the agent's Allstate quote on a rate check. The rate_checks trigger
 // computes delta / delta_pct and flips status to won or lost; this function then
@@ -84,10 +85,13 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}))
     const rateCheckId = body.rate_check_id
+    const isBind = body.action === 'bound'
     const allstatePremium = Number(body.allstate_premium)
     const quoteNote = body.quote_note ? String(body.quote_note).slice(0, 2000) : null
+    const boundCarrier = isBind ? String(body.bound_carrier || 'Allstate').slice(0, 80) : null
+    const boundPremium = isBind && body.bound_premium != null && Number.isFinite(Number(body.bound_premium)) ? Number(body.bound_premium) : null
 
-    if (!rateCheckId || !Number.isFinite(allstatePremium) || allstatePremium <= 0) {
+    if (!rateCheckId || (!isBind && (!Number.isFinite(allstatePremium) || allstatePremium <= 0))) {
       return jsonResponse({ error: 'rate_check_id and a positive allstate_premium are required' }, 400, corsHeaders)
     }
 
@@ -111,12 +115,47 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Rate check was declined and is closed' }, 409, corsHeaders)
     }
 
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    // ── Bound: the policy was written. Terminal; closes the lead as won. ──
+    if (isBind) {
+      if (!['won', 'quoted', 'lost', 'extracted', 'extract_failed'].includes(existing.status)) {
+        return jsonResponse({ error: `Can’t bind a rate check that is ${existing.status}` }, 409, corsHeaders)
+      }
+      const { data: b, error: bErr } = await supabaseUser
+        .from('rate_checks')
+        .update({ status: 'bound', bound_carrier: boundCarrier, bound_premium: boundPremium, bound_at: new Date().toISOString(), bound_by: user.id })
+        .eq('id', rateCheckId)
+        .select('id, agency_id, lead_id, first_name, carrier, annual_premium, bound_carrier, bound_premium, status')
+        .single()
+      if (bErr) throw bErr
+      if (b.lead_id) {
+        await supabase.from('leads').update({ status: 'closed_won' }).eq('id', b.lead_id)
+        const { error: noteErr } = await supabase.from('case_notes').insert({
+          agency_id: b.agency_id, case_type: 'lead', case_id: b.lead_id, customer_name: b.first_name,
+          note_type: 'general', tags: ['rate_check', 'bound'],
+          body: `Rate check BOUND with ${b.bound_carrier}${b.bound_premium != null ? ` at $${money(b.bound_premium)}/yr` : ''} (was ${b.carrier || 'current carrier'} $${money(b.annual_premium)})`,
+          author_id: user.id, author_name: profile?.full_name || user.email || null,
+        })
+        if (noteErr) console.error('[RATE_CHECK_OUTCOME] bound note failed:', noteErr.message)
+      }
+      await audit(supabase, {
+        event_type: 'RATE_CHECK_QUOTED', lead_id: b.lead_id, agency_id: b.agency_id, actor_user_id: user.id,
+        metadata: { rate_check_id: b.id, status: 'bound', bound_carrier: b.bound_carrier, bound_premium: b.bound_premium },
+      })
+      return jsonResponse({ rate_check_id: b.id, status: 'bound', bound_carrier: b.bound_carrier, bound_premium: b.bound_premium }, 200, corsHeaders)
+    }
+
     // Update as the caller (RLS-checked); the trigger sets status/quoted_at/outcome_at.
     const { data: rc, error: updErr } = await supabaseUser
       .from('rate_checks')
       .update({ allstate_premium: allstatePremium, quote_note: quoteNote, quoted_by: user.id })
       .eq('id', rateCheckId)
-      .select('id, agency_id, lead_id, first_name, carrier, policy_type, annual_premium, allstate_premium, delta, delta_pct, status, consent_given_at')
+      .select('id, agency_id, lead_id, first_name, phone, carrier, policy_type, annual_premium, allstate_premium, delta, delta_pct, status, consent_given_at')
       .single()
     if (updErr) throw updErr
 
@@ -131,12 +170,6 @@ Deno.serve(async (req) => {
       carrier: rc.carrier,
       policy_type: rc.policy_type,
     }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('full_name')
-      .eq('id', user.id)
-      .maybeSingle()
 
     if (rc.status === 'won' && rc.lead_id) {
       await supabase.from('leads').update({ status: 'interested' }).eq('id', rc.lead_id)
@@ -156,6 +189,25 @@ Deno.serve(async (req) => {
     }
 
     if (rc.status === 'lost' && rc.lead_id) {
+      // Household: if this person has another policy we won or haven't quoted yet,
+      // don't close the lead or send the "couldn't beat it" text — the bundle may still win.
+      const { data: siblings } = await supabase
+        .from('rate_checks')
+        .select('id, status')
+        .eq('agency_id', rc.agency_id)
+        .eq('phone', rc.phone)
+        .neq('id', rc.id)
+        .in('status', ['pending', 'extracted', 'extract_failed', 'quoted', 'won', 'bound'])
+      if (siblings && siblings.length > 0) {
+        result.sms = { attempted: false, reason: `household has ${siblings.length} other open or won polic${siblings.length === 1 ? 'y' : 'ies'} — no text sent, lead left open` }
+        result.household_open = siblings.length
+        await audit(supabase, {
+          event_type: 'RATE_CHECK_QUOTED', lead_id: rc.lead_id, agency_id: rc.agency_id, actor_user_id: user.id,
+          metadata: { rate_check_id: rc.id, status: rc.status, annual_premium: rc.annual_premium, allstate_premium: rc.allstate_premium, delta: rc.delta, sms: result.sms },
+        })
+        return jsonResponse(result, 200, corsHeaders)
+      }
+
       await supabase
         .from('leads')
         .update({ status: 'closed_lost', disposition_reason: 'other', disposition_note: 'rate_check_lost' })

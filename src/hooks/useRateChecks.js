@@ -18,7 +18,8 @@ export const RATE_CHECK_LIST_COLUMNS = `
   insured_address, extracted, quote_note, quoted_at, outcome_at,
   competitor_agent_id, current_agent, referral_consent_given_at, upload_source, consent_given_at,
   decision, decision_carrier, decision_reasons, decision_questions, decided_at,
-  invite_id, producer_id, producer_name, event_name
+  invite_id, producer_id, producer_name, event_name, carrier_raw,
+  bound_carrier, bound_premium, bound_at
 `;
 
 // Rate checks for an agency, newest first. `statuses` empty/undefined = all.
@@ -33,8 +34,13 @@ export const useRateChecks = (agencyId, statuses) => {
       .on('postgres_changes', {
         event: '*', schema: 'public', table: 'rate_checks',
         filter: `agency_id=eq.${agencyId}`,
-      }, () => {
+      }, (payload) => {
         queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
+        // Heads-up on this device when a new one lands (only if the agent allowed it).
+        if (payload.eventType === 'INSERT' && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          const r = payload.new || {};
+          try { new Notification('New rate check', { body: `${r.first_name || 'Someone'}${r.event_name ? ` · ${r.event_name}` : ''} just sent a policy`, tag: `rc-${r.id}` }); } catch { /* ignore */ }
+        }
       })
       .subscribe();
     return () => supabase.removeChannel(channel);
@@ -392,3 +398,54 @@ export const useCreateRateCheckInvite = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
   });
 };
+
+// "Scan again": re-read the stored photo (after a failure, or a bad read).
+export const useRescanRateCheck = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ rateCheckId }) => {
+      const { data, error } = await supabase.functions.invoke('rate-check', { body: { mode: 'rescan', rate_check_id: rateCheckId } });
+      if (error) {
+        let message = error.message;
+        try { message = (await error.context?.json())?.error || message; } catch { /* keep default */ }
+        throw new Error(message);
+      }
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};
+
+// The policy was written. Closes the loop: status 'bound', lead closed_won.
+export const useBindRateCheck = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ rateCheckId, carrier, premium }) => {
+      const { data, error } = await supabase.functions.invoke('rate-check-outcome', {
+        body: { action: 'bound', rate_check_id: rateCheckId, bound_carrier: carrier, bound_premium: premium ?? null },
+      });
+      if (error) {
+        let message = error.message;
+        try { message = (await error.context?.json())?.error || message; } catch { /* keep default */ }
+        throw new Error(message);
+      }
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.leads.all() });
+    },
+  });
+};
+
+// Scoreboard: links → opened → uploaded → quoted → won → bound, per event and producer.
+export const useRateCheckInviteStats = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.inviteStats(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('rate_check_invite_stats').select('*').eq('agency_id', agencyId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });

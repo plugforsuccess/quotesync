@@ -60,9 +60,14 @@ const MEDIA_TYPES: Record<string, string> = {
 // Claude reads these directly; HEIC is stored for the agent but not extracted.
 const EXTRACTABLE = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
 
+// Carriers we see in Georgia. Anything else is 'Other' and carrier_raw keeps what was printed.
 const CARRIERS = [
   'State Farm', 'GEICO', 'Progressive', 'Allstate', 'USAA', 'Farmers', 'Liberty Mutual',
-  'Nationwide', 'Travelers', 'Auto-Owners', 'Georgia Farm Bureau', 'Erie', 'Other',
+  'Nationwide', 'Travelers', 'Auto-Owners', 'Georgia Farm Bureau', 'Erie',
+  'American Family', 'Country Financial', 'Safeco', 'Mercury', 'National General', 'The Hartford',
+  'Amica', 'Kemper', 'Direct Auto', 'The General', 'Root', 'Lemonade', 'Chubb', 'Cincinnati',
+  'Encompass', 'Foremost', 'Grange', 'The Hanover', 'Shelter', 'Homesite', 'Openly', 'Branch',
+  'Bristol West', 'Infinity', 'Esurance', 'Other',
 ]
 const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial', 'other']
 
@@ -273,6 +278,17 @@ const CARRIER_AUTO_TERM_MONTHS: Record<string, 6 | 12> = {
   'Georgia Farm Bureau': 12, // confirmed by the agency
   'Auto-Owners': 12,
   'Erie': 12,
+  'Safeco': 6,
+  'Mercury': 6,
+  'National General': 6,
+  'The General': 6,
+  'Direct Auto': 6,
+  'Root': 6,
+  'Bristol West': 6,
+  'Infinity': 6,
+  'Esurance': 6,
+  'Kemper': 6,
+  'Chubb': 12,
 }
 const ANNUAL_LINES = new Set(['home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial'])
 
@@ -366,6 +382,7 @@ function flatten(x: any) {
 
   return {
     carrier,
+    carrier_raw: cleanText(x.carrier_raw, 120),
     policy_type: policyType,
     policy_number: policyNumber,
     policy_number_last4: policyAlnum ? policyAlnum.slice(-4) : null,
@@ -421,6 +438,80 @@ function leadFieldsFor(policyType: string | null, carrier: string | null, annual
     fields.current_auto_premium = premium
   }
   return fields
+}
+
+// Read the dec page and store the result on the row (status extracted / extract_failed),
+// then link the competing agent. Shared by the first scan and "Scan again".
+async function extractAndStore(supabase: any, anthropicKey: string | undefined, rateCheckId: string, agencyId: string, imageBase64: string, mediaType: string) {
+  let flat: ReturnType<typeof flatten> | null = null
+  let extractError: string | null = null
+  try {
+    if (!anthropicKey) throw new Error('ANTHROPIC_API_KEY is not configured')
+    if (!EXTRACTABLE.has(mediaType)) throw new Error(`Cannot extract ${mediaType}; agent must review image`)
+    const { input, usage } = await extractDecPage(anthropicKey, imageBase64, mediaType)
+    flat = flatten(input)
+    const { error: updErr } = await supabase
+      .from('rate_checks')
+      .update({
+        status: 'extracted',
+        extracted: { ...input, model: ANTHROPIC_MODEL, usage },
+        extracted_at: new Date().toISOString(),
+        extract_error: null,
+        ...flat,
+      })
+      .eq('id', rateCheckId)
+    if (updErr) throw updErr
+
+    // Competing-agent intel (internal only): match/create the agent and link it.
+    if (flat.current_agent) {
+      const ca = flat.current_agent
+      const { data: competitorId, error: caErr } = await supabase.rpc('upsert_competitor_agent', {
+        p_agency_id: agencyId, p_carrier: flat.carrier, p_agent_name: ca.agent_name,
+        p_agency_name: ca.agency_name, p_phone: ca.phone, p_email: ca.email,
+        p_address: ca.address, p_agent_code: ca.agent_code,
+      })
+      if (caErr) console.error('[RATE_CHECK] competitor agent upsert failed:', caErr.message)
+      else if (competitorId) {
+        await supabase.from('rate_checks').update({ competitor_agent_id: competitorId }).eq('id', rateCheckId)
+      }
+    }
+  } catch (e) {
+    extractError = (e as Error).message || 'Extraction failed'
+    console.error('[RATE_CHECK] Extraction failed:', extractError)
+    flat = null
+    await supabase
+      .from('rate_checks')
+      .update({ status: 'extract_failed', extract_error: extractError.slice(0, 1000) })
+      .eq('id', rateCheckId)
+  }
+  return { flat, extractError }
+}
+
+function bytesToBase64(bytes: Uint8Array): string {
+  let binary = ''
+  const chunk = 0x8000
+  for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, i + chunk))
+  return btoa(binary)
+}
+
+// Tell the producer who sent the link (email via Resend, if configured). In-app
+// notifications are inserted separately; this is for producers away from the app.
+async function emailProducer(supabase: any, userId: string, subject: string, text: string) {
+  const key = Deno.env.get('RESEND_API_KEY')
+  if (!key) return
+  const { data: profile } = await supabase.from('profiles').select('email').eq('id', userId).maybeSingle()
+  if (!profile?.email) return
+  const from = Deno.env.get('RATE_CHECK_EMAIL_FROM') || Deno.env.get('DD_EMAIL_FROM') || 'QuoteSync <noreply@insuredbycam.com>'
+  try {
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: [profile.email], subject, text }),
+    })
+    if (!r.ok) console.error('[RATE_CHECK] producer email failed:', r.status, await r.text())
+  } catch (e) {
+    console.error('[RATE_CHECK] producer email error:', (e as Error).message)
+  }
 }
 
 // Invite by code, only while it's live. Codes are 8 chars from an unambiguous alphabet.
@@ -486,7 +577,7 @@ Deno.serve(async (req) => {
 
   // ── Staff upload (Rate Checks inbox): verify the caller and their agency ──
   let staff: { userId: string; agencyId: string; name: string | null } | null = null
-  if (body?.mode === 'agent') {
+  if (body?.mode === 'agent' || body?.mode === 'rescan') {
     const token = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '')
     const { data: authData } = token ? await supabase.auth.getUser(token) : { data: { user: null } }
     const user = authData?.user
@@ -502,6 +593,33 @@ Deno.serve(async (req) => {
     if (!memberships?.length) return jsonResponse({ error: 'Access denied' }, 403, corsHeaders)
     const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
     staff = { userId: user.id, agencyId: memberships[0].agency_id, name: profile?.full_name ?? null }
+  }
+
+  // ── Scan again (staff): re-read the stored image after a failure or a bad read ──
+  if (body?.mode === 'rescan') {
+    if (!staff) return jsonResponse({ error: 'Unauthorized' }, 401, corsHeaders)
+    const { data: rc } = await supabase
+      .from('rate_checks')
+      .select('id, agency_id, lead_id, image_path, image_media_type, status')
+      .eq('id', String(body.rate_check_id || ''))
+      .eq('agency_id', staff.agencyId)
+      .maybeSingle()
+    if (!rc) return jsonResponse({ error: 'Rate check not found' }, 404, corsHeaders)
+    if (!rc.image_path) return jsonResponse({ error: 'No photo on file to scan' }, 409, corsHeaders)
+    if (['won', 'lost', 'bound', 'declined'].includes(rc.status)) return jsonResponse({ error: 'This rate check is already closed' }, 409, corsHeaders)
+    const { data: file, error: dlErr } = await supabase.storage.from(BUCKET).download(rc.image_path)
+    if (dlErr || !file) return jsonResponse({ error: 'Couldn’t read the stored photo' }, 500, corsHeaders)
+    const base64 = bytesToBase64(new Uint8Array(await file.arrayBuffer()))
+    const { flat, extractError } = await extractAndStore(supabase, anthropicKey, rc.id, rc.agency_id, base64, rc.image_media_type)
+    if (flat && rc.lead_id) {
+      await supabase.from('leads').update({ ...leadFieldsFor(flat.policy_type, flat.carrier, flat.annual_premium), vehicle_count: flat.vehicle_count }).eq('id', rc.lead_id)
+    }
+    await audit(supabase, {
+      event_type: flat ? 'RATE_CHECK_EXTRACTED' : 'RATE_CHECK_FAILED',
+      agency_id: rc.agency_id, lead_id: rc.lead_id, actor_user_id: staff.userId,
+      metadata: { rate_check_id: rc.id, rescan: true, carrier: flat?.carrier ?? null, ...(extractError ? { error: extractError.slice(0, 300) } : {}) },
+    })
+    return jsonResponse({ status: flat ? 'extracted' : 'extract_failed', error: extractError, carrier: flat?.carrier ?? null, policy_type: flat?.policy_type ?? null, annual_premium: flat?.annual_premium ?? null }, 200, corsHeaders)
   }
 
   // ── Tagged invite link (consumer upload from /r/CODE) ──
@@ -628,47 +746,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 3. Extract ──
-    let flat: ReturnType<typeof flatten> | null = null
-    let extractError: string | null = null
-    try {
-      if (!anthropicKey) throw new Error('ANTHROPIC_API_KEY is not configured')
-      if (!EXTRACTABLE.has(mediaType)) throw new Error(`Cannot extract ${mediaType}; agent must review image`)
-      const { input, usage } = await extractDecPage(anthropicKey, imageBase64, mediaType)
-      flat = flatten(input)
-      const { error: updErr } = await supabase
-        .from('rate_checks')
-        .update({
-          status: 'extracted',
-          extracted: { ...input, model: ANTHROPIC_MODEL, usage },
-          extracted_at: new Date().toISOString(),
-          extract_error: null,
-          ...flat,
-        })
-        .eq('id', rateCheckId)
-      if (updErr) throw updErr
-
-      // Competing-agent intel (internal only): match/create the agent and link it.
-      if (flat.current_agent) {
-        const ca = flat.current_agent
-        const { data: competitorId, error: caErr } = await supabase.rpc('upsert_competitor_agent', {
-          p_agency_id: agencyId, p_carrier: flat.carrier, p_agent_name: ca.agent_name,
-          p_agency_name: ca.agency_name, p_phone: ca.phone, p_email: ca.email,
-          p_address: ca.address, p_agent_code: ca.agent_code,
-        })
-        if (caErr) console.error('[RATE_CHECK] competitor agent upsert failed:', caErr.message)
-        else if (competitorId) {
-          await supabase.from('rate_checks').update({ competitor_agent_id: competitorId }).eq('id', rateCheckId)
-        }
-      }
-    } catch (e) {
-      extractError = (e as Error).message || 'Extraction failed'
-      console.error('[RATE_CHECK] Extraction failed:', extractError)
-      flat = null
-      await supabase
-        .from('rate_checks')
-        .update({ status: 'extract_failed', extract_error: extractError.slice(0, 1000) })
-        .eq('id', rateCheckId)
-    }
+    const { flat, extractError } = await extractAndStore(supabase, anthropicKey, rateCheckId, agencyId, imageBase64, mediaType)
 
     const carrier = flat?.carrier ?? null
     const policyType = flat?.policy_type ?? null
@@ -695,7 +773,7 @@ Deno.serve(async (req) => {
 
       const { data: existingLeads } = await supabase
         .from('leads')
-        .select('id, status')
+        .select('id, status, assigned_to_id')
         .eq('agency_id', agencyId)
         .eq('phone', phone)
         .not('status', 'in', '(closed_won,closed_lost)')
@@ -712,6 +790,8 @@ Deno.serve(async (req) => {
             ...consent,
             ...policyFields,
             ...(existing.status === 'partial' ? { status: 'new' } : {}),
+            // The producer who sourced it works it — unless someone already owns the lead.
+            ...(origin.producer_id && !existing.assigned_to_id ? { assigned_to_id: origin.producer_id } : {}),
           })
           .eq('id', existing.id)
         if (error) throw error
@@ -731,6 +811,7 @@ Deno.serve(async (req) => {
             ...sanitizedUtm,
             landing_page: landingPage,
             session_id: sessionId,
+            ...(origin.producer_id ? { assigned_to_id: origin.producer_id } : {}),
             ...(flat ? policyFields : { product_intent: 'bundle' }),
           })
           .select('id')
@@ -762,6 +843,11 @@ Deno.serve(async (req) => {
         message: `${firstName || 'Someone'}${invite.event_name ? ` from ${invite.event_name}` : ''} · ${carrier || 'Unknown carrier'} ${policyType || 'policy'} · ${premiumText}`,
         metadata: { rate_check_id: rateCheckId, lead_id: leadId, invite_id: invite.id, event_name: invite.event_name },
       })
+      const appUrl = Deno.env.get('QUOTESYNC_APP_URL') || 'https://quotesync.vercel.app'
+      await emailProducer(supabase, invite.created_by,
+        `${firstName || 'Your invite'} uploaded their policy${invite.event_name ? ` (${invite.event_name})` : ''}`,
+        `${firstName || 'Someone'} just uploaded a ${carrier || 'policy'}${policyType ? ` ${policyType}` : ''} policy${annualPremium != null ? ` paying $${Math.round(annualPremium).toLocaleString('en-US')}/yr` : ''}.\n\n` +
+        `Open it: ${appUrl}/agency/leads/rate-checks\n\nThe page promised them a text within the hour.`)
     }
 
     // ── 5. Notify agency staff (in-app) ──
