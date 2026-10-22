@@ -100,39 +100,44 @@ function TileValue({ value, addOn, size = 'text-xl' }) {
 
 // One coverage across the vehicles. Same on all → one value, "All 3" (change them
 // together in Allstate). Different → each value with the vehicles that have it.
+// The band under a tile: can these be changed together in Allstate?
+function MatchBand({ same, total }) {
+  const tone = same
+    ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', borderTop: '1px solid var(--qs-success-border)' }
+    : { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', borderTop: '1px solid var(--qs-warning-border)' };
+  return (
+    <p className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold" style={tone}>
+      {same ? <><Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Same on all {total} vehicles</> : 'Differs — set each group separately'}
+    </p>
+  );
+}
+
+// One coverage across the vehicles. Same on all → one value (change them together
+// in Allstate). Different → each value with the vehicles that have it.
 function CoverageTile({ c, rc, total, wide }) {
   const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(', ');
   return (
-    <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
-      <div className="flex items-center justify-between gap-2">
+    <div className={`flex flex-col overflow-hidden rounded-lg ${wide ? 'col-span-2' : ''}`} style={TILE}>
+      <div className="flex-1 px-3 py-2">
         <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
-        {total > 1 && !c.same && <span className="shrink-0 text-[11px] font-semibold" style={{ color: 'var(--qs-warning)' }}>Differs</span>}
+        {c.same ? <TileValue value={c.groups[0].value} addOn={c.addOn} /> : (
+          <ul className="mt-1 space-y-1.5">
+            {c.groups.map(g => (
+              <li key={g.value} className="flex items-baseline justify-between gap-3">
+                <TileValue value={g.value} addOn={c.addOn} size="text-lg" />
+                <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(g.indexes)}</span>
+              </li>
+            ))}
+            {c.none.length > 0 && (
+              <li className="flex items-baseline justify-between gap-3">
+                <span className="text-lg font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
+                <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(c.none)}</span>
+              </li>
+            )}
+          </ul>
+        )}
       </div>
-      {c.same ? (
-        <div className="flex items-end justify-between gap-2">
-          <TileValue value={c.groups[0].value} addOn={c.addOn} />
-          {total > 1 && (
-            <span className="mb-1 inline-flex shrink-0 items-center gap-0.5 text-[11px] font-semibold" style={{ color: 'var(--qs-success)' }}>
-              <Check className="h-3 w-3" aria-hidden="true" />All {total}
-            </span>
-          )}
-        </div>
-      ) : (
-        <ul className="mt-1 space-y-1.5">
-          {c.groups.map(g => (
-            <li key={g.value} className="flex items-baseline justify-between gap-3">
-              <TileValue value={g.value} addOn={c.addOn} size="text-lg" />
-              <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(g.indexes)}</span>
-            </li>
-          ))}
-          {c.none.length > 0 && (
-            <li className="flex items-baseline justify-between gap-3">
-              <span className="text-lg font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
-              <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(c.none)}</span>
-            </li>
-          )}
-        </ul>
-      )}
+      {total > 1 && <MatchBand same={c.same} total={total} />}
     </div>
   );
 }
