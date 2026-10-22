@@ -73,15 +73,6 @@ function VehicleCard({ rc, v, index }) {
       </div>
       {vinWarn && <p className="text-xs text-yellow-600">{vinWarn}</p>}
       {miles && <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{miles}</p>}
-      {own.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5 text-sm">
-          {own.map(r => (
-            <span key={r.key} className={r.addOn ? ADD_ON_CLS : 'inline-block'} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
-              {r.label} {r.value}
-            </span>
-          ))}
-        </div>
-      )}
       {lien && (
         <>
           <p className="mt-1 flex items-center gap-1 text-sm" style={{ color: 'var(--qs-text)' }}>
@@ -93,6 +84,15 @@ function VehicleCard({ rc, v, index }) {
             <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
         </>
+      )}
+      {own.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5 text-sm">
+          {own.map(r => (
+            <span key={r.key} className={r.addOn ? ADD_ON_CLS : 'inline-block'} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
+              {r.label} {r.value}
+            </span>
+          ))}
+        </div>
       )}
     </li>
   );
