@@ -12,12 +12,12 @@ import zlib from 'node:zlib';
 test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
 // Minimal truecolor PNG encoder: grey noise so the file stays ~4 MB like a real photo.
-function noisePng(w, h) {
+function noisePng(w, h, { base = 200, spread = 40 } = {}) {
   const raw = Buffer.alloc((w * 3 + 1) * h);
   for (let y = 0; y < h; y++) {
     const row = y * (w * 3 + 1);
     for (let x = 0; x < w; x++) {
-      const v = (Math.random() * 40 + 200) | 0;
+      const v = (Math.random() * spread + base) | 0;
       raw[row + 1 + x * 3] = v; raw[row + 2 + x * 3] = v; raw[row + 3 + x * 3] = v;
     }
   }
@@ -48,7 +48,15 @@ function jpegSize(buf) {
   return null;
 }
 
-test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page }, testInfo) => {
+async function fillContact(page) {
+  await page.getByLabel('First name').fill('Keisha');
+  await page.getByLabel('Mobile number').fill('4045551212');
+  await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
+  await page.getByLabel('ZIP code').fill('30094');
+  await page.getByLabel('Where do you live?').selectOption('own');
+}
+
+test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo) => {
   const photoPath = testInfo.outputPath('dec-page-photo.png');
   fs.writeFileSync(photoPath, noisePng(2400, 1800));
   const photoBytes = fs.statSync(photoPath).size;
@@ -67,16 +75,14 @@ test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page
   await page.goto('/ratecheck?utm_source=e2e&utm_campaign=ratecheck-qa');
   await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
 
+  await page.getByTestId('rc-files').setInputFiles(photoPath);
+  await expect(page.getByText('Clear photo')).toBeVisible();
+  await page.getByRole('button', { name: /Continue/ }).click();
+
+  await expect(page.getByRole('heading', { name: 'Where should Cam text you?' })).toBeVisible();
   const submit = page.getByRole('button', { name: 'Check my rate' });
   await expect(submit).toBeDisabled();
-
-  // Second file input = "or upload a photo / PDF" (the first one has capture=environment).
-  await page.locator('input[type=file]').nth(1).setInputFiles(photoPath);
-  await page.getByLabel('First name').fill('Keisha');
-  await page.getByLabel('Mobile number').fill('4045551212');
-  await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
-  await page.getByLabel('ZIP code').fill('30094');
-  await page.getByLabel('Where do you live?').selectOption('own');
+  await fillContact(page);
   await expect(submit).toBeDisabled(); // consent still unchecked
   // First checkbox = required call/text consent; second = optional partner referral (left unchecked).
   await page.getByRole('checkbox').nth(0).check();
@@ -84,8 +90,11 @@ test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page
 
   const started = Date.now();
   await submit.click();
-  await expect(page.getByText("Got it — we're checking your State Farm auto policy now.")).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
   const elapsedMs = Date.now() - started;
+  await expect(page.getByText('State Farm', { exact: true })).toBeVisible();
+  await expect(page.getByText('Auto · $1,560/yr')).toBeVisible();
+  await expect(page.getByTestId('rc-total')).toHaveText('$1,560'); // "You pay today" total
 
   expect(posted).not.toBeNull();
   expect(posted.media_type).toBe('image/jpeg');
@@ -95,6 +104,7 @@ test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page
   expect(jpeg.length).toBeLessThan(photoBytes);
   expect(posted.phone).toBe('4045551212');
   expect(posted.zip).toBe('30094');
+  expect(posted.housing_situation).toBe('own');
   expect(posted.consent_version).toBe('ratecheck-v1');
   expect(Date.parse(posted.consent_given_at)).not.toBeNaN();
   expect(posted.session_id).toMatch(/^[0-9a-f-]{36}$/);
@@ -106,62 +116,98 @@ test('downscales a 4 MB photo and shows the carrier confirmation', async ({ page
     `client prep + (mocked) round trip ${elapsedMs} ms`);
 });
 
-test('sends every policy a household adds, one request each, and retries a throttled one', async ({ page }, testInfo) => {
-  const a = testInfo.outputPath('auto.png'); fs.writeFileSync(a, noisePng(800, 600));
-  const b = testInfo.outputPath('home.png'); fs.writeFileSync(b, noisePng(800, 600));
-  const c = testInfo.outputPath('boat.png'); fs.writeFileSync(c, noisePng(800, 600));
+test('a household sends any number of policies, retries a throttled one, and adds more later', async ({ page }, testInfo) => {
+  const files = ['auto', 'home', 'boat', 'truck'].map(n => {
+    const f = testInfo.outputPath(`${n}.png`); fs.writeFileSync(f, noisePng(800, 600)); return f;
+  });
   const replies = [
-    { carrier: 'State Farm', policy_type: 'auto' },
-    { carrier: 'Progressive', policy_type: 'home' },
-    { carrier: 'Other', policy_type: 'other' },
+    { carrier: 'State Farm', policy_type: 'auto', annual_premium: 1560 },
+    { carrier: 'Progressive', policy_type: 'home', annual_premium: 2013 },
+    { carrier: 'Other', policy_type: 'other', annual_premium: 427 },
+    { carrier: 'GEICO', policy_type: 'auto', annual_premium: 980 },
   ];
   const posts = [];
   let throttledOnce = false;
   await page.route('**/functions/v1/rate-check', async (route) => {
-    // Throttle the second request once; the page should wait and retry it.
     if (posts.length === 1 && !throttledOnce) {
-      throttledOnce = true;
+      throttledOnce = true; // the page should wait and retry this one
       return route.fulfill({ status: 429, contentType: 'application/json', body: '{"error":"Rate limit exceeded"}' });
     }
     posts.push(route.request().postDataJSON());
-    const r = replies[posts.length - 1];
     await route.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify({ status: 'received', rate_check_id: `t${posts.length}`, annual_premium: 1000, ...r }) });
+      body: JSON.stringify({ status: 'received', rate_check_id: `t${posts.length}`, ...replies[posts.length - 1] }) });
   });
   await page.clock.install();
 
   await page.goto('/ratecheck');
-  // Pick two at once from the upload picker, then add a third.
-  await page.locator('input[type=file]').nth(1).setInputFiles([a, b]);
-  await expect(page.getByText('2 policies added')).toBeVisible();
-  await page.locator('input[type=file]').nth(1).setInputFiles(c);
-  await expect(page.getByText('3 policies added')).toBeVisible();
-  // Remove and re-add one to exercise Remove.
+  await page.getByTestId('rc-files').setInputFiles([files[0], files[1]]);
+  await expect(page.getByText('2 added')).toBeVisible();
+  await page.getByTestId('rc-files').setInputFiles(files[0]); // duplicate
+  await expect(page.getByText('You already added that one.')).toBeVisible();
+  await page.getByTestId('rc-files').setInputFiles(files[2]);
+  await expect(page.getByText('3 added')).toBeVisible();
   await page.getByRole('button', { name: 'Remove policy 3' }).click();
-  await expect(page.getByText('2 policies added')).toBeVisible();
-  await page.locator('input[type=file]').nth(1).setInputFiles(c);
+  await expect(page.getByText('2 added')).toBeVisible();
+  await page.getByTestId('rc-files').setInputFiles(files[2]);
+  await page.getByRole('button', { name: /Continue/ }).click();
 
-  await page.getByLabel('First name').fill('Keisha');
-  await page.getByLabel('Mobile number').fill('4045551212');
-  await page.getByLabel('ZIP code').fill('30094');
-  await page.getByLabel('Where do you live?').selectOption('own');
+  await fillContact(page);
   await page.getByRole('checkbox').nth(0).check();
   await page.getByRole('button', { name: 'Check my 3 policies' }).click();
 
-  // The throttled request waits 20 s before retrying; fast-forward the clock.
-  await expect(page.getByText('Almost there')).toBeVisible({ timeout: 15_000 });
-  await page.clock.runFor(21_000);
+  await expect(page.getByRole('heading', { name: 'Reading your policies…' })).toBeVisible();
+  await expect(page.getByText('State Farm', { exact: true })).toBeVisible({ timeout: 15_000 });
+  await page.clock.runFor(21_000); // the throttled request waits 20 s
 
-  await expect(page.getByText("Got it — we're checking your 3 policies now.")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText('Your State Farm auto policy')).toBeVisible();
-  await expect(page.getByText('Your Progressive home policy')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Home · $2,013/yr')).toBeVisible();
+  await expect(page.getByText('Policy read')).toBeVisible();
+  await expect(page.getByTestId('rc-total')).toHaveText('$4,000');
   expect(posts).toHaveLength(3);
   expect(new Set(posts.map(p => p.session_id)).size).toBe(1);
   expect(new Set(posts.map(p => p.consent_given_at)).size).toBe(1);
-  expect(posts.every(p => p.phone === '4045551212')).toBe(true);
 
-  // "Add more policies" keeps the contact details for the next round.
+  // Add one more later: no second contact step, same consent.
   await page.getByRole('button', { name: 'Add more policies' }).click();
-  await expect(page.getByRole('heading', { name: 'Add more policies' })).toBeVisible();
-  await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
+  await expect(page.getByText('3 policies already sent.')).toBeVisible();
+  await page.getByTestId('rc-files').setInputFiles(files[3]);
+  await page.getByRole('button', { name: /Send it/ }).click();
+  await expect(page.getByText('Auto · $980/yr')).toBeVisible({ timeout: 15_000 });
+  expect(posts).toHaveLength(4);
+  expect(posts[3].consent_given_at).toBe(posts[0].consent_given_at);
+  await expect(page.getByTestId('rc-total')).toHaveText('$4,980');
+
+  // Reloading the tab keeps what was sent; "Start over" wipes it.
+  await page.reload();
+  await expect(page.getByText('Auto · $980/yr')).toBeVisible();
+  await page.getByRole('button', { name: 'Start over' }).click();
+  await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
+});
+
+test('saves progress on the device and warns about dark or blurry photos', async ({ page }, testInfo) => {
+  const dark = testInfo.outputPath('dark.png'); fs.writeFileSync(dark, noisePng(600, 800, { base: 20, spread: 10 }));
+  const flat = testInfo.outputPath('flat.png'); fs.writeFileSync(flat, noisePng(600, 800, { base: 210, spread: 1 }));
+  await page.route('**/functions/v1/rate-check', route => route.abort());
+
+  await page.goto('/ratecheck');
+  await page.getByTestId('rc-files').setInputFiles([dark, flat]);
+  await expect(page.getByText('Too dark — retake in better light')).toBeVisible();
+  await expect(page.getByText('Looks blurry — hold steady and retake')).toBeVisible();
+  await expect(page.getByText('Some photos may be hard to read. You can still send them.')).toBeVisible();
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await page.getByLabel('First name').fill('Dre');
+
+  // Leave and come back: photos and typed details are still there; consent is not.
+  await page.reload();
+  await expect(page.getByText('Welcome back — we kept your progress.')).toBeVisible();
+  await expect(page.getByText('2 added')).toBeVisible();
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await expect(page.getByLabel('First name')).toHaveValue('Dre');
+  await expect(page.getByRole('checkbox').nth(0)).not.toBeChecked();
+
+  await page.getByRole('button', { name: '2 policies', exact: true }).click();
+  await page.getByRole('button', { name: 'Start over' }).click();
+  await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('Welcome back')).toHaveCount(0);
 });
