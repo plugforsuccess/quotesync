@@ -140,7 +140,11 @@ export async function submitRateCheck({ prepared, firstName, phone, zip, housing
   });
 
   const data = await res.json().catch(() => ({}));
-  if (res.status === 429) throw new Error('Too many tries in a minute — please wait a moment and try again.');
+  if (res.status === 429) {
+    const err = new Error('Too many tries in a minute — please wait a moment and try again.');
+    err.rateLimited = true;
+    throw err;
+  }
   if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
   return data;
 }

@@ -94,7 +94,24 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
 const RATE_LIMIT = 5 // public requests per minute per IP
 const LOOKUP_RATE_LIMIT = 30 // invite-link opens per minute per IP
 const AGENT_RATE_LIMIT = 30 // staff uploads per minute per user
+const HOUSEHOLD_RATE_LIMIT = 20 // a household's 2nd, 3rd… policy, per minute per session
 const RATE_WINDOW_SECONDS = 60
+
+// A follow-up policy from someone who already sent one: same session, phone and IP, recently.
+async function householdFollowUpKey(supabase: any, body: any, clientIp: string): Promise<string | null> {
+  const sessionId = typeof body?.session_id === 'string' ? body.session_id.slice(0, 64) : ''
+  const phone = String(body?.phone || '').replace(/\D/g, '').replace(/^1(\d{10})$/, '$1')
+  if (!sessionId || phone.length !== 10 || clientIp === 'unknown') return null
+  const { data } = await supabase
+    .from('rate_checks')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('phone', phone)
+    .eq('consent_ip', clientIp)
+    .gte('created_at', new Date(Date.now() - 30 * 60 * 1000).toISOString())
+    .limit(1)
+  return data?.length ? `rate_check_household:${sessionId}` : null
+}
 
 async function checkRateLimit(supabase: any, key: string, limit: number): Promise<boolean> {
   const { data, error } = await supabase.rpc('rate_limit_hit', {
@@ -670,9 +687,15 @@ Deno.serve(async (req) => {
   // ── Tagged invite link (consumer upload from /r/CODE) ──
   const invite = !staff && body.invite_code ? await resolveInvite(supabase, body.invite_code) : null
 
+  // No cap on how many policies one household sends: once a visitor's first policy is in,
+  // the rest of their policies (same browser session, phone and network, within 30 minutes)
+  // count against a separate, larger per-session allowance instead of the per-IP limit.
+  const householdKey = !staff ? await householdFollowUpKey(supabase, body, clientIp) : null
   const limited = staff
     ? !(await checkRateLimit(supabase, `rate_check_agent:${staff.userId}`, AGENT_RATE_LIMIT))
-    : !(await checkRateLimit(supabase, `rate_check:${clientIp}`, RATE_LIMIT))
+    : householdKey
+      ? !(await checkRateLimit(supabase, householdKey, HOUSEHOLD_RATE_LIMIT))
+      : !(await checkRateLimit(supabase, `rate_check:${clientIp}`, RATE_LIMIT))
   if (limited) {
     return jsonResponse({ error: 'Rate limit exceeded' }, 429, corsHeaders)
   }
