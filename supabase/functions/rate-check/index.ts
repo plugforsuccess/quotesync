@@ -79,36 +79,24 @@ function jsonResponse(body: unknown, status: number, corsHeaders: Record<string,
   })
 }
 
-// Rate limiting: DB-backed to survive Edge Function cold starts (same as create-lead)
+// Rate limiting: DB-backed to survive Edge Function cold starts (same rate_limits
+// table as create-lead), but via the atomic rate_limit_hit() upsert — the
+// read-then-increment pattern loses counts when requests arrive concurrently.
 const RATE_LIMIT = 5 // requests per minute
-const RATE_WINDOW = 60_000 // 1 minute
+const RATE_WINDOW_SECONDS = 60
 
 async function checkRateLimit(supabase: any, ip: string): Promise<boolean> {
-  const now = new Date()
-  const windowEnd = new Date(now.getTime() + RATE_WINDOW)
-  const key = `rate_check:${ip}`
-
-  const { data: existing } = await supabase
-    .from('rate_limits')
-    .select('count, reset_at')
-    .eq('key', key)
-    .single()
-
-  if (!existing || new Date(existing.reset_at) <= now) {
-    await supabase
-      .from('rate_limits')
-      .upsert({ key, count: 1, reset_at: windowEnd.toISOString() }, { onConflict: 'key' })
+  const { data, error } = await supabase.rpc('rate_limit_hit', {
+    p_key: `rate_check:${ip}`,
+    p_limit: RATE_LIMIT,
+    p_window_seconds: RATE_WINDOW_SECONDS,
+  })
+  if (error) {
+    // Fail open: never drop a consumer's upload because the limiter hiccuped.
+    console.error('[RATE_CHECK] rate limit check failed:', error.message)
     return true
   }
-
-  if (existing.count >= RATE_LIMIT) return false
-
-  await supabase
-    .from('rate_limits')
-    .update({ count: existing.count + 1 })
-    .eq('key', key)
-
-  return true
+  return data === true
 }
 
 function base64DecodedSize(b64: string): number {
