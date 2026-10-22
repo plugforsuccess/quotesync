@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   nameCase, addressCase, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, usageFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, glance, headsUp,
+  lienholderFor, usageFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, glance, headsUp, insuredFirstNames,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -19,6 +19,7 @@ const auto = {
   drivers: [{ age: 58, name: 'JOCELYN PEARSON' }, { age: 22, name: 'STEPHEN PEARSON' }, { age: 60, name: 'STEPHEN PEARSON' }],
   surcharges: [], claims: [],
   extracted: {
+    insured_name: 'PEARSON, STEPHEN & JOCELYN',
     notes: 'Policy period is approximately 5.7 months (February 4, 2026 to July 25, 2026). This is a mid-term endorsement adding a vehicle to an existing multicar policy. The page notes that beginning at next renewal all vehicles will be renewed for full policy term. Usage is stated as "To work, school, or pleasure" for all vehicles. There appear to be two people named Stephen Pearson (ages 22 and 60) plus Jocelyn Pearson (age 58). TD Auto Finance listed as creditor for Vehicle 003.',
     discounts: ['Multicar (because you insure more than one vehicle with us)', 'Multiple Lines (because you also have Homeowners with us)', 'Vehicle Safety (because your vehicle has important safety features)', 'Tenure (because you have been a loyal auto customer for 2 years)', 'Accident Free for the last 2 years', 'Good Student Discount (because 1 of 1 drivers have qualified)'],
   },
@@ -72,6 +73,19 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
   assert.equal(vehicleCoverages(auto, 2).length, 1);
 });
 
+test('drivers: named insured, spouse, then the rest oldest to youngest', () => {
+  assert.deepEqual(insuredFirstNames('PEARSON, STEPHEN & JOCELYN'), ['stephen', 'jocelyn']);
+  assert.deepEqual(insuredFirstNames('Stephen and Jocelyn Pearson'), ['stephen', 'jocelyn']);
+  assert.deepEqual(insuredFirstNames('Keisha T. Example'), ['keisha']);
+  const fam = {
+    extracted: { insured_name: 'DANA REYES' },
+    drivers: [{ name: 'MAYA REYES', age: 16 }, { name: 'LUIS REYES', age: 44, status: 'Spouse' }, { name: 'ANA REYES', age: 19 }, { name: 'DANA REYES', age: 45 }],
+  };
+  assert.deepEqual(driverRows(fam).map(d => d.name), ['Dana Reyes', 'Luis Reyes', 'Ana Reyes', 'Maya Reyes']);
+  // No name on the policy: oldest first.
+  assert.deepEqual(driverRows({ drivers: fam.drivers }).map(d => d.age), [45, 44, 19, 16]);
+});
+
 test('lienholder and usage land on the right vehicle', () => {
   assert.equal(lienholderFor(auto, 0), null);
   assert.equal(lienholderFor(auto, 2), 'TD Auto Finance');
@@ -79,8 +93,9 @@ test('lienholder and usage land on the right vehicle', () => {
 });
 
 test('drivers with the same name are told apart; discounts are short tags', () => {
-  assert.deepEqual(driverRows(auto).map(d => d.name), ['Jocelyn Pearson', 'Stephen Pearson (22)', 'Stephen Pearson (60)']);
-  assert.equal(driverRows(auto)[1].young, true);
+  assert.deepEqual(driverRows(auto).map(d => d.name), ['Stephen Pearson (60)', 'Jocelyn Pearson', 'Stephen Pearson (22)']);
+  assert.deepEqual(driverRows(auto).map(d => d.role), ['insured', 'spouse', null]);
+  assert.equal(driverRows(auto)[2].young, true);
   assert.deepEqual(discountsOf(auto), ['Multicar', 'Multiple Lines', 'Vehicle Safety', 'Tenure 2 yrs', 'Accident Free 2 yrs', 'Good Student']);
   assert.deepEqual(discountsOf(home), ['Utility Rating Credit', 'Home Alert', 'Home/Auto', 'Claim Record', 'Loyal Customer']);
   assert.deepEqual(discountsOf({ extracted: { discounts: ['Drive Safe &amp; Save'] } }), ['Drive Safe & Save']);

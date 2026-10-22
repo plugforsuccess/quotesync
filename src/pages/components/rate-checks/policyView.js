@@ -352,13 +352,44 @@ export function remainingNotes(rc) {
 
 // ── Drivers and discounts ─────────────────────────────────────────────────────
 
-/** Drivers with readable names; two people with one name are told apart by age. */
+const firstName = (n) => String(n || '').trim().split(/\s+/)[0]?.toLowerCase() || '';
+
+/**
+ * First names on the policy's "Name on policy" line, in order:
+ * "PEARSON, STEPHEN & JOCELYN" → [stephen, jocelyn]; "Stephen and Jocelyn Pearson" → [stephen, jocelyn].
+ */
+export function insuredFirstNames(insured) {
+  if (!insured) return [];
+  const str = String(insured).trim();
+  const firsts = str.includes(',') ? str.slice(str.indexOf(',') + 1) : str;
+  return firsts.split(/\s*(?:&|\band\b|\/)\s*/i).map(firstName).filter(Boolean);
+}
+
+const byAgeDesc = (a, b) => (b.age ?? -1) - (a.age ?? -1);
+
+/**
+ * Drivers in the order a producer enters them: named insured, then spouse, then
+ * everyone else oldest to youngest. Roles come from the name on the policy (or a
+ * printed "spouse"); when two drivers share the insured's first name, the older
+ * one is the insured. Two people with one name are told apart by age.
+ */
 export function driverRows(rc) {
-  const list = (Array.isArray(rc?.drivers) ? rc.drivers : []).map(d => ({ ...d, display: nameCase(d.name) || 'Driver' }));
-  const counts = list.reduce((m, d) => m.set(d.display, (m.get(d.display) || 0) + 1), new Map());
-  return list.map(d => ({
+  const list = (Array.isArray(rc?.drivers) ? rc.drivers : []).map((d, i) => ({ ...d, i, display: nameCase(d.name) || 'Driver' }));
+  const [insuredFirst, spouseFirst] = insuredFirstNames(rc?.extracted?.insured_name);
+  const pick = (pred) => list.filter(d => !d.role && pred(d)).sort(byAgeDesc)[0];
+  const insured = insuredFirst ? pick(d => firstName(d.display) === insuredFirst) : null;
+  if (insured) insured.role = 'insured';
+  // A spouse is only placed second when we know who the insured is; otherwise everyone is by age.
+  const spouse = !insured ? null : (spouseFirst ? pick(d => firstName(d.display) === spouseFirst) : null)
+    || pick(d => /spouse|wife|husband/i.test(`${d.status || ''} ${d.usage || ''}`));
+  if (spouse) spouse.role = 'spouse';
+  const ordered = [insured, spouse].filter(Boolean).concat(list.filter(d => !d.role).sort((a, b) => byAgeDesc(a, b) || a.i - b.i));
+
+  const counts = ordered.reduce((m, d) => m.set(d.display, (m.get(d.display) || 0) + 1), new Map());
+  return ordered.map(d => ({
     name: counts.get(d.display) > 1 && d.age ? `${d.display} (${d.age})` : d.display,
     display: d.display,
+    role: d.role || null,
     age: d.age ?? null,
     status: d.status ? nameCase(d.status) : null,
     usage: d.usage || null,
