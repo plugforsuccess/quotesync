@@ -126,10 +126,10 @@ function CoverageTile({ c, setup, total, wide }) {
       <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
       {c.same ? (
         // Every vehicle → one label; only some (a liability-only car left off a deductible) → their pills.
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+        <div>
           <TileValue value={c.groups[0].value} addOn />
-          {total > 1 && c.count < total && rows.map(x => <VehicleChip key={x.index} x={x} />)}
-          {total > 1 && c.count === total && <p className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {total} vehicles</p>}
+          {total > 1 && c.count < total && <div className="mt-1 flex flex-wrap gap-1">{rows.map(x => <VehicleChip key={x.index} x={x} />)}</div>}
+          {total > 1 && c.count === total && <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {total} vehicles</p>}
         </div>
       ) : (
         <ul className="mt-1 space-y-1.5">
