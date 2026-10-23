@@ -13,7 +13,7 @@ import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
-  driverRows, discountsOf, headsUp, vehicleTitle, vehicleShort, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
+  driverRows, discountsOf, summaryLines, vehicleTitle, vehicleShort, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
   vehicleCoverageSetup,
 } from './policyView';
 
@@ -311,7 +311,7 @@ export default function PolicySheet({ rc, warning }) {
 // What the producer should know that the fields above don't say: the scan's
 // summary (or, for older scans, what's left of its note), plus a read-quality warning.
 function SummarySection({ rc, warning }) {
-  const lines = headsUp(rc);
+  const lines = summaryLines(rc);
   if (!lines.length && !warning) return null;
   return (
     <Section title="Summary" ruled>
@@ -319,7 +319,9 @@ function SummarySection({ rc, warning }) {
         {warning && (
           <p className="flex gap-2 text-yellow-600"><AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />{warning}</p>
         )}
-        {lines.length > 0 && <p className="select-text">{lines.join(' ')}</p>}
+        {lines.map(l => (
+          <p key={l.tag} className="select-text"><b style={{ color: 'var(--qs-bright)' }}>{l.tag}.</b> {l.text}</p>
+        ))}
       </div>
     </Section>
   );

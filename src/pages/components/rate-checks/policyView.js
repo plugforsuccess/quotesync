@@ -471,3 +471,44 @@ export function headsUp(rc) {
   const lines = rc?.summary ? [rc.summary] : remainingNotes(rc);
   return lines.map(l => replaceVehicleRefs(l, rc?.vehicles || rc?.extracted?.vehicles));
 }
+
+const DAY = 86_400_000;
+const parseDay = (iso) => {
+  const d = iso ? new Date(`${iso}T00:00:00`) : null;
+  return d && !Number.isNaN(d.getTime()) ? d : null;
+};
+
+/** "7/25/2026" — the way producers say dates (no leading zeros). */
+export function shortDate(iso) {
+  const d = parseDay(iso);
+  return d ? `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}` : null;
+}
+
+/** "2/4/2026 to 7/25/2026" */
+export function dateSpan(startIso, endIso) {
+  const a = shortDate(startIso), b = shortDate(endIso);
+  return a && b ? `${a} to ${b}` : null;
+}
+
+/**
+ * The summary as tagged lines, facts first: a term shorter than usual and the
+ * renewal date come from the policy dates (always right, always worded the same);
+ * the scan's own sentence closes it. `now` is injectable for tests.
+ */
+export function summaryLines(rc, now = new Date()) {
+  const lines = [];
+  const a = parseDay(rc?.effective_date), b = parseDay(rc?.expiration_date);
+  if (a && b && b > a) {
+    const months = (b - a) / (30.44 * DAY);
+    const usual = rc.term_months || (months > 9 ? 12 : 6);
+    if (months < usual - 0.25) {
+      lines.push({ tag: 'Short term', text: `${dateSpan(rc.effective_date, rc.expiration_date)} (${months.toFixed(1)} months).` });
+    }
+    const days = Math.round((b - now) / DAY);
+    const when = days < 0 ? `${Math.abs(days)} days ago` : days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
+    lines.push({ tag: days < 0 ? 'Expired' : 'Renews', text: `${shortDate(rc.expiration_date)} (${when}).` });
+  }
+  const note = headsUp(rc).join(' ');
+  if (note) lines.push({ tag: 'Note', text: note });
+  return lines;
+}

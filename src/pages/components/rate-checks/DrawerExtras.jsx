@@ -4,7 +4,6 @@
 
 import { useState } from 'react';
 import { useCompetitorAgents, useReferralPartners, useReferrals, useCreateReferral } from '../../../hooks/useRateChecks';
-import { OwnershipChip } from './CompetitorAgents';
 import { inputStyle, formatPhone, formatDate } from './ui';
 import { Field } from './Copyable';
 import { caps } from './policyView';
@@ -36,14 +35,10 @@ export function CurrentAgentBox({ rc }) {
         {address && <Field label="Address" value={address} copy />}
       </dl>
       {stats && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm" style={{ color: 'var(--qs-subtle)' }}>
-          <OwnershipChip value={stats.book_ownership} />
-          <span>
-            {Number(stats.rate_checks) === 1 ? 'First customer of theirs we’ve seen.' : `We’ve seen ${stats.rate_checks} of their customers.`}
-            {Number(stats.quoted) > 0 && ` Allstate beat the price ${stats.wins} of ${stats.quoted} times.`}
-          </span>
-          {stats.starred && <span className="text-yellow-500">★ Starred</span>}
-        </div>
+        <p className="mt-2 text-sm" style={{ color: 'var(--qs-subtle)' }}>
+          {Number(stats.rate_checks) === 1 ? 'First customer of theirs we’ve seen.' : `We’ve seen ${stats.rate_checks} of their customers.`}
+          {Number(stats.quoted) > 0 && ` Allstate beat the price ${stats.wins} of ${stats.quoted} times.`}
+        </p>
       )}
       <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>Never contact this agent about this customer.</p>
     </section>

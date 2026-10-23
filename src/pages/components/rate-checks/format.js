@@ -138,15 +138,17 @@ export function vehicleName(v) {
   return [v.year, v.make, v.model].filter(Boolean).join(' ') || 'Vehicle';
 }
 
-function usDate(iso) {
+// "2/4/2026" — the way producers say dates (no leading zeros).
+export function usDate(iso) {
   if (!iso) return null;
   const [y, m, d] = String(iso).split('-');
-  return y && m && d ? `${m}/${d}/${y}` : iso;
+  return y && m && d ? `${Number(m)}/${Number(d)}/${y}` : iso;
 }
 
+// "2/4/2026 to 7/25/2026"
 export function policyPeriod(rc) {
   const a = usDate(rc.effective_date), b = usDate(rc.expiration_date);
-  return a && b ? `${a} – ${b}` : a || b || null;
+  return a && b ? `${a} to ${b}` : a || b || null;
 }
 
 // "$780 every 6 months" / "$2,013 a year"
