@@ -514,7 +514,7 @@ function HouseholdCard({ rc, household, onSelect }) {
   const hhAllstate = household.every(p => p.allstate_premium != null) ? sum('allstate_premium') : null;
   const hhDelta = hhPays != null && hhAllstate != null ? hhPays - hhAllstate : null;
   return (
-    <div className="rounded-xl p-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+    <div className="h-full rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
         <span style={{ color: 'var(--qs-subtle)' }}>Household · {household.length} policies</span>
         <span style={{ color: 'var(--qs-bright)' }}>
@@ -533,7 +533,7 @@ function HouseholdCard({ rc, household, onSelect }) {
           </button>
         ))}
       </div>
-      <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Quote each policy; the bundle decides the win. No “can’t beat it” text goes out while another policy here is open or won.</p>
+      <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Quote each one; the bundle decides the win. No “can’t beat it” text until the household is done.</p>
     </div>
   );
 }
@@ -580,7 +580,7 @@ function QuoteBox({ rc, onQuoted }) {
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (
-    <section className="rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+    <section className="h-full rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{Number(rc.term_months) === 6 ? termPrice(rc) : ''}</p>
