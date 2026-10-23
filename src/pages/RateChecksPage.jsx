@@ -788,16 +788,15 @@ function PriceDrop({ current, price, market }) {
   const tone = up ? 'var(--qs-warning)' : 'var(--qs-success)';
   return (
     <div>
-      <div className="flex items-end justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
-          <p className="mt-1 text-2xl font-bold leading-none line-through decoration-2" style={{ color: 'var(--qs-subtle)' }}>{money(current)}</p>
-        </div>
-        <ArrowRight className="mb-1 h-6 w-6 shrink-0" style={{ color: tone }} aria-hidden="true" />
-        <div className="min-w-0 text-right">
-          <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: tone }}>{market}</p>
-          <p className="mt-1 text-4xl font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-lg font-semibold">/yr</span></p>
-        </div>
+      {/* Labels on their own row, so the prices below get the full width. */}
+      <div className="flex items-baseline justify-between gap-2 text-xs font-bold uppercase tracking-[0.12em]">
+        <span className="whitespace-nowrap" style={{ color: 'var(--qs-subtle)' }}>They pay now</span>
+        <span className="whitespace-nowrap" style={{ color: tone }}>{market}</span>
+      </div>
+      <div className="mt-1.5 flex items-end justify-between gap-2">
+        <p className="text-xl font-bold leading-none line-through decoration-2" style={{ color: 'var(--qs-subtle)' }}>{money(current)}</p>
+        <ArrowRight className="mb-0.5 h-5 w-5 shrink-0" style={{ color: tone }} aria-hidden="true" />
+        <p className="whitespace-nowrap text-[32px] font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-base font-semibold">/yr</span></p>
       </div>
       <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }} role="img"
         aria-label={s ? (up ? `${market} is ${money(-s.delta)} a year more` : `${market} is ${s.pct}% less`) : undefined}>
@@ -805,8 +804,8 @@ function PriceDrop({ current, price, market }) {
       </div>
       {s && (
         <p className="mt-2 text-lg font-extrabold" style={{ color: tone }}>
-          {s.delta > 0 ? `Saves them ${money(s.delta)}/yr` : s.delta < 0 ? `${money(-s.delta)}/yr more than they pay` : 'Same as they pay'}
-          {s.pct != null && s.delta !== 0 && <span className="font-semibold" style={{ color: 'var(--qs-subtle)' }}> · {Math.abs(s.pct)}% {s.delta > 0 ? 'less' : 'more'}</span>}
+          {s.delta > 0 ? `${money(s.delta)}/yr less` : s.delta < 0 ? `${money(-s.delta)}/yr more` : 'Same as they pay'}
+          {s.pct != null && s.delta !== 0 && <span className="font-semibold" style={{ color: 'var(--qs-subtle)' }}> · {Math.abs(s.pct)}%</span>}
         </p>
       )}
     </div>
