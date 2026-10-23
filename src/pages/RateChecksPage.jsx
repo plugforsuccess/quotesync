@@ -714,6 +714,12 @@ function QuoteBox({ rc, onQuoted }) {
       {Number(rc.term_months) === 6 && rc.current_premium != null && (
         <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
       )}
+      {/* The Allstate price on file for this policy, once there is one. */}
+      {(result?.allstate_premium ?? rc.allstate_premium) != null && !bound && (
+        <p className="mt-3 flex items-center gap-1.5 text-base font-semibold" style={{ color: 'var(--qs-success)' }}>
+          <Check className="h-4 w-4" aria-hidden="true" /><span>{market} {money(result?.allstate_premium ?? rc.allstate_premium)}<span className="text-sm font-medium">/yr</span></span>
+        </p>
+      )}
 
 
       {bound && (
