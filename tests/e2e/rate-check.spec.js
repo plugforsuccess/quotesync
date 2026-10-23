@@ -89,7 +89,8 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
 
   await page.getByTestId('rc-files').setInputFiles(photoPath);
-  await expect(page.getByText('Clear', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 page', { exact: true })).toBeVisible();
+  await expect(page.getByText('Does this policy have more pages?')).toBeVisible();
   await page.getByRole('button', { name: /Continue/ }).click();
 
   await expect(page.getByRole('heading', { name: 'Where should Cam text you?' })).toBeVisible();
@@ -155,6 +156,7 @@ test('a household sends any number of policies, retries a throttled one, and add
 
   await page.goto('/ratecheck');
   await page.getByTestId('rc-files').setInputFiles([files[0], files[1]]);
+  await page.getByRole('button', { name: '2 separate policies' }).click();
   await expect(page.getByText('2 added')).toBeVisible();
   await page.getByTestId('rc-files').setInputFiles(files[0]); // duplicate
   await expect(page.getByText('You already added that one.')).toBeVisible();
@@ -205,9 +207,10 @@ test('saves progress on the device and warns about dark or blurry photos', async
 
   await page.goto('/ratecheck');
   await page.getByTestId('rc-files').setInputFiles([dark, flat]);
-  await expect(page.getByText('Too dark', { exact: true })).toBeVisible();
-  await expect(page.getByText('Blurry', { exact: true })).toBeVisible();
-  await expect(page.getByText('Blurry or dark? Retake, or send anyway.')).toBeVisible();
+  await page.getByRole('button', { name: '2 separate policies' }).click();
+  await expect(page.getByText('Page 1 looks too dark')).toBeVisible();
+  await expect(page.getByText('Page 1 looks blurry')).toBeVisible();
+  await expect(page.getByText('Blurry or dark? Retake that page, or send anyway.')).toBeVisible();
   await page.getByRole('button', { name: /Continue/ }).click();
   await page.getByLabel('First name').fill('Dre');
 
@@ -224,4 +227,50 @@ test('saves progress on the device and warns about dark or blurry photos', async
   await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
   await page.reload();
   await expect(page.getByText('Welcome back')).toHaveCount(0);
+});
+
+test('a policy with several pages goes up as one PDF, and asks about more pages', async ({ page }, testInfo) => {
+  const [p1, p2, p3] = ['p1', 'p2', 'p3'].map(n => {
+    const f = testInfo.outputPath(`${n}.png`); fs.writeFileSync(f, noisePng(900, 1200)); return f;
+  });
+  const posts = [];
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    posts.push(route.request().postDataJSON());
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ status: 'received', rate_check_id: 't1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 1560 }) });
+  });
+
+  await page.goto('/ratecheck');
+  // One photo: it asks whether the policy has more pages.
+  await page.getByTestId('rc-files').setInputFiles(p1);
+  await expect(page.getByText('Does this policy have more pages?')).toBeVisible();
+  const chooser = page.waitForEvent('filechooser');
+  await page.getByRole('button', { name: 'Add page 2' }).first().click();
+  await (await chooser).setFiles(p2);
+  await expect(page.getByText('2 pages', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Add page 3' }).first()).toBeVisible();
+  await page.getByRole('button', { name: "That's all" }).click();
+  await expect(page.getByText('Does this policy have more pages?')).toHaveCount(0);
+
+  // A new photo from the main buttons starts a new policy.
+  await page.getByTestId('rc-files').setInputFiles([p3]);
+  await expect(page.getByText('2 added')).toBeVisible();
+  await page.getByRole('button', { name: 'Remove policy 2' }).click();
+
+  // Pages survive a reload, in order.
+  await page.reload();
+  await expect(page.getByText('2 pages', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await fillContact(page);
+  await page.getByRole('checkbox').nth(0).check();
+  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
+
+  expect(posts).toHaveLength(1);
+  expect(posts[0].media_type).toBe('application/pdf');
+  const pdf = Buffer.from(posts[0].image_base64, 'base64');
+  expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
+  const { PDFDocument } = await import('pdf-lib');
+  expect((await PDFDocument.load(pdf)).getPageCount()).toBe(2);
 });

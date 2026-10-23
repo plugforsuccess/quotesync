@@ -102,6 +102,54 @@ export async function prepareDecPage(file) {
   };
 }
 
+const isPdfFile = (f) => f.type === 'application/pdf' || /\.pdf$/i.test(f.name || '');
+
+function bytesToBase64(bytes) {
+  let bin = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+
+/**
+ * One policy can be several pages (an auto dec page often runs 2–4). One page goes
+ * up as before; several are combined into a single PDF, in order, so the scanner
+ * reads them together as one policy and staff see every page. Photos are re-encoded
+ * to JPEG first (same as single uploads); PDF pages are copied in as-is.
+ * Resolves to { base64, mediaType, bytes, pages }.
+ */
+export async function preparePolicy(files) {
+  const list = (files || []).filter(Boolean);
+  if (!list.length) throw new Error('Please add a photo of your declarations page.');
+  if (list.length === 1) return { ...(await prepareDecPage(list[0])), pages: 1 };
+
+  const { PDFDocument } = await import('pdf-lib');
+  const pdf = await PDFDocument.create();
+  for (const file of list) {
+    if (isPdfFile(file)) {
+      let src;
+      try { src = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true }); } catch {
+        throw new Error("We couldn't open one of those PDFs. Try a screenshot of it instead.");
+      }
+      const copied = await pdf.copyPages(src, src.getPageIndices());
+      copied.forEach(pg => pdf.addPage(pg));
+    } else {
+      let jpeg;
+      try { jpeg = await downscaleToJpeg(file); } catch {
+        throw new Error(isHeic(file)
+          ? "We couldn't read one of those HEIC photos. Try a screenshot of it, or set your camera to \"Most Compatible\"."
+          : "We couldn't read one of those photos. Try retaking it.");
+      }
+      const img = await pdf.embedJpg(new Uint8Array(await jpeg.arrayBuffer()));
+      pdf.addPage([img.width, img.height]).drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+    }
+  }
+  const bytes = await pdf.save();
+  if (bytes.length > MAX_UPLOAD_BYTES) {
+    throw new Error('Those pages add up to more than 10 MB. Try fewer pages, or photos instead of scans.');
+  }
+  return { base64: bytesToBase64(bytes), mediaType: 'application/pdf', bytes: bytes.length, pages: pdf.getPageCount() };
+}
+
 /**
  * POST the dec page + contact + consent to the rate-check edge function.
  * Resolves to { status, rate_check_id, carrier, policy_type, annual_premium }.

@@ -45,9 +45,11 @@ export function saveDraftFields(fields) {
   try { localStorage.setItem(FIELDS_KEY, JSON.stringify({ ...fields, savedAt: Date.now() })); } catch { /* best effort */ }
 }
 
-export async function saveDraftPhoto({ id, file }) {
+// One row per page. policyId groups the pages of one policy, in `order`; rows saved
+// before policies had pages have neither and load as a one-page policy of their own.
+export async function saveDraftPhoto({ id, file, policyId = null, order = 0 }) {
   try {
-    await withStore('readwrite', s => s.put({ id, blob: file, name: file.name, type: file.type, lastModified: file.lastModified, addedAt: Date.now() }));
+    await withStore('readwrite', s => s.put({ id, blob: file, name: file.name, type: file.type, lastModified: file.lastModified, policyId, order, addedAt: Date.now() }));
   } catch { /* best effort */ }
 }
 
@@ -55,7 +57,7 @@ export async function removeDraftPhoto(id) {
   try { await withStore('readwrite', s => s.delete(id)); } catch { /* best effort */ }
 }
 
-/** Resolves to { fields, photos: [{ id, file }] }; expired drafts are cleared. */
+/** Resolves to { fields, photos: [{ id, file, policyId, order }] } (oldest first); expired drafts are cleared. */
 export async function loadDraft() {
   let fields = null;
   try {
@@ -71,7 +73,10 @@ export async function loadDraft() {
       const stale = (rows || []).filter(r => !fresh.includes(r)).map(r => r.id);
       withStore('readwrite', s => stale.forEach(id => s.delete(id))).catch(() => {});
     }
-    photos = fresh.map(r => ({ id: r.id, file: new File([r.blob], r.name || 'policy', { type: r.type, lastModified: r.lastModified }) }));
+    photos = fresh.map(r => ({
+      id: r.id, policyId: r.policyId || r.id, order: r.order || 0,
+      file: new File([r.blob], r.name || 'policy', { type: r.type, lastModified: r.lastModified }),
+    }));
   } catch { /* ignore */ }
 
   if (!fields && !photos.length) return null;

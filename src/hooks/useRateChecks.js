@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
-import { prepareDecPage } from '../lib/rateCheckApi';
+import { preparePolicy } from '../lib/rateCheckApi';
 
 // Test/QA records (is_test) are filtered out of every list here and every view.
 export const RATE_CHECK_LIST_COLUMNS = `
@@ -258,14 +258,15 @@ export const useCreateReferral = () => {
   });
 };
 
-// Staff upload: a dec page a customer emailed/texted in. Runs the same scan via
+// Staff upload: a dec page a customer emailed/texted in (one policy; several files
+// are its pages, combined into one PDF). Runs the same scan via
 // the rate-check function in 'agent' mode (caller's JWT + agency verified
 // server-side). No consumer consent is recorded, so it's never auto-texted.
 export const useAgentUploadDecPage = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ agencyId, file, firstName, phone, zip, housing }) => {
-      const prepared = await prepareDecPage(file);
+    mutationFn: async ({ agencyId, files, firstName, phone, zip, housing }) => {
+      const prepared = await preparePolicy(files);
       const { data, error } = await supabase.functions.invoke('rate-check', {
         body: {
           mode: 'agent',
