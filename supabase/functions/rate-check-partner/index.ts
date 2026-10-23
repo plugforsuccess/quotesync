@@ -310,15 +310,22 @@ async function fillW9(w: W9, ctx: { agency: string; mm: string; dd: string; yyyy
   text('Address_ReadOrder[0].f1_07[0]', w.address)
   text('Address_ReadOrder[0].f1_08[0]', w.city_state_zip)
   text('f1_09[0]', ctx.agency)
+  form.getTextField(P + 'f1_09[0]').acroField.setDefaultAppearance('/Helv 9 Tf 0 g') // otherwise auto-size fills the box
   if (w.tin_type === 'ssn') { text('f1_11[0]', w.tin.slice(0, 3)); text('f1_12[0]', w.tin.slice(3, 5)); text('f1_13[0]', w.tin.slice(5)) }
   else { text('f1_14[0]', w.tin.slice(0, 2)); text('f1_15[0]', w.tin.slice(2)) }
-  text('f1_16[0]', ctx.mm); text('f1_17[0]', ctx.dd); text('f1_18[0]', ctx.yyyy)
   const page = doc.getPages()[0]
   const sig = await doc.embedFont(StandardFonts.HelveticaOblique)
   const small = await doc.embedFont(StandardFonts.Helvetica)
-  page.drawText(w.signed_name, { x: 150, y: 92, size: 13, font: sig, color: rgb(0.05, 0.1, 0.4) })
+  // Where the Sign Here box sits depends on the revision: the June 2026 draft (which has
+  // date fields) puts it near the foot of the page; the March 2024 form puts it mid-page
+  // with the instructions below and a plain Date box.
+  const hasDateFields = !!form.getFieldMaybe(P + 'f1_16[0]')
+  const sigY = hasDateFields ? 92 : 196
+  page.drawText(w.signed_name, { x: 150, y: sigY, size: 13, font: sig, color: rgb(0.05, 0.1, 0.4) })
+  if (hasDateFields) { text('f1_16[0]', ctx.mm); text('f1_17[0]', ctx.dd); text('f1_18[0]', ctx.yyyy) }
+  else page.drawText(`${ctx.mm}/${ctx.dd}/${ctx.yyyy}`, { x: 468, y: sigY, size: 11, font: small, color: rgb(0.05, 0.1, 0.4) })
   page.drawText(`Electronically signed by ${w.signed_name} on ${ctx.mm}/${ctx.dd}/${ctx.yyyy} (${ctx.when.toISOString()}) from IP ${ctx.ip} via the ${ctx.agency} partner portal.`,
-    { x: 112, y: 81, size: 5, font: small, color: rgb(0.3, 0.3, 0.3) })
+    { x: 112, y: sigY - 11, size: 5, font: small, color: rgb(0.3, 0.3, 0.3) })
   form.flatten()
   return await doc.save()
 }
