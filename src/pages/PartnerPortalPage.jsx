@@ -5,10 +5,10 @@
 // they've earned each month (first names and what each household sent only).
 // Standalone like the Rate Check page: no login, no site layout.
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Check, Copy, Loader2, Share2 } from 'lucide-react';
-import { loadPartnerPortal, signPartnerAgreement } from '../lib/rateCheckApi';
+import { Camera, Check, Copy, Loader2, Share2 } from 'lucide-react';
+import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, squarePhoto } from '../lib/rateCheckApi';
 import { inviteUrl } from './components/rate-checks/invite';
 
 const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
@@ -46,7 +46,7 @@ export default function PartnerPortalPage() {
         {error ? <p className="rounded-xl bg-white p-4 text-slate-700 ring-1 ring-slate-200">{error}</p>
           : !data ? <p className="flex items-center gap-2 text-slate-500"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading…</p>
           : !data.agreement.signed ? <SignAgreement token={token} data={data} greet={greet} onSigned={load} />
-          : <Earnings data={data} greet={greet} />}
+          : <Earnings token={token} data={data} greet={greet} onChange={load} />}
       </main>
     </div>
   );
@@ -92,7 +92,73 @@ function SignAgreement({ token, data, greet, onSigned }) {
   );
 }
 
-function Earnings({ data, greet }) {
+// Their photo next to "Javon shared this with you" on their link's landing page.
+function PhotoSection({ token, name, photoUrl, onChange }) {
+  const input = useRef(null);
+  const [preview, setPreview] = useState(null);
+  const [agree, setAgree] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError('');
+    try { setPreview(await squarePhoto(file)); } catch (err) { setError(err.message); }
+  };
+  const run = async (fn) => {
+    setBusy(true); setError('');
+    try { await fn(); setPreview(null); setAgree(false); onChange(); } catch (err) { setError(err.message); }
+    setBusy(false);
+  };
+  const shown = preview || photoUrl;
+
+  return (
+    <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Your photo</p>
+      <div className="mt-3 flex items-center gap-4">
+        <button type="button" onClick={() => input.current?.click()} aria-label={shown ? 'Choose a different photo' : 'Choose a photo'}
+          className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+          {shown ? <img src={shown} alt="" className="h-full w-full object-cover" /> : <Camera className="h-7 w-7" aria-hidden="true" />}
+        </button>
+        <p className="text-sm leading-relaxed text-slate-600">
+          {photoUrl && !preview
+            ? 'People who open your link see your photo next to “' + name + ' shared this with you.”'
+            : 'Add a photo so people who open your link know it came from you.'}
+        </p>
+      </div>
+      {preview ? (
+        <>
+          <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700">
+            <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
+            <span>Show this photo with my first name on my link&apos;s page. I can take it off any time.</span>
+          </label>
+          <div className="mt-3 flex gap-2">
+            <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-700">Cancel</button>
+            <button type="button" disabled={!agree || busy} onClick={() => run(() => savePartnerPhoto(token, preview))}
+              className="h-12 flex-1 rounded-xl bg-blue-700 font-semibold text-white disabled:bg-slate-300">{busy ? 'Saving…' : 'Use this photo'}</button>
+          </div>
+        </>
+      ) : (
+        <div className="mt-3 flex gap-2">
+          <button type="button" onClick={() => input.current?.click()} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-800">
+            {photoUrl ? 'Change photo' : 'Add a photo'}
+          </button>
+          {photoUrl && (
+            <button type="button" disabled={busy} onClick={() => run(() => removePartnerPhoto(token))} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-600">
+              {busy ? 'Removing…' : 'Remove'}
+            </button>
+          )}
+        </div>
+      )}
+      {error && <p className="mt-2 text-sm text-red-600" role="alert">{error}</p>}
+      <input ref={input} type="file" accept="image/*" className="hidden" onChange={pick} />
+    </section>
+  );
+}
+
+function Earnings({ token, data, greet, onChange }) {
   const url = inviteUrl(data.code);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -124,6 +190,8 @@ function Earnings({ data, greet }) {
         </div>
         <p className="mt-3 text-xs leading-relaxed text-slate-500">When you post or message your link, say you get a referral fee. Don&apos;t talk about coverage or prices — just share the link.</p>
       </section>
+
+      <PhotoSection token={token} name={data.first_name} photoUrl={data.photo_url} onChange={onChange} />
 
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[[monthLabel(current.month).split(' ')[0], current.households, 'households'], ['Earned', money(current.earned), 'this month'], ['All time', money(lifetime), 'earned']].map(([k, v, sub]) => (

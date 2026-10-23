@@ -44,11 +44,25 @@ export function insuredName(s) {
   return sfx ? `${first} ${sfx[1]} ${sfx[2]}` : `${first} ${last}`;
 }
 
-export function vehicleTitle(v) {
-  return caps([v?.year, v?.make, v?.model].filter(Boolean).join(' ')) || 'VEHICLE';
+// Model and trim codes that have vowels but stay in capitals (no-vowel codes like
+// "BMW", "XF", "MDX" and anything with a digit stay in capitals on their own).
+const KEEP_UPPER = new Set(['AMG', 'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'CLA', 'CLS', 'EQE', 'EQS', 'ES', 'IS', 'GS', 'LS', 'EX', 'SE', 'LE', 'XLE', 'SUV', 'GTI', 'SLE', 'ZR2']);
+/** "LAND ROVER VELAR" → "Land Rover Velar"; keeps "BMW", "XF", "RAV4", "F-150", "CR-V". */
+export function titleCase(s) {
+  if (s == null || s === '') return s;
+  return String(s).replace(/\s+/g, ' ').trim().split(' ').map(word => word.split('-').map(part => {
+    const up = part.toUpperCase();
+    if (/\d/.test(part) || part.length === 1 || KEEP_UPPER.has(up) || (up.length <= 4 && !/[AEIOUY]/.test(up))) return up;
+    return up[0] + up.slice(1).toLowerCase();
+  }).join('-')).join(' ');
 }
 
-/** "2015 MERCEDES S550" — for referring to a vehicle inside other text. Full year: a "’15" is easy to miss. */
+/** "2021 Land Rover Velar" — vehicle names are shown in title case (stored as read). */
+export function vehicleTitle(v) {
+  return titleCase([v?.year, v?.make, v?.model].filter(Boolean).join(' ')) || 'Vehicle';
+}
+
+/** "2015 Mercedes S550" — for referring to a vehicle inside other text. Full year: a "’15" is easy to miss. */
 export function vehicleShort(v) {
   return vehicleTitle(v);
 }

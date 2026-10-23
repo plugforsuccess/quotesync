@@ -7,6 +7,9 @@
 //                                                     signed) their share code and earnings
 //   { mode: 'sign', token, signed_name, accept }    → records the signature; from then on
 //                                                     rate-check tags scans from their link
+//   { mode: 'photo', token, image, consent }        → (signed partners) their photo for their
+//                                                     link's landing page; image is a JPEG data URL
+//   { mode: 'photo_remove', token }                 → takes the photo off their link
 // The agreement text below is a DRAFT for the agency's attorney and Allstate compliance
 // to review. Changing it means bumping AGREEMENT_VERSION, which asks every partner to
 // sign again before their link pays.
@@ -125,7 +128,7 @@ Deno.serve(async (req) => {
   if (token.length !== 48) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
   const { data: p } = await supabase.from('rate_check_promoters')
-    .select('id, agency_id, name, code, active, monthly_cap, agreement_version, agreement_signed_at')
+    .select('id, agency_id, name, code, active, monthly_cap, agreement_version, agreement_signed_at, photo_url, photo_consent_at')
     .eq('portal_token', token).maybeSingle()
   if (!p) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
@@ -156,11 +159,35 @@ Deno.serve(async (req) => {
     return json({ signed: true }, 200, cors)
   }
 
+  if (body.mode === 'photo' || body.mode === 'photo_remove') {
+    if (!signed) return json({ error: 'Sign the agreement first.' }, 409, cors)
+    const path = `${p.agency_id}/${p.id}.jpg`
+    if (body.mode === 'photo_remove') {
+      await supabase.storage.from('partner-photos').remove([path])
+      await supabase.from('rate_check_promoters').update({ photo_url: null, photo_consent_at: null }).eq('id', p.id)
+      return json({ photo_url: null }, 200, cors)
+    }
+    if (body.consent !== true) return json({ error: 'Tick the box to show your photo.' }, 400, cors)
+    const m = /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(body.image || ''))
+    if (!m) return json({ error: 'That photo couldn’t be read. Try another.' }, 400, cors)
+    const bytes = Uint8Array.from(atob(m[1]), ch => ch.charCodeAt(0))
+    if (bytes.length > 1048576 || bytes[0] !== 0xff || bytes[1] !== 0xd8 || bytes[2] !== 0xff) {
+      return json({ error: 'That photo couldn’t be read. Try another.' }, 400, cors)
+    }
+    const { error: upErr } = await supabase.storage.from('partner-photos').upload(path, bytes, { upsert: true, contentType: 'image/jpeg' })
+    if (upErr) { console.error('[RATE_CHECK_PARTNER] photo upload failed:', upErr.message); return json({ error: 'Something went wrong. Please try again.' }, 500, cors) }
+    const { data: { publicUrl } } = supabase.storage.from('partner-photos').getPublicUrl(path)
+    const photoUrl = `${publicUrl}?v=${Date.now()}`
+    await supabase.from('rate_check_promoters').update({ photo_url: photoUrl, photo_consent_at: new Date().toISOString() }).eq('id', p.id)
+    return json({ photo_url: photoUrl }, 200, cors)
+  }
+
   if (body.mode === 'portal') {
     const base = {
       first_name: String(p.name).split(/\s+/)[0], agency_name: agencyName, active: p.active,
       agreement: { version: AGREEMENT_VERSION, text, signed, signed_at: signed ? p.agreement_signed_at : null },
       schedule, monthly_cap: p.monthly_cap,
+      photo_url: p.photo_consent_at ? p.photo_url : null,
     }
     if (!signed) return json(base, 200, cors)
     const [{ data: scans }, { data: payouts }] = await Promise.all([

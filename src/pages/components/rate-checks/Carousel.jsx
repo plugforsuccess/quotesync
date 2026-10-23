@@ -1,7 +1,8 @@
 // src/pages/components/rate-checks/Carousel.jsx
 // Swipeable cards for the top of the Rate Check drawer (household, decision,
 // price): one card at a time on a phone, dots underneath. Each slide brings its
-// own card chrome; the track only lays them out and hides its scrollbar.
+// own card chrome; the track only lays them out and hides its scrollbar. Cards are
+// centered with the same gutter on both sides, so the neighbours peek in evenly.
 
 import { useRef, useState } from 'react';
 
@@ -10,19 +11,20 @@ export default function Carousel({ slides, label }) {
   const [active, setActive] = useState(0);
   const many = slides.length > 1;
 
+  // Where the track must scroll for a card to sit in the middle.
+  const centerOf = (el, kid) => kid.offsetLeft - el.offsetLeft - (el.clientWidth - kid.offsetWidth) / 2;
   const onScroll = () => {
     const el = track.current;
     if (!el) return;
     const kids = [...el.children];
-    if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 4) { setActive(kids.length - 1); return; }
     let best = 0;
-    kids.forEach((k, i) => { if (Math.abs(k.offsetLeft - el.scrollLeft) < Math.abs(kids[best].offsetLeft - el.scrollLeft)) best = i; });
+    kids.forEach((k, i) => { if (Math.abs(centerOf(el, k) - el.scrollLeft) < Math.abs(centerOf(el, kids[best]) - el.scrollLeft)) best = i; });
     setActive(best);
   };
   const go = (i) => {
     const el = track.current;
     const kid = el?.children[i];
-    if (kid) el.scrollTo({ left: kid.offsetLeft - el.offsetLeft, behavior: 'smooth' });
+    if (kid) el.scrollTo({ left: centerOf(el, kid), behavior: 'smooth' });
     setActive(i);
   };
 
@@ -30,10 +32,10 @@ export default function Carousel({ slides, label }) {
     <section aria-roledescription="carousel" aria-label={label}>
       <style>{'.rc-drawer-track{scrollbar-width:none}.rc-drawer-track::-webkit-scrollbar{display:none}'}</style>
       <div ref={track} onScroll={onScroll}
-        className="rc-drawer-track flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto px-5 scroll-px-5">
+        className={`rc-drawer-track flex snap-x snap-mandatory items-start gap-3 overflow-x-auto ${many ? 'px-10' : 'px-5'}`}>
         {slides.map((s, i) => (
           <div key={s.key} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}: ${s.label}`}
-            className={`${many ? 'w-[88%]' : 'w-full'} flex shrink-0 snap-start [&>*]:w-full`}>
+            className="flex w-full shrink-0 snap-center [&>*]:w-full">
             {s.content}
           </div>
         ))}

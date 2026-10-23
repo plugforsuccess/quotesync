@@ -193,6 +193,33 @@ async function partnerCall(body) {
 export const loadPartnerPortal = (token) => partnerCall({ mode: 'portal', token });
 /** Record the partner's signature on the current agreement. */
 export const signPartnerAgreement = (token, signedName) => partnerCall({ mode: 'sign', token, signed_name: signedName, accept: true });
+/** The partner's photo for their link's landing page (a JPEG data URL from squarePhoto). */
+export const savePartnerPhoto = (token, image) => partnerCall({ mode: 'photo', token, image, consent: true });
+export const removePartnerPhoto = (token) => partnerCall({ mode: 'photo_remove', token });
+
+/**
+ * A headshot cropped to a centered square and shrunk to `size` px, as a JPEG data
+ * URL (small enough to send to an edge function and load fast on a phone).
+ */
+export async function squarePhoto(file, size = 400) {
+  if (!file || !/^image\//.test(file.type)) throw new Error('Choose a photo.');
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const i = new Image();
+      i.onload = () => resolve(i);
+      i.onerror = () => reject(new Error('That photo couldn’t be read. Try another.'));
+      i.src = url;
+    });
+    const side = Math.min(img.naturalWidth, img.naturalHeight);
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = Math.min(size, side);
+    canvas.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL('image/jpeg', 0.86);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '').trim());
 

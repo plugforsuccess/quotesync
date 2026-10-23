@@ -5,14 +5,14 @@
 // what they're owed this month, their close rate and cost per win, the pay
 // schedule, and a monthly payout export for 1099s. Math lives in partnerPay.js.
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
-  useSavePromoter, useSavePromoterRates, useRecordPromoterPayout,
+  useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto,
 } from '../../../hooks/useRateChecks';
 import { downloadCSV } from '../../../lib/csvExport';
-import { formatPhoneInput, isEmail } from '../../../lib/rateCheckApi';
+import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
 import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
@@ -82,36 +82,51 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
           Confirm the program with Allstate compliance and your attorney before the first payment, and get a W-9 on file.</span>
       </p>
 
-      {/* This month, across partners */}
-      <div className="dark-card" style={{ padding: 16 }}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <select value={month} onChange={e => setMonth(e.target.value)} className="dark-select" style={{ width: 'auto', ...inputStyle }} aria-label="Month">
-            {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
-          </select>
-          <div className="flex gap-2">
-            <button type="button" onClick={exportMonth} disabled={!promoters.length}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50" style={inputStyle}>
-              <Download className="h-4 w-4" aria-hidden="true" /> Export for 1099s
+      {promoters.length === 0 ? (
+        /* No partners yet: one card, one button. */
+        <div className="dark-card" style={{ padding: 20 }}>
+          <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>No partners yet</h3>
+          <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
+            Add someone who&apos;ll share your Rate Check link. They get a private portal to sign the agreement, then their own link that pays per household.
+          </p>
+          {canEdit && !adding && (
+            <button type="button" onClick={() => setAdding(true)} className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
+              <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
             </button>
+          )}
+          {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
+        </div>
+      ) : (
+        /* This month, across partners */
+        <div className="dark-card" style={{ padding: 16 }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <select value={month} onChange={e => setMonth(e.target.value)} className="dark-select -ml-1 border-0 bg-transparent text-base font-bold"
+              style={{ width: 'auto', color: 'var(--qs-bright)', background: 'transparent' }} aria-label="Month">
+              {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+            </select>
             {canEdit && (
-              <button type="button" onClick={() => setAdding(a => !a)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
+              <button type="button" onClick={() => setAdding(a => !a)} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
                 <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
               </button>
             )}
           </div>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <Stat label="Partners" value={promoters.filter(p => p.active).length} />
+            <Stat label="Households" value={monthHouseholds} />
+            <Stat label="Owed" value={dollars(monthOwed)} tone="var(--qs-warning)" />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <button type="button" onClick={exportMonth} disabled={!payouts.length}
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-medium disabled:opacity-50" style={inputStyle}>
+              <Download className="h-4 w-4" aria-hidden="true" /> Export for 1099s
+            </button>
+            {!payouts.length && <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Available once a partner is paid</span>}
+          </div>
+          {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <Stat label="Partners" value={promoters.filter(p => p.active).length} />
-          <Stat label="Households" value={monthHouseholds} />
-          <Stat label="Owed" value={dollars(monthOwed)} tone="var(--qs-warning)" />
-        </div>
-        {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
-      </div>
+      )}
 
       {/* One card per partner */}
-      {promoters.length === 0 && !adding && (
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No partners yet. Add one to get their link.</p>
-      )}
       {promoters.map(p => {
         const { hh = [], summary: s } = byPartner[p.id] || {};
         const paid = paidFor(p.id);
@@ -120,7 +135,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         return (
           <section key={p.id} className="dark-card" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
+              <PartnerPhoto promoter={p} canEdit={canEdit} />
+              <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>Paused</span>}</h3>
                 <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || 'No contact on file'}</p>
               </div>
@@ -187,7 +203,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                         {' · '}<span style={{ color: h.won ? 'var(--qs-success)' : undefined }}>{h.won ? 'Won' : h.quoted ? 'Quoted' : 'Not quoted yet'}</span>
                       </p>
                     </div>
-                    <span className="shrink-0 text-base font-bold tabular-nums" style={{ color: 'var(--qs-warning)' }}>{dollars(h.fee)}</span>
+                    <span className="shrink-0 text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{dollars(h.fee)}</span>
                   </li>
                 ))}
               </ul>
@@ -202,6 +218,46 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 }
 
 const portalUrl = (token) => `${window.location.origin}/partner/${token}`;
+
+// The photo on their share link's landing page. Partners can add their own in the
+// portal; staff add one here only with the partner's OK.
+function PartnerPhoto({ promoter: p, canEdit }) {
+  const setPhoto = useSetPromoterPhoto();
+  const input = useRef(null);
+  const [error, setError] = useState('');
+  const first = String(p.name).trim().split(/\s+/)[0];
+  const initials = String(p.name).trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const photo = p.photo_consent_at ? p.photo_url : null;
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!window.confirm(`Only add a photo ${first} gave you and agreed to show on their share link. Add it?`)) return;
+    setError('');
+    try { setPhoto.mutate({ promoter: p, dataUrl: await squarePhoto(file) }, { onError: (err) => setError(err.message) }); }
+    catch (err) { setError(err.message); }
+  };
+
+  return (
+    <div className="flex shrink-0 flex-col items-center gap-1">
+      <button type="button" disabled={!canEdit || setPhoto.isPending} onClick={() => input.current?.click()}
+        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full text-base font-bold disabled:cursor-default"
+        style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }}
+        aria-label={photo ? `Change ${first}'s photo` : `Add ${first}'s photo`}>
+        {photo ? <img src={photo} alt="" className="h-full w-full object-cover" /> : initials}
+      </button>
+      {canEdit && (
+        <button type="button" onClick={() => (photo ? setPhoto.mutate({ promoter: p, dataUrl: null }) : input.current?.click())}
+          disabled={setPhoto.isPending} className="text-[11px] font-semibold text-primary-600">
+          {setPhoto.isPending ? 'Saving…' : photo ? 'Remove photo' : 'Add photo'}
+        </button>
+      )}
+      {error && <p className="max-w-[7rem] text-center text-[11px] text-red-500">{error}</p>}
+      <input ref={input} type="file" accept="image/*" className="hidden" onChange={pick} />
+    </div>
+  );
+}
 
 function Pill({ ok, children }) {
   return (
@@ -290,7 +346,7 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
                     className="w-20 rounded px-2 py-1 text-right text-sm tabular-nums" style={inputStyle} />
                 </span>
               ) : (
-                <span className="text-base font-bold tabular-nums" style={{ color: 'var(--qs-warning)' }}>
+                <span className="text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>
                   {t.key === EXTRA_LINE.key ? '+' : ''}{dollars(Number(values[t.key]))}
                 </span>
               )}
