@@ -75,9 +75,6 @@ export function HouseholdCard({ rc, household, onSelect }) {
           );
         })}
       </div>
-      <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-        Quote {household.length === 2 ? 'both policies' : `all ${household.length} policies`} — the bundle decides the win.
-      </p>
       {g.bundleAllstate != null && (
         <div className="mt-3 rounded-lg px-3 py-2.5" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
           <p className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>
