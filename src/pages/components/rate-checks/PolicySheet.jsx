@@ -110,10 +110,12 @@ function TileValue({ value, addOn, inline = false, size = 'text-xl' }) {
 // One tile per coverage. A plain tile is the same on every vehicle; when vehicles
 // differ, each value gets chips naming its vehicles (a chip is tinted by that
 // vehicle's level, so a liability-only car explains itself).
+// Same cyan as the vehicle titles and number badges above, so a car reads the same everywhere.
+const VEHICLE_TONE = { color: 'var(--qs-cyan)', background: 'rgba(6, 182, 212, 0.14)', border: '1px solid rgba(6, 182, 212, 0.45)' };
+
 function VehicleChip({ x }) {
-  const tone = LEVEL_TONE[x.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' };
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={tone}>{vehicleShort(x.v)}</span>
+    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={VEHICLE_TONE}>{vehicleShort(x.v)}</span>
   );
 }
 
@@ -180,7 +182,7 @@ function VehicleCard({ rc, v, index, level, n }) {
       {/* Number badge, year/make/model and the coverage level on one line; the VIN under the title. */}
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums"
-          style={{ color: 'var(--qs-cyan)', background: 'rgba(6, 182, 212, 0.14)', border: '1px solid rgba(6, 182, 212, 0.45)' }} aria-hidden="true">{n}</span>
+          style={VEHICLE_TONE} aria-hidden="true">{n}</span>
         <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
           <span className="sr-only">Vehicle {n}: </span>{vehicleTitle(v)}
         </p>
