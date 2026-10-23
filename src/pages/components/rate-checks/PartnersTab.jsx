@@ -9,7 +9,7 @@ import { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
-  useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto,
+  useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
 } from '../../../hooks/useRateChecks';
 import { downloadCSV } from '../../../lib/csvExport';
 import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
@@ -66,7 +66,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       return {
         partner: p.name, phone: p.phone ? formatPhone(p.phone) : '', email: p.email || '',
         month: monthLabel(month), households: s?.month.households || 0, amount: (s?.month.owed || 0).toFixed(2),
-        w9_on_file: p.w9_received_at ? 'yes' : 'no', agreement_signed: p.agreement_signed_at ? formatDate(p.agreement_signed_at) : 'no',
+        w9_on_file: p.w9_received_at ? 'yes' : 'no', tin: p.w9_tin_last4 ? `${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} ending ${p.w9_tin_last4}` : '', agreement_signed: p.agreement_signed_at ? formatDate(p.agreement_signed_at) : 'no',
         paid: paidFor(p.id) ? formatDate(paidFor(p.id).paid_at) : '',
       };
     }));
@@ -143,7 +143,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </div>
               <span className="flex flex-wrap justify-end gap-1.5">
                 <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Agreement signed' : 'Agreement not signed'}</Pill>
-                <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? 'W-9 on file' : 'W-9 needed'}</Pill>
+                <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? `W-9 on file${p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ''}` : 'W-9 needed'}</Pill>
               </span>
             </div>
             {!p.agreement_signed_at && (
@@ -197,8 +197,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                   ) : plan.underMinimum ? (
                     <span className="self-center text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(MIN_PAYOUT)} · carries over</span>
                   ) : null}
-                  <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.w9_received_at ? 'Clear W-9' : 'W-9 received'}</button>
+                  {p.w9_pdf_path ? (
+                    <button type="button" onClick={() => partnerW9Url(p.w9_pdf_path).then(url => window.open(url, '_blank', 'noopener')).catch(err => window.alert(err.message))}
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>Open W-9</button>
+                  ) : (
+                    <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}
+                      className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.w9_received_at ? 'Clear W-9' : 'Paper W-9 received'}</button>
+                  )}
                   <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
                   <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}
                     className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.active ? 'Pause link' : 'Turn link on'}</button>

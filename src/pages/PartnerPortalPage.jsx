@@ -8,7 +8,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Camera, Check, Copy, Loader2, Share2 } from 'lucide-react';
-import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, squarePhoto } from '../lib/rateCheckApi';
+import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartnerPhoto, squarePhoto, submitPartnerW9 } from '../lib/rateCheckApi';
+import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
 
 const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
@@ -89,6 +90,142 @@ function SignAgreement({ token, data, greet, onSigned }) {
         {busy ? 'Signing…' : 'Sign and turn on my link'}
       </button>
     </>
+  );
+}
+
+// IRS Form W-9, needed before the first payment. The function fills the real form
+// and keeps the PDF privately; the portal only ever shows the last 4 of the TIN.
+const INPUT = 'mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
+const CERT = [
+  'The number shown on this form is my correct taxpayer identification number (or I am waiting for a number to be issued to me);',
+  'I am not subject to backup withholding because (a) I am exempt from backup withholding, or (b) I have not been notified by the IRS that I am subject to backup withholding as a result of a failure to report all interest or dividends, or (c) the IRS has notified me that I am no longer subject to backup withholding;',
+  'I am a U.S. citizen or other U.S. person; and',
+  'The FATCA code(s) entered on this form (if any) indicating that I am exempt from FATCA reporting is correct.',
+];
+
+function W9Section({ token, data, onChange }) {
+  const w9 = data.w9 || {};
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(() => ({
+    name: data.name || '', business_name: '', tax_class: 'individual', llc_class: '', other_text: '',
+    address: '', city_state_zip: '', tin_type: 'ssn', tin: '', signed_name: data.name || '', accept: false,
+  }));
+  const [tried, setTried] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value }));
+  const problems = w9Problems(form);
+  const show = (k) => (tried && problems[k] ? <p className="mt-1 text-xs text-red-600">{problems[k]}</p> : null);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    setTried(true);
+    if (Object.keys(problems).length) return;
+    setBusy(true); setError('');
+    try {
+      await submitPartnerW9(w9Payload(token, form));
+      setForm(f => ({ ...f, tin: '', accept: false })); // the number is gone from the page the moment it's sent
+      setOpen(false);
+      onChange();
+    } catch (err) { setError(err.message); }
+    setBusy(false);
+  };
+
+  if (w9.on_file && !open) {
+    return (
+      <section className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+        <p className="text-sm text-slate-700">
+          <span className="flex items-center gap-1.5 font-semibold text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> W-9 on file</span>
+          {w9.tin_type === 'ein' ? 'EIN' : 'SSN'} ending {w9.last4} · signed {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+        </p>
+        <button type="button" onClick={() => setOpen(true)} className="min-h-[40px] shrink-0 text-sm font-semibold text-blue-700">Update</button>
+      </section>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200" noValidate>
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{w9.on_file ? 'Update your W-9' : 'W-9 · needed before your first payment'}</p>
+      <p className="mt-1 text-sm text-slate-600">
+        This fills IRS Form W-9 for you. Your tax ID is sent once, kept only in the finished form, and never shown here again.
+      </p>
+
+      <label htmlFor="w9-name" className="mt-4 block text-sm font-semibold text-slate-800">Name on your tax return</label>
+      <input id="w9-name" autoComplete="name" value={form.name} onChange={set('name')} className={INPUT} />
+      {show('name')}
+
+      <label htmlFor="w9-biz" className="mt-4 block text-sm font-semibold text-slate-800">Business name <span className="font-normal text-slate-500">(if different)</span></label>
+      <input id="w9-biz" autoComplete="organization" value={form.business_name} onChange={set('business_name')} className={INPUT} />
+
+      <p className="mt-4 text-sm font-semibold text-slate-800">How you file</p>
+      <div className="mt-1.5 space-y-1.5">
+        {TAX_CLASSES.map(t => (
+          <label key={t.value} className={`flex items-start gap-3 rounded-xl border p-3 text-sm ${form.tax_class === t.value ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
+            <input type="radio" name="w9-class" value={t.value} checked={form.tax_class === t.value} onChange={set('tax_class')} className="mt-0.5 h-5 w-5 accent-blue-700" />
+            <span><span className="block font-semibold text-slate-900">{t.label}</span>{t.hint && <span className="block text-xs text-slate-500">{t.hint}</span>}</span>
+          </label>
+        ))}
+      </div>
+      {show('tax_class')}
+      {form.tax_class === 'llc' && (
+        <>
+          <p className="mt-3 text-sm font-semibold text-slate-800">The LLC is taxed as</p>
+          <div className="mt-1.5 flex gap-2">
+            {LLC_CLASSES.map(([v, l]) => (
+              <button key={v} type="button" onClick={() => setForm(f => ({ ...f, llc_class: v }))} aria-pressed={form.llc_class === v}
+                className={`min-h-[44px] flex-1 rounded-xl border text-sm font-semibold ${form.llc_class === v ? 'border-blue-600 bg-blue-700 text-white' : 'border-slate-300 text-slate-800'}`}>{l}</button>
+            ))}
+          </div>
+          {show('llc_class')}
+        </>
+      )}
+      {form.tax_class === 'other' && (
+        <>
+          <label htmlFor="w9-other" className="mt-3 block text-sm font-semibold text-slate-800">What kind of entity</label>
+          <input id="w9-other" value={form.other_text} onChange={set('other_text')} className={INPUT} />
+          {show('other_text')}
+        </>
+      )}
+
+      <label htmlFor="w9-addr" className="mt-4 block text-sm font-semibold text-slate-800">Street address</label>
+      <input id="w9-addr" autoComplete="street-address" value={form.address} onChange={set('address')} placeholder="123 Peachtree St NE, Apt 4" className={INPUT} />
+      {show('address')}
+      <label htmlFor="w9-csz" className="mt-4 block text-sm font-semibold text-slate-800">City, state, ZIP</label>
+      <input id="w9-csz" value={form.city_state_zip} onChange={set('city_state_zip')} placeholder="Atlanta, GA 30303" className={INPUT} />
+      {show('city_state_zip')}
+
+      <p className="mt-4 text-sm font-semibold text-slate-800">Taxpayer identification number</p>
+      <div className="mt-1.5 flex gap-2">
+        {[['ssn', 'Social Security number'], ['ein', 'Employer ID number']].map(([v, l]) => (
+          <button key={v} type="button" onClick={() => setForm(f => ({ ...f, tin_type: v, tin: '' }))} aria-pressed={form.tin_type === v}
+            className={`min-h-[44px] flex-1 rounded-xl border text-sm font-semibold ${form.tin_type === v ? 'border-blue-600 bg-blue-700 text-white' : 'border-slate-300 text-slate-800'}`}>{l}</button>
+        ))}
+      </div>
+      {show('tin_type')}
+      <input aria-label={form.tin_type === 'ein' ? 'Employer identification number' : 'Social Security number'} inputMode="numeric" autoComplete="off"
+        value={formatTin(form.tin, form.tin_type)} onChange={e => setForm(f => ({ ...f, tin: e.target.value }))}
+        placeholder={form.tin_type === 'ein' ? '12-3456789' : '123-45-6789'} className={`${INPUT} font-mono tracking-wider`} />
+      {show('tin')}
+
+      <div className="mt-5 rounded-xl bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+        <p className="font-semibold text-slate-800">Under penalties of perjury, I certify that:</p>
+        <ol className="mt-1 list-decimal space-y-1 pl-4">{CERT.map((c, i) => <li key={i}>{c}</li>)}</ol>
+        <p className="mt-2">The IRS does not require your consent to any provision of this document other than the certifications required to avoid backup withholding.</p>
+      </div>
+      <label htmlFor="w9-sig" className="mt-4 block text-sm font-semibold text-slate-800">Signature <span className="font-normal text-slate-500">(type your full name)</span></label>
+      <input id="w9-sig" value={form.signed_name} onChange={set('signed_name')} className={`${INPUT} italic`} />
+      {show('signed_name')}
+      <label className="mt-3 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700">
+        <input type="checkbox" checked={form.accept} onChange={set('accept')} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
+        <span>I certify the statements above are true and that typing my name is my signature on Form W-9.</span>
+      </label>
+      {show('accept')}
+      {error && <p className="mt-3 text-sm text-red-600" role="alert">{error}</p>}
+      <div className="mt-4 flex gap-2">
+        {w9.on_file && <button type="button" onClick={() => setOpen(false)} className="h-14 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-700">Cancel</button>}
+        <button type="submit" disabled={busy} className="h-14 flex-1 rounded-xl bg-blue-700 text-lg font-bold text-white disabled:bg-slate-300">{busy ? 'Sending…' : 'Sign W-9'}</button>
+      </div>
+    </form>
   );
 }
 
@@ -190,6 +327,8 @@ function Earnings({ token, data, greet, onChange }) {
         </div>
         <p className="mt-3 text-xs leading-relaxed text-slate-500">When you post or message your link, say you get a referral fee. Don&apos;t talk about coverage or prices — just share the link.</p>
       </section>
+
+      <W9Section token={token} data={data} onChange={onChange} />
 
       <PhotoSection token={token} name={data.first_name} photoUrl={data.photo_url} onChange={onChange} />
 

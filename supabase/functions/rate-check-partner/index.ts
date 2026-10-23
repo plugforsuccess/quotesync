@@ -10,11 +10,17 @@
 //   { mode: 'photo', token, image, consent }        → (signed partners) their photo for their
 //                                                     link's landing page; image is a JPEG data URL
 //   { mode: 'photo_remove', token }                 → takes the photo off their link
+//   { mode: 'w9', token, …fields }                  → (signed partners) fills IRS Form W-9 from
+//                                                     the fields, keeps the PDF in the private
+//                                                     partner-w9 bucket; the row keeps TIN type
+//                                                     and last 4 only. The TIN is never logged.
 // The agreement text below is a DRAFT for the agency's attorney and Allstate compliance
 // to review. Changing it means bumping AGREEMENT_VERSION, which asks every partner to
 // sign again before their link pays.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
+import { W9_PDF_BASE64, W9_REVISION } from './w9Form.ts'
 
 const allowedOrigins = ['https://insuredbycam.com', 'https://www.insuredbycam.com', 'https://quotesync.vercel.app']
 const envOrigin = Deno.env.get('CORS_ALLOWED_ORIGIN')
@@ -156,7 +162,7 @@ Deno.serve(async (req) => {
   if (token.length !== 48) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
   const { data: p } = await supabase.from('rate_check_promoters')
-    .select('id, agency_id, name, code, active, monthly_cap, agreement_version, agreement_signed_at, photo_url, photo_consent_at')
+    .select('id, agency_id, name, code, active, monthly_cap, agreement_version, agreement_signed_at, photo_url, photo_consent_at, w9_received_at, w9_tin_type, w9_tin_last4')
     .eq('portal_token', token).maybeSingle()
   if (!p) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
@@ -210,12 +216,38 @@ Deno.serve(async (req) => {
     return json({ photo_url: photoUrl }, 200, cors)
   }
 
+  if (body.mode === 'w9') {
+    if (!signed) return json({ error: 'Sign the agreement first.' }, 409, cors)
+    const w9 = checkW9(body)
+    if ('error' in w9) return json({ error: w9.error }, 400, cors)
+    const when = new Date()
+    const [mm, dd, yyyy] = when.toLocaleDateString('en-US', { timeZone: 'America/New_York', month: '2-digit', day: '2-digit', year: 'numeric' }).split('/')
+    let pdf: Uint8Array
+    try {
+      pdf = await fillW9(w9, { agency: agencyName, mm, dd, yyyy, ip: clientIp, when })
+    } catch (err) {
+      console.error('[RATE_CHECK_PARTNER] w9 fill failed:', (err as Error).message)
+      return json({ error: 'Something went wrong making the form. Please try again.' }, 500, cors)
+    }
+    const path = `${p.agency_id}/${p.id}/w9-${when.getTime()}.pdf`
+    const { error: upErr } = await supabase.storage.from('partner-w9').upload(path, pdf, { contentType: 'application/pdf', upsert: false })
+    if (upErr) { console.error('[RATE_CHECK_PARTNER] w9 upload failed:', upErr.message); return json({ error: 'Something went wrong. Please try again.' }, 500, cors) }
+    const row = {
+      w9_received_at: when.toISOString(), w9_tin_type: w9.tin_type, w9_tin_last4: w9.tin.slice(-4),
+      w9_tax_class: w9.tax_class === 'llc' ? `llc-${w9.llc_class}` : w9.tax_class, w9_signed_name: w9.signed_name, w9_pdf_path: path,
+    }
+    const { error: rowErr } = await supabase.from('rate_check_promoters').update(row).eq('id', p.id)
+    if (rowErr) { console.error('[RATE_CHECK_PARTNER] w9 row update failed:', rowErr.message); return json({ error: 'Something went wrong. Please try again.' }, 500, cors) }
+    return json({ w9: { on_file: true, tin_type: w9.tin_type, last4: w9.tin.slice(-4), signed_at: row.w9_received_at, revision: W9_REVISION } }, 200, cors)
+  }
+
   if (body.mode === 'portal') {
     const base = {
-      first_name: String(p.name).split(/\s+/)[0], agency_name: agencyName, active: p.active,
+      first_name: String(p.name).split(/\s+/)[0], name: p.name, agency_name: agencyName, active: p.active,
       agreement: { version: AGREEMENT_VERSION, text, signed, signed_at: signed ? p.agreement_signed_at : null },
       schedule, monthly_cap: p.monthly_cap,
       photo_url: p.photo_consent_at ? p.photo_url : null,
+      w9: { on_file: !!p.w9_received_at, tin_type: p.w9_tin_type, last4: p.w9_tin_last4, signed_at: p.w9_received_at, revision: W9_REVISION },
     }
     if (!signed) return json(base, 200, cors)
     const [{ data: scans }, { data: payouts }] = await Promise.all([
@@ -231,3 +263,62 @@ Deno.serve(async (req) => {
 
   return json({ error: 'Unknown mode' }, 400, cors)
 })
+
+// ── W-9 ────────────────────────────────────────────────────────────────────────
+// Same rules as src/pages/components/rate-checks/w9.js, re-checked here.
+const TAX_CLASSES = ['individual', 'c_corp', 's_corp', 'partnership', 'trust', 'llc', 'other']
+const CLASS_BOX: Record<string, number> = { individual: 0, c_corp: 1, s_corp: 2, partnership: 3, trust: 4, llc: 5, other: 6 }
+type W9 = { name: string; business_name: string | null; tax_class: string; llc_class: string | null; other_text: string | null; address: string; city_state_zip: string; tin_type: 'ssn' | 'ein'; tin: string; signed_name: string }
+
+function checkW9(b: any): W9 | { error: string } {
+  const clean = (v: unknown, max = 120) => String(v ?? '').replace(/\s+/g, ' ').trim().slice(0, max)
+  const name = clean(b.name), address = clean(b.address), csz = clean(b.city_state_zip), signed = clean(b.signed_name)
+  const tin = String(b.tin ?? '').replace(/\D/g, '')
+  const tinType = b.tin_type === 'ein' ? 'ein' : b.tin_type === 'ssn' ? 'ssn' : null
+  if (b.accept !== true) return { error: 'Tick the box to certify.' }
+  if (name.length < 3) return { error: 'Enter the name that goes on your tax return.' }
+  if (!TAX_CLASSES.includes(b.tax_class)) return { error: 'Choose how you file.' }
+  if (b.tax_class === 'llc' && !['C', 'S', 'P'].includes(b.llc_class)) return { error: 'Choose how the LLC is taxed.' }
+  if (b.tax_class === 'other' && !clean(b.other_text)) return { error: 'Say what kind of entity.' }
+  if (address.length < 5) return { error: 'Enter your street address.' }
+  if (!/^.{2,},?\s*[A-Za-z]{2}\s+\d{5}(-\d{4})?$/.test(csz)) return { error: 'City, state and ZIP, like “Atlanta, GA 30303”.' }
+  if (!tinType) return { error: 'Choose SSN or EIN.' }
+  if (tin.length !== 9 || /^(\d)\1{8}$/.test(tin) || tin === '123456789') return { error: 'That doesn’t look like a real number.' }
+  if (tinType === 'ssn') {
+    const area = tin.slice(0, 3)
+    if (area === '000' || area === '666' || area >= '900' || tin.slice(3, 5) === '00' || tin.slice(5) === '0000') return { error: 'That isn’t a valid SSN.' }
+  } else if (tin.startsWith('00')) return { error: 'An EIN can’t start with 00.' }
+  if (signed.length < 3 || !signed.includes(' ')) return { error: 'Type your full name as your signature.' }
+  return {
+    name, business_name: clean(b.business_name) || null, tax_class: b.tax_class, llc_class: b.tax_class === 'llc' ? b.llc_class : null,
+    other_text: b.tax_class === 'other' ? clean(b.other_text, 60) : null, address, city_state_zip: csz, tin_type: tinType, tin, signed_name: signed,
+  }
+}
+
+// Fills the IRS form's own fields (names from the blank PDF), draws the typed
+// signature and an e-sign line in the Sign Here box, then flattens it.
+async function fillW9(w: W9, ctx: { agency: string; mm: string; dd: string; yyyy: string; ip: string; when: Date }) {
+  const doc = await PDFDocument.load(Uint8Array.from(atob(W9_PDF_BASE64), c => c.charCodeAt(0)))
+  const form = doc.getForm()
+  const P = 'topmostSubform[0].Page1[0].'
+  const text = (f: string, v: string | null) => { if (v) form.getTextField(P + f).setText(v) }
+  text('f1_01[0]', w.name)
+  text('f1_02[0]', w.business_name)
+  form.getCheckBox(`${P}Boxes3a-b_ReadOrder[0].c1_1[${CLASS_BOX[w.tax_class]}]`).check()
+  if (w.tax_class === 'llc') text('Boxes3a-b_ReadOrder[0].f1_03[0]', w.llc_class)
+  if (w.tax_class === 'other') text('Boxes3a-b_ReadOrder[0].f1_04[0]', w.other_text)
+  text('Address_ReadOrder[0].f1_07[0]', w.address)
+  text('Address_ReadOrder[0].f1_08[0]', w.city_state_zip)
+  text('f1_09[0]', ctx.agency)
+  if (w.tin_type === 'ssn') { text('f1_11[0]', w.tin.slice(0, 3)); text('f1_12[0]', w.tin.slice(3, 5)); text('f1_13[0]', w.tin.slice(5)) }
+  else { text('f1_14[0]', w.tin.slice(0, 2)); text('f1_15[0]', w.tin.slice(2)) }
+  text('f1_16[0]', ctx.mm); text('f1_17[0]', ctx.dd); text('f1_18[0]', ctx.yyyy)
+  const page = doc.getPages()[0]
+  const sig = await doc.embedFont(StandardFonts.HelveticaOblique)
+  const small = await doc.embedFont(StandardFonts.Helvetica)
+  page.drawText(w.signed_name, { x: 150, y: 92, size: 13, font: sig, color: rgb(0.05, 0.1, 0.4) })
+  page.drawText(`Electronically signed by ${w.signed_name} on ${ctx.mm}/${ctx.dd}/${ctx.yyyy} (${ctx.when.toISOString()}) from IP ${ctx.ip} via the ${ctx.agency} partner portal.`,
+    { x: 112, y: 81, size: 5, font: small, color: rgb(0.3, 0.3, 0.3) })
+  form.flatten()
+  return await doc.save()
+}

@@ -576,6 +576,13 @@ export const useSavePromoter = () => {
   });
 };
 
+/** A short-lived link to a partner's completed W-9 (private bucket; owners, principals and managers). */
+export async function partnerW9Url(path) {
+  const { data, error } = await supabase.storage.from('partner-w9').createSignedUrl(path, 300);
+  if (error) throw error;
+  return data.signedUrl;
+}
+
 // Staff add a partner's photo (with the partner's OK) or take it off their link.
 export const useSetPromoterPhoto = () => {
   const queryClient = useQueryClient();
