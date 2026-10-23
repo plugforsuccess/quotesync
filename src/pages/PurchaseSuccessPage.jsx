@@ -178,7 +178,7 @@ const PurchaseSuccessPage = () => {
             Browse More Guides
           </Link>
           <Link
-            to="/quotes"
+            to="/"
             className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 text-white font-semibold rounded-xl hover:from-primary-700 hover:to-secondary-700 transition-all"
           >
             Get Insurance Quote

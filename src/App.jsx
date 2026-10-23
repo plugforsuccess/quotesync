@@ -17,8 +17,8 @@ import { validateCacheVersion } from './utils/cacheVersion';
 import { persistUtmParams } from './lib/leadsApi';
 import { queryClient } from './lib/queryClient';
 
-// Homepage — eager (landing page, always needed on first load)
-import InsuranceQuotesPage from './pages/InsuranceQuotesPage';
+// Homepage = Rate Check (dec-page scan) — eager: it's the landing page, always needed on first load
+import RateCheckPage from './pages/RateCheckPage';
 
 // Clear chunk-error reload flag synchronously at module load time.
 // Must happen BEFORE lazyWithRetry is defined — if the flag is set from a
@@ -53,7 +53,6 @@ function lazyWithRetry(importFn) {
 }
 
 // All other pages — lazy loaded for code splitting
-const ThankYouPage = lazyWithRetry(() => import('./pages/ThankYouPage'));
 const DriversEdPage = lazyWithRetry(() => import('./pages/DriversEdPage'));
 const DefensiveDrivingPage = lazyWithRetry(() => import('./pages/DefensiveDrivingPage'));
 const DefensiveDrivingSuccessPage = lazyWithRetry(() => import('./pages/DefensiveDrivingSuccessPage'));
@@ -69,9 +68,6 @@ const NewsroomPage = lazyWithRetry(() => import('./pages/NewsroomPage'));
 const StoryDetailPage = lazyWithRetry(() => import('./pages/StoryDetailPage'));
 const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
 const PunchPage = lazyWithRetry(() => import('./pages/PunchPage'));
-const SaveWizardPage = lazyWithRetry(() => import('./pages/SaveWizardPage'));
-const SaveConfirmationPage = lazyWithRetry(() => import('./pages/SaveConfirmationPage'));
-const RateCheckPage = lazyWithRetry(() => import('./pages/RateCheckPage'));
 const PartnerPortalPage = lazyWithRetry(() => import('./pages/PartnerPortalPage'));
 const RateCheckPrivacyPage = lazyWithRetry(() => import('./pages/RateCheckPrivacyPage'));
 const AgencyApplyPage = lazyWithRetry(() => import('./pages/AgencyApplyPage'));
@@ -175,9 +171,11 @@ function App() {
           {/* Employee punch clock — public, no auth required */}
           <Route path="/punch" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PunchPage /></Suspense></ErrorBoundary>} />
 
-          {/* Rate Check — public dec-page scanner landing page; standalone (no site Layout) to stay light on mobile */}
-          <Route path="/ratecheck" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPage /></Suspense></ErrorBoundary>} />
-          <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPage /></Suspense></ErrorBoundary>} />
+          {/* Rate Check — the public home page: one dec-page scan that converts. Standalone
+              (no site Layout) to stay light on mobile. /ratecheck and /r/:code are the same page. */}
+          <Route path="/" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
+          <Route path="/ratecheck" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
+          <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
           <Route path="/partner/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PartnerPortalPage /></Suspense></ErrorBoundary>} />
           <Route path="/ratecheck-privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPrivacyPage /></Suspense></ErrorBoundary>} />
 
@@ -214,10 +212,9 @@ function App() {
           </Route>
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}
-          <Route path="/" element={<Layout />}>
-            {/* Default route – homepage = Insurance Quotes */}
-            <Route index element={<InsuranceQuotesPage />} />
-            <Route path="quotes" element={<InsuranceQuotesPage />} />
+          <Route element={<Layout />}>
+            {/* The old quote home page (/quotes) and /save wizard were retired for Rate Check;
+                their old links fall through to the catch-all below and land on it. */}
 
             {/* Drivers Ed tab */}
             <Route path="courses" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
@@ -316,14 +313,6 @@ function App() {
             <Route path="store" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><StorePage /></Suspense></ErrorBoundary>} />
             <Route path="store/:slug" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ProductDetailPage /></Suspense></ErrorBoundary>} />
             <Route path="store/purchase-success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PurchaseSuccessPage /></Suspense></ErrorBoundary>} />
-
-            {/* Lead generation funnel — V2 single-question wizard */}
-            <Route path="save" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><SaveWizardPage /></Suspense></ErrorBoundary>} />
-            <Route path="save/details" element={<Navigate to="/save" replace />} />
-            <Route path="save/confirmation" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><SaveConfirmationPage /></Suspense></ErrorBoundary>} />
-
-            {/* Thank you page (after form / Canopy redirect) */}
-            <Route path="success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ThankYouPage /></Suspense></ErrorBoundary>} />
 
             {/* Privacy Policy and Terms of Service */}
             <Route path="privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PrivacyPage /></Suspense></ErrorBoundary>} />
