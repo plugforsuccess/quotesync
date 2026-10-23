@@ -804,8 +804,8 @@ function PriceDrop({ current, price, market }) {
       </div>
       {s && (
         <p className="mt-2 text-lg font-extrabold" style={{ color: tone }}>
-          {s.delta > 0 ? `${money(s.delta)}/yr less` : s.delta < 0 ? `${money(-s.delta)}/yr more` : 'Same as they pay'}
-          {s.pct != null && s.delta !== 0 && <span className="font-semibold" style={{ color: 'var(--qs-subtle)' }}> · {Math.abs(s.pct)}%</span>}
+          {s.delta > 0 ? `Saves ${money(s.delta)}/yr.` : s.delta < 0 ? `Costs ${money(-s.delta)}/yr more.` : 'Same as they pay.'}
+          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> That&apos;s {Math.abs(s.pct)}% {s.delta > 0 ? 'less!' : 'more.'}</span>}
         </p>
       )}
     </div>
