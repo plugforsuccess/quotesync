@@ -36,9 +36,11 @@ const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: '
 // Texted-code verification of the mobile number: off while the agency tests; set
 // VITE_RATE_CHECK_OTP=true (and RATE_CHECK_OTP_REQUIRED on the function) to turn it on.
 const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
-// The licensed agent shown on the page (same headshot as the homepage).
-// TODO(compliance): fill in the GA license number; the card and footer use it.
-const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '' };
+// The licensed agent shown on the page (same headshot as the homepage). Two GA
+// licenses: Cam's individual resident license goes under his headshot (the card
+// names him); the agency's resident license goes in the footer next to the agency name.
+const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
+const AGENCY = { name: 'Wiley-Wilson Agency', license: '209488' };
 // "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
 // Photo: { photo, alt, caption, position }. Bio: { icon, title, lines }.
 // TODO(Cam): a second photo goes here when there is one; review the bio wording.
@@ -822,7 +824,7 @@ function AgentCard() {
       <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
         className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
         style={{ objectPosition: '50% 30%' }} />
-      {AGENT.license && <p className="mt-3 text-xs text-slate-400">GA license #{AGENT.license}</p>}
+      {AGENT.license && <p className="mt-3 text-sm font-medium text-slate-500">GA License #: {AGENT.license}</p>}
     </div>
   );
 }
@@ -922,12 +924,12 @@ export function RateCheckFooter({ padForBar = false }) {
         <Link to="/privacy" className="underline">Privacy policy</Link>
         <Link to="/terms" className="underline">Terms</Link>
       </nav>
-      {/* TODO(compliance): confirm the Allstate agency disclosure wording and the GA license number before launch. */}
+      {/* TODO(compliance): confirm the Allstate agency disclosure wording before launch. */}
       <p>
-        Wiley-Wilson Agency is an Allstate agency. Quotes and savings vary and are subject to underwriting and
+        {AGENCY.name} is an Allstate agency. Quotes and savings vary and are subject to underwriting and
         eligibility; not all applicants qualify.
       </p>
-      <p className="mt-1">GA License #: {AGENT.license || '[LICENSE NUMBER]'}</p>
+      <p className="mt-1">{AGENCY.name} GA agency license #: {AGENCY.license} · {AGENT.name} GA license #: {AGENT.license}</p>
     </footer>
   );
 }
