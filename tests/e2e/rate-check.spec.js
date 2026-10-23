@@ -86,7 +86,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   });
 
   await page.goto('/ratecheck?utm_source=e2e&utm_campaign=ratecheck-qa');
-  await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get a second opinion on your insurance.' })).toBeVisible();
 
   await page.getByTestId('rc-files').setInputFiles(photoPath);
   await expect(page.getByText('1 page', { exact: true })).toBeVisible();
@@ -197,7 +197,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   await page.reload();
   await expect(page.getByText('Auto · $980/yr')).toBeVisible();
   await page.getByRole('button', { name: 'Start over' }).click();
-  await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get a second opinion on your insurance.' })).toBeVisible();
 });
 
 test('saves progress on the device and warns about dark or blurry photos', async ({ page }, testInfo) => {
@@ -224,7 +224,7 @@ test('saves progress on the device and warns about dark or blurry photos', async
 
   await page.getByRole('button', { name: '2 policies', exact: true }).click();
   await page.getByRole('button', { name: 'Start over' }).click();
-  await expect(page.getByRole('heading', { name: 'Overpaying for insurance? Find out in 60 seconds.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Get a second opinion on your insurance.' })).toBeVisible();
   await page.reload();
   await expect(page.getByText('Welcome back')).toHaveCount(0);
 });

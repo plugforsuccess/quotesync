@@ -650,7 +650,7 @@ export default function RateCheckPage() {
             <>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Free rate check · Georgia</p>
               <h1 className="mt-2 text-[32px] font-extrabold leading-[1.1] tracking-tight text-slate-900">
-                Overpaying for insurance? Find out in 60 seconds.
+                Get a second opinion on your insurance.
               </h1>
               <p className="mt-3 text-slate-600">
                 Snap the declarations page of each policy — car, home, renters, all of them, every page. A local Allstate
