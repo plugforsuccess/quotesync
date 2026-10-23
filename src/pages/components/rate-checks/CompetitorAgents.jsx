@@ -4,7 +4,7 @@
 // we beat them. Internal market intel only — never contact a competitor about
 // a specific customer, never share pricing with competitors.
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronDown, Lock, SlidersHorizontal, Star } from 'lucide-react';
 import { useCompetitorAgents, useUpdateCompetitorAgent } from '../../../hooks/useRateChecks';
 import { thCls, thStyle, inputStyle, money, formatPhone, formatDate, BOOK_OWNERSHIP } from './ui';
@@ -48,6 +48,7 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
     </th>
   );
 
+  const wide = useWide();
   const filterCount = (minSeen > 1 ? 1 : 0) + (acquirableOnly ? 1 : 0) + (starredOnly ? 1 : 0);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -89,7 +90,13 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
         )}
       </div>
 
-      {!isLoading && !error && data.length > 0 && <AgentsMap agents={unzipped} scans={scans} zip={zip} onPickZip={setZip} />}
+      {/* Wide screens: map on the left (tall, stays put while the list scrolls), agents on the right. */}
+      <div className="xl:grid xl:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] xl:items-start">
+      {!isLoading && !error && data.length > 0 && (
+        <div className="border-b xl:sticky xl:top-20 xl:h-[calc(100vh-7rem)] xl:border-b-0 xl:border-r" style={{ borderColor: 'var(--qs-border)' }}>
+          <AgentsMap agents={unzipped} scans={scans} zip={zip} onPickZip={setZip} tall={wide} />
+        </div>
+      )}
 
       {isLoading ? (
         <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</div>
@@ -101,10 +108,10 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
         </div>
       ) : (
         <>
-          <ul className="md:hidden">
+          <ul className="md:hidden xl:block">
             {rows.map(r => <AgentCard key={r.id} r={r} open={openId === r.id} onToggle={() => setOpenId(openId === r.id ? null : r.id)} update={update} />)}
           </ul>
-          <div className="hidden overflow-x-auto md:block">
+          <div className="hidden overflow-x-auto md:block xl:hidden">
             <table className="min-w-full">
               <thead>
                 <tr style={{ background: 'var(--qs-elevated)' }}>
@@ -129,8 +136,22 @@ export default function CompetitorAgents({ agencyId, scans = [] }) {
           </div>
         </>
       )}
+      </div>
     </div>
   );
+}
+
+// Computer-width screens get the side-by-side map.
+function useWide() {
+  const query = '(min-width: 1280px)';
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const on = () => setWide(mq.matches);
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, []);
+  return wide;
 }
 
 const plural = (n, word) => `${n} ${word}${Number(n) === 1 ? '' : 's'}`;
