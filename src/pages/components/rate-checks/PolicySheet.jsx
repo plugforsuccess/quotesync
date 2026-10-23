@@ -177,28 +177,26 @@ function VehicleCard({ rc, v, index, level, n }) {
   const lien = lienholderFor(rc, index);
   return (
     <li className="py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      {/* Number badge + year/make/model on one line; VIN and the coverage level on the next. */}
+      {/* Number badge, year/make/model and the coverage level on one line; the VIN under the title. */}
       <div className="flex items-center gap-2.5">
         <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums"
           style={{ color: 'var(--qs-cyan)', background: 'rgba(6, 182, 212, 0.14)', border: '1px solid rgba(6, 182, 212, 0.45)' }} aria-hidden="true">{n}</span>
-        <p className="min-w-0 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
+        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
           <span className="sr-only">Vehicle {n}: </span>{vehicleTitle(v)}
         </p>
-      </div>
-      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pl-[34px]">
-        {vin ? (
-          <span className="inline-flex items-center gap-1">
-            <span className="select-text font-mono text-sm" style={{ color: 'var(--qs-bright)' }}>{vin}</span>
-            {v.vin && v.vin_complete !== false && <CopyButton text={v.vin} label={`Copy VIN for ${vehicleTitle(v)}`} />}
-          </span>
-        ) : <span />}
         {level && (
-          <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
+          <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold uppercase leading-4 tracking-[0.08em]"
             style={LEVEL_TONE[level.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
             {level.levelLabel}
           </span>
         )}
       </div>
+      {vin && (
+        <p className="mt-1 flex items-center gap-1 pl-[34px]">
+          <span className="select-text font-mono text-sm" style={{ color: 'var(--qs-bright)' }}>{vin}</span>
+          {v.vin && v.vin_complete !== false && <CopyButton text={v.vin} label={`Copy VIN for ${vehicleTitle(v)}`} />}
+        </p>
+      )}
       {vinWarn && <p className="pl-[34px] text-xs text-yellow-600">{vinWarn}</p>}
       {lien && (
         <>
