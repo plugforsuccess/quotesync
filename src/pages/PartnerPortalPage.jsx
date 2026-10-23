@@ -13,6 +13,11 @@ import { inviteUrl } from './components/rate-checks/invite';
 
 const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
 const monthLabel = (key) => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
+// A different hello each visit.
+const GREETINGS = [
+  (n) => `Hi ${n}`, (n) => `Hey ${n}`, (n) => `Hello ${n}`,
+  (n) => `Hey there, ${n}`, (n) => `Good to see you, ${n}`, (n) => `What’s good, ${n}`,
+];
 const SCHEDULE_ROWS = [
   ['auto_home', 'Auto + home or condo'], ['auto_renters', 'Auto + renters'], ['home_only', 'Home or condo only'],
   ['auto_only', 'Auto only'], ['renters_only', 'Renters only'],
@@ -22,6 +27,7 @@ export default function PartnerPortalPage() {
   const { token } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
+  const [greet] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)]);
   const load = useCallback(() => {
     setError('');
     loadPartnerPortal(token).then(setData).catch(err => setError(err.message));
@@ -39,14 +45,14 @@ export default function PartnerPortalPage() {
       <main className="mx-auto max-w-md px-4 pt-6 pb-12">
         {error ? <p className="rounded-xl bg-white p-4 text-slate-700 ring-1 ring-slate-200">{error}</p>
           : !data ? <p className="flex items-center gap-2 text-slate-500"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading…</p>
-          : !data.agreement.signed ? <SignAgreement token={token} data={data} onSigned={load} />
-          : <Earnings data={data} />}
+          : !data.agreement.signed ? <SignAgreement token={token} data={data} greet={greet} onSigned={load} />
+          : <Earnings data={data} greet={greet} />}
       </main>
     </div>
   );
 }
 
-function SignAgreement({ token, data, onSigned }) {
+function SignAgreement({ token, data, greet, onSigned }) {
   const [name, setName] = useState('');
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -61,7 +67,7 @@ function SignAgreement({ token, data, onSigned }) {
 
   return (
     <>
-      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Hi {data.first_name}, sign to turn on your link</h1>
+      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">{greet(data.first_name)} — sign to turn on your link</h1>
       <p className="mt-2 text-slate-600">
         Read the agreement with {data.agency_name}. Your link starts earning as soon as you sign.
       </p>
@@ -86,7 +92,7 @@ function SignAgreement({ token, data, onSigned }) {
   );
 }
 
-function Earnings({ data }) {
+function Earnings({ data, greet }) {
   const url = inviteUrl(data.code);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -100,7 +106,7 @@ function Earnings({ data }) {
 
   return (
     <>
-      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Hi {data.first_name}</h1>
+      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">{greet(data.first_name)}</h1>
       <p className="mt-1 flex items-center gap-1.5 text-sm text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> Agreement signed {new Date(data.agreement.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
 
       <section className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
