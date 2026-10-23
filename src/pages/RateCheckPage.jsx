@@ -43,13 +43,16 @@ const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', li
 const AGENCY = { name: 'Wiley-Wilson Agency', license: '209488' };
 // "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
 // Photo: { photo, alt, caption, position }. Bio: { icon, title, lines }.
-// TODO(Cam): a second photo goes here when there is one; review the bio wording.
 const ABOUT = [
   { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cameron cutting down the net at Swarthmore', caption: 'Swarthmore basketball, #23', position: '52% 45%' },
+  // TODO(Cam): placeholder bio wording; replace with your own when ready.
   { key: 'me', icon: Trophy, title: 'A little about me', lines: [
     'I played college basketball at Swarthmore.',
     'Now I run my own Allstate agency here in Georgia.',
+    'Basketball taught me to prepare, then compete. I bring both to every quote.',
+    'Family comes first. I treat your household the way I’d treat mine.',
   ] },
+  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cameron with his family', caption: 'My family', position: '50% 30%' },
   { key: 'how', icon: MessageSquare, title: 'How I work', lines: [
     'I read every dec page myself. No call center, no bots.',
     'If I can beat your price, I text you. If I can’t, I tell you.',
