@@ -297,6 +297,7 @@ export default function PolicySheet({ rc, warning }) {
       {isAuto && coverageGroups.filter(g => g.title !== 'Liability').map(g => (
         <Section key={g.title} title={g.title === 'Every vehicle' ? 'Coverage on every vehicle' : g.title}><Rows rows={g.rows} /></Section>
       ))}
+      {isAuto && <AutoEndorsements rc={rc} />}
 
       {isProperty && <PropertySection rc={rc} />}
       {isProperty && homeCoverageRows(rc).length > 0 && (
@@ -367,6 +368,31 @@ function PropertySection({ rc }) {
         {p.loan_number && <Field label="Loan number" value={p.loan_number} copy mono />}
         {p.paid_by_mortgagee != null && <Field label="Paid by" value={p.paid_by_mortgagee ? 'Mortgage company (escrow)' : 'Customer'} />}
       </dl>
+    </Section>
+  );
+}
+
+// Auto endorsements (accident forgiveness, rideshare, new car replacement…) as tiles,
+// two per row at the same size as the vehicle-coverage tiles: name, then the limit
+// (or Yes), then its form/option code on the same line height as "All 3 vehicles".
+// In yellow like every add-on: easy to leave off an Allstate quote.
+function AutoEndorsements({ rc }) {
+  const list = endorsementsOf(rc);
+  if (!list.length) return null;
+  return (
+    <Section title={`Endorsements · ${list.length}`} ruled>
+      <ul className="grid grid-cols-2 gap-2">
+        {list.map((e, i) => (
+          <li key={i} className="rounded-lg px-3 py-2" style={TILE}>
+            <p className="text-[11px] font-bold uppercase leading-snug tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{e.name}</p>
+            {/* A long limit ("$100 off per year") drops a size so it stays on one line and the tiles match. */}
+            <TileValue value={e.limit || 'Yes'} addOn size={String(e.limit || '').length > 9 ? 'text-base leading-7' : 'text-xl'} />
+            <div className="mt-1 flex min-h-[24px] items-center">
+              {e.code && <span className="font-mono text-xs" style={{ color: 'var(--qs-subtle)' }}>{e.code}</span>}
+            </div>
+          </li>
+        ))}
+      </ul>
     </Section>
   );
 }
