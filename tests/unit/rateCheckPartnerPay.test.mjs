@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  scheduleFrom, householdTier, households, partnerSummary, qualifies, monthsWithActivity,
+  scheduleFrom, householdTier, households, partnerSummary, qualifies, monthsWithActivity, applyCap,
 } from '../../src/pages/components/rate-checks/partnerPay.js';
 
 const scan = (o) => ({ id: Math.random().toString(36).slice(2), promoter_id: 'p1', status: 'extracted', duplicate_of: null, created_at: '2026-10-05T15:00:00Z', ...o });
@@ -51,11 +51,28 @@ test('one payout per household (by phone), in the month of its first qualifying 
   assert.deepEqual([failed.tier, failed.fee, failed.month], [null, 0, null]);
 
   const s = partnerSummary(hh, '2026-10');
-  assert.deepEqual(s.month, { households: 1, owed: 2 });
+  assert.deepEqual(s.month, { households: 1, owed: 2, overCap: 0 });
   assert.equal(s.households, 2);
   assert.equal(s.won, 1);
   assert.equal(s.closeRate, 0.5);
   assert.equal(s.fees, 47);
   assert.equal(s.costPerWin, 47);
   assert.deepEqual(monthsWithActivity(hh, '2026-11'), ['2026-11', '2026-10', '2026-09']);
+});
+
+test('monthly cap: the first N households in a month are paid, the rest pay $0', () => {
+  const hh = households([
+    scan({ phone: '4045550001', policy_type: 'auto', created_at: '2026-10-01T10:00:00Z' }),
+    scan({ phone: '4045550002', policy_type: 'auto', created_at: '2026-10-02T10:00:00Z' }),
+    scan({ phone: '4045550002', policy_type: 'home', created_at: '2026-10-02T10:05:00Z' }),
+    scan({ phone: '4045550003', policy_type: 'auto', created_at: '2026-10-03T10:00:00Z' }),
+    scan({ phone: '4045550004', policy_type: 'auto', created_at: '2026-11-01T10:00:00Z' }),
+  ], schedule);
+  const capped = applyCap(hh, 2);
+  const by = Object.fromEntries(capped.map(h => [h.phone, h]));
+  assert.deepEqual([by['4045550001'].fee, by['4045550002'].fee, by['4045550003'].fee], [10, 45, 0]);
+  assert.equal(by['4045550003'].overCap, true);
+  assert.equal(by['4045550004'].overCap, false); // new month, counts from zero
+  assert.deepEqual(partnerSummary(capped, '2026-10').month, { households: 3, owed: 55, overCap: 1 });
+  assert.equal(applyCap(hh, null).every(h => !h.overCap), true);
 });

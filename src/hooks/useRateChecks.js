@@ -533,6 +533,7 @@ export const useSavePromoter = () => {
         ...('active' in fields ? { active: !!fields.active } : {}),
         ...('w9_received_at' in fields ? { w9_received_at: fields.w9_received_at } : {}),
         ...('notes' in fields ? { notes: fields.notes?.trim() || null } : {}),
+        ...('monthly_cap' in fields ? { monthly_cap: fields.monthly_cap ? Math.max(1, Math.min(1000, Math.round(Number(fields.monthly_cap)))) : null } : {}),
       };
       const q = id
         ? supabase.from('rate_check_promoters').update(clean).eq('id', id)

@@ -80,6 +80,7 @@ export function households(scans, schedule) {
     const fee = tier ? (schedule[tier] ?? 0) + extras * (schedule.extra_line ?? 0) : 0;
     return {
       key: sorted[0].phone || sorted[0].id,
+      firstAt: firstQualifying ? firstQualifying.created_at : null,
       promoterId: sorted[0].promoter_id,
       firstName: sorted.find(s => s.first_name)?.first_name || null,
       phone: sorted[0].phone || null,
@@ -95,6 +96,25 @@ export function households(scans, schedule) {
   });
 }
 
+/**
+ * A partner's monthly cap: in each month, the first `cap` qualifying households (by
+ * when their first page arrived) are paid; the rest keep their tier but pay $0 and
+ * are marked overCap. A null cap pays every household.
+ */
+export function applyCap(hh, cap) {
+  if (!cap) return hh.map(h => ({ ...h, overCap: false }));
+  const rank = new Map();
+  const byMonth = {};
+  for (const h of hh.filter(x => x.tier && x.month)) (byMonth[h.month] ||= []).push(h);
+  for (const list of Object.values(byMonth)) {
+    list.sort((a, b) => new Date(a.firstAt) - new Date(b.firstAt)).forEach((h, i) => rank.set(h, i));
+  }
+  return hh.map(h => {
+    const overCap = rank.has(h) && rank.get(h) >= cap;
+    return overCap ? { ...h, overCap, fee: 0 } : { ...h, overCap: false };
+  });
+}
+
 /** Totals for one partner: this month and all time, close rate and cost per win. */
 export function partnerSummary(hh, month) {
   const paid = hh.filter(h => h.tier);
@@ -102,7 +122,7 @@ export function partnerSummary(hh, month) {
   const won = paid.filter(h => h.won).length;
   const fees = paid.reduce((t, h) => t + h.fee, 0);
   return {
-    month: { households: inMonth.length, owed: inMonth.reduce((t, h) => t + h.fee, 0) },
+    month: { households: inMonth.length, owed: inMonth.reduce((t, h) => t + h.fee, 0), overCap: inMonth.filter(h => h.overCap).length },
     households: paid.length,
     quoted: paid.filter(h => h.quoted).length,
     won,

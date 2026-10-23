@@ -719,6 +719,8 @@ async function resolveInvite(supabase: any, code: unknown) {
 }
 
 // A partner's permanent link (rate_check_promoters), same /r/CODE space as invites.
+// It only counts once the partner has signed the current agreement (rate-check-partner).
+const PARTNER_AGREEMENT_VERSION = 'partner-v1'
 async function resolvePromoter(supabase: any, code: unknown) {
   const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
   if (c.length !== 8) return null
@@ -727,6 +729,8 @@ async function resolvePromoter(supabase: any, code: unknown) {
     .select('id, agency_id, name')
     .eq('code', c)
     .eq('active', true)
+    .eq('agreement_version', PARTNER_AGREEMENT_VERSION)
+    .not('agreement_signed_at', 'is', null)
     .maybeSingle()
   return data ?? null
 }

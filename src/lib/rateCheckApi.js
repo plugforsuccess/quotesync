@@ -172,6 +172,28 @@ export const sendOtp = (phone) => otp('send', phone);
 /** Check the code they typed; resolves to { verified: true }. */
 export const verifyOtp = (phone, code) => otp('verify', phone, { code: String(code || '').replace(/\D/g, '') });
 
+const PARTNER_URL = RATE_CHECK_URL.replace(/rate-check$/, 'rate-check-partner');
+
+async function partnerCall(body) {
+  const res = await fetch(PARTNER_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'Something went wrong. Please try again.');
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+/** A partner's portal (/partner/TOKEN): the agreement, and once signed, their link and earnings. */
+export const loadPartnerPortal = (token) => partnerCall({ mode: 'portal', token });
+/** Record the partner's signature on the current agreement. */
+export const signPartnerAgreement = (token, signedName) => partnerCall({ mode: 'sign', token, signed_name: signedName, accept: true });
+
 export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '').trim());
 
 /**

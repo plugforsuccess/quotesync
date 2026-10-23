@@ -17,7 +17,7 @@ import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
-  TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, households, partnerSummary,
+  TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, households, partnerSummary, applyCap,
   monthsWithActivity, monthLabel, monthStart, currentMonth,
 } from './partnerPay';
 
@@ -50,7 +50,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const byPartner = useMemo(() => {
     const all = households(scans, schedule);
     return Object.fromEntries(promoters.map(p => {
-      const hh = all.filter(h => h.promoterId === p.id);
+      const hh = applyCap(all.filter(h => h.promoterId === p.id), p.monthly_cap);
       return [p.id, { hh, summary: partnerSummary(hh, month) }];
     }));
   }, [scans, schedule, promoters, month]);
@@ -65,7 +65,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       return {
         partner: p.name, phone: p.phone ? formatPhone(p.phone) : '', email: p.email || '',
         month: monthLabel(month), households: s?.month.households || 0, amount: (s?.month.owed || 0).toFixed(2),
-        w9_on_file: p.w9_received_at ? 'yes' : 'no', paid: paidFor(p.id) ? formatDate(paidFor(p.id).paid_at) : '',
+        w9_on_file: p.w9_received_at ? 'yes' : 'no', agreement_signed: p.agreement_signed_at ? formatDate(p.agreement_signed_at) : 'no',
+        paid: paidFor(p.id) ? formatDate(paidFor(p.id).paid_at) : '',
       };
     }));
   };
@@ -123,21 +124,22 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>Paused</span>}</h3>
                 <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || 'No contact on file'}</p>
               </div>
-              <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
-                style={p.w9_received_at
-                  ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }
-                  : { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
-                {p.w9_received_at ? <><Check className="h-3 w-3" aria-hidden="true" />W-9 on file</> : 'W-9 needed'}
+              <span className="flex flex-wrap justify-end gap-1.5">
+                <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Agreement signed' : 'Agreement not signed'}</Pill>
+                <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? 'W-9 on file' : 'W-9 needed'}</Pill>
               </span>
             </div>
+            {!p.agreement_signed_at && (
+              <p className="mt-3 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
+                Their link doesn&apos;t earn anything until they sign. Send them their portal link: they sign there, then see their link and earnings.
+              </p>
+            )}
 
-            <div className="mt-3 flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-              <span className="min-w-0 flex-1 truncate font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{inviteUrl(p.code)}</span>
-              <CopyTextButton text={inviteUrl(p.code)} className="shrink-0 rounded px-2 py-1 text-xs font-semibold" style={inputStyle}>Copy link</CopyTextButton>
-            </div>
+            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy portal link" />
+            <LinkRow label={p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={!p.agreement_signed_at} />
 
             <div className="mt-4 grid grid-cols-3 gap-3">
-              <Stat label="Households" value={s.month.households} />
+              <Stat label={s.month.overCap ? `Households · ${s.month.overCap} over cap` : 'Households'} value={s.month.households} />
               <Stat label="Owed" value={dollars(s.month.owed)} tone="var(--qs-warning)" />
               <Stat label="Status" value={paid ? 'Paid' : s.month.owed > 0 ? 'Unpaid' : '—'} tone={paid ? 'var(--qs-success)' : undefined} />
             </div>
@@ -163,6 +165,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                   )}
                   <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}
                     className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.w9_received_at ? 'Clear W-9' : 'W-9 received'}</button>
+                  <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
                   <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}
                     className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.active ? 'Pause link' : 'Turn link on'}</button>
                 </span>
@@ -180,6 +183,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                       </button>
                       <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
                         {h.tier ? TIER_LABEL[h.tier] : 'Not qualified'}{h.extras ? ` + ${h.extras} extra ${h.extras === 1 ? 'line' : 'lines'}` : ''}
+                        {h.overCap && <span style={{ color: 'var(--qs-warning)' }}> · over the monthly cap</span>}
                         {' · '}<span style={{ color: h.won ? 'var(--qs-success)' : undefined }}>{h.won ? 'Won' : h.quoted ? 'Quoted' : 'Not quoted yet'}</span>
                       </p>
                     </div>
@@ -197,6 +201,52 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   );
 }
 
+const portalUrl = (token) => `${window.location.origin}/partner/${token}`;
+
+function Pill({ ok, children }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
+      style={ok
+        ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }
+        : { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
+      {ok && <Check className="h-3 w-3" aria-hidden="true" />}{children}
+    </span>
+  );
+}
+
+function LinkRow({ label, url, copyLabel, muted = false }) {
+  return (
+    <div className="mt-3">
+      <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{label}</p>
+      <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', opacity: muted ? 0.55 : 1 }}>
+        <span className="min-w-0 flex-1 truncate font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</span>
+        <CopyTextButton text={url} className="shrink-0 rounded px-2 py-1 text-xs font-semibold" style={inputStyle}>{copyLabel}</CopyTextButton>
+      </div>
+    </div>
+  );
+}
+
+// Most households paid per month; blank means no cap.
+function CapControl({ value, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? '');
+  if (!editing) {
+    return (
+      <button type="button" onClick={() => { setDraft(value ?? ''); setEditing(true); }} className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>
+        {value ? `Cap ${value}/month` : 'No cap'}
+      </button>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm" style={inputStyle}>
+      Cap
+      <input inputMode="numeric" value={draft} onChange={e => setDraft(e.target.value.replace(/\D/g, '').slice(0, 4))} aria-label="Monthly cap"
+        className="w-14 rounded px-1.5 py-0.5 text-right tabular-nums" style={inputStyle} placeholder="none" />
+      <button type="button" onClick={() => { onSave(draft ? Number(draft) : null); setEditing(false); }} className="font-semibold text-primary-600">Save</button>
+    </span>
+  );
+}
+
 function AddPartner({ agencyId, userId, save, onDone }) {
   const [form, setForm] = useState({ name: '', phone: '', email: '' });
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: k === 'phone' ? formatPhoneInput(e.target.value) : e.target.value }));
@@ -209,8 +259,9 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       <input className={field} style={inputStyle} placeholder="Mobile" inputMode="tel" value={form.phone} onChange={set('phone')} aria-label="Partner mobile" />
       <input className={field} style={inputStyle} placeholder="Email" type="email" value={form.email} onChange={set('email')} aria-label="Partner email" />
       <button type="submit" disabled={!ok || save.isPending} className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
-        {save.isPending ? 'Adding…' : 'Add and make link'}
+        {save.isPending ? 'Adding…' : 'Add and make links'}
       </button>
+      <p className="text-xs md:col-span-4" style={{ color: 'var(--qs-subtle)' }}>Use their full legal name (it goes on the agreement and the 1099). Then send them their portal link to sign.</p>
       {save.error && <p className="text-sm text-red-500 md:col-span-4">{save.error.message}</p>}
     </form>
   );
