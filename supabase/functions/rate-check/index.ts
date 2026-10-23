@@ -720,7 +720,7 @@ async function resolveInvite(supabase: any, code: unknown) {
 
 // A partner's permanent link (rate_check_promoters), same /r/CODE space as invites.
 // It only counts once the partner has signed the current agreement (rate-check-partner).
-const PARTNER_AGREEMENT_VERSION = 'partner-v1'
+const PARTNER_AGREEMENT_VERSION = 'partner-v2'
 async function resolvePromoter(supabase: any, code: unknown) {
   const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
   if (c.length !== 8) return null

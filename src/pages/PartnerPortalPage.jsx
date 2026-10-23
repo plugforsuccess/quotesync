@@ -236,7 +236,7 @@ function Earnings({ token, data, greet, onChange }) {
           ))}
           <div className="flex justify-between py-2"><dt className="text-slate-700">Each extra line, up to 2</dt><dd className="font-bold tabular-nums text-slate-900">+{money(data.schedule.extra_line)}</dd></div>
         </dl>
-        <p className="mt-2 text-xs leading-relaxed text-slate-500">Paid the same whether or not they buy. A household is one phone number, paid once. Pages that can&apos;t be read and repeats don&apos;t count. Paid monthly, after your W-9 is on file.</p>
+        <p className="mt-2 text-xs leading-relaxed text-slate-500">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we&apos;ve quoted it (or 7 days after their first page). Pages that can&apos;t be read, repeats, expired pages and Allstate policies don&apos;t count. Paid monthly after your W-9 is on file; months under $50 carry over.</p>
       </section>
     </>
   );

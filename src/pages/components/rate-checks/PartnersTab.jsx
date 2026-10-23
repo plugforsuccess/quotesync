@@ -17,8 +17,8 @@ import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
-  TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, households, partnerSummary, applyCap,
-  monthsWithActivity, monthLabel, monthStart, currentMonth,
+  TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, MIN_PAYOUT, QUOTE_DAYS, scheduleFrom, households, partnerSummary, applyCap,
+  monthsWithActivity, monthLabel, monthStart, currentMonth, payoutPlan,
 } from './partnerPay';
 
 const pct = (n) => (n == null ? '—' : `${Math.round(n * 100)}%`);
@@ -51,9 +51,10 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
     const all = households(scans, schedule);
     return Object.fromEntries(promoters.map(p => {
       const hh = applyCap(all.filter(h => h.promoterId === p.id), p.monthly_cap);
-      return [p.id, { hh, summary: partnerSummary(hh, month) }];
+      const mine = payouts.filter(x => x.promoter_id === p.id);
+      return [p.id, { hh, summary: partnerSummary(hh, month), plan: payoutPlan(hh, mine, month) }];
     }));
-  }, [scans, schedule, promoters, month]);
+  }, [scans, schedule, promoters, month, payouts]);
   const months = useMemo(() => monthsWithActivity(households(scans, schedule), now), [scans, schedule, now]);
   const paidFor = (promoterId) => payouts.find(x => x.promoter_id === promoterId && x.period === monthStart(month));
   const monthOwed = promoters.reduce((t, p) => t + (byPartner[p.id]?.summary.month.owed || 0), 0);
@@ -128,7 +129,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
       {/* One card per partner */}
       {promoters.map(p => {
-        const { hh = [], summary: s } = byPartner[p.id] || {};
+        const { hh = [], summary: s, plan } = byPartner[p.id] || {};
         const paid = paidFor(p.id);
         const expanded = open === p.id;
         const monthRows = hh.filter(h => h.month === month);
@@ -155,10 +156,20 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
             <LinkRow label={p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={!p.agreement_signed_at} />
 
             <div className="mt-4 grid grid-cols-3 gap-3">
-              <Stat label={s.month.overCap ? `Households · ${s.month.overCap} over cap` : 'Households'} value={s.month.households} />
-              <Stat label="Owed" value={dollars(s.month.owed)} tone="var(--qs-warning)" />
-              <Stat label="Status" value={paid ? 'Paid' : s.month.owed > 0 ? 'Unpaid' : '—'} tone={paid ? 'var(--qs-success)' : undefined} />
+              <Stat label="Households" value={s.month.households} />
+              <Stat label="Owed" value={dollars(paid ? Number(paid.amount) : plan.amount)} tone="var(--qs-warning)" />
+              <Stat label="Status" value={paid ? 'Paid' : plan.underMinimum ? `Under ${dollars(MIN_PAYOUT)}` : plan.amount > 0 ? 'Unpaid' : '—'} tone={paid ? 'var(--qs-success)' : undefined} />
             </div>
+            {(s.month.pending > 0 || s.month.overCap > 0 || (!paid && plan.carried > 0) || (!paid && plan.underMinimum)) && (
+              <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+                {[
+                  s.month.pending > 0 && `${s.month.pending} waiting on a quote (pays in ${QUOTE_DAYS} days either way)`,
+                  s.month.overCap > 0 && `${s.month.overCap} over the monthly cap`,
+                  !paid && plan.carried > 0 && `includes ${dollars(plan.carried)} carried from ${plan.months.filter(m => m.month !== month).map(m => monthLabel(m.month).split(' ')[0]).join(', ')}`,
+                  !paid && plan.underMinimum && 'carries to next month',
+                ].filter(Boolean).join(' · ')}
+              </p>
+            )}
             <div className="mt-3 grid grid-cols-3 gap-3 pt-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
               <Stat label="All time" value={s.households} />
               <Stat label="Won" value={s.won ? `${s.won} · ${pct(s.closeRate)}` : '0'} />
@@ -172,13 +183,20 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </button>
               {canEdit && (
                 <span className="ml-auto flex flex-wrap gap-2">
-                  {s.month.owed > 0 && (
+                  {paid ? (
                     <button type="button" disabled={recordPayout.isPending}
-                      onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, period: monthStart(month), households: s.month.households, amount: s.month.owed, userId, remove: !!paid })}
-                      className={`rounded-lg px-3 py-1.5 text-sm font-semibold ${paid ? '' : 'bg-primary-600 text-white'}`} style={paid ? inputStyle : undefined}>
-                      {paid ? 'Mark unpaid' : `Mark ${dollars(s.month.owed)} paid`}
+                      onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, months: [{ period: monthStart(month) }], userId, remove: true })}
+                      className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}>Mark unpaid</button>
+                  ) : plan.amount > 0 && !plan.underMinimum ? (
+                    <button type="button" disabled={recordPayout.isPending}
+                      onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, userId,
+                        months: plan.months.map(m => ({ period: monthStart(m.month), households: m.households, amount: m.amount })) })}
+                      className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
+                      Mark {dollars(plan.amount)} paid{plan.carried ? ` (${plan.months.length} months)` : ''}
                     </button>
-                  )}
+                  ) : plan.underMinimum ? (
+                    <span className="self-center text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(MIN_PAYOUT)} · carries over</span>
+                  ) : null}
                   <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}
                     className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.w9_received_at ? 'Clear W-9' : 'W-9 received'}</button>
                   <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
@@ -355,8 +373,9 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
         ))}
       </dl>
       <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-        A household is one phone number, paid once, in the month its first page arrives. Pages that couldn&apos;t be read, repeats and
-        thrown-out scans don&apos;t count. Pay is on what they send, never on what they buy.
+        A household is one phone number, address or policy, paid once, in the month its first page arrives. It pays once you&apos;ve
+        quoted it, or after {QUOTE_DAYS} days if nobody got to it. Pages that couldn&apos;t be read, repeats, Allstate policies, pages
+        expired over 30 days and thrown-out scans don&apos;t count. Pay is on what they send, never on what they buy. Months under {dollars(MIN_PAYOUT)} carry over.
       </p>
       {draft && (
         <div className="mt-3 flex justify-end gap-2">
