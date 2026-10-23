@@ -47,14 +47,14 @@ const ABOUT = [
   { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
-  { key: 'court', title: 'My story · On the court', paragraphs: [
+  { key: 'court', title: 'My story, on the court', paragraphs: [
     'March 9, 2019. I was on a ladder with a pair of scissors, cutting down the net. Swarthmore had just reached its first NCAA Final Four.',
     'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
   ] },
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his family', caption: 'My family', position: '50% 35%' },
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
-  { key: 'today', title: 'My story · Today', paragraphs: [
+  { key: 'today', title: 'My story, today', paragraphs: [
     'Family comes first for me. So I treat your household the way I’d treat mine.',
     'Today I run Cam Wiley Insurance, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
@@ -846,8 +846,8 @@ function MeetCam() {
     key: a.key, label: a.title, untitled: true,
     content: (
       <div className="flex h-full min-h-[268px] flex-col text-left">
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">{a.title}</p>
-        <div className="mt-2 space-y-3 text-[15px] leading-relaxed text-slate-700">
+        {/* No visible header: the bold first line is the headline. The title names the slide for screen readers. */}
+        <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
           {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-slate-900' : ''}>{t}</p>)}
         </div>
       </div>
