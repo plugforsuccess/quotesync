@@ -706,7 +706,7 @@ function QuoteBox({ rc, onQuoted }) {
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (
-    <section className="flex-1 rounded-xl p-4" style={CARD_STYLE}>
+    <section className="grow rounded-xl p-4" style={CARD_STYLE}>
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
       <p className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>
         {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}

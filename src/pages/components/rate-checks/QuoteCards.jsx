@@ -52,7 +52,7 @@ export function LiveDelta({ current, price, className = '' }) {
 export function HouseholdCard({ rc, household, onSelect }) {
   const g = householdGoal(household);
   return (
-    <div className="rounded-xl p-4" style={CARD_STYLE}>
+    <div className="grow rounded-xl p-4" style={CARD_STYLE}>
       <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--qs-bright)' }}>
         Household <span className="font-medium" style={{ color: 'var(--qs-subtle)' }}>· {household.length} policies</span>
       </h3>
