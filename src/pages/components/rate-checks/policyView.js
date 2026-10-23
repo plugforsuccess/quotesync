@@ -413,6 +413,7 @@ const ENDORSEMENT_SHORT = [
   [/(original|full) (parts|equipment|oem)/i, 'OEM parts'],
   [/(sound|audio|custom) equip/i, 'Custom equipment'],
   [/pet injury/i, 'Pet injury'],
+  [/personal (effects|belongings|property) (coverage|in (the )?(auto|vehicle))|^personal effects/i, 'Personal effects'],
 ];
 /** "Rideshare driver coverage" → "Rideshare"; anything unrecognised keeps its printed name. */
 export function shortEndorsementName(name) {

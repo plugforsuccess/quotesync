@@ -206,5 +206,8 @@ test('endorsement tiles use the short name a producer says', async () => {
   assert.equal(shortEndorsementName('ACCIDENT FORGIVENESS'), 'Accident forgiveness');
   assert.equal(shortEndorsementName('Vanishing Deductible'), 'Disappearing deductible');
   assert.equal(shortEndorsementName('New Car Replacement Coverage'), 'New car replacement');
+  assert.equal(shortEndorsementName('Personal Effects Coverage'), 'Personal effects');
+  assert.equal(shortEndorsementName('Personal property in the vehicle'), 'Personal effects');
+  assert.equal(shortEndorsementName('Custom Equipment & Parts'), 'Custom equipment');
   assert.equal(shortEndorsementName('Towing and labor'), 'Towing and labor');
 });
