@@ -6,7 +6,6 @@
 // endorsements → discounts. A short summary closes the sheet.
 // All formatting lives in policyView.js.
 
-import { useState } from 'react';
 import { AlertTriangle, CircleHelp } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
@@ -15,7 +14,7 @@ import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
   driverRows, discountsOf, headsUp, vehicleTitle, vehicleShort, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
-  vehicleCoverageSetup, keyingSteps,
+  vehicleCoverageSetup,
 } from './policyView';
 
 const AUTO = ['auto', 'commercial_auto'];
@@ -99,87 +98,43 @@ function TileValue({ value, addOn, size = 'text-xl' }) {
   );
 }
 
-// One card per Allstate selection: Allstate changes a coverage on several vehicles at
-// once only when it's the same change for all of them, so this is the fewest
-// selections, biggest first, with the values to enter as tiles. Tick a card off when done.
-function KeyingSteps({ rc, steps, total }) {
-  const [done, setDone] = useState(() => new Set());
-  const toggle = (id) => setDone(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
-  const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(' + ');
+// One tile per coverage. A plain tile is the same on every vehicle; when vehicles
+// differ, the tile spans the row and names which vehicles have which value.
+function CoverageTile({ c, rc, wide }) {
+  const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(', ');
+  const rows = [...c.groups, ...(c.none.length ? [{ value: null, indexes: c.none }] : [])];
   return (
-    <ol className="space-y-3">
-      {steps.map((st, i) => {
-        const checked = done.has(st.id);
-        return (
-          <li key={st.id} className="rounded-lg p-2" style={{ border: '1px solid var(--qs-border)', opacity: checked ? 0.5 : 1 }}>
-            {total > 1 && (
-              <label className="mb-2 flex cursor-pointer items-start gap-2 px-1">
-                <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" checked={checked} onChange={() => toggle(st.id)}
-                  aria-label={`Step ${i + 1} done`} />
-                <span className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-bright)' }}>
-                  {i + 1}. Select {st.all ? `all ${st.indexes.length} vehicles` : names(st.indexes)}
-                </span>
-              </label>
-            )}
-            <div className="grid grid-cols-2 gap-2">
-              {st.changes.map((ch, j) => (
-                <div key={ch.key} className={`rounded-lg px-3 py-2 ${j === st.changes.length - 1 && st.changes.length % 2 === 1 ? 'col-span-2' : ''}`} style={TILE}>
-                  <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[ch.key] || ch.label}</p>
-                  <TileValue value={ch.value} addOn={ch.addOn} />
-                </div>
-              ))}
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
-}
-
-// "$50/day · $1,500 max" → "$50 / $1,500" so four columns fit the drawer.
-const gridValue = (v) => (v == null ? '—' : String(v).replace('/day · ', ' / ').replace(/ max$/, ''));
-const GRID_HEAD = { comp_deductible: 'Comp', coll_deductible: 'Coll', rental: 'Rental', roadside: 'Road' };
-
-// After keying: every vehicle's physical damage on one line, to check against Allstate.
-function CheckByVehicle({ setup }) {
-  const keys = Object.keys(GRID_HEAD).filter(k => setup.coverages.some(c => c.key === k));
-  return (
-    <details className="mt-3 text-sm">
-      <summary className="cursor-pointer font-medium" style={{ color: 'var(--qs-subtle)' }}>Check by vehicle</summary>
-      <table className="mt-2 w-full table-fixed text-xs">
-        <thead>
-          <tr style={{ color: 'var(--qs-subtle)' }}>
-            <th className="w-[34%] py-1 text-left font-semibold">Vehicle</th>
-            {keys.map(k => <th key={k} className="py-1 text-right font-semibold">{GRID_HEAD[k]}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {setup.vehicles.map(x => (
-            <tr key={x.index} style={{ borderTop: '1px solid var(--qs-border)' }}>
-              <td className="py-1.5 pr-1 font-medium" style={{ color: 'var(--qs-bright)' }}>{vehicleShort(x.v)}</td>
-              {keys.map(k => (
-                <td key={k} className="py-1.5 text-right tabular-nums"
-                  style={x.values[k] == null ? { color: 'var(--qs-muted)' } : (k === 'rental' || k === 'roadside' ? ADD_ON_STYLE : { color: 'var(--qs-bright)' })}>
-                  {gridValue(x.values[k])}
-                </td>
-              ))}
-            </tr>
+    <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
+      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
+      {c.same ? <TileValue value={c.groups[0].value} addOn={c.addOn} /> : (
+        <ul className="mt-1 space-y-1.5">
+          {rows.map(g => (
+            <li key={g.value ?? 'none'} className="flex items-baseline justify-between gap-3">
+              {g.value == null
+                ? <span className="text-lg font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
+                : <TileValue value={g.value} addOn={c.addOn} size="text-lg" />}
+              <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(g.indexes)}</span>
+            </li>
           ))}
-        </tbody>
-      </table>
-    </details>
+        </ul>
+      )}
+    </div>
   );
 }
 
 function VehicleCoverages({ rc, setup }) {
   const total = setup.vehicles.length;
-  const steps = keyingSteps(setup);
+  // Shared values pair up two per row; anything that differs gets the full width.
+  const same = setup.coverages.filter(c => c.same);
+  const split = setup.coverages.filter(c => !c.same);
   return (
     <Section title="Vehicle coverages" ruled aside={total > 1 && (
-      <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>{steps.length} {steps.length === 1 ? 'selection' : 'selections'} in Allstate</span>
+      <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Same on all {total} unless listed</span>
     )}>
-      <KeyingSteps key={rc.id} rc={rc} steps={steps} total={total} />
-      {total > 1 && <CheckByVehicle setup={setup} />}
+      <div className="grid grid-cols-2 gap-2">
+        {same.map((c, i) => <CoverageTile key={c.key} c={c} rc={rc} wide={i === same.length - 1 && same.length % 2 === 1} />)}
+        {split.map(c => <CoverageTile key={c.key} c={c} rc={rc} wide />)}
+      </div>
     </Section>
   );
 }

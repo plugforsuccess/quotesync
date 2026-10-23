@@ -294,28 +294,6 @@ export function vehicleCoverageSetup(rc) {
   return { vehicles, coverages };
 }
 
-const STEP_LABEL = { comp_deductible: 'Comp', coll_deductible: 'Collision', rental: 'Rental', roadside: 'Roadside' };
-
-/**
- * The fewest vehicle selections that key every coverage: changes that apply to the
- * same set of vehicles go in one step. Biggest selections first, so "all vehicles"
- * comes before the exceptions.
- */
-export function keyingSteps(setup) {
-  const order = setup.vehicles.map(x => x.index);
-  const steps = [];
-  for (const c of setup.coverages) {
-    for (const g of c.groups) {
-      const indexes = order.filter(i => g.indexes.includes(i));
-      const id = indexes.join(',');
-      let step = steps.find(st => st.id === id);
-      if (!step) steps.push(step = { id, indexes, all: indexes.length === order.length, changes: [] });
-      step.changes.push({ key: c.key, label: STEP_LABEL[c.key] || c.label, value: g.value, addOn: c.addOn });
-    }
-  }
-  return steps.sort((a, b) => b.indexes.length - a.indexes.length || order.indexOf(a.indexes[0]) - order.indexOf(b.indexes[0]));
-}
-
 /** Home / condo / renters coverages A–F then deductibles, with % deductibles spelled out. */
 export function homeCoverageRows(rc) {
   const cov = rc?.coverages && typeof rc.coverages === 'object' ? rc.coverages : {};

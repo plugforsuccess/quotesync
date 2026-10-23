@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   caps, insuredName, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup, keyingSteps,
+  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -164,10 +164,3 @@ test('vehicle coverages group vehicles that share a value', () => {
   assert.deepEqual([comp.same, comp.count, comp.scope, comp.none], [true, 2, 'full-coverage', []]);
 });
 
-test('keying steps: fewest selections, all vehicles first', () => {
-  const steps = keyingSteps(vehicleCoverageSetup(auto));
-  assert.deepEqual(steps.map(s => [s.indexes, s.all, s.changes.map(c => c.label)]), [
-    [[1, 2, 0], true, ['Comp', 'Collision', 'Roadside']],
-    [[1, 2], false, ['Rental']],
-  ]);
-});
