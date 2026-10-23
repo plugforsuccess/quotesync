@@ -61,9 +61,10 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
     ['Bodily injury', '$250k / $500k'],
     ['Property damage', '$100,000'],
     ['Medical payments', 'None listed'],
-    ['Uninsured motorist BI', '$250k / $500k'],
-    ['Uninsured motorist PD', '$100k'],
+    ['Uninsured motorist', '$250k / $500k / $100k'],
   ]);
+  const withDed = autoCoverageGroups({ ...auto, coverages: { ...auto.coverages, um_uim: '250000/500000/100000 (PD Deductible $250)' } })[0];
+  assert.deepEqual([withDed.rows[3].value, withDed.rows[3].note], ['$250k / $500k / $100k', 'Deductible $250']);
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
   assert.deepEqual(vehicleCoverages(auto, 0), []);

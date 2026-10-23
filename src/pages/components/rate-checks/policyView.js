@@ -149,7 +149,7 @@ export function formatCoverage(raw, key, vehicles) {
 
 const NAMES = {
   bi: 'Bodily injury', bi_per_person: 'Bodily injury (per person)', bi_per_accident: 'Bodily injury (per accident)',
-  pd: 'Property damage', um_uim: 'Uninsured motorist BI', umpd: 'Uninsured motorist PD', med_pay: 'Medical payments',
+  pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist PD', med_pay: 'Medical payments',
   pip: 'Personal injury protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
   rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
   custom_equipment: 'Custom equipment', sound_equipment: 'Sound equipment', glass: 'Glass',
@@ -201,14 +201,8 @@ export function autoCoverageGroups(rc) {
     used.add(k);
     if (!(k in cov)) continue;
     const r = row(k, cov[k], vehicles);
-    // Georgia UM prints as "250/500/100": BI per person / per accident, then UM property
-    // damage — Allstate asks for them as two lines.
-    const parts = r?.value.split(' / ');
-    if (k === 'um_uim' && cov.umpd == null && parts?.length === 3) {
-      liability.push({ ...r, value: parts.slice(0, 2).join(' / '), note: null });
-      liability.push({ key: 'umpd', label: coverageName('umpd'), value: parts[2], note: r.note, addOn: false });
-      continue;
-    }
+    // "(PD Deductible $250)" on the UM line → "Deductible $250".
+    if (k === 'um_uim' && r?.note) r.note = r.note.replace(/^PD\s+deductible/i, 'Deductible');
     liability.push(r || { key: k, label: coverageName(k), value: 'None listed', muted: true });
   }
 
