@@ -32,7 +32,7 @@ function getCorsHeaders(req: Request): Record<string, string> {
 const json = (body: unknown, status: number, cors: Record<string, string>) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
-export const AGREEMENT_VERSION = 'partner-v1'
+export const AGREEMENT_VERSION = 'partner-v2'
 
 // Same tiers and defaults as src/pages/components/rate-checks/partnerPay.js.
 const TIERS: [string, string, number][] = [
@@ -44,6 +44,10 @@ const TIERS: [string, string, number][] = [
 ]
 const EXTRA_LINE_FEE = 5
 const EXTRA_LINE_CAP = 2
+const QUOTE_DAYS = 7      // a household pays once quoted, or after this long if nobody got to it
+const EXPIRED_DAYS = 30   // a page expired longer ago is an old page from a drawer
+const MIN_PAYOUT = 50     // months under this carry over
+const DAY = 86400000
 const LABEL: Record<string, string> = Object.fromEntries(TIERS.map(([k, l]) => [k, l]))
 const money = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`
 
@@ -59,8 +63,8 @@ function agreementText(agencyName: string, partnerName: string, schedule: Record
     lines,
     `   - Each extra line (umbrella, a second auto policy): +${money(schedule.extra_line)}, up to ${EXTRA_LINE_CAP}`,
     '   You are paid the same whether or not anyone buys anything. Fees are never a share of commission or premium.',
-    `4. What qualifies. A household is one phone number, paid once, in the month its first page arrives. Pages that can't be read, repeats, test or fake uploads, and anyone who was already the Agency's customer don't count. The Agency decides what qualifies.${cap ? ` At most ${cap} households are paid per month.` : ''}`,
-    '5. Payment. Paid monthly for the previous month. The Agency needs your completed IRS Form W-9 before the first payment and may issue you a Form 1099.',
+    `4. What qualifies. A household is one phone number, address or policy, paid once, in the month its first page arrives. A household pays once the Agency has quoted it, or ${QUOTE_DAYS} days after its first page if the Agency hasn't got to it. Pages that can't be read, repeats, pages expired more than ${EXPIRED_DAYS} days, current Allstate policies, test or fake uploads, and anyone who was already the Agency's customer don't count. The Agency decides what qualifies.${cap ? ` At most ${cap} households are paid per month.` : ''}`,
+    `5. Payment. Paid monthly for the previous month; a month under ${money(MIN_PAYOUT)} is carried into the next payment. The Agency needs your completed IRS Form W-9 before the first payment and may issue you a Form 1099. Fees for self-referrals, fake or copied uploads, or anything that breaks this agreement are not owed and may be taken back.`,
     '6. Honest promotion. When you post or message about your link, you say clearly that you are paid for referrals (for example, "I get a referral fee"). You only share with people you know or with your own followers: no buying lists, no mass or automated texts, calls or emails.',
     '7. No sharing your fee. You don\'t give any part of your fee, or anything else of value, to the people you refer.',
     '8. Independent. You are an independent contractor, not an employee or agent of the Agency or of Allstate. You can\'t make promises on their behalf.',
@@ -76,7 +80,27 @@ async function rateLimited(supabase: any, key: string, limit: number) {
 }
 
 // ── Earnings (same rules as partnerPay.js) ───────────────────────────────────
-const QUALIFIES = (rc: any) => !!rc.policy_type && rc.duplicate_of == null && !['pending', 'extract_failed', 'declined'].includes(rc.status)
+const QUALIFIES = (rc: any, now: number) => {
+  if (!rc.policy_type || rc.duplicate_of != null || ['pending', 'extract_failed', 'declined'].includes(rc.status)) return false
+  if (String(rc.carrier || '').toLowerCase() === 'allstate') return false
+  if (rc.expiration_date) { const exp = new Date(rc.expiration_date).getTime(); if (Number.isFinite(exp) && exp < now - EXPIRED_DAYS * DAY) return false }
+  return true
+}
+const QUOTED = (rc: any) => rc.allstate_premium != null || !!rc.quoted_at || ['quoted', 'won', 'lost', 'bound'].includes(rc.status)
+// One household = one phone number, address or policy number.
+const norm = (s: unknown) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+function groupHouseholds(scans: any[]): any[][] {
+  const parent = scans.map((_, i) => i)
+  const find = (i: number): number => (parent[i] === i ? i : (parent[i] = find(parent[i])))
+  const seen = new Map<string, number>()
+  scans.forEach((rc, i) => {
+    const keys = [rc.phone && `p:${rc.phone}`, norm(rc.insured_address).length > 8 && `a:${norm(rc.insured_address)}`, norm(rc.policy_number).length > 5 && `n:${norm(rc.policy_number)}`].filter(Boolean) as string[]
+    for (const k of keys) { if (seen.has(k)) parent[find(i)] = find(seen.get(k)!); else seen.set(k, i) }
+  })
+  const groups = new Map<number, any[]>()
+  scans.forEach((rc, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r)!.push(rc) })
+  return [...groups.values()]
+}
 // Months in the agency's time zone (Georgia), like the staff Partners tab.
 const monthKey = (iso: string) => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).slice(0, 7)
 
@@ -90,11 +114,11 @@ function tierOf(pages: any[]) {
   return { tier: null, base: 0 }
 }
 
+// Households that pay (quoted, or QUOTE_DAYS old); pending ones aren't listed yet.
 function earnings(scans: any[], schedule: Record<string, number>, cap: number | null) {
-  const byPhone = new Map<string, any[]>()
-  for (const rc of scans) { const k = rc.phone || rc.id; if (!byPhone.has(k)) byPhone.set(k, []); byPhone.get(k)!.push(rc) }
-  const hh = [...byPhone.values()].map(list => {
-    const pages = list.filter(QUALIFIES).sort((a, b) => a.created_at.localeCompare(b.created_at))
+  const now = Date.now()
+  const hh = groupHouseholds(scans).map(list => {
+    const pages = list.filter(rc => QUALIFIES(rc, now)).sort((a, b) => a.created_at.localeCompare(b.created_at))
     const { tier, base } = tierOf(pages)
     if (!tier) return null
     const extras = Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base))
@@ -103,14 +127,18 @@ function earnings(scans: any[], schedule: Record<string, number>, cap: number | 
       tier, label: LABEL[tier] + (extras ? ` + ${extras} extra` : ''),
       fee: schedule[tier] + extras * schedule.extra_line,
       firstAt: pages[0].created_at, month: monthKey(pages[0].created_at),
+      pending: !list.some(QUOTED) && now - new Date(pages[0].created_at).getTime() < QUOTE_DAYS * DAY,
     }
   }).filter(Boolean) as any[]
   const months: Record<string, any[]> = {}
   for (const h of hh.sort((a, b) => a.firstAt.localeCompare(b.firstAt))) (months[h.month] ||= []).push(h)
   return Object.entries(months).map(([month, list]) => {
-    const rows = list.map((h, i) => ({ first_name: h.first_name, label: h.label, fee: cap && i >= cap ? 0 : h.fee, over_cap: !!(cap && i >= cap), at: h.firstAt }))
+    // The cap counts every qualifying household in arrival order (pending ones hold their place), like the staff tab.
+    const rows = list.map((h, i) => ({ ...h, fee: cap && i >= cap ? 0 : h.fee, over_cap: !!(cap && i >= cap) }))
+      .filter(h => !h.pending)
+      .map(h => ({ first_name: h.first_name, label: h.label, fee: h.fee, over_cap: h.over_cap, at: h.firstAt }))
     return { month, households: rows.length, earned: rows.reduce((t, r) => t + r.fee, 0), rows: rows.reverse() }
-  }).sort((a, b) => b.month.localeCompare(a.month))
+  }).filter(m => m.households > 0).sort((a, b) => b.month.localeCompare(a.month))
 }
 
 Deno.serve(async (req) => {
@@ -191,7 +219,7 @@ Deno.serve(async (req) => {
     }
     if (!signed) return json(base, 200, cors)
     const [{ data: scans }, { data: payouts }] = await Promise.all([
-      supabase.from('rate_checks').select('id, phone, first_name, policy_type, status, duplicate_of, created_at')
+      supabase.from('rate_checks').select('id, phone, first_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at')
         .eq('promoter_id', p.id).order('created_at', { ascending: true }).limit(5000),
       supabase.from('rate_check_promoter_payouts').select('period, amount, paid_at').eq('promoter_id', p.id),
     ])

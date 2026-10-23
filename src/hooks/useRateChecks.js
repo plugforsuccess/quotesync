@@ -514,7 +514,7 @@ export const usePromoterScans = (agencyId) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rate_checks')
-        .select('id, promoter_id, phone, first_name, policy_type, carrier, status, duplicate_of, created_at, annual_premium, allstate_premium, bound_premium')
+        .select('id, promoter_id, phone, first_name, policy_type, carrier, status, duplicate_of, created_at, annual_premium, allstate_premium, bound_premium, quoted_at, expiration_date, insured_address, policy_number')
         .eq('agency_id', agencyId)
         .eq('is_test', false)
         .not('promoter_id', 'is', null)
@@ -613,18 +613,20 @@ export const useSavePromoterRates = () => {
   });
 };
 
-// One row per partner per month; recording it again for the same month replaces it.
+// One row per partner per month; a payout can cover several months at once (small
+// months carry over, see partnerPay.payoutPlan). Recording a month again replaces it.
 export const useRecordPromoterPayout = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ agencyId, promoterId, period, households, amount, userId, remove = false }) => {
+    mutationFn: async ({ agencyId, promoterId, months, userId, remove = false }) => {
       if (remove) {
-        const { error } = await supabase.from('rate_check_promoter_payouts').delete().eq('promoter_id', promoterId).eq('period', period);
+        const { error } = await supabase.from('rate_check_promoter_payouts').delete().eq('promoter_id', promoterId).in('period', months.map(m => m.period));
         if (error) throw error;
         return;
       }
+      const paid_at = new Date().toISOString();
       const { error } = await supabase.from('rate_check_promoter_payouts').upsert(
-        { agency_id: agencyId, promoter_id: promoterId, period, households, amount, paid_by: userId, paid_at: new Date().toISOString() },
+        months.map(m => ({ agency_id: agencyId, promoter_id: promoterId, period: m.period, households: m.households, amount: m.amount, paid_by: userId, paid_at })),
         { onConflict: 'promoter_id,period' },
       );
       if (error) throw error;

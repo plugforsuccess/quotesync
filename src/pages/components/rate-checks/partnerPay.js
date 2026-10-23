@@ -2,6 +2,7 @@
 // Partner pay: a flat fee per qualified household, by which dec pages it sends —
 // never by what it buys. Pure functions (no React, no Supabase) so the payout
 // math can be tested and matches what the partner tab shows and exports.
+// The rate-check-partner edge function carries the same rules for the portal.
 
 // The agency's schedule overrides these (rate_check_promoter_rates).
 export const TIERS = [
@@ -15,6 +16,16 @@ export const EXTRA_LINE = { key: 'extra_line', label: 'Each extra line (umbrella
 export const EXTRA_LINE_CAP = 2;
 export const TIER_LABEL = Object.fromEntries([...TIERS, EXTRA_LINE].map(t => [t.key, t.label]));
 
+// A household pays once the agency has quoted it, or after this long if the
+// agency never got to it — a slow week at the desk shouldn't cost the partner.
+export const QUOTE_DAYS = 7;
+// A dec page this long past its expiration date is an old page from a drawer.
+export const EXPIRED_DAYS = 30;
+// Months under this carry over to the next payout.
+export const MIN_PAYOUT = 50;
+
+const DAY = 86400000;
+
 /** { auto_home: 45, …, extra_line: 5 } from the saved rows, falling back to the defaults. */
 export function scheduleFrom(rows) {
   const out = Object.fromEntries([...TIERS, EXTRA_LINE].map(t => [t.key, t.fee]));
@@ -26,14 +37,26 @@ const AUTO = new Set(['auto']);
 const HOME = new Set(['home', 'condo']);
 const RENTERS = new Set(['renters']);
 
-/** A scan counts toward pay: read, not a repeat, not thrown out. */
-export function qualifies(rc) {
-  return !!rc?.policy_type && rc.duplicate_of == null && !['pending', 'extract_failed', 'declined'].includes(rc.status);
+/**
+ * A scan counts toward pay: read, not a repeat, not thrown out, not already an
+ * Allstate policy, and current (expired no more than EXPIRED_DAYS ago).
+ */
+export function qualifies(rc, now = Date.now()) {
+  if (!rc?.policy_type || rc.duplicate_of != null || ['pending', 'extract_failed', 'declined'].includes(rc.status)) return false;
+  if (String(rc.carrier || '').toLowerCase() === 'allstate') return false;
+  if (rc.expiration_date) {
+    const exp = new Date(rc.expiration_date).getTime();
+    if (Number.isFinite(exp) && exp < now - EXPIRED_DAYS * DAY) return false;
+  }
+  return true;
 }
 
+/** Quoted by the agency: an Allstate price was entered (won or lost both count). */
+export const quoted = (rc) => rc.allstate_premium != null || !!rc.quoted_at || ['quoted', 'won', 'lost', 'bound'].includes(rc.status);
+
 /** Which tier a household's qualifying pages earn, and how many extra lines on top. */
-export function householdTier(scans) {
-  const pages = (scans || []).filter(qualifies);
+export function householdTier(scans, now = Date.now()) {
+  const pages = (scans || []).filter(s => qualifies(s, now));
   const has = (set) => pages.some(p => set.has(p.policy_type));
   let tier = null, base = 0;
   if (has(AUTO) && has(HOME)) { tier = 'auto_home'; base = 2; }
@@ -56,38 +79,55 @@ export const monthLabel = (key) => {
 };
 /** "2026-10" → "2026-10-01" (rate_check_promoter_payouts.period) */
 export const monthStart = (key) => `${key}-01`;
-export const currentMonth = (now = new Date()) => monthKey(now.toISOString());
+export const currentMonth = (now = new Date()) => monthKey(new Date(now).toISOString());
 
 const WON = new Set(['won', 'bound']);
 const QUOTED = new Set(['quoted', 'won', 'lost', 'bound']);
 
+// One household = one phone number, address or policy number; the same house
+// sent under three phones is still one household.
+const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+export function groupHouseholds(scans) {
+  const list = scans || [];
+  const parent = list.map((_, i) => i);
+  const find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const union = (a, b) => { parent[find(a)] = find(b); };
+  const seen = new Map();
+  list.forEach((rc, i) => {
+    for (const key of [rc.phone && `p:${rc.phone}`, norm(rc.insured_address).length > 8 && `a:${norm(rc.insured_address)}`, norm(rc.policy_number).length > 5 && `n:${norm(rc.policy_number)}`].filter(Boolean)) {
+      if (seen.has(key)) union(i, seen.get(key)); else seen.set(key, i);
+    }
+  });
+  const groups = new Map();
+  list.forEach((rc, i) => { const r = find(i); if (!groups.has(r)) groups.set(r, []); groups.get(r).push(rc); });
+  return [...groups.values()];
+}
+
 /**
- * Every household a partner sent, one per phone number. A household is paid
- * once, in the month its first qualifying page arrived, at the tier all its
- * pages earn. Households with nothing that qualifies are listed with no fee.
+ * Every household a partner sent. A household is paid once, in the month its
+ * first qualifying page arrived, at the tier all its pages earn — and only once
+ * the agency has quoted it or QUOTE_DAYS have passed (`pays`; until then `pending`).
+ * Households with nothing that qualifies are listed with no fee.
  */
-export function households(scans, schedule) {
-  const byPhone = new Map();
-  for (const rc of scans || []) {
-    const key = rc.phone || rc.id;
-    if (!byPhone.has(key)) byPhone.set(key, []);
-    byPhone.get(key).push(rc);
-  }
-  return [...byPhone.values()].map(list => {
+export function households(scans, schedule, now = Date.now()) {
+  return groupHouseholds(scans).map(list => {
     const sorted = [...list].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const firstQualifying = sorted.find(qualifies);
-    const { tier, extras, pages } = householdTier(sorted);
+    const firstQualifying = sorted.find(s => qualifies(s, now));
+    const { tier, extras, pages } = householdTier(sorted, now);
     const fee = tier ? (schedule[tier] ?? 0) + extras * (schedule.extra_line ?? 0) : 0;
+    const firstAt = firstQualifying ? firstQualifying.created_at : null;
+    const pays = !!tier && (sorted.some(quoted) || now - new Date(firstAt).getTime() >= QUOTE_DAYS * DAY);
     return {
       key: sorted[0].phone || sorted[0].id,
-      firstAt: firstQualifying ? firstQualifying.created_at : null,
+      firstAt,
       promoterId: sorted[0].promoter_id,
       firstName: sorted.find(s => s.first_name)?.first_name || null,
       phone: sorted[0].phone || null,
       scans: sorted,
       pages,
-      types: [...new Set(sorted.filter(qualifies).map(s => s.policy_type))],
+      types: [...new Set(sorted.filter(s => qualifies(s, now)).map(s => s.policy_type))],
       tier, extras, fee,
+      pays, pending: !!tier && !pays,
       month: firstQualifying ? monthKey(firstQualifying.created_at) : null,
       quoted: sorted.some(s => QUOTED.has(s.status)),
       won: sorted.some(s => WON.has(s.status)),
@@ -120,9 +160,14 @@ export function partnerSummary(hh, month) {
   const paid = hh.filter(h => h.tier);
   const inMonth = paid.filter(h => h.month === month);
   const won = paid.filter(h => h.won).length;
-  const fees = paid.reduce((t, h) => t + h.fee, 0);
+  const fees = paid.filter(h => h.pays).reduce((t, h) => t + h.fee, 0);
   return {
-    month: { households: inMonth.length, owed: inMonth.reduce((t, h) => t + h.fee, 0), overCap: inMonth.filter(h => h.overCap).length },
+    month: {
+      households: inMonth.length,
+      owed: inMonth.filter(h => h.pays).reduce((t, h) => t + h.fee, 0),
+      pending: inMonth.filter(h => h.pending).length,
+      overCap: inMonth.filter(h => h.overCap).length,
+    },
     households: paid.length,
     quoted: paid.filter(h => h.quoted).length,
     won,
@@ -131,6 +176,24 @@ export function partnerSummary(hh, month) {
     costPerWin: won ? fees / won : null,
     boundPremium: paid.reduce((t, h) => t + h.boundPremium, 0),
   };
+}
+
+/**
+ * What to pay a partner for `month`: that month plus any earlier unpaid months
+ * (small months carry over). `payouts` are the recorded payouts (period = YYYY-MM-01).
+ * Returns { months: [{ month, households, amount }], amount, carried, underMinimum }.
+ */
+export function payoutPlan(hh, payouts, month) {
+  const paidMonths = new Set((payouts || []).map(p => String(p.period).slice(0, 7)));
+  const owedBy = {};
+  for (const h of hh) if (h.tier && h.pays && h.month && h.month <= month && !paidMonths.has(h.month)) {
+    (owedBy[h.month] ||= { month: h.month, households: 0, amount: 0 });
+    owedBy[h.month].households += 1;
+    owedBy[h.month].amount += h.fee;
+  }
+  const months = Object.values(owedBy).filter(m => m.amount > 0).sort((a, b) => a.month.localeCompare(b.month));
+  const amount = months.reduce((t, m) => t + m.amount, 0);
+  return { months, amount, carried: months.filter(m => m.month !== month).reduce((t, m) => t + m.amount, 0), underMinimum: amount > 0 && amount < MIN_PAYOUT };
 }
 
 /** Months that have at least one paid household, newest first (always includes `current`). */
