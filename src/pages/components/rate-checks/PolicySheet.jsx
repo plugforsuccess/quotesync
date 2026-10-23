@@ -86,12 +86,11 @@ const LEVEL_TONE = {
   liability: { color: 'var(--qs-danger)', background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)' },
 };
 
-// "$50/day · $1,500 max" → "$50/day" large with "$1,500 max" under it, so long
-// values still fit a half-width tile.
+// "A · B" values → "A" large with "B" under it, so long values still fit a half-width tile.
 function TileValue({ value, addOn, inline = false, size = 'text-xl' }) {
   const [main, ...rest] = String(value).split(' · ');
   const tone = addOn ? ADD_ON_STYLE : { color: 'var(--qs-bright)' };
-  // Full-width tiles have room for "$50/day · $1,500 max" on one line.
+  // Full-width tiles have room for "A · B" on one line.
   if (inline) {
     return (
       <p className="text-xl font-bold tabular-nums" style={tone}>
@@ -141,7 +140,7 @@ function CoverageTile({ c, setup, total, wide }) {
         <ul className="mt-1 space-y-1.5">
           {rows.map(x => (
             <li key={x.index} className="flex min-h-[28px] items-center justify-between gap-3">
-              {/* The car never wraps; a long value breaks at its "·" instead ("$50/day" over "$1,500 max"). */}
+              {/* The car never wraps; a long value breaks at its "·" instead. */}
               <span className="shrink-0"><VehicleChip x={x} /></span>
               {x.values[c.key] == null
                 ? <span className="text-base font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>

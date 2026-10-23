@@ -148,7 +148,8 @@ export function formatCoverage(raw, key, vehicles) {
 
   if (key === 'rental') {
     const parts = value.split('/').map(parseAmount);
-    if (parts.length === 2 && parts.every(n => n != null)) return { value: `${full(parts[0])}/day · ${full(parts[1])} max`, note: prettyNote };
+    // Rental as producers say it: per day / per claim max, "$50/$1500".
+    if (parts.length === 2 && parts.every(n => n != null)) return { value: `$${Math.round(parts[0])}/$${Math.round(parts[1])}`, note: prettyNote };
   }
   if (key === 'roadside' && /^[A-Z]{1,2}$/.test(value)) return { value: `Included (${value})`, note: prettyNote };
   // "$0 deductible" / "0 ded" → "$0" (the tile is labelled Glass deductible); "Full glass" stays words.

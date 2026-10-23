@@ -53,7 +53,7 @@ test('limits read like money', () => {
   assert.equal(formatCoverage('250000/500000/100000', 'um_uim').value, '$250k / $500k / $100k');
   assert.equal(formatCoverage('100/300', 'um_uim').value, '$100k / $300k');
   assert.equal(formatCoverage('100000', 'pd').value, '$100,000');
-  assert.equal(formatCoverage('50/1500', 'rental').value, '$50/day · $1,500 max');
+  assert.equal(formatCoverage('50/1500', 'rental').value, '$50/$1500');
   assert.equal(formatCoverage('H (all vehicles)', 'roadside').value, 'Included (H)');
   assert.equal(formatCoverage(null, 'med_pay'), null);
 });
@@ -71,7 +71,7 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
   assert.deepEqual(vehicleCoverages(auto, 0), []);
-  assert.deepEqual(vehicleCoverages(auto, 1).map(r => [r.label, r.value, r.addOn]), [['Rental', '$50/day · $1,500 max', true]]);
+  assert.deepEqual(vehicleCoverages(auto, 1).map(r => [r.label, r.value, r.addOn]), [['Rental', '$50/$1500', true]]);
   assert.deepEqual(every.rows.map(r => r.addOn), [false, false, true]); // roadside is an add-on
   assert.equal(vehicleCoverages(auto, 2).length, 1);
 });
@@ -158,7 +158,7 @@ test('vehicle coverages group vehicles that share a value', () => {
   assert.equal(by.coll_deductible.same, true);
   assert.equal(by.roadside.same, true);
   assert.equal(by.rental.same, false);
-  assert.deepEqual(by.rental.groups, [{ value: '$50/day · $1,500 max', indexes: [1, 2] }]);
+  assert.deepEqual(by.rental.groups, [{ value: '$50/$1500', indexes: [1, 2] }]);
   assert.deepEqual(by.rental.none, [0]);
 
   const liabilityCar = { ...auto, coverages: { ...auto.coverages, comp_deductible: '200 (vehicles 002, 003)', coll_deductible: '1000 (vehicles 002, 003)' } };
