@@ -22,7 +22,7 @@ import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone, CARD_STYLE } from './components/rate-checks/ui';
 import {
   STATUS, CONFIDENCE_WARNING, TERM_HINT,
-  quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
+  isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
 } from './components/rate-checks/format';
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
@@ -553,7 +553,7 @@ function Notice({ tone, children }) {
   return <div className="rounded-lg px-3 py-2 text-sm" style={{ ...styles[tone], color: 'var(--qs-bright)' }}>{children}</div>;
 }
 
-// Step 1: copy into Allstate. Step 2: enter Allstate's price → won/lost.
+// Enter Allstate's price → won/lost, then mark it bound.
 function QuoteBox({ rc, onQuoted }) {
   const enterQuote = useEnterRateCheckQuote();
   const [premium, setPremium] = useState(rc.allstate_premium != null ? String(rc.allstate_premium) : '');
@@ -568,7 +568,6 @@ function QuoteBox({ rc, onQuoted }) {
   const [localBound, setLocalBound] = useState(null);
   const bound = rc.status === 'bound' || !!localBound;
   const boundInfo = localBound || rc;
-  const sheet = quoteSheet(rc);
   // An expanded-market risk is quoted with that carrier; the price box compares the same way.
   const market = rc.decision === 'expanded_market' && rc.decision_carrier ? rc.decision_carrier : 'Allstate';
 
@@ -600,11 +599,6 @@ function QuoteBox({ rc, onQuoted }) {
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
       )}
 
-      {!outcome && !bound && (
-        <CopyTextButton text={sheet} className="mt-3 rounded-lg px-3 py-2 text-sm font-medium" style={inputStyle}>
-          Copy details for {market} quote
-        </CopyTextButton>
-      )}
 
       {bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>

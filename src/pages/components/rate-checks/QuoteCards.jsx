@@ -1,6 +1,6 @@
 // src/pages/components/rate-checks/QuoteCards.jsx
 // The payoff on the drawer's quote cards: the goal header (the number to beat,
-// how many policies are quoted, saved so far), the Household card, and the live
+// how many policies are quoted, what the quotes save so far), the Household card, and the live
 // savings line under a price as it's typed. Math lives in quoteMath.js.
 //
 // Card colours: every quote card has the same neutral border. Colour only carries
@@ -14,7 +14,7 @@ import { householdGoal, savings } from './quoteMath';
 const tone = (delta) => (delta > 0 ? 'var(--qs-success)' : 'var(--qs-warning)');
 const policyName = (p) => [carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Not read yet';
 
-/** "Beat $9,916/yr · 1 of 2 quoted · Saved $5,660 so far" */
+/** "Beat $9,916/yr · 1 of 2 quoted · Saves $5,660 so far" — a quote saves; nothing is saved until it binds. */
 export function GoalHeader({ household }) {
   const g = householdGoal(household);
   if (g.target == null) return null;
@@ -27,7 +27,7 @@ export function GoalHeader({ household }) {
         <>
           <span aria-hidden="true">·</span>
           <span style={{ color: tone(g.saved) }} className="font-semibold">
-            {g.saved > 0 ? `Saved ${money(g.saved)} so far` : g.saved < 0 ? `${money(-g.saved)} more so far` : 'Even so far'}
+            {g.saved > 0 ? `Saves ${money(g.saved)}/yr so far` : g.saved < 0 ? `${money(-g.saved)} more so far` : 'Even so far'}
           </span>
         </>
       )}
