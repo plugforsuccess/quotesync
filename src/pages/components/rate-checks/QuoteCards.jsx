@@ -52,17 +52,18 @@ export function LiveDelta({ current, price, className = '' }) {
 export function HouseholdCard({ rc, household, onSelect }) {
   const g = householdGoal(household);
   return (
-    <div className="grow rounded-xl p-4" style={CARD_STYLE}>
+    <div className="flex grow flex-col rounded-xl p-4" style={CARD_STYLE}>
       <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--qs-bright)' }}>
         Household <span className="font-medium" style={{ color: 'var(--qs-subtle)' }}>· {household.length} policies</span>
       </h3>
-      <div className="mt-3 space-y-1.5" role="tablist" aria-label="Policies in this household">
+      {/* The rows share whatever height the card has, so it never ends in a blank strip. */}
+      <div className="mt-3 flex flex-1 flex-col gap-1.5" role="tablist" aria-label="Policies in this household">
         {household.map(p => {
           const active = p.id === rc.id;
           const quoted = p.allstate_premium != null && Number(p.allstate_premium) > 0;
           return (
             <button key={p.id} type="button" role="tab" aria-selected={active} onClick={() => onSelect?.(p)}
-              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${active ? 'bg-primary-600 text-white' : ''}`}
+              className={`flex min-h-[44px] w-full flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${active ? 'bg-primary-600 text-white' : ''}`}
               style={active ? undefined : { background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
               <span className="min-w-0 flex-1">
                 {active && <span className="block text-[10px] font-bold uppercase tracking-[0.12em] opacity-80">Working on</span>}
