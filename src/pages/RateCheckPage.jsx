@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, MessageCircle, Plus, RotateCcw, UserCheck, Upload, X,
+  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -691,12 +691,16 @@ export default function RateCheckPage() {
             <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> Take photos instead</span>
             <span className="mt-0.5 text-xs text-slate-500">Photograph every page of the declarations</span>
           </button>
-          <p className="mt-3 text-center text-sm text-slate-600">Have more than one policy? Add them all in one upload.</p>
+          <p className="mt-4 flex justify-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF2FF] px-3.5 py-1.5 text-sm font-semibold text-blue-700">
+              <Paperclip className="h-4 w-4" aria-hidden="true" /> Multiple policies? Upload them together.
+            </span>
+          </p>
 
           <ul className="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
-            <Trust icon={UserCheck} label="Reviewed by a licensed agent" />
-            <Trust icon={MessageCircle} label="One text, no calls" />
-            <Trust icon={Lock} label="Never sold or shared" />
+            <Trust icon={Sparkles} label="Read in seconds" />
+            <Trust icon={ShieldCheck} label="No spam calls" />
+            <Trust icon={Lock} label="Private & secure" />
           </ul>
 
           <details open className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
