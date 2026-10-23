@@ -177,38 +177,43 @@ function VehicleCard({ rc, v, index, level, n }) {
   const lien = lienholderFor(rc, index);
   return (
     <li className="py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="font-semibold" style={{ color: 'var(--qs-cyan)' }}>
-          <span className="mr-1.5 tabular-nums" style={{ color: 'var(--qs-subtle)' }}>{n}.</span>{vehicleTitle(v)}
+      {/* Number badge + year/make/model on one line; VIN and the coverage level on the next. */}
+      <div className="flex items-center gap-2.5">
+        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums"
+          style={{ color: 'var(--qs-cyan)', background: 'rgba(6, 182, 212, 0.14)', border: '1px solid rgba(6, 182, 212, 0.45)' }} aria-hidden="true">{n}</span>
+        <p className="min-w-0 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
+          <span className="sr-only">Vehicle {n}: </span>{vehicleTitle(v)}
         </p>
-        {vin && (
+      </div>
+      <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 pl-[34px]">
+        {vin ? (
           <span className="inline-flex items-center gap-1">
             <span className="select-text font-mono text-sm" style={{ color: 'var(--qs-bright)' }}>{vin}</span>
             {v.vin && v.vin_complete !== false && <CopyButton text={v.vin} label={`Copy VIN for ${vehicleTitle(v)}`} />}
           </span>
+        ) : <span />}
+        {level && (
+          <span className="inline-block rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
+            style={LEVEL_TONE[level.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
+            {level.levelLabel}
+          </span>
         )}
       </div>
-      {level && (
-        <span className="mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
-          style={LEVEL_TONE[level.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
-          {level.levelLabel}
-        </span>
-      )}
-      {vinWarn && <p className="text-xs text-yellow-600">{vinWarn}</p>}
+      {vinWarn && <p className="pl-[34px] text-xs text-yellow-600">{vinWarn}</p>}
       {lien && (
         <>
-          <p className="mt-3 flex items-center gap-1 text-sm" style={{ color: 'var(--qs-text)' }}>
+          <p className="mt-3 flex items-center gap-1 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
             <span style={{ color: 'var(--qs-subtle)' }}>Lienholder</span> {lien}
             <CopyButton text={lien} label={`Copy lienholder for ${vehicleTitle(v)}`} />
           </p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-text)' }}>
+          <p className="mt-0.5 flex items-center gap-1.5 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
             <span style={{ color: 'var(--qs-subtle)' }}>Loan payoff year</span>
             <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
         </>
       )}
       {extras.map((r, i) => (
-        <p key={r.key} className={`${i === 0 && !lien ? 'mt-3' : 'mt-1.5'} text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
+        <p key={r.key} className={`${i === 0 && !lien ? 'mt-3' : 'mt-1.5'} pl-[34px] text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
           {r.label} {r.value}
         </p>
       ))}
