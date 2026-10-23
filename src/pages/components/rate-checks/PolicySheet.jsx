@@ -127,11 +127,11 @@ function CoverageTile({ c, setup, wide }) {
       {c.same ? <TileValue value={c.groups[0].value} addOn /> : (
         <ul className="mt-1 space-y-1.5">
           {rows.map(x => (
-            <li key={x.index} className="flex items-center justify-between gap-3">
+            <li key={x.index} className="flex min-h-[28px] items-center justify-between gap-3">
               <span className="min-w-0"><VehicleChip x={x} /></span>
               {x.values[c.key] == null
-                ? <span className="text-sm font-semibold" style={{ color: 'var(--qs-muted)' }}>None</span>
-                : <span className="shrink-0 text-right"><TileValue value={x.values[c.key]} addOn size="text-lg" /></span>}
+                ? <span className="text-base font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
+                : <span className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums" style={ADD_ON_STYLE}>{x.values[c.key]}</span>}
             </li>
           ))}
         </ul>
