@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, MessageSquare, Plus, RotateCcw, ShieldCheck, Sparkles, Trophy, Upload, X,
+  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
 } from 'lucide-react';
 import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -42,23 +42,17 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
 const AGENCY = { name: 'Wiley-Wilson Agency', license: '209488' };
 // "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
-// Photo: { photo, alt, caption, position }. Bio: { icon, title, lines }.
+// Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
   { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cameron cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
   // Facts from Swarthmore Athletics (2019 NABC All-America release) and the Swarthmore
-  // Phoenix season recap. TODO(Cam): the last line is placeholder wording.
-  { key: 'me', icon: Trophy, title: 'A little about me', lines: [
-    'NABC First Team All-American at Swarthmore in 2019, the first in program history.',
-    'Centennial Conference Player of the Year. We made the NCAA Division III title game.',
-    'Now I run my own Allstate agency here in Georgia.',
-    'Family comes first. I treat your household the way I’d treat mine.',
+  // Phoenix season recap. TODO(Cam): the last paragraph is placeholder wording.
+  { key: 'story', title: 'My story', paragraphs: [
+    'March 9, 2019. I was on a ladder with a pair of scissors, cutting down the net. Swarthmore had just reached its first NCAA Final Four.',
+    'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history. We played for the Division III national title.',
+    'Today I run my own Allstate agency here in Georgia. Family comes first for me, so I treat your household the way I’d treat mine.',
   ] },
-  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cameron with his family', caption: 'My family', position: '50% 30%' },
-  { key: 'how', icon: MessageSquare, title: 'How I work', lines: [
-    'I read every dec page myself. No call center, no bots.',
-    'If I can beat your price, I text you. If I can’t, I tell you.',
-    'Either way, no spam calls. Ever.',
-  ] },
+  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cameron with his family', caption: 'My family', position: '50% 35%' },
 ];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -846,11 +840,10 @@ function MeetCam() {
     key: a.key, label: a.title, untitled: true,
     content: (
       <div className="flex h-full min-h-[268px] flex-col text-left">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><a.icon className="h-5 w-5" aria-hidden="true" /></span>
-        <p className="mt-3 text-lg font-extrabold text-slate-900">{a.title}</p>
-        <ul className="mt-2 space-y-2.5 text-[15px] leading-snug text-slate-700">
-          {a.lines.map(l => <li key={l} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" />{l}</li>)}
-        </ul>
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">{a.title}</p>
+        <div className="mt-2 space-y-3 text-[15px] leading-relaxed text-slate-700">
+          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-slate-900' : ''}>{t}</p>)}
+        </div>
       </div>
     ),
   })];
