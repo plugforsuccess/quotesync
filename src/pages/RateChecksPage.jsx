@@ -796,7 +796,7 @@ function PriceDrop({ current, price, market }) {
       <div className="mt-1.5 flex items-end justify-between gap-2">
         <p className="text-xl font-bold leading-none line-through decoration-2" style={{ color: 'var(--qs-subtle)' }}>{money(current)}</p>
         <ArrowRight className="mb-0.5 h-5 w-5 shrink-0" style={{ color: tone }} aria-hidden="true" />
-        <p className="whitespace-nowrap text-[32px] font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-base font-semibold">/yr</span></p>
+        <p className="whitespace-nowrap text-2xl font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-sm font-semibold">/yr</span></p>
       </div>
       <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }} role="img"
         aria-label={s ? (up ? `${market} is ${money(-s.delta)} a year more` : `${market} is ${s.pct}% less`) : undefined}>
@@ -805,7 +805,7 @@ function PriceDrop({ current, price, market }) {
       {s && (
         <p className="mt-2 text-lg font-extrabold" style={{ color: tone }}>
           {s.delta > 0 ? `Saves ${money(s.delta)}/yr.` : s.delta < 0 ? `Costs ${money(-s.delta)}/yr more.` : 'Same as they pay.'}
-          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> {Math.abs(s.pct)}% {s.delta > 0 ? 'less!' : 'more.'}</span>}
+          {s.pct != null && s.delta !== 0 && <span className="font-semibold"> That&apos;s {Math.abs(s.pct)}% {s.delta > 0 ? 'less!' : 'more.'}</span>}
         </p>
       )}
     </div>
