@@ -2,7 +2,8 @@
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon, Bell } from 'lucide-react';
+import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon, Bell, LogOut } from 'lucide-react';
+import { signOutAndExit } from '../lib/signOut';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
 import HamburgerMenu from './HamburgerMenu';
@@ -33,7 +34,7 @@ function Layout({ forcePlane = null }) {
   const {
     user, profile, isPlatformUser, platformRole,
     activePlane: authPlane, currentAgencyRole, currentAgencyId,
-    agencyMemberships
+    agencyMemberships, signOut,
   } = useAuth();
 
   // Upload/cadence checklist — principals only. useUploadChecklist already
@@ -567,6 +568,15 @@ function Layout({ forcePlane = null }) {
                   <span>Admin Tools</span>
                 </NavLink>
               )}
+
+              <button
+                type="button"
+                onClick={() => signOutAndExit(signOut)}
+                className="flex w-full items-center gap-2 mt-2 px-2 py-2.5 text-sm font-medium text-red-300 hover:text-red-200 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Sign out</span>
+              </button>
             </div>
           </div>
         </div>
