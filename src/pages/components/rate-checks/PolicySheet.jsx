@@ -120,10 +120,16 @@ function CoverageTile({ c, rc, wide }) {
           {c.groups.map(g => (
             <div key={g.value}>
               <TileValue value={g.value} addOn={c.addOn} inline />
-              <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>{only ? 'Only on' : 'On'} {names(g.indexes)}</p>
+              <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-text)' }}>
+                {only ? 'Only on ' : 'On '}<span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{names(g.indexes)}</span>
+              </p>
             </div>
           ))}
-          {!only && c.none.length > 0 && <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>None on {names(c.none)}</p>}
+          {!only && c.none.length > 0 && (
+            <p className="text-sm" style={{ color: 'var(--qs-text)' }}>
+              None on <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{names(c.none)}</span>
+            </p>
+          )}
         </div>
       )}
     </div>

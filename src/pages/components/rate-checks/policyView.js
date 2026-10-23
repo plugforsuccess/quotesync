@@ -2,7 +2,7 @@
 // Turns what the scan stored into what a producer reads and keys into Allstate:
 // money that reads like money ("$250k / $500k"), data in capitals, coverages
 // in the order they're quoted, per-vehicle coverages and lienholders on the
-// vehicle they belong to ("’22 JAGUAR XF", not "vehicle 002"), home facts and
+// vehicle they belong to ("2022 JAGUAR XF", not "vehicle 002"), home facts and
 // endorsements as their own lists, and short discount tags.
 //
 // Newer scans return these as structured fields. For older scans the same facts
@@ -40,10 +40,9 @@ export function vehicleTitle(v) {
   return caps([v?.year, v?.make, v?.model].filter(Boolean).join(' ')) || 'VEHICLE';
 }
 
-/** "’15 MERCEDES S550" — for referring to a vehicle inside other text. */
+/** "2015 MERCEDES S550" — for referring to a vehicle inside other text. Full year: a "’15" is easy to miss. */
 export function vehicleShort(v) {
-  const yr = v?.year ? `’${String(v.year).slice(-2)}` : null;
-  return caps([yr, v?.make, v?.model].filter(Boolean).join(' ')) || 'VEHICLE';
+  return vehicleTitle(v);
 }
 
 // ── Vehicles referenced by number ("002") ─────────────────────────────────────
@@ -74,7 +73,7 @@ export function vehicleIndexesIn(text, vehicles) {
   return [...out];
 }
 
-/** "vehicles 002, 003" → "’22 Jaguar XF, ’21 Land Rover Velar". */
+/** "vehicles 002, 003" → "2022 JAGUAR XF, 2021 LAND ROVER VELAR". */
 export function replaceVehicleRefs(text, vehicles) {
   if (!text) return text;
   return String(text).replace(VEHICLE_REF, (whole, refs) => {
@@ -358,7 +357,7 @@ export function vehiclesNewestFirst(rc) {
 
 /**
  * What the dec page can't tell us but the quote needs: the loan payoff year for
- * every financed vehicle (newest first), e.g. "Loan payoff year for the ’21 LAND ROVER VELAR".
+ * every financed vehicle (newest first), e.g. "Loan payoff year for the 2021 LAND ROVER VELAR".
  */
 export function vehicleQuestions(rc) {
   return vehiclesNewestFirst(rc)

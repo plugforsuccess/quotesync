@@ -43,7 +43,7 @@ test('data reads in capitals; name on policy is first name then last name', () =
   assert.equal(caps('255 Waltham Way,  Fayetteville Ga 30214'), '255 WALTHAM WAY, FAYETTEVILLE GA 30214');
   assert.equal(vehicleTitle(auto.vehicles[0]), '2015 MERCEDES S550');
   assert.equal(vehicleTitle({ year: 2021, make: 'Land Rover', model: 'Velar' }), '2021 LAND ROVER VELAR');
-  assert.equal(vehicleShort(auto.vehicles[1]), '’22 JAGUAR XF');
+  assert.equal(vehicleShort(auto.vehicles[1]), '2022 JAGUAR XF');
 });
 
 test('limits read like money', () => {
@@ -88,7 +88,7 @@ test('drivers: named insured, spouse, then the rest oldest to youngest', () => {
 test('lienholder lands on the right vehicle, and its payoff year is flagged to ask', () => {
   assert.equal(lienholderFor(auto, 0), null);
   assert.equal(lienholderFor(auto, 2), 'TD AUTO FINANCE');
-  assert.deepEqual(vehicleQuestions(auto), ['Loan payoff year for the ’21 LAND ROVER VELAR']);
+  assert.deepEqual(vehicleQuestions(auto), ['Loan payoff year for the 2021 LAND ROVER VELAR']);
 });
 
 test('vehicles newest to oldest, keeping their original index', () => {
@@ -137,11 +137,11 @@ test('what is left of the notes is only what no field shows', () => {
 test('summary names vehicles instead of page numbers', () => {
   assert.deepEqual(
     headsUp({ ...auto, summary: 'Mid-term change adding a car (Vehicle 003); short term.' }),
-    ['Mid-term change adding a car (’21 LAND ROVER VELAR); short term.'],
+    ['Mid-term change adding a car (2021 LAND ROVER VELAR); short term.'],
   );
   assert.deepEqual(
     headsUp({ ...auto, summary: 'Adds Vehicle 003 (2021 Land Rover Velar) mid-term.' }),
-    ['Adds ’21 LAND ROVER VELAR mid-term.'],
+    ['Adds 2021 LAND ROVER VELAR mid-term.'],
   );
 });
 
