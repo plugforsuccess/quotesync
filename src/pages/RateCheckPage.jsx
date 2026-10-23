@@ -504,7 +504,7 @@ export default function RateCheckPage() {
           <p className="mx-auto mt-2 max-w-xs text-slate-600">
             {reading
               ? 'Each one takes about 10–20 seconds. Keep this screen open.'
-              : 'If we can beat what you pay, Cam texts you within the hour.'}
+              : 'Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.'}
           </p>
         </div>
 

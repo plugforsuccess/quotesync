@@ -1130,7 +1130,7 @@ Deno.serve(async (req) => {
       await emailProducer(supabase, invite.created_by,
         `${firstName || 'Your invite'} uploaded their policy${invite.event_name ? ` (${invite.event_name})` : ''}`,
         `${firstName || 'Someone'} just uploaded a ${carrier || 'policy'}${policyType ? ` ${policyType}` : ''} policy${annualPremium != null ? ` paying $${Math.round(annualPremium).toLocaleString('en-US')}/yr` : ''}.\n\n` +
-        `Open it: ${appUrl}/agency/leads/rate-checks\n\nThe page promised them a text within the hour.`)
+        `Open it: ${appUrl}/agency/leads/rate-checks\n\nThe page told them we typically text within 30 minutes during business hours.`)
     }
 
     // ── 5. Notify agency staff (in-app) ──
