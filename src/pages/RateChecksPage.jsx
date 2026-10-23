@@ -404,7 +404,7 @@ export default function RateChecksPage() {
         <TabBar tab={tab} setTab={setTab} />
 
         {tab === 'map' ? <WinMap agencyId={agencyId} />
-          : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} />
+          : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} scans={allRows} />
           : tab === 'promoters' ? <PartnersTab agencyId={agencyId} userId={user?.id} canEdit={canEditRules}
               onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); }} />
           : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />

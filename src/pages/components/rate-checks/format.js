@@ -24,7 +24,7 @@ export const STATUS = {
 export const DECISION = {
   quote_allstate:          { label: 'Quote Allstate P&C',        tone: 'success', cls: 'bg-green-100 text-green-700' },
   quote_allstate_umbrella: { label: 'Quote Allstate Auto + HO + PUP', tone: 'success', cls: 'bg-green-100 text-green-700' },
-  expanded_market:         { label: 'Expanded market',           tone: 'info',    cls: 'bg-primary-100 text-primary-700' },
+  expanded_market:         { label: 'Ivantage',                  tone: 'info',    cls: 'bg-primary-100 text-primary-700' },
   double_check:            { label: 'Double check',              tone: 'warning', cls: 'bg-yellow-100 text-yellow-700' },
   manual_review:           { label: 'Manual Review',             tone: 'warning', cls: 'bg-orange-100 text-orange-700' },
   refer:                   { label: 'Refer',                     tone: 'neutral', cls: 'bg-gray-200 text-gray-700' },
@@ -61,7 +61,7 @@ export const RULE_OPS = {
 };
 export const RULE_DECISIONS = [
   ['umbrella', 'Counts toward a PUP (needs auto + home)'],
-  ['expanded_market', 'Expanded market'],
+  ['expanded_market', 'Ivantage'],
   ['double_check', 'Double check'],
   ['manual_review', 'Manual Review'],
   ['refer', 'Refer'],

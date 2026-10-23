@@ -11,13 +11,14 @@ import { thCls, thStyle, inputStyle, money, formatPhone, formatDate, BOOK_OWNERS
 import { isSelectingText } from './format';
 import { Field } from './Copyable';
 import { caps } from './policyView';
+import AgentsMap from './AgentsMap';
 
 export function OwnershipChip({ value }) {
   const o = BOOK_OWNERSHIP[value] || BOOK_OWNERSHIP.check;
   return <span title={o.hint} className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${o.cls}`}>{o.label}</span>;
 }
 
-export default function CompetitorAgents({ agencyId }) {
+export default function CompetitorAgents({ agencyId, scans = [] }) {
   const { data = [], isLoading, error } = useCompetitorAgents(agencyId);
   const update = useUpdateCompetitorAgent();
   const [carrier, setCarrier] = useState('');
@@ -29,14 +30,17 @@ export default function CompetitorAgents({ agencyId }) {
   const [openId, setOpenId] = useState(null);
 
   const carriers = useMemo(() => [...new Set(data.map(r => r.carrier))].sort(), [data]);
-  const rows = useMemo(() => data
+  // Every filter but ZIP feeds the map; the map's ZIP then narrows the list.
+  const unzipped = useMemo(() => data
     .filter(r => !carrier || r.carrier === carrier)
-    .filter(r => !zip || (r.zips || []).some(z => z.startsWith(zip)))
     .filter(r => Number(r.rate_checks) >= minSeen)
     .filter(r => !acquirableOnly || ['acquirable', 'allstate'].includes(r.book_ownership))
-    .filter(r => !starredOnly || r.starred)
+    .filter(r => !starredOnly || r.starred),
+  [data, carrier, minSeen, acquirableOnly, starredOnly]);
+  const rows = useMemo(() => unzipped
+    .filter(r => !zip || (r.zips || []).some(z => z.startsWith(zip)))
     .sort((a, b) => (Number(b[sort]) || 0) - (Number(a[sort]) || 0)),
-  [data, carrier, zip, minSeen, acquirableOnly, starredOnly, sort]);
+  [unzipped, zip, sort]);
 
   const SortTh = ({ k, children }) => (
     <th className={thCls} style={thStyle}>
@@ -84,6 +88,8 @@ export default function CompetitorAgents({ agencyId }) {
           </div>
         )}
       </div>
+
+      {!isLoading && !error && data.length > 0 && <AgentsMap agents={unzipped} scans={scans} zip={zip} onPickZip={setZip} />}
 
       {isLoading ? (
         <div className="p-8 text-center text-sm" style={{ color: 'var(--qs-subtle)' }}>Loading…</div>

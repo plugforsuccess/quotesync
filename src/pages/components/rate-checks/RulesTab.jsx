@@ -26,7 +26,7 @@ const outcome = (r) => (r.decision === 'umbrella'
 // Strongest result wins, left to right.
 const LADDER = [
   ['Refer', DECISION.refer.cls], ['Manual review', DECISION.manual_review.cls], ['Double check', DECISION.double_check.cls],
-  ['Expanded market', DECISION.expanded_market.cls], ['+ Umbrella', DECISION.quote_allstate_umbrella.cls], ['Quote Allstate P&C', DECISION.quote_allstate.cls],
+  ['Ivantage', DECISION.expanded_market.cls], ['+ Umbrella', DECISION.quote_allstate_umbrella.cls], ['Quote Allstate P&C', DECISION.quote_allstate.cls],
 ];
 
 function Switch({ on, onChange, label, disabled }) {
