@@ -5,14 +5,14 @@
 // what they're owed this month, their close rate and cost per win, the pay
 // schedule, and a monthly payout export for 1099s. Math lives in partnerPay.js.
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
-  useSavePromoter, useSavePromoterRates, useRecordPromoterPayout,
+  useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto,
 } from '../../../hooks/useRateChecks';
 import { downloadCSV } from '../../../lib/csvExport';
-import { formatPhoneInput, isEmail } from '../../../lib/rateCheckApi';
+import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
 import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
@@ -120,7 +120,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         return (
           <section key={p.id} className="dark-card" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
+              <PartnerPhoto promoter={p} canEdit={canEdit} />
+              <div className="min-w-0 flex-1">
                 <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>{p.name}{!p.active && <span className="ml-2 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>Paused</span>}</h3>
                 <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || 'No contact on file'}</p>
               </div>
@@ -202,6 +203,46 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 }
 
 const portalUrl = (token) => `${window.location.origin}/partner/${token}`;
+
+// The photo on their share link's landing page. Partners can add their own in the
+// portal; staff add one here only with the partner's OK.
+function PartnerPhoto({ promoter: p, canEdit }) {
+  const setPhoto = useSetPromoterPhoto();
+  const input = useRef(null);
+  const [error, setError] = useState('');
+  const first = String(p.name).trim().split(/\s+/)[0];
+  const initials = String(p.name).trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  const photo = p.photo_consent_at ? p.photo_url : null;
+
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (!window.confirm(`Only add a photo ${first} gave you and agreed to show on their share link. Add it?`)) return;
+    setError('');
+    try { setPhoto.mutate({ promoter: p, dataUrl: await squarePhoto(file) }, { onError: (err) => setError(err.message) }); }
+    catch (err) { setError(err.message); }
+  };
+
+  return (
+    <div className="flex shrink-0 flex-col items-center gap-1">
+      <button type="button" disabled={!canEdit || setPhoto.isPending} onClick={() => input.current?.click()}
+        className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full text-base font-bold disabled:cursor-default"
+        style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-subtle)' }}
+        aria-label={photo ? `Change ${first}'s photo` : `Add ${first}'s photo`}>
+        {photo ? <img src={photo} alt="" className="h-full w-full object-cover" /> : initials}
+      </button>
+      {canEdit && (
+        <button type="button" onClick={() => (photo ? setPhoto.mutate({ promoter: p, dataUrl: null }) : input.current?.click())}
+          disabled={setPhoto.isPending} className="text-[11px] font-semibold text-primary-600">
+          {setPhoto.isPending ? 'Saving…' : photo ? 'Remove photo' : 'Add photo'}
+        </button>
+      )}
+      {error && <p className="max-w-[7rem] text-center text-[11px] text-red-500">{error}</p>}
+      <input ref={input} type="file" accept="image/*" className="hidden" onChange={pick} />
+    </div>
+  );
+}
 
 function Pill({ ok, children }) {
   return (

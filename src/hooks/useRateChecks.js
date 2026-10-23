@@ -546,6 +546,31 @@ export const useSavePromoter = () => {
   });
 };
 
+// Staff add a partner's photo (with the partner's OK) or take it off their link.
+export const useSetPromoterPhoto = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ promoter, dataUrl }) => {
+      const path = `${promoter.agency_id}/${promoter.id}.jpg`;
+      const bucket = supabase.storage.from('partner-photos');
+      if (!dataUrl) {
+        await bucket.remove([path]);
+        const { error } = await supabase.from('rate_check_promoters').update({ photo_url: null, photo_consent_at: null }).eq('id', promoter.id);
+        if (error) throw error;
+        return;
+      }
+      const blob = await (await fetch(dataUrl)).blob();
+      const { error: upErr } = await bucket.upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
+      if (upErr) throw upErr;
+      const { data: { publicUrl } } = bucket.getPublicUrl(path);
+      const { error } = await supabase.from('rate_check_promoters')
+        .update({ photo_url: `${publicUrl}?v=${Date.now()}`, photo_consent_at: new Date().toISOString() }).eq('id', promoter.id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.promoters(v.promoter.agency_id) }),
+  });
+};
+
 export const useSavePromoterRates = () => {
   const queryClient = useQueryClient();
   return useMutation({

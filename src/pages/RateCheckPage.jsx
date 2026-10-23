@@ -36,6 +36,9 @@ const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: '
 // Texted-code verification of the mobile number: off while the agency tests; set
 // VITE_RATE_CHECK_OTP=true (and RATE_CHECK_OTP_REQUIRED on the function) to turn it on.
 const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
+// The licensed agent shown on the page (same headshot as the homepage).
+// TODO(compliance): fill in the GA license number; the card and footer use it.
+const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '' };
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const fileKey = (f) => `${f.name}|${f.size}|${f.lastModified}`;
@@ -292,12 +295,21 @@ export default function RateCheckPage() {
 
   const banner = (
     <>
-      {invite && (
+      {invite?.promoter_name && (
+        <div className="mb-5 flex items-center gap-3 rounded-2xl bg-blue-50 px-3 py-2.5">
+          {invite.promoter_photo_url && (
+            <img src={invite.promoter_photo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white" />
+          )}
+          <span className="min-w-0">
+            <span className="block font-bold text-slate-900">{invite.promoter_name} shared this with you</span>
+            <span className="block text-xs text-slate-600">{invite.promoter_name} gets a referral fee for sharing.</span>
+          </span>
+        </div>
+      )}
+      {invite && !invite.promoter_name && (
         <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
-          {invite.promoter_name
-            ? `${invite.promoter_name} shared this with you.`
-            : <>{invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
-              {invite.event_name ? ` after ${invite.event_name}` : ''}.</>}
+          {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+          {invite.event_name ? ` after ${invite.event_name}` : ''}.
         </p>
       )}
       {inviteExpired && (
@@ -556,6 +568,8 @@ export default function RateCheckPage() {
             <Upload className="h-5 w-5" aria-hidden="true" /> Upload photos or PDFs
           </button>
 
+          <AgentCard />
+
           <ul className="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
             <Trust icon={Sparkles} label="Read in seconds" />
             <Trust icon={ShieldCheck} label="No spam calls" />
@@ -778,6 +792,19 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
+function AgentCard() {
+  return (
+    <div className="mt-6 rounded-3xl bg-white px-4 pb-5 pt-5 text-center ring-1 ring-slate-200">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Your licensed agent</p>
+      <p className="mt-0.5 text-xl font-extrabold text-slate-900">{AGENT.name}</p>
+      <img src={AGENT.photo} alt={AGENT.name} width="88" height="88" loading="lazy"
+        className="mx-auto mt-3.5 h-[88px] w-[88px] rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
+        style={{ objectPosition: '50% 30%' }} />
+      {AGENT.license && <p className="mt-3 text-xs text-slate-400">GA license #{AGENT.license}</p>}
+    </div>
+  );
+}
+
 function Trust({ icon: Icon, label }) {
   return (
     <li className="flex flex-col items-center gap-1.5 rounded-xl bg-white px-2 py-3 ring-1 ring-slate-200">
@@ -854,7 +881,7 @@ export function RateCheckFooter({ padForBar = false }) {
         Wiley-Wilson Agency is an Allstate agency. Quotes and savings vary and are subject to underwriting and
         eligibility; not all applicants qualify.
       </p>
-      <p className="mt-1">GA License #: [LICENSE NUMBER]</p>
+      <p className="mt-1">GA License #: {AGENT.license || '[LICENSE NUMBER]'}</p>
     </footer>
   );
 }

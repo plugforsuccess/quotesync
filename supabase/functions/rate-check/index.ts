@@ -726,7 +726,7 @@ async function resolvePromoter(supabase: any, code: unknown) {
   if (c.length !== 8) return null
   const { data } = await supabase
     .from('rate_check_promoters')
-    .select('id, agency_id, name')
+    .select('id, agency_id, name, photo_url, photo_consent_at')
     .eq('code', c)
     .eq('active', true)
     .eq('agreement_version', PARTNER_AGREEMENT_VERSION)
@@ -774,7 +774,13 @@ Deno.serve(async (req) => {
     if (!invite) {
       // A partner's link: say who shared it, pre-fill nothing.
       const promoter = await resolvePromoter(supabase, body.code)
-      if (promoter) return jsonResponse({ promoter_name: String(promoter.name).trim().split(/\s+/)[0] }, 200, corsHeaders)
+      if (promoter) {
+        return jsonResponse({
+          promoter_name: String(promoter.name).trim().split(/\s+/)[0],
+          // Only once the partner agreed to show it.
+          promoter_photo_url: promoter.photo_consent_at ? promoter.photo_url : null,
+        }, 200, corsHeaders)
+      }
       return jsonResponse({ error: 'This link has expired' }, 404, corsHeaders)
     }
     await supabase.from('rate_check_invites')
