@@ -15,7 +15,7 @@ export const EXTRA_LINE = { key: 'extra_line', label: 'Each extra line (umbrella
 export const EXTRA_LINE_CAP = 2;
 export const TIER_LABEL = Object.fromEntries([...TIERS, EXTRA_LINE].map(t => [t.key, t.label]));
 
-/** { auto_home: 35, …, extra_line: 5 } from the saved rows, falling back to the defaults. */
+/** { auto_home: 45, …, extra_line: 5 } from the saved rows, falling back to the defaults. */
 export function scheduleFrom(rows) {
   const out = Object.fromEntries([...TIERS, EXTRA_LINE].map(t => [t.key, t.fee]));
   for (const r of rows || []) if (r?.tier in out && Number.isFinite(Number(r.amount))) out[r.tier] = Number(r.amount);
