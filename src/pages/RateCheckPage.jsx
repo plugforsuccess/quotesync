@@ -115,7 +115,7 @@ export default function RateCheckPage() {
   const saveDraftPages = (policy) => policy.pages.forEach((pg, order) => saveDraftPhoto({ id: pg.id, file: pg.file, policyId: policy.id, order }));
 
   useEffect(() => {
-    document.title = 'Rate Check — Are you overpaying for insurance? | insuredbycam';
+    document.title = 'Get a second opinion on your insurance | insuredbycam';
     window.scrollTo(0, 0);
   }, []);
 

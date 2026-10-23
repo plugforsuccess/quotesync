@@ -301,7 +301,7 @@ function Earnings({ token, data, greet, onChange }) {
   const copy = async () => {
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
   };
-  const share = () => navigator.share?.({ title: 'Rate Check', text: 'See if you’re overpaying for insurance (I get a referral fee):', url }).catch(() => {});
+  const share = () => navigator.share?.({ title: 'Rate Check', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).catch(() => {});
   const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
   const months = data.months?.length ? data.months : [{ month: thisMonth, households: 0, earned: 0, rows: [], paid: null }];
   const current = months.find(m => m.month === thisMonth) || { month: thisMonth, households: 0, earned: 0, rows: [], paid: null };
