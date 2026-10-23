@@ -104,14 +104,14 @@ test('drivers with the same name are told apart; discounts are short tags', () =
   assert.deepEqual(driverRows(auto).map(d => d.name), ['STEPHEN PEARSON (60)', 'JOCELYN PEARSON', 'STEPHEN PEARSON (22)']);
   assert.deepEqual(driverRows(auto).map(d => d.role), ['insured', 'spouse', null]);
   assert.equal(driverRows(auto)[2].young, true);
-  assert.deepEqual(discountsOf(auto), ['Multi Car', 'Multi Policy', 'Vehicle Safety', 'Loyalty 2 yrs', 'Accident Free 2 yrs', 'Good Student']);
+  assert.deepEqual(discountsOf(auto), ['Multi Car', 'Multi Policy', 'Vehicle Safety', 'Loyalty (2 yrs)', 'Accident Free (2 yrs)', 'Good Student']);
   assert.deepEqual(discountsOf(home), ['Utility Rating Credit', 'Protective Devices', 'Multi Policy', 'Claim Free', 'Loyalty']);
   assert.deepEqual(discountsOf({ extracted: { discounts: ['Drive Safe &amp; Save'] } }), ['Telematics']);
   // Two carrier names for the same discount become one pill.
   assert.deepEqual(discountsOf({ extracted: { discounts: ['Multiple Lines', 'Home/Auto Discount', 'ANTI-THEFT DEVICE'] } }), ['Multi Policy', 'Anti Theft']);
   // Unknown ones: title case, no hyphens, acronyms and "yrs" kept.
   assert.deepEqual(discountsOf({ extracted: { discounts: ['UTILITY RATING CREDIT', 'good-payer credit', 'EFT payment', 'Low mileage (for 3 years)'] } }),
-    ['Utility Rating Credit', 'Good Payer Credit', 'Autopay', 'Low Mileage 3 yrs']);
+    ['Utility Rating Credit', 'Good Payer Credit', 'Autopay', 'Low Mileage (3 yrs)']);
 });
 
 test('home: coverages A–F, % deductible, property facts and endorsements', () => {

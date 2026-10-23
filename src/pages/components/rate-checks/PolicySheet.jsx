@@ -34,10 +34,10 @@ export function Section({ title, aside, ruled = false, children }) {
   );
 }
 
-function Chip({ children, tone }) {
+function Chip({ children, tone, className = '' }) {
   const warn = tone === 'warn';
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${warn ? 'text-yellow-700' : ''}`}
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${warn ? 'text-yellow-700' : ''} ${className}`}
       style={warn
         ? { background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }
         : { background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
@@ -328,7 +328,14 @@ export default function PolicySheet({ rc, warning }) {
 
       {discounts.length > 0 && (
         <Section title="Discounts they have now" ruled>
-          <div className="flex flex-wrap gap-1.5">{discounts.map(d => <Chip key={d}>{d}</Chip>)}</div>
+          {/* Two equal columns like the tiles, so the pills fill the width; an odd last one spans the row. */}
+          <ul className="grid grid-cols-2 gap-1.5">
+            {discounts.map((d, i) => (
+              <li key={d} className={`flex ${i === discounts.length - 1 && discounts.length % 2 ? 'col-span-2' : ''}`}>
+                <Chip className="w-full justify-center text-center">{d}</Chip>
+              </li>
+            ))}
+          </ul>
         </Section>
       )}
 

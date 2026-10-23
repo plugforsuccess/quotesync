@@ -506,7 +506,7 @@ export function cleanDiscount(s) {
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
 }
 // Every carrier names discounts its own way; pills use one standard name each, in
-// title case without hyphens ("Multi Car", "Good Student"). Years carry over ("Loyalty 2 yrs").
+// title case without hyphens ("Multi Car", "Good Student"). Years carry over ("Loyalty (2 yrs)").
 const DISCOUNT_NAMES = [
   [/multi.?(car|vehicle|auto)|multiple (auto|cars?|vehicles?)/i, 'Multi Car'],
   [/multi.?(line|policy|product)|multiple (lines|policies)|home\s*[/&+]\s*auto|auto\s*[/&+]\s*home|bundl/i, 'Multi Policy'],
@@ -534,14 +534,14 @@ const KEEP_CAPS = /^(?:ABS|EFT|ACH|GPS|OEM|USAA|AARP)$/;
 const titleCaseDiscount = (t) => t.replace(/-/g, ' ').replace(/\s+/g, ' ').trim().split(' ')
   .map(w => (/^\d/.test(w) || /^yrs?$/i.test(w) ? w.toLowerCase() : KEEP_CAPS.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
   .join(' ');
-/** "Multiple Lines" → "Multi Policy", "Tenure 2 yrs" → "Loyalty 2 yrs"; unknown ones keep their name, title-cased. */
+/** "Multiple Lines" → "Multi Policy", "Tenure 2 yrs" → "Loyalty (2 yrs)"; unknown ones keep their name, title-cased. */
 export function normalizeDiscount(name) {
   const t = cleanDiscount(name);
   if (!t) return null;
   const years = t.match(/(\d+)\s*yrs?\b/i)?.[1];
   const hit = DISCOUNT_NAMES.find(([re]) => re.test(t));
-  if (!hit) return titleCaseDiscount(t);
-  return years ? `${hit[1]} ${years} yrs` : hit[1];
+  const label = hit ? hit[1] : titleCaseDiscount(t.replace(/\s*\d+\s*yrs?\b/i, ''));
+  return years ? `${label} (${years} yrs)` : label;
 }
 export function discountsOf(rc) {
   const list = Array.isArray(rc?.extracted?.discounts) ? rc.extracted.discounts : [];
