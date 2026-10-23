@@ -107,7 +107,7 @@ function MatchBand({ same, total }) {
     : { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', borderTop: '1px solid var(--qs-warning-border)' };
   return (
     <p className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold" style={tone}>
-      {same ? <><Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Same on all {total} vehicles</> : 'Differs — set each group separately'}
+      {same ? <><Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Same on all {total} vehicles</> : 'Differs by vehicle'}
     </p>
   );
 }
