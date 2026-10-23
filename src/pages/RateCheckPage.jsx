@@ -294,8 +294,10 @@ export default function RateCheckPage() {
     <>
       {invite && (
         <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
-          {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
-          {invite.event_name ? ` after ${invite.event_name}` : ''}.
+          {invite.promoter_name
+            ? `${invite.promoter_name} shared this with you.`
+            : <>{invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+              {invite.event_name ? ` after ${invite.event_name}` : ''}.</>}
         </p>
       )}
       {inviteExpired && (

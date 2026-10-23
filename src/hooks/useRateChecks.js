@@ -20,7 +20,7 @@ export const RATE_CHECK_LIST_COLUMNS = `
   decision, decision_carrier, decision_reasons, decision_questions, decided_at,
   invite_id, producer_id, producer_name, event_name, carrier_raw,
   bound_carrier, bound_premium, bound_at, housing_situation, drivers, surcharges, claims, property, endorsements, summary,
-  duplicate_of, resubmitted_at, resubmit_count, email
+  duplicate_of, resubmitted_at, resubmit_count, email, promoter_id
 `;
 
 const notified = new Set(); // rate check ids already announced on this device
@@ -460,3 +460,120 @@ export const useRateCheckInviteStats = (agencyId) =>
     },
     enabled: !!agencyId,
   });
+
+// ── Partners (people outside the agency paid per qualified household) ─────────
+
+export const usePromoters = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.promoters(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rate_check_promoters')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+
+// Every scan that came through a partner link — the payout math runs on these.
+export const usePromoterScans = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.promoterScans(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rate_checks')
+        .select('id, promoter_id, phone, first_name, policy_type, carrier, status, duplicate_of, created_at, annual_premium, allstate_premium, bound_premium')
+        .eq('agency_id', agencyId)
+        .not('promoter_id', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(5000);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+
+export const usePromoterRates = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.promoterRates(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('rate_check_promoter_rates').select('tier, amount').eq('agency_id', agencyId);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+
+export const usePromoterPayouts = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.promoterPayouts(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rate_check_promoter_payouts')
+        .select('*')
+        .eq('agency_id', agencyId)
+        .order('period', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+
+export const useSavePromoter = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, agencyId, userId, ...fields }) => {
+      const clean = {
+        ...('name' in fields ? { name: fields.name.trim() } : {}),
+        ...('phone' in fields ? { phone: (fields.phone || '').replace(/\D/g, '').slice(-10) || null } : {}),
+        ...('email' in fields ? { email: fields.email?.trim() || null } : {}),
+        ...('active' in fields ? { active: !!fields.active } : {}),
+        ...('w9_received_at' in fields ? { w9_received_at: fields.w9_received_at } : {}),
+        ...('notes' in fields ? { notes: fields.notes?.trim() || null } : {}),
+        ...('monthly_cap' in fields ? { monthly_cap: fields.monthly_cap ? Math.max(1, Math.min(1000, Math.round(Number(fields.monthly_cap)))) : null } : {}),
+      };
+      const q = id
+        ? supabase.from('rate_check_promoters').update(clean).eq('id', id)
+        : supabase.from('rate_check_promoters').insert({ ...clean, agency_id: agencyId, created_by: userId });
+      const { data, error } = await q.select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_d, v) => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.promoters(v.agencyId) }),
+  });
+};
+
+export const useSavePromoterRates = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ agencyId, schedule }) => {
+      const rows = Object.entries(schedule).map(([tier, amount]) => ({ agency_id: agencyId, tier, amount: Number(amount) || 0, updated_at: new Date().toISOString() }));
+      const { error } = await supabase.from('rate_check_promoter_rates').upsert(rows, { onConflict: 'agency_id,tier' });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.promoterRates(v.agencyId) }),
+  });
+};
+
+// One row per partner per month; recording it again for the same month replaces it.
+export const useRecordPromoterPayout = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ agencyId, promoterId, period, households, amount, userId, remove = false }) => {
+      if (remove) {
+        const { error } = await supabase.from('rate_check_promoter_payouts').delete().eq('promoter_id', promoterId).eq('period', period);
+        if (error) throw error;
+        return;
+      }
+      const { error } = await supabase.from('rate_check_promoter_payouts').upsert(
+        { agency_id: agencyId, promoter_id: promoterId, period, households, amount, paid_by: userId, paid_at: new Date().toISOString() },
+        { onConflict: 'promoter_id,period' },
+      );
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.promoterPayouts(v.agencyId) }),
+  });
+};

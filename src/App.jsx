@@ -72,6 +72,7 @@ const PunchPage = lazyWithRetry(() => import('./pages/PunchPage'));
 const SaveWizardPage = lazyWithRetry(() => import('./pages/SaveWizardPage'));
 const SaveConfirmationPage = lazyWithRetry(() => import('./pages/SaveConfirmationPage'));
 const RateCheckPage = lazyWithRetry(() => import('./pages/RateCheckPage'));
+const PartnerPortalPage = lazyWithRetry(() => import('./pages/PartnerPortalPage'));
 const RateCheckPrivacyPage = lazyWithRetry(() => import('./pages/RateCheckPrivacyPage'));
 const AgencyApplyPage = lazyWithRetry(() => import('./pages/AgencyApplyPage'));
 
@@ -177,6 +178,7 @@ function App() {
           {/* Rate Check — public dec-page scanner landing page; standalone (no site Layout) to stay light on mobile */}
           <Route path="/ratecheck" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPage /></Suspense></ErrorBoundary>} />
           <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPage /></Suspense></ErrorBoundary>} />
+          <Route path="/partner/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PartnerPortalPage /></Suspense></ErrorBoundary>} />
           <Route path="/ratecheck-privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPrivacyPage /></Suspense></ErrorBoundary>} />
 
           {/* Defensive Driving course — full-screen, no consumer nav (its own chrome) */}
