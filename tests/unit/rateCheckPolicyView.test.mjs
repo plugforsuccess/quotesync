@@ -183,3 +183,18 @@ test('summary: short term and renewal computed from the dates', () => {
   const full = summaryLines({ ...rc, effective_date: '2026-06-01', expiration_date: '2026-12-01', summary: null, extracted: { notes: null } }, new Date('2026-12-10T12:00:00'));
   assert.deepEqual(full, [{ tag: 'Expired', text: '12/1/2026 (9 days ago).' }]);
 });
+
+test('glass: an amount reads as the deductible, words stay words', async () => {
+  const { formatCoverage, vehicleCoverageSetup } = await import('../../src/pages/components/rate-checks/policyView.js');
+  assert.equal(formatCoverage('$0 deductible', 'glass').value, '$0');
+  assert.equal(formatCoverage('100 ded', 'glass').value, '$100');
+  assert.equal(formatCoverage('Full glass', 'glass').value, 'Full glass');
+  const setup = vehicleCoverageSetup({ vehicles: [
+    { year: 2022, make: 'JAGUAR', model: 'XF', coverages: { comp_deductible: '200', glass: '$0 deductible' } },
+    { year: 2015, make: 'MERCEDES', model: 'S550', coverages: { comp_deductible: '200' } },
+  ] });
+  const glass = setup.coverages.find(c => c.key === 'glass');
+  assert.equal(glass.groups.length, 1);
+  assert.equal(glass.groups[0].value, '$0');
+  assert.equal(glass.none.length, 1);
+});

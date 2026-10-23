@@ -47,7 +47,7 @@ function Chip({ children, tone }) {
 }
 
 const DEDUCTIBLES = ['comp_deductible', 'coll_deductible'];
-const PHYSICAL = [...DEDUCTIBLES, 'rental', 'roadside'];
+const PHYSICAL = [...DEDUCTIBLES, 'rental', 'roadside', 'glass'];
 
 const TILE_LABEL = { Comprehensive: 'Comp', Collision: 'Collision' };
 
@@ -123,15 +123,19 @@ function CoverageTile({ c, setup, total, wide }) {
   // Differs → one row per car (newest first): chip, then that car's value.
   const deductible = c.key === 'comp_deductible' || c.key === 'coll_deductible';
   const rows = setup.vehicles.filter(x => !(deductible && x.level === 'liability'));
+  // Glass reads "$0 · Glass deductible" when it's an amount, "Glass" when it's words ("Full glass").
+  const name = c.key === 'glass' ? (c.groups.every(g => /^\$/.test(g.value)) ? 'Glass deductible' : 'Glass') : (TILE_NAME[c.key] || c.label);
+  const everyCar = c.same && c.count === total;
+  const withIt = setup.vehicles.filter(x => c.groups[0]?.indexes.includes(x.index));
   return (
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
-      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
-      {c.same ? (
-        // Every vehicle → one label; only some (a liability-only car left off a deductible) → their pills.
+      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{name}</p>
+      {c.groups.length === 1 && (everyCar || c.key !== 'rental') ? (
+        // One value → one label; every vehicle says so, otherwise pills for the cars that have it.
         <div>
           <TileValue value={c.groups[0].value} addOn />
-          {total > 1 && c.count < total && <div className="mt-1 flex flex-wrap gap-1">{rows.map(x => <VehicleChip key={x.index} x={x} />)}</div>}
-          {total > 1 && c.count === total && <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {total} vehicles</p>}
+          {total > 1 && everyCar && <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {total} vehicles</p>}
+          {total > 1 && !everyCar && <div className="mt-1 flex flex-wrap gap-1">{withIt.map(x => <VehicleChip key={x.index} x={x} />)}</div>}
         </div>
       ) : (
         <ul className="mt-1 space-y-1.5">
@@ -151,13 +155,13 @@ function CoverageTile({ c, setup, total, wide }) {
 
 function VehicleCoverages({ setup }) {
   const total = setup.vehicles.length;
-  // In Allstate's order (comp, collision, rental, roadside). Two shared values in a row
-  // sit side by side; a tile that differs, or a shared one with no partner, takes the full row.
+  // In Allstate's order (comp, collision, rental, roadside, glass). Tiles with one value
+  // pair up two per row: on every car, or (glass, roadside) on some cars with their pills.
+  // Rental on only some cars keeps the full row so its "None" cars show; so does a tile
+  // whose value differs by car, or one with no partner.
   const cells = [];
   const cs = setup.coverages;
-  // Label-only tiles (same value on every vehicle) pair up two per row; tiles with
-  // pills or per-car rows take the full row.
-  const compact = (c) => c.same && (total === 1 || c.count === total);
+  const compact = (c) => (c.same && c.count === total) || (c.groups.length === 1 && c.key !== 'rental');
   for (let i = 0; i < cs.length; i++) {
     if (compact(cs[i]) && cs[i + 1] && compact(cs[i + 1])) { cells.push([cs[i], false], [cs[i + 1], false]); i++; } else cells.push([cs[i], true]);
   }

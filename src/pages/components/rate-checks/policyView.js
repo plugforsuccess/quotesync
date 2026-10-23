@@ -151,6 +151,11 @@ export function formatCoverage(raw, key, vehicles) {
     if (parts.length === 2 && parts.every(n => n != null)) return { value: `${full(parts[0])}/day · ${full(parts[1])} max`, note: prettyNote };
   }
   if (key === 'roadside' && /^[A-Z]{1,2}$/.test(value)) return { value: `Included (${value})`, note: prettyNote };
+  // "$0 deductible" / "0 ded" → "$0" (the tile is labelled Glass deductible); "Full glass" stays words.
+  if (key === 'glass') {
+    const n = parseAmount(value.replace(/\b(deductible|ded\.?)\b/ig, '').trim());
+    if (n != null) return { value: full(n), note: prettyNote };
+  }
 
   if (value.includes('/')) {
     const parts = value.split('/').map(p => p.trim());
@@ -189,7 +194,7 @@ export function coverageName(key) {
 
 // Allstate's coverage screen order: BI, PD, med pay, UM BI, UM PD (then comp, collision, add-ons).
 const AUTO_LIABILITY = ['pd', 'med_pay', 'pip', 'um_uim', 'umpd'];
-const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside'];
+const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside', 'glass'];
 const HOME_ORDER = ['dwelling', 'other_structures', 'personal_property', 'loss_of_use', 'liability', 'med_pay', 'deductible', 'wind_hail_deductible', 'hurricane_deductible'];
 
 // Optional add-ons: easy to leave off an Allstate quote, which makes the price look
