@@ -373,22 +373,26 @@ function PropertySection({ rc }) {
 }
 
 // Auto endorsements (accident forgiveness, rideshare, new car replacement…) as tiles,
-// two per row at the same size as the vehicle-coverage tiles: name, then the limit
-// (or Yes), then its form/option code on the same line height as "All 3 vehicles".
-// In yellow like every add-on: easy to leave off an Allstate quote.
+// two per row at the same size as the vehicle-coverage tiles: name, the limit (or Yes),
+// then "All 3 vehicles". The scan puts anything printed per vehicle on that vehicle, so
+// what's left here is policy-wide. The carrier's form code is only a tooltip: it isn't
+// something to key into Allstate. Yellow like every add-on: easy to leave off a quote.
 function AutoEndorsements({ rc }) {
   const list = endorsementsOf(rc);
   if (!list.length) return null;
+  const cars = Array.isArray(rc.vehicles) ? rc.vehicles.length : 0;
   return (
     <Section title={`Endorsements · ${list.length}`} ruled>
       <ul className="grid grid-cols-2 gap-2">
         {list.map((e, i) => (
-          <li key={i} className="rounded-lg px-3 py-2" style={TILE}>
+          <li key={i} className="rounded-lg px-3 py-2" style={TILE} title={e.code ? `Form ${e.code}` : undefined}>
             <p className="text-[11px] font-bold uppercase leading-snug tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{e.name}</p>
             {/* A long limit ("$100 off per year") drops a size so it stays on one line and the tiles match. */}
             <TileValue value={e.limit || 'Yes'} addOn size={String(e.limit || '').length > 9 ? 'text-base leading-7' : 'text-xl'} />
             <div className="mt-1 flex min-h-[24px] items-center">
-              {e.code && <span className="font-mono text-xs" style={{ color: 'var(--qs-subtle)' }}>{e.code}</span>}
+              <span className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>
+                {cars > 1 ? `All ${cars} vehicles` : cars === 1 ? 'This vehicle' : 'Whole policy'}
+              </span>
             </div>
           </li>
         ))}
