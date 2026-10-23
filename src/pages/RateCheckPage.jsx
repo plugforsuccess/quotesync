@@ -53,11 +53,11 @@ const ABOUT = [
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
   ] },
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his family', caption: 'My family', position: '50% 35%' },
-  // TODO(Cam): the last two paragraphs are placeholder wording; replace with your own.
+  // TODO(Cam): placeholder wording except the agency line; replace with your own.
   { key: 'today', title: 'My story · Today', paragraphs: [
-    'Today I run Cam Wiley Insurance, my own Allstate agency here in Georgia.',
+    'Family comes first for me. So I treat your household the way I’d treat mine.',
+    'That’s how I run Cam Wiley Insurance, my own Allstate agency here in Georgia.',
     'I look at every dec page myself, and I only text you when I can save you money.',
-    'Family comes first for me, so I treat your household the way I’d treat mine.',
   ] },
 ];
 
