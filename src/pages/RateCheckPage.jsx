@@ -39,7 +39,7 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // The licensed agent shown on the page (same headshot as the homepage).
 // TODO(compliance): fill in the GA license number; the card and footer use it.
 const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '' };
-// "Meet Cam" carousel under the agent card: photos and short bio cards, in order.
+// "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
 // Photo: { photo, alt, caption, position }. Bio: { icon, title, lines }.
 // TODO(Cam): a second photo goes here when there is one; review the bio wording.
 const ABOUT = [
@@ -589,7 +589,6 @@ export default function RateCheckPage() {
             <Upload className="h-5 w-5" aria-hidden="true" /> Upload photos or PDFs
           </button>
 
-          <AgentCard />
           <MeetCam />
 
           <ul className="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
@@ -814,13 +813,14 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
+// First slide of the Meet Cam carousel.
 function AgentCard() {
   return (
-    <div className="mt-6 rounded-3xl bg-white px-4 pb-5 pt-5 text-center ring-1 ring-slate-200">
+    <div className="flex h-full min-h-[268px] flex-col items-center justify-center text-center">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Your licensed agent</p>
-      <p className="mt-0.5 text-xl font-extrabold text-slate-900">{AGENT.name}</p>
-      <img src={AGENT.photo} alt={AGENT.name} width="88" height="88" loading="lazy"
-        className="mx-auto mt-3.5 h-[88px] w-[88px] rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
+      <p className="mt-0.5 text-2xl font-extrabold text-slate-900">{AGENT.name}</p>
+      <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
+        className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
         style={{ objectPosition: '50% 30%' }} />
       {AGENT.license && <p className="mt-3 text-xs text-slate-400">GA license #{AGENT.license}</p>}
     </div>
@@ -828,7 +828,7 @@ function AgentCard() {
 }
 
 function MeetCam() {
-  const slides = ABOUT.map(a => a.photo ? {
+  const slides = [{ key: 'agent', label: 'Your licensed agent', untitled: true, content: <AgentCard /> }, ...ABOUT.map(a => a.photo ? {
     key: a.key, label: a.caption, untitled: true, bare: true,
     content: (
       <figure className="relative h-full min-h-[300px]">
@@ -847,8 +847,8 @@ function MeetCam() {
         </ul>
       </div>
     ),
-  });
-  return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-4" />;
+  })];
+  return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-6" />;
 }
 
 function Trust({ icon: Icon, label }) {
