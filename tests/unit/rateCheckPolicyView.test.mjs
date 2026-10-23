@@ -53,7 +53,7 @@ test('limits read like money', () => {
   assert.equal(formatCoverage('250000/500000/100000', 'um_uim').value, '$250k / $500k / $100k');
   assert.equal(formatCoverage('100/300', 'um_uim').value, '$100k / $300k');
   assert.equal(formatCoverage('100000', 'pd').value, '$100,000');
-  assert.equal(formatCoverage('50/1500', 'rental').value, '$50/day · $1,500 max');
+  assert.equal(formatCoverage('50/1500', 'rental').value, '$50/$1500');
   assert.equal(formatCoverage('H (all vehicles)', 'roadside').value, 'Included (H)');
   assert.equal(formatCoverage(null, 'med_pay'), null);
 });
@@ -71,7 +71,7 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
   assert.deepEqual(vehicleCoverages(auto, 0), []);
-  assert.deepEqual(vehicleCoverages(auto, 1).map(r => [r.label, r.value, r.addOn]), [['Rental', '$50/day · $1,500 max', true]]);
+  assert.deepEqual(vehicleCoverages(auto, 1).map(r => [r.label, r.value, r.addOn]), [['Rental', '$50/$1500', true]]);
   assert.deepEqual(every.rows.map(r => r.addOn), [false, false, true]); // roadside is an add-on
   assert.equal(vehicleCoverages(auto, 2).length, 1);
 });
@@ -104,9 +104,14 @@ test('drivers with the same name are told apart; discounts are short tags', () =
   assert.deepEqual(driverRows(auto).map(d => d.name), ['STEPHEN PEARSON (60)', 'JOCELYN PEARSON', 'STEPHEN PEARSON (22)']);
   assert.deepEqual(driverRows(auto).map(d => d.role), ['insured', 'spouse', null]);
   assert.equal(driverRows(auto)[2].young, true);
-  assert.deepEqual(discountsOf(auto), ['Multicar', 'Multiple Lines', 'Vehicle Safety', 'Tenure 2 yrs', 'Accident Free 2 yrs', 'Good Student']);
-  assert.deepEqual(discountsOf(home), ['Utility Rating Credit', 'Home Alert', 'Home/Auto', 'Claim Record', 'Loyal Customer']);
-  assert.deepEqual(discountsOf({ extracted: { discounts: ['Drive Safe &amp; Save'] } }), ['Drive Safe & Save']);
+  assert.deepEqual(discountsOf(auto), ['Multi Car', 'Multi Policy', 'Vehicle Safety', 'Loyalty (2 yrs)', 'Accident Free (2 yrs)', 'Good Student']);
+  assert.deepEqual(discountsOf(home), ['Utility Rating Credit', 'Protective Devices', 'Multi Policy', 'Claim Free', 'Loyalty']);
+  assert.deepEqual(discountsOf({ extracted: { discounts: ['Drive Safe &amp; Save'] } }), ['Telematics']);
+  // Two carrier names for the same discount become one pill.
+  assert.deepEqual(discountsOf({ extracted: { discounts: ['Multiple Lines', 'Home/Auto Discount', 'ANTI-THEFT DEVICE'] } }), ['Multi Policy', 'Anti Theft']);
+  // Unknown ones: title case, no hyphens, acronyms and "yrs" kept.
+  assert.deepEqual(discountsOf({ extracted: { discounts: ['UTILITY RATING CREDIT', 'good-payer credit', 'EFT payment', 'Low mileage (for 3 years)'] } }),
+    ['Utility Rating Credit', 'Good Payer Credit', 'Autopay', 'Low Mileage (3 yrs)']);
 });
 
 test('home: coverages A–F, % deductible, property facts and endorsements', () => {
@@ -158,7 +163,7 @@ test('vehicle coverages group vehicles that share a value', () => {
   assert.equal(by.coll_deductible.same, true);
   assert.equal(by.roadside.same, true);
   assert.equal(by.rental.same, false);
-  assert.deepEqual(by.rental.groups, [{ value: '$50/day · $1,500 max', indexes: [1, 2] }]);
+  assert.deepEqual(by.rental.groups, [{ value: '$50/$1500', indexes: [1, 2] }]);
   assert.deepEqual(by.rental.none, [0]);
 
   const liabilityCar = { ...auto, coverages: { ...auto.coverages, comp_deductible: '200 (vehicles 002, 003)', coll_deductible: '1000 (vehicles 002, 003)' } };
@@ -182,4 +187,32 @@ test('summary: short term and renewal computed from the dates', () => {
   // A full 6-month term is not flagged; an expired policy says so.
   const full = summaryLines({ ...rc, effective_date: '2026-06-01', expiration_date: '2026-12-01', summary: null, extracted: { notes: null } }, new Date('2026-12-10T12:00:00'));
   assert.deepEqual(full, [{ tag: 'Expired', text: '12/1/2026 (9 days ago).' }]);
+});
+
+test('glass: an amount reads as the deductible, words stay words', async () => {
+  const { formatCoverage, vehicleCoverageSetup } = await import('../../src/pages/components/rate-checks/policyView.js');
+  assert.equal(formatCoverage('$0 deductible', 'glass').value, '$0');
+  assert.equal(formatCoverage('100 ded', 'glass').value, '$100');
+  assert.equal(formatCoverage('Full glass', 'glass').value, 'Full glass');
+  const setup = vehicleCoverageSetup({ vehicles: [
+    { year: 2022, make: 'JAGUAR', model: 'XF', coverages: { comp_deductible: '200', glass: '$0 deductible' } },
+    { year: 2015, make: 'MERCEDES', model: 'S550', coverages: { comp_deductible: '200' } },
+  ] });
+  const glass = setup.coverages.find(c => c.key === 'glass');
+  assert.equal(glass.groups.length, 1);
+  assert.equal(glass.groups[0].value, '$0');
+  assert.equal(glass.none.length, 1);
+});
+
+test('endorsement tiles use the short name a producer says', async () => {
+  const { shortEndorsementName } = await import('../../src/pages/components/rate-checks/policyView.js');
+  assert.equal(shortEndorsementName('Rideshare driver coverage'), 'Rideshare');
+  assert.equal(shortEndorsementName('Transportation Network Company Endorsement'), 'Rideshare');
+  assert.equal(shortEndorsementName('ACCIDENT FORGIVENESS'), 'Accident forgiveness');
+  assert.equal(shortEndorsementName('Vanishing Deductible'), 'Disappearing deductible');
+  assert.equal(shortEndorsementName('New Car Replacement Coverage'), 'New car replacement');
+  assert.equal(shortEndorsementName('Personal Effects Coverage'), 'Personal effects');
+  assert.equal(shortEndorsementName('Personal property in the vehicle'), 'Personal effects');
+  assert.equal(shortEndorsementName('Custom Equipment & Parts'), 'Custom equipment');
+  assert.equal(shortEndorsementName('Towing and labor'), 'Towing and labor');
 });

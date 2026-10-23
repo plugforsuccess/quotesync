@@ -252,6 +252,11 @@ export function quoteSheet(rc) {
     if (ends.length) { push('', 'Endorsements:'); ends.forEach(e => push(`  ${[e.code, e.name].filter(Boolean).join(' ')}${e.limit ? `: ${e.limit}` : ''}`)); }
   }
 
+  if (rc.policy_type === 'auto' || rc.policy_type === 'commercial_auto') {
+    const ends = endorsementsOf(rc);
+    if (ends.length) { push('', 'Endorsements:'); ends.forEach(e => push(`  ${[e.code, e.name].filter(Boolean).join(' ')}${e.limit ? `: ${e.limit}` : ''}`)); }
+  }
+
   const record = [...(Array.isArray(rc.surcharges) ? rc.surcharges : []), ...(Array.isArray(rc.claims) ? rc.claims : [])];
   if (record.length) { push('', 'On the record:'); record.forEach(t => push(`  ${t}`)); }
   const discounts = discountsOf(rc);

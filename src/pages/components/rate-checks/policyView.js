@@ -148,9 +148,15 @@ export function formatCoverage(raw, key, vehicles) {
 
   if (key === 'rental') {
     const parts = value.split('/').map(parseAmount);
-    if (parts.length === 2 && parts.every(n => n != null)) return { value: `${full(parts[0])}/day · ${full(parts[1])} max`, note: prettyNote };
+    // Rental as producers say it: per day / per claim max, "$50/$1500".
+    if (parts.length === 2 && parts.every(n => n != null)) return { value: `$${Math.round(parts[0])}/$${Math.round(parts[1])}`, note: prettyNote };
   }
   if (key === 'roadside' && /^[A-Z]{1,2}$/.test(value)) return { value: `Included (${value})`, note: prettyNote };
+  // "$0 deductible" / "0 ded" → "$0" (the tile is labelled Glass deductible); "Full glass" stays words.
+  if (key === 'glass') {
+    const n = parseAmount(value.replace(/\b(deductible|ded\.?)\b/ig, '').trim());
+    if (n != null) return { value: full(n), note: prettyNote };
+  }
 
   if (value.includes('/')) {
     const parts = value.split('/').map(p => p.trim());
@@ -173,7 +179,7 @@ const NAMES = {
   bi: 'Bodily injury', bi_per_person: 'Bodily injury (per person)', bi_per_accident: 'Bodily injury (per accident)',
   pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist PD', med_pay: 'Medical payments',
   pip: 'Personal injury protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
-  rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
+  rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap Coverage', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
   custom_equipment: 'Custom equipment', sound_equipment: 'Sound equipment', glass: 'Glass',
   dwelling: 'Dwelling (A)', other_structures: 'Other structures (B)', personal_property: 'Personal property (C)',
   loss_of_use: 'Loss of use (D)', liability: 'Personal liability (E)', home_med_pay: 'Medical payments (F)',
@@ -189,7 +195,7 @@ export function coverageName(key) {
 
 // Allstate's coverage screen order: BI, PD, med pay, UM BI, UM PD (then comp, collision, add-ons).
 const AUTO_LIABILITY = ['pd', 'med_pay', 'pip', 'um_uim', 'umpd'];
-const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside'];
+const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside', 'glass'];
 const HOME_ORDER = ['dwelling', 'other_structures', 'personal_property', 'loss_of_use', 'liability', 'med_pay', 'deductible', 'wind_hail_deductible', 'hurricane_deductible'];
 
 // Optional add-ons: easy to leave off an Allstate quote, which makes the price look
@@ -398,6 +404,24 @@ export function propertyFacts(rc) {
   return Object.values(p).some(v => v != null && v !== '') ? p : null;
 }
 
+// Carriers name the same endorsement many ways; tiles use the short name a producer says.
+const ENDORSEMENT_SHORT = [
+  [/ride.?shar|transportation network|\btnc\b/i, 'Rideshare'],
+  [/accident forgiv/i, 'Accident forgiveness'],
+  [/new (car|vehicle) replace/i, 'New car replacement'],
+  [/(disappear|vanish|diminish)\w* deductible/i, 'Disappearing deductible'],
+  [/(original|full) (parts|equipment|oem)/i, 'OEM parts'],
+  [/(sound|audio|custom) equip/i, 'Custom equipment'],
+  [/pet injury/i, 'Pet injury'],
+  [/personal (effects|belongings|property) (coverage|in (the )?(auto|vehicle))|^personal effects/i, 'Personal effects'],
+];
+/** "Rideshare driver coverage" → "Rideshare"; anything unrecognised keeps its printed name. */
+export function shortEndorsementName(name) {
+  const s = String(name || '').trim();
+  const hit = ENDORSEMENT_SHORT.find(([re]) => re.test(s));
+  return hit ? hit[1] : s;
+}
+
 /** [{ code, name, limit }] — the scan's list, else parsed from "endorsements including A, B, and C". */
 export function endorsementsOf(rc) {
   if (Array.isArray(rc?.endorsements) && rc.endorsements.length) return rc.endorsements;
@@ -481,9 +505,47 @@ export function cleanDiscount(s) {
   if (years && !/\d/.test(t)) t = `${t} ${years} yrs`;
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
 }
+// Every carrier names discounts its own way; pills use one standard name each, in
+// title case without hyphens ("Multi Car", "Good Student"). Years carry over ("Loyalty (2 yrs)").
+const DISCOUNT_NAMES = [
+  [/multi.?(car|vehicle|auto)|multiple (auto|cars?|vehicles?)/i, 'Multi Car'],
+  [/multi.?(line|policy|product)|multiple (lines|policies)|home\s*[/&+]\s*auto|auto\s*[/&+]\s*home|bundl/i, 'Multi Policy'],
+  [/drive safe|snapshot|drivewise|right ?track|smartride|telematic|usage.?based|safe ?pilot|milewise/i, 'Telematics'],
+  [/accident.?free|safe driv|good driver|no accidents/i, 'Accident Free'],
+  [/claim.?free|claims? record|no claims/i, 'Claim Free'],
+  [/tenure|loyal|years? with|renewal|longevity|continuous(ly)? insured/i, 'Loyalty'],
+  [/good student|honor roll|good grades/i, 'Good Student'],
+  [/student away|distant student|away at school/i, 'Student Away'],
+  [/defensive driv|driver training|driver.?s? ed/i, 'Defensive Driving'],
+  [/anti.?theft|theft deterr|vehicle recovery/i, 'Anti Theft'],
+  [/vehicle safety|anti.?lock|air ?bag|passive restraint|safety (feature|equipment)/i, 'Vehicle Safety'],
+  [/new (car|vehicle)/i, 'New Car'],
+  [/home ?alert|protective device|alarm|monitored|smart home|security system|fire ext|sprinkler/i, 'Protective Devices'],
+  [/new home|newer home|home buyer|new purchase/i, 'New Home'],
+  [/paperless|e.?policy|e.?sign|electronic (delivery|docs)/i, 'Paperless'],
+  [/auto.?pay|eft|automatic (payment|withdrawal)|recurring pay/i, 'Autopay'],
+  [/paid in full|pay(ment)? in full|full pay/i, 'Paid In Full'],
+  [/homeowner/i, 'Homeowner'],
+  [/early (signing|shopper|quote)|advance (quote|purchase)/i, 'Early Signing'],
+  [/mature driver|senior|55\+/i, 'Mature Driver'],
+];
+// "UTILITY RATING CREDIT" / "utility rating-credit" → "Utility Rating Credit"; "yrs" stays lowercase.
+const KEEP_CAPS = /^(?:ABS|EFT|ACH|GPS|OEM|USAA|AARP)$/;
+const titleCaseDiscount = (t) => t.replace(/-/g, ' ').replace(/\s+/g, ' ').trim().split(' ')
+  .map(w => (/^\d/.test(w) || /^yrs?$/i.test(w) ? w.toLowerCase() : KEEP_CAPS.test(w) ? w : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()))
+  .join(' ');
+/** "Multiple Lines" → "Multi Policy", "Tenure 2 yrs" → "Loyalty (2 yrs)"; unknown ones keep their name, title-cased. */
+export function normalizeDiscount(name) {
+  const t = cleanDiscount(name);
+  if (!t) return null;
+  const years = t.match(/(\d+)\s*yrs?\b/i)?.[1];
+  const hit = DISCOUNT_NAMES.find(([re]) => re.test(t));
+  const label = hit ? hit[1] : titleCaseDiscount(t.replace(/\s*\d+\s*yrs?\b/i, ''));
+  return years ? `${label} (${years} yrs)` : label;
+}
 export function discountsOf(rc) {
   const list = Array.isArray(rc?.extracted?.discounts) ? rc.extracted.discounts : [];
-  return [...new Set(list.map(cleanDiscount).filter(Boolean))];
+  return [...new Set(list.map(normalizeDiscount).filter(Boolean))];
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────
