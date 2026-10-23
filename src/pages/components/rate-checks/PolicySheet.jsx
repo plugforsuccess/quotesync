@@ -124,16 +124,19 @@ function CoverageTile({ c, rc, wide }) {
 
 function VehicleCoverages({ rc, setup }) {
   const total = setup.vehicles.length;
-  // Shared values pair up two per row; anything that differs gets the full width.
-  const same = setup.coverages.filter(c => c.same);
-  const split = setup.coverages.filter(c => !c.same);
+  // In Allstate's order (comp, collision, rental, roadside). Two shared values in a row
+  // sit side by side; a tile that differs, or a shared one with no partner, takes the full row.
+  const cells = [];
+  const cs = setup.coverages;
+  for (let i = 0; i < cs.length; i++) {
+    if (cs[i].same && cs[i + 1]?.same) { cells.push([cs[i], false], [cs[i + 1], false]); i++; } else cells.push([cs[i], true]);
+  }
   return (
     <Section title="Vehicle coverages" ruled aside={total > 1 && (
       <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Same on all {total} unless listed</span>
     )}>
       <div className="grid grid-cols-2 gap-2">
-        {same.map((c, i) => <CoverageTile key={c.key} c={c} rc={rc} wide={i === same.length - 1 && same.length % 2 === 1} />)}
-        {split.map(c => <CoverageTile key={c.key} c={c} rc={rc} wide />)}
+        {cells.map(([c, wide]) => <CoverageTile key={c.key} c={c} rc={rc} wide={wide} />)}
       </div>
     </Section>
   );

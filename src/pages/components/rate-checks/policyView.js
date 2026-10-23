@@ -150,7 +150,7 @@ export function formatCoverage(raw, key, vehicles) {
 
 const NAMES = {
   bi: 'Bodily injury', bi_per_person: 'Bodily injury (per person)', bi_per_accident: 'Bodily injury (per accident)',
-  pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist (property)', med_pay: 'Medical payments',
+  pd: 'Property damage', um_uim: 'Uninsured motorist BI', umpd: 'Uninsured motorist PD', med_pay: 'Medical payments',
   pip: 'Personal injury protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
   rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
   custom_equipment: 'Custom equipment', sound_equipment: 'Sound equipment', glass: 'Glass',
@@ -166,7 +166,8 @@ export function coverageName(key) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-const AUTO_LIABILITY = ['pd', 'um_uim', 'umpd', 'med_pay', 'pip'];
+// Allstate's coverage screen order: BI, PD, med pay, UM BI, UM PD (then comp, collision, add-ons).
+const AUTO_LIABILITY = ['pd', 'med_pay', 'pip', 'um_uim', 'umpd'];
 const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside'];
 const HOME_ORDER = ['dwelling', 'other_structures', 'personal_property', 'loss_of_use', 'liability', 'med_pay', 'deductible', 'wind_hail_deductible', 'hurricane_deductible'];
 
@@ -200,7 +201,16 @@ export function autoCoverageGroups(rc) {
   for (const k of AUTO_LIABILITY) {
     used.add(k);
     if (!(k in cov)) continue;
-    liability.push(row(k, cov[k], vehicles) || { key: k, label: coverageName(k), value: 'None listed', muted: true });
+    const r = row(k, cov[k], vehicles);
+    // Georgia UM prints as "250/500/100": BI per person / per accident, then UM property
+    // damage — Allstate asks for them as two lines.
+    const parts = r?.value.split(' / ');
+    if (k === 'um_uim' && cov.umpd == null && parts?.length === 3) {
+      liability.push({ ...r, value: parts.slice(0, 2).join(' / '), note: null });
+      liability.push({ key: 'umpd', label: coverageName('umpd'), value: parts[2], note: r.note, addOn: false });
+      continue;
+    }
+    liability.push(r || { key: k, label: coverageName(k), value: 'None listed', muted: true });
   }
 
   const physical = [];

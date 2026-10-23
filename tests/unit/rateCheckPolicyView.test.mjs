@@ -60,8 +60,9 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
   assert.deepEqual(liab.rows.map(r => [r.label, r.value]), [
     ['Bodily injury', '$250k / $500k'],
     ['Property damage', '$100,000'],
-    ['Uninsured motorist', '$250k / $500k / $100k'],
     ['Medical payments', 'None listed'],
+    ['Uninsured motorist BI', '$250k / $500k'],
+    ['Uninsured motorist PD', '$100k'],
   ]);
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
