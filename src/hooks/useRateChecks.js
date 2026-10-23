@@ -15,7 +15,7 @@ export const RATE_CHECK_LIST_COLUMNS = `
   allstate_premium, delta, delta_pct, extract_confidence, extract_error,
   image_path, image_media_type, policy_number, policy_number_last4, term_source, effective_date,
   expiration_date, vehicle_count, driver_count, vehicles, coverages,
-  insured_address, extracted, quote_note, quoted_at, outcome_at,
+  insured_address, extracted, quote_note, quoted_at, outcome_at, intake_answers,
   competitor_agent_id, current_agent, referral_consent_given_at, upload_source, consent_given_at,
   decision, decision_carrier, decision_reasons, decision_questions, decided_at,
   invite_id, producer_id, producer_name, event_name, carrier_raw,

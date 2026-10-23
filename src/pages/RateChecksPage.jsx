@@ -19,10 +19,10 @@ import {
 import { sanitizeMoneyInput, parseMoney } from '../lib/money';
 import { HOUSING_LABEL } from '../lib/rateCheckApi';
 import PageSpinner from '../components/PageSpinner';
-import { thCls, thStyle, inputStyle, money, formatPhone } from './components/rate-checks/ui';
+import { thCls, thStyle, inputStyle, money, formatPhone, CARD_STYLE } from './components/rate-checks/ui';
 import {
   STATUS, CONFIDENCE_WARNING, TERM_HINT,
-  termPrice, quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
+  quoteSheet, isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
 } from './components/rate-checks/format';
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
@@ -33,6 +33,8 @@ import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
 import PolicySheet from './components/rate-checks/PolicySheet';
 import Carousel from './components/rate-checks/Carousel';
+import { GoalHeader, HouseholdCard, LiveDelta } from './components/rate-checks/QuoteCards';
+import { looksTooLow } from './components/rate-checks/quoteMath';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import InvitesTab from './components/rate-checks/InvitesTab';
@@ -420,7 +422,14 @@ export default function RateChecksPage() {
 
 // ── Detail drawer ────────────────────────────────────────────────────────────
 
-function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
+function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted }) {
+  // Prices saved in this drawer, so the chips and goal header update before the list refetches.
+  const [saved, setSaved] = useState({});
+  const household = rows.map(p => (p.id in saved ? { ...p, allstate_premium: saved[p.id] } : p));
+  const quoted = (res) => {
+    if (res?.allstate_premium != null) setSaved(m => ({ ...m, [rc.id]: res.allstate_premium }));
+    onQuoted(res);
+  };
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
   const insuredName = rc.extracted?.insured_name;
   const rescan = useRescanRateCheck();
@@ -479,6 +488,7 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
               )}
             </div>
           )}
+          <GoalHeader household={household} />
         </div>
 
         {/* Household, what to quote, the price — one swipe each; then the quote sheet and reference */}
@@ -488,7 +498,7 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
             { key: 'decision', label: 'What to quote', content: <DecisionCard rc={rc} /> },
             { key: 'price', label: 'Price', content: (
               <div>
-                <QuoteBox rc={rc} onQuoted={onQuoted} />
+                <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
                 {rc.upload_source === 'agent' && (
                   <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
                 )}
@@ -521,38 +531,6 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
   );
 }
 
-// Every policy this phone number sent, with the bundle total — the win is decided
-// on the bundle, so each policy is quoted but texts wait for the household.
-function HouseholdCard({ rc, household, onSelect }) {
-  const sum = (f) => household.some(p => p[f] != null) ? household.reduce((t, p) => t + (Number(p[f]) || 0), 0) : null;
-  const hhPays = sum('annual_premium');
-  const hhAllstate = household.every(p => p.allstate_premium != null) ? sum('allstate_premium') : null;
-  const hhDelta = hhPays != null && hhAllstate != null ? hhPays - hhAllstate : null;
-  return (
-    <div className="h-full rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
-        <span style={{ color: 'var(--qs-subtle)' }}>Household · {household.length} policies</span>
-        <span style={{ color: 'var(--qs-bright)' }}>
-          Pays <b>{money(hhPays)}</b>/yr
-          {hhAllstate != null && <> · Allstate <b>{money(hhAllstate)}</b></>}
-          {hhDelta != null && <> · {hhDelta > 0 ? <b className="text-green-600">saves {money(hhDelta)}</b> : <b className="text-red-500">{money(Math.abs(hhDelta))} more</b>}</>}
-        </span>
-      </div>
-      <div className="mt-2 flex flex-wrap gap-1.5" role="tablist" aria-label="Policies in this household">
-        {household.map(p => (
-          <button key={p.id} role="tab" aria-selected={p.id === rc.id} onClick={() => onSelect?.(p)}
-            className={`rounded-lg px-2.5 py-1 text-sm ${p.id === rc.id ? 'bg-primary-600 text-white' : ''}`}
-            style={p.id === rc.id ? undefined : { ...inputStyle }}>
-            {[carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Not read yet'}
-            {p.annual_premium != null && <span className={p.id === rc.id ? ' opacity-80' : ''} style={p.id === rc.id ? undefined : { color: 'var(--qs-subtle)' }}> {money(p.annual_premium)}</span>}
-          </button>
-        ))}
-      </div>
-      <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Quote each one; the bundle decides the win. No “can’t beat it” text until the household is done.</p>
-    </div>
-  );
-}
-
 function Notice({ tone, children }) {
   const styles = {
     danger: { background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)' },
@@ -567,6 +545,7 @@ function QuoteBox({ rc, onQuoted }) {
   const enterQuote = useEnterRateCheckQuote();
   const [premium, setPremium] = useState(rc.allstate_premium != null ? String(rc.allstate_premium) : '');
   const [note, setNote] = useState(rc.quote_note || '');
+  const [justSaved, setJustSaved] = useState(false);
   const result = enterQuote.data;
   const outcome = result?.status || (['won', 'lost', 'bound'].includes(rc.status) ? rc.status : null);
   const delta = result?.delta ?? rc.delta;
@@ -587,7 +566,11 @@ function QuoteBox({ rc, onQuoted }) {
     enterQuote.mutate(
       { rateCheckId: rc.id, allstatePremium: n, quoteNote: note },
       // Keep the drawer's snapshot current (status chip, savings) once the row leaves the list.
-      { onSuccess: (res) => onQuoted?.({ status: res.status, allstate_premium: res.allstate_premium, delta: res.delta, delta_pct: res.delta_pct }) },
+      { onSuccess: (res) => {
+        onQuoted?.({ status: res.status, allstate_premium: res.allstate_premium, delta: res.delta, delta_pct: res.delta_pct });
+        setJustSaved(true);
+        setTimeout(() => setJustSaved(false), 2500);
+      } },
     );
   };
 
@@ -595,14 +578,14 @@ function QuoteBox({ rc, onQuoted }) {
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (
-    <section className="h-full rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{Number(rc.term_months) === 6 ? termPrice(rc) : ''}</p>
-      </div>
+    <section className="h-full rounded-xl p-4" style={CARD_STYLE}>
+      <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
       <p className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>
-        {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}> /yr</span></> : 'Price not read yet'}
+        {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
       </p>
+      {Number(rc.term_months) === 6 && rc.current_premium != null && (
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
+      )}
 
       {!outcome && !bound && (
         <CopyTextButton text={sheet} className="mt-3 rounded-lg px-3 py-2 text-sm font-medium" style={inputStyle}>
@@ -619,18 +602,25 @@ function QuoteBox({ rc, onQuoted }) {
       {!bound && <form onSubmit={submit} className="mt-4 space-y-2">
         <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} price per year</label>
         <div className="flex gap-2">
-          <div className="relative flex-1">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>
-            <input id="rc-allstate" className="w-full rounded-md py-2 pl-7 pr-2 text-base" style={inputStyle} inputMode="decimal" placeholder="1,320"
+          <div className="relative min-w-0 flex-1">
+            {premium && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>}
+            <input id="rc-allstate" className={`w-full rounded-md py-2 pr-2 text-base ${premium ? 'pl-7' : 'pl-3'}`} style={inputStyle} inputMode="decimal" placeholder="Enter annual price"
               value={premium} onChange={e => setPremium(sanitizeMoneyInput(e.target.value))} disabled={declined} />
           </div>
-          <button type="submit" disabled={enterQuote.isPending || !parseMoney(premium) || declined}
-            className="rounded-lg bg-primary-600 px-4 py-2 font-semibold text-white disabled:opacity-50">
-            {enterQuote.isPending ? 'Saving…' : outcome ? 'Update' : 'Save'}
+          <button type="submit" disabled={enterQuote.isPending || !(parseMoney(premium) > 0) || declined}
+            className="shrink-0 rounded-lg bg-primary-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400 disabled:opacity-60">
+            {enterQuote.isPending ? 'Saving…' : justSaved ? 'Saved ✓' : outcome ? 'Update' : 'Save'}
           </button>
         </div>
+        {/* Live: what this price saves them, before Save (once saved, the result box below says it). */}
+        {!(outcome && parseMoney(premium) === Number(result?.allstate_premium ?? rc.allstate_premium)) && (
+          <LiveDelta current={rc.annual_premium} price={parseMoney(premium)} />
+        )}
+        {looksTooLow(rc.annual_premium, parseMoney(premium)) && (
+          <p className="text-sm text-yellow-600">That&apos;s a big drop — double-check the limits match.</p>
+        )}
         <input className="w-full rounded-md px-2 py-2 text-sm" style={inputStyle} value={note} onChange={e => setNote(e.target.value)}
-          placeholder="Note, e.g. same limits, $500 deductibles (optional)" aria-label="Quote note" disabled={declined} />
+          placeholder="Same limits, $500 ded." aria-label="Quote note (optional)" disabled={declined} />
       </form>}
       {rc.annual_premium == null && !declined && (
         <p className="mt-2 text-xs text-yellow-600">Fill in their current price under Policy first — otherwise we can&apos;t tell if Allstate wins.</p>

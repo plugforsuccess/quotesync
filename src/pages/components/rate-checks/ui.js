@@ -33,3 +33,7 @@ export const BOOK_OWNERSHIP = {
 // Add-ons and endorsements the producer must match on the quote (rental, roadside, every endorsement).
 export const ADD_ON_CLS = 'font-semibold';
 export const ADD_ON_STYLE = { color: 'var(--qs-warning)' };
+
+// Quote cards in the drawer share one neutral border; colour is kept for results
+// (green = they save, amber = Allstate costs more).
+export const CARD_STYLE = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' };
