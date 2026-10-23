@@ -117,14 +117,21 @@ function VehicleChip({ x }) {
   );
 }
 
-function CoverageTile({ c, setup, wide }) {
+function CoverageTile({ c, setup, total, wide }) {
   // Differs → one row per car (newest first): chip, then that car's value.
   const deductible = c.key === 'comp_deductible' || c.key === 'coll_deductible';
   const rows = setup.vehicles.filter(x => !(deductible && x.level === 'liability'));
   return (
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
       <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
-      {c.same ? <TileValue value={c.groups[0].value} addOn /> : (
+      {c.same ? (
+        <>
+          <TileValue value={c.groups[0].value} addOn />
+          {total > 1 && (
+            <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {c.count}{c.scope ? ` ${c.scope}` : ''} vehicles</p>
+          )}
+        </>
+      ) : (
         <ul className="mt-1 space-y-1.5">
           {rows.map(x => (
             <li key={x.index} className="flex min-h-[28px] items-center justify-between gap-3">
@@ -150,11 +157,9 @@ function VehicleCoverages({ setup }) {
     if (cs[i].same && cs[i + 1]?.same) { cells.push([cs[i], false], [cs[i + 1], false]); i++; } else cells.push([cs[i], true]);
   }
   return (
-    <Section title="Vehicle coverages" ruled aside={total > 1 && (
-      <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Same on all {total} unless listed</span>
-    )}>
+    <Section title="Vehicle coverages" ruled>
       <div className="grid grid-cols-2 gap-2">
-        {cells.map(([c, wide]) => <CoverageTile key={c.key} c={c} setup={setup} wide={wide} />)}
+        {cells.map(([c, wide]) => <CoverageTile key={c.key} c={c} setup={setup} total={total} wide={wide} />)}
       </div>
     </Section>
   );
