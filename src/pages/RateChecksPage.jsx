@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
+  AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
   MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -35,7 +35,7 @@ import WinMap from './components/rate-checks/WinMapTab';
 import PolicySheet from './components/rate-checks/PolicySheet';
 import Carousel from './components/rate-checks/Carousel';
 import { GoalHeader, HouseholdCard, LiveDelta } from './components/rate-checks/QuoteCards';
-import { looksTooLow } from './components/rate-checks/quoteMath';
+import { looksTooLow, savings } from './components/rate-checks/quoteMath';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import InvitesTab from './components/rate-checks/InvitesTab';
@@ -678,7 +678,6 @@ function QuoteBox({ rc, onQuoted }) {
   const result = enterQuote.data;
   const outcome = result?.status || (['won', 'lost', 'bound'].includes(rc.status) ? rc.status : null);
   const delta = result?.delta ?? rc.delta;
-  const deltaPct = result?.delta_pct ?? rc.delta_pct;
   const declined = rc.status === 'declined';
   // Bound locally the moment the agent marks it, before the row refetches.
   const [localBound, setLocalBound] = useState(null);
@@ -686,6 +685,7 @@ function QuoteBox({ rc, onQuoted }) {
   const boundInfo = localBound || rc;
   // An expanded-market risk is quoted with that carrier; the price box compares the same way.
   const market = rc.decision === 'expanded_market' && rc.decision_carrier ? rc.decision_carrier : 'Allstate';
+  const quotedPrice = result?.allstate_premium ?? rc.allstate_premium;
 
   const submit = (e) => {
     e.preventDefault();
@@ -707,18 +707,18 @@ function QuoteBox({ rc, onQuoted }) {
 
   return (
     <section className="grow rounded-xl p-5" style={CARD_STYLE}>
-      <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
-      <p className="mt-1 text-4xl font-bold leading-none" style={{ color: 'var(--qs-bright)' }}>
-        {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
-      </p>
-      {Number(rc.term_months) === 6 && rc.current_premium != null && (
-        <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
-      )}
-      {/* The Allstate price on file for this policy, once there is one. */}
-      {(result?.allstate_premium ?? rc.allstate_premium) != null && !bound && (
-        <p className="mt-3 flex items-center gap-1.5 text-base font-semibold" style={{ color: 'var(--qs-success)' }}>
-          <Check className="h-4 w-4" aria-hidden="true" /><span>{market} {money(result?.allstate_premium ?? rc.allstate_premium)}<span className="text-sm font-medium">/yr</span></span>
-        </p>
+      {quotedPrice != null && !bound && rc.annual_premium != null ? (
+        <PriceDrop current={rc.annual_premium} price={quotedPrice} market={market} />
+      ) : (
+        <>
+          <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
+          <p className="mt-1 text-4xl font-bold leading-none" style={{ color: 'var(--qs-bright)' }}>
+            {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
+          </p>
+          {Number(rc.term_months) === 6 && rc.current_premium != null && (
+            <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
+          )}
+        </>
       )}
 
 
@@ -756,8 +756,7 @@ function QuoteBox({ rc, onQuoted }) {
 
       {outcome === 'won' && !bound && (
         <div className="mt-4 rounded-lg p-3" style={{ background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' }}>
-          <div className="text-2xl font-extrabold text-green-600">Saves {money(delta)}/yr{deltaPct != null ? ` (${Math.round(deltaPct)}%)` : ''}</div>
-          <p className="text-sm" style={{ color: 'var(--qs-text)' }}>Call now. The lead is marked Interested.</p>
+          <p className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>Call now. The lead is marked Interested.</p>
           <p className="mt-3 select-text text-sm" style={{ color: 'var(--qs-bright)' }}>“{script}”</p>
           <CopyTextButton text={script} className="mt-2 text-xs font-semibold text-primary-600 hover:underline">Copy script</CopyTextButton>
           <BindForm rc={rc} market={market} defaultPremium={result?.allstate_premium ?? rc.allstate_premium}
@@ -777,6 +776,40 @@ function QuoteBox({ rc, onQuoted }) {
         </div>
       )}
     </section>
+  );
+}
+
+// The quoted price next to what they pay now, with the drop drawn as a bar:
+// the old price crossed out, the new one big and green (amber if it's higher).
+function PriceDrop({ current, price, market }) {
+  const s = savings(current, price);
+  const share = Math.min(1, Number(price) / Number(current)); // how much of today's bill is left
+  const up = s && s.delta < 0;
+  const tone = up ? 'var(--qs-warning)' : 'var(--qs-success)';
+  return (
+    <div>
+      <div className="flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
+          <p className="mt-1 text-2xl font-bold leading-none line-through decoration-2" style={{ color: 'var(--qs-subtle)' }}>{money(current)}</p>
+        </div>
+        <ArrowRight className="mb-1 h-6 w-6 shrink-0" style={{ color: tone }} aria-hidden="true" />
+        <div className="min-w-0 text-right">
+          <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: tone }}>{market}</p>
+          <p className="mt-1 text-4xl font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-lg font-semibold">/yr</span></p>
+        </div>
+      </div>
+      <div className="mt-4 h-3 overflow-hidden rounded-full" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }} role="img"
+        aria-label={s ? (up ? `${market} is ${money(-s.delta)} a year more` : `${market} is ${s.pct}% less`) : undefined}>
+        <div className="h-full rounded-full transition-all duration-700" style={{ width: `${share * 100}%`, background: tone }} />
+      </div>
+      {s && (
+        <p className="mt-2 text-lg font-extrabold" style={{ color: tone }}>
+          {s.delta > 0 ? `Saves them ${money(s.delta)}/yr` : s.delta < 0 ? `${money(-s.delta)}/yr more than they pay` : 'Same as they pay'}
+          {s.pct != null && s.delta !== 0 && <span className="font-semibold" style={{ color: 'var(--qs-subtle)' }}> · {Math.abs(s.pct)}% {s.delta > 0 ? 'less' : 'more'}</span>}
+        </p>
+      )}
+    </div>
   );
 }
 
