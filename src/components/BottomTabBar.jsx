@@ -2,17 +2,19 @@
 // Mobile-only bottom tab bar for primary navigation (hidden on md: and above)
 
 import { NavLink, useLocation } from 'react-router-dom';
-import { Camera, ClipboardList, BarChart2, DollarSign, Grid } from 'lucide-react';
+import { Camera, ClipboardList, RotateCcw, Shield, Grid } from 'lucide-react';
 
-const tabs = [
+const TABS = [
   { to: '/agency/leads/rate-checks', label: 'Rate Checks', icon: Camera },
   { to: '/agency/leads', label: 'Leads', icon: ClipboardList },
-  { to: '/admin/staff-performance', label: 'Performance', icon: BarChart2 },
-  { to: '/admin/revenue-projections', label: 'Revenue', icon: DollarSign },
+  { to: '/agency/winbacks', label: 'Winbacks', icon: RotateCcw },
+  { to: '/agency/retention', label: 'Retention', icon: Shield, principalOnly: true },
 ];
 
-function BottomTabBar({ onMorePress, moreActive, drawerOpen = false }) {
+function BottomTabBar({ onMorePress, moreActive, drawerOpen = false, agencyRole = null }) {
   const location = useLocation();
+  // Retention is principal-only; producers would hit /unauthorized.
+  const tabs = TABS.filter(t => !t.principalOnly || !agencyRole || agencyRole === 'principal');
 
   const matches = (to) => location.pathname === to || location.pathname.startsWith(to + '/');
   // The most specific tab wins: /agency/leads/rate-checks lights Rate Checks, not Leads.

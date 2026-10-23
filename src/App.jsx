@@ -93,6 +93,7 @@ const AdminAuditPage = lazyWithRetry(() => import('./pages/AdminAuditPage'));
 const TimeAttendancePage = lazyWithRetry(() => import('./pages/TimeAttendancePage'));
 const StaffPerformancePage = lazyWithRetry(() => import('./pages/StaffPerformancePage'));
 const AgencyLeadsPage = lazyWithRetry(() => import('./pages/AgencyLeadsPage'));
+const AgencyWinbacksPage = lazyWithRetry(() => import('./pages/AgencyWinbacksPage'));
 const AgencyLeadDetailPage = lazyWithRetry(() => import('./pages/AgencyLeadDetailPage'));
 const RateChecksPage = lazyWithRetry(() => import('./pages/RateChecksPage'));
 const FunnelDashboardPage = lazyWithRetry(() => import('./pages/FunnelDashboardPage'));
@@ -350,6 +351,19 @@ function App() {
             />
 
             {/* Agency Dashboard - Pipeline Management (Protected for agency users) */}
+            {/* Winbacks — former customers from termination reports, as a call list */}
+            <Route
+              path="agency/winbacks"
+              element={
+                <ProtectedRoute requiredAgencyRole="producer">
+                  <ErrorBoundary fallback={<PageError />}>
+                    <Suspense fallback={<PageLoader />}>
+                      <AgencyWinbacksPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="agency/leads"
               element={

@@ -20,6 +20,7 @@ export const consumerNav = [
 const primaryItems = {
   funnel:           { to: '/agency/dashboard',         label: 'Dashboard',   icon: '📊' },
   leads:            { to: '/agency/leads',             label: 'Leads',       icon: '📋' },
+  winbacks:         { to: '/agency/winbacks',          label: 'Winbacks',    icon: '♻️' },
   // featureKey: hidden unless feature_permissions has it enabled for the agency (filtered in Layout)
   rateChecks:       { to: '/agency/leads/rate-checks', label: 'Rate Checks', icon: '📸', featureKey: 'rate_checks' },
   timeAttendance:   { to: '/agency/time-attendance',   label: 'Attendance',  icon: '⏱️' },
@@ -114,20 +115,17 @@ export const agencyNav = {
   principal: {
     primary: [
       // Rate Checks is the lead source, so it's first and where principals land.
-      // The funnel Dashboard (/agency/dashboard) is hidden: it tracked the retired /save wizard.
+      // Hidden (still work by URL, just not linked): the funnel Dashboard, which tracked
+      // the retired /save wizard, and the tools with no recent use — Weekly Review,
+      // Planning, Staff Performance, Cross-Sell, Referrals, Time & Attendance,
+      // Comp Schedules. Add them back here when they're in use again.
       primaryItems.rateChecks,
-      { to: '/agency/weekly-review', label: 'Review', icon: '📋' },
       primaryItems.leads,
+      primaryItems.winbacks,
       primaryItems.retention,
-      primaryItems.planning,
     ],
     secondary: [
-      primaryItems.staffPerformance,
-      primaryItems.crossSell,
       primaryItems.customers,
-      primaryItems.referrals,
-      primaryItems.timeAttendance,
-      { to: '/agency/comp-schedules', label: 'Comp Schedules', icon: '💰' },
       { to: '/agency/settings/termination-aliases', label: 'Reason Aliases', icon: '🏷️' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
@@ -135,13 +133,11 @@ export const agencyNav = {
   },
   producer: {
     primary: [
-      primaryItems.leads,
       primaryItems.rateChecks,
-      primaryItems.timeAttendance,
+      primaryItems.leads,
+      primaryItems.winbacks,
     ],
-    secondary: [
-      primaryItems.referrals,
-    ],
+    secondary: [],
   },
 };
 

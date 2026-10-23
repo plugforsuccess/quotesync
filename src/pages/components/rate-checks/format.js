@@ -7,6 +7,7 @@ import {
   caps, insuredName, vehicleTitle, vehicleShort, vehicleCoverages, vehicleCoverageSetup, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
   homeCoverageRows, endorsementsOf, driverRows, discountsOf,
 } from './policyView';
+import { quoteHeadline } from './quoteLine';
 
 // rate_checks.status → what an agent should read.
 export const STATUS = {
@@ -30,9 +31,15 @@ export const DECISION = {
   refer:                   { label: 'Refer',                     tone: 'neutral', cls: 'bg-gray-200 text-gray-700' },
 };
 
-export function decisionLabel(rc) {
+// With the household's policies, a straight Allstate quote names the lines:
+// "Quote Allstate Home + Auto + PUP" (see quoteLine.js).
+export function decisionLabel(rc, policies = null) {
   const d = DECISION[rc.decision];
   if (!d) return null;
+  if (policies?.length) {
+    const line = quoteHeadline(policies, rc.decision);
+    if (line) return line;
+  }
   return rc.decision === 'expanded_market' && rc.decision_carrier ? `${d.label} — ${rc.decision_carrier}` : d.label;
 }
 

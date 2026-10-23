@@ -212,8 +212,8 @@ function Layout({ forcePlane = null }) {
   const bottomTabRoutes = [
     '/agency/leads/rate-checks',
     '/agency/leads',
-    '/admin/staff-performance',
-    '/admin/revenue-projections',
+    '/agency/winbacks',
+    '/agency/retention',
   ];
 
   // Drawer nav items: secondary items that are NOT in the bottom tab bar, grouped
@@ -601,6 +601,7 @@ function Layout({ forcePlane = null }) {
           onMorePress={() => setDrawerOpen(prev => !prev)}
           moreActive={drawerOpen || isDrawerRouteActive}
           drawerOpen={drawerOpen}
+          agencyRole={currentAgencyRole}
         />
       )}
 
