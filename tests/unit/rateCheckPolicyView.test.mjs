@@ -167,16 +167,16 @@ test('vehicle coverages group vehicles that share a value', () => {
 });
 
 
-test('summary: short term and renewal computed from the dates, months spelled out', () => {
+test('summary: short term and renewal computed from the dates', () => {
   const rc = { ...auto, effective_date: '2026-02-04', expiration_date: '2026-07-25', term_months: 6, summary: 'The Velar was added mid-term.' };
-  assert.equal(dateSpan('2026-02-04', '2026-07-25'), 'February 4 to July 25, 2026');
-  assert.equal(dateSpan('2025-12-01', '2026-06-01'), 'December 1, 2025 to June 1, 2026');
+  assert.equal(dateSpan('2026-02-04', '2026-07-25'), '2/4/2026 to 7/25/2026');
+  assert.equal(dateSpan('2025-12-01', '2026-06-01'), '12/1/2025 to 6/1/2026');
   assert.deepEqual(summaryLines(rc, new Date('2026-07-13T12:00:00')), [
-    { tag: 'Short term', text: 'February 4 to July 25, 2026 (5.6 months).' },
-    { tag: 'Renews', text: 'July 25, 2026 (in 12 days).' },
+    { tag: 'Short term', text: '2/4/2026 to 7/25/2026 (5.6 months).' },
+    { tag: 'Renews', text: '7/25/2026 (in 12 days).' },
     { tag: 'Note', text: 'The Velar was added mid-term.' },
   ]);
   // A full 6-month term is not flagged; an expired policy says so.
   const full = summaryLines({ ...rc, effective_date: '2026-06-01', expiration_date: '2026-12-01', summary: null, extracted: { notes: null } }, new Date('2026-12-10T12:00:00'));
-  assert.deepEqual(full, [{ tag: 'Expired', text: 'December 1, 2026 (9 days ago).' }]);
+  assert.deepEqual(full, [{ tag: 'Expired', text: '12/1/2026 (9 days ago).' }]);
 });

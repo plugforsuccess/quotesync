@@ -478,17 +478,16 @@ const parseDay = (iso) => {
   return d && !Number.isNaN(d.getTime()) ? d : null;
 };
 
-/** "July 25, 2026" — months spelled out, never abbreviated. */
-export function longDate(iso, { year = true } = {}) {
+/** "7/25/2026" — the way producers say dates (no leading zeros). */
+export function shortDate(iso) {
   const d = parseDay(iso);
-  return d ? d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', ...(year ? { year: 'numeric' } : {}) }) : null;
+  return d ? `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}` : null;
 }
 
-/** "February 4 to July 25, 2026" (the year once when both dates share it). */
+/** "2/4/2026 to 7/25/2026" */
 export function dateSpan(startIso, endIso) {
-  const a = parseDay(startIso), b = parseDay(endIso);
-  if (!a || !b) return null;
-  return `${longDate(startIso, { year: a.getFullYear() !== b.getFullYear() })} to ${longDate(endIso)}`;
+  const a = shortDate(startIso), b = shortDate(endIso);
+  return a && b ? `${a} to ${b}` : null;
 }
 
 /**
@@ -507,7 +506,7 @@ export function summaryLines(rc, now = new Date()) {
     }
     const days = Math.round((b - now) / DAY);
     const when = days < 0 ? `${Math.abs(days)} days ago` : days === 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
-    lines.push({ tag: days < 0 ? 'Expired' : 'Renews', text: `${longDate(rc.expiration_date)} (${when}).` });
+    lines.push({ tag: days < 0 ? 'Expired' : 'Renews', text: `${shortDate(rc.expiration_date)} (${when}).` });
   }
   const note = headsUp(rc).join(' ');
   if (note) lines.push({ tag: 'Note', text: note });
