@@ -377,14 +377,43 @@ export function vehiclesNewestFirst(rc) {
     .sort((a, b) => (Number(b.v?.year) || -Infinity) - (Number(a.v?.year) || -Infinity) || a.index - b.index);
 }
 
+const GAP_KEYS = ['gap', 'loan_lease'];
+const DECLINED = /^(no|none|n\/a|not|declined|rejected|excluded)\b/i;
+
 /**
- * What the dec page can't tell us but the quote needs: the loan payoff year for
- * every financed vehicle (newest first), e.g. "Loan payoff year for the 2021 LAND ROVER VELAR".
+ * Gap for a vehicle, read against its lienholder (gap only matters on a financed car):
+ * pills: [{ key, label }] e.g. "Gap Coverage", "Loan/Lease Gap 25%";
+ * flag: 'no_gap' (financed, no gap) | 'no_lien' (gap, but no lienholder listed) | null.
+ */
+export function gapFor(rc, index) {
+  const pills = vehicleCoverages(rc, index)
+    .filter(r => GAP_KEYS.includes(r.key) && !DECLINED.test(String(r.value)))
+    .map(r => {
+      if (r.key === 'gap') return { key: r.key, label: 'Gap Coverage' };
+      const pct = String(r.value).match(/\d+(?:\.\d+)?\s*%/)?.[0].replace(/\s/g, '');
+      const extra = pct || (/^(yes|included)/i.test(r.value) ? '' : r.value);
+      return { key: r.key, label: `Loan/Lease Gap${extra ? ` ${extra}` : ''}` };
+    });
+  const financed = Boolean(lienholderFor(rc, index));
+  const flag = financed && !pills.length ? 'no_gap' : !financed && pills.length ? 'no_lien' : null;
+  return { pills, flag };
+}
+
+/**
+ * What the dec page can't tell us but the quote needs, per vehicle (newest first):
+ * the loan payoff year on a financed car, whether they want gap when it has none,
+ * and whether a car with gap but no lienholder is paid off.
  */
 export function vehicleQuestions(rc) {
-  return vehiclesNewestFirst(rc)
-    .filter(({ index }) => lienholderFor(rc, index))
-    .map(({ v }) => `Loan payoff year for the ${vehicleShort(v)}`);
+  return vehiclesNewestFirst(rc).flatMap(({ v, index }) => {
+    const car = vehicleShort(v);
+    const { flag } = gapFor(rc, index);
+    const out = [];
+    if (lienholderFor(rc, index)) out.push(`Loan payoff year for the ${car}`);
+    if (flag === 'no_gap') out.push(`Do they want gap coverage on the ${car}`);
+    if (flag === 'no_lien') out.push(`Is the ${car} paid off? Gap is listed but no lienholder`);
+    return out;
+  });
 }
 
 /** { year_built, construction, roof_material, roof_year, mortgagee, loan_number, paid_by_mortgagee, … } */

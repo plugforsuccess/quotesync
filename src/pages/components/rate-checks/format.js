@@ -4,7 +4,7 @@
 
 import { money, formatPhone } from './ui';
 import {
-  caps, insuredName, vehicleTitle, vehicleShort, vehicleCoverages, vehicleCoverageSetup, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
+  caps, insuredName, vehicleTitle, vehicleShort, vehicleCoverages, vehicleCoverageSetup, lienholderFor, gapFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
   homeCoverageRows, endorsementsOf, driverRows, discountsOf,
 } from './policyView';
 import { quoteHeadline } from './quoteLine';
@@ -204,8 +204,11 @@ export function quoteSheet(rc) {
       const level = setup?.coverages.length ? setup.vehicles.find(s => s.index === i)?.levelLabel : null;
       push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}${level ? ` — ${level.toUpperCase()}` : ''}`);
       const lien = lienholderFor(rc, i);
-      if (lien) push(`    Lienholder: ${lien} — ask loan payoff year`);
-      const own = vehicleCoverages(rc, i).filter(r => !setup || !physical.has(r.key));
+      const gap = gapFor(rc, i);
+      const gapText = [...gap.pills.map(p => p.label), gap.flag === 'no_gap' && 'No gap — ask', gap.flag === 'no_lien' && 'no lienholder listed — paid off?'].filter(Boolean).join(' · ');
+      if (lien) push(`    Lienholder: ${lien} — ask loan payoff year${gapText ? ` · ${gapText}` : ''}`);
+      else if (gapText) push(`    ${gapText}`);
+      const own = vehicleCoverages(rc, i).filter(r => (!setup || !physical.has(r.key)) && r.key !== 'gap' && r.key !== 'loan_lease');
       if (own.length) push(`    ${own.map(r => `${r.label} ${r.value}`).join(' · ')}`);
     });
   }

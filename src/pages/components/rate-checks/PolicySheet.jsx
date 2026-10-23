@@ -12,7 +12,7 @@ import { CopyButton, Field } from './Copyable';
 import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
-  autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf, shortEndorsementName,
+  autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, gapFor, propertyFacts, endorsementsOf, shortEndorsementName,
   driverRows, discountsOf, summaryLines, vehicleTitle, vehicleShort, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
   vehicleCoverageSetup,
 } from './policyView';
@@ -197,13 +197,33 @@ function VehicleCoverages({ setup }) {
   );
 }
 
+const GAP = ['gap', 'loan_lease'];
+const PILL = 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold leading-4';
+// Gap they have: filled add-on yellow. Something to ask about gap: amber outline only.
+const GAP_PILL = { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' };
+const FLAG_PILL = { color: 'var(--qs-warning)', background: 'transparent', border: '1px dashed var(--qs-warning)' };
+
 function VehicleCard({ rc, v, index, level, n }) {
   const vin = v.vin ? (v.vin_complete === false ? `…${v.vin}` : v.vin) : (v.vin_last4 ? `…${v.vin_last4}` : null);
   const vinWarn = v.vin_complete === false ? 'Only part of the VIN is on the page'
     : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo' : null;
   // Comp, collision, rental and roadside are grouped across vehicles below; only other lines stay here.
-  const extras = vehicleCoverages(rc, index).filter(r => !PHYSICAL.includes(r.key));
+  // Gap sits with the lienholder as pills, so it's left out of the lines below.
+  const extras = vehicleCoverages(rc, index).filter(r => !PHYSICAL.includes(r.key) && !GAP.includes(r.key));
   const lien = lienholderFor(rc, index);
+  const gap = gapFor(rc, index);
+  const hasGapRow = gap.pills.length > 0 || Boolean(gap.flag);
+  const gapRow = (mt) => hasGapRow && (
+    <div className={`${mt} flex flex-wrap items-center gap-1.5 pl-[34px]`}>
+      {gap.pills.map(p => <span key={p.key} className={PILL} style={GAP_PILL}>{p.label}</span>)}
+      {gap.flag === 'no_gap' && <span className={PILL} style={FLAG_PILL}>No gap</span>}
+      {gap.flag === 'no_lien' && (
+        <span className={`${PILL} gap-1`} style={FLAG_PILL}>
+          <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" /> No lienholder listed — paid off?
+        </span>
+      )}
+    </div>
+  );
   return (
     <li className="py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
       {/* Number badge, year/make/model and the coverage level on one line; the VIN under the title. */}
@@ -237,10 +257,12 @@ function VehicleCard({ rc, v, index, level, n }) {
             <span style={{ color: 'var(--qs-subtle)' }}>Loan payoff year</span>
             <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
+          {gapRow('mt-2')}
         </>
       )}
+      {!lien && gapRow('mt-3')}
       {extras.map((r, i) => (
-        <p key={r.key} className={`${i === 0 && !lien ? 'mt-3' : 'mt-1.5'} pl-[34px] text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
+        <p key={r.key} className={`${i === 0 && !lien && !hasGapRow ? 'mt-3' : 'mt-1.5'} pl-[34px] text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
           {r.label} {r.value}
         </p>
       ))}
