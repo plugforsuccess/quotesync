@@ -6,14 +6,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, Bell, Camera, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
+  AlertCircle, AlertTriangle, BadgeDollarSign, Bell, Camera, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
   MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCurrentAgency } from '../hooks/useAgencyLeads';
 import { useEnabledFeatures } from '../hooks/useFeaturePermissions';
 import {
-  useRateChecks, useRateCheckImageUrl, useUpdateRateCheck,
+  useRateChecks, useRateCheckImageUrl, useUpdateRateCheck, usePromoters,
   useEnterRateCheckQuote, useRateCheckWinMap, annualize, useRescanRateCheck, useBindRateCheck,
 } from '../hooks/useRateChecks';
 import { sanitizeMoneyInput, parseMoney } from '../lib/money';
@@ -27,6 +27,7 @@ import {
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
 import ReferralPartners from './components/rate-checks/ReferralPartners';
+import PartnersTab from './components/rate-checks/PartnersTab';
 import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
@@ -106,8 +107,8 @@ function StaffTag() {
 
 // "via Marcus · Gwinnett expo" — where a rate check came from.
 function OriginTag({ rc, className = '' }) {
-  if (!rc.producer_name && !rc.event_name) return null;
-  const text = [rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
+  if (!rc.producer_name && !rc.event_name && !rc.promoter_name) return null;
+  const text = [rc.promoter_name && `Referred by ${rc.promoter_name.split(' ')[0]}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${className}`} style={{ color: 'var(--qs-subtle)' }} title={[rc.event_name, rc.producer_name].filter(Boolean).join(' — ')}>
       <Link2 className="h-3 w-3" /> {text}
@@ -178,7 +179,13 @@ export default function RateChecksPage() {
 
   const enabled = features?.has('rate_checks');
   // One fetch for every status: the filter pills show counts, so filter client-side.
-  const { data: allRows = [], isLoading, error } = useRateChecks(enabled ? agencyId : null, null);
+  const { data: rawRows = [], isLoading, error } = useRateChecks(enabled ? agencyId : null, null);
+  // "Referred by Javon": partner names onto the rows that came through a partner link.
+  const { data: promoters = [] } = usePromoters(enabled ? agencyId : null);
+  const allRows = useMemo(() => {
+    const names = Object.fromEntries(promoters.map(p => [p.id, p.name]));
+    return rawRows.map(r => (r.promoter_id && names[r.promoter_id] ? { ...r, promoter_name: names[r.promoter_id] } : r));
+  }, [rawRows, promoters]);
   const open = openRow ? (allRows.find(r => r.id === openRow.id) || openRow) : null;
 
   const counts = useMemo(() => Object.fromEntries(FILTERS.map(f => [
@@ -194,7 +201,7 @@ export default function RateChecksPage() {
     return allRows
       .filter(r => !statuses || statuses.includes(r.status))
       .filter(r => !q
-        || [r.first_name, r.extracted?.insured_name, r.carrier, r.zip, r.policy_number, r.decision_carrier, r.event_name, r.producer_name].some(v => v && String(v).toLowerCase().includes(q))
+        || [r.first_name, r.extracted?.insured_name, r.carrier, r.zip, r.policy_number, r.decision_carrier, r.event_name, r.producer_name, r.promoter_name].some(v => v && String(v).toLowerCase().includes(q))
         || (qDigits.length >= 3 && (r.phone || '').includes(qDigits)));
   }, [allRows, filter, search]);
 
@@ -257,7 +264,8 @@ export default function RateChecksPage() {
             { v: 'invites', label: 'Links sent', Icon: Send },
             { v: 'map', label: 'Where we win', Icon: MapIcon },
             { v: 'agents', label: 'Competing agents', Icon: Users },
-            { v: 'partners', label: 'Referral partners', Icon: Handshake },
+            { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
+            { v: 'partners', label: 'Referral agencies', Icon: Handshake },
             { v: 'rules', label: 'Rules', Icon: SlidersHorizontal },
           ].map(({ v, label, Icon }) => (
             <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)}
@@ -270,6 +278,8 @@ export default function RateChecksPage() {
 
         {tab === 'map' ? <WinMap agencyId={agencyId} />
           : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} />
+          : tab === 'promoters' ? <PartnersTab agencyId={agencyId} userId={user?.id} canEdit={canEditRules}
+              onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); }} />
           : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />
           : tab === 'rules' ? <RulesTab agencyId={agencyId} canEdit={canEditRules} />
           : tab === 'invites' ? <InvitesTab agencyId={agencyId} producerName={producerName}

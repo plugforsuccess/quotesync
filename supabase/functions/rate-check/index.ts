@@ -718,6 +718,19 @@ async function resolveInvite(supabase: any, code: unknown) {
   return data ?? null
 }
 
+// A partner's permanent link (rate_check_promoters), same /r/CODE space as invites.
+async function resolvePromoter(supabase: any, code: unknown) {
+  const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  if (c.length !== 8) return null
+  const { data } = await supabase
+    .from('rate_check_promoters')
+    .select('id, agency_id, name')
+    .eq('code', c)
+    .eq('active', true)
+    .maybeSingle()
+  return data ?? null
+}
+
 // audit_log.event_type is allowlisted (see the *_audit_log_rate_check_events
 // migration); log instead of failing silently if an insert is rejected.
 async function audit(supabase: any, row: Record<string, unknown>) {
@@ -754,7 +767,12 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Rate limit exceeded' }, 429, corsHeaders)
     }
     const invite = await resolveInvite(supabase, body.code)
-    if (!invite) return jsonResponse({ error: 'This link has expired' }, 404, corsHeaders)
+    if (!invite) {
+      // A partner's link: say who shared it, pre-fill nothing.
+      const promoter = await resolvePromoter(supabase, body.code)
+      if (promoter) return jsonResponse({ promoter_name: String(promoter.name).trim().split(/\s+/)[0] }, 200, corsHeaders)
+      return jsonResponse({ error: 'This link has expired' }, 404, corsHeaders)
+    }
     await supabase.from('rate_check_invites')
       .update({ opened_at: invite.opened_at ?? new Date().toISOString(), open_count: (invite.open_count ?? 0) + 1 })
       .eq('id', invite.id)
@@ -815,6 +833,8 @@ Deno.serve(async (req) => {
 
   // ── Tagged invite link (consumer upload from /r/CODE) ──
   const invite = !staff && body.invite_code ? await resolveInvite(supabase, body.invite_code) : null
+  // Not a producer's invite? It may be a partner's link (paid per qualified household).
+  const promoter = !staff && !invite && body.invite_code ? await resolvePromoter(supabase, body.invite_code) : null
 
   // No cap on how many policies one household sends: once a visitor's first policy is in,
   // the rest of their policies (same browser session, phone and network, within 30 minutes)
@@ -915,7 +935,9 @@ Deno.serve(async (req) => {
       ? { data: { id: staff.agencyId } }
       : invite
         ? { data: { id: invite.agency_id } }
-        : await supabase.from('agencies').select('id').eq('is_default', true).single()
+        : promoter
+          ? { data: { id: promoter.agency_id } }
+          : await supabase.from('agencies').select('id').eq('is_default', true).single()
     const agencyId = defaultAgency?.id
     if (!agencyId) throw new Error('No default agency configured')
 
@@ -933,6 +955,7 @@ Deno.serve(async (req) => {
         uploaded_by: staff?.userId ?? null,
         housing_situation: housing,
         ...origin,
+        ...(promoter ? { promoter_id: promoter.id } : {}),
         ...consent,
         ...referralConsent,
         ...sanitizedUtm,

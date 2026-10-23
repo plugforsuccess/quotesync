@@ -38,6 +38,10 @@ export const queryKeys = {
     invites: (agencyId) => ['rate_checks', 'invites', agencyId],
     events: (agencyId) => ['rate_checks', 'events', agencyId],
     inviteStats: (agencyId) => ['rate_checks', 'invite_stats', agencyId],
+    promoters: (agencyId) => ['rate_checks', 'promoters', agencyId],
+    promoterScans: (agencyId) => ['rate_checks', 'promoter_scans', agencyId],
+    promoterRates: (agencyId) => ['rate_checks', 'promoter_rates', agencyId],
+    promoterPayouts: (agencyId) => ['rate_checks', 'promoter_payouts', agencyId],
   },
 
   // ── Feature permissions ─────────────────────────────────────────────────────
