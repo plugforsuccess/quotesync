@@ -3,7 +3,7 @@
 // permanent Rate Check link and are paid a flat fee per qualified household —
 // by the dec pages it sends, never by what it buys. Shows each partner's link,
 // what they're owed this month, their close rate and cost per win, the pay
-// schedule, and a monthly payout export for 1099s. Math lives in partnerPay.js.
+// schedule, and a yearly export of what was paid, for 1099s. Math lives in partnerPay.js.
 
 import { useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 'lucide-react';
@@ -18,7 +18,7 @@ import { inviteUrl } from './invite';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
   TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, MIN_PAYOUT, QUOTE_DAYS, scheduleFrom, households, partnerSummary, applyCap,
-  monthsWithActivity, monthLabel, monthStart, currentMonth, payoutPlan,
+  monthsWithActivity, monthLabel, monthStart, currentMonth, payoutPlan, paidInYear,
 } from './partnerPay';
 
 const pct = (n) => (n == null ? '—' : `${Math.round(n * 100)}%`);
@@ -60,14 +60,19 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const monthOwed = promoters.reduce((t, p) => t + (byPartner[p.id]?.summary.month.owed || 0), 0);
   const monthHouseholds = promoters.reduce((t, p) => t + (byPartner[p.id]?.summary.month.households || 0), 0);
 
-  const exportMonth = () => {
-    downloadCSV(`partner-payouts-${month}.csv`, promoters.map(p => {
-      const s = byPartner[p.id]?.summary;
+  // 1099s count what was paid in the calendar year (by payment date), so a payout
+  // that covers carried-over months is reported at its full amount.
+  const year = Number(month.slice(0, 4));
+  const paidThisYear = useMemo(() => paidInYear(payouts, year), [payouts, year]);
+  const exportYear = () => {
+    downloadCSV(`partner-1099-${year}.csv`, promoters.filter(p => paidThisYear[p.id]).map(p => {
+      const t = paidThisYear[p.id];
       return {
         partner: p.name, phone: p.phone ? formatPhone(p.phone) : '', email: p.email || '',
-        month: monthLabel(month), households: s?.month.households || 0, amount: (s?.month.owed || 0).toFixed(2),
-        w9_on_file: p.w9_received_at ? 'yes' : 'no', tin: p.w9_tin_last4 ? `${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} ending ${p.w9_tin_last4}` : '', agreement_signed: p.agreement_signed_at ? formatDate(p.agreement_signed_at) : 'no',
-        paid: paidFor(p.id) ? formatDate(paidFor(p.id).paid_at) : '',
+        year, paid: t.amount.toFixed(2), payments: t.payments,
+        months_covered: t.months.map(monthLabel).join('; '), last_paid: formatDate(t.lastPaid),
+        w9_on_file: p.w9_received_at ? 'yes' : 'no', tin: p.w9_tin_last4 ? `${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} ending ${p.w9_tin_last4}` : '',
+        agreement_signed: p.agreement_signed_at ? formatDate(p.agreement_signed_at) : 'no',
       };
     }));
   };
@@ -117,11 +122,11 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
             <Stat label="Owed" value={dollars(monthOwed)} tone="var(--qs-warning)" />
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button type="button" onClick={exportMonth} disabled={!payouts.length}
+            <button type="button" onClick={exportYear} disabled={!Object.keys(paidThisYear).length}
               className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-medium disabled:opacity-50" style={inputStyle}>
-              <Download className="h-4 w-4" aria-hidden="true" /> Export for 1099s
+              <Download className="h-4 w-4" aria-hidden="true" /> Export {year} for 1099s
             </button>
-            {!payouts.length && <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Available once a partner is paid</span>}
+            <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>{Object.keys(paidThisYear).length ? `What each partner was paid in ${year}, by payment date` : `Available once a partner is paid in ${year}`}</span>
           </div>
           {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
         </div>
@@ -187,6 +192,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                     <button type="button" disabled={recordPayout.isPending}
                       onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, months: [{ period: monthStart(month) }], userId, remove: true })}
                       className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}>Mark unpaid</button>
+                  ) : plan.amount > 0 && !plan.underMinimum && !p.w9_received_at ? (
+                    <span className="self-center text-xs font-semibold" style={{ color: 'var(--qs-warning)' }}>W-9 needed before paying {dollars(plan.amount)}</span>
                   ) : plan.amount > 0 && !plan.underMinimum ? (
                     <button type="button" disabled={recordPayout.isPending}
                       onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, userId,

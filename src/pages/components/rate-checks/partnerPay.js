@@ -200,3 +200,24 @@ export function payoutPlan(hh, payouts, month) {
 export function monthsWithActivity(hh, current) {
   return [...new Set([current, ...hh.filter(h => h.tier && h.month).map(h => h.month)])].sort().reverse();
 }
+
+/**
+ * What each partner was actually paid in a calendar year, for 1099s: the recorded
+ * payouts whose paid_at falls in `year` (a 1099 counts the payment date, not the
+ * month earned, so carried-over months land in the year they were paid).
+ * Returns { [promoterId]: { amount, payments, months, lastPaid } }.
+ */
+export function paidInYear(payouts, year) {
+  const by = {};
+  for (const p of payouts || []) {
+    if (!p.paid_at || new Date(p.paid_at).getFullYear() !== Number(year)) continue;
+    const t = (by[p.promoter_id] ||= { amount: 0, paidAt: new Set(), months: [], lastPaid: null });
+    t.amount += Number(p.amount) || 0;
+    t.paidAt.add(p.paid_at);
+    t.months.push(String(p.period).slice(0, 7));
+    if (!t.lastPaid || p.paid_at > t.lastPaid) t.lastPaid = p.paid_at;
+  }
+  return Object.fromEntries(Object.entries(by).map(([id, t]) => [id, {
+    amount: Math.round(t.amount * 100) / 100, payments: t.paidAt.size, months: t.months.sort(), lastPaid: t.lastPaid,
+  }]));
+}
