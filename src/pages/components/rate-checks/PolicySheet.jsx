@@ -115,7 +115,7 @@ const VEHICLE_TONE = { color: 'var(--qs-cyan)', background: 'rgba(6, 182, 212, 0
 
 function VehicleChip({ x }) {
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={{ ...VEHICLE_TONE, color: 'var(--qs-bright)' }}>{vehicleShort(x.v)}</span>
+    <span className="inline-flex items-center whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-semibold" style={{ ...VEHICLE_TONE, color: 'var(--qs-bright)' }}>{vehicleShort(x.v)}</span>
   );
 }
 
@@ -141,10 +141,17 @@ function CoverageTile({ c, setup, total, wide }) {
         <ul className="mt-1 space-y-1.5">
           {rows.map(x => (
             <li key={x.index} className="flex min-h-[28px] items-center justify-between gap-3">
-              <span className="min-w-0"><VehicleChip x={x} /></span>
+              {/* The car never wraps; a long value breaks at its "·" instead ("$50/day" over "$1,500 max"). */}
+              <span className="shrink-0"><VehicleChip x={x} /></span>
               {x.values[c.key] == null
                 ? <span className="text-base font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
-                : <span className="shrink-0 whitespace-nowrap text-base font-bold tabular-nums" style={ADD_ON_STYLE}>{x.values[c.key]}</span>}
+                : (
+                  <span className="min-w-0 text-right text-base font-bold tabular-nums" style={ADD_ON_STYLE}>
+                    {String(x.values[c.key]).split(' · ').map((part, k, all) => (
+                      <span key={k}>{k > 0 && ' '}<span className="whitespace-nowrap">{part}{k < all.length - 1 && ' ·'}</span></span>
+                    ))}
+                  </span>
+                )}
             </li>
           ))}
         </ul>
