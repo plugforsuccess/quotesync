@@ -205,7 +205,7 @@ export function quoteSheet(rc) {
       push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}${level ? ` — ${level.toUpperCase()}` : ''}`);
       const lien = lienholderFor(rc, i);
       const gap = gapFor(rc, i);
-      const gapText = [...gap.pills.map(p => p.label), gap.flag === 'no_gap' && 'No gap — ask', gap.flag === 'no_lien' && 'no lienholder listed — paid off?'].filter(Boolean).join(' · ');
+      const gapText = [...gap.pills.map(p => p.label), gap.flag === 'no_gap' && 'No Gap — ask', gap.flag === 'no_lien' && 'no lienholder listed — paid off?'].filter(Boolean).join(' · ');
       if (lien) push(`    Lienholder: ${lien} — ask loan payoff${gapText ? ` · ${gapText}` : ''}`);
       else if (gapText) push(`    ${gapText}`);
       const own = vehicleCoverages(rc, i).filter(r => (!setup || !physical.has(r.key)) && r.key !== 'gap' && r.key !== 'loan_lease');

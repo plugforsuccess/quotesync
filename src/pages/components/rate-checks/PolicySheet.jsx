@@ -216,7 +216,7 @@ function VehicleCard({ rc, v, index, level, n }) {
   const gapRow = (mt) => hasGapRow && (
     <div className={`${mt} flex flex-wrap items-center gap-1.5 pl-[34px]`}>
       {gap.pills.map(p => <span key={p.key} className={PILL} style={GAP_PILL}>{p.label}</span>)}
-      {gap.flag === 'no_gap' && <span className={PILL} style={FLAG_PILL}>No gap</span>}
+      {gap.flag === 'no_gap' && <span className={PILL} style={FLAG_PILL}>No Gap</span>}
       {gap.flag === 'no_lien' && (
         <span className={`${PILL} gap-1`} style={FLAG_PILL}>
           <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" /> No lienholder listed — paid off?
