@@ -88,35 +88,43 @@ const LEVEL_TONE = {
 
 // "$50/day · $1,500 max" → "$50/day" large with "$1,500 max" under it, so long
 // values still fit a half-width tile.
-function TileValue({ value, addOn, size = 'text-xl' }) {
+function TileValue({ value, addOn, inline = false }) {
   const [main, ...rest] = String(value).split(' · ');
+  const tone = addOn ? ADD_ON_STYLE : { color: 'var(--qs-bright)' };
+  // Full-width tiles have room for "$50/day · $1,500 max" on one line.
+  if (inline) {
+    return (
+      <p className="text-xl font-bold tabular-nums" style={tone}>
+        {main}{rest.length > 0 && <span className="text-base font-semibold"> · {rest.join(' · ')}</span>}
+      </p>
+    );
+  }
   return (
     <span className="block">
-      <span className={`block ${size} font-bold tabular-nums`} style={addOn ? ADD_ON_STYLE : { color: 'var(--qs-bright)' }}>{main}</span>
+      <span className="block text-xl font-bold tabular-nums" style={tone}>{main}</span>
       {rest.length > 0 && <span className="block text-xs font-medium" style={addOn ? ADD_ON_STYLE : { color: 'var(--qs-subtle)' }}>{rest.join(' · ')}</span>}
     </span>
   );
 }
 
 // One tile per coverage. A plain tile is the same on every vehicle; when vehicles
-// differ, the tile spans the row and names which vehicles have which value.
+// differ, each value gets a small "Only on …" line naming its vehicles.
 function CoverageTile({ c, rc, wide }) {
   const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(', ');
-  const rows = [...c.groups, ...(c.none.length ? [{ value: null, indexes: c.none }] : [])];
+  const only = c.groups.length === 1;
   return (
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
       <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
       {c.same ? <TileValue value={c.groups[0].value} addOn={c.addOn} /> : (
-        <ul className="mt-1 space-y-1.5">
-          {rows.map(g => (
-            <li key={g.value ?? 'none'} className="flex items-baseline justify-between gap-3">
-              {g.value == null
-                ? <span className="text-lg font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
-                : <TileValue value={g.value} addOn={c.addOn} size="text-lg" />}
-              <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(g.indexes)}</span>
-            </li>
+        <div className="space-y-2">
+          {c.groups.map(g => (
+            <div key={g.value}>
+              <TileValue value={g.value} addOn={c.addOn} inline />
+              <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>{only ? 'Only on' : 'On'} {names(g.indexes)}</p>
+            </div>
           ))}
-        </ul>
+          {!only && c.none.length > 0 && <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>None on {names(c.none)}</p>}
+        </div>
       )}
     </div>
   );
