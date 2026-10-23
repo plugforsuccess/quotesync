@@ -124,11 +124,11 @@ function CoverageTile({ c, setup, wide }) {
   return (
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
       <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
-      {c.same ? <TileValue value={c.groups[0].value} addOn={c.addOn} /> : (
+      {c.same ? <TileValue value={c.groups[0].value} addOn /> : (
         <div className="space-y-2">
           {c.groups.map(g => (
             <div key={g.value}>
-              <TileValue value={g.value} addOn={c.addOn} inline />
+              <TileValue value={g.value} addOn inline />
               <div className="mt-1 flex flex-wrap gap-1">{chips(g.indexes)}</div>
             </div>
           ))}
