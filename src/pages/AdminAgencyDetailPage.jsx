@@ -176,7 +176,7 @@ const AdminAgencyDetailPage = () => {
     try {
       await startImpersonation(principal.user_id, impersonationReason, false);
       setShowImpersonateModal(false);
-      navigate('/agency/dashboard');
+      navigate('/agency/leads/rate-checks');
     } catch (err) {
       setImpersonateError(err.message || 'Failed to start impersonation.');
     } finally {

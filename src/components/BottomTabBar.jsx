@@ -2,10 +2,10 @@
 // Mobile-only bottom tab bar for primary navigation (hidden on md: and above)
 
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, BarChart2, DollarSign, Grid } from 'lucide-react';
+import { Camera, ClipboardList, BarChart2, DollarSign, Grid } from 'lucide-react';
 
 const tabs = [
-  { to: '/agency/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/agency/leads/rate-checks', label: 'Rate Checks', icon: Camera },
   { to: '/agency/leads', label: 'Leads', icon: ClipboardList },
   { to: '/admin/staff-performance', label: 'Performance', icon: BarChart2 },
   { to: '/admin/revenue-projections', label: 'Revenue', icon: DollarSign },
@@ -14,8 +14,10 @@ const tabs = [
 function BottomTabBar({ onMorePress, moreActive, drawerOpen = false }) {
   const location = useLocation();
 
-  const onTab = (to) =>
-    location.pathname === to || location.pathname.startsWith(to + '/');
+  const matches = (to) => location.pathname === to || location.pathname.startsWith(to + '/');
+  // The most specific tab wins: /agency/leads/rate-checks lights Rate Checks, not Leads.
+  const best = tabs.filter(t => matches(t.to)).sort((a, b) => b.to.length - a.to.length)[0]?.to;
+  const onTab = (to) => to === best;
   // Exactly one tab is active: an open More drawer wins; otherwise a tab whose path
   // matches wins over More (Rate Checks is under /agency/leads but also in the drawer).
   const anyTab = tabs.some(t => onTab(t.to));

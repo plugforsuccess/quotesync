@@ -113,14 +113,15 @@ export const platformNav = {
 export const agencyNav = {
   principal: {
     primary: [
+      // Rate Checks is the lead source, so it's first and where principals land.
+      // The funnel Dashboard (/agency/dashboard) is hidden: it tracked the retired /save wizard.
+      primaryItems.rateChecks,
       { to: '/agency/weekly-review', label: 'Review', icon: '📋' },
-      primaryItems.funnel,
       primaryItems.leads,
       primaryItems.retention,
       primaryItems.planning,
     ],
     secondary: [
-      primaryItems.rateChecks,
       primaryItems.staffPerformance,
       primaryItems.crossSell,
       primaryItems.customers,
@@ -298,7 +299,7 @@ export function getDefaultLanding(platformRole, agencyRole, agency = null) {
   if (platformRole) {
     if (platformRole === 'platform_editor') return '/news/dashboard';
     if (platformRole === 'platform_master_admin' || platformRole === 'platform_admin') return '/admin';
-    return '/agency/dashboard';
+    return '/agency/leads/rate-checks';
   }
   if (agencyRole) {
     // MT-04: Redirect new agents to setup page if onboarding not complete
@@ -308,8 +309,8 @@ export function getDefaultLanding(platformRole, agencyRole, agency = null) {
     // Employees land on their personal queue. /agency/leads requires
     // producer-or-higher and would redirect to /unauthorized otherwise.
     if (agencyRole === 'employee') return '/my/queue';
-    if (agencyRole === 'principal') return '/agency/dashboard';
-    return '/agency/leads';
+    // Principals and producers start on Rate Checks, where the leads come in.
+    return '/agency/leads/rate-checks';
   }
   return '/';
 }

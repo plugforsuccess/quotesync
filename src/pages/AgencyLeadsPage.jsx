@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, Filter, Clock, FileText, ArrowUpDown,
-  ChevronRight, Users, AlertCircle, BarChart3
+  ChevronRight, Users, AlertCircle
 } from 'lucide-react';
 import { useCurrentAgency, useAgencyLeads, useAgencySLAMetrics } from '../hooks/useAgencyLeads';
 import { getScoreColor, RISK_FLAG_CONFIG } from '../lib/leadScoring';
@@ -135,13 +135,6 @@ const AgencyLeadsPage = () => {
           </h1>
           <div className="flex items-center gap-4 mt-1">
             <p style={{ color: 'var(--qs-dim)' }}>Manage and track your leads</p>
-            <Link
-              to="/agency/dashboard"
-              className="text-sm text-primary-600 hover:text-primary-800 inline-flex items-center gap-1"
-            >
-              <BarChart3 className="w-4 h-4" />
-              Funnel Dashboard
-            </Link>
           </div>
         </div>
 
