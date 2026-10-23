@@ -347,6 +347,7 @@ function Layout({ forcePlane = null }) {
                   to={item.to}
                   label={item.label}
                   isPrimary={item.isPrimary && idx === 0}
+                  scrollToQuote={item.scrollToQuote}
                   end={item.end}
                 />
               ))}
@@ -435,7 +436,8 @@ function Layout({ forcePlane = null }) {
                 label={item.label}
                 icon={item.icon}
                 isPrimary={item.isPrimary && idx === 0}
-                end={item.end}
+                scrollToQuote={item.scrollToQuote}
+                  end={item.end}
               />
             ))}
 
@@ -649,11 +651,24 @@ function ChecklistBell({ count, onClick, compact = false }) {
   );
 }
 
-function TabLink({ to, label, end, isPrimary }) {
+function TabLink({ to, label, end, scrollToQuote, isPrimary }) {
+  const handleClick = (e) => {
+    if (scrollToQuote && to === '/quotes') {
+      // Small delay to allow navigation to complete
+      setTimeout(() => {
+        const quoteButton = document.querySelector('.canopy-connect-embed');
+        if (quoteButton) {
+          quoteButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  };
+
   return (
     <NavLink
       to={to}
       end={end}
+      onClick={handleClick}
       className={({ isActive }) => {
         return [
           'relative px-4 lg:px-6 py-2.5 rounded-full font-semibold transition-all text-sm lg:text-base whitespace-nowrap group overflow-hidden',
@@ -698,11 +713,24 @@ function TabLink({ to, label, end, isPrimary }) {
   );
 }
 
-function MobileTabLink({ to, label, end, icon, isPrimary }) {
+function MobileTabLink({ to, label, end, icon, scrollToQuote, isPrimary }) {
+  const handleClick = (e) => {
+    if (scrollToQuote && to === '/quotes') {
+      // Small delay to allow navigation and menu close
+      setTimeout(() => {
+        const quoteButton = document.querySelector('.canopy-connect-embed');
+        if (quoteButton) {
+          quoteButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+    }
+  };
+
   return (
     <NavLink
       to={to}
       end={end}
+      onClick={handleClick}
       className="relative w-full max-w-sm group overflow-hidden"
     >
       {({ isActive }) => (

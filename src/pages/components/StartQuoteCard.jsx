@@ -1,0 +1,377 @@
+// src/components/StartQuoteCard.jsx - WITH ZIP VALIDATION + DUAL CTA
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowRight, CheckCircle, Shield, Zap, Lock, Eye } from 'lucide-react';
+
+const StartQuoteCard = ({ isVisible, setModalStep, onGetQuote }) => {
+  const navigate = useNavigate();
+
+  return (
+    <div
+      className={`w-full px-4 sm:px-6 lg:px-12 pb-24 mb-16 transition-all duration-1000 delay-300 ${
+        isVisible ? 'opacity-100 trangray-y-0' : 'opacity-0 trangray-y-10'
+      }`}
+    >
+      <div
+        className={`max-w-5xl pt-0 mx-auto transition-all duration-1000 delay-500 ${
+          isVisible ? 'opacity-100 trangray-y-0' : 'opacity-0 trangray-y-10'
+        }`}
+      >
+        {/* Main Card with Advanced Glassmorphism */}
+        <div className="relative group">
+          {/* Animated Gradient Border */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 rounded-[2rem] opacity-75 group-hover:opacity-100 blur-sm group-hover:blur-md transition duration-1000 animate-gradient-x"></div>
+
+          {/* Card Content */}
+          <div className="relative bg-white/95 backdrop-blur-2xl rounded-[2rem] shadow-2xl p-6 sm:p-8 md:p-12 border border-white/50 overflow-hidden">
+            {/* Animated Mesh Background */}
+            <div className="absolute inset-0 opacity-[0.03]">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-500 via-primary-600 to-secondary-500 animate-mesh"></div>
+            </div>
+
+            {/* Floating Orbs */}
+            <div className="absolute top-10 right-10 w-32 h-32 bg-gradient-to-br from-primary-400/20 to-secondary-400/20 rounded-full blur-3xl animate-float"></div>
+            <div className="absolute bottom-10 left-10 w-40 h-40 bg-gradient-to-br from-secondary-400/20 to-primary-400/20 rounded-full blur-3xl animate-float-delayed"></div>
+
+            {/* Content */}
+            <div className="relative z-10">
+              {/* Header with Gradient Text */}
+              <div className="text-center mb-4">
+                <div className="inline-block mb-4">
+
+                </div>
+
+                <h2 className="text-4xl sm:text-5xl font-black mb-4 leading-tight">
+                  <span className="bg-gradient-to-r from-gray-900 via-primary-900 to-secondary-900 bg-clip-text text-transparent animate-gradient-x">
+                    Start Your Quote
+                  </span>
+                </h2>
+
+                {/* Dual CTA Approach */}
+                <div className="max-w-xl mx-auto">
+                  {/* PRIMARY CTA: Check My Savings → /save */}
+                  <button
+                    onClick={() => {
+                      const stored = localStorage.getItem('qs_validated_zip');
+                      const zip = stored ? JSON.parse(stored)?.zip : null;
+                      navigate(zip ? `/save?zip=${zip}` : '/save');
+                    }}
+                    className="group relative inline-flex items-center justify-center gap-3 w-full overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-[1.02] active:scale-[0.98] cursor-pointer border-0"
+                  >
+                    {/* Animated Gradient Border */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
+
+                    {/* Button Content */}
+                    <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-5 rounded-2xl transition-all duration-300">
+                      {/* Shine Effect */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
+
+                      <span className="relative z-10 text-white font-black text-lg tracking-wide whitespace-nowrap">
+                        Check My Savings
+                      </span>
+                      <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform duration-300 group-hover:trangray-x-2" />
+                    </div>
+                  </button>
+
+                  {/* SECONDARY CTA: Canopy Connect */}
+                  <button
+                    onClick={onGetQuote}
+                    className="mt-3 text-sm text-primary-600 hover:text-primary-700 font-medium hover:underline transition-colors cursor-pointer bg-transparent border-0"
+                  >
+                    Already have your policy handy? Sync it now &rarr;
+                  </button>
+
+                  <div className="flex items-center justify-center gap-6 mt-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1">
+                      <Shield className="w-4 h-4 text-green-600" />
+                      Bank-level security
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Zap className="w-4 h-4 text-primary-600" />
+                      Takes 30 seconds
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Process Steps with Advanced Design */}
+              <ProcessSteps setModalStep={setModalStep} onGetQuote={onGetQuote} />
+
+              {/* How it works + Security */}
+              <HowItWorks onGetQuote={onGetQuote} />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProcessSteps = ({ setModalStep, onGetQuote }) => {
+  const [hoveredStep, setHoveredStep] = useState(null);
+
+  const steps = [
+    { step: 1, text: 'Select your current insurance company', icon: '🔍' },
+    { step: 2, text: 'Log in securely using your existing credentials', icon: '🔐' },
+    { step: 3, text: 'Enter the quick verification code', icon: '📱' },
+    { step: 4, text: 'Your current policy details load automatically', icon: '⚡' },
+    { step: 5, text: 'Confirm your contact information', icon: '✉️' },
+    { step: 6, text: 'Add any drivers listed on your policy', icon: '👥' },
+    { step: 7, text: 'Done — sent directly to Cameron', icon: '🎉' },
+  ];
+
+  return (
+    <div className="mt-16 relative">
+      {/* Background Card with Advanced Gradient */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-secondary-50 to-primary-50 border-2 border-primary-200 p-8 shadow-2xl">
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-5">
+          <div className="absolute inset-0 bg-[linear-gradient(45deg,transparent_25%,rgba(99,102,241,0.1)_25%,rgba(99,102,241,0.1)_50%,transparent_50%,transparent_75%,rgba(99,102,241,0.1)_75%,rgba(99,102,241,0.1))] bg-[length:20px_20px] animate-slide"></div>
+        </div>
+
+        {/* Floating Gradient Orbs */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary-400/10 to-secondary-400/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-secondary-400/10 to-primary-400/10 rounded-full blur-2xl"></div>
+
+        <div className="relative z-10">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-3 mb-3">
+                <h2 className="text-2xl sm:text-3xl font-black bg-gradient-to-r from-gray-900 via-primary-900 to-secondary-900 bg-clip-text text-transparent">
+                The Process is Simple
+              </h2>
+            </div>
+            <p className="text-sm font-semibold text-indigo-600">Click any step for details</p>
+          </div>
+
+          {/* Steps Grid */}
+          <div className="space-y-3">
+            {steps.map((item) => (
+              <div
+                key={item.step}
+                onClick={() => setModalStep(item.step)}
+                onMouseEnter={() => setHoveredStep(item.step)}
+                onMouseLeave={() => setHoveredStep(null)}
+                className="relative group cursor-pointer"
+              >
+                {/* Glow Effect on Hover */}
+                <div className={`absolute -inset-0.5 bg-gradient-to-r from-primary-500 via-primary-600 to-secondary-500 rounded-2xl opacity-0 group-hover:opacity-50 blur transition duration-300`}></div>
+
+                {/* Step Card */}
+                <div className="relative flex items-start gap-4 bg-white/90 backdrop-blur-sm rounded-2xl p-5 shadow-md group-hover:shadow-2xl transition-all duration-300 transform group-hover:-trangray-y-1 border border-primary-100 group-hover:border-primary-300">
+                  {/* Step Number with Advanced Styling */}
+                  <div className="flex-shrink-0 relative">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br from-primary-500 to-secondary-600 flex items-center justify-center shadow-lg transition-all duration-300 ${
+                      hoveredStep === item.step ? 'scale-110 rotate-2' : 'scale-100 rotate-0'
+                    }`}>
+                      <span className="text-white font-bold text-lg">{item.step}</span>
+                    </div>
+                    {/* Connecting Line (except last) */}
+                    {item.step < steps.length && (
+                      <div className="absolute top-12 left-1/2 -trangray-x-1/2 w-0.5 h-3 bg-gradient-to-b from-primary-300 to-transparent"></div>
+                    )}
+                  </div>
+
+                  {/* Step Text */}
+                  <div className="flex-1 pt-2.5">
+                    <p className="text-gray-800 font-semibold text-base leading-relaxed group-hover:text-primary-900 transition-colors">
+                      {item.text}
+                    </p>
+                  </div>
+
+                  {/*Icon with Animation*/}
+                  <div className={`flex-shrink-0 text-3xl transition-all duration-300 ${
+                    hoveredStep === item.step ? 'scale-125 rotate-12' : 'scale-100 rotate-0'
+                  }`}>
+                    {item.icon}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Bottom CTA - NOW USES onGetQuote */}
+          <div className="mt-8 text-center">
+            <button
+              onClick={onGetQuote}
+              className="group inline-flex items-center justify-center gap-3 relative overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer border-0 bg-transparent"
+            >
+              {/* Animated Border */}
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 animate-gradient-x"></div>
+              
+              {/* Button Content */}
+              <div className="relative flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-500 via-green-500 to-teal-500 px-8 py-4 rounded-2xl transition-all duration-300 transform">
+                <span className="text-white font-black text-lg whitespace-nowrap">Start My Quote</span>
+                <ArrowRight className="w-5 h-5 text-white transition-transform group-hover:trangray-x-2" />
+              </div>
+            </button>
+            <p className="text-xs text-gray-500 mt-3 flex items-center justify-center gap-4">
+              <span className="flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-green-600" />
+                No credit check
+              </span>
+              <span className="flex items-center gap-1">
+                <Lock className="w-3 h-3 text-primary-600" />
+                No card required
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes slide {
+          0% {
+            transform: translateX(0) translateY(0);
+          }
+          100% {
+            transform: translateX(20px) translateY(20px);
+          }
+        }
+
+        .animate-slide {
+          animation: slide 20s linear infinite;
+        }
+      `}</style>
+    </div>
+  );
+};
+
+const HowItWorks = ({ onGetQuote }) => {
+  return (
+    <div className="mt-12 space-y-8">
+      {/* How it works Section */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-50 via-primary-50 to-secondary-50 border-2 border-primary-200 p-8 shadow-xl">
+        {/* Animated Background */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-primary-400/10 to-transparent rounded-full blur-3xl"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-12 h-12 bg-gradient-to-br from-primary-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-2xl">💡</span>
+            </div>
+            <h3 className="text-2xl font-black text-gray-900">How Does This Work?</h3>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4 mb-8">
+            {/* Old Way */}
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-gray-400 to-gray-500 rounded-2xl opacity-20 group-hover:opacity-40 blur transition duration-300"></div>
+              <div className="relative bg-white/80 backdrop-blur-sm rounded-2xl p-6 border-2 border-gray-200 transition-all duration-300 group-hover:shadow-lg">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">😓</span>
+                  <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">
+                    The Old Way
+                  </p>
+                </div>
+                <p className="text-gray-700 leading-relaxed">
+                  Manually fill out <span className="font-bold text-gray-900">20 minutes</span> of online forms before getting{' '}
+                  <span className="font-bold text-red-600">spammed</span> by telemarketers.
+                </p>
+              </div>
+            </div>
+
+            {/* Modern Way */}
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500 via-primary-600 to-secondary-500 rounded-2xl opacity-50 group-hover:opacity-75 blur transition duration-300"></div>
+              <div className="relative bg-white backdrop-blur-sm rounded-2xl p-6 border-2 border-primary-300 transition-all duration-300 group-hover:shadow-xl group-hover:scale-[1.02]">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">✨</span>
+                  <p className="text-sm font-bold text-primary-600 uppercase tracking-wider">
+                    The Modern Way
+                  </p>
+                </div>
+                <p className="text-gray-700 leading-relaxed">
+                  Skip the forms and spam. Just link your current insurance policy{' '}
+                  <span className="font-bold text-primary-600">one time</span> in{' '}
+                  <span className="font-bold text-gray-900">2 minutes</span>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Comparison */}
+          <div className="bg-gradient-to-r from-primary-100/50 to-indigo-100/50 rounded-2xl p-6 border border-primary-200">
+            <p className="text-gray-700 leading-relaxed text-center">
+              <span className="font-semibold text-gray-900">Think of it like Plaid</span> (which links your bank to Venmo or Cash App) –{' '}
+              <span className="font-semibold text-primary-600">same security, way faster</span> than typing everything manually.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Important Qualifier */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 p-6 shadow-lg">
+        <div className="flex items-start gap-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-amber-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+            <span className="text-xl">⚠️</span>
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900 mb-2 text-lg">
+              Important: Do you currently have auto insurance?
+            </h3>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              This service works by comparing your{' '}
+              <span className="font-semibold text-gray-900">existing policy</span> to an Allstate quote. 
+              You must have <span className="font-semibold text-gray-900">active insurance</span> to use this process.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Final CTA - NOW USES onGetQuote */}
+      <div className="text-center">
+        <button
+          onClick={onGetQuote}
+          className="group inline-flex items-center justify-center gap-3 relative overflow-hidden rounded-2xl p-0.5 transition-all duration-500 hover:scale-105 active:scale-95 cursor-pointer border-0 bg-transparent w-full max-w-2xl mx-auto"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 animate-gradient-x"></div>
+          <div className="relative flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 px-8 py-5 rounded-2xl">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent trangray-x-[-200%] group-hover:trangray-x-[200%] transition-transform duration-1000"></div>
+            <span className="relative z-10 text-white font-black text-lg whitespace-nowrap">Compare Rates Now</span>
+            <ArrowRight className="relative z-10 w-6 h-6 text-white transition-transform group-hover:trangray-x-2" />
+          </div>
+        </button>
+      </div>
+
+      {/* Canopy FAQ */}
+      <details className="group bg-gradient-to-br from-gray-50 to-gray-50 rounded-2xl border-2 border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
+        <summary className="cursor-pointer p-6 font-bold text-gray-900 flex items-center justify-between group-hover:bg-gray-100 transition-colors">
+          <span className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-bold">?</span>
+            </div>
+            What is Canopy Connect?
+          </span>
+          <span className="text-gray-400 group-open:rotate-180 transition-transform duration-300">▼</span>
+        </summary>
+        <div className="px-6 pb-6 text-sm text-gray-600 leading-relaxed space-y-3 bg-white/50">
+          <p className="font-medium text-gray-700">
+            Canopy Connect is a secure data-sharing tool enabling you to safely transfer insurance information to your agent.
+          </p>
+          <p>This technology works similar to:</p>
+          <div className="grid sm:grid-cols-3 gap-3">
+            {[
+              { name: 'Plaid', used: 'Venmo, Cash App, Robinhood' },
+              { name: 'Yodlee', used: 'Major banks' },
+              { name: 'Finicity', used: 'Mastercard' },
+            ].map((tech) => (
+              <div key={tech.name} className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-lg p-3 border border-primary-200">
+                <p className="font-bold text-gray-900 mb-1">{tech.name}</p>
+                <p className="text-xs text-gray-600">{tech.used}</p>
+              </div>
+            ))}
+          </div>
+          <div className="bg-success-50 border border-success-200 rounded-lg p-4 mt-4">
+            <p className="font-semibold text-success-900 mb-2">🔒 Security Guarantee</p>
+            <p className="text-xs text-gray-700">
+              Your credentials are never stored. We use 256-bit encryption—the same security standard used by banks and financial institutions.
+            </p>
+          </div>
+        </div>
+      </details>
+    </div>
+  );
+};
+
+export default StartQuoteCard;

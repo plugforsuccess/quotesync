@@ -68,6 +68,12 @@ const NewsroomPage = lazyWithRetry(() => import('./pages/NewsroomPage'));
 const StoryDetailPage = lazyWithRetry(() => import('./pages/StoryDetailPage'));
 const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
 const PunchPage = lazyWithRetry(() => import('./pages/PunchPage'));
+// Hidden, kept for later: the old quote home page and the /save wizard. Not linked
+// from anywhere (Rate Check at / is the lead path), but their URLs still work.
+const InsuranceQuotesPage = lazyWithRetry(() => import('./pages/InsuranceQuotesPage'));
+const SaveWizardPage = lazyWithRetry(() => import('./pages/SaveWizardPage'));
+const SaveConfirmationPage = lazyWithRetry(() => import('./pages/SaveConfirmationPage'));
+const ThankYouPage = lazyWithRetry(() => import('./pages/ThankYouPage'));
 const PartnerPortalPage = lazyWithRetry(() => import('./pages/PartnerPortalPage'));
 const RateCheckPrivacyPage = lazyWithRetry(() => import('./pages/RateCheckPrivacyPage'));
 const AgencyApplyPage = lazyWithRetry(() => import('./pages/AgencyApplyPage'));
@@ -213,8 +219,12 @@ function App() {
 
           {/* Use Layout to wrap all main pages with the nav/tabs */}
           <Route element={<Layout />}>
-            {/* The old quote home page (/quotes) and /save wizard were retired for Rate Check;
-                their old links fall through to the catch-all below and land on it. */}
+            {/* Hidden: the old quote home page and the /save lead wizard. Off the nav, still reachable. */}
+            <Route path="quotes" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><InsuranceQuotesPage /></Suspense></ErrorBoundary>} />
+            <Route path="save" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><SaveWizardPage /></Suspense></ErrorBoundary>} />
+            <Route path="save/details" element={<Navigate to="/save" replace />} />
+            <Route path="save/confirmation" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><SaveConfirmationPage /></Suspense></ErrorBoundary>} />
+            <Route path="success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ThankYouPage /></Suspense></ErrorBoundary>} />
 
             {/* Drivers Ed tab */}
             <Route path="courses" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
