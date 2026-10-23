@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, MessageCircle, Plus, RotateCcw, UserCheck, Upload, X,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -278,26 +278,45 @@ export default function RateCheckPage() {
       return;
     }
 
-    // Several photos at once could be one policy's pages or several policies: ask.
-    if (fresh.length > 1) { setGrouping(fresh); if (step === 'results') setStep('policies'); return; }
+    if (fresh.length > 1) {
+      // A downloaded PDF already holds every page of one policy, so several PDFs are several policies.
+      if (fresh.every(isPdfName)) { addPolicies(fresh.map(f => newPolicy([f]))); setAskingMore(null); return; }
+      // Photos or screenshots could be one policy's pages, several policies, or a mix: ask.
+      setGrouping(fresh);
+      if (step === 'results') setStep('policies');
+      return;
+    }
     const pol = newPolicy(fresh);
     addPolicies([pol]);
     // A single photo: ask whether this policy has more pages (PDFs usually already do).
     setAskingMore(isPdfName(fresh[0]) ? null : pol.id);
   };
 
-  const groupPicked = (asOne) => {
+  // how: 'one' (pages of one policy), 'separate' (one file per policy), or 'mix' (one per
+  // policy for now, each with "Same policy as above" so they can be sorted into pages).
+  const groupPicked = (how) => {
     const files = grouping || [];
     setGrouping(null);
     if (!files.length) return;
-    if (asOne) {
+    if (how === 'one') {
       const pol = newPolicy(files);
       addPolicies([pol]);
       setAskingMore(pol.id);
-    } else {
-      addPolicies(files.map(f => newPolicy([f])));
-      setAskingMore(null);
+      return;
     }
+    const batch = how === 'mix' ? newId() : null;
+    addPolicies(files.map(f => ({ ...newPolicy([f]), ...(batch ? { batch } : {}) })));
+    setAskingMore(null);
+  };
+  // "Same policy as above": move this policy's pages onto the end of the one before it.
+  const mergeUp = (id) => {
+    const list = itemsRef.current.filter(i => i.status === 'draft');
+    const k = list.findIndex(i => i.id === id);
+    if (k < 1) return;
+    const prev = list[k - 1], cur = list[k];
+    const merged = withPages(prev, [...prev.pages, ...cur.pages]);
+    updateItems(all => all.filter(i => i.id !== cur.id).map(i => (i.id === prev.id ? merged : i)));
+    saveDraftPages(merged);
   };
 
   const removeItem = (id) => {
@@ -653,41 +672,49 @@ export default function RateCheckPage() {
                 Get a second opinion on your insurance.
               </h1>
               <p className="mt-3 text-slate-600">
-                Snap the declarations page of each policy — car, home, renters, all of them, every page. A local Allstate
-                agent compares them and texts you only if we can save you money.
+                Upload your auto, home or umbrella declarations pages. A licensed agent on Cam&apos;s team will check your
+                rate and text you when your quote is ready—typically within 30 mins during business hours.
               </p>
             </>
           )}
 
-          <button type="button" onClick={() => openCamera()}
-            className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-9 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
-              <Camera className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
-            </span>
-            <span className="text-xl font-bold">Snap your policy</span>
-            <span className="text-sm text-blue-100">Add as many as you like</span>
-          </button>
           <button type="button" onClick={() => openFiles()}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-semibold text-slate-700">
-            <Upload className="h-5 w-5" aria-hidden="true" /> Upload photos or PDFs
+            className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-8 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
+            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
+              <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
+            </span>
+            <span className="text-xl font-bold">Upload my policy</span>
+            <span className="text-sm text-blue-100">PDF, photos or screenshots</span>
           </button>
-
-          <MeetCam />
+          <button type="button" onClick={() => openCamera()}
+            className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-700 active:bg-slate-50">
+            <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> Take photos instead</span>
+            <span className="mt-0.5 text-xs text-slate-500">Photograph every page of the declarations</span>
+          </button>
+          <p className="mt-3 text-center text-sm text-slate-600">Have more than one policy? Add them all in one upload.</p>
 
           <ul className="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
-            <Trust icon={Sparkles} label="Read in seconds" />
-            <Trust icon={ShieldCheck} label="No spam calls" />
-            <Trust icon={Lock} label="Private & secure" />
+            <Trust icon={UserCheck} label="Reviewed by a licensed agent" />
+            <Trust icon={MessageCircle} label="One text, no calls" />
+            <Trust icon={Lock} label="Never sold or shared" />
           </ul>
 
-          <details className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            <summary className="cursor-pointer font-semibold text-slate-800">Which page do I need?</summary>
-            <p className="mt-2">
-              The one insurers call the <em>declarations page</em>. It shows your name, your cars or home, your coverages
-              and your total price. It often runs 2 to 4 pages (drivers, cars and coverages); snap every page. Find it in your insurer&apos;s app, or in the email they sent when your
-              policy started or renewed. A screenshot works.
-            </p>
+          <details open className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            <summary className="cursor-pointer font-semibold text-slate-800">How to get your declarations page</summary>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700">
+              <li>Log in to your insurer&apos;s website or app.</li>
+              <li>Open <b>Documents</b>. Some insurers call it <b>Policy Documents</b> or <b>Documents &amp; ID Cards</b>.</li>
+              <li>Find the most recent declarations page for each policy.</li>
+              <li>Download the PDF. On iPhone, tap <b>Share</b>, then <b>Save to Files</b>. On Android, it goes to <b>Downloads</b>.</li>
+              <li>Come back here and tap <b>Upload my policy</b>.</li>
+            </ol>
+            <p className="mt-4 font-semibold text-slate-800">Have a paper copy?</p>
+            <p className="mt-1">Tap <b>Take photos instead</b> and photograph every page of the declarations. Lay it flat in good light.</p>
+            <p className="mt-4 font-semibold text-slate-800">Can&apos;t download it?</p>
+            <p className="mt-1">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</p>
           </details>
+
+          <MeetCam />
         </>
       ) : (
         <>
@@ -697,14 +724,15 @@ export default function RateCheckPage() {
               {drafts.length === 1 ? '1 added' : `${drafts.length} added`}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-600">Snap every page of each policy. Add every car, home and renters policy you have.</p>
+          <p className="mt-1 text-sm text-slate-600">Include every page of each policy. Add every auto, home and umbrella policy you have.</p>
 
           <ul className="mt-5 space-y-3">
             {drafts.map((it, n) => (
               <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id}
                 onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
                 onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
-                onRemove={() => removeItem(it.id)} />
+                onRemove={() => removeItem(it.id)}
+                onMergeUp={it.batch && drafts[n - 1]?.batch === it.batch ? () => mergeUp(it.id) : null} />
             ))}
             <li className="flex gap-2">
               <button type="button" onClick={newPolicyPhoto}
@@ -721,7 +749,7 @@ export default function RateCheckPage() {
       )}
 
       {notice && <p className="mt-4 rounded-xl bg-slate-900 px-3 py-2 text-center text-sm text-white" role="status">{notice}</p>}
-      {grouping && <GroupSheet count={grouping.length} onOne={() => groupPicked(true)} onSeparate={() => groupPicked(false)} onCancel={() => setGrouping(null)} />}
+      {grouping && <GroupSheet count={grouping.length} onOne={() => groupPicked('one')} onSeparate={() => groupPicked('separate')} onMix={() => groupPicked('mix')} onCancel={() => setGrouping(null)} />}
     </Shell>
   );
 }
@@ -779,7 +807,7 @@ function Thumb({ item, scanning = false, small = false }) {
 
 // A policy waiting to be sent: its pages in order, each with retake/remove, and an
 // add-page tile. Right after a photo it asks whether the policy has more pages.
-function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove }) {
+function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
   const bad = pages.findIndex(pg => pg.quality?.issue);
   const n = index + 1;
@@ -825,6 +853,13 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
         </li>
       </ul>
 
+      {onMergeUp && (
+        <button type="button" onClick={onMergeUp}
+          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700">
+          Same policy as Policy {index}? Combine them
+        </button>
+      )}
+
       {asking && (
         <div className="mt-2 rounded-xl bg-blue-50 p-3" role="group" aria-label="More pages?">
           <p className="font-semibold text-slate-900">Does this policy have more pages?</p>
@@ -846,12 +881,12 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
 }
 
 // Several photos picked at once: pages of one policy, or one photo per policy?
-function GroupSheet({ count, onOne, onSeparate, onCancel }) {
+function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
   return (
     <div className="fixed inset-0 z-30 flex items-end justify-center bg-slate-900/40" role="dialog" aria-modal="true" aria-label="How should we group these?">
       <div className="w-full max-w-md rounded-t-3xl bg-white px-5 pb-6 pt-5" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
         <p className="text-xl font-extrabold text-slate-900">You picked {count} files</p>
-        <p className="mt-1 text-slate-600">Are they pages of one policy, or separate policies?</p>
+        <p className="mt-1 text-slate-600">Are they pages of one policy, or more than one policy?</p>
         <button type="button" onClick={onOne}
           className="mt-5 flex w-full items-center justify-center rounded-2xl bg-blue-700 px-4 py-4 text-lg font-bold text-white">
           One policy, {count} pages
@@ -859,6 +894,11 @@ function GroupSheet({ count, onOne, onSeparate, onCancel }) {
         <button type="button" onClick={onSeparate}
           className="mt-3 flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-semibold text-slate-800">
           {count} separate policies
+        </button>
+        <button type="button" onClick={onMix}
+          className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-800">
+          A mix — I&apos;ll sort them
+          <span className="text-xs font-normal text-slate-500">e.g. 3 pages of auto and 2 of home</span>
         </button>
         <button type="button" onClick={onCancel} className="mt-2 w-full py-2 text-sm font-medium text-slate-500">Cancel</button>
       </div>
