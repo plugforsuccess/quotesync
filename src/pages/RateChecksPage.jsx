@@ -621,17 +621,18 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
 
         {/* Household, what to quote, the price — one swipe each; then the quote sheet and reference */}
         <div className="pt-4">
+          {/* Slide 1: the household (when there's more than one policy) with the price right under it. Slide 2: what to quote. */}
           <Carousel label="Quote this policy" slides={[
-            ...(multi ? [{ key: 'household', label: 'Household', content: <HouseholdCard rc={rc} household={household} onSelect={onSelect} /> }] : []),
-            { key: 'decision', label: 'What to quote', content: <DecisionCard rc={rc} /> },
-            { key: 'price', label: 'Price', content: (
-              <div>
+            { key: 'price', label: multi ? 'Household and price' : 'Price', content: (
+              <div className="space-y-3">
+                {multi && <HouseholdCard rc={rc} household={household} onSelect={onSelect} />}
                 <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
                 {rc.upload_source === 'agent' && (
-                  <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
+                  <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
                 )}
               </div>
             ) },
+            { key: 'decision', label: 'What to quote', content: <DecisionCard rc={rc} /> },
           ]} />
         </div>
 
@@ -672,7 +673,7 @@ function Notice({ tone, children }) {
 function QuoteBox({ rc, onQuoted }) {
   const enterQuote = useEnterRateCheckQuote();
   const [premium, setPremium] = useState(rc.allstate_premium != null ? String(rc.allstate_premium) : '');
-  const [note, setNote] = useState(rc.quote_note || '');
+  const note = rc.quote_note || ''; // kept on the row; the price card no longer asks for one
   const [justSaved, setJustSaved] = useState(false);
   const result = enterQuote.data;
   const outcome = result?.status || (['won', 'lost', 'bound'].includes(rc.status) ? rc.status : null);
@@ -705,7 +706,7 @@ function QuoteBox({ rc, onQuoted }) {
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (
-    <section className="h-full rounded-xl p-4" style={CARD_STYLE}>
+    <section className="rounded-xl p-4" style={CARD_STYLE}>
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
       <p className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>
         {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
@@ -741,8 +742,6 @@ function QuoteBox({ rc, onQuoted }) {
         {looksTooLow(rc.annual_premium, parseMoney(premium)) && (
           <p className="text-sm text-yellow-600">That&apos;s a big drop — double-check the limits match.</p>
         )}
-        <input className="w-full rounded-md px-2 py-2 text-sm" style={inputStyle} value={note} onChange={e => setNote(e.target.value)}
-          placeholder="Same limits, $500 ded." aria-label="Quote note (optional)" disabled={declined} />
       </form>}
       {rc.annual_premium == null && !declined && (
         <p className="mt-2 text-xs text-yellow-600">Fill in their current price under Policy first — otherwise we can&apos;t tell if Allstate wins.</p>
