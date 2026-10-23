@@ -7,7 +7,7 @@
 // All formatting lives in policyView.js.
 
 import { useState } from 'react';
-import { AlertTriangle, Check, CircleHelp } from 'lucide-react';
+import { AlertTriangle, CircleHelp } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
 import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
@@ -99,79 +99,36 @@ function TileValue({ value, addOn, size = 'text-xl' }) {
   );
 }
 
-// The band under a tile: can these be changed together in Allstate?
-function MatchBand({ c }) {
-  const tone = c.same
-    ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', borderTop: '1px solid var(--qs-success-border)' }
-    : { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', borderTop: '1px solid var(--qs-warning-border)' };
-  return (
-    <p className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold" style={tone}>
-      {c.same
-        ? <><Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Same on all {c.count}{c.scope ? ` ${c.scope}` : ''} vehicles</>
-        : 'Differs by vehicle'}
-    </p>
-  );
-}
-
-// One coverage across the vehicles. Same on all → one value (change them together
-// in Allstate). Different → each value with the vehicles that have it.
-function CoverageTile({ c, rc, total, wide }) {
-  const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(', ');
-  return (
-    <div className={`flex flex-col overflow-hidden rounded-lg ${wide ? 'col-span-2' : ''}`} style={TILE}>
-      <div className="flex-1 px-3 py-2">
-        <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
-        {c.same ? <TileValue value={c.groups[0].value} addOn={c.addOn} /> : (
-          <ul className="mt-1 space-y-1.5">
-            {c.groups.map(g => (
-              <li key={g.value} className="flex items-baseline justify-between gap-3">
-                <TileValue value={g.value} addOn={c.addOn} size="text-lg" />
-                <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(g.indexes)}</span>
-              </li>
-            ))}
-            {c.none.length > 0 && (
-              <li className="flex items-baseline justify-between gap-3">
-                <span className="text-lg font-bold" style={{ color: 'var(--qs-muted)' }}>None</span>
-                <span className="text-right text-xs font-medium" style={{ color: 'var(--qs-text)' }}>{names(c.none)}</span>
-              </li>
-            )}
-          </ul>
-        )}
-      </div>
-      {total > 1 && c.count > 1 && <MatchBand c={c} />}
-    </div>
-  );
-}
-
-// Allstate changes a coverage on several vehicles at once only when it's the same
-// change for all of them — so: the fewest selections, in order, to tick off.
-function KeyingSteps({ rc, steps }) {
+// One card per Allstate selection: Allstate changes a coverage on several vehicles at
+// once only when it's the same change for all of them, so this is the fewest
+// selections, biggest first, with the values to enter as tiles. Tick a card off when done.
+function KeyingSteps({ rc, steps, total }) {
   const [done, setDone] = useState(() => new Set());
   const toggle = (id) => setDone(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(' + ');
   return (
-    <ol className="mb-3 space-y-2">
+    <ol className="space-y-3">
       {steps.map((st, i) => {
         const checked = done.has(st.id);
         return (
-          <li key={st.id}>
-            <label className="flex cursor-pointer gap-3 rounded-lg px-3 py-2" style={{ ...TILE, opacity: checked ? 0.55 : 1 }}>
-              <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={checked} onChange={() => toggle(st.id)}
-                aria-label={`Step ${i + 1} done`} />
-              <span className="min-w-0">
-                <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>
-                  Step {i + 1} · Select {st.all ? `all ${st.indexes.length} vehicles` : names(st.indexes)}
+          <li key={st.id} className="rounded-lg p-2" style={{ border: '1px solid var(--qs-border)', opacity: checked ? 0.5 : 1 }}>
+            {total > 1 && (
+              <label className="mb-2 flex cursor-pointer items-start gap-2 px-1">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 shrink-0" checked={checked} onChange={() => toggle(st.id)}
+                  aria-label={`Step ${i + 1} done`} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-bright)' }}>
+                  {i + 1}. Select {st.all ? `all ${st.indexes.length} vehicles` : names(st.indexes)}
                 </span>
-                <span className={`block text-sm font-semibold ${checked ? 'line-through' : ''}`} style={{ color: 'var(--qs-bright)' }}>
-                  {st.changes.map((ch, j) => (
-                    <span key={ch.key}>
-                      {j > 0 && <span style={{ color: 'var(--qs-subtle)' }}> · </span>}
-                      {ch.label} <span style={ch.addOn ? ADD_ON_STYLE : undefined}>{ch.value}</span>
-                    </span>
-                  ))}
-                </span>
-              </span>
-            </label>
+              </label>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              {st.changes.map((ch, j) => (
+                <div key={ch.key} className={`rounded-lg px-3 py-2 ${j === st.changes.length - 1 && st.changes.length % 2 === 1 ? 'col-span-2' : ''}`} style={TILE}>
+                  <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[ch.key] || ch.label}</p>
+                  <TileValue value={ch.value} addOn={ch.addOn} />
+                </div>
+              ))}
+            </div>
           </li>
         );
       })}
@@ -216,19 +173,12 @@ function CheckByVehicle({ setup }) {
 
 function VehicleCoverages({ rc, setup }) {
   const total = setup.vehicles.length;
-  const steps = total > 1 ? keyingSteps(setup) : [];
-  // Shared values pair up two per row; anything that differs gets the full width.
-  const same = setup.coverages.filter(c => c.same || total === 1);
-  const split = setup.coverages.filter(c => !(c.same || total === 1));
+  const steps = keyingSteps(setup);
   return (
-    <Section title="Vehicle coverages" ruled aside={steps.length > 0 && (
-      <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Key it in {steps.length} {steps.length === 1 ? 'step' : 'steps'}</span>
+    <Section title="Vehicle coverages" ruled aside={total > 1 && (
+      <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>{steps.length} {steps.length === 1 ? 'selection' : 'selections'} in Allstate</span>
     )}>
-      {steps.length > 0 && <KeyingSteps key={rc.id} rc={rc} steps={steps} />}
-      <div className="grid grid-cols-2 gap-2">
-        {same.map((c, i) => <CoverageTile key={c.key} c={c} rc={rc} total={total} wide={i === same.length - 1 && same.length % 2 === 1} />)}
-        {split.map(c => <CoverageTile key={c.key} c={c} rc={rc} total={total} wide />)}
-      </div>
+      <KeyingSteps key={rc.id} rc={rc} steps={steps} total={total} />
       {total > 1 && <CheckByVehicle setup={setup} />}
     </Section>
   );
