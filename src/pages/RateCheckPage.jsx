@@ -39,20 +39,26 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // The licensed agent shown on the page (same headshot as the homepage). Two GA
 // licenses: Cam's individual resident license goes under his headshot (the card
 // names him); the agency's resident license goes in the footer next to the agency name.
-const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
-const AGENCY = { name: 'Wiley-Wilson Agency', license: '209488' };
+const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
+const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
 // "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
-  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cameron cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
-  // Facts from Swarthmore Athletics (2019 NABC All-America release) and the Swarthmore
-  // Phoenix season recap. TODO(Cam): the last paragraph is placeholder wording.
-  { key: 'story', title: 'My story', paragraphs: [
+  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
+  // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
+  // the Swarthmore Phoenix season recap.
+  { key: 'court', title: 'My story · On the court', paragraphs: [
     'March 9, 2019. I was on a ladder with a pair of scissors, cutting down the net. Swarthmore had just reached its first NCAA Final Four.',
-    'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history. We played for the Division III national title.',
-    'Today I run my own Allstate agency here in Georgia. Family comes first for me, so I treat your household the way I’d treat mine.',
+    'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
+    'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
   ] },
-  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cameron with his family', caption: 'My family', position: '50% 35%' },
+  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his family', caption: 'My family', position: '50% 35%' },
+  // TODO(Cam): the last two paragraphs are placeholder wording; replace with your own.
+  { key: 'today', title: 'My story · Today', paragraphs: [
+    'Today I run Cam Wiley Insurance, my own Allstate agency here in Georgia.',
+    'I look at every dec page myself, and I only text you when I can save you money.',
+    'Family comes first for me, so I treat your household the way I’d treat mine.',
+  ] },
 ];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -923,7 +929,7 @@ export function RateCheckFooter({ padForBar = false }) {
       </nav>
       {/* TODO(compliance): confirm the Allstate agency disclosure wording before launch. */}
       <p>
-        {AGENCY.name} is an Allstate agency. Quotes and savings vary and are subject to underwriting and
+        {AGENCY.name} is an Allstate Insurance Agency. Quotes and savings vary and are subject to underwriting and
         eligibility; not all applicants qualify.
       </p>
       <p className="mt-1">Agency Resident License #: {AGENCY.license}</p>
