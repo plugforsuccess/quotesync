@@ -123,3 +123,22 @@ test('$50 minimum: small months carry over into the next payout', () => {
   const after = payoutPlan(hh, [{ period: '2026-08-01' }, { period: '2026-09-01' }], '2026-10');
   assert.deepEqual([after.amount, after.carried], [70, 0]);
 });
+
+test('1099 totals: what was paid in the year, by payment date', async () => {
+  const { paidInYear } = await import('../../src/pages/components/rate-checks/partnerPay.js');
+  const payouts = [
+    // One October payment covering August + September (carried) + October.
+    { promoter_id: 'p1', period: '2026-08-01', amount: '2.00', paid_at: '2026-10-31T15:00:00Z' },
+    { promoter_id: 'p1', period: '2026-09-01', amount: '10.00', paid_at: '2026-10-31T15:00:00Z' },
+    { promoter_id: 'p1', period: '2026-10-01', amount: '70.00', paid_at: '2026-10-31T15:00:00Z' },
+    { promoter_id: 'p1', period: '2026-11-01', amount: '45.00', paid_at: '2026-12-01T15:00:00Z' },
+    // Earned in 2026, paid in 2027: counts for 2027.
+    { promoter_id: 'p1', period: '2026-12-01', amount: '60.00', paid_at: '2027-01-05T15:00:00Z' },
+    { promoter_id: 'p2', period: '2026-06-01', amount: '55.50', paid_at: '2026-07-01T15:00:00Z' },
+  ];
+  const y = paidInYear(payouts, 2026);
+  assert.deepEqual(y.p1, { amount: 127, payments: 2, months: ['2026-08', '2026-09', '2026-10', '2026-11'], lastPaid: '2026-12-01T15:00:00Z' });
+  assert.equal(y.p2.amount, 55.5);
+  assert.deepEqual(Object.keys(paidInYear(payouts, 2027)), ['p1']);
+  assert.equal(paidInYear(payouts, 2027).p1.amount, 60);
+});
