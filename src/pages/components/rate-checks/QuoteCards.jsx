@@ -53,8 +53,10 @@ export function HouseholdCard({ rc, household, onSelect }) {
   const g = householdGoal(household);
   return (
     <div className="h-full rounded-xl p-4" style={CARD_STYLE}>
-      <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Household · {household.length} policies</p>
-      <div className="mt-2 space-y-1.5" role="tablist" aria-label="Policies in this household">
+      <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--qs-bright)' }}>
+        Household <span className="font-medium" style={{ color: 'var(--qs-subtle)' }}>· {household.length} policies</span>
+      </h3>
+      <div className="mt-3 space-y-1.5" role="tablist" aria-label="Policies in this household">
         {household.map(p => {
           const active = p.id === rc.id;
           const quoted = p.allstate_premium != null && Number(p.allstate_premium) > 0;
