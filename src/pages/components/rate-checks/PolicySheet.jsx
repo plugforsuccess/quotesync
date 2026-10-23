@@ -88,7 +88,7 @@ const LEVEL_TONE = {
 
 // "$50/day · $1,500 max" → "$50/day" large with "$1,500 max" under it, so long
 // values still fit a half-width tile.
-function TileValue({ value, addOn, inline = false }) {
+function TileValue({ value, addOn, inline = false, size = 'text-xl' }) {
   const [main, ...rest] = String(value).split(' · ');
   const tone = addOn ? ADD_ON_STYLE : { color: 'var(--qs-bright)' };
   // Full-width tiles have room for "$50/day · $1,500 max" on one line.
@@ -101,7 +101,7 @@ function TileValue({ value, addOn, inline = false }) {
   }
   return (
     <span className="block">
-      <span className="block text-xl font-bold tabular-nums" style={tone}>{main}</span>
+      <span className={`block ${size} font-bold tabular-nums`} style={tone}>{main}</span>
       {rest.length > 0 && <span className="block text-xs font-medium" style={addOn ? ADD_ON_STYLE : { color: 'var(--qs-subtle)' }}>{rest.join(' · ')}</span>}
     </span>
   );
@@ -118,27 +118,23 @@ function VehicleChip({ x }) {
 }
 
 function CoverageTile({ c, setup, wide }) {
-  const chips = (indexes) => indexes.map(i => setup.vehicles.find(x => x.index === i)).filter(Boolean)
-    .map(x => <VehicleChip key={x.index} x={x} />);
-  const only = c.groups.length === 1;
+  // Differs → one row per car (newest first): chip, then that car's value.
+  const deductible = c.key === 'comp_deductible' || c.key === 'coll_deductible';
+  const rows = setup.vehicles.filter(x => !(deductible && x.level === 'liability'));
   return (
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
       <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
       {c.same ? <TileValue value={c.groups[0].value} addOn /> : (
-        <div className="space-y-2">
-          {c.groups.map(g => (
-            <div key={g.value}>
-              <TileValue value={g.value} addOn inline />
-              <div className="mt-1 flex flex-wrap gap-1">{chips(g.indexes)}</div>
-            </div>
+        <ul className="mt-1 space-y-1.5">
+          {rows.map(x => (
+            <li key={x.index} className="flex items-center justify-between gap-3">
+              <span className="min-w-0"><VehicleChip x={x} /></span>
+              {x.values[c.key] == null
+                ? <span className="text-sm font-semibold" style={{ color: 'var(--qs-muted)' }}>None</span>
+                : <span className="shrink-0 text-right"><TileValue value={x.values[c.key]} addOn size="text-lg" /></span>}
+            </li>
           ))}
-          {!only && c.none.length > 0 && (
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'var(--qs-muted)' }}>None</p>
-              <div className="mt-1 flex flex-wrap gap-1">{chips(c.none)}</div>
-            </div>
-          )}
-        </div>
+        </ul>
       )}
     </div>
   );
