@@ -404,6 +404,23 @@ export function propertyFacts(rc) {
   return Object.values(p).some(v => v != null && v !== '') ? p : null;
 }
 
+// Carriers name the same endorsement many ways; tiles use the short name a producer says.
+const ENDORSEMENT_SHORT = [
+  [/ride.?shar|transportation network|\btnc\b/i, 'Rideshare'],
+  [/accident forgiv/i, 'Accident forgiveness'],
+  [/new (car|vehicle) replace/i, 'New car replacement'],
+  [/(disappear|vanish|diminish)\w* deductible/i, 'Disappearing deductible'],
+  [/(original|full) (parts|equipment|oem)/i, 'OEM parts'],
+  [/(sound|audio|custom) equip/i, 'Custom equipment'],
+  [/pet injury/i, 'Pet injury'],
+];
+/** "Rideshare driver coverage" → "Rideshare"; anything unrecognised keeps its printed name. */
+export function shortEndorsementName(name) {
+  const s = String(name || '').trim();
+  const hit = ENDORSEMENT_SHORT.find(([re]) => re.test(s));
+  return hit ? hit[1] : s;
+}
+
 /** [{ code, name, limit }] — the scan's list, else parsed from "endorsements including A, B, and C". */
 export function endorsementsOf(rc) {
   if (Array.isArray(rc?.endorsements) && rc.endorsements.length) return rc.endorsements;

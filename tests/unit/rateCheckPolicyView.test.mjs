@@ -198,3 +198,13 @@ test('glass: an amount reads as the deductible, words stay words', async () => {
   assert.equal(glass.groups[0].value, '$0');
   assert.equal(glass.none.length, 1);
 });
+
+test('endorsement tiles use the short name a producer says', async () => {
+  const { shortEndorsementName } = await import('../../src/pages/components/rate-checks/policyView.js');
+  assert.equal(shortEndorsementName('Rideshare driver coverage'), 'Rideshare');
+  assert.equal(shortEndorsementName('Transportation Network Company Endorsement'), 'Rideshare');
+  assert.equal(shortEndorsementName('ACCIDENT FORGIVENESS'), 'Accident forgiveness');
+  assert.equal(shortEndorsementName('Vanishing Deductible'), 'Disappearing deductible');
+  assert.equal(shortEndorsementName('New Car Replacement Coverage'), 'New car replacement');
+  assert.equal(shortEndorsementName('Towing and labor'), 'Towing and labor');
+});

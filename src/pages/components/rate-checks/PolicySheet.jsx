@@ -12,7 +12,7 @@ import { CopyButton, Field } from './Copyable';
 import { ADD_ON_CLS, ADD_ON_STYLE } from './ui';
 import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
-  autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
+  autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf, shortEndorsementName,
   driverRows, discountsOf, summaryLines, vehicleTitle, vehicleShort, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
   vehicleCoverageSetup,
 } from './policyView';
@@ -80,6 +80,15 @@ function Rows({ rows }) {
 }
 
 const TILE = { background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' };
+// Every tile has the same shape whatever the scan holds: a two-line label area, the
+// value, then the "All 3 vehicles" line. So tiles match in height and values line up.
+function TileLabel({ children }) {
+  return (
+    <p className="line-clamp-2 min-h-[30px] text-[11px] font-bold uppercase leading-[15px] tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>
+      {children}
+    </p>
+  );
+}
 const TILE_NAME = { comp_deductible: 'Comp deductible', coll_deductible: 'Collision deductible' };
 const LEVEL_TONE = {
   full: { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', border: '1px solid var(--qs-success-border)' },
@@ -128,7 +137,9 @@ function CoverageTile({ c, setup, total, wide }) {
   const withIt = setup.vehicles.filter(x => c.groups[0]?.indexes.includes(x.index));
   return (
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
-      <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{name}</p>
+      {wide
+        ? <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{name}</p>
+        : <TileLabel>{name}</TileLabel>}
       {c.groups.length === 1 && (everyCar || c.key !== 'rental') ? (
         // One value → one label; every vehicle says so, otherwise pills for the cars that have it.
         <div>
@@ -385,8 +396,8 @@ function AutoEndorsements({ rc }) {
     <Section title={`Endorsements · ${list.length}`} ruled>
       <ul className="grid grid-cols-2 gap-2">
         {list.map((e, i) => (
-          <li key={i} className="rounded-lg px-3 py-2" style={TILE} title={e.code ? `Form ${e.code}` : undefined}>
-            <p className="text-[11px] font-bold uppercase leading-snug tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{e.name}</p>
+          <li key={i} className="rounded-lg px-3 py-2" style={TILE} title={[e.name, e.code && `Form ${e.code}`].filter(Boolean).join(' · ')}>
+            <TileLabel>{shortEndorsementName(e.name)}</TileLabel>
             {/* A long limit ("$100 off per year") drops a size so it stays on one line and the tiles match. */}
             <TileValue value={e.limit || 'Yes'} addOn size={String(e.limit || '').length > 9 ? 'text-base leading-7' : 'text-xl'} />
             <div className="mt-1 flex min-h-[24px] items-center">
