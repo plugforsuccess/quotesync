@@ -57,9 +57,13 @@ async function fillContact(page) {
   await page.getByLabel('First name').fill('Keisha');
   await page.getByLabel('Mobile number').fill('4045551212');
   await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
-  await page.getByRole('button', { name: 'Text me a code' }).click();
-  await page.getByLabel(/Enter the 6-digit code/).fill('123456');
-  await expect(page.getByRole('status')).toHaveText(/Number verified/);
+  // Only when the build has VITE_RATE_CHECK_OTP=true.
+  const textMe = page.getByRole('button', { name: 'Text me a code' });
+  if (await textMe.isVisible()) {
+    await textMe.click();
+    await page.getByLabel(/Enter the 6-digit code/).fill('123456');
+    await expect(page.getByRole('status')).toHaveText(/Number verified/);
+  }
   await page.getByLabel('Email').fill('keisha@example.com');
   await page.getByLabel('ZIP code').fill('30094');
   await page.getByLabel('Where do you live?').selectOption('own');

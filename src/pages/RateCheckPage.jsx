@@ -33,6 +33,10 @@ const REFERRAL_CONSENT_TEXT =
 
 const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', umbrella: 'Umbrella', commercial_auto: 'Commercial auto', commercial: 'Business' };
 
+// Texted-code verification of the mobile number: off while the agency tests; set
+// VITE_RATE_CHECK_OTP=true (and RATE_CHECK_OTP_REQUIRED on the function) to turn it on.
+const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
+
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const fileKey = (f) => `${f.name}|${f.size}|${f.lastModified}`;
 const money = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
@@ -226,7 +230,7 @@ export default function RateCheckPage() {
   const drafts = items.filter(i => i.status === 'draft');
   const sent = items.filter(i => i.status !== 'draft');
   const phoneDigits = fields.phone.replace(/\D/g, '');
-  const phoneVerified = phoneDigits.length === 10 && verifiedPhone === phoneDigits;
+  const phoneVerified = !OTP_ENABLED || (phoneDigits.length === 10 && verifiedPhone === phoneDigits);
   const missing = [
     !fields.firstName.trim() && 'your first name',
     phoneDigits.length !== 10 && 'your mobile number',
@@ -419,7 +423,7 @@ export default function RateCheckPage() {
               value={fields.phone} className={inputCls}
               onChange={e => { setFields(f => ({ ...f, phone: formatPhoneInput(e.target.value) })); setOtp({ status: 'idle', code: '', error: '', sentAt: 0 }); }} />
           </Field>
-          {phoneDigits.length === 10 && (phoneVerified ? (
+          {OTP_ENABLED && phoneDigits.length === 10 && (phoneVerified ? (
             <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700" role="status">
               <Check className="h-4 w-4" aria-hidden="true" /> Number verified
             </p>

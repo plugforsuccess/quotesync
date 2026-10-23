@@ -73,6 +73,9 @@ const CARRIERS = [
 ]
 const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial', 'other']
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
+// Texted-code verification of the consumer's number: off until the agency turns it on.
+//   supabase secrets set RATE_CHECK_OTP_REQUIRED=true
+const OTP_REQUIRED = Deno.env.get('RATE_CHECK_OTP_REQUIRED') === 'true'
 
 function sanitizeUtm(val: string | null | undefined): string | null {
   if (!val) return null
@@ -838,8 +841,8 @@ Deno.serve(async (req) => {
 
   const errors: string[] = []
   if (phone.length !== 10) errors.push('phone must be a 10-digit US number')
-  // Email is required from consumers; optional on staff uploads.
-  if (staff ? (email && !EMAIL_RE.test(email)) : !(email && EMAIL_RE.test(email))) errors.push('a valid email is required')
+  // The form requires an email; the function only checks the shape (an older form may not send one).
+  if (email && !EMAIL_RE.test(email)) errors.push('email is not valid')
   // ZIP is optional for staff uploads (an emailed dec page may not need it typed in).
   if (staff ? (zip && !/^\d{5}$/.test(zip)) : !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
   if (!staff && (!body.consent_given_at || Number.isNaN(Date.parse(body.consent_given_at)))) {
@@ -883,7 +886,7 @@ Deno.serve(async (req) => {
   const sessionId = cleanText(body.session_id, 64) || crypto.randomUUID()
 
   // ── Consumer uploads need a verified mobile number (rate-check-otp) this session ──
-  if (!staff) {
+  if (!staff && OTP_REQUIRED) {
     const { data: verified } = await supabase
       .from('rate_check_otps')
       .select('id')
