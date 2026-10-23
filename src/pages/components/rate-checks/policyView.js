@@ -505,9 +505,45 @@ export function cleanDiscount(s) {
   if (years && !/\d/.test(t)) t = `${t} ${years} yrs`;
   return t ? t.charAt(0).toUpperCase() + t.slice(1) : null;
 }
+// Every carrier names discounts its own way; pills use one standard name each, in
+// sentence case like the tile labels. Years carry over ("Loyalty 2 yrs").
+const DISCOUNT_NAMES = [
+  [/multi.?(car|vehicle|auto)|multiple (auto|cars?|vehicles?)/i, 'Multi-car'],
+  [/multi.?(line|policy|product)|multiple (lines|policies)|home\s*[/&+]\s*auto|auto\s*[/&+]\s*home|bundl/i, 'Multi-policy'],
+  [/drive safe|snapshot|drivewise|right ?track|smartride|telematic|usage.?based|safe ?pilot|milewise/i, 'Telematics'],
+  [/accident.?free|safe driv|good driver|no accidents/i, 'Accident-free'],
+  [/claim.?free|claims? record|no claims/i, 'Claim-free'],
+  [/tenure|loyal|years? with|renewal|longevity|continuous(ly)? insured/i, 'Loyalty'],
+  [/good student|honor roll|good grades/i, 'Good student'],
+  [/student away|distant student|away at school/i, 'Student away'],
+  [/defensive driv|driver training|driver.?s? ed/i, 'Defensive driving'],
+  [/anti.?theft|theft deterr|vehicle recovery/i, 'Anti-theft'],
+  [/vehicle safety|anti.?lock|air ?bag|passive restraint|safety (feature|equipment)/i, 'Vehicle safety'],
+  [/new (car|vehicle)/i, 'New car'],
+  [/home ?alert|protective device|alarm|monitored|smart home|security system|fire ext|sprinkler/i, 'Protective devices'],
+  [/new home|newer home|home buyer|new purchase/i, 'New home'],
+  [/paperless|e.?policy|e.?sign|electronic (delivery|docs)/i, 'Paperless'],
+  [/auto.?pay|eft|automatic (payment|withdrawal)|recurring pay/i, 'Autopay'],
+  [/paid in full|pay(ment)? in full|full pay/i, 'Paid in full'],
+  [/homeowner/i, 'Homeowner'],
+  [/early (signing|shopper|quote)|advance (quote|purchase)/i, 'Early signing'],
+  [/mature driver|senior|55\+/i, 'Mature driver'],
+];
+const sentenceCase = (t) => (t === t.toUpperCase() || /\b[A-Z][a-z]+\b.*\b[A-Z][a-z]+\b/.test(t)
+  ? t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+  : t.charAt(0).toUpperCase() + t.slice(1));
+/** "Multiple Lines" → "Multi-policy", "Tenure 2 yrs" → "Loyalty 2 yrs"; unknown ones keep their name, sentence-cased. */
+export function normalizeDiscount(name) {
+  const t = cleanDiscount(name);
+  if (!t) return null;
+  const years = t.match(/(\d+)\s*yrs?\b/i)?.[1];
+  const hit = DISCOUNT_NAMES.find(([re]) => re.test(t));
+  if (!hit) return sentenceCase(t).replace(/\bYrs\b/, 'yrs');
+  return years ? `${hit[1]} ${years} yrs` : hit[1];
+}
 export function discountsOf(rc) {
   const list = Array.isArray(rc?.extracted?.discounts) ? rc.extracted.discounts : [];
-  return [...new Set(list.map(cleanDiscount).filter(Boolean))];
+  return [...new Set(list.map(normalizeDiscount).filter(Boolean))];
 }
 
 // ── Summary ───────────────────────────────────────────────────────────────────

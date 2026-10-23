@@ -104,9 +104,11 @@ test('drivers with the same name are told apart; discounts are short tags', () =
   assert.deepEqual(driverRows(auto).map(d => d.name), ['STEPHEN PEARSON (60)', 'JOCELYN PEARSON', 'STEPHEN PEARSON (22)']);
   assert.deepEqual(driverRows(auto).map(d => d.role), ['insured', 'spouse', null]);
   assert.equal(driverRows(auto)[2].young, true);
-  assert.deepEqual(discountsOf(auto), ['Multicar', 'Multiple Lines', 'Vehicle Safety', 'Tenure 2 yrs', 'Accident Free 2 yrs', 'Good Student']);
-  assert.deepEqual(discountsOf(home), ['Utility Rating Credit', 'Home Alert', 'Home/Auto', 'Claim Record', 'Loyal Customer']);
-  assert.deepEqual(discountsOf({ extracted: { discounts: ['Drive Safe &amp; Save'] } }), ['Drive Safe & Save']);
+  assert.deepEqual(discountsOf(auto), ['Multi-car', 'Multi-policy', 'Vehicle safety', 'Loyalty 2 yrs', 'Accident-free 2 yrs', 'Good student']);
+  assert.deepEqual(discountsOf(home), ['Utility rating credit', 'Protective devices', 'Multi-policy', 'Claim-free', 'Loyalty']);
+  assert.deepEqual(discountsOf({ extracted: { discounts: ['Drive Safe &amp; Save'] } }), ['Telematics']);
+  // Two carrier names for the same discount become one pill.
+  assert.deepEqual(discountsOf({ extracted: { discounts: ['Multiple Lines', 'Home/Auto Discount', 'ANTI-THEFT DEVICE'] } }), ['Multi-policy', 'Anti-theft']);
 });
 
 test('home: coverages A–F, % deductible, property facts and endorsements', () => {
