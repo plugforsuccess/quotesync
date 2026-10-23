@@ -75,7 +75,7 @@ export default function AgencySetupPage() {
     setMarking(true);
     try {
       await markComplete.mutateAsync();
-      navigate('/agency/dashboard');
+      navigate('/agency/leads/rate-checks');
     } catch (err) {
       console.error('Failed to mark setup complete:', err);
     } finally {
@@ -147,10 +147,10 @@ export default function AgencySetupPage() {
             </button>
           )}
           <Link
-            to="/agency/dashboard"
+            to="/agency/leads/rate-checks"
             className="block w-full text-center text-sm text-gray-500 hover:text-gray-700 py-2 transition-colors"
           >
-            Skip setup, go to dashboard &rarr;
+            Skip setup, go to Rate Checks &rarr;
           </Link>
         </div>
       </div>

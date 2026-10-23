@@ -258,7 +258,7 @@ function InboxCard({ h, now, onOpen }) {
       {(open && (h.decision || (late && h.lead.phone))) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name ? (
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-            {open && h.decision && <QuietDecision rc={h.decision} />}
+            {open && h.decision && <QuietDecision rc={h.decision} policies={h.policies} />}
             <OriginTag rc={h.lead} />
           </span>
           {open && late && h.lead.phone && (
@@ -275,12 +275,12 @@ function InboxCard({ h, now, onOpen }) {
 
 // The routing result as a small label, so it doesn't read as a button.
 const DECISION_DOT = { success: 'var(--qs-success)', info: 'var(--qs-info)', warning: 'var(--qs-warning)', neutral: 'var(--qs-subtle)' };
-function QuietDecision({ rc }) {
+function QuietDecision({ rc, policies }) {
   const d = DECISION[rc.decision];
   if (!d) return null;
   return (
     <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: 'var(--qs-text)' }}>
-      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: DECISION_DOT[d.tone] }} />{decisionLabel(rc)}
+      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: DECISION_DOT[d.tone] }} />{decisionLabel(rc, policies)}
     </span>
   );
 }
@@ -498,7 +498,7 @@ export default function RateChecksPage() {
                               ))}
                             </td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(h.pays)}</td>
-                            <td className="px-4 py-3 whitespace-nowrap">{h.decision ? <DecisionChip rc={h.decision} /> : <span style={{ color: 'var(--qs-subtle)' }}>—</span>}</td>
+                            <td className="px-4 py-3 whitespace-nowrap">{h.decision ? <DecisionChip rc={h.decision} policies={h.policies} /> : <span style={{ color: 'var(--qs-subtle)' }}>—</span>}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm" style={{ color: 'var(--qs-text)' }}>{money(h.allstate)}</td>
                             <td className="px-4 py-3 whitespace-nowrap text-sm"><Savings delta={h.delta} /></td>
                             <td className="px-4 py-3 whitespace-nowrap"><StatusChip status={h.status} /></td>
@@ -632,7 +632,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
                 )}
               </div>
             ) },
-            { key: 'decision', label: 'What to quote', content: <DecisionCard rc={rc} /> },
+            { key: 'decision', label: 'What to quote', content: <DecisionCard rc={rc} household={household} /> },
           ]} />
         </div>
 

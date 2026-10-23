@@ -426,3 +426,22 @@ export const useAgencySLAMetrics = (agencyId) => {
     staleTime: 60 * 1000 // Refresh every minute
   });
 };
+
+// Winback leads (source 'winback'): former customers from Allstate termination
+// reports. The Winbacks tab needs names and numbers to call, unlike the
+// PII-light pipeline list. The note carries what they lost (lib/winbackNote.js).
+export const useWinbackLeads = (agencyId) =>
+  useQuery({
+    queryKey: ['agency_leads', agencyId, 'winbacks'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('id, first_name, last_name, phone, email, zip, status, product_intent, callback_note, attempt_count, last_attempt_at, assigned_to_id, created_at')
+        .eq('agency_id', agencyId)
+        .eq('source', 'winback')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });

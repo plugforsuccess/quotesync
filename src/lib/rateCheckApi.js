@@ -256,3 +256,18 @@ export const HOUSING_OPTIONS = [
   ['retirement', 'Retirement community'],
 ];
 export const HOUSING_LABEL = { own: 'Owns home', rent: 'Rents', family: 'Lives with family', retirement: 'Retirement community' };
+
+// The /save wizard hands its dec-page step to the scanner (/). What the person
+// already typed rides along in sessionStorage (never the URL) and is read once.
+// Same tab, same session_id, so rate-check joins the wizard's partial lead.
+const PREFILL_KEY = 'rc_prefill';
+export function handOffToScanner(fields) {
+  try { sessionStorage.setItem(PREFILL_KEY, JSON.stringify(fields)); } catch { /* storage blocked: they'll just type it */ }
+}
+export function takeScannerPrefill() {
+  try {
+    const v = JSON.parse(sessionStorage.getItem(PREFILL_KEY) || 'null');
+    sessionStorage.removeItem(PREFILL_KEY);
+    return v;
+  } catch { return null; }
+}

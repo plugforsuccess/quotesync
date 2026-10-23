@@ -147,7 +147,7 @@ const StoryDetailPage = () => {
     trackNewsroomCTAClick(story, ctaType);
 
     if (ctaType === 'compare_policy') {
-      navigate('/quotes');
+      navigate('/');
     } else if (ctaType === 'webinar') {
       navigate('/courses');
     }

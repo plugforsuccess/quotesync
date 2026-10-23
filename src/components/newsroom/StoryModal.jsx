@@ -47,7 +47,7 @@ const StoryModal = ({ story, isOpen, onClose }) => {
     // Navigate after closing modal
     setTimeout(() => {
       if (ctaType === 'compare_policy') {
-        window.location.href = '/quotes';
+        window.location.href = '/';
       } else if (ctaType === 'webinar') {
         window.location.href = '/courses';
       }

@@ -37,7 +37,7 @@ import {
   RoofReplacedRecentlyStep,
   PropertyDetailsStep,
 } from './components/wizard/WizardSteps';
-import DeclarationFastPathStep from './components/wizard/DeclarationFastPathStep';
+import { ScanFastPathStep } from './components/wizard/ScanHandoff';
 import { validateStep } from './components/wizard/wizardValidation';
 
 const EDGE_FUNCTION_URL = import.meta.env.VITE_SUPABASE_URL
@@ -558,32 +558,6 @@ export default function SaveWizardPage() {
 
   // ─── Dec-page fast path (skip the manual questionnaire) ─────────
 
-  const handleDecFastPathContinue = useCallback((declarations) => {
-    const list = declarations || [];
-    // Infer product intent from the uploaded policy types (aids routing).
-    const types = new Set(list.map((d) => d?.policy_type).filter(Boolean));
-    const hasAuto = types.has('auto');
-    const hasHome = types.has('home') || types.has('condo');
-    let intent = null;
-    if (hasAuto && hasHome) intent = 'bundle';
-    else if (hasAuto) intent = 'auto';
-    else if (hasHome) intent = 'home';
-    else if (types.has('landlord')) intent = 'landlord';
-    if (intent) setAnswer('productIntent', intent);
-
-    // Prefill the name from the declarations if we don't already have one.
-    const primaryName = list.find((d) => d?.named_insured)?.named_insured;
-    if (primaryName && !answers.firstName) {
-      const parts = primaryName.trim().split(/\s+/);
-      setAnswer('firstName', parts[0]);
-      if (parts.length > 1) setAnswer('lastName', parts.slice(1).join(' '));
-    }
-
-    setAnswer('intakeMode', 'upload');
-    trackEvent('declaration_fastpath_continue', { count: list.length, intent });
-    goNext();
-  }, [answers.firstName, setAnswer, goNext]);
-
   const handleDecFastPathSkip = useCallback(() => {
     setAnswer('intakeMode', 'manual');
     trackEvent('declaration_fastpath_skipped', {});
@@ -640,8 +614,8 @@ export default function SaveWizardPage() {
         );
       case 'decUpload':
         return (
-          <DeclarationFastPathStep
-            onContinue={handleDecFastPathContinue}
+          <ScanFastPathStep
+            answers={answers}
             onSkip={handleDecFastPathSkip}
           />
         );

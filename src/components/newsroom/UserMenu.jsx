@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { LogOut, ArrowLeftRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { signOutAndExit } from '../../lib/signOut';
 import { roleDisplayNames } from '../../config/navConfig';
 
 function initialsFor(name) {
@@ -74,20 +75,7 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
   const handleLogout = async (e) => {
     e.stopPropagation();
     setShowDropdown(false);
-    try {
-      // Race signOut against a 3s timeout — prevents hanging if auth lock is held.
-      await Promise.race([
-        signOut(),
-        new Promise(resolve => setTimeout(resolve, 3000)),
-      ]);
-    } catch (err) {
-      console.warn('[logout] signOut error (non-fatal):', err);
-    }
-    // Hard redirect to destroy all React state and force clean re-init.
-    // Using navigate() here caused a race: if signOut hadn't cleared the user
-    // state yet, LoginPage's useEffect would see the user still authenticated
-    // and immediately redirect back to the admin dashboard.
-    window.location.href = '/admin-access-8by2X';
+    await signOutAndExit(signOut);
   };
 
   if (!user) {

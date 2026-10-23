@@ -258,12 +258,11 @@ export default function GeorgiaDriverEducationPage() {
           <div className="bg-gradient-to-r from-primary-500/10 to-secondary-500/10 border border-primary-500/30 rounded-2xl p-8 text-center">
             <h3 className="text-2xl font-bold mb-3">Need an Insurance Quote?</h3>
             <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-              Skip the long forms. Compares rates in less than a minute.
+              Snap your declarations page. Cam checks if Allstate can beat it.
             </p>
              <a
-              className="canopy-connect-embed inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-primary-700 hover:via-primary-800 hover:to-secondary-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-primary-500/50 group no-underline"
-              href="https://app.usecanopy.com/c/insuredbycam"
-              target="_blank"
+              className="inline-flex items-center justify-center gap-3 w-full bg-gradient-to-r from-primary-600 via-primary-700 to-secondary-600 text-white font-black text-lg py-5 px-8 rounded-xl hover:from-primary-700 hover:via-primary-800 hover:to-secondary-700 transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl hover:shadow-primary-500/50 group no-underline"
+              href="/"
                 >
                <span className="whitespace-nowrap">Get Started →</span>
                 </a>

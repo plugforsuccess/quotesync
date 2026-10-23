@@ -29,7 +29,7 @@ function actionFor(hint) {
   return hit ? { headline: hit[1], why: hit[2] } : null;
 }
 
-export default function DecisionCard({ rc, compact = false }) {
+export default function DecisionCard({ rc, household = null, compact = false }) {
   const d = DECISION[rc.decision];
   if (!d) return null;
   const all = Array.isArray(rc.decision_reasons) ? rc.decision_reasons : [];
@@ -47,12 +47,12 @@ export default function DecisionCard({ rc, compact = false }) {
     <section className="flex h-full flex-col rounded-xl p-4" style={{ ...CARD_STYLE, color: 'var(--qs-bright)' }} aria-label="Routing decision">
       {action ? (
         <>
-          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc)}</span>
+          <span className="self-start rounded px-2 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]" style={PILL[d.tone]}>{decisionLabel(rc, household)}</span>
           <h3 className="mt-2 text-lg font-bold leading-snug">{action.headline}</h3>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{action.why}</p>
         </>
       ) : (
-        <h3 className="text-xl font-bold leading-tight" style={{ color: PILL[d.tone].color === 'var(--qs-subtle)' ? undefined : PILL[d.tone].color }}>{decisionLabel(rc)}</h3>
+        <h3 className="text-xl font-bold leading-tight" style={{ color: PILL[d.tone].color === 'var(--qs-subtle)' ? undefined : PILL[d.tone].color }}>{decisionLabel(rc, household)}</h3>
       )}
 
       {reasons.length > 0 && (
@@ -175,13 +175,13 @@ function Question({ q, a, onSave }) {
   );
 }
 
-export function DecisionChip({ rc }) {
+export function DecisionChip({ rc, policies = null }) {
   const d = DECISION[rc.decision];
   if (!d) return null;
   return (
     <span className={`inline-flex items-center whitespace-nowrap rounded px-2 py-1 text-xs font-medium ${d.cls}`}
       title={(rc.decision_reasons || []).filter(r => r.decision !== 'info' && r.decision !== 'fact').map(r => r.name).join(' · ') || undefined}>
-      {decisionLabel(rc)}
+      {decisionLabel(rc, policies)}
     </span>
   );
 }
