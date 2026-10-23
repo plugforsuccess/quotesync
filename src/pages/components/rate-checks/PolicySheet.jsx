@@ -125,12 +125,10 @@ function CoverageTile({ c, setup, total, wide }) {
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
       <p className="truncate text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{TILE_NAME[c.key] || c.label}</p>
       {c.same ? (
-        <>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <TileValue value={c.groups[0].value} addOn />
-          {total > 1 && (
-            <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {c.count}{c.scope ? ` ${c.scope}` : ''} vehicles</p>
-          )}
-        </>
+          {total > 1 && rows.map(x => <VehicleChip key={x.index} x={x} />)}
+        </div>
       ) : (
         <ul className="mt-1 space-y-1.5">
           {rows.map(x => (
@@ -153,8 +151,9 @@ function VehicleCoverages({ setup }) {
   // sit side by side; a tile that differs, or a shared one with no partner, takes the full row.
   const cells = [];
   const cs = setup.coverages;
+  // With several vehicles every tile carries pills, so each takes the full row.
   for (let i = 0; i < cs.length; i++) {
-    if (cs[i].same && cs[i + 1]?.same) { cells.push([cs[i], false], [cs[i + 1], false]); i++; } else cells.push([cs[i], true]);
+    if (total === 1 && cs[i].same && cs[i + 1]?.same) { cells.push([cs[i], false], [cs[i + 1], false]); i++; } else cells.push([cs[i], true]);
   }
   return (
     <Section title="Vehicle coverages" ruled>
