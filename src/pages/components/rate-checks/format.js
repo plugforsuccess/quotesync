@@ -170,6 +170,7 @@ export function quoteSheet(rc) {
   if (rc.insured_address) push(caps(rc.insured_address));
   else if (rc.zip) push(`ZIP ${rc.zip}`);
   if (rc.phone) push(formatPhone(rc.phone));
+  if (rc.email) push(rc.email);
 
   const type = rc.policy_type ? `${policyTypeLabel(rc.policy_type).toLowerCase()} ` : '';
   push('', `Current: ${carrierLabel(rc) || 'Unknown carrier'} ${type}policy`.replace(/\s+/g, ' '));

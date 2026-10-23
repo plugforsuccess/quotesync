@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, Bell, Camera, ExternalLink, Handshake, Link2, Map as MapIcon,
+  AlertCircle, AlertTriangle, Bell, Camera, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
   MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -456,6 +456,11 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
               <a href={`sms:+1${rc.phone}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
                 <MessageSquare className="h-4 w-4" /> Text
               </a>
+              {rc.email && (
+                <a href={`mailto:${rc.email}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-medium" style={inputStyle}>
+                  <Mail className="h-4 w-4" /> Email
+                </a>
+              )}
               <CopyButton text={formatPhone(rc.phone)} label="Copy phone number" className="p-2" />
               {rc.lead_id && (
                 <Link to={`/agency/leads/${rc.lead_id}`} className="ml-auto inline-flex items-center gap-1 text-primary-600 hover:underline">

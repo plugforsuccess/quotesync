@@ -237,6 +237,7 @@ export default function PolicySheet({ rc, warning }) {
         <dl>
           <Field label="Name on policy" value={insured} copy />
           <Field label="Address" value={rc.insured_address ? caps(rc.insured_address) : (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address ? caps(rc.insured_address) : rc.zip} />
+          {rc.email && <Field label="Email" value={rc.email} copy />}
           {rc.housing_situation && <Field label="Lives" value={HOUSING_LABEL[rc.housing_situation] || rc.housing_situation} />}
         </dl>
       </Section>

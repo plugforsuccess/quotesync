@@ -72,6 +72,7 @@ const CARRIERS = [
   'Bristol West', 'Infinity', 'Esurance', 'Other',
 ]
 const POLICY_TYPES = ['auto', 'home', 'renters', 'condo', 'umbrella', 'commercial_auto', 'commercial', 'other']
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
 function sanitizeUtm(val: string | null | undefined): string | null {
   if (!val) return null
@@ -833,8 +834,12 @@ Deno.serve(async (req) => {
     ? body.image_base64.replace(/^data:[^;]+;base64,/, '').replace(/\s/g, '')
     : ''
 
+  const email = (cleanText(body.email, 160) || '').trim().toLowerCase() || null
+
   const errors: string[] = []
   if (phone.length !== 10) errors.push('phone must be a 10-digit US number')
+  // Email is required from consumers; optional on staff uploads.
+  if (staff ? (email && !EMAIL_RE.test(email)) : !(email && EMAIL_RE.test(email))) errors.push('a valid email is required')
   // ZIP is optional for staff uploads (an emailed dec page may not need it typed in).
   if (staff ? (zip && !/^\d{5}$/.test(zip)) : !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
   if (!staff && (!body.consent_given_at || Number.isNaN(Date.parse(body.consent_given_at)))) {
@@ -876,6 +881,19 @@ Deno.serve(async (req) => {
       }
     : {}
   const sessionId = cleanText(body.session_id, 64) || crypto.randomUUID()
+
+  // ── Consumer uploads need a verified mobile number (rate-check-otp) this session ──
+  if (!staff) {
+    const { data: verified } = await supabase
+      .from('rate_check_otps')
+      .select('id')
+      .eq('phone', phone)
+      .eq('session_id', sessionId)
+      .not('verified_at', 'is', null)
+      .gte('verified_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .limit(1)
+    if (!verified?.length) return jsonResponse({ error: 'Verify your mobile number first.', code: 'phone_unverified' }, 403, corsHeaders)
+  }
   const landingPage = staff ? 'agent_upload' : cleanText(body.landing_page, 512)
   // Who gets credit: the producer who sent the link, or the staff member uploading.
   const origin = invite
@@ -906,6 +924,7 @@ Deno.serve(async (req) => {
         session_id: sessionId,
         first_name: firstName,
         phone,
+        email,
         zip: zip || null,
         upload_source: staff ? 'agent' : 'consumer',
         uploaded_by: staff?.userId ?? null,
@@ -994,6 +1013,7 @@ Deno.serve(async (req) => {
           .from('leads')
           .update({
             ...(firstName ? { first_name: firstName } : {}),
+            ...(email ? { email } : {}),
             ...(zip ? { zip } : {}),
             ...consent,
             ...policyFields,
@@ -1015,6 +1035,7 @@ Deno.serve(async (req) => {
             zip: zip || null,
             first_name: firstName,
             phone,
+            email,
             ...consent,
             ...sanitizedUtm,
             landing_page: landingPage,
