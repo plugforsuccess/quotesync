@@ -36,9 +36,30 @@ const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: '
 // Texted-code verification of the mobile number: off while the agency tests; set
 // VITE_RATE_CHECK_OTP=true (and RATE_CHECK_OTP_REQUIRED on the function) to turn it on.
 const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
-// The licensed agent shown on the page (same headshot as the homepage).
-// TODO(compliance): fill in the GA license number; the card and footer use it.
-const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '' };
+// The licensed agent shown on the page (same headshot as the homepage). Two GA
+// licenses: Cam's individual resident license goes under his headshot (the card
+// names him); the agency's resident license goes in the footer next to the agency name.
+const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
+const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
+// "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
+// Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
+const ABOUT = [
+  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
+  // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
+  // the Swarthmore Phoenix season recap.
+  { key: 'court', title: 'My story, on the court', paragraphs: [
+    'March 9, 2019. I was on a ladder with a pair of scissors, cutting down the net. Swarthmore had just reached its first NCAA Final Four.',
+    'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
+    'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
+  ] },
+  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his family', caption: 'My family', position: '50% 35%' },
+  // From Cam's Allstate agent bio, condensed; statewide, not one town.
+  { key: 'today', title: 'My story, today', paragraphs: [
+    'Family comes first for me. So I treat your household the way I’d treat mine.',
+    'Today I run Cam Wiley Insurance, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
+    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
+  ] },
+];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const fileKey = (f) => `${f.name}|${f.size}|${f.lastModified}`;
@@ -574,7 +595,7 @@ export default function RateCheckPage() {
             <Upload className="h-5 w-5" aria-hidden="true" /> Upload photos or PDFs
           </button>
 
-          <AgentCard />
+          <MeetCam />
 
           <ul className="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
             <Trust icon={Sparkles} label="Read in seconds" />
@@ -746,7 +767,7 @@ function ResultRow({ item, index, onRetake, onRetry }) {
 
 // Swipeable sections (native scroll-snap, so touch, trackpad and keyboard all work).
 // The next slide peeks in from the right so it reads as swipeable; the dots jump.
-function Carousel({ slides, className = '' }) {
+function Carousel({ slides, className = '', label = 'Your rate check' }) {
   const track = useRef(null);
   const [active, setActive] = useState(0);
   const onScroll = () => {
@@ -766,12 +787,12 @@ function Carousel({ slides, className = '' }) {
   };
   const many = slides.length > 1;
   return (
-    <section className={className} aria-roledescription="carousel" aria-label="Your rate check">
+    <section className={className} aria-roledescription="carousel" aria-label={label}>
       <div ref={track} onScroll={onScroll}
         className={`rc-track relative flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto ${many ? '' : 'justify-center'}`}>
         {slides.map((s, i) => (
           <div key={s.key} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}: ${s.label}`}
-            className={`${many ? 'w-[88%]' : 'w-full'} shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm`}>
+            className={`${many ? 'w-[88%]' : 'w-full'} shrink-0 snap-start rounded-2xl border border-slate-200 bg-white shadow-sm ${s.bare ? 'overflow-hidden' : 'p-4'}`}>
             {!s.untitled && <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{s.label}</p>}
             {s.content}
           </div>
@@ -798,17 +819,41 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
+// First slide of the Meet Cam carousel.
 function AgentCard() {
   return (
-    <div className="mt-6 rounded-3xl bg-white px-4 pb-5 pt-5 text-center ring-1 ring-slate-200">
+    <div className="flex h-full min-h-[268px] flex-col items-center justify-center text-center">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Your licensed agent</p>
-      <p className="mt-0.5 text-xl font-extrabold text-slate-900">{AGENT.name}</p>
-      <img src={AGENT.photo} alt={AGENT.name} width="88" height="88" loading="lazy"
-        className="mx-auto mt-3.5 h-[88px] w-[88px] rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
+      <p className="mt-0.5 text-2xl font-extrabold text-slate-900">{AGENT.name}</p>
+      <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
+        className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
         style={{ objectPosition: '50% 30%' }} />
-      {AGENT.license && <p className="mt-3 text-xs text-slate-400">GA license #{AGENT.license}</p>}
+      {AGENT.license && <p className="mt-10 text-[11px] text-slate-400">GA License #: {AGENT.license}</p>}
     </div>
   );
+}
+
+function MeetCam() {
+  const slides = [{ key: 'agent', label: 'Your licensed agent', untitled: true, content: <AgentCard /> }, ...ABOUT.map(a => a.photo ? {
+    key: a.key, label: a.caption, untitled: true, bare: true,
+    content: (
+      <figure className="relative h-full min-h-[300px]">
+        <img src={a.photo} alt={a.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.position }} />
+        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-left text-sm font-semibold text-white">{a.caption}</figcaption>
+      </figure>
+    ),
+  } : {
+    key: a.key, label: a.title, untitled: true,
+    content: (
+      <div className="flex h-full min-h-[268px] flex-col text-left">
+        {/* No visible header: the bold first line is the headline. The title names the slide for screen readers. */}
+        <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
+          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-slate-900' : ''}>{t}</p>)}
+        </div>
+      </div>
+    ),
+  })];
+  return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-6" />;
 }
 
 function Trust({ icon: Icon, label }) {
@@ -882,12 +927,12 @@ export function RateCheckFooter({ padForBar = false }) {
         <Link to="/privacy" className="underline">Privacy policy</Link>
         <Link to="/terms" className="underline">Terms</Link>
       </nav>
-      {/* TODO(compliance): confirm the Allstate agency disclosure wording and the GA license number before launch. */}
+      {/* TODO(compliance): confirm the Allstate agency disclosure wording before launch. */}
       <p>
-        Wiley-Wilson Agency is an Allstate agency. Quotes and savings vary and are subject to underwriting and
+        {AGENCY.name} is an Allstate Insurance Agency. Quotes and savings vary and are subject to underwriting and
         eligibility; not all applicants qualify.
       </p>
-      <p className="mt-1">GA License #: {AGENT.license || '[LICENSE NUMBER]'}</p>
+      <p className="mt-1">Agency Resident License #: {AGENCY.license}</p>
     </footer>
   );
 }
