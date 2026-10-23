@@ -706,13 +706,13 @@ function QuoteBox({ rc, onQuoted }) {
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (
-    <section className="grow rounded-xl p-4" style={CARD_STYLE}>
+    <section className="grow rounded-xl p-5" style={CARD_STYLE}>
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
-      <p className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>
-        {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
+      <p className="mt-1 text-4xl font-bold leading-none" style={{ color: 'var(--qs-bright)' }}>
+        {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-lg font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
       </p>
       {Number(rc.term_months) === 6 && rc.current_premium != null && (
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
+        <p className="mt-2.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>{money(rc.current_premium)} every 6 months</p>
       )}
 
 
@@ -722,16 +722,16 @@ function QuoteBox({ rc, onQuoted }) {
           <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{boundInfo.bound_at ? new Date(boundInfo.bound_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}{rc.annual_premium != null && boundInfo.bound_premium != null ? ` · they were paying ${money(rc.annual_premium)}` : ''}</p>
         </div>
       )}
-      {!bound && <form onSubmit={submit} className="mt-4 space-y-2">
+      {!bound && <form onSubmit={submit} className="mt-7 space-y-3">
         <label className="block text-sm font-medium" htmlFor="rc-allstate" style={{ color: 'var(--qs-bright)' }}>{market} price per year</label>
         <div className="flex gap-2">
           <div className="relative min-w-0 flex-1">
             {premium && <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--qs-subtle)' }}>$</span>}
-            <input id="rc-allstate" className={`w-full rounded-md py-2 pr-2 text-base ${premium ? 'pl-7' : 'pl-3'}`} style={inputStyle} inputMode="decimal" placeholder="Enter annual price"
+            <input id="rc-allstate" className={`w-full rounded-lg py-3 pr-3 text-base ${premium ? 'pl-7' : 'pl-3'}`} style={inputStyle} inputMode="decimal" placeholder="Enter annual price"
               value={premium} onChange={e => setPremium(sanitizeMoneyInput(e.target.value))} disabled={declined} />
           </div>
           <button type="submit" disabled={enterQuote.isPending || !(parseMoney(premium) > 0) || declined}
-            className="shrink-0 rounded-lg bg-primary-600 px-4 py-2 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400 disabled:opacity-60">
+            className="shrink-0 rounded-lg bg-primary-600 px-5 py-3 font-semibold text-white disabled:cursor-not-allowed disabled:bg-slate-400 disabled:opacity-60">
             {enterQuote.isPending ? 'Saving…' : justSaved ? 'Saved ✓' : outcome ? 'Update' : 'Save'}
           </button>
         </div>

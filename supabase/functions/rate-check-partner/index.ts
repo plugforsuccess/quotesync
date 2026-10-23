@@ -20,7 +20,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { PDFDocument, StandardFonts, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
-import { W9_PDF_BASE64, W9_REVISION } from './w9Form.ts'
+import { loadBlankW9, W9_REVISION } from './w9Form.ts'
 
 const allowedOrigins = ['https://insuredbycam.com', 'https://www.insuredbycam.com', 'https://quotesync.vercel.app']
 const envOrigin = Deno.env.get('CORS_ALLOWED_ORIGIN')
@@ -298,7 +298,7 @@ function checkW9(b: any): W9 | { error: string } {
 // Fills the IRS form's own fields (names from the blank PDF), draws the typed
 // signature and an e-sign line in the Sign Here box, then flattens it.
 async function fillW9(w: W9, ctx: { agency: string; mm: string; dd: string; yyyy: string; ip: string; when: Date }) {
-  const doc = await PDFDocument.load(Uint8Array.from(atob(W9_PDF_BASE64), c => c.charCodeAt(0)))
+  const doc = await PDFDocument.load(await loadBlankW9())
   const form = doc.getForm()
   const P = 'topmostSubform[0].Page1[0].'
   const text = (f: string, v: string | null) => { if (v) form.getTextField(P + f).setText(v) }

@@ -12,7 +12,7 @@ import { CARD_STYLE, money } from './ui';
 import { householdGoal, savings } from './quoteMath';
 
 const tone = (delta) => (delta > 0 ? 'var(--qs-success)' : 'var(--qs-warning)');
-const policyName = (p) => [carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Not read yet';
+const policyName = (p) => [carrierLabel(p), policyTypeLabel(p.policy_type)].filter(Boolean).join(' ') || 'Not read yet';
 
 /** "Beat $9,916/yr · 1 of 2 quoted · Saves $5,660 so far" — a quote saves; nothing is saved until it binds. */
 export function GoalHeader({ household }) {
@@ -57,21 +57,24 @@ export function HouseholdCard({ rc, household, onSelect }) {
         Household <span className="font-medium" style={{ color: 'var(--qs-subtle)' }}>· {household.length} policies</span>
       </h3>
       {/* The rows share whatever height the card has, so it never ends in a blank strip. */}
-      <div className="mt-3 flex flex-1 flex-col gap-1.5" role="tablist" aria-label="Policies in this household">
+      <div className="mt-3 flex flex-1 flex-col gap-2" role="tablist" aria-label="Policies in this household">
         {household.map(p => {
           const active = p.id === rc.id;
           const quoted = p.allstate_premium != null && Number(p.allstate_premium) > 0;
           return (
             <button key={p.id} type="button" role="tab" aria-selected={active} onClick={() => onSelect?.(p)}
-              className={`flex min-h-[44px] w-full flex-1 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm ${active ? 'bg-primary-600 text-white' : ''}`}
+              className={`flex min-h-[64px] w-full flex-1 flex-col justify-center gap-1 rounded-xl px-4 py-3 text-left ${active ? 'bg-primary-600 text-white' : ''}`}
               style={active ? undefined : { background: 'var(--qs-card)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
-              <span className="min-w-0 flex-1">
-                {active && <span className="block text-[10px] font-bold uppercase tracking-[0.12em] opacity-80">Working on</span>}
-                <span className="font-semibold">{policyName(p)}</span>
-                {p.annual_premium != null && <span className={active ? 'opacity-90' : ''} style={active ? undefined : { color: 'var(--qs-subtle)' }}> {money(p.annual_premium)}</span>}
-                {quoted && <span> → Allstate <b>{money(p.allstate_premium)}</b></span>}
+              {active && <span className="text-[10px] font-bold uppercase tracking-[0.14em] opacity-80">Working on</span>}
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="text-lg font-bold leading-tight">{policyName(p)}</span>
+                {p.annual_premium != null && <span className="shrink-0 text-lg font-bold tabular-nums leading-tight">{money(p.annual_premium)}<span className={`text-sm font-medium ${active ? 'opacity-80' : ''}`} style={active ? undefined : { color: 'var(--qs-subtle)' }}>/yr</span></span>}
               </span>
-              {quoted && <Check className="h-4 w-4 shrink-0" style={{ color: active ? '#fff' : 'var(--qs-success)' }} aria-label="Quoted" />}
+              {quoted && (
+                <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: active ? '#fff' : 'var(--qs-success)' }}>
+                  <Check className="h-4 w-4" aria-hidden="true" /> Allstate {money(p.allstate_premium)}
+                </span>
+              )}
             </button>
           );
         })}
