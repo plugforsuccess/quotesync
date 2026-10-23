@@ -115,7 +115,7 @@ const VEHICLE_TONE = { color: 'var(--qs-cyan)', background: 'rgba(6, 182, 212, 0
 
 function VehicleChip({ x }) {
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={VEHICLE_TONE}>{vehicleShort(x.v)}</span>
+    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={{ ...VEHICLE_TONE, color: 'var(--qs-bright)' }}>{vehicleShort(x.v)}</span>
   );
 }
 
