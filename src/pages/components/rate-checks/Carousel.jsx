@@ -2,7 +2,8 @@
 // Swipeable cards for the top of the Rate Check drawer (household, decision,
 // price): one card at a time on a phone, dots underneath. Each slide brings its
 // own card chrome; the track only lays them out and hides its scrollbar. Cards are
-// centered with the same gutter on both sides, so the neighbours peek in evenly.
+// centered with the same gutter on both sides, so the neighbours peek in evenly,
+// and every slide is as tall as the tallest one.
 
 import { useRef, useState } from 'react';
 
@@ -32,7 +33,7 @@ export default function Carousel({ slides, label }) {
     <section aria-roledescription="carousel" aria-label={label}>
       <style>{'.rc-drawer-track{scrollbar-width:none}.rc-drawer-track::-webkit-scrollbar{display:none}'}</style>
       <div ref={track} onScroll={onScroll}
-        className={`rc-drawer-track flex snap-x snap-mandatory items-start gap-3 overflow-x-auto ${many ? 'px-10' : 'px-5'}`}>
+        className={`rc-drawer-track flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto ${many ? 'px-10' : 'px-5'}`}>
         {slides.map((s, i) => (
           <div key={s.key} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}: ${s.label}`}
             className="flex w-full shrink-0 snap-center [&>*]:w-full">

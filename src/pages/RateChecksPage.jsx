@@ -624,7 +624,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           {/* Slide 1: the household (when there's more than one policy) with the price right under it. Slide 2: what to quote. */}
           <Carousel label="Quote this policy" slides={[
             { key: 'price', label: multi ? 'Household and price' : 'Price', content: (
-              <div className="space-y-3">
+              <div className="flex h-full flex-col gap-3">
                 {multi && <HouseholdCard rc={rc} household={household} onSelect={onSelect} />}
                 <QuoteBox rc={household.find(p => p.id === rc.id) || rc} onQuoted={quoted} />
                 {rc.upload_source === 'agent' && (
@@ -706,7 +706,7 @@ function QuoteBox({ rc, onQuoted }) {
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (
-    <section className="rounded-xl p-4" style={CARD_STYLE}>
+    <section className="flex-1 rounded-xl p-4" style={CARD_STYLE}>
       <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
       <p className="text-3xl font-bold" style={{ color: 'var(--qs-bright)' }}>
         {rc.annual_premium != null ? <>{money(rc.annual_premium)}<span className="text-base font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></> : 'Price not read yet'}
