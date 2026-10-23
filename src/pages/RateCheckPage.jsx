@@ -53,11 +53,11 @@ const ABOUT = [
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
   ] },
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his family', caption: 'My family', position: '50% 35%' },
-  // TODO(Cam): placeholder wording except the agency line; replace with your own.
+  // From Cam's Allstate agent bio (Covington), condensed.
   { key: 'today', title: 'My story · Today', paragraphs: [
     'Family comes first for me. So I treat your household the way I’d treat mine.',
-    'That’s how I run Cam Wiley Insurance, my own Allstate agency here in Georgia.',
-    'I look at every dec page myself, and I only text you when I can save you money.',
+    'Today I run Cam Wiley Insurance, my Allstate agency in Covington. I’ve gotten to know many local families here, and building those relationships is the best part of my job.',
+    'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
 ];
 
