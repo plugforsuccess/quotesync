@@ -9,7 +9,7 @@ const scan = (o) => ({ id: Math.random().toString(36).slice(2), promoter_id: 'p1
 const schedule = scheduleFrom([]);
 
 test('default schedule, overridden by saved rows', () => {
-  assert.deepEqual(schedule, { auto_home: 35, auto_renters: 15, home_only: 15, auto_only: 10, renters_only: 2, extra_line: 5 });
+  assert.deepEqual(schedule, { auto_home: 45, auto_renters: 15, home_only: 15, auto_only: 10, renters_only: 2, extra_line: 5 });
   assert.equal(scheduleFrom([{ tier: 'auto_home', amount: '40.00' }, { tier: 'nope', amount: 9 }]).auto_home, 40);
 });
 
@@ -44,7 +44,7 @@ test('one payout per household (by phone), in the month of its first qualifying 
     scan({ phone: '4045550199', policy_type: null, status: 'extract_failed' }),
   ], schedule);
   const stephen = hh.find(h => h.phone === '6787726107');
-  assert.deepEqual([stephen.tier, stephen.fee, stephen.month, stephen.firstName], ['auto_home', 35, '2026-09', 'Stephen']);
+  assert.deepEqual([stephen.tier, stephen.fee, stephen.month, stephen.firstName], ['auto_home', 45, '2026-09', 'Stephen']);
   const ana = hh.find(h => h.phone === '4045550100');
   assert.deepEqual([ana.tier, ana.fee, ana.won], ['renters_only', 2, true]);
   const failed = hh.find(h => h.phone === '4045550199');
@@ -55,7 +55,7 @@ test('one payout per household (by phone), in the month of its first qualifying 
   assert.equal(s.households, 2);
   assert.equal(s.won, 1);
   assert.equal(s.closeRate, 0.5);
-  assert.equal(s.fees, 37);
-  assert.equal(s.costPerWin, 37);
+  assert.equal(s.fees, 47);
+  assert.equal(s.costPerWin, 47);
   assert.deepEqual(monthsWithActivity(hh, '2026-11'), ['2026-11', '2026-10', '2026-09']);
 });

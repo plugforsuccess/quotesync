@@ -5,7 +5,7 @@
 
 // The agency's schedule overrides these (rate_check_promoter_rates).
 export const TIERS = [
-  { key: 'auto_home', label: 'Auto + home or condo', fee: 35 },
+  { key: 'auto_home', label: 'Auto + home or condo', fee: 45 },
   { key: 'auto_renters', label: 'Auto + renters', fee: 15 },
   { key: 'home_only', label: 'Home or condo only', fee: 15 },
   { key: 'auto_only', label: 'Auto only', fee: 10 },
