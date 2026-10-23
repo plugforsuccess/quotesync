@@ -133,8 +133,14 @@ function CoverageTile({ c, setup, total, wide }) {
         // One value → one label; every vehicle says so, otherwise pills for the cars that have it.
         <div>
           <TileValue value={c.groups[0].value} addOn />
-          {total > 1 && everyCar && <p className="mt-0.5 text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {total} vehicles</p>}
-          {total > 1 && !everyCar && <div className="mt-1 flex flex-wrap gap-1">{withIt.map(x => <VehicleChip key={x.index} x={x} />)}</div>}
+          {/* "All 3 vehicles" and car pills sit on the same line height, so side-by-side tiles line up. */}
+          {total > 1 && (
+            <div className="mt-1 flex min-h-[24px] flex-wrap items-center gap-1">
+              {everyCar
+                ? <span className="text-xs font-medium" style={{ color: 'var(--qs-subtle)' }}>All {total} vehicles</span>
+                : withIt.map(x => <VehicleChip key={x.index} x={x} />)}
+            </div>
+          )}
         </div>
       ) : (
         <ul className="mt-1 space-y-1.5">
