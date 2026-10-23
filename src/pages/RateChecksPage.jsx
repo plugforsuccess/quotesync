@@ -3,7 +3,7 @@
 // Agents copy the policy into an Allstate quote, enter Allstate's price, and
 // the outcome (won → call, lost → polite auto-text) is handled by rate-check-outcome.
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertCircle, AlertTriangle, BadgeDollarSign, Bell, Camera, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
@@ -435,6 +435,18 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
   const multi = household.length > 1;
+  // The header (name, call, goal) slides away while scrolling down into the quote
+  // sheet and comes back on any scroll up.
+  const [headerHidden, setHeaderHidden] = useState(false);
+  const header = useRef(null);
+  const lastY = useRef(0);
+  const onScroll = (e) => {
+    const y = e.currentTarget.scrollTop;
+    const dy = y - lastY.current;
+    if (Math.abs(dy) < 6) return;
+    lastY.current = y;
+    setHeaderHidden(dy > 0 && y > (header.current?.offsetHeight || 0));
+  };
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -445,9 +457,10 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
   return (
     <div className="fixed inset-0 z-[60] flex justify-end" role="dialog" aria-modal="true" aria-label="Rate check detail">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="relative h-full w-full max-w-xl overflow-y-auto shadow-xl" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
+      <div onScroll={onScroll} className="relative h-full w-full max-w-xl overflow-y-auto shadow-xl" style={{ background: 'var(--qs-card)', color: 'var(--qs-text)' }}>
         {/* Who + how to reach them */}
-        <div className="sticky top-0 z-10 px-5 pt-4 pb-3" style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)' }}>
+        <div ref={header} className="sticky top-0 z-10 px-5 pt-4 pb-3 transition-transform duration-200"
+          style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)', transform: headerHidden ? 'translateY(-100%)' : 'none' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{rc.first_name || insuredName || 'Rate check'}</h2>
