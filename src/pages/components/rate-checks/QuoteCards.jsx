@@ -6,7 +6,6 @@
 // Card colours: every quote card has the same neutral border. Colour only carries
 // a result: green = they save, amber = Allstate costs more.
 
-import { Check } from 'lucide-react';
 import { carrierLabel, policyTypeLabel } from './format';
 import { CARD_STYLE, money } from './ui';
 import { householdGoal, savings } from './quoteMath';
@@ -60,7 +59,6 @@ export function HouseholdCard({ rc, household, onSelect }) {
       <div className="mt-3 flex flex-1 flex-col gap-2" role="tablist" aria-label="Policies in this household">
         {household.map(p => {
           const active = p.id === rc.id;
-          const quoted = p.allstate_premium != null && Number(p.allstate_premium) > 0;
           return (
             <button key={p.id} type="button" role="tab" aria-selected={active} onClick={() => onSelect?.(p)}
               className={`flex min-h-[64px] w-full flex-1 flex-col justify-center gap-1 rounded-xl px-4 py-3 text-left ${active ? 'bg-primary-600 text-white' : ''}`}
@@ -70,11 +68,6 @@ export function HouseholdCard({ rc, household, onSelect }) {
                 <span className="text-lg font-bold leading-tight">{policyName(p)}</span>
                 {p.annual_premium != null && <span className="shrink-0 text-lg font-bold tabular-nums leading-tight">{money(p.annual_premium)}<span className={`text-sm font-medium ${active ? 'opacity-80' : ''}`} style={active ? undefined : { color: 'var(--qs-subtle)' }}>/yr</span></span>}
               </span>
-              {quoted && (
-                <span className="flex items-center gap-1 text-sm font-semibold" style={{ color: active ? '#fff' : 'var(--qs-success)' }}>
-                  <Check className="h-4 w-4" aria-hidden="true" /> Allstate {money(p.allstate_premium)}
-                </span>
-              )}
             </button>
           );
         })}
