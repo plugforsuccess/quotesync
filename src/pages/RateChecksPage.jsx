@@ -47,8 +47,8 @@ const FILTERS = [
   { value: 'lost', label: 'Can’t beat', short: 'Lost', statuses: ['lost'] },
   { value: 'all', label: 'All', statuses: null },
 ];
-// The consumer page promises a text "within the hour".
-const OVERDUE_MINUTES = 60;
+// The consumer page says we text "typically within 30 mins during business hours".
+const OVERDUE_MINUTES = 30;
 
 
 const heading = 'mb-1 text-base font-semibold';
@@ -82,7 +82,7 @@ function Age({ rc, now }) {
   const mins = minutesSince(rc.created_at, now);
   const open = OPEN_STATUSES.includes(rc.status);
   if (open && mins >= OVERDUE_MINUTES) {
-    return <span className="font-semibold text-red-500" title="We promised a text within the hour">Waiting {ageText(mins)}</span>;
+    return <span className="font-semibold text-red-500" title="The page says we typically text within 30 minutes">Waiting {ageText(mins)}</span>;
   }
   return <span style={{ color: 'var(--qs-text)' }}>{mins < 1 ? 'Just now' : `${ageText(mins)} ago`}</span>;
 }
@@ -423,8 +423,8 @@ export default function RateChecksPage() {
                 <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
                 <span className="min-w-0 flex-1">
                   {overdueOnly
-                    ? <>Showing the {overdue} who waited over an hour.</>
-                    : <>{overdue} {overdue === 1 ? 'person has' : 'people have'} waited over an hour. The page promised a text within the hour.</>}
+                    ? <>Showing the {overdue} who waited over 30 minutes.</>
+                    : <>{overdue} {overdue === 1 ? 'person has' : 'people have'} waited over 30 minutes. The page says we typically text within 30.</>}
                 </span>
                 <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show all' : 'Show them ›'}</span>
               </button>

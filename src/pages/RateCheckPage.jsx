@@ -13,9 +13,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
 } from 'lucide-react';
-import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
+import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
@@ -72,11 +72,18 @@ export default function RateCheckPage() {
   const [inviteExpired, setInviteExpired] = useState(false);
   const cameraInput = useRef(null);
   const fileInput = useRef(null);
-  const retakeTarget = useRef(null); // id of the card a Retake replaces
+  // What the next pick does: null = new policy; { mode: 'page', policyId } adds a page;
+  // { mode: 'retake', policyId, pageId } replaces one page.
+  const pickTarget = useRef(null);
 
   const [step, setStep] = useState('policies'); // policies | you | results
-  // { id, file, preview, quality, status: draft|queued|reading|read|unreadable|failed, result, error }
+  // A policy: { id, pages: [{ id, file, preview, quality }], file, preview (page 1),
+  //   status: draft|queued|reading|read|unreadable|failed, result, error }
   const [items, setItems] = useState([]);
+  // The policy we're asking "more pages?" about, and photos picked together that
+  // might be one policy or several.
+  const [askingMore, setAskingMore] = useState(null);
+  const [grouping, setGrouping] = useState(null); // File[]
   const [fields, setFields] = useState({ firstName: '', phone: '', email: '', zip: '', housing: '' });
   // Text-message verification of the mobile number. The verified number is kept for
   // the tab session so a reload (or a second policy) doesn't ask again.
@@ -98,12 +105,17 @@ export default function RateCheckPage() {
   fieldsRef.current = fields;
 
   const patch = useCallback((id, change) => updateItems(list => list.map(i => (i.id === id ? { ...i, ...change } : i))), [updateItems]);
-  const checkQuality = useCallback((id, file) => {
-    assessPhoto(file).then(q => patch(id, { quality: q }));
-  }, [patch]);
+  const patchPage = useCallback((pageId, change) => updateItems(list => list.map(i => (
+    i.pages?.some(pg => pg.id === pageId) ? withPages(i, i.pages.map(pg => (pg.id === pageId ? { ...pg, ...change } : pg))) : i
+  ))), [updateItems]);
+  const checkQuality = useCallback((pageId, file) => {
+    assessPhoto(file).then(q => patchPage(pageId, { quality: q }));
+  }, [patchPage]);
+  // Save every page of a draft policy, in order (the order is what gets sent).
+  const saveDraftPages = (policy) => policy.pages.forEach((pg, order) => saveDraftPhoto({ id: pg.id, file: pg.file, policyId: policy.id, order }));
 
   useEffect(() => {
-    document.title = 'Rate Check — Are you overpaying for insurance? | insuredbycam';
+    document.title = 'Get a second opinion on your insurance | insuredbycam';
     window.scrollTo(0, 0);
   }, []);
 
@@ -117,12 +129,20 @@ export default function RateCheckPage() {
       const sentBefore = session?.results?.length > 0;
       const restored = [];
       if (sentBefore) {
-        restored.push(...session.results.map(r => ({ ...r, file: null, preview: null, quality: null })));
+        restored.push(...session.results.map(r => ({ ...r, pages: [], file: null, preview: null })));
         setGiven({ consentGivenAt: session.consentGivenAt, referralConsentGivenAt: session.referralConsentGivenAt });
         setStep('results');
       }
       if (draft?.photos?.length) {
-        restored.push(...draft.photos.map(p => ({ id: p.id, file: p.file, preview: previewFor(p.file), quality: null, status: 'draft' })));
+        const byPolicy = new Map();
+        draft.photos.forEach(ph => {
+          if (!byPolicy.has(ph.policyId)) byPolicy.set(ph.policyId, []);
+          byPolicy.get(ph.policyId).push(ph);
+        });
+        byPolicy.forEach((rows, policyId) => {
+          const pages = rows.sort((a, b) => a.order - b.order).map(r => ({ id: r.id, file: r.file, preview: previewFor(r.file), quality: null }));
+          restored.push(withPages({ id: policyId, status: 'draft' }, pages));
+        });
       }
       const f = session?.fields || draft?.fields;
       if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, phone: f.phone || prev.phone, email: f.email || prev.email, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
@@ -136,7 +156,7 @@ export default function RateCheckPage() {
       if (draftHasContent && !sentBefore) setResumed(true);
       if (restored.length) {
         updateItems(() => restored);
-        restored.filter(i => i.status === 'draft').forEach(i => checkQuality(i.id, i.file));
+        restored.filter(i => i.status === 'draft').forEach(i => i.pages.forEach(pg => checkQuality(pg.id, pg.file)));
       }
       setReady(true);
     })();
@@ -177,10 +197,10 @@ export default function RateCheckPage() {
     const f = fieldsRef.current;
     for (const id of ids) {
       const it = itemsRef.current.find(i => i.id === id);
-      if (!it?.file) continue;
+      if (!it?.pages?.length) continue;
       patch(id, { status: 'reading', error: null });
       try {
-        const prepared = await prepareDecPage(it.file);
+        const prepared = await preparePolicy(it.pages.map(pg => pg.file));
         const data = await submitWithRetry(() => submitRateCheck({
           prepared, firstName: f.firstName, phone: f.phone.replace(/\D/g, ''), email: f.email, zip: f.zip,
           housingSituation: f.housing, consentGivenAt: grant.consentGivenAt,
@@ -188,7 +208,7 @@ export default function RateCheckPage() {
         }));
         const unreadable = !data?.carrier && !data?.policy_type && data?.annual_premium == null;
         patch(id, { status: unreadable ? 'unreadable' : 'read', result: data });
-        removeDraftPhoto(id);
+        it.pages.forEach(pg => removeDraftPhoto(pg.id));
       } catch (err) {
         patch(id, { status: 'failed', error: err.message || 'Didn’t go through.' });
       }
@@ -197,55 +217,131 @@ export default function RateCheckPage() {
     if (!itemsRef.current.some(i => i.status === 'draft')) clearDraft();
   };
 
-  // ── Adding, replacing and removing policies ──
+  // ── Adding policies and pages, replacing and removing ──
+  const newPolicy = (files) => withPages({ id: newId(), status: 'draft' }, files.map(newPage));
+  const addPolicies = (policies) => {
+    updateItems(list => [...list, ...policies]);
+    policies.forEach(pol => { saveDraftPages(pol); pol.pages.forEach(pg => checkQuality(pg.id, pg.file)); });
+    if (step === 'results') setStep('policies');
+  };
+
   const onPick = (e) => {
     const picked = Array.from(e.target.files || []);
     e.target.value = '';
-    const target = retakeTarget.current;
-    retakeTarget.current = null;
+    const target = pickTarget.current;
+    pickTarget.current = null;
     if (!picked.length) return;
     navigator.vibrate?.(8);
 
-    if (target) {
-      const old = itemsRef.current.find(i => i.id === target);
+    const have = new Set(itemsRef.current.flatMap(i => (i.pages || []).map(pg => fileKey(pg.file))));
+    const fresh = picked.filter(f => !have.has(fileKey(f)));
+    if (!target && fresh.length < picked.length) setNotice(fresh.length ? 'Skipped a photo you already added.' : 'You already added that one.');
+
+    if (target?.mode === 'retake') {
+      const old = itemsRef.current.find(i => i.id === target.policyId);
       const file = picked[0];
       if (!old) return;
-      if (old.preview) URL.revokeObjectURL(old.preview);
-      const id = newId();
-      if (old.status === 'draft') {
-        removeDraftPhoto(old.id);
-        updateItems(list => list.map(i => (i.id === target ? { id, file, preview: previewFor(file), quality: null, status: 'draft' } : i)));
-        saveDraftPhoto({ id, file });
-        checkQuality(id, file);
-      } else {
+      if (old.status !== 'draft') {
         // Retaking a policy we couldn't read: send the new photo straight away.
-        const next = { id, file, preview: previewFor(file), quality: null, status: 'queued' };
-        updateItems(list => [...list.filter(i => i.id !== target), next]);
-        checkQuality(id, file);
-        sendQueue([id], given);
+        old.pages.forEach(pg => pg.preview && URL.revokeObjectURL(pg.preview));
+        const next = { ...newPolicy([file]), status: 'queued' };
+        updateItems(list => [...list.filter(i => i.id !== old.id), next]);
+        checkQuality(next.pages[0].id, file);
+        sendQueue([next.id], given);
+        return;
       }
+      const pg = newPage(file);
+      const pages = old.pages.map(p => {
+        if (p.id !== target.pageId) return p;
+        if (p.preview) URL.revokeObjectURL(p.preview);
+        removeDraftPhoto(p.id);
+        return pg;
+      });
+      const updated = withPages(old, pages);
+      updateItems(list => list.map(i => (i.id === old.id ? updated : i)));
+      saveDraftPages(updated);
+      checkQuality(pg.id, file);
       return;
     }
 
-    const have = new Set(itemsRef.current.filter(i => i.file).map(i => fileKey(i.file)));
-    const fresh = picked.filter(f => !have.has(fileKey(f)));
-    if (fresh.length < picked.length) setNotice(fresh.length ? 'Skipped a photo you already added.' : 'You already added that one.');
-    const added = fresh.map(file => ({ id: newId(), file, preview: previewFor(file), quality: null, status: 'draft' }));
-    if (!added.length) return;
-    updateItems(list => [...list, ...added]);
-    added.forEach(i => { saveDraftPhoto(i); checkQuality(i.id, i.file); });
-    if (step === 'results') setStep('policies');
+    if (!fresh.length) return;
+
+    if (target?.mode === 'page') {
+      const pol = itemsRef.current.find(i => i.id === target.policyId);
+      if (!pol) return;
+      const added = fresh.map(newPage);
+      const updated = withPages(pol, [...pol.pages, ...added]);
+      updateItems(list => list.map(i => (i.id === pol.id ? updated : i)));
+      saveDraftPages(updated);
+      added.forEach(pg => checkQuality(pg.id, pg.file));
+      setAskingMore(pol.id);
+      return;
+    }
+
+    if (fresh.length > 1) {
+      // A downloaded PDF already holds every page of one policy, so several PDFs are several policies.
+      if (fresh.every(isPdfName)) { addPolicies(fresh.map(f => newPolicy([f]))); setAskingMore(null); return; }
+      // Photos or screenshots could be one policy's pages, several policies, or a mix: ask.
+      setGrouping(fresh);
+      if (step === 'results') setStep('policies');
+      return;
+    }
+    const pol = newPolicy(fresh);
+    addPolicies([pol]);
+    // A single photo: ask whether this policy has more pages (PDFs usually already do).
+    setAskingMore(isPdfName(fresh[0]) ? null : pol.id);
+  };
+
+  // how: 'one' (pages of one policy), 'separate' (one file per policy), or 'mix' (one per
+  // policy for now, each with "Same policy as above" so they can be sorted into pages).
+  const groupPicked = (how) => {
+    const files = grouping || [];
+    setGrouping(null);
+    if (!files.length) return;
+    if (how === 'one') {
+      const pol = newPolicy(files);
+      addPolicies([pol]);
+      setAskingMore(pol.id);
+      return;
+    }
+    const batch = how === 'mix' ? newId() : null;
+    addPolicies(files.map(f => ({ ...newPolicy([f]), ...(batch ? { batch } : {}) })));
+    setAskingMore(null);
+  };
+  // "Same policy as above": move this policy's pages onto the end of the one before it.
+  const mergeUp = (id) => {
+    const list = itemsRef.current.filter(i => i.status === 'draft');
+    const k = list.findIndex(i => i.id === id);
+    if (k < 1) return;
+    const prev = list[k - 1], cur = list[k];
+    const merged = withPages(prev, [...prev.pages, ...cur.pages]);
+    updateItems(all => all.filter(i => i.id !== cur.id).map(i => (i.id === prev.id ? merged : i)));
+    saveDraftPages(merged);
   };
 
   const removeItem = (id) => {
     const it = itemsRef.current.find(i => i.id === id);
-    if (it?.preview) URL.revokeObjectURL(it.preview);
-    removeDraftPhoto(id);
+    (it?.pages || []).forEach(pg => { if (pg.preview) URL.revokeObjectURL(pg.preview); removeDraftPhoto(pg.id); });
+    if (askingMore === id) setAskingMore(null);
     updateItems(list => list.filter(i => i.id !== id));
   };
+  const removePage = (policyId, pageId) => {
+    const pol = itemsRef.current.find(i => i.id === policyId);
+    if (!pol) return;
+    if (pol.pages.length <= 1) { removeItem(policyId); return; }
+    const gone = pol.pages.find(pg => pg.id === pageId);
+    if (gone?.preview) URL.revokeObjectURL(gone.preview);
+    removeDraftPhoto(pageId);
+    const updated = withPages(pol, pol.pages.filter(pg => pg.id !== pageId));
+    updateItems(list => list.map(i => (i.id === policyId ? updated : i)));
+    saveDraftPages(updated);
+  };
 
-  const openCamera = (replaceId = null) => { retakeTarget.current = replaceId; cameraInput.current?.click(); };
-  const openFiles = () => { retakeTarget.current = null; fileInput.current?.click(); };
+  const openCamera = (target = null) => { pickTarget.current = target; cameraInput.current?.click(); };
+  const openFiles = (target = null) => { pickTarget.current = target; fileInput.current?.click(); };
+  const addPage = (policyId) => openCamera({ mode: 'page', policyId });
+  const retakePage = (policyId, pageId) => openCamera({ mode: 'retake', policyId, pageId });
+  const newPolicyPhoto = () => { setAskingMore(null); openCamera(); };
 
   const startOver = async () => {
     itemsRef.current.forEach(i => i.preview && URL.revokeObjectURL(i.preview));
@@ -363,7 +459,7 @@ export default function RateCheckPage() {
       content: (
         <ul className="max-h-[15.5rem] divide-y divide-slate-100 overflow-y-auto overscroll-contain">
           {sent.map((it, n) => (
-            <ResultRow key={it.id} item={it} index={n} onRetake={() => openCamera(it.id)} onRetry={() => sendQueue([it.id], given)} />
+            <ResultRow key={it.id} item={it} index={n} onRetake={() => retakePage(it.id, it.pages?.[0]?.id)} onRetry={() => sendQueue([it.id], given)} />
           ))}
         </ul>
       ),
@@ -408,7 +504,7 @@ export default function RateCheckPage() {
           <p className="mx-auto mt-2 max-w-xs text-slate-600">
             {reading
               ? 'Each one takes about 10–20 seconds. Keep this screen open.'
-              : 'If we can beat what you pay, Cam texts you within the hour.'}
+              : 'Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.'}
           </p>
         </div>
 
@@ -544,8 +640,8 @@ export default function RateCheckPage() {
   };
   return (
     <Shell step={1} bar={drafts.length > 0 && (
-      <ActionBar hint={drafts.some(d => d.quality?.issue) ? 'Blurry or dark? Retake, or send anyway.' : null}>
-        <button type="button" onClick={() => openCamera()} aria-label="Take another photo"
+      <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
+        <button type="button" onClick={newPolicyPhoto} aria-label="Add another policy"
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700">
           <Plus className="h-6 w-6" aria-hidden="true" />
         </button>
@@ -573,29 +669,33 @@ export default function RateCheckPage() {
             <>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Free rate check · Georgia</p>
               <h1 className="mt-2 text-[32px] font-extrabold leading-[1.1] tracking-tight text-slate-900">
-                Overpaying for insurance? Find out in 60 seconds.
+                Get a second opinion on your insurance.
               </h1>
               <p className="mt-3 text-slate-600">
-                Snap the first page of each policy — car, home, renters, all of them. A local Allstate agent compares them
-                and texts you only if we can save you money.
+                Upload your auto, home or umbrella declarations pages. A licensed agent on Cam&apos;s team will check your
+                rate and text you when your quote is ready—typically within 30 mins during business hours.
               </p>
             </>
           )}
 
-          <button type="button" onClick={() => openCamera()}
-            className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-9 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
+          <button type="button" onClick={() => openFiles()}
+            className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-8 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
             <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
-              <Camera className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
+              <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
             </span>
-            <span className="text-xl font-bold">Snap your policy</span>
-            <span className="text-sm text-blue-100">Add as many as you like</span>
+            <span className="text-xl font-bold">Upload my policy</span>
+            <span className="text-sm text-blue-100">PDF, photos or screenshots</span>
           </button>
-          <button type="button" onClick={openFiles}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-semibold text-slate-700">
-            <Upload className="h-5 w-5" aria-hidden="true" /> Upload photos or PDFs
+          <button type="button" onClick={() => openCamera()}
+            className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-700 active:bg-slate-50">
+            <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> Take photos instead</span>
+            <span className="mt-0.5 text-xs text-slate-500">Photograph every page of the declarations</span>
           </button>
-
-          <MeetCam />
+          <p className="mt-4 flex justify-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF2FF] px-3.5 py-1.5 text-sm font-semibold text-blue-700">
+              <Paperclip className="h-4 w-4" aria-hidden="true" /> Multiple policies? Upload them together.
+            </span>
+          </p>
 
           <ul className="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
             <Trust icon={Sparkles} label="Read in seconds" />
@@ -603,14 +703,22 @@ export default function RateCheckPage() {
             <Trust icon={Lock} label="Private & secure" />
           </ul>
 
-          <details className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            <summary className="cursor-pointer font-semibold text-slate-800">Which page do I need?</summary>
-            <p className="mt-2">
-              The one insurers call the <em>declarations page</em>, usually page 1. It shows your name, your cars or home,
-              your coverages and your total price. Find it in your insurer&apos;s app, or in the email they sent when your
-              policy started or renewed. A screenshot works.
-            </p>
+          <details open className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+            <summary className="cursor-pointer font-semibold text-slate-800">How to get your declarations page</summary>
+            <ol className="mt-3 list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700">
+              <li>Log in to your insurer&apos;s website or app.</li>
+              <li>Open <b>Documents</b>. Some insurers call it <b>Policy Documents</b> or <b>Documents &amp; ID Cards</b>.</li>
+              <li>Find the most recent declarations page for each policy.</li>
+              <li>Download the PDF. On iPhone, tap <b>Share</b>, then <b>Save to Files</b>. On Android, it goes to <b>Downloads</b>.</li>
+              <li>Come back here and tap <b>Upload my policy</b>.</li>
+            </ol>
+            <p className="mt-4 font-semibold text-slate-800">Have a paper copy?</p>
+            <p className="mt-1">Tap <b>Take photos instead</b> and photograph every page of the declarations. Lay it flat in good light.</p>
+            <p className="mt-4 font-semibold text-slate-800">Can&apos;t download it?</p>
+            <p className="mt-1">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</p>
           </details>
+
+          <MeetCam />
         </>
       ) : (
         <>
@@ -620,18 +728,22 @@ export default function RateCheckPage() {
               {drafts.length === 1 ? '1 added' : `${drafts.length} added`}
             </span>
           </div>
-          <p className="mt-1 text-sm text-slate-600">One photo per policy. Add every car, home and renters policy you have.</p>
+          <p className="mt-1 text-sm text-slate-600">Include every page of each policy. Add every auto, home and umbrella policy you have.</p>
 
           <ul className="mt-5 space-y-3">
             {drafts.map((it, n) => (
-              <DraftCard key={it.id} item={it} index={n} onRetake={() => openCamera(it.id)} onRemove={() => removeItem(it.id)} />
+              <DraftCard key={it.id} item={it} index={n} asking={askingMore === it.id}
+                onAddPage={() => addPage(it.id)} onDoneAdding={() => setAskingMore(null)}
+                onRetakePage={(pageId) => retakePage(it.id, pageId)} onRemovePage={(pageId) => removePage(it.id, pageId)}
+                onRemove={() => removeItem(it.id)}
+                onMergeUp={it.batch && drafts[n - 1]?.batch === it.batch ? () => mergeUp(it.id) : null} />
             ))}
             <li className="flex gap-2">
-              <button type="button" onClick={() => openCamera()}
+              <button type="button" onClick={newPolicyPhoto}
                 className="flex flex-1 items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-blue-300 bg-blue-50/60 px-4 py-4 font-semibold text-blue-800 active:bg-blue-100">
                 <Camera className="h-5 w-5" aria-hidden="true" /> Add another policy
               </button>
-              <button type="button" onClick={openFiles} aria-label="Upload more"
+              <button type="button" onClick={() => { setAskingMore(null); openFiles(); }} aria-label="Upload more"
                 className="flex w-16 items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700">
                 <Upload className="h-5 w-5" aria-hidden="true" />
               </button>
@@ -641,6 +753,7 @@ export default function RateCheckPage() {
       )}
 
       {notice && <p className="mt-4 rounded-xl bg-slate-900 px-3 py-2 text-center text-sm text-white" role="status">{notice}</p>}
+      {grouping && <GroupSheet count={grouping.length} onOne={() => groupPicked('one')} onSeparate={() => groupPicked('separate')} onMix={() => groupPicked('mix')} onCancel={() => setGrouping(null)} />}
     </Shell>
   );
 }
@@ -652,6 +765,13 @@ function currentSession(items, given) {
     results: items.filter(i => i.status === 'read' || i.status === 'unreadable')
       .map(i => ({ id: i.id, status: i.status, result: i.result })),
   };
+}
+
+const isPdfName = (f) => f?.type === 'application/pdf' || /\.pdf$/i.test(f?.name || '');
+const newPage = (file) => ({ id: newId(), file, preview: previewFor(file), quality: null });
+// Keep a policy's cover (page 1) on the policy itself for the thumbnails and result rows.
+function withPages(policy, pages) {
+  return { ...policy, pages, file: pages[0]?.file || null, preview: pages[0]?.preview || null };
 }
 
 function previewFor(file) {
@@ -689,33 +809,104 @@ function Thumb({ item, scanning = false, small = false }) {
   );
 }
 
-function QualityLine({ item }) {
-  const q = item.quality;
-  if (!q) return <span className="inline-flex items-center gap-1.5 text-slate-500"><Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> Checking photo…</span>;
-  if (q.issue === 'dark') return <span className="inline-flex items-center gap-1.5 text-amber-700"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Too dark</span>;
-  if (q.issue === 'blurry') return <span className="inline-flex items-center gap-1.5 text-amber-700"><AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Blurry</span>;
-  if (!q.checked) return <span className="text-slate-500">{/pdf/i.test(item.file?.type || '') ? 'PDF ready' : 'Ready'}</span>;
-  return <span className="inline-flex items-center gap-1.5 text-emerald-700"><Check className="h-3.5 w-3.5" aria-hidden="true" /> Clear</span>;
+// A policy waiting to be sent: its pages in order, each with retake/remove, and an
+// add-page tile. Right after a photo it asks whether the policy has more pages.
+function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
+  const { pages } = item;
+  const bad = pages.findIndex(pg => pg.quality?.issue);
+  const n = index + 1;
+  return (
+    <li className={`rounded-2xl border bg-white p-3 shadow-sm ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900">Policy {n}</p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            {pages.length === 1 ? '1 page' : `${pages.length} pages`}
+            {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
+          </p>
+        </div>
+        <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
+          className="-mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500">
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </div>
+
+      <ul className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label={`Pages of policy ${n}`}>
+        {pages.map((pg, k) => (
+          <li key={pg.id} className="flex w-16 shrink-0 flex-col items-center">
+            <div className={`rounded-lg ${pg.quality?.issue ? 'ring-2 ring-amber-400' : ''}`}><Thumb item={pg} /></div>
+            <span className="mt-1 text-xs font-medium text-slate-600">Page {k + 1}</span>
+            <span className="flex">
+              <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Retake page ${k + 1} of policy ${n}`}
+                className={`flex h-8 w-8 items-center justify-center rounded-lg ${pg.quality?.issue ? 'text-amber-800' : 'text-slate-500'}`}>
+                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <button type="button" onClick={() => onRemovePage(pg.id)} aria-label={`Remove page ${k + 1} of policy ${n}`}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500">
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </span>
+          </li>
+        ))}
+        <li className="flex w-16 shrink-0 flex-col items-center">
+          <button type="button" onClick={onAddPage} aria-label={`Add page ${pages.length + 1} to policy ${n}`}
+            className="flex h-[72px] w-14 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
+            <Plus className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <span className="mt-1 text-xs font-medium text-blue-700">Add page</span>
+        </li>
+      </ul>
+
+      {onMergeUp && (
+        <button type="button" onClick={onMergeUp}
+          className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700">
+          Same policy as Policy {index}? Combine them
+        </button>
+      )}
+
+      {asking && (
+        <div className="mt-2 rounded-xl bg-blue-50 p-3" role="group" aria-label="More pages?">
+          <p className="font-semibold text-slate-900">Does this policy have more pages?</p>
+          <p className="mt-0.5 text-sm text-slate-600">Drivers, cars and coverages are often on page 2 or 3.</p>
+          <div className="mt-3 flex gap-2">
+            <button type="button" onClick={onAddPage}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-700 px-3 py-3 font-semibold text-white">
+              <Camera className="h-4 w-4" aria-hidden="true" /> Add page {pages.length + 1}
+            </button>
+            <button type="button" onClick={onDoneAdding}
+              className="flex-1 rounded-xl border border-slate-300 bg-white px-3 py-3 font-semibold text-slate-700">
+              That&apos;s all
+            </button>
+          </div>
+        </div>
+      )}
+    </li>
+  );
 }
 
-function DraftCard({ item, index, onRetake, onRemove }) {
-  const warn = !!item.quality?.issue;
+// Several photos picked at once: pages of one policy, or one photo per policy?
+function GroupSheet({ count, onOne, onSeparate, onMix, onCancel }) {
   return (
-    <li className={`flex items-center gap-3 rounded-2xl border bg-white p-3 shadow-sm ${warn ? 'border-amber-300' : 'border-slate-200'}`}>
-      <Thumb item={item} />
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold text-slate-900">Policy {index + 1}</p>
-        <p className="mt-0.5 text-sm"><QualityLine item={item} /></p>
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-slate-900/40" role="dialog" aria-modal="true" aria-label="How should we group these?">
+      <div className="w-full max-w-md rounded-t-3xl bg-white px-5 pb-6 pt-5" style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}>
+        <p className="text-xl font-extrabold text-slate-900">You picked {count} files</p>
+        <p className="mt-1 text-slate-600">Are they pages of one policy, or more than one policy?</p>
+        <button type="button" onClick={onOne}
+          className="mt-5 flex w-full items-center justify-center rounded-2xl bg-blue-700 px-4 py-4 text-lg font-bold text-white">
+          One policy, {count} pages
+        </button>
+        <button type="button" onClick={onSeparate}
+          className="mt-3 flex w-full items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 font-semibold text-slate-800">
+          {count} separate policies
+        </button>
+        <button type="button" onClick={onMix}
+          className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3 font-semibold text-slate-800">
+          A mix — I&apos;ll sort them
+          <span className="text-xs font-normal text-slate-500">e.g. 3 pages of auto and 2 of home</span>
+        </button>
+        <button type="button" onClick={onCancel} className="mt-2 w-full py-2 text-sm font-medium text-slate-500">Cancel</button>
       </div>
-      <button type="button" onClick={onRetake} aria-label={`Retake policy ${index + 1}`}
-        className={`flex h-10 w-10 items-center justify-center rounded-xl ${warn ? 'bg-amber-100 text-amber-800' : 'text-slate-500'}`}>
-        <RotateCcw className="h-5 w-5" aria-hidden="true" />
-      </button>
-      <button type="button" onClick={onRemove} aria-label={`Remove policy ${index + 1}`}
-        className="flex h-10 w-10 items-center justify-center rounded-xl text-slate-500">
-        <X className="h-5 w-5" aria-hidden="true" />
-      </button>
-    </li>
+    </div>
   );
 }
 
@@ -757,8 +948,8 @@ function ResultRow({ item, index, onRetake, onRetry }) {
         <button type="button" onClick={onRetake} className="shrink-0 rounded-lg bg-amber-100 px-3 py-1.5 text-sm font-semibold text-amber-900">Retake</button>
       )}
       {item.status === 'failed' && (
-        <button type="button" onClick={item.file ? onRetry : onRetake} className="shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-800">
-          {item.file ? 'Try again' : 'Retake'}
+        <button type="button" onClick={item.pages?.length ? onRetry : onRetake} className="shrink-0 rounded-lg bg-red-50 px-3 py-1.5 text-sm font-semibold text-red-800">
+          {item.pages?.length ? 'Try again' : 'Retake'}
         </button>
       )}
     </li>

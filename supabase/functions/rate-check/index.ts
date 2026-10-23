@@ -292,6 +292,8 @@ const INSTRUCTION =
   'Put anything printed per vehicle (deductibles, rental, roadside, lienholder) on that vehicle. ' +
   'For home policies, record the building facts, mortgagee and every endorsement in their own fields, not in notes. ' +
   'Record the servicing agent or agency block exactly as printed, if there is one. ' +
+  'The upload may be several pages of the same policy (drivers, vehicles and coverages often continue on later ' +
+  'pages): read every page and combine them into one record. ' +
   'If more than one policy appears, pick the primary auto or home policy and mention the others in notes.'
 
 async function extractDecPage(apiKey: string, base64: string, mediaType: string) {
@@ -1128,7 +1130,7 @@ Deno.serve(async (req) => {
       await emailProducer(supabase, invite.created_by,
         `${firstName || 'Your invite'} uploaded their policy${invite.event_name ? ` (${invite.event_name})` : ''}`,
         `${firstName || 'Someone'} just uploaded a ${carrier || 'policy'}${policyType ? ` ${policyType}` : ''} policy${annualPremium != null ? ` paying $${Math.round(annualPremium).toLocaleString('en-US')}/yr` : ''}.\n\n` +
-        `Open it: ${appUrl}/agency/leads/rate-checks\n\nThe page promised them a text within the hour.`)
+        `Open it: ${appUrl}/agency/leads/rate-checks\n\nThe page told them we typically text within 30 minutes during business hours.`)
     }
 
     // ── 5. Notify agency staff (in-app) ──
