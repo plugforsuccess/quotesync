@@ -717,7 +717,7 @@ function QuoteBox({ rc, onQuoted }) {
       {/* The Allstate price on file for this policy, once there is one. */}
       {(result?.allstate_premium ?? rc.allstate_premium) != null && !bound && (
         <p className="mt-3 flex items-center gap-1.5 text-base font-semibold" style={{ color: 'var(--qs-success)' }}>
-          <Check className="h-4 w-4" aria-hidden="true" /><span>{market} {money(result?.allstate_premium ?? rc.allstate_premium)}<span className="text-sm font-medium" style={{ color: 'var(--qs-subtle)' }}>/yr</span></span>
+          <Check className="h-4 w-4" aria-hidden="true" /><span>{market} {money(result?.allstate_premium ?? rc.allstate_premium)}<span className="text-sm font-medium">/yr</span></span>
         </p>
       )}
 
