@@ -828,7 +828,7 @@ function AgentCard() {
       <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
         className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
         style={{ objectPosition: '50% 30%' }} />
-      {AGENT.license && <p className="mt-5 text-[11px] text-slate-400">GA License #: {AGENT.license}</p>}
+      {AGENT.license && <p className="mt-10 text-[11px] text-slate-400">GA License #: {AGENT.license}</p>}
     </div>
   );
 }
