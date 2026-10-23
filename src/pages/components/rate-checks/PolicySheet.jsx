@@ -6,6 +6,7 @@
 // endorsements → discounts. A short summary closes the sheet.
 // All formatting lives in policyView.js.
 
+import { useState } from 'react';
 import { AlertTriangle, Check, CircleHelp } from 'lucide-react';
 import { HOUSING_LABEL } from '../../../lib/rateCheckApi';
 import { CopyButton, Field } from './Copyable';
@@ -14,7 +15,7 @@ import { carrierLabel, policyPeriod, termPrice, TERM_HINT } from './format';
 import {
   autoCoverageGroups, vehicleCoverages, homeCoverageRows, lienholderFor, propertyFacts, endorsementsOf,
   driverRows, discountsOf, headsUp, vehicleTitle, vehicleShort, caps, insuredName, vehiclesNewestFirst, replaceVehicleRefs,
-  vehicleCoverageSetup,
+  vehicleCoverageSetup, keyingSteps,
 } from './policyView';
 
 const AUTO = ['auto', 'commercial_auto'];
@@ -98,16 +99,16 @@ function TileValue({ value, addOn, size = 'text-xl' }) {
   );
 }
 
-// One coverage across the vehicles. Same on all → one value, "All 3" (change them
-// together in Allstate). Different → each value with the vehicles that have it.
 // The band under a tile: can these be changed together in Allstate?
-function MatchBand({ same, total }) {
-  const tone = same
+function MatchBand({ c }) {
+  const tone = c.same
     ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)', borderTop: '1px solid var(--qs-success-border)' }
     : { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', borderTop: '1px solid var(--qs-warning-border)' };
   return (
     <p className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold" style={tone}>
-      {same ? <><Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Same on all {total} vehicles</> : 'Differs by vehicle'}
+      {c.same
+        ? <><Check className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />Same on all {c.count}{c.scope ? ` ${c.scope}` : ''} vehicles</>
+        : 'Differs by vehicle'}
     </p>
   );
 }
@@ -137,22 +138,98 @@ function CoverageTile({ c, rc, total, wide }) {
           </ul>
         )}
       </div>
-      {total > 1 && <MatchBand same={c.same} total={total} />}
+      {total > 1 && c.count > 1 && <MatchBand c={c} />}
     </div>
+  );
+}
+
+// Allstate changes a coverage on several vehicles at once only when it's the same
+// change for all of them — so: the fewest selections, in order, to tick off.
+function KeyingSteps({ rc, steps }) {
+  const [done, setDone] = useState(() => new Set());
+  const toggle = (id) => setDone(prev => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(' + ');
+  return (
+    <ol className="mb-3 space-y-2">
+      {steps.map((st, i) => {
+        const checked = done.has(st.id);
+        return (
+          <li key={st.id}>
+            <label className="flex cursor-pointer gap-3 rounded-lg px-3 py-2" style={{ ...TILE, opacity: checked ? 0.55 : 1 }}>
+              <input type="checkbox" className="mt-1 h-4 w-4 shrink-0" checked={checked} onChange={() => toggle(st.id)}
+                aria-label={`Step ${i + 1} done`} />
+              <span className="min-w-0">
+                <span className="block text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>
+                  Step {i + 1} · Select {st.all ? `all ${st.indexes.length} vehicles` : names(st.indexes)}
+                </span>
+                <span className={`block text-sm font-semibold ${checked ? 'line-through' : ''}`} style={{ color: 'var(--qs-bright)' }}>
+                  {st.changes.map((ch, j) => (
+                    <span key={ch.key}>
+                      {j > 0 && <span style={{ color: 'var(--qs-subtle)' }}> · </span>}
+                      {ch.label} <span style={ch.addOn ? ADD_ON_STYLE : undefined}>{ch.value}</span>
+                    </span>
+                  ))}
+                </span>
+              </span>
+            </label>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+// "$50/day · $1,500 max" → "$50 / $1,500" so four columns fit the drawer.
+const gridValue = (v) => (v == null ? '—' : String(v).replace('/day · ', ' / ').replace(/ max$/, ''));
+const GRID_HEAD = { comp_deductible: 'Comp', coll_deductible: 'Coll', rental: 'Rental', roadside: 'Road' };
+
+// After keying: every vehicle's physical damage on one line, to check against Allstate.
+function CheckByVehicle({ setup }) {
+  const keys = Object.keys(GRID_HEAD).filter(k => setup.coverages.some(c => c.key === k));
+  return (
+    <details className="mt-3 text-sm">
+      <summary className="cursor-pointer font-medium" style={{ color: 'var(--qs-subtle)' }}>Check by vehicle</summary>
+      <table className="mt-2 w-full table-fixed text-xs">
+        <thead>
+          <tr style={{ color: 'var(--qs-subtle)' }}>
+            <th className="w-[34%] py-1 text-left font-semibold">Vehicle</th>
+            {keys.map(k => <th key={k} className="py-1 text-right font-semibold">{GRID_HEAD[k]}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {setup.vehicles.map(x => (
+            <tr key={x.index} style={{ borderTop: '1px solid var(--qs-border)' }}>
+              <td className="py-1.5 pr-1 font-medium" style={{ color: 'var(--qs-bright)' }}>{vehicleShort(x.v)}</td>
+              {keys.map(k => (
+                <td key={k} className="py-1.5 text-right tabular-nums"
+                  style={x.values[k] == null ? { color: 'var(--qs-muted)' } : (k === 'rental' || k === 'roadside' ? ADD_ON_STYLE : { color: 'var(--qs-bright)' })}>
+                  {gridValue(x.values[k])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
   );
 }
 
 function VehicleCoverages({ rc, setup }) {
   const total = setup.vehicles.length;
+  const steps = total > 1 ? keyingSteps(setup) : [];
   // Shared values pair up two per row; anything that differs gets the full width.
   const same = setup.coverages.filter(c => c.same || total === 1);
   const split = setup.coverages.filter(c => !(c.same || total === 1));
   return (
-    <Section title="Vehicle coverages" ruled>
+    <Section title="Vehicle coverages" ruled aside={steps.length > 0 && (
+      <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Key it in {steps.length} {steps.length === 1 ? 'step' : 'steps'}</span>
+    )}>
+      {steps.length > 0 && <KeyingSteps key={rc.id} rc={rc} steps={steps} />}
       <div className="grid grid-cols-2 gap-2">
         {same.map((c, i) => <CoverageTile key={c.key} c={c} rc={rc} total={total} wide={i === same.length - 1 && same.length % 2 === 1} />)}
         {split.map(c => <CoverageTile key={c.key} c={c} rc={rc} total={total} wide />)}
       </div>
+      {total > 1 && <CheckByVehicle setup={setup} />}
     </Section>
   );
 }

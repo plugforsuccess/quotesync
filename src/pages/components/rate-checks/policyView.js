@@ -270,20 +270,50 @@ export function vehicleCoverageSetup(rc) {
   const vehicles = order.map(({ v, index }, i) => {
     const comp = values[i].comp_deductible != null, coll = values[i].coll_deductible != null;
     const level = comp && coll ? 'full' : comp ? 'comp_only' : coll ? 'coll_only' : 'liability';
-    return { v, index, level, levelLabel: LEVEL_LABEL[level] };
+    return { v, index, level, levelLabel: LEVEL_LABEL[level], values: values[i] };
   });
   const coverages = AUTO_PHYSICAL.map(key => {
+    // A liability-only car can't carry a deductible, so it doesn't break a deductible match.
+    const deductible = key === 'comp_deductible' || key === 'coll_deductible';
+    const pool = vehicles.filter(x => !(deductible && x.level === 'liability'));
     const groups = [];
     const none = [];
-    values.forEach((vals, i) => {
-      const value = vals[key];
-      if (value == null) { none.push(order[i].index); return; }
-      const g = groups.find(x => x.value === value);
-      if (g) g.indexes.push(order[i].index); else groups.push({ value, indexes: [order[i].index] });
-    });
-    return { key, label: coverageName(key), addOn: isAddOn(key), groups, none, same: groups.length === 1 && none.length === 0 };
+    for (const x of pool) {
+      const value = x.values[key];
+      if (value == null) { none.push(x.index); continue; }
+      const g = groups.find(y => y.value === value);
+      if (g) g.indexes.push(x.index); else groups.push({ value, indexes: [x.index] });
+    }
+    return {
+      key, label: coverageName(key), addOn: isAddOn(key), groups, none,
+      same: groups.length === 1 && none.length === 0,
+      count: pool.length,
+      scope: pool.length < vehicles.length ? 'full-coverage' : null,
+    };
   }).filter(c => c.groups.length);
   return { vehicles, coverages };
+}
+
+const STEP_LABEL = { comp_deductible: 'Comp', coll_deductible: 'Collision', rental: 'Rental', roadside: 'Roadside' };
+
+/**
+ * The fewest vehicle selections that key every coverage: changes that apply to the
+ * same set of vehicles go in one step. Biggest selections first, so "all vehicles"
+ * comes before the exceptions.
+ */
+export function keyingSteps(setup) {
+  const order = setup.vehicles.map(x => x.index);
+  const steps = [];
+  for (const c of setup.coverages) {
+    for (const g of c.groups) {
+      const indexes = order.filter(i => g.indexes.includes(i));
+      const id = indexes.join(',');
+      let step = steps.find(st => st.id === id);
+      if (!step) steps.push(step = { id, indexes, all: indexes.length === order.length, changes: [] });
+      step.changes.push({ key: c.key, label: STEP_LABEL[c.key] || c.label, value: g.value, addOn: c.addOn });
+    }
+  }
+  return steps.sort((a, b) => b.indexes.length - a.indexes.length || order.indexOf(a.indexes[0]) - order.indexOf(b.indexes[0]));
 }
 
 /** Home / condo / renters coverages A–F then deductibles, with % deductibles spelled out. */

@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   caps, insuredName, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup,
+  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup, keyingSteps,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -157,5 +157,17 @@ test('vehicle coverages group vehicles that share a value', () => {
   assert.deepEqual(by.rental.none, [0]);
 
   const liabilityCar = { ...auto, coverages: { ...auto.coverages, comp_deductible: '200 (vehicles 002, 003)', coll_deductible: '1000 (vehicles 002, 003)' } };
-  assert.equal(vehicleCoverageSetup(liabilityCar).vehicles.find(v => v.index === 0).level, 'liability');
+  const lc = vehicleCoverageSetup(liabilityCar);
+  assert.equal(lc.vehicles.find(v => v.index === 0).level, 'liability');
+  // The liability-only car doesn't break the deductible match.
+  const comp = lc.coverages.find(c => c.key === 'comp_deductible');
+  assert.deepEqual([comp.same, comp.count, comp.scope, comp.none], [true, 2, 'full-coverage', []]);
+});
+
+test('keying steps: fewest selections, all vehicles first', () => {
+  const steps = keyingSteps(vehicleCoverageSetup(auto));
+  assert.deepEqual(steps.map(s => [s.indexes, s.all, s.changes.map(c => c.label)]), [
+    [[1, 2, 0], true, ['Comp', 'Collision', 'Roadside']],
+    [[1, 2], false, ['Rental']],
+  ]);
 });

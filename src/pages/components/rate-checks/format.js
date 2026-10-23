@@ -4,7 +4,7 @@
 
 import { money, formatPhone } from './ui';
 import {
-  caps, insuredName, vehicleTitle, vehicleShort, vehicleCoverages, vehicleCoverageSetup, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
+  caps, insuredName, vehicleTitle, vehicleShort, vehicleCoverages, vehicleCoverageSetup, keyingSteps, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
   homeCoverageRows, endorsementsOf, driverRows, discountsOf,
 } from './policyView';
 
@@ -204,10 +204,14 @@ export function quoteSheet(rc) {
     const names = (idx) => idx.map(i => vehicleShort(vehicles[i])).join(', ');
     const pushSetup = () => {
       if (!setup?.coverages.length) return;
+      if (vehicles.length > 1) {
+        push('', 'Keying steps:');
+        keyingSteps(setup).forEach((st, i) => push(`  ${i + 1}. Select ${st.all ? `all ${st.indexes.length} vehicles` : names(st.indexes)}: ${st.changes.map(ch => `${ch.label} ${ch.value}`).join(' · ')}`));
+      }
       push('', 'Vehicle coverages:');
       setup.coverages.forEach(c => {
         const label = { comp_deductible: 'Comp deductible', coll_deductible: 'Collision deductible' }[c.key] || c.label;
-        if (c.same) push(`  ${label}: ${c.groups[0].value}${vehicles.length > 1 ? ` — all ${vehicles.length} vehicles` : ''}`);
+        if (c.same) push(`  ${label}: ${c.groups[0].value}${c.count > 1 ? ` — all ${c.count}${c.scope ? ` ${c.scope}` : ''} vehicles` : ''}`);
         else {
           push(`  ${label} (differs):`);
           c.groups.forEach(g => push(`    ${g.value} — ${names(g.indexes)}`));
