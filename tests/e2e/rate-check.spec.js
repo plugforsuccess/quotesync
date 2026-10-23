@@ -173,9 +173,11 @@ test('a household sends any number of policies, retries a throttled one, and add
 
   await expect(page.getByRole('heading', { name: 'Reading your policies…' })).toBeVisible();
   await expect(page.getByText('State Farm', { exact: true })).toBeVisible({ timeout: 15_000 });
-  await page.clock.runFor(21_000); // the throttled request waits 20 s
-
-  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
+  // The throttled request waits 20 s before retrying. Keep advancing the fake clock
+  // until it finishes: one big jump can land before the page has started that wait
+  // (under load), and then the retry never fires.
+  const done = page.getByRole('heading', { name: 'Got it — Cam is on it.' });
+  await expect.poll(async () => { await page.clock.runFor(5_000); return done.isVisible(); }, { timeout: 15_000 }).toBe(true);
   await expect(page.getByText('Home · $2,013/yr')).toBeVisible();
   await expect(page.getByText('Policy read')).toBeVisible();
   await expect(page.getByTestId('rc-total')).toHaveText('$4,000');
