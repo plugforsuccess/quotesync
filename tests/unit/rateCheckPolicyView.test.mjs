@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   caps, insuredName, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions,
+  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -43,7 +43,7 @@ test('data reads in capitals; name on policy is first name then last name', () =
   assert.equal(caps('255 Waltham Way,  Fayetteville Ga 30214'), '255 WALTHAM WAY, FAYETTEVILLE GA 30214');
   assert.equal(vehicleTitle(auto.vehicles[0]), '2015 MERCEDES S550');
   assert.equal(vehicleTitle({ year: 2021, make: 'Land Rover', model: 'Velar' }), '2021 LAND ROVER VELAR');
-  assert.equal(vehicleShort(auto.vehicles[1]), '’22 JAGUAR XF');
+  assert.equal(vehicleShort(auto.vehicles[1]), '2022 JAGUAR XF');
 });
 
 test('limits read like money', () => {
@@ -60,9 +60,11 @@ test('auto coverages are grouped, and vehicle-specific ones move to the vehicle'
   assert.deepEqual(liab.rows.map(r => [r.label, r.value]), [
     ['Bodily injury', '$250k / $500k'],
     ['Property damage', '$100,000'],
-    ['Uninsured motorist', '$250k / $500k / $100k'],
     ['Medical payments', 'None listed'],
+    ['Uninsured motorist', '$250k / $500k / $100k'],
   ]);
+  const withDed = autoCoverageGroups({ ...auto, coverages: { ...auto.coverages, um_uim: '250000/500000/100000 (PD Deductible $250)' } })[0];
+  assert.deepEqual([withDed.rows[3].value, withDed.rows[3].note], ['$250k / $500k / $100k', 'Deductible $250']);
   assert.equal(every.title, 'Every vehicle');
   assert.deepEqual(every.rows.map(r => [r.label, r.value]), [['Comprehensive', '$200'], ['Collision', '$1,000'], ['Roadside', 'Included (H)']]);
   assert.deepEqual(vehicleCoverages(auto, 0), []);
@@ -87,7 +89,7 @@ test('drivers: named insured, spouse, then the rest oldest to youngest', () => {
 test('lienholder lands on the right vehicle, and its payoff year is flagged to ask', () => {
   assert.equal(lienholderFor(auto, 0), null);
   assert.equal(lienholderFor(auto, 2), 'TD AUTO FINANCE');
-  assert.deepEqual(vehicleQuestions(auto), ['Loan payoff year for the ’21 LAND ROVER VELAR']);
+  assert.deepEqual(vehicleQuestions(auto), ['Loan payoff year for the 2021 LAND ROVER VELAR']);
 });
 
 test('vehicles newest to oldest, keeping their original index', () => {
@@ -132,3 +134,35 @@ test('what is left of the notes is only what no field shows', () => {
   ]);
   assert.deepEqual(headsUp({ ...auto, summary: 'Mid-term change.' }), ['Mid-term change.']);
 });
+
+test('summary names vehicles instead of page numbers', () => {
+  assert.deepEqual(
+    headsUp({ ...auto, summary: 'Mid-term change adding a car (Vehicle 003); short term.' }),
+    ['Mid-term change adding a car (2021 LAND ROVER VELAR); short term.'],
+  );
+  assert.deepEqual(
+    headsUp({ ...auto, summary: 'Adds Vehicle 003 (2021 Land Rover Velar) mid-term.' }),
+    ['Adds 2021 LAND ROVER VELAR mid-term.'],
+  );
+});
+
+test('vehicle coverages group vehicles that share a value', () => {
+  const { vehicles, coverages } = vehicleCoverageSetup(auto);
+  assert.deepEqual(vehicles.map(v => [v.index, v.level]), [[1, 'full'], [2, 'full'], [0, 'full']]);
+  const by = Object.fromEntries(coverages.map(c => [c.key, c]));
+  assert.equal(by.comp_deductible.same, true);
+  assert.equal(by.comp_deductible.groups[0].value, '$200');
+  assert.equal(by.coll_deductible.same, true);
+  assert.equal(by.roadside.same, true);
+  assert.equal(by.rental.same, false);
+  assert.deepEqual(by.rental.groups, [{ value: '$50/day · $1,500 max', indexes: [1, 2] }]);
+  assert.deepEqual(by.rental.none, [0]);
+
+  const liabilityCar = { ...auto, coverages: { ...auto.coverages, comp_deductible: '200 (vehicles 002, 003)', coll_deductible: '1000 (vehicles 002, 003)' } };
+  const lc = vehicleCoverageSetup(liabilityCar);
+  assert.equal(lc.vehicles.find(v => v.index === 0).level, 'liability');
+  // The liability-only car doesn't break the deductible match.
+  const comp = lc.coverages.find(c => c.key === 'comp_deductible');
+  assert.deepEqual([comp.same, comp.count, comp.scope, comp.none], [true, 2, 'full-coverage', []]);
+});
+

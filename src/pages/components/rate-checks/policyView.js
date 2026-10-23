@@ -2,7 +2,7 @@
 // Turns what the scan stored into what a producer reads and keys into Allstate:
 // money that reads like money ("$250k / $500k"), data in capitals, coverages
 // in the order they're quoted, per-vehicle coverages and lienholders on the
-// vehicle they belong to ("’22 JAGUAR XF", not "vehicle 002"), home facts and
+// vehicle they belong to ("2022 JAGUAR XF", not "vehicle 002"), home facts and
 // endorsements as their own lists, and short discount tags.
 //
 // Newer scans return these as structured fields. For older scans the same facts
@@ -40,10 +40,9 @@ export function vehicleTitle(v) {
   return caps([v?.year, v?.make, v?.model].filter(Boolean).join(' ')) || 'VEHICLE';
 }
 
-/** "’15 MERCEDES S550" — for referring to a vehicle inside other text. */
+/** "2015 MERCEDES S550" — for referring to a vehicle inside other text. Full year: a "’15" is easy to miss. */
 export function vehicleShort(v) {
-  const yr = v?.year ? `’${String(v.year).slice(-2)}` : null;
-  return caps([yr, v?.make, v?.model].filter(Boolean).join(' ')) || 'VEHICLE';
+  return vehicleTitle(v);
 }
 
 // ── Vehicles referenced by number ("002") ─────────────────────────────────────
@@ -57,7 +56,9 @@ export function vehicleByRef(vehicles, ref) {
   return byNumber || list[n - 1] || null;
 }
 
-const VEHICLE_REF = /\b(?:vehicles?|veh\.?)\s*#?\s*((?:\d{1,3})(?:\s*(?:,|&|and)\s*#?\s*\d{1,3})*)/gi;
+// An optional "(2021 Land Rover Velar)" right after the number is dropped on replace,
+// since the replacement already names the vehicle.
+const VEHICLE_REF = /\b(?:vehicles?|veh\.?)\s*#?\s*((?:\d{1,3})(?:\s*(?:,|&|and)\s*#?\s*\d{1,3})*)(?:\s*\(\s*(?:19|20)\d{2}\b[^)]*\))?/gi;
 
 /** Indexes (into vehicles) a text refers to, e.g. "(vehicles 002, 003)" → [1, 2]. */
 export function vehicleIndexesIn(text, vehicles) {
@@ -72,7 +73,7 @@ export function vehicleIndexesIn(text, vehicles) {
   return [...out];
 }
 
-/** "vehicles 002, 003" → "’22 Jaguar XF, ’21 Land Rover Velar". */
+/** "vehicles 002, 003" → "2022 JAGUAR XF, 2021 LAND ROVER VELAR". */
 export function replaceVehicleRefs(text, vehicles) {
   if (!text) return text;
   return String(text).replace(VEHICLE_REF, (whole, refs) => {
@@ -148,7 +149,7 @@ export function formatCoverage(raw, key, vehicles) {
 
 const NAMES = {
   bi: 'Bodily injury', bi_per_person: 'Bodily injury (per person)', bi_per_accident: 'Bodily injury (per accident)',
-  pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist (property)', med_pay: 'Medical payments',
+  pd: 'Property damage', um_uim: 'Uninsured motorist', umpd: 'Uninsured motorist PD', med_pay: 'Medical payments',
   pip: 'Personal injury protection', comp_deductible: 'Comprehensive', coll_deductible: 'Collision',
   rental: 'Rental', roadside: 'Roadside', towing: 'Towing', gap: 'Gap', loan_lease: 'Loan / lease gap', rideshare: 'Rideshare',
   custom_equipment: 'Custom equipment', sound_equipment: 'Sound equipment', glass: 'Glass',
@@ -164,7 +165,8 @@ export function coverageName(key) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-const AUTO_LIABILITY = ['pd', 'um_uim', 'umpd', 'med_pay', 'pip'];
+// Allstate's coverage screen order: BI, PD, med pay, UM BI, UM PD (then comp, collision, add-ons).
+const AUTO_LIABILITY = ['pd', 'med_pay', 'pip', 'um_uim', 'umpd'];
 const AUTO_PHYSICAL = ['comp_deductible', 'coll_deductible', 'rental', 'roadside'];
 const HOME_ORDER = ['dwelling', 'other_structures', 'personal_property', 'loss_of_use', 'liability', 'med_pay', 'deductible', 'wind_hail_deductible', 'hurricane_deductible'];
 
@@ -198,7 +200,10 @@ export function autoCoverageGroups(rc) {
   for (const k of AUTO_LIABILITY) {
     used.add(k);
     if (!(k in cov)) continue;
-    liability.push(row(k, cov[k], vehicles) || { key: k, label: coverageName(k), value: 'None listed', muted: true });
+    const r = row(k, cov[k], vehicles);
+    // "(PD Deductible $250)" on the UM line → "Deductible $250".
+    if (k === 'um_uim' && r?.note) r.note = r.note.replace(/^PD\s+deductible/i, 'Deductible');
+    liability.push(r || { key: k, label: coverageName(k), value: 'None listed', muted: true });
   }
 
   const physical = [];
@@ -239,6 +244,57 @@ export function vehicleCoverages(rc, index) {
     }
   }
   return rows;
+}
+
+const LEVEL_LABEL = { full: 'Full coverage', comp_only: 'Comp only', coll_only: 'Collision only', liability: 'Liability only' };
+
+/**
+ * Physical damage laid out the way it's keyed: Allstate changes a coverage on several
+ * vehicles at once only when the change is the same for all of them. So for each of
+ * comp, collision, rental and roadside: which vehicles share which value, and which
+ * have none. Plus each vehicle's level (full coverage vs liability only).
+ * Vehicles are newest first; `same` means one value on every vehicle.
+ */
+export function vehicleCoverageSetup(rc) {
+  const cov = rc?.coverages && typeof rc.coverages === 'object' ? rc.coverages : {};
+  const list = Array.isArray(rc?.vehicles) ? rc.vehicles : [];
+  const order = vehiclesNewestFirst(rc);
+  // Policy-level lines that don't name vehicles apply to every vehicle.
+  const everywhere = {};
+  for (const k of AUTO_PHYSICAL) {
+    if (cov[k] == null || vehicleIndexesIn(cov[k], list).length) continue;
+    const r = row(k, splitNote(cov[k]).value, list);
+    if (r) everywhere[k] = r.value;
+  }
+  const values = order.map(({ index }) => {
+    const own = Object.fromEntries(vehicleCoverages(rc, index).map(r => [r.key, r.value]));
+    return Object.fromEntries(AUTO_PHYSICAL.map(k => [k, own[k] ?? everywhere[k] ?? null]));
+  });
+  const vehicles = order.map(({ v, index }, i) => {
+    const comp = values[i].comp_deductible != null, coll = values[i].coll_deductible != null;
+    const level = comp && coll ? 'full' : comp ? 'comp_only' : coll ? 'coll_only' : 'liability';
+    return { v, index, level, levelLabel: LEVEL_LABEL[level], values: values[i] };
+  });
+  const coverages = AUTO_PHYSICAL.map(key => {
+    // A liability-only car can't carry a deductible, so it doesn't break a deductible match.
+    const deductible = key === 'comp_deductible' || key === 'coll_deductible';
+    const pool = vehicles.filter(x => !(deductible && x.level === 'liability'));
+    const groups = [];
+    const none = [];
+    for (const x of pool) {
+      const value = x.values[key];
+      if (value == null) { none.push(x.index); continue; }
+      const g = groups.find(y => y.value === value);
+      if (g) g.indexes.push(x.index); else groups.push({ value, indexes: [x.index] });
+    }
+    return {
+      key, label: coverageName(key), addOn: isAddOn(key), groups, none,
+      same: groups.length === 1 && none.length === 0,
+      count: pool.length,
+      scope: pool.length < vehicles.length ? 'full-coverage' : null,
+    };
+  }).filter(c => c.groups.length);
+  return { vehicles, coverages };
 }
 
 /** Home / condo / renters coverages A–F then deductibles, with % deductibles spelled out. */
@@ -295,7 +351,7 @@ export function vehiclesNewestFirst(rc) {
 
 /**
  * What the dec page can't tell us but the quote needs: the loan payoff year for
- * every financed vehicle (newest first), e.g. "Loan payoff year for the ’21 LAND ROVER VELAR".
+ * every financed vehicle (newest first), e.g. "Loan payoff year for the 2021 LAND ROVER VELAR".
  */
 export function vehicleQuestions(rc) {
   return vehiclesNewestFirst(rc)
@@ -412,6 +468,6 @@ export function discountsOf(rc) {
 
 /** What to tell the producer in a sentence or two: the scan's summary, else leftover notes. */
 export function headsUp(rc) {
-  if (rc?.summary) return [rc.summary];
-  return remainingNotes(rc);
+  const lines = rc?.summary ? [rc.summary] : remainingNotes(rc);
+  return lines.map(l => replaceVehicleRefs(l, rc?.vehicles || rc?.extracted?.vehicles));
 }

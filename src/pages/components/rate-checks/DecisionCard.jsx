@@ -23,12 +23,12 @@ export default function DecisionCard({ rc, compact = false }) {
   const questions = [...(Array.isArray(rc.decision_questions) ? rc.decision_questions : []), ...vehicleQuestions(rc)];
 
   return (
-    <section className="rounded-xl p-5" style={{ ...TONE[d.tone], color: 'var(--qs-bright)' }} aria-label="Routing decision">
+    <section className="h-full rounded-xl p-4" style={{ ...TONE[d.tone], color: 'var(--qs-bright)' }} aria-label="Routing decision">
       <h3 className="text-xl font-bold leading-tight">{decisionLabel(rc)}</h3>
-      <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>From the rules — not an underwriting approval</p>
+      <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>Per the rules, not an underwriting approval</p>
 
       {reasons.length > 0 && (
-        <ul className="mt-4 space-y-2 text-sm">
+        <ul className="mt-3 space-y-1.5 text-sm">
           {reasons.map((r, i) => (
             <li key={i} className="flex gap-2.5">
               <span aria-hidden="true" className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: 'var(--qs-subtle)' }} />
@@ -37,14 +37,14 @@ export default function DecisionCard({ rc, compact = false }) {
           ))}
         </ul>
       )}
-      {reasons.length === 0 && <p className="mt-3 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page needs special handling.</p>}
+      {reasons.length === 0 && hints.length === 0 && <p className="mt-3 text-sm" style={{ color: 'var(--qs-text)' }}>Nothing on the page needs special handling.</p>}
 
       {hints.map((r, i) => (
         <p key={i} className="mt-3 text-sm" style={{ color: 'var(--qs-subtle)' }}><span className="font-semibold">{r.name}.</span> {r.detail}</p>
       ))}
 
       {!compact && facts.length > 0 && (
-        <div className="mt-5">
+        <div className="mt-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>On the page</p>
           <ul className="mt-1.5 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             {facts.flatMap(f => String(f.detail || '').split('; ')).filter(Boolean).map((t, i) => <li key={i}>{t}</li>)}
@@ -53,7 +53,7 @@ export default function DecisionCard({ rc, compact = false }) {
       )}
 
       {!compact && questions.length > 0 && (
-        <div className="mt-5">
+        <div className="mt-4">
           <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: 'var(--qs-subtle)' }}>Still to ask</p>
           <ul className="mt-1.5 space-y-1 text-sm" style={{ color: 'var(--qs-text)' }}>
             {questions.map((q, i) => <li key={i}>{q}</li>)}

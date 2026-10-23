@@ -4,7 +4,7 @@
 
 import { money, formatPhone } from './ui';
 import {
-  caps, insuredName, vehicleTitle, vehicleCoverages, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
+  caps, insuredName, vehicleTitle, vehicleShort, vehicleCoverages, vehicleCoverageSetup, lienholderFor, autoCoverageGroups, propertyFacts, vehiclesNewestFirst,
   homeCoverageRows, endorsementsOf, driverRows, discountsOf,
 } from './policyView';
 
@@ -184,20 +184,44 @@ export function quoteSheet(rc) {
   } else if (rc.driver_count != null) push('', `Drivers: ${rc.driver_count}`);
 
   const vehicles = Array.isArray(rc.vehicles) ? rc.vehicles : [];
+  const isAuto = ['auto', 'commercial_auto'].includes(rc.policy_type);
+  const setup = isAuto && vehicles.length ? vehicleCoverageSetup(rc) : null;
+  const physical = new Set(['comp_deductible', 'coll_deductible', 'rental', 'roadside']);
   if (vehicles.length) {
     push('', 'Vehicles:');
     vehiclesNewestFirst(rc).forEach(({ v, index: i }) => {
       const vin = v.vin ? (v.vin_complete === false ? `VIN ends ${v.vin}` : `VIN ${v.vin}`) : null;
-      push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}`);
+      const level = setup?.coverages.length ? setup.vehicles.find(s => s.index === i)?.levelLabel : null;
+      push(`  ${vehicleTitle(v)}${vin ? ` — ${vin}` : ''}${level ? ` — ${level.toUpperCase()}` : ''}`);
       const lien = lienholderFor(rc, i);
       if (lien) push(`    Lienholder: ${lien} — ask loan payoff year`);
-      const own = vehicleCoverages(rc, i);
+      const own = vehicleCoverages(rc, i).filter(r => !setup || !physical.has(r.key));
       if (own.length) push(`    ${own.map(r => `${r.label} ${r.value}`).join(' · ')}`);
     });
   }
 
-  if (['auto', 'commercial_auto'].includes(rc.policy_type)) {
-    autoCoverageGroups(rc).forEach(g => {
+  if (isAuto) {
+    const names = (idx) => idx.map(i => vehicleShort(vehicles[i])).join(', ');
+    const pushSetup = () => {
+      if (!setup?.coverages.length) return;
+      push('', 'Vehicle coverages:');
+      setup.coverages.forEach(c => {
+        const label = { comp_deductible: 'Comp deductible', coll_deductible: 'Collision deductible' }[c.key] || c.label;
+        if (c.same) push(`  ${label}: ${c.groups[0].value}`);
+        else {
+          push(`  ${label}:`);
+          c.groups.forEach(g => push(`    ${g.value} — ${names(g.indexes)}`));
+          if (c.none.length) push(`    None — ${names(c.none)}`);
+        }
+      });
+    };
+    const groups = autoCoverageGroups(rc).filter(g => !(setup && g.title === 'Every vehicle'));
+    groups.filter(g => g.title === 'Liability').forEach(g => {
+      push('', 'Liability:');
+      g.rows.forEach(r => push(`  ${r.label}: ${r.value}${r.note ? ` (${r.note})` : ''}`));
+    });
+    pushSetup();
+    groups.filter(g => g.title !== 'Liability').forEach(g => {
       push('', `${g.title === 'Every vehicle' ? 'On every vehicle' : g.title}:`);
       g.rows.forEach(r => push(`  ${r.label}: ${r.value}${r.note ? ` (${r.note})` : ''}`));
     });

@@ -19,10 +19,14 @@ export const RATE_CHECK_LIST_COLUMNS = `
   competitor_agent_id, current_agent, referral_consent_given_at, upload_source, consent_given_at,
   decision, decision_carrier, decision_reasons, decision_questions, decided_at,
   invite_id, producer_id, producer_name, event_name, carrier_raw,
-  bound_carrier, bound_premium, bound_at, housing_situation, drivers, surcharges, claims, property, endorsements, summary
+  bound_carrier, bound_premium, bound_at, housing_situation, drivers, surcharges, claims, property, endorsements, summary,
+  duplicate_of, resubmitted_at, resubmit_count
 `;
 
+const notified = new Set(); // rate check ids already announced on this device
+
 // Rate checks for an agency, newest first. `statuses` empty/undefined = all.
+// Duplicates (the same policy sent again) are folded into the original and hidden.
 // Subscribes to realtime changes so new uploads appear without a refresh.
 export const useRateChecks = (agencyId, statuses) => {
   const queryClient = useQueryClient();
@@ -36,9 +40,14 @@ export const useRateChecks = (agencyId, statuses) => {
         filter: `agency_id=eq.${agencyId}`,
       }, (payload) => {
         queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() });
-        // Heads-up on this device when a new one lands (only if the agent allowed it).
-        if (payload.eventType === 'INSERT' && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-          const r = payload.new || {};
+        // Heads-up on this device when a new one has been read (only if the agent allowed it).
+        // Fires once the scan finishes — by then a policy sent twice is already marked as a
+        // duplicate and stays quiet. Rescans of older rows don't re-notify.
+        const r = payload.new || {};
+        const fresh = r.created_at && Date.now() - new Date(r.created_at).getTime() < 5 * 60 * 1000;
+        if (payload.eventType === 'UPDATE' && fresh && !r.duplicate_of && ['extracted', 'extract_failed'].includes(r.status)
+          && !notified.has(r.id) && typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          notified.add(r.id);
           try { new Notification('New rate check', { body: `${r.first_name || 'Someone'}${r.event_name ? ` · ${r.event_name}` : ''} just sent a policy`, tag: `rc-${r.id}` }); } catch { /* ignore */ }
         }
       })
@@ -53,6 +62,7 @@ export const useRateChecks = (agencyId, statuses) => {
         .from('rate_checks')
         .select(RATE_CHECK_LIST_COLUMNS)
         .eq('agency_id', agencyId)
+        .is('duplicate_of', null) // a policy sent twice shows once
         .order('created_at', { ascending: false })
         .limit(500);
       if (statuses?.length) query = query.in('status', statuses);

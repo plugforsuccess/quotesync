@@ -31,6 +31,7 @@ import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExt
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
 import PolicySheet from './components/rate-checks/PolicySheet';
+import Carousel from './components/rate-checks/Carousel';
 import RulesTab from './components/rate-checks/RulesTab';
 import InviteDialog from './components/rate-checks/InviteDialog';
 import InvitesTab from './components/rate-checks/InvitesTab';
@@ -415,10 +416,6 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
   const multi = household.length > 1;
-  const sum = (f) => household.some(p => p[f] != null) ? household.reduce((t, p) => t + (Number(p[f]) || 0), 0) : null;
-  const hhPays = sum('annual_premium');
-  const hhAllstate = household.every(p => p.allstate_premium != null) ? sum('allstate_premium') : null;
-  const hhDelta = hhPays != null && hhAllstate != null ? hhPays - hhAllstate : null;
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -439,6 +436,12 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
                 {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
               <OriginTag rc={rc} className="mt-0.5" />
+              {rc.resubmitted_at && (
+                <p className="mt-0.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+                  Sent again {new Date(rc.resubmitted_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                  {rc.resubmit_count > 1 ? ` · ${rc.resubmit_count} times` : ''}
+                </p>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <StatusChip status={rc.status} />
@@ -463,31 +466,21 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
           )}
         </div>
 
-        {multi && (
-          <div className="px-5 pt-4">
-            <div className="rounded-xl p-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-              <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
-                <span style={{ color: 'var(--qs-subtle)' }}>Household · {household.length} policies</span>
-                <span style={{ color: 'var(--qs-bright)' }}>
-                  Pays <b>{money(hhPays)}</b>/yr
-                  {hhAllstate != null && <> · Allstate <b>{money(hhAllstate)}</b></>}
-                  {hhDelta != null && <> · {hhDelta > 0 ? <b className="text-green-600">saves {money(hhDelta)}</b> : <b className="text-red-500">{money(Math.abs(hhDelta))} more</b>}</>}
-                </span>
+        {/* Household, what to quote, the price — one swipe each; then the quote sheet and reference */}
+        <div className="pt-4">
+          <Carousel label="Quote this policy" slides={[
+            ...(multi ? [{ key: 'household', label: 'Household', content: <HouseholdCard rc={rc} household={household} onSelect={onSelect} /> }] : []),
+            { key: 'decision', label: 'What to quote', content: <DecisionCard rc={rc} /> },
+            { key: 'price', label: 'Price', content: (
+              <div>
+                <QuoteBox rc={rc} onQuoted={onQuoted} />
+                {rc.upload_source === 'agent' && (
+                  <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
+                )}
               </div>
-              <div className="mt-2 flex flex-wrap gap-1.5" role="tablist" aria-label="Policies in this household">
-                {household.map(p => (
-                  <button key={p.id} role="tab" aria-selected={p.id === rc.id} onClick={() => onSelect?.(p)}
-                    className={`rounded-lg px-2.5 py-1 text-sm ${p.id === rc.id ? 'bg-primary-600 text-white' : ''}`}
-                    style={p.id === rc.id ? undefined : { ...inputStyle }}>
-                    {[carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Not read yet'}
-                    {p.annual_premium != null && <span className={p.id === rc.id ? ' opacity-80' : ''} style={p.id === rc.id ? undefined : { color: 'var(--qs-subtle)' }}> {money(p.annual_premium)}</span>}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Quote each policy; the bundle decides the win. No “can’t beat it” text goes out while another policy here is open or won.</p>
-            </div>
-          </div>
-        )}
+            ) },
+          ]} />
+        </div>
 
         <div className="space-y-6 p-5">
           {rc.extract_error && (
@@ -503,18 +496,44 @@ function RateCheckDrawer({ rc, household, now, onClose, onSelect, onQuoted }) {
           )}
           {rescan.isError && <Notice tone="danger">{rescan.error.message}</Notice>}
           {rescan.isSuccess && rescan.data?.status === 'extracted' && <Notice tone="info">Scanned again — check the details below.</Notice>}
-          {/* 1. What to quote, 2. the price, 3. the quote sheet (ends with a summary), 4. reference */}
-          <DecisionCard rc={rc} />
-          <QuoteBox rc={rc} onQuoted={onQuoted} />
-          {rc.upload_source === 'agent' && (
-            <p className="-mt-3 text-xs" style={{ color: 'var(--qs-subtle)' }}>Uploaded by staff — no texting consent on file, so no automatic texts go out. Follow up yourself.</p>
-          )}
           <PolicyDetails rc={rc} warning={!rc.extract_error ? warning : null} onRescan={canRescan && !rc.extract_error ? () => rescan.mutate({ rateCheckId: rc.id }) : null} rescanning={rescan.isPending} />
           <PolicyPhoto rc={rc} />
           <CurrentAgentBox rc={rc} />
           {(rc.status === 'lost' || ['refer', 'expanded_market'].includes(rc.decision)) && <ReferralBox rc={rc} />}
         </div>
       </div>
+    </div>
+  );
+}
+
+// Every policy this phone number sent, with the bundle total — the win is decided
+// on the bundle, so each policy is quoted but texts wait for the household.
+function HouseholdCard({ rc, household, onSelect }) {
+  const sum = (f) => household.some(p => p[f] != null) ? household.reduce((t, p) => t + (Number(p[f]) || 0), 0) : null;
+  const hhPays = sum('annual_premium');
+  const hhAllstate = household.every(p => p.allstate_premium != null) ? sum('allstate_premium') : null;
+  const hhDelta = hhPays != null && hhAllstate != null ? hhPays - hhAllstate : null;
+  return (
+    <div className="h-full rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-sm">
+        <span style={{ color: 'var(--qs-subtle)' }}>Household · {household.length} policies</span>
+        <span style={{ color: 'var(--qs-bright)' }}>
+          Pays <b>{money(hhPays)}</b>/yr
+          {hhAllstate != null && <> · Allstate <b>{money(hhAllstate)}</b></>}
+          {hhDelta != null && <> · {hhDelta > 0 ? <b className="text-green-600">saves {money(hhDelta)}</b> : <b className="text-red-500">{money(Math.abs(hhDelta))} more</b>}</>}
+        </span>
+      </div>
+      <div className="mt-2 flex flex-wrap gap-1.5" role="tablist" aria-label="Policies in this household">
+        {household.map(p => (
+          <button key={p.id} role="tab" aria-selected={p.id === rc.id} onClick={() => onSelect?.(p)}
+            className={`rounded-lg px-2.5 py-1 text-sm ${p.id === rc.id ? 'bg-primary-600 text-white' : ''}`}
+            style={p.id === rc.id ? undefined : { ...inputStyle }}>
+            {[carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Not read yet'}
+            {p.annual_premium != null && <span className={p.id === rc.id ? ' opacity-80' : ''} style={p.id === rc.id ? undefined : { color: 'var(--qs-subtle)' }}> {money(p.annual_premium)}</span>}
+          </button>
+        ))}
+      </div>
+      <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>Quote each one; the bundle decides the win. No “can’t beat it” text until the household is done.</p>
     </div>
   );
 }
@@ -561,7 +580,7 @@ function QuoteBox({ rc, onQuoted }) {
     `I was able to beat it by ${money(delta)} a year with the same coverage. Do you have 5 minutes now to lock it in?`;
 
   return (
-    <section className="rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+    <section className="h-full rounded-xl p-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>They pay now</p>
         <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{Number(rc.term_months) === 6 ? termPrice(rc) : ''}</p>
