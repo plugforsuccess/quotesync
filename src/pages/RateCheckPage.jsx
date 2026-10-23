@@ -44,12 +44,13 @@ const AGENCY = { name: 'Wiley-Wilson Agency', license: '209488' };
 // "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
 // Photo: { photo, alt, caption, position }. Bio: { icon, title, lines }.
 const ABOUT = [
-  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cameron cutting down the net at Swarthmore', caption: 'Swarthmore basketball, #23', position: '52% 45%' },
-  // TODO(Cam): placeholder bio wording; replace with your own when ready.
+  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cameron cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
+  // Facts from Swarthmore Athletics (2019 NABC All-America release) and the Swarthmore
+  // Phoenix season recap. TODO(Cam): the last line is placeholder wording.
   { key: 'me', icon: Trophy, title: 'A little about me', lines: [
-    'I played college basketball at Swarthmore.',
+    'NABC First Team All-American at Swarthmore in 2019, the first in program history.',
+    'Centennial Conference Player of the Year. We made the NCAA Division III title game.',
     'Now I run my own Allstate agency here in Georgia.',
-    'Basketball taught me to prepare, then compete. I bring both to every quote.',
     'Family comes first. I treat your household the way I’d treat mine.',
   ] },
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cameron with his family', caption: 'My family', position: '50% 30%' },
