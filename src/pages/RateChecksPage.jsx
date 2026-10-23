@@ -794,7 +794,8 @@ function PriceDrop({ current, price, market }) {
         <span className="whitespace-nowrap" style={{ color: tone }}>{market}</span>
       </div>
       <div className="mt-1.5 flex items-end justify-between gap-2">
-        <p className="text-xl font-bold leading-none line-through decoration-2" style={{ color: 'var(--qs-subtle)' }}>{money(current)}</p>
+        {/* Struck through only when Allstate is cheaper: the price they pay goes away. */}
+        <p className={`text-xl font-bold leading-none ${s && s.delta > 0 ? 'line-through decoration-2' : ''}`} style={{ color: 'var(--qs-subtle)' }}>{money(current)}</p>
         <ArrowRight className="mb-0.5 h-5 w-5 shrink-0" style={{ color: tone }} aria-hidden="true" />
         <p className="whitespace-nowrap text-2xl font-extrabold leading-none tabular-nums" style={{ color: tone }}>{money(price)}<span className="text-sm font-semibold">/yr</span></p>
       </div>
