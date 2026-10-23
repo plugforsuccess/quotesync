@@ -108,9 +108,18 @@ function TileValue({ value, addOn, inline = false }) {
 }
 
 // One tile per coverage. A plain tile is the same on every vehicle; when vehicles
-// differ, each value gets a small "Only on …" line naming its vehicles.
-function CoverageTile({ c, rc, wide }) {
-  const names = (indexes) => indexes.map(i => vehicleShort(rc.vehicles[i])).join(', ');
+// differ, each value gets chips naming its vehicles (a chip is tinted by that
+// vehicle's level, so a liability-only car explains itself).
+function VehicleChip({ x }) {
+  const tone = LEVEL_TONE[x.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' };
+  return (
+    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={tone}>{vehicleShort(x.v)}</span>
+  );
+}
+
+function CoverageTile({ c, setup, wide }) {
+  const chips = (indexes) => indexes.map(i => setup.vehicles.find(x => x.index === i)).filter(Boolean)
+    .map(x => <VehicleChip key={x.index} x={x} />);
   const only = c.groups.length === 1;
   return (
     <div className={`rounded-lg px-3 py-2 ${wide ? 'col-span-2' : ''}`} style={TILE}>
@@ -120,15 +129,14 @@ function CoverageTile({ c, rc, wide }) {
           {c.groups.map(g => (
             <div key={g.value}>
               <TileValue value={g.value} addOn={c.addOn} inline />
-              <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-text)' }}>
-                {only ? 'Only on ' : 'On '}<span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{names(g.indexes)}</span>
-              </p>
+              <div className="mt-1 flex flex-wrap gap-1">{chips(g.indexes)}</div>
             </div>
           ))}
           {!only && c.none.length > 0 && (
-            <p className="text-sm" style={{ color: 'var(--qs-text)' }}>
-              None on <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{names(c.none)}</span>
-            </p>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--qs-muted)' }}>None</p>
+              <div className="mt-1 flex flex-wrap gap-1">{chips(c.none)}</div>
+            </div>
           )}
         </div>
       )}
@@ -136,7 +144,7 @@ function CoverageTile({ c, rc, wide }) {
   );
 }
 
-function VehicleCoverages({ rc, setup }) {
+function VehicleCoverages({ setup }) {
   const total = setup.vehicles.length;
   // In Allstate's order (comp, collision, rental, roadside). Two shared values in a row
   // sit side by side; a tile that differs, or a shared one with no partner, takes the full row.
@@ -150,7 +158,7 @@ function VehicleCoverages({ rc, setup }) {
       <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Same on all {total} unless listed</span>
     )}>
       <div className="grid grid-cols-2 gap-2">
-        {cells.map(([c, wide]) => <CoverageTile key={c.key} c={c} rc={rc} wide={wide} />)}
+        {cells.map(([c, wide]) => <CoverageTile key={c.key} c={c} setup={setup} wide={wide} />)}
       </div>
     </Section>
   );
@@ -257,7 +265,7 @@ export default function PolicySheet({ rc, warning }) {
       {isAuto && coverageGroups.filter(g => g.title === 'Liability').map(g => (
         <Section key={g.title} title="Liability"><Rows rows={g.rows} /></Section>
       ))}
-      {setup?.coverages.length > 0 && <VehicleCoverages rc={rc} setup={setup} />}
+      {setup?.coverages.length > 0 && <VehicleCoverages setup={setup} />}
       {isAuto && coverageGroups.filter(g => g.title !== 'Liability').map(g => (
         <Section key={g.title} title={g.title === 'Every vehicle' ? 'Coverage on every vehicle' : g.title}><Rows rows={g.rows} /></Section>
       ))}
