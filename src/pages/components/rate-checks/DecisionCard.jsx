@@ -122,7 +122,7 @@ function Question({ q, a, onSave }) {
   const [open, setOpen] = useState(!answered(a));
   const [details, setDetails] = useState(a?.details || '');
   const isDone = answered(a);
-  const label = isPayoff(q) ? q.replace(/^loan payoff year for the /i, 'Loan payoff year — ') : q;
+  const label = isPayoff(q) ? q.replace(/^loan payoff year for the /i, 'Loan Payoff — ') : q;
 
   if (isDone && !open) {
     const shown = a.answer === 'yes' ? `Yes${a.details ? ` — ${a.details}` : ''}` : a.answer === 'no' ? 'No' : a.answer;

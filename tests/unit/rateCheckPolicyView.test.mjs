@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   caps, insuredName, vehicleTitle, vehicleShort, formatCoverage, autoCoverageGroups, vehicleCoverages, homeCoverageRows,
-  lienholderFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup, summaryLines, dateSpan,
+  lienholderFor, gapFor, propertyFacts, endorsementsOf, remainingNotes, driverRows, discountsOf, headsUp, insuredFirstNames, vehiclesNewestFirst, vehicleQuestions, vehicleCoverageSetup, summaryLines, dateSpan,
 } from '../../src/pages/components/rate-checks/policyView.js';
 
 const auto = {
@@ -92,7 +92,27 @@ test('drivers: named insured, spouse, then the rest oldest to youngest', () => {
 test('lienholder lands on the right vehicle, and its payoff year is flagged to ask', () => {
   assert.equal(lienholderFor(auto, 0), null);
   assert.equal(lienholderFor(auto, 2), 'TD AUTO FINANCE');
-  assert.deepEqual(vehicleQuestions(auto), ['Loan payoff year for the 2021 Land Rover Velar']);
+  // Financed with no gap on the page: ask about gap too.
+  assert.deepEqual(vehicleQuestions(auto), ['Loan payoff year for the 2021 Land Rover Velar', 'Do they want gap coverage on the 2021 Land Rover Velar']);
+});
+
+test('gap rides with the lienholder: pills when they have it, a flag when it is missing or unmatched', () => {
+  const rc = { vehicles: [
+    { year: 2021, make: 'LAND ROVER', model: 'VELAR', lienholder: 'TD Auto Finance', coverages: { gap: 'Yes', loan_lease: '25% of ACV' } },
+    { year: 2020, make: 'HONDA', model: 'ACCORD', lienholder: 'Ally', coverages: { gap: 'No' } },
+    { year: 2019, make: 'FORD', model: 'F-150', coverages: { gap: 'Yes' } },
+    { year: 2015, make: 'MERCEDES', model: 'S550', coverages: {} },
+  ] };
+  assert.deepEqual(gapFor(rc, 0), { pills: [{ key: 'gap', label: 'Gap Coverage' }, { key: 'loan_lease', label: 'Loan/Lease Gap 25%' }], flag: null });
+  assert.deepEqual(gapFor(rc, 1), { pills: [], flag: 'no_gap' });
+  assert.deepEqual(gapFor(rc, 2).flag, 'no_lien');
+  assert.deepEqual(gapFor(rc, 3), { pills: [], flag: null });
+  assert.deepEqual(vehicleQuestions(rc), [
+    'Loan payoff year for the 2021 Land Rover Velar',
+    'Loan payoff year for the 2020 Honda Accord',
+    'Do they want gap coverage on the 2020 Honda Accord',
+    'Is the 2019 Ford F-150 paid off? Gap is listed but no lienholder',
+  ]);
 });
 
 test('vehicles newest to oldest, keeping their original index', () => {
