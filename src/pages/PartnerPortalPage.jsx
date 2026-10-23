@@ -15,7 +15,7 @@ const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigi
 const monthLabel = (key) => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
 // A different hello each visit.
 const GREETINGS = [
-  (n) => `Hi ${n}`, (n) => `Hey ${n}`, (n) => `Hello ${n}`,
+  (n) => `Hi, ${n}`, (n) => `Hey, ${n}`, (n) => `Hello, ${n}`,
   (n) => `Hey there, ${n}`, (n) => `Good to see you, ${n}`, (n) => `What’s good, ${n}`,
 ];
 const SCHEDULE_ROWS = [
