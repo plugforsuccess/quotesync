@@ -13,7 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import {
-  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, MessageSquare, Plus, RotateCcw, ShieldCheck, Sparkles, Trophy, Upload, X,
 } from 'lucide-react';
 import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -39,6 +39,21 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // The licensed agent shown on the page (same headshot as the homepage).
 // TODO(compliance): fill in the GA license number; the card and footer use it.
 const AGENT = { name: 'Cameron Wiley', photo: '/logos/cameron-headshot.webp', license: '' };
+// "Meet Cam" carousel under the agent card: photos and short bio cards, in order.
+// Photo: { photo, alt, caption, position }. Bio: { icon, title, lines }.
+// TODO(Cam): a second photo goes here when there is one; review the bio wording.
+const ABOUT = [
+  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cameron cutting down the net at Swarthmore', caption: 'Swarthmore basketball, #23', position: '52% 45%' },
+  { key: 'me', icon: Trophy, title: 'A little about me', lines: [
+    'I played college basketball at Swarthmore.',
+    'Now I run my own Allstate agency here in Georgia.',
+  ] },
+  { key: 'how', icon: MessageSquare, title: 'How I work', lines: [
+    'I read every dec page myself. No call center, no bots.',
+    'If I can beat your price, I text you. If I can’t, I tell you.',
+    'Either way, no spam calls. Ever.',
+  ] },
+];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const fileKey = (f) => `${f.name}|${f.size}|${f.lastModified}`;
@@ -575,6 +590,7 @@ export default function RateCheckPage() {
           </button>
 
           <AgentCard />
+          <MeetCam />
 
           <ul className="mt-6 grid grid-cols-3 gap-2 text-center text-xs text-slate-600">
             <Trust icon={Sparkles} label="Read in seconds" />
@@ -746,7 +762,7 @@ function ResultRow({ item, index, onRetake, onRetry }) {
 
 // Swipeable sections (native scroll-snap, so touch, trackpad and keyboard all work).
 // The next slide peeks in from the right so it reads as swipeable; the dots jump.
-function Carousel({ slides, className = '' }) {
+function Carousel({ slides, className = '', label = 'Your rate check' }) {
   const track = useRef(null);
   const [active, setActive] = useState(0);
   const onScroll = () => {
@@ -766,12 +782,12 @@ function Carousel({ slides, className = '' }) {
   };
   const many = slides.length > 1;
   return (
-    <section className={className} aria-roledescription="carousel" aria-label="Your rate check">
+    <section className={className} aria-roledescription="carousel" aria-label={label}>
       <div ref={track} onScroll={onScroll}
         className={`rc-track relative flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto ${many ? '' : 'justify-center'}`}>
         {slides.map((s, i) => (
           <div key={s.key} role="group" aria-roledescription="slide" aria-label={`${i + 1} of ${slides.length}: ${s.label}`}
-            className={`${many ? 'w-[88%]' : 'w-full'} shrink-0 snap-start rounded-2xl border border-slate-200 bg-white p-4 shadow-sm`}>
+            className={`${many ? 'w-[88%]' : 'w-full'} shrink-0 snap-start rounded-2xl border border-slate-200 bg-white shadow-sm ${s.bare ? 'overflow-hidden' : 'p-4'}`}>
             {!s.untitled && <p className="mb-3 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{s.label}</p>}
             {s.content}
           </div>
@@ -809,6 +825,30 @@ function AgentCard() {
       {AGENT.license && <p className="mt-3 text-xs text-slate-400">GA license #{AGENT.license}</p>}
     </div>
   );
+}
+
+function MeetCam() {
+  const slides = ABOUT.map(a => a.photo ? {
+    key: a.key, label: a.caption, untitled: true, bare: true,
+    content: (
+      <figure className="relative h-full min-h-[300px]">
+        <img src={a.photo} alt={a.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.position }} />
+        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-left text-sm font-semibold text-white">{a.caption}</figcaption>
+      </figure>
+    ),
+  } : {
+    key: a.key, label: a.title, untitled: true,
+    content: (
+      <div className="flex h-full min-h-[268px] flex-col text-left">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-700"><a.icon className="h-5 w-5" aria-hidden="true" /></span>
+        <p className="mt-3 text-lg font-extrabold text-slate-900">{a.title}</p>
+        <ul className="mt-2 space-y-2.5 text-[15px] leading-snug text-slate-700">
+          {a.lines.map(l => <li key={l} className="flex gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-blue-700" aria-hidden="true" />{l}</li>)}
+        </ul>
+      </div>
+    ),
+  });
+  return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-4" />;
 }
 
 function Trust({ icon: Icon, label }) {
