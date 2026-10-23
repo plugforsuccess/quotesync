@@ -932,7 +932,7 @@ export function RateCheckFooter({ padForBar = false }) {
         {AGENCY.name} is an Allstate agency. Quotes and savings vary and are subject to underwriting and
         eligibility; not all applicants qualify.
       </p>
-      <p className="mt-1">{AGENCY.name} GA agency license #: {AGENCY.license} · {AGENT.name} GA license #: {AGENT.license}</p>
+      <p className="mt-1">Agency Resident License #: {AGENCY.license}</p>
     </footer>
   );
 }
