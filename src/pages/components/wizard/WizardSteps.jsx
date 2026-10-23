@@ -11,7 +11,7 @@ import { trackEvent } from '../../../lib/analytics';
 import AddressAutocomplete from '../../../components/AddressAutocomplete';
 import { TOP_VEHICLE_MAKES, ALL_VEHICLE_MAKES } from '../../../data/vehicleMakes';
 import { getModelsForMake } from '../../../data/vehicleModels';
-import DeclarationUpload from './DeclarationUpload';
+import { ScanHandoffCard } from './ScanHandoff';
 
 // ─── Shared UI Primitives ──────────────────────────────────────────
 
@@ -1310,7 +1310,6 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
 
   // Capture the lead id during render (the initializer runs before the clear
   // effect below) so the dec-page upload still has something to attach to.
-  const [leadId] = useState(() => sessionStorage.getItem(SESSION_KEYS.LEAD_ID));
 
   // H-2: Clear PII from sessionStorage once confirmation renders
   // (data is already in React state and submitted to server)
@@ -1390,8 +1389,8 @@ export function ConfirmationStep({ answers, agentName, brandName }) {
         </button>
       </div>
 
-      {/* Declarations-page upload — optional enrichment */}
-      <DeclarationUpload leadId={leadId} agentName={agentName} />
+      {/* Declarations page — scanned by Rate Check, joined to this lead */}
+      <ScanHandoffCard answers={answers} agentName={agentName} />
 
       {/* About Agent */}
       <div className="bg-white border border-gray-200 rounded-xl p-5">

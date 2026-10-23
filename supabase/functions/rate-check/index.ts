@@ -1042,13 +1042,28 @@ Deno.serve(async (req) => {
         .not('status', 'in', '(closed_won,closed_lost)')
         .order('created_at', { ascending: false })
         .limit(1)
-      const existing = existingLeads?.[0]
+      // Sent here from the /save wizard (same tab, same session_id): join the partial lead
+      // it started, which may not have a phone yet, rather than creating a second lead.
+      let existing = existingLeads?.[0]
+      if (!existing && !staff) {
+        const { data: sessionLeads } = await supabase
+          .from('leads')
+          .select('id, status, assigned_to_id')
+          .eq('agency_id', agencyId)
+          .eq('session_id', sessionId)
+          .eq('status', 'partial')
+          .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+          .order('created_at', { ascending: false })
+          .limit(1)
+        existing = sessionLeads?.[0]
+      }
 
       if (existing) {
         const { error } = await supabase
           .from('leads')
           .update({
             ...(firstName ? { first_name: firstName } : {}),
+            ...(phone ? { phone } : {}),
             ...(email ? { email } : {}),
             ...(zip ? { zip } : {}),
             ...consent,

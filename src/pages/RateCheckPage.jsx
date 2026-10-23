@@ -15,7 +15,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
 } from 'lucide-react';
-import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS } from '../lib/rateCheckApi';
+import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
@@ -105,6 +105,12 @@ export default function RateCheckPage() {
       }
       const f = session?.fields || draft?.fields;
       if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, phone: f.phone || prev.phone, email: f.email || prev.email, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
+      // Sent here from the /save wizard: fill in what they already told it.
+      const handed = takeScannerPrefill();
+      if (handed) setFields(prev => ({
+        firstName: prev.firstName || handed.firstName || '', phone: prev.phone || (handed.phone ? formatPhoneInput(handed.phone) : ''),
+        email: prev.email || handed.email || '', zip: prev.zip || handed.zip || '', housing: prev.housing || handed.housing || '',
+      }));
       const draftHasContent = !!draft && (draft.photos.length > 0 || ['firstName', 'phone', 'email', 'zip', 'housing'].some(k => draft.fields?.[k]));
       if (draftHasContent && !sentBefore) setResumed(true);
       if (restored.length) {
