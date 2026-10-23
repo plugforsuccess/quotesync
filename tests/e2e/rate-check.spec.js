@@ -49,9 +49,22 @@ function jpegSize(buf) {
 }
 
 async function fillContact(page) {
+  // The code is texted by rate-check-otp; here it answers "sent" and accepts any code.
+  await page.route('**/functions/v1/rate-check-otp', async (route) => {
+    const body = route.request().postDataJSON();
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body.mode === 'send' ? { sent: true } : { verified: true }) });
+  });
   await page.getByLabel('First name').fill('Keisha');
   await page.getByLabel('Mobile number').fill('4045551212');
   await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
+  // Only when the build has VITE_RATE_CHECK_OTP=true.
+  const textMe = page.getByRole('button', { name: 'Text me a code' });
+  if (await textMe.isVisible()) {
+    await textMe.click();
+    await page.getByLabel(/Enter the 6-digit code/).fill('123456');
+    await expect(page.getByRole('status')).toHaveText(/Number verified/);
+  }
+  await page.getByLabel('Email').fill('keisha@example.com');
   await page.getByLabel('ZIP code').fill('30094');
   await page.getByLabel('Where do you live?').selectOption('own');
 }
@@ -104,6 +117,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   expect(jpeg.length).toBeLessThan(photoBytes);
   expect(posted.phone).toBe('4045551212');
   expect(posted.zip).toBe('30094');
+  expect(posted.email).toBe('keisha@example.com');
   expect(posted.housing_situation).toBe('own');
   expect(posted.consent_version).toBe('ratecheck-v1');
   expect(Date.parse(posted.consent_given_at)).not.toBeNaN();

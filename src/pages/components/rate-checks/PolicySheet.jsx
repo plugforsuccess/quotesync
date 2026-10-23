@@ -110,10 +110,12 @@ function TileValue({ value, addOn, inline = false, size = 'text-xl' }) {
 // One tile per coverage. A plain tile is the same on every vehicle; when vehicles
 // differ, each value gets chips naming its vehicles (a chip is tinted by that
 // vehicle's level, so a liability-only car explains itself).
+// Same cyan as the vehicle titles and number badges above, so a car reads the same everywhere.
+const VEHICLE_TONE = { color: 'var(--qs-cyan)', background: 'rgba(6, 182, 212, 0.14)', border: '1px solid rgba(6, 182, 212, 0.45)' };
+
 function VehicleChip({ x }) {
-  const tone = LEVEL_TONE[x.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' };
   return (
-    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={tone}>{vehicleShort(x.v)}</span>
+    <span className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold" style={{ ...VEHICLE_TONE, color: 'var(--qs-bright)' }}>{vehicleShort(x.v)}</span>
   );
 }
 
@@ -168,7 +170,7 @@ function VehicleCoverages({ setup }) {
   );
 }
 
-function VehicleCard({ rc, v, index, level }) {
+function VehicleCard({ rc, v, index, level, n }) {
   const vin = v.vin ? (v.vin_complete === false ? `…${v.vin}` : v.vin) : (v.vin_last4 ? `…${v.vin_last4}` : null);
   const vinWarn = v.vin_complete === false ? 'Only part of the VIN is on the page'
     : v.vin_complete && v.vin_valid === false ? 'This VIN doesn’t check out — compare with the photo' : null;
@@ -176,37 +178,42 @@ function VehicleCard({ rc, v, index, level }) {
   const extras = vehicleCoverages(rc, index).filter(r => !PHYSICAL.includes(r.key));
   const lien = lienholderFor(rc, index);
   return (
-    <li className="py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{vehicleTitle(v)}</p>
-        {vin && (
-          <span className="inline-flex items-center gap-1">
-            <span className="select-text font-mono text-sm" style={{ color: 'var(--qs-bright)' }}>{vin}</span>
-            {v.vin && v.vin_complete !== false && <CopyButton text={v.vin} label={`Copy VIN for ${vehicleTitle(v)}`} />}
+    <li className="py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
+      {/* Number badge, year/make/model and the coverage level on one line; the VIN under the title. */}
+      <div className="flex items-center gap-2.5">
+        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold tabular-nums"
+          style={VEHICLE_TONE} aria-hidden="true">{n}</span>
+        <p className="min-w-0 flex-1 truncate text-[17px] font-semibold" style={{ color: 'var(--qs-cyan)' }}>
+          <span className="sr-only">Vehicle {n}: </span>{vehicleTitle(v)}
+        </p>
+        {level && (
+          <span className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-bold uppercase leading-4 tracking-[0.08em]"
+            style={LEVEL_TONE[level.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
+            {level.levelLabel}
           </span>
         )}
       </div>
-      {level && (
-        <span className="mt-1 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.08em]"
-          style={LEVEL_TONE[level.level] || { color: 'var(--qs-warning)', background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)' }}>
-          {level.levelLabel}
-        </span>
+      {vin && (
+        <p className="mt-1 flex items-center gap-1 pl-[34px]">
+          <span className="select-text font-mono text-sm" style={{ color: 'var(--qs-bright)' }}>{vin}</span>
+          {v.vin && v.vin_complete !== false && <CopyButton text={v.vin} label={`Copy VIN for ${vehicleTitle(v)}`} />}
+        </p>
       )}
-      {vinWarn && <p className="text-xs text-yellow-600">{vinWarn}</p>}
+      {vinWarn && <p className="pl-[34px] text-xs text-yellow-600">{vinWarn}</p>}
       {lien && (
         <>
-          <p className="mt-1 flex items-center gap-1 text-sm" style={{ color: 'var(--qs-text)' }}>
+          <p className="mt-3 flex items-center gap-1 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
             <span style={{ color: 'var(--qs-subtle)' }}>Lienholder</span> {lien}
             <CopyButton text={lien} label={`Copy lienholder for ${vehicleTitle(v)}`} />
           </p>
-          <p className="mt-0.5 flex items-center gap-1.5 text-sm" style={{ color: 'var(--qs-text)' }}>
+          <p className="mt-0.5 flex items-center gap-1.5 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
             <span style={{ color: 'var(--qs-subtle)' }}>Loan payoff year</span>
             <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
         </>
       )}
-      {extras.map(r => (
-        <p key={r.key} className={`mt-1.5 text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
+      {extras.map((r, i) => (
+        <p key={r.key} className={`${i === 0 && !lien ? 'mt-3' : 'mt-1.5'} pl-[34px] text-sm ${r.addOn ? ADD_ON_CLS : ''}`} style={r.addOn ? ADD_ON_STYLE : { color: 'var(--qs-text)' }}>
           {r.label} {r.value}
         </p>
       ))}
@@ -235,6 +242,7 @@ export default function PolicySheet({ rc, warning }) {
         <dl>
           <Field label="Name on policy" value={insured} copy />
           <Field label="Address" value={rc.insured_address ? caps(rc.insured_address) : (rc.zip ? `ZIP ${rc.zip}` : null)} copy={rc.insured_address ? caps(rc.insured_address) : rc.zip} />
+          {rc.email && <Field label="Email" value={rc.email} copy />}
           {rc.housing_situation && <Field label="Lives" value={HOUSING_LABEL[rc.housing_situation] || rc.housing_situation} />}
         </dl>
       </Section>
@@ -262,7 +270,7 @@ export default function PolicySheet({ rc, warning }) {
 
       {isAuto && vehicles.length > 0 && (
         <Section title={`Vehicles · ${vehicles.length}`}>
-          <ul>{vehiclesNewestFirst(rc).map(({ v, index }) => <VehicleCard key={index} rc={rc} v={v} index={index} level={levelOf(index)} />)}</ul>
+          <ul>{vehiclesNewestFirst(rc).map(({ v, index }, i) => <VehicleCard key={index} rc={rc} v={v} index={index} level={levelOf(index)} n={i + 1} />)}</ul>
         </Section>
       )}
 

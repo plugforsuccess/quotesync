@@ -20,7 +20,7 @@ export const RATE_CHECK_LIST_COLUMNS = `
   decision, decision_carrier, decision_reasons, decision_questions, decided_at,
   invite_id, producer_id, producer_name, event_name, carrier_raw,
   bound_carrier, bound_premium, bound_at, housing_situation, drivers, surcharges, claims, property, endorsements, summary,
-  duplicate_of, resubmitted_at, resubmit_count
+  duplicate_of, resubmitted_at, resubmit_count, email
 `;
 
 const notified = new Set(); // rate check ids already announced on this device

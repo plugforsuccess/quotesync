@@ -106,7 +106,7 @@ export async function prepareDecPage(file) {
  * POST the dec page + contact + consent to the rate-check edge function.
  * Resolves to { status, rate_check_id, carrier, policy_type, annual_premium }.
  */
-export async function submitRateCheck({ prepared, firstName, phone, zip, housingSituation, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
+export async function submitRateCheck({ prepared, firstName, phone, email, zip, housingSituation, consentGivenAt, referralConsentGivenAt = null, inviteCode = null }) {
   const utm = getUtmParams();
   const res = await fetch(RATE_CHECK_URL, {
     method: 'POST',
@@ -119,6 +119,7 @@ export async function submitRateCheck({ prepared, firstName, phone, zip, housing
       media_type: prepared.mediaType,
       first_name: firstName.trim(),
       phone: phone.replace(/\D/g, ''),
+      email: String(email || '').trim(),
       zip,
       housing_situation: housingSituation,
       consent_given_at: consentGivenAt,
@@ -148,6 +149,30 @@ export async function submitRateCheck({ prepared, firstName, phone, zip, housing
   if (!res.ok) throw new Error(data.error || 'Something went wrong. Please try again.');
   return data;
 }
+
+const OTP_URL = RATE_CHECK_URL.replace(/rate-check$/, 'rate-check-otp');
+
+async function otp(mode, phone, extra = {}) {
+  const res = await fetch(OTP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
+    body: JSON.stringify({ mode, phone: phone.replace(/\D/g, ''), session_id: getSessionId(), ...extra }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.error || 'Something went wrong. Please try again.');
+    err.rateLimited = res.status === 429;
+    throw err;
+  }
+  return data;
+}
+
+/** Text a 6-digit code to the mobile number (rate-check won't accept a dec page until it's verified). */
+export const sendOtp = (phone) => otp('send', phone);
+/** Check the code they typed; resolves to { verified: true }. */
+export const verifyOtp = (phone, code) => otp('verify', phone, { code: String(code || '').replace(/\D/g, '') });
+
+export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '').trim());
 
 /**
  * A producer's tagged link (/r/CODE): who sent it and what to pre-fill.

@@ -22,6 +22,7 @@ export function caps(s) {
 /**
  * Name on policy as first name(s) then last name, in capitals:
  * "PEARSON, STEPHEN & JOCELYN" → "STEPHEN & JOCELYN PEARSON";
+ * "STEPHEN PEARSON, JOCELYN PEARSON" → "STEPHEN & JOCELYN PEARSON";
  * "PEARSON JR, STEPHEN" → "STEPHEN PEARSON JR". Names without a comma are already in that order.
  */
 export function insuredName(s) {
@@ -29,6 +30,13 @@ export function insuredName(s) {
   const str = caps(s);
   const i = str.indexOf(',');
   if (i < 0) return str;
+  // Several full names ("STEPHEN PEARSON, JOCELYN PEARSON"): join them, sharing one last name.
+  const people = str.split(/\s*(?:,|&|\bAND\b)\s*/).filter(Boolean).map(p => p.trim().split(/\s+/));
+  if (people.length > 1 && people.every(w => w.length >= 2)) {
+    const last = people[0].slice(-1)[0];
+    if (people.every(w => w.slice(-1)[0] === last)) return `${people.map(w => w.slice(0, -1).join(' ')).join(' & ')} ${last}`;
+    return people.map(w => w.join(' ')).join(' & ');
+  }
   const last = str.slice(0, i).trim();
   const first = str.slice(i + 1).replace(/,/g, ' ').replace(/\s+/g, ' ').trim();
   if (!first || !last) return str.replace(/,/g, '').trim();

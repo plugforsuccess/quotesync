@@ -44,6 +44,9 @@ test('data reads in capitals; name on policy is first name then last name', () =
   assert.equal(vehicleTitle(auto.vehicles[0]), '2015 MERCEDES S550');
   assert.equal(vehicleTitle({ year: 2021, make: 'Land Rover', model: 'Velar' }), '2021 LAND ROVER VELAR');
   assert.equal(vehicleShort(auto.vehicles[1]), '2022 JAGUAR XF');
+  assert.equal(insuredName('STEPHEN PEARSON, JOCELYN PEARSON'), 'STEPHEN & JOCELYN PEARSON');
+  assert.equal(insuredName('Stephen Pearson, Jocelyn Smith'), 'STEPHEN PEARSON & JOCELYN SMITH');
+  assert.equal(insuredName('PEARSON JR, STEPHEN'), 'STEPHEN PEARSON JR');
 });
 
 test('limits read like money', () => {

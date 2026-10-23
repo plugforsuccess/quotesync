@@ -15,7 +15,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
 } from 'lucide-react';
-import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, HOUSING_OPTIONS } from '../lib/rateCheckApi';
+import { prepareDecPage, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
@@ -33,6 +33,10 @@ const REFERRAL_CONSENT_TEXT =
 
 const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', umbrella: 'Umbrella', commercial_auto: 'Commercial auto', commercial: 'Business' };
 
+// Texted-code verification of the mobile number: off while the agency tests; set
+// VITE_RATE_CHECK_OTP=true (and RATE_CHECK_OTP_REQUIRED on the function) to turn it on.
+const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
+
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
 const fileKey = (f) => `${f.name}|${f.size}|${f.lastModified}`;
 const money = (n) => `$${Math.round(n).toLocaleString('en-US')}`;
@@ -49,7 +53,12 @@ export default function RateCheckPage() {
   const [step, setStep] = useState('policies'); // policies | you | results
   // { id, file, preview, quality, status: draft|queued|reading|read|unreadable|failed, result, error }
   const [items, setItems] = useState([]);
-  const [fields, setFields] = useState({ firstName: '', phone: '', zip: '', housing: '' });
+  const [fields, setFields] = useState({ firstName: '', phone: '', email: '', zip: '', housing: '' });
+  // Text-message verification of the mobile number. The verified number is kept for
+  // the tab session so a reload (or a second policy) doesn't ask again.
+  const [otp, setOtp] = useState({ status: 'idle', code: '', error: '', sentAt: 0 }); // idle | sending | sent | verifying
+  const [verifiedPhone, setVerifiedPhone] = useState(() => { try { return sessionStorage.getItem('rc_verified_phone') || ''; } catch { return ''; } });
+  const [, tick] = useState(0);
   const [consent, setConsent] = useState(false);
   const [referralConsent, setReferralConsent] = useState(false);
   const [given, setGiven] = useState(null); // { consentGivenAt, referralConsentGivenAt } once sent this session
@@ -92,8 +101,8 @@ export default function RateCheckPage() {
         restored.push(...draft.photos.map(p => ({ id: p.id, file: p.file, preview: previewFor(p.file), quality: null, status: 'draft' })));
       }
       const f = session?.fields || draft?.fields;
-      if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, phone: f.phone || prev.phone, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
-      const draftHasContent = !!draft && (draft.photos.length > 0 || ['firstName', 'phone', 'zip', 'housing'].some(k => draft.fields?.[k]));
+      if (f) setFields(prev => ({ firstName: f.firstName || prev.firstName, phone: f.phone || prev.phone, email: f.email || prev.email, zip: f.zip || prev.zip, housing: f.housing || prev.housing }));
+      const draftHasContent = !!draft && (draft.photos.length > 0 || ['firstName', 'phone', 'email', 'zip', 'housing'].some(k => draft.fields?.[k]));
       if (draftHasContent && !sentBefore) setResumed(true);
       if (restored.length) {
         updateItems(() => restored);
@@ -143,7 +152,7 @@ export default function RateCheckPage() {
       try {
         const prepared = await prepareDecPage(it.file);
         const data = await submitWithRetry(() => submitRateCheck({
-          prepared, firstName: f.firstName, phone: f.phone.replace(/\D/g, ''), zip: f.zip,
+          prepared, firstName: f.firstName, phone: f.phone.replace(/\D/g, ''), email: f.email, zip: f.zip,
           housingSituation: f.housing, consentGivenAt: grant.consentGivenAt,
           referralConsentGivenAt: grant.referralConsentGivenAt, inviteCode: invite ? inviteCode : null,
         }));
@@ -212,7 +221,8 @@ export default function RateCheckPage() {
     itemsRef.current.forEach(i => i.preview && URL.revokeObjectURL(i.preview));
     await clearDraft();
     clearSession();
-    updateItems(() => []); setFields({ firstName: '', phone: '', zip: '', housing: '' });
+    updateItems(() => []); setFields({ firstName: '', phone: '', email: '', zip: '', housing: '' });
+    setOtp({ status: 'idle', code: '', error: '', sentAt: 0 });
     setConsent(false); setReferralConsent(false); setGiven(null); setResumed(false); setStep('policies');
     window.scrollTo(0, 0);
   };
@@ -220,13 +230,45 @@ export default function RateCheckPage() {
   const drafts = items.filter(i => i.status === 'draft');
   const sent = items.filter(i => i.status !== 'draft');
   const phoneDigits = fields.phone.replace(/\D/g, '');
+  const phoneVerified = !OTP_ENABLED || (phoneDigits.length === 10 && verifiedPhone === phoneDigits);
   const missing = [
     !fields.firstName.trim() && 'your first name',
     phoneDigits.length !== 10 && 'your mobile number',
+    !isEmail(fields.email) && 'your email',
     !/^\d{5}$/.test(fields.zip) && 'your ZIP code',
     !fields.housing && 'where you live',
+    phoneDigits.length === 10 && !phoneVerified && 'the code we texted you',
   ].filter(Boolean);
   const contactOk = missing.length === 0;
+
+  // ── Mobile number verification ──
+  const requestCode = async () => {
+    setOtp(o => ({ ...o, status: 'sending', error: '' }));
+    try {
+      await sendOtp(phoneDigits);
+      setOtp({ status: 'sent', code: '', error: '', sentAt: Date.now() });
+    } catch (err) {
+      setOtp(o => ({ ...o, status: o.sentAt ? 'sent' : 'idle', error: err.message }));
+    }
+  };
+  const checkCode = async (code) => {
+    setOtp(o => ({ ...o, status: 'verifying', error: '' }));
+    try {
+      await verifyOtp(phoneDigits, code);
+      try { sessionStorage.setItem('rc_verified_phone', phoneDigits); } catch { /* private mode */ }
+      setVerifiedPhone(phoneDigits);
+      setOtp({ status: 'idle', code: '', error: '', sentAt: 0 });
+      navigator.vibrate?.(8);
+    } catch (err) {
+      setOtp(o => ({ ...o, status: 'sent', error: err.message }));
+    }
+  };
+  const canResend = Date.now() - otp.sentAt > 30_000;
+  useEffect(() => {
+    if (otp.status !== 'sent' || canResend) return undefined;
+    const t = setTimeout(() => tick(n => n + 1), 30_500 - (Date.now() - otp.sentAt));
+    return () => clearTimeout(t);
+  }, [otp.status, otp.sentAt, canResend]);
 
   const submit = () => {
     if (!contactOk || !drafts.length) return;
@@ -378,7 +420,48 @@ export default function RateCheckPage() {
           </Field>
           <Field label="Mobile number" htmlFor="rc-phone">
             <input id="rc-phone" type="tel" inputMode="tel" autoComplete="tel-national" placeholder="(404) 555-1212" required
-              value={fields.phone} onChange={e => setFields(f => ({ ...f, phone: formatPhoneInput(e.target.value) }))} className={inputCls} />
+              value={fields.phone} className={inputCls}
+              onChange={e => { setFields(f => ({ ...f, phone: formatPhoneInput(e.target.value) })); setOtp({ status: 'idle', code: '', error: '', sentAt: 0 }); }} />
+          </Field>
+          {OTP_ENABLED && phoneDigits.length === 10 && (phoneVerified ? (
+            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700" role="status">
+              <Check className="h-4 w-4" aria-hidden="true" /> Number verified
+            </p>
+          ) : !otp.sentAt ? (
+            <div>
+              <button type="button" onClick={requestCode} disabled={otp.status === 'sending'}
+                className="h-12 w-full rounded-xl border border-blue-700 bg-white px-4 font-semibold text-blue-700 disabled:opacity-60">
+                {otp.status === 'sending' ? 'Sending…' : 'Text me a code'}
+              </button>
+              <p className="mt-1.5 px-1 text-xs text-slate-500">We text a 6-digit code to confirm it&apos;s you.</p>
+              {otp.error && <p className="mt-1 px-1 text-sm text-red-600" role="alert">{otp.error}</p>}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-slate-200 bg-white p-3">
+              <label htmlFor="rc-code" className="block text-sm font-semibold text-slate-800">Enter the 6-digit code we texted to {fields.phone}</label>
+              <div className="mt-2 flex gap-2">
+                <input id="rc-code" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="123456" value={otp.code}
+                  className={`${inputCls} tracking-[0.25em]`}
+                  onChange={e => {
+                    const code = e.target.value.replace(/\D/g, '').slice(0, 6);
+                    setOtp(o => ({ ...o, code, error: '' }));
+                    if (code.length === 6) checkCode(code);
+                  }} />
+                <button type="button" onClick={() => checkCode(otp.code)} disabled={otp.code.length !== 6 || otp.status === 'verifying'}
+                  className="h-12 shrink-0 rounded-xl bg-blue-700 px-4 font-semibold text-white disabled:opacity-50">
+                  {otp.status === 'verifying' ? 'Checking…' : 'Verify'}
+                </button>
+              </div>
+              {otp.error && <p className="mt-2 text-sm text-red-600" role="alert">{otp.error}</p>}
+              <button type="button" onClick={requestCode} disabled={!canResend || otp.status === 'sending'}
+                className="mt-2 text-xs font-semibold text-slate-600 underline disabled:no-underline disabled:opacity-60">
+                {otp.status === 'sending' ? 'Sending…' : canResend ? 'Send a new code' : 'Send a new code in 30 seconds'}
+              </button>
+            </div>
+          ))}
+          <Field label="Email" htmlFor="rc-email">
+            <input id="rc-email" type="email" inputMode="email" autoComplete="email" placeholder="you@example.com" required
+              value={fields.email} onChange={e => setFields(f => ({ ...f, email: e.target.value }))} className={inputCls} />
           </Field>
           <div className="grid grid-cols-[7.5rem_1fr] gap-3">
             <Field label="ZIP code" htmlFor="rc-zip">
