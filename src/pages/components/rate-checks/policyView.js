@@ -409,6 +409,7 @@ export function vehicleQuestions(rc) {
     const car = vehicleShort(v);
     const { flag } = gapFor(rc, index);
     const out = [];
+    // Keyed by this text (saved answers), so the wording stays; the card shows "Loan Payoff — …".
     if (lienholderFor(rc, index)) out.push(`Loan payoff year for the ${car}`);
     if (flag === 'no_gap') out.push(`Do they want gap coverage on the ${car}`);
     if (flag === 'no_lien') out.push(`Is the ${car} paid off? Gap is listed but no lienholder`);

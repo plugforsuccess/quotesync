@@ -254,7 +254,7 @@ function VehicleCard({ rc, v, index, level, n }) {
             <CopyButton text={lien} label={`Copy lienholder for ${vehicleTitle(v)}`} />
           </p>
           <p className="mt-0.5 flex items-center gap-1.5 pl-[34px] text-sm" style={{ color: 'var(--qs-text)' }}>
-            <span style={{ color: 'var(--qs-subtle)' }}>Loan payoff year</span>
+            <span style={{ color: 'var(--qs-subtle)' }}>Loan Payoff</span>
             <CircleHelp className="h-4 w-4" style={{ color: 'var(--qs-warning)' }} aria-label="Not on the dec page — ask the customer" role="img" />
           </p>
           {gapRow('mt-2')}
