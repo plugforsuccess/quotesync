@@ -82,36 +82,51 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
           Confirm the program with Allstate compliance and your attorney before the first payment, and get a W-9 on file.</span>
       </p>
 
-      {/* This month, across partners */}
-      <div className="dark-card" style={{ padding: 16 }}>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <select value={month} onChange={e => setMonth(e.target.value)} className="dark-select" style={{ width: 'auto', ...inputStyle }} aria-label="Month">
-            {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
-          </select>
-          <div className="flex gap-2">
-            <button type="button" onClick={exportMonth} disabled={!promoters.length}
-              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50" style={inputStyle}>
-              <Download className="h-4 w-4" aria-hidden="true" /> Export for 1099s
+      {promoters.length === 0 ? (
+        /* No partners yet: one card, one button. */
+        <div className="dark-card" style={{ padding: 20 }}>
+          <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>No partners yet</h3>
+          <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
+            Add someone who&apos;ll share your Rate Check link. They get a private portal to sign the agreement, then their own link that pays per household.
+          </p>
+          {canEdit && !adding && (
+            <button type="button" onClick={() => setAdding(true)} className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
+              <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
             </button>
+          )}
+          {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
+        </div>
+      ) : (
+        /* This month, across partners */
+        <div className="dark-card" style={{ padding: 16 }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <select value={month} onChange={e => setMonth(e.target.value)} className="dark-select -ml-1 border-0 bg-transparent text-base font-bold"
+              style={{ width: 'auto', color: 'var(--qs-bright)', background: 'transparent' }} aria-label="Month">
+              {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+            </select>
             {canEdit && (
-              <button type="button" onClick={() => setAdding(a => !a)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
+              <button type="button" onClick={() => setAdding(a => !a)} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
                 <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
               </button>
             )}
           </div>
+          <div className="mt-3 grid grid-cols-3 gap-3">
+            <Stat label="Partners" value={promoters.filter(p => p.active).length} />
+            <Stat label="Households" value={monthHouseholds} />
+            <Stat label="Owed" value={dollars(monthOwed)} tone="var(--qs-warning)" />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <button type="button" onClick={exportMonth} disabled={!payouts.length}
+              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-medium disabled:opacity-50" style={inputStyle}>
+              <Download className="h-4 w-4" aria-hidden="true" /> Export for 1099s
+            </button>
+            {!payouts.length && <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Available once a partner is paid</span>}
+          </div>
+          {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
         </div>
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <Stat label="Partners" value={promoters.filter(p => p.active).length} />
-          <Stat label="Households" value={monthHouseholds} />
-          <Stat label="Owed" value={dollars(monthOwed)} tone="var(--qs-warning)" />
-        </div>
-        {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
-      </div>
+      )}
 
       {/* One card per partner */}
-      {promoters.length === 0 && !adding && (
-        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No partners yet. Add one to get their link.</p>
-      )}
       {promoters.map(p => {
         const { hh = [], summary: s } = byPartner[p.id] || {};
         const paid = paidFor(p.id);
@@ -188,7 +203,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                         {' · '}<span style={{ color: h.won ? 'var(--qs-success)' : undefined }}>{h.won ? 'Won' : h.quoted ? 'Quoted' : 'Not quoted yet'}</span>
                       </p>
                     </div>
-                    <span className="shrink-0 text-base font-bold tabular-nums" style={{ color: 'var(--qs-warning)' }}>{dollars(h.fee)}</span>
+                    <span className="shrink-0 text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{dollars(h.fee)}</span>
                   </li>
                 ))}
               </ul>
@@ -331,7 +346,7 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
                     className="w-20 rounded px-2 py-1 text-right text-sm tabular-nums" style={inputStyle} />
                 </span>
               ) : (
-                <span className="text-base font-bold tabular-nums" style={{ color: 'var(--qs-warning)' }}>
+                <span className="text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>
                   {t.key === EXTRA_LINE.key ? '+' : ''}{dollars(Number(values[t.key]))}
                 </span>
               )}

@@ -24,9 +24,9 @@ export function formatDate(ts) {
 
 // Can the competing agent's book be bought? (competitor_agents.book_ownership)
 export const BOOK_OWNERSHIP = {
-  acquirable:     { label: 'Agent owns it',   cls: 'bg-green-100 text-green-700', hint: 'The agent could sell you their book' },
+  acquirable:     { label: 'Independent',     cls: 'bg-green-100 text-green-700', hint: 'The agent owns the book and could sell it to you' },
   allstate:       { label: 'Allstate book',   cls: 'bg-primary-100 text-primary-700', hint: 'Buy through Allstate’s agency transfer process' },
-  not_acquirable: { label: 'Carrier owns it', cls: 'bg-gray-200 text-gray-600', hint: 'Can’t be bought — you could recruit the agent instead' },
+  not_acquirable: { label: 'Captive',         cls: 'bg-gray-200 text-gray-600', hint: 'The carrier owns the book — you could recruit the agent instead' },
   check:          { label: 'Not sure',        cls: 'bg-yellow-100 text-yellow-700', hint: 'Depends on the agent’s contract — confirm first' },
 };
 

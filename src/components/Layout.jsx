@@ -296,7 +296,8 @@ function Layout({ forcePlane = null }) {
         {/* Animated gradient line at top */}
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x"></div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5">
+        {/* Collapses to one compact row once the page scrolls. */}
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 transition-all duration-300 ${scrolled ? 'py-2' : 'py-4 sm:py-5'}`}>
           <div className="flex items-center justify-between">
             {/* Brand with Advanced Styling */}
             <NavLink to="/" className="flex items-center gap-2 sm:gap-3 group">
@@ -315,9 +316,11 @@ function Layout({ forcePlane = null }) {
                 <div className="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent group-hover:from-emerald-400 group-hover:via-teal-400 group-hover:to-cyan-400 transition-all duration-300">
                   insuredbycam
                 </div>
-                <div className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                  {agencyBrandName || 'Insurance shopping, simplified'}
-                </div>
+                {!scrolled && (
+                  <div className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
+                    {agencyBrandName || 'Insurance shopping, simplified'}
+                  </div>
+                )}
               </div>
             </NavLink>
 
@@ -595,6 +598,7 @@ function Layout({ forcePlane = null }) {
         <BottomTabBar
           onMorePress={() => setDrawerOpen(prev => !prev)}
           moreActive={drawerOpen || isDrawerRouteActive}
+          drawerOpen={drawerOpen}
         />
       )}
 

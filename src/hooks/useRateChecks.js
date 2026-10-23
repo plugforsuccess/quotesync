@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
 import { prepareDecPage } from '../lib/rateCheckApi';
 
+// Test/QA records (is_test) are filtered out of every list here and every view.
 export const RATE_CHECK_LIST_COLUMNS = `
   id, agency_id, lead_id, created_at, first_name, phone, zip, status,
   carrier, policy_type, current_premium, term_months, annual_premium,
@@ -62,6 +63,7 @@ export const useRateChecks = (agencyId, statuses) => {
         .from('rate_checks')
         .select(RATE_CHECK_LIST_COLUMNS)
         .eq('agency_id', agencyId)
+        .eq('is_test', false)
         .is('duplicate_of', null) // a policy sent twice shows once
         .order('created_at', { ascending: false })
         .limit(500);
@@ -338,6 +340,32 @@ export const useDeleteRateCheckRule = () => {
   });
 };
 
+// Save a new run order (dragged in the Rules list): priorities 10, 20, 30… in the
+// given order, only for rules whose priority changes, then re-run the rules once.
+export const useReorderRateCheckRules = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ agencyId, rules }) => {
+      const changed = rules.map((r, i) => ({ id: r.id, priority: (i + 1) * 10, was: r.priority })).filter(r => r.priority !== r.was);
+      for (const r of changed) {
+        const { error } = await supabase.from('rate_check_rules').update({ priority: r.priority, updated_at: new Date().toISOString() }).eq('id', r.id);
+        if (error) throw error;
+      }
+      if (changed.length) await supabase.rpc('rate_check_redecide', { p_agency_id: agencyId });
+    },
+    onMutate: async ({ agencyId, rules }) => {
+      // Show the new order right away.
+      const key = queryKeys.rateChecks.rules(agencyId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData(key);
+      queryClient.setQueryData(key, rules.map((r, i) => ({ ...r, priority: (i + 1) * 10 })));
+      return { key, previous };
+    },
+    onError: (_e, _v, ctx) => { if (ctx) queryClient.setQueryData(ctx.key, ctx.previous); },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.all() }),
+  });
+};
+
 // Add the default rule set (only if the agency has none).
 export const useSeedRateCheckRules = () => {
   const queryClient = useQueryClient();
@@ -362,6 +390,7 @@ export const useRateCheckInvites = (agencyId) =>
         .from('rate_check_invites')
         .select('*')
         .eq('agency_id', agencyId)
+        .eq('is_test', false)
         .order('created_at', { ascending: false })
         .limit(1000);
       if (error) throw error;
@@ -487,6 +516,7 @@ export const usePromoterScans = (agencyId) =>
         .from('rate_checks')
         .select('id, promoter_id, phone, first_name, policy_type, carrier, status, duplicate_of, created_at, annual_premium, allstate_premium, bound_premium')
         .eq('agency_id', agencyId)
+        .eq('is_test', false)
         .not('promoter_id', 'is', null)
         .order('created_at', { ascending: true })
         .limit(5000);

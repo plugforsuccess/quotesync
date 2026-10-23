@@ -11,11 +11,16 @@ const tabs = [
   { to: '/admin/revenue-projections', label: 'Revenue', icon: DollarSign },
 ];
 
-function BottomTabBar({ onMorePress, moreActive }) {
+function BottomTabBar({ onMorePress, moreActive, drawerOpen = false }) {
   const location = useLocation();
 
-  const isTabActive = (to) =>
+  const onTab = (to) =>
     location.pathname === to || location.pathname.startsWith(to + '/');
+  // Exactly one tab is active: an open More drawer wins; otherwise a tab whose path
+  // matches wins over More (Rate Checks is under /agency/leads but also in the drawer).
+  const anyTab = tabs.some(t => onTab(t.to));
+  const isTabActive = (to) => !drawerOpen && onTab(to);
+  const moreOn = drawerOpen || (moreActive && !anyTab);
 
   return (
     <div
@@ -66,23 +71,23 @@ function BottomTabBar({ onMorePress, moreActive }) {
           onClick={onMorePress}
           className="flex flex-col items-center justify-center flex-1 h-full relative"
         >
-          {moreActive && (
+          {moreOn && (
             <div className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-[3px] rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" />
           )}
           <div
             className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all duration-200 ${
-              moreActive ? 'bg-emerald-500/15' : ''
+              moreOn ? 'bg-emerald-500/15' : ''
             }`}
           >
             <Grid
               className={`w-5 h-5 transition-colors duration-200 ${
-                moreActive ? 'text-emerald-400' : 'text-white/60'
+                moreOn ? 'text-emerald-400' : 'text-white/60'
               }`}
-              strokeWidth={moreActive ? 2.2 : 1.8}
+              strokeWidth={moreOn ? 2.2 : 1.8}
             />
             <span
               className={`text-[10px] leading-tight font-medium transition-colors duration-200 ${
-                moreActive ? 'text-emerald-400' : 'text-white/60'
+                moreOn ? 'text-emerald-400' : 'text-white/60'
               }`}
             >
               More
