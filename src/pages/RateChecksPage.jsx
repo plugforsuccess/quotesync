@@ -226,6 +226,9 @@ function TabBar({ tab, setTab }) {
   );
 }
 
+// Start quote and Text now: same height and width, so they stack as a pair.
+const CARD_BTN = 'inline-flex h-11 w-36 shrink-0 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold';
+
 // One household in the inbox: who, what they have, what it costs, and the next step.
 function InboxCard({ h, now, onOpen }) {
   const open = OPEN_STATUSES.includes(h.status);
@@ -236,20 +239,20 @@ function InboxCard({ h, now, onOpen }) {
     <li onClick={onOpen} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          {h.lead.first_name || 'No name'}{h.lead.upload_source === 'agent' && <StaffTag />}
+          {h.lead.first_name || 'No name'}
+          {h.policies.length > 1 && <span className="ml-1.5 text-sm font-normal" style={{ color: 'var(--qs-subtle)' }}>· {h.policies.length} policies</span>}
+          {h.lead.upload_source === 'agent' && <StaffTag />}
         </span>
         <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
       </div>
-      <p className="text-sm" style={{ color: 'var(--qs-text)' }}>
-        {householdLine(h)}{h.policies.length > 1 && <span style={{ color: 'var(--qs-subtle)' }}> · {h.policies.length} policies</span>}
-      </p>
+      <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{householdLine(h)}</p>
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
         </span>
         {open
-          ? <span className="inline-flex min-h-[44px] shrink-0 items-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote ›</span>
+          ? <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
           : <StatusChip status={h.status} quiet />}
       </div>
       {(open && (h.decision || (late && h.lead.phone))) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name ? (
@@ -260,7 +263,7 @@ function InboxCard({ h, now, onOpen }) {
           </span>
           {open && late && h.lead.phone && (
             <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
-              className="inline-flex min-h-[40px] shrink-0 items-center gap-1 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
+              className={CARD_BTN} style={inputStyle}>
               <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text now
             </a>
           )}
