@@ -23,6 +23,21 @@ const VIEWS = {
   atl: [ATL_X - 75, ATL_Y - 75, 150, 165],
 };
 
+// Reference cities for each view: [name, ZIP for its position, label side].
+const CITIES = {
+  ga: [
+    ['Atlanta', '30303', 'r'], ['Dalton', '30720', 'r'], ['Rome', '30161', 'r'], ['Gainesville', '30501', 'r'], ['Athens', '30601', 'r'],
+    ['Augusta', '30901', 'l'], ['Columbus', '31901', 'r'], ['Macon', '31201', 'r'], ['Warner Robins', '31088', 'r'], ['Statesboro', '30458', 'l'],
+    ['Savannah', '31401', 'l'], ['Albany', '31701', 'r'], ['Valdosta', '31601', 'r'], ['Brunswick', '31520', 'l'],
+  ],
+  atl: [
+    ['Atlanta', '30303', 'l'], ['Marietta', '30060', 'l'], ['Kennesaw', '30144', 'l'], ['Canton', '30114', 'r'], ['Alpharetta', '30009', 'r'],
+    ['Cumming', '30040', 'r'], ['Buford', '30518', 'l'], ['Lawrenceville', '30046', 'l'], ['Snellville', '30078', 'l'], ['Decatur', '30030', 'r'],
+    ['Conyers', '30012', 'l'], ['Covington', '30014', 'l'], ['Douglasville', '30134', 'l'], ['Stockbridge', '30281', 'r'], ['McDonough', '30253', 'r'],
+    ['Fayetteville', '30214', 'l'], ['Peachtree City', '30269', 'l'], ['Newnan', '30263', 'l'],
+  ],
+};
+
 /**
  * agents: the agents the list shows (every filter but ZIP); scans: rate checks
  * (competitor_agent_id, zip). Bubbles count customers per ZIP for those agents.
@@ -93,6 +108,22 @@ export default function AgentsMap({ agents, scans, zip, onPickZip }) {
             </g>
           );
         })}
+        {/* City names on top (taps pass through), with a halo; pushed past a bubble sitting on the city. */}
+        <g pointerEvents="none" aria-hidden="true">
+          {CITIES[view].filter(([, z]) => GA_ZIPS[z]).map(([name, z, side]) => {
+            const [x, y] = GA_ZIPS[z];
+            const under = Math.max(0, ...bubbles.filter(b => Math.hypot(b.x - x, b.y - y) < radius(b.customers)).map(b => radius(b.customers)));
+            const off = (under ? under + 2 * k : 4 * k) * (side === 'l' ? -1 : 1);
+            return (
+              <g key={name}>
+                {!under && <circle cx={x} cy={y} r={1.8 * k} fill="var(--qs-text)" />}
+                <text x={x + off} y={y} dy="0.35em" textAnchor={side === 'l' ? 'end' : 'start'}
+                  fontSize={10.5 * k} fontWeight={name === 'Atlanta' ? 700 : 500} fill="var(--qs-text)"
+                  stroke="var(--qs-elevated)" strokeWidth={3 * k} strokeLinejoin="round" style={{ paintOrder: 'stroke' }}>{name}</text>
+              </g>
+            );
+          })}
+        </g>
       </svg>
 
       <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>
