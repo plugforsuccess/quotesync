@@ -46,10 +46,9 @@ export function LiveDelta({ current, price, className = '' }) {
   );
 }
 
-// Every policy this phone number sent: which one is being worked on, which are
-// quoted, and the bundle so far. The win is decided on the bundle.
+// Every policy this phone number sent and which one is being worked on. The
+// household's savings live in the goal header, not here.
 export function HouseholdCard({ rc, household, onSelect }) {
-  const g = householdGoal(household);
   return (
     <div className="flex grow flex-col rounded-xl p-4" style={CARD_STYLE}>
       <h3 className="text-lg font-bold leading-tight" style={{ color: 'var(--qs-bright)' }}>
@@ -72,21 +71,6 @@ export function HouseholdCard({ rc, household, onSelect }) {
           );
         })}
       </div>
-      {g.bundleAllstate != null && (
-        <div className="mt-3 rounded-lg px-3 py-2.5" style={{ background: 'var(--qs-card)', border: '1px solid var(--qs-border)' }}>
-          <p className="text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>
-            Bundle so far{g.quoted < g.total ? ` · ${g.quoted} of ${g.total}` : ''}
-          </p>
-          <p className="text-base" style={{ color: 'var(--qs-bright)' }}>
-            <b>{money(g.bundleAllstate)}/yr</b> <span style={{ color: 'var(--qs-subtle)' }}>vs {money(g.quoted < g.total ? g.bundleCurrent : g.target)}/yr</span>
-          </p>
-          {g.saved != null && g.saved !== 0 && (
-            <p className="text-sm font-semibold" style={{ color: tone(g.saved) }}>
-              {g.saved > 0 ? `Saves ${money(g.saved)}/yr` : `${money(-g.saved)}/yr more`}{g.quoted < g.total ? ' so far' : ''}
-            </p>
-          )}
-        </div>
-      )}
     </div>
   );
 }
