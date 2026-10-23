@@ -22,7 +22,7 @@ export const STATUS = {
 
 // rate_checks.decision → the card. `cls` is the badge; `tone` picks the card colours.
 export const DECISION = {
-  quote_allstate:          { label: 'Quote Allstate',            tone: 'success', cls: 'bg-green-100 text-green-700' },
+  quote_allstate:          { label: 'Quote Allstate P&C',        tone: 'success', cls: 'bg-green-100 text-green-700' },
   quote_allstate_umbrella: { label: 'Quote Allstate Auto + HO + PUP', tone: 'success', cls: 'bg-green-100 text-green-700' },
   expanded_market:         { label: 'Expanded market',           tone: 'info',    cls: 'bg-primary-100 text-primary-700' },
   double_check:            { label: 'Double check',              tone: 'warning', cls: 'bg-yellow-100 text-yellow-700' },

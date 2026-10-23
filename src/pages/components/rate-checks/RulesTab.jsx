@@ -65,7 +65,7 @@ export default function RulesTab({ agencyId, canEdit }) {
   return (
     <div className="space-y-4">
       <div className="dark-card text-sm" style={{ padding: 12, color: 'var(--qs-subtle)' }}>
-        Rules run on every scan and pick where it goes: <span style={{ color: 'var(--qs-text)' }}>Quote Allstate, + umbrella, Expanded market, Double check, Manual Review, or Refer</span>.
+        Rules run on every scan and pick where it goes: <span style={{ color: 'var(--qs-text)' }}>Quote Allstate P&amp;C, + umbrella, Expanded market, Double check, Manual Review, or Refer</span>.
         The strongest result wins. Unreadable scans always go to Manual Review. This is a pre-screen from what the dec page shows, not underwriting.
       </div>
 
@@ -149,7 +149,7 @@ export default function RulesTab({ agencyId, canEdit }) {
         ) : error ? (
           <div className="p-8 text-center text-red-600">Error loading rules.</div>
         ) : rules.length === 0 ? (
-          <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>No rules yet — every scan will say Quote Allstate.</div>
+          <div className="p-8 text-center" style={{ color: 'var(--qs-subtle)' }}>No rules yet — every scan will say Quote Allstate P&amp;C.</div>
         ) : (
           <ul>
             {rules.map(r => {
