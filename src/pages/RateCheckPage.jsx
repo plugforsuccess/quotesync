@@ -54,7 +54,7 @@ const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
 // right after the agent card, then alternating photo / story.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
-  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley with two people in an office', caption: 'Face to face, every time', position: '50% 66%' },
+  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, the day he bought the agency', caption: 'Closing day in Covington, GA: the day I bought the agency', position: '50% 66%' },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
   { key: 'court', title: 'My story, on the court', paragraphs: [
