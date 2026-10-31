@@ -15,6 +15,7 @@ import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
 import {
   AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -1117,28 +1118,30 @@ function Field({ label, htmlFor, children }) {
 // ── Products we insure, and the carriers (landing page, below the how-to) ────
 // Titles and lines are editable in place (copy editor); keys are stable, so reorder freely.
 const PRODUCTS = [
-  ['auto', 'Auto', 'Cars, trucks and SUVs'],
-  ['home', 'Home', 'Homeowners, including high-value homes'],
-  ['condo', 'Condo', 'Your unit and what’s in it'],
-  ['renters', 'Renters', 'Your things and your liability'],
-  ['landlord', 'Landlord', 'Homes you rent out'],
-  ['umbrella', 'Umbrella', 'Extra liability over home and auto'],
-  ['motorcycle', 'Motorcycle', 'Street bikes, cruisers and touring'],
-  ['boat', 'Boat', 'Boats, personal watercraft and trailers'],
-  ['mobile-home', 'Mobile homes', 'Manufactured and mobile homes'],
-  ['life', 'Life', 'Term and permanent life insurance'],
-  ['commercial', 'Commercial', 'Business owners, commercial auto, liability and workers’ comp'],
+  ['auto', Car, 'Auto', 'Cars & trucks'],
+  ['home', House, 'Home', 'Homeowners'],
+  ['condo', Building2, 'Condo', 'Unit & belongings'],
+  ['renters', Sofa, 'Renters', 'Your belongings'],
+  ['landlord', KeyRound, 'Landlord', 'Homes you rent out'],
+  ['umbrella', Umbrella, 'Umbrella', 'Extra liability'],
+  ['motorcycle', Motorbike, 'Motorcycle', 'Bikes & cruisers'],
+  ['boat', Sailboat, 'Boat', 'Boats & watercraft'],
+  ['mobile-home', Caravan, 'Mobile homes', 'Manufactured homes'],
+  ['life', HeartPulse, 'Life', 'Term & permanent'],
+  ['commercial', Briefcase, 'Commercial', 'Business insurance'],
 ];
 
+// Three tiles to a row; a short last row is centred.
 function ProductsWeInsure() {
   return (
     <section className="mt-10" aria-labelledby="rc-products">
       <h2 id="rc-products" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.products.heading">Products we insure</T></h2>
-      <ul className="mt-3 divide-y divide-slate-200">
-        {PRODUCTS.map(([key, name, sub]) => (
-          <li key={key} className="py-3">
-            <p className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k={`rc.products.${key}.title`}>{name}</T></p>
-            <p className="text-sm text-slate-500"><T k={`rc.products.${key}.line`}>{sub}</T></p>
+      <ul className="mt-3 flex flex-wrap justify-center gap-2">
+        {PRODUCTS.map(([key, Icon, name, sub]) => (
+          <li key={key} className="flex w-[calc((100%-1rem)/3)] flex-col items-center rounded-2xl border border-slate-200 bg-white px-1.5 py-3.5 text-center">
+            <Icon className="h-6 w-6 text-blue-700" aria-hidden="true" strokeWidth={1.75} />
+            <p className="mt-2 text-[15px] font-extrabold leading-tight tracking-tight text-slate-900"><T k={`rc.products.${key}.title`}>{name}</T></p>
+            <p className="mt-0.5 text-[11px] leading-snug text-slate-500"><T k={`rc.products.${key}.line`}>{sub}</T></p>
           </li>
         ))}
       </ul>
