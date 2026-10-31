@@ -1152,13 +1152,14 @@ function ProductsWeInsure() {
 }
 
 // Each carrier's own published logo file (public/logos/carriers), only trimmed and resized.
+// Chubb is its official vector (published in white) filled with Chubb turquoise, #01C1D6.
 // No redraws: a carrier without its official file shows its name until one is added
 // (here, or uploaded in the copy editor). JPGs keep their white background; the page
 // blends it away (mix-blend-multiply) rather than editing the artwork.
 /* TODO(compliance): confirm with Allstate marketing how other carriers' logos may be shown on the agency site. */
 const CARRIERS = [
   ['allstate', 'Allstate', '/logos/carriers/allstate.jpg'],
-  ['chubb', 'Chubb', '/logos/carriers/chubb.png'],
+  ['chubb', 'Chubb', '/logos/carriers/chubb.svg'],
   ['american-modern', 'American Modern', '/logos/carriers/american-modern.png'],
   ['national-general', 'National General', null],
   ['foremost', 'Foremost', null],
