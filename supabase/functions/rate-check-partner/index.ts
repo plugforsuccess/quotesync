@@ -4,7 +4,8 @@
 // The partner portal (/partner/TOKEN). The token is a long secret the agency sends the
 // partner privately; it is not the public share code.
 //   { mode: 'portal', token }                       → who they are, the agreement, and (once
-//                                                     signed) their share code and earnings
+//                                                     signed, or while AGREEMENT_REQUIRED is off)
+//                                                     their share code and earnings
 //   { mode: 'sign', token, signed_name, accept }    → records the signature; from then on
 //                                                     rate-check tags scans from their link
 //   { mode: 'photo', token, image, consent }        → (signed partners) their photo for their
@@ -45,6 +46,13 @@ const json = (body: unknown, status: number, cors: Record<string, string>) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
 
 export const AGREEMENT_VERSION = 'partner-v2'
+// The agreement is off until the attorney / Allstate compliance review is done:
+// links work and earnings show without signing, and the draft text isn't shown.
+// Turning it on (with the reviewed text and a new AGREEMENT_VERSION) makes each
+// partner's portal ask them to sign on their next visit, and their link pauses
+// until they do. Keep in step with PARTNER_AGREEMENT_REQUIRED in rate-check and
+// src/lib/partnerProgram.js.
+export const AGREEMENT_REQUIRED = false
 
 // Same tiers and defaults as src/pages/components/rate-checks/partnerPay.js.
 const TIERS: [string, string, number][] = [
@@ -225,8 +233,10 @@ Deno.serve(async (req) => {
   const agencyName = agency?.name || agency?.brand_name || 'the Agency'
   const text = agreementText(agencyName, p.name, schedule, p.monthly_cap)
   const signed = p.agreement_version === AGREEMENT_VERSION && !!p.agreement_signed_at
+  const cleared = signed || !AGREEMENT_REQUIRED // past the agreement gate (or there isn't one yet)
 
   if (body.mode === 'sign') {
+    if (!AGREEMENT_REQUIRED) return json({ error: 'There’s no agreement to sign yet.' }, 409, cors)
     if (signed) return json({ signed: true }, 200, cors)
     const signedName = String(body.signed_name || '').replace(/\s+/g, ' ').trim()
     if (body.accept !== true) return json({ error: 'Tick the box to agree.' }, 400, cors)
@@ -244,7 +254,7 @@ Deno.serve(async (req) => {
   }
 
   if (body.mode === 'photo' || body.mode === 'photo_remove') {
-    if (!signed) return json({ error: 'Sign the agreement first.' }, 409, cors)
+    if (!cleared) return json({ error: 'Sign the agreement first.' }, 409, cors)
     const path = `${p.agency_id}/${p.id}.jpg`
     if (body.mode === 'photo_remove') {
       await supabase.storage.from('partner-photos').remove([path])
@@ -267,7 +277,7 @@ Deno.serve(async (req) => {
   }
 
   if (body.mode === 'w9') {
-    if (!signed) return json({ error: 'Sign the agreement first.' }, 409, cors)
+    if (!cleared) return json({ error: 'Sign the agreement first.' }, 409, cors)
     const w9 = checkW9(body)
     if ('error' in w9) return json({ error: w9.error }, 400, cors)
     const when = new Date()
@@ -294,12 +304,13 @@ Deno.serve(async (req) => {
   if (body.mode === 'portal') {
     const base = {
       first_name: String(p.name).split(/\s+/)[0], name: p.name, agency_name: agencyName, active: p.active,
-      agreement: { version: AGREEMENT_VERSION, text, signed, signed_at: signed ? p.agreement_signed_at : null },
+      // The draft text is only sent once the agreement is live.
+      agreement: { required: AGREEMENT_REQUIRED, version: AGREEMENT_VERSION, text: AGREEMENT_REQUIRED ? text : null, signed, signed_at: signed ? p.agreement_signed_at : null },
       schedule, monthly_cap: p.monthly_cap,
       photo_url: p.photo_consent_at ? p.photo_url : null,
       w9: { on_file: !!p.w9_received_at, tin_type: p.w9_tin_type, last4: p.w9_tin_last4, signed_at: p.w9_received_at, revision: W9_REVISION },
     }
-    if (!signed) return json(base, 200, cors)
+    if (!cleared) return json(base, 200, cors)
     const [{ data: scans }, { data: payouts }] = await Promise.all([
       supabase.from('rate_checks').select('id, phone, first_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at')
         .eq('promoter_id', p.id).order('created_at', { ascending: true }).limit(5000),

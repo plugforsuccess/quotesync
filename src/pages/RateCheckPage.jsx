@@ -426,25 +426,47 @@ export default function RateCheckPage() {
     </>
   );
 
-  const banner = (
+  // Who sent the link: a partner (with their photo once they've agreed to show it) or a producer.
+  const whoSent = invite?.promoter_name ? (
+    <div className="mb-5 flex items-center gap-3 rounded-2xl bg-blue-50 px-3 py-2.5">
+      {invite.promoter_photo_url && (
+        <img src={invite.promoter_photo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white" />
+      )}
+      <span className="min-w-0">
+        <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this with you</span>
+        <span className="block text-xs text-slate-600">{invite.promoter_name} gets a referral fee for sharing.</span>
+      </span>
+    </div>
+  ) : invite ? (
+    <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.event_name ? ` after ${invite.event_name}` : ''}.
+    </p>
+  ) : null;
+  // The same note on the landing page's blue hero.
+  const whoSentHero = invite?.promoter_name ? (
+    <div className="mb-6 flex items-center gap-3 rounded-2xl bg-white/10 p-3 pr-4 ring-1 ring-white/20 backdrop-blur-sm lg:max-w-md">
+      {invite.promoter_photo_url ? (
+        <img src={invite.promoter_photo_url} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2" style={{ '--tw-ring-color': ACCENT }} />
+      ) : (
+        <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-extrabold ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
+          {invite.promoter_name.charAt(0).toUpperCase()}
+        </span>
+      )}
+      <span className="min-w-0">
+        <span className="block text-[17px] font-bold text-white">{invite.promoter_name} shared this with you</span>
+        <span className="block text-xs text-blue-100">{invite.promoter_name} gets a referral fee for sharing.</span>
+      </span>
+    </div>
+  ) : invite ? (
+    <p className="mb-6 inline-block rounded-xl bg-white/10 px-3 py-2 text-sm text-white ring-1 ring-white/20">
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.event_name ? ` after ${invite.event_name}` : ''}.
+    </p>
+  ) : null;
+
+  const notices = (
     <>
-      {invite?.promoter_name && (
-        <div className="mb-5 flex items-center gap-3 rounded-2xl bg-blue-50 px-3 py-2.5">
-          {invite.promoter_photo_url && (
-            <img src={invite.promoter_photo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white" />
-          )}
-          <span className="min-w-0">
-            <span className="block font-bold text-slate-900">{invite.promoter_name} shared this with you</span>
-            <span className="block text-xs text-slate-600">{invite.promoter_name} gets a referral fee for sharing.</span>
-          </span>
-        </div>
-      )}
-      {invite && !invite.promoter_name && (
-        <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
-          {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
-          {invite.event_name ? ` after ${invite.event_name}` : ''}.
-        </p>
-      )}
       {inviteExpired && (
         <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">That link has expired, but you can still check your rate below.</p>
       )}
@@ -456,6 +478,7 @@ export default function RateCheckPage() {
       )}
     </>
   );
+  const banner = <>{whoSent}{notices}</>;
 
   // ── Step 3: results ──
   if (step === 'results') {
@@ -666,7 +689,7 @@ export default function RateCheckPage() {
       </ActionBar>
     )}>
       {fileInputs}
-      {banner}
+      {drafts.length === 0 && !returning ? notices : banner}
       {returning && (
         <p className="mb-4 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
           <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
@@ -694,7 +717,7 @@ export default function RateCheckPage() {
             </button>
           </>
         ) : (
-          <Landing onUpload={() => openFiles()} onCamera={() => openCamera()}
+          <Landing note={whoSentHero} onUpload={() => openFiles()} onCamera={() => openCamera()}
             onDropFiles={(files) => onPick({ target: { files, value: '' } })} />
         )
       ) : (
@@ -1243,7 +1266,7 @@ const HOW = [
   ['3', MessageSquare, 'Get your quote', 'Usually within 30 minutes during business hours.'],
 ];
 
-function Landing({ onUpload, onCamera, onDropFiles }) {
+function Landing({ note, onUpload, onCamera, onDropFiles }) {
   const [howTo, setHowTo] = useState(false);
   return (
     <>
@@ -1255,6 +1278,7 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
           <ConsumerNav current="rate" />
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
             <div>
+              {note}
               <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="rc.eyebrow">Free rate check · Georgia</T></p>
               <h1 className="mt-3 text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
                 <T k="rc.headline">Get a **second opinion** on your insurance.</T>
