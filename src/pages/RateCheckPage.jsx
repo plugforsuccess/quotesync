@@ -733,6 +733,9 @@ export default function RateCheckPage() {
             <p className="mt-1">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</p>
           </details>
 
+          <WhatIWrite />
+          <Carriers />
+
         </>
       ) : (
         <>
@@ -1100,6 +1103,72 @@ function Field({ label, htmlFor, children }) {
   );
 }
 
+// ── What Cam writes, and with whom (landing page, below the how-to) ──────────
+const PRODUCTS = [
+  ['Auto', 'Cars, trucks and SUVs'],
+  ['Home', 'Homeowners, including high-value homes'],
+  ['Condo', 'Your unit and what’s in it'],
+  ['Renters', 'Your things and your liability'],
+  ['Landlord', 'Homes you rent out'],
+  ['Umbrella', 'Extra liability over home and auto'],
+  ['Motorcycle & boat', 'Bikes, boats and other toys'],
+  ['Business', 'Commercial auto, liability and workers’ comp'],
+];
+
+function WhatIWrite() {
+  return (
+    <section className="mt-10" aria-labelledby="rc-products">
+      <h2 id="rc-products" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">What Cam writes</h2>
+      <ul className="mt-3 divide-y divide-slate-200">
+        {PRODUCTS.map(([name, sub]) => (
+          <li key={name} className="py-3">
+            <p className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">{name}</p>
+            <p className="text-sm text-slate-500">{sub}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// Allstate first; the rest are expanded markets or commercial only.
+/* TODO(compliance): confirm with Allstate marketing how other carriers may be shown on the agency site. */
+const CARRIERS = [
+  ['Allstate', 'Primary'],
+  ['Chubb', 'Expanded markets'],
+  ['American Modern', 'Expanded markets'],
+  ['National General', 'Expanded markets'],
+  ['Foremost', 'Expanded markets'],
+  ['Liberty Mutual', 'Commercial'],
+  ['Progressive', 'Commercial'],
+  ['The Hartford', 'Commercial'],
+];
+
+function Carriers() {
+  const row = (hidden) => (
+    <ul className="flex shrink-0 gap-3 pr-3" aria-hidden={hidden || undefined}>
+      {CARRIERS.map(([name, tag]) => (
+        <li key={name} className="flex shrink-0 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3">
+          <span className={`whitespace-nowrap text-lg font-extrabold tracking-tight ${name === 'Allstate' ? 'text-blue-800' : 'text-slate-800'}`}>{name}</span>
+          <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">{tag}</span>
+        </li>
+      ))}
+    </ul>
+  );
+  return (
+    <section className="mt-10" aria-labelledby="rc-carriers">
+      <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 32s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;flex-wrap:wrap;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;row-gap:.75rem}}'}</style>
+      <h2 id="rc-carriers" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Carriers Cam writes</h2>
+      <div className="rc-marquee-wrap -mx-4 mt-3 overflow-hidden px-4 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+        <div className="rc-marquee flex w-max">{row(false)}{row(true)}</div>
+      </div>
+      <p className="mt-3 text-sm text-slate-500">
+        Allstate first. When Allstate isn&apos;t the right fit, Cam can quote other carriers through expanded markets, and for business insurance.
+      </p>
+    </section>
+  );
+}
+
 const STEPS = ['Policies', 'You', 'Results'];
 function Shell({ children, step, bar, center = false }) {
   return (
@@ -1127,7 +1196,11 @@ function Shell({ children, step, bar, center = false }) {
 export function RateCheckFooter({ padForBar = false }) {
   return (
     <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'}`}>
-      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1">
+      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
+        <Link to="/courses" className="font-semibold text-slate-600 underline">Drivers Ed</Link>
+        <Link to="/news" className="font-semibold text-slate-600 underline">Insurance news</Link>
+      </nav>
+      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legal">
         <Link to="/ratecheck-privacy" className="underline">Rate Check privacy notice</Link>
         <Link to="/privacy" className="underline">Privacy policy</Link>
         <Link to="/terms" className="underline">Terms</Link>

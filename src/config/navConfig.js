@@ -9,10 +9,13 @@ export const PLANES = {
 };
 
 // Consumer plane navigation (public/logged-out users)
-// Rate Check (the dec-page scan at /) is the one lead path. Newsroom, Courses, Store
-// and Giveaway still work by direct link; they're just not in the nav.
+// Three consumer pages: Rate Check (the dec-page scan at /, the front door and the one
+// lead path), Drivers Ed, and the content pages (Newsroom). Store, Giveaway, the old
+// quote page and the wizard still work by direct link; they're just not in the nav.
 export const consumerNav = [
   { to: '/', label: 'Check my rate', icon: '📸', isPrimary: true, end: true },
+  { to: '/courses', label: 'Drivers Ed', icon: '🚗' },
+  { to: '/news', label: 'News', icon: '📰' },
 ];
 
 // ── Primary nav items (always visible in top bar) ────────────────────────────
