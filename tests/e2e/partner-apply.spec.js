@@ -17,11 +17,13 @@ test('apply to be a referral partner from Drivers Ed', async ({ page }) => {
   await page.getByLabel('First name').fill('Dana');
   await page.getByLabel('Mobile number').fill('4045551212');
   await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
-  await page.getByText('Yes', { exact: true }).click();
+  await expect(page.getByText('Is Cam Wiley Agency your agent?')).toHaveCount(0);
+  await page.getByRole('group', { name: 'Are you an Allstate customer?' }).getByText('Yes', { exact: true }).click();
+  await page.getByRole('group', { name: 'Is Cam Wiley Agency your agent?' }).getByText('Not sure', { exact: true }).click();
   await page.getByLabel(/Who would you share it with/).selectOption('Coworkers');
   await apply.click();
 
   await expect(page.getByText('Thanks, Dana!')).toBeVisible();
   expect(posts).toHaveLength(1);
-  expect(posts[0]).toMatchObject({ mode: 'apply', first_name: 'Dana', phone: '4045551212', is_customer: 'yes', audience: 'Coworkers', source: 'drivers_ed' });
+  expect(posts[0]).toMatchObject({ mode: 'apply', first_name: 'Dana', phone: '4045551212', is_customer: 'allstate_unsure', audience: 'Coworkers', source: 'drivers_ed' });
 });

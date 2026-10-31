@@ -76,12 +76,28 @@ const formatPhone = (s) => {
   if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 };
+// A row of tap-to-pick answers (radio buttons styled as buttons).
+function Choice({ legend, name, value, options, onChange }) {
+  return (
+    <fieldset className="mt-4">
+      <legend className="text-sm font-semibold text-slate-700">{legend}</legend>
+      <div className={`mt-1.5 grid gap-2 ${options.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+        {options.map(([v, l]) => (
+          <label key={v} className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-semibold ${value === v ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-700'}`}>
+            <input type="radio" name={name} value={v} checked={value === v} onChange={() => onChange(v)} className="sr-only" /> {l}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
 const input = 'mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-[#0F2D6B] placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
 
 // The referral partner program: why (you're already taking the course for the discount —
 // your friends are probably overpaying too), how, and a short application.
 function PartnerProgram() {
-  const [f, setF] = useState({ first: '', last: '', phone: '', email: '', customer: '', audience: '' });
+  const [f, setF] = useState({ first: '', last: '', phone: '', email: '', allstate: '', agent: '', audience: '' });
   const [state, setState] = useState({ status: 'idle', error: '' });
   const set = (k) => (e) => setF(v => ({ ...v, [k]: k === 'phone' ? formatPhone(e.target.value) : e.target.value }));
   const ok = f.first.trim() && /^[2-9]\d{2}[2-9]\d{6}$/.test(phoneDigits(f.phone));
@@ -93,7 +109,7 @@ function PartnerProgram() {
       const res = await fetch(PARTNER_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
-        body: JSON.stringify({ mode: 'apply', first_name: f.first.trim(), last_name: f.last.trim(), phone: phoneDigits(f.phone), email: f.email.trim(), is_customer: f.customer || null, audience: f.audience || null, source: 'drivers_ed' }),
+        body: JSON.stringify({ mode: 'apply', first_name: f.first.trim(), last_name: f.last.trim(), phone: phoneDigits(f.phone), email: f.email.trim(), is_customer: f.allstate === 'no' ? 'no' : f.allstate === 'yes' ? (f.agent || 'allstate_unsure') : null, audience: f.audience || null, source: 'drivers_ed' }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Something went wrong. Try again.');
@@ -156,16 +172,12 @@ function PartnerProgram() {
               <label className="mt-3 block text-sm font-semibold text-slate-700">Email <span className="font-normal text-slate-400">(optional)</span>
                 <input className={input} type="email" inputMode="email" autoComplete="email" value={f.email} onChange={set('email')} maxLength={160} />
               </label>
-              <fieldset className="mt-4">
-                <legend className="text-sm font-semibold text-slate-700">Are you an Allstate customer?</legend>
-                <div className="mt-1.5 grid grid-cols-2 gap-2">
-                  {[['yes', 'Yes'], ['no', 'Not yet']].map(([v, l]) => (
-                    <label key={v} className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-semibold ${f.customer === v ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-700'}`}>
-                      <input type="radio" name="customer" value={v} checked={f.customer === v} onChange={set('customer')} className="sr-only" /> {l}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
+              <Choice legend="Are you an Allstate customer?" name="allstate" value={f.allstate}
+                options={[['yes', 'Yes'], ['no', 'No']]} onChange={v => setF(x => ({ ...x, allstate: v, agent: v === 'yes' ? x.agent : '' }))} />
+              {f.allstate === 'yes' && (
+                <Choice legend="Is Cam Wiley Agency your agent?" name="agent" value={f.agent}
+                  options={[['agency', 'Yes'], ['allstate_other', 'No'], ['allstate_unsure', 'Not sure']]} onChange={v => setF(x => ({ ...x, agent: v }))} />
+              )}
               <label className="mt-4 block text-sm font-semibold text-slate-700">Who would you share it with? <span className="font-normal text-slate-400">(optional)</span>
                 <select className={input} value={f.audience} onChange={set('audience')}>
                   <option value="">Choose one</option>

@@ -336,6 +336,12 @@ function CapControl({ value, onSave }) {
   );
 }
 
+// What applicants said about being with Allstate (and with us).
+const CUSTOMER_BADGE = {
+  agency: 'Cam Wiley Agency customer', yes: 'Allstate customer', allstate_other: 'Allstate · another agent',
+  allstate_unsure: 'Allstate · agent unknown', no: 'Not with Allstate',
+};
+
 // People who asked to join from the Drivers Ed page. "Add as partner" makes the partner
 // (same as Add partner) and closes the application; then send them their portal link.
 function Applications({ agencyId, userId, canEdit, savePromoter }) {
@@ -363,7 +369,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
             <div className="min-w-0">
               <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>
                 {[a.first_name, a.last_name].filter(Boolean).join(' ')}
-                {a.is_customer === 'yes' && <span className="ml-2 rounded px-1.5 py-0.5 text-[11px] font-bold" style={{ color: 'var(--qs-success)', background: 'var(--qs-success-subtle)' }}>Allstate customer</span>}
+                {CUSTOMER_BADGE[a.is_customer] && <span className="ml-2 rounded px-1.5 py-0.5 text-[11px] font-bold" style={a.is_customer === 'agency' ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)' } : { color: 'var(--qs-text)', background: 'var(--qs-card)' }}>{CUSTOMER_BADGE[a.is_customer]}</span>}
               </p>
               <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
                 {[formatPhone(a.phone), a.email, a.audience, `applied ${formatDate(a.created_at)}`].filter(Boolean).join(' · ')}

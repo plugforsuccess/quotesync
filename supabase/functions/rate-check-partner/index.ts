@@ -15,6 +15,7 @@
 //                                                     partner-w9 bucket; the row keeps TIN type
 //                                                     and last 4 only. The TIN is never logged.
 //   { mode: 'apply', first_name, last_name, phone, email, is_customer, audience, source }
+//                                                     is_customer: agency | allstate_other | allstate_unsure | no
 //                                                   → (no token) someone asks to become a partner from
 //                                                     the Drivers Ed page; saved to
 //                                                     rate_check_partner_applications and the agency's
@@ -166,6 +167,11 @@ Deno.serve(async (req) => {
 
   // ── Apply to be a partner (public, no token) ──
   if (body?.mode === 'apply') {
+    // "Are you an Allstate customer?" then, if yes, "Is Cam Wiley Agency your agent?"
+    const CUSTOMER: Record<string, string> = {
+      agency: 'Cam Wiley Agency customer', allstate_other: 'Allstate customer with another agent',
+      allstate_unsure: 'Allstate customer, agent unknown', no: 'Not with Allstate',
+    }
     const { data: ok } = await supabase.rpc('rate_limit_hit', { p_key: `partner_apply:${clientIp}`, p_limit: 5, p_window_seconds: 3600 })
     if (ok !== true) return json({ error: 'Too many applications from here. Try again later.' }, 429, cors)
     const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) || null : null)
@@ -184,7 +190,7 @@ Deno.serve(async (req) => {
     const lastName = text(body.last_name, 60)
     const { error: insErr } = await supabase.from('rate_check_partner_applications').insert({
       agency_id: agency.id, first_name: firstName, last_name: lastName, phone, email,
-      is_customer: ['yes', 'no'].includes(body.is_customer) ? body.is_customer : null,
+      is_customer: CUSTOMER[body.is_customer] ? body.is_customer : null,
       audience: text(body.audience, 60), source: text(body.source, 40) || 'drivers_ed',
       ip_address: clientIp !== 'unknown' ? clientIp : null,
     })
@@ -195,7 +201,7 @@ Deno.serve(async (req) => {
     if (principals?.length) {
       await supabase.from('notifications').insert(principals.map((m: any) => ({
         user_id: m.user_id, type: 'PARTNER_APPLICATION', title: `${name} wants to be a referral partner`,
-        message: `${body.is_customer === 'yes' ? 'Allstate customer' : 'Not an Allstate customer yet'} · from Drivers Ed. Add them in Rate Checks → Partners.`,
+        message: `${CUSTOMER[body.is_customer] || 'Didn’t say if they’re with Allstate'} · from Drivers Ed. Add them in Rate Checks → Partners.`,
         metadata: { phone },
       })))
     }
