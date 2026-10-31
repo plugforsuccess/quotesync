@@ -33,34 +33,34 @@ export default function DefensiveDrivingSuccessPage() {
   }, [user, authLoading]);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-lg w-full rounded-2xl border border-gray-800 bg-gray-900/60 p-8 text-center">
+    <div className="flex min-h-[60vh] items-center justify-center bg-slate-50 px-4 py-14 text-slate-700">
+      <div className="max-w-lg w-full rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
         {state === 'active' ? (
           <>
-            <CheckCircle className="w-14 h-14 text-success-400 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Payment complete — you’re enrolled!</h1>
-            <p className="text-sm text-gray-300 mb-6">Your Georgia 6-Hour Defensive Driving course is ready.</p>
+            <CheckCircle className="w-14 h-14 text-emerald-500 mx-auto mb-4" />
+            <h1 className="text-2xl font-extrabold text-[#0F2D6B] mb-2">Payment complete — you’re enrolled!</h1>
+            <p className="text-sm text-slate-600 mb-6">Your Georgia 6-Hour Defensive Driving course is ready.</p>
             <Link to="/courses/defensive-driving/portal"
-              className="inline-block rounded-full px-6 py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 text-gray-950 transition">
+              className="inline-block rounded-2xl px-6 py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white transition">
               Start your course
             </Link>
           </>
         ) : state === 'checking' ? (
           <>
-            <Loader2 className="w-12 h-12 text-success-400 mx-auto mb-4 animate-spin" />
-            <h1 className="text-xl font-bold mb-2">Confirming your payment…</h1>
-            <p className="text-sm text-gray-400">This only takes a moment.</p>
+            <Loader2 className="w-12 h-12 text-blue-700 mx-auto mb-4 animate-spin" />
+            <h1 className="text-xl font-extrabold text-[#0F2D6B] mb-2">Confirming your payment…</h1>
+            <p className="text-sm text-slate-500">This only takes a moment.</p>
           </>
         ) : (
           <>
-            <Clock className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-            <h1 className="text-xl font-bold mb-2">Almost there</h1>
-            <p className="text-sm text-gray-300 mb-6">
+            <Clock className="w-12 h-12 text-amber-500 mx-auto mb-4" />
+            <h1 className="text-xl font-extrabold text-[#0F2D6B] mb-2">Almost there</h1>
+            <p className="text-sm text-slate-600 mb-6">
               Your payment is processing. If you completed checkout, your access will appear shortly —
               refresh this page or head to the course page.
             </p>
             <Link to="/courses/defensive-driving"
-              className="inline-block rounded-full px-6 py-3 text-sm font-semibold bg-gray-700 hover:bg-gray-600 text-gray-50 transition">
+              className="inline-block rounded-2xl border-2 border-blue-700 px-6 py-3 text-base font-bold text-blue-700 hover:bg-blue-50 transition">
               Back to course
             </Link>
           </>

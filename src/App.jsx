@@ -195,7 +195,9 @@ function App() {
               its own hero and footer; the Newsroom gets the shared blue bar and footer. */}
             <Route path="/courses" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
             <Route path="/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
+            <Route path="/courses/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPage /></Suspense></ErrorBoundary>} />
           <Route element={<ConsumerShell />}>
+            <Route path="/courses/defensive-driving/success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingSuccessPage /></Suspense></ErrorBoundary>} />
             <Route path="/news" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense></ErrorBoundary>} />
             <Route path="/news/:slug" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><StoryDetailPage /></Suspense></ErrorBoundary>} />
           </Route>
@@ -243,9 +245,6 @@ function App() {
 
 
 
-            {/* In-house Georgia 6-Hour Defensive Driving — enrollment + checkout */}
-            <Route path="courses/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPage /></Suspense></ErrorBoundary>} />
-            <Route path="courses/defensive-driving/success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingSuccessPage /></Suspense></ErrorBoundary>} />
             {/* Staff queue + principal overview (access gated in-page via dd_is_staff/principal) */}
             <Route path="defensive-driving/queue" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDiscountQueuePage /></Suspense></ErrorBoundary>} />
             <Route path="defensive-driving/overview" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveOverviewPage /></Suspense></ErrorBoundary>} />

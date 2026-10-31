@@ -1,6 +1,7 @@
 // src/pages/DefensiveDrivingPage.jsx
 // In-house Georgia 6-Hour Defensive Driving — marketing landing + enrollment.
-// Dark brand styling. The enrollment card (magic-link sign-in / checkout) lives
+// Consumer-site styling (royal-blue hero with the shared nav, white cards, deep-blue
+// headings, the brand green as the accent; no black). The enrollment card (magic-link sign-in / checkout) lives
 // in the hero (#enroll); CTAs throughout scroll to it.
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
@@ -12,6 +13,11 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { getDefensiveDrivingCourse, getMyEnrollment, getModules, createCheckout, formatPrice } from '../lib/ddApi';
 import { getModuleContent } from '../data/ddCourseContent';
+import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
+
+const ACCENT = '#39FF88';
+const DEEP = '#0F2D6B';
+const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 
 export default function DefensiveDrivingPage() {
   const { user, profile, loading: authLoading } = useAuth();
@@ -50,54 +56,59 @@ export default function DefensiveDrivingPage() {
   }, [user]);
 
   if (loading || authLoading) {
-    return <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <Loader2 className="w-8 h-8 text-success-400 animate-spin" />
+    return <div className="min-h-screen bg-white flex items-center justify-center">
+      <Loader2 className="w-8 h-8 text-blue-700 animate-spin" />
     </div>;
   }
   if (!course) {
-    return <div className="min-h-screen bg-gray-950 text-gray-100 flex items-center justify-center p-6">
+    return <div className="min-h-screen bg-white text-[#0F2D6B] flex items-center justify-center p-6">
       <p>This course isn’t available right now. {error}</p>
     </div>;
   }
   const price = formatPrice(course.price_cents, course.currency);
 
   return (
-    <div className="bg-gray-950 text-gray-50 min-h-screen">
+    <div className="bg-white text-slate-700 min-h-screen">
       <title>Georgia 6-Hour Defensive Driving Course | insuredbycam</title>
       {/* ── Hero ───────────────────────────────────────────── */}
-      <section className="relative overflow-hidden border-b border-gray-800">
-        <div className="absolute inset-0 bg-gradient-to-b from-success-500/10 via-gray-950 to-gray-950 pointer-events-none" />
-        <div className="relative max-w-6xl mx-auto px-4 py-12 lg:py-20 grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-start">
-          <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-3">Defensive Driving · Georgia</p>
-            <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-[1.05] mb-4">
-              {course.title}
-            </h1>
-            <p className="text-lg text-gray-300 max-w-xl mb-6">
-              A self-paced online defensive driving course built to help you earn an
-              auto-insurance premium discount. Complete the modules, pass the final exam,
-              and your certificate is forwarded to the agency automatically.
-            </p>
-            <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-300 mb-8">
-              {['100% online & self-paced', 'Progress saved automatically', 'Certificate forwarded for you'].map((t) => (
-                <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4 text-success-400" /> {t}</li>
-              ))}
-            </ul>
-            <div className="flex items-center gap-4">
-              <a href="#enroll" className="rounded-full px-7 py-3.5 text-sm font-semibold bg-success-400 hover:bg-success-300 text-gray-950 transition">
-                Enroll for {price}
-              </a>
-              <span className="text-sm text-gray-400">One-time payment</span>
-            </div>
-          </div>
-
-          <div id="enroll" className="scroll-mt-24">
-            {canceled && (
-              <div className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-                Checkout was canceled. You can start again whenever you’re ready.
+      <section className="relative overflow-hidden text-white" style={{ background: HERO_BG }}>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(55% 50% at 5% 0%, rgba(96,165,250,0.35), transparent 70%), radial-gradient(45% 45% at 100% 100%, rgba(57,255,136,0.18), transparent 70%)' }} />
+        <div className="relative max-w-6xl mx-auto px-4 lg:px-8">
+          <ConsumerNav current="drivers" />
+          <div className="py-10 lg:py-16 grid lg:grid-cols-[1.15fr_1fr] gap-10 lg:gap-14 items-start">
+            <div>
+              <Link to="/courses" className="mb-4 inline-block text-sm font-semibold text-blue-100 hover:text-white">← Drivers Ed</Link>
+              <p className="text-xs font-bold uppercase tracking-[0.16em] mb-3" style={{ color: ACCENT }}>Defensive Driving · Georgia</p>
+              <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.05] mb-4">
+                {course.title}
+              </h1>
+              <p className="text-lg text-blue-100 max-w-xl mb-6">
+                A self-paced online defensive driving course built to help you earn an
+                auto-insurance premium discount. Complete the modules, pass the final exam,
+                and your certificate is forwarded to the agency automatically.
+              </p>
+              <ul className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-blue-50 mb-8">
+                {['100% online & self-paced', 'Progress saved automatically', 'Certificate forwarded for you'].map((t) => (
+                  <li key={t} className="flex items-center gap-2"><Check className="w-4 h-4" style={{ color: ACCENT }} strokeWidth={3} /> {t}</li>
+                ))}
+              </ul>
+              <div className="flex items-center gap-4">
+                <a href="#enroll" className="rounded-2xl px-7 py-3.5 text-base font-bold shadow-lg shadow-emerald-500/25 transition hover:brightness-95" style={{ background: ACCENT, color: DEEP }}>
+                  Enroll for {price}
+                </a>
+                <span className="text-sm text-blue-100">One-time payment</span>
               </div>
-            )}
-            <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} />
+            </div>
+
+            <div id="enroll" className="scroll-mt-24">
+              {canceled && (
+                <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  Checkout was canceled. You can start again whenever you’re ready.
+                </div>
+              )}
+              <EnrollCard course={course} enrollment={enrollment} user={user} profile={profile} />
+            </div>
           </div>
         </div>
       </section>
@@ -118,7 +129,7 @@ export default function DefensiveDrivingPage() {
       </section>
 
       {/* ── How it works ───────────────────────────────────── */}
-      <section className="border-y border-gray-800 bg-gray-900/30">
+      <section className="border-y border-slate-200 bg-slate-50">
         <div className="max-w-6xl mx-auto px-4 py-16">
           <SectionHeading eyebrow="How it works" title="From sign-in to certificate in four steps" />
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -138,17 +149,17 @@ export default function DefensiveDrivingPage() {
             <ModuleCard key={m.id || i} m={m} index={i} />
           ))}
         </div>
-        <p className="mt-4 text-xs text-gray-500">Tap a module to see what it covers.</p>
+        <p className="mt-4 text-xs text-slate-500">Tap a module to see what it covers.</p>
       </section>
 
       {/* ── Pricing ────────────────────────────────────────── */}
-      <section className="border-t border-gray-800 bg-gray-900/30">
+      <section className="border-y border-slate-200 bg-slate-50">
         <div className="max-w-xl mx-auto px-4 py-16 text-center">
           <SectionHeading eyebrow="Simple pricing" title="One price, everything included" center />
-          <div className="rounded-2xl border border-success-500/30 bg-gradient-to-br from-success-500/10 to-gray-900/60 p-8">
+          <div className="rounded-3xl border-2 bg-white p-8 shadow-[0_0_0_4px_rgba(57,255,136,0.18)]" style={{ borderColor: ACCENT }}>
             <div className="flex items-baseline justify-center gap-2 mb-5">
-              <span className="text-5xl font-black text-success-300">{price}</span>
-              <span className="text-sm text-gray-400">one-time</span>
+              <span className="text-5xl font-extrabold text-[#0F2D6B]">{price}</span>
+              <span className="text-sm text-slate-500">one-time</span>
             </div>
             <ul className="space-y-2.5 text-left max-w-sm mx-auto mb-7">
               {[
@@ -157,12 +168,12 @@ export default function DefensiveDrivingPage() {
                 'Certificate automatically forwarded to the agency',
                 'Valid for three years',
               ].map((t) => (
-                <li key={t} className="flex items-start gap-2.5 text-sm text-gray-200">
-                  <Check className="w-4 h-4 text-success-400 shrink-0 mt-0.5" /> {t}
+                <li key={t} className="flex items-start gap-2.5 text-sm text-slate-700">
+                  <Check className="w-4 h-4 text-blue-700 shrink-0 mt-0.5" strokeWidth={3} /> {t}
                 </li>
               ))}
             </ul>
-            <a href="#enroll" className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-semibold bg-success-400 hover:bg-success-300 text-gray-950 transition">
+            <a href="#enroll" className="inline-flex items-center gap-2 rounded-2xl px-8 py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white shadow-lg shadow-blue-700/25 transition">
               <CreditCard className="w-4 h-4" /> Enroll now
             </a>
           </div>
@@ -176,14 +187,15 @@ export default function DefensiveDrivingPage() {
       </section>
 
       {/* ── Compliance footer ──────────────────────────────── */}
-      <footer className="border-t border-gray-800">
-        <div className="max-w-3xl mx-auto px-4 py-10">
-          <p className="text-xs text-gray-500 leading-relaxed">{course.compliance_label}</p>
+      <div className="border-t border-slate-200 bg-slate-50 pt-8">
+        <div className="max-w-6xl mx-auto px-4 pb-6 lg:px-8">
+          <p className="text-xs text-slate-500 leading-relaxed">{course.compliance_label}</p>
           {course.is_dds_approved && course.dds_provider_no && (
-            <p className="text-xs text-gray-500 mt-2">DDS Provider #: {course.dds_provider_no}</p>
+            <p className="text-xs text-slate-500 mt-2">DDS Provider #: {course.dds_provider_no}</p>
           )}
         </div>
-      </footer>
+        <RateCheckFooter wide />
+      </div>
     </div>
   );
 }
@@ -204,15 +216,15 @@ function ModuleCard({ m, index }) {
   const desc = getModuleContent(m.content_ref)?.summary;
   return (
     <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}
-      className="text-left w-full rounded-xl border border-gray-800 bg-gray-900/50 p-5 transition hover:border-gray-700">
+      className="text-left w-full rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-blue-300">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold text-success-300 mb-1">Module {m.ordinal || index + 1}</p>
-          <p className="font-semibold text-gray-100">{m.title}</p>
+          <p className="text-xs font-bold text-blue-700 mb-1">Module {m.ordinal || index + 1}</p>
+          <p className="font-bold text-[#0F2D6B]">{m.title}</p>
         </div>
-        {desc && <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 mt-1 transition-transform ${open ? 'rotate-180' : ''}`} />}
+        {desc && <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 mt-1 transition-transform ${open ? 'rotate-180' : ''}`} />}
       </div>
-      {open && desc && <p className="mt-3 text-sm text-gray-400 leading-relaxed">{desc}</p>}
+      {open && desc && <p className="mt-3 text-sm text-slate-600 leading-relaxed">{desc}</p>}
     </button>
   );
 }
@@ -230,8 +242,8 @@ const FAQ_ITEMS = [
 function SectionHeading({ eyebrow, title, center }) {
   return (
     <div className={`mb-8 ${center ? 'text-center' : ''}`}>
-      <p className="text-xs uppercase tracking-[0.2em] text-success-300 mb-2">{eyebrow}</p>
-      <h2 className="text-2xl md:text-3xl font-black tracking-tight">{title}</h2>
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700 mb-2">{eyebrow}</p>
+      <h2 className="text-[28px] lg:text-[36px] font-extrabold leading-tight tracking-tight text-[#0F2D6B]">{title}</h2>
     </div>
   );
 }
@@ -239,12 +251,12 @@ function SectionHeading({ eyebrow, title, center }) {
 function Benefit({ icon, title, body }) {
   const Icon = icon;
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-900/50 p-5">
-      <div className="w-10 h-10 rounded-lg bg-success-500/15 flex items-center justify-center mb-3">
-        <Icon className="w-5 h-5 text-success-300" />
+    <div className="rounded-3xl border border-slate-200 bg-white p-6">
+      <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center mb-3">
+        <Icon className="w-5 h-5 text-blue-700" />
       </div>
-      <p className="font-semibold text-gray-100 mb-1">{title}</p>
-      <p className="text-sm text-gray-400 leading-relaxed">{body}</p>
+      <p className="font-bold text-[#0F2D6B] mb-1">{title}</p>
+      <p className="text-sm text-slate-600 leading-relaxed">{body}</p>
     </div>
   );
 }
@@ -252,13 +264,13 @@ function Benefit({ icon, title, body }) {
 function Step({ n, icon, title, body }) {
   const Icon = icon;
   return (
-    <div className="rounded-xl border border-gray-800 bg-gray-950 p-5">
-      <div className="flex items-center gap-3 mb-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-success-500/20 text-sm font-bold text-success-200">{n}</span>
-        <Icon className="w-5 h-5 text-success-300" />
+    <div className="rounded-3xl border border-slate-200 bg-white p-6">
+      <div className="flex items-center justify-between mb-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl text-base font-extrabold" style={{ background: DEEP, color: ACCENT }}>{n}</span>
+        <Icon className="w-5 h-5 text-slate-300" />
       </div>
-      <p className="font-semibold text-gray-100 mb-1">{title}</p>
-      <p className="text-sm text-gray-400 leading-relaxed">{body}</p>
+      <p className="font-bold text-[#0F2D6B] mb-1">{title}</p>
+      <p className="text-sm text-slate-600 leading-relaxed">{body}</p>
     </div>
   );
 }
@@ -268,14 +280,14 @@ function FAQ({ items }) {
   return (
     <div className="space-y-3">
       {items.map((it, i) => (
-        <div key={i} className="rounded-xl border border-gray-800 bg-gray-900/50 overflow-hidden">
+        <div key={i} className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
           <button onClick={() => setOpen(open === i ? -1 : i)}
             className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left"
             aria-expanded={open === i}>
-            <span className="font-medium text-gray-100">{it.q}</span>
-            <ChevronDown className={`w-5 h-5 text-gray-400 shrink-0 transition-transform ${open === i ? 'rotate-180' : ''}`} />
+            <span className="font-semibold text-[#0F2D6B]">{it.q}</span>
+            <ChevronDown className={`w-5 h-5 text-slate-400 shrink-0 transition-transform ${open === i ? 'rotate-180' : ''}`} />
           </button>
-          {open === i && <p className="px-5 pb-5 -mt-1 text-sm text-gray-300 leading-relaxed">{it.a}</p>}
+          {open === i && <p className="px-5 pb-5 -mt-1 text-sm text-slate-600 leading-relaxed">{it.a}</p>}
         </div>
       ))}
     </div>
@@ -286,16 +298,16 @@ function FAQ({ items }) {
 function EnrollCard({ course, enrollment, user, profile }) {
   const hasAccess = enrollment && (enrollment.status === 'active' || enrollment.status === 'completed');
   return (
-    <div className="rounded-2xl border border-success-500/30 bg-gradient-to-br from-success-500/10 to-gray-900/60 p-6 shadow-xl">
+    <div className="rounded-3xl bg-white p-6 text-slate-700 shadow-2xl shadow-blue-950/30 sm:p-7">
       <div className="flex items-baseline gap-2 mb-4">
-        <span className="text-3xl font-bold text-success-300">{formatPrice(course.price_cents, course.currency)}</span>
-        <span className="text-xs text-gray-400">one-time</span>
+        <span className="text-3xl font-extrabold text-[#0F2D6B]">{formatPrice(course.price_cents, course.currency)}</span>
+        <span className="text-xs text-slate-500">one-time</span>
       </div>
       {hasAccess ? (
         <div className="space-y-3">
-          <p className="text-sm text-success-200">You’re enrolled.</p>
+          <p className="text-sm font-semibold text-emerald-700">You’re enrolled.</p>
           <Link to="/courses/defensive-driving/portal"
-            className="block text-center w-full rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 text-gray-950 transition">
+            className="block text-center w-full rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 text-white transition">
             Go to your course
           </Link>
         </div>
@@ -332,16 +344,16 @@ function EnrollForm({ course, defaultName }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <p className="text-xs text-gray-400">Enter your legal details exactly as they should appear on your certificate.</p>
+      <p className="text-xs text-slate-500">Enter your legal details exactly as they should appear on your certificate.</p>
       <Field label="Legal name" value={studentName} onChange={setStudentName} placeholder="First Middle Last" autoComplete="name" />
       <Field label="Driver license number" value={dln} onChange={(v) => setDln(v.toUpperCase())} placeholder="GA DLN" />
       <Field label="Date of birth" type="date" value={dob} onChange={setDob} />
-      {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
+      {error && <p className="flex items-start gap-2 text-xs font-medium text-red-700"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
       <button type="submit" disabled={submitting}
-        className="w-full rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
+        className="w-full rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white transition flex items-center justify-center gap-2">
         {submitting ? <><Loader2 className="w-4 h-4 animate-spin" /> Redirecting…</> : 'Enroll & Pay'}
       </button>
-      <p className="text-[11px] text-gray-500 text-center">Secure checkout with Stripe.</p>
+      <p className="text-[11px] text-slate-500 text-center">Secure checkout with Stripe.</p>
     </form>
   );
 }
@@ -414,8 +426,8 @@ function AuthPanel() {
 
   return (
     <form onSubmit={submit} className="space-y-4">
-      <p className="text-sm text-gray-200">{isCreate ? 'Create your account to start' : 'Sign in to continue'}</p>
-      <p className="text-xs text-gray-400">
+      <p className="text-base font-bold text-[#0F2D6B]">{isCreate ? 'Create your account to start' : 'Sign in to continue'}</p>
+      <p className="text-xs text-slate-500">
         {isCreate
           ? 'Just an email and a password — no codes to look up.'
           : 'Enter the email and password you set up.'}
@@ -430,41 +442,41 @@ function AuthPanel() {
       <Field label="Email address" type="email" value={email} onChange={setEmail} autoComplete="email" />
 
       <label className="block">
-        <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1">Password</span>
+        <span className="block text-xs font-semibold text-slate-600 mb-1">Password</span>
         <div className="relative">
           <input
             type={showPw ? 'text' : 'password'}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             autoComplete={isCreate ? 'new-password' : 'current-password'}
-            className="w-full rounded-lg bg-white text-gray-900 px-3 py-2.5 pr-16 text-sm outline-none focus:ring-2 focus:ring-success-400"
+            className="w-full rounded-xl border border-slate-300 bg-white text-[#0F2D6B] px-3.5 py-3 pr-16 text-base outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
           />
           <button type="button" onClick={() => setShowPw((s) => !s)}
-            className="absolute inset-y-0 right-2 my-auto h-7 px-2 text-xs font-semibold text-gray-500 hover:text-gray-800">
+            className="absolute inset-y-0 right-2 my-auto h-7 px-2 text-xs font-semibold text-slate-500 hover:text-[#0F2D6B]">
             {showPw ? 'Hide' : 'Show'}
           </button>
         </div>
-        {isCreate && <span className="mt-1 block text-[11px] text-gray-500">At least 6 characters. Write it down somewhere safe.</span>}
+        {isCreate && <span className="mt-1 block text-[11px] text-slate-500">At least 6 characters. Write it down somewhere safe.</span>}
       </label>
 
-      {error && <p className="flex items-start gap-2 text-xs text-red-300"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
+      {error && <p className="flex items-start gap-2 text-xs font-medium text-red-700"><AlertCircle className="w-4 h-4 shrink-0" />{error}</p>}
 
       <div className="pt-2 flex justify-center">
         <button type="submit" disabled={busy}
-          className="px-8 rounded-full py-3 text-sm font-semibold bg-success-400 hover:bg-success-300 disabled:opacity-60 text-gray-950 transition flex items-center justify-center gap-2">
+          className="px-8 rounded-2xl py-3.5 text-base font-bold bg-blue-700 hover:bg-blue-800 disabled:opacity-60 text-white transition flex items-center justify-center gap-2">
           {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : (isCreate ? 'Create account & start' : 'Sign in')}
         </button>
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
+      <p className="text-xs text-slate-500 text-center">
         {isCreate ? 'Already have an account?' : 'New here?'}{' '}
         <button type="button"
           onClick={() => { setMode(isCreate ? 'signin' : 'create'); setError(null); }}
-          className="text-success-300 font-semibold underline underline-offset-2">
+          className="text-blue-700 font-semibold underline underline-offset-2">
           {isCreate ? 'Sign in' : 'Create an account'}
         </button>
       </p>
-      <p className="text-xs text-gray-400 text-center pt-1">Need help? Call <a href="tel:+17707861616" className="text-success-300 font-semibold">(770) 786-1616</a></p>
+      <p className="text-xs text-slate-500 text-center pt-1">Need help? Call <a href="tel:+17707861616" className="text-blue-700 font-semibold">(770) 786-1616</a></p>
     </form>
   );
 }
@@ -472,14 +484,14 @@ function AuthPanel() {
 function Field({ label, value, onChange, type = 'text', placeholder, autoComplete }) {
   return (
     <label className="block">
-      <span className="block text-[11px] uppercase tracking-wider text-gray-500 mb-1">{label}</span>
+      <span className="block text-xs font-semibold text-slate-600 mb-1">{label}</span>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full rounded-lg bg-white text-gray-900 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-success-400"
+        className="w-full rounded-xl border border-slate-300 bg-white text-[#0F2D6B] px-3.5 py-3 text-base outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
       />
     </label>
   );
