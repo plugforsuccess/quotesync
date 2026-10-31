@@ -12,6 +12,12 @@ import { loadPartnerPortal, signPartnerAgreement, savePartnerPhoto, removePartne
 import { TAX_CLASSES, LLC_CLASSES, formatTin, w9Problems, w9Payload } from './components/rate-checks/w9';
 import { inviteUrl } from './components/rate-checks/invite';
 
+const ACCENT = '#39FF88';
+const DEEP = '#0F2D6B';
+const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
+const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+// "Cam Wiley Agency, Inc." + "." without doubling the period.
+const sentence = (name) => `${String(name || 'the agency').replace(/\.+$/, '')}.`;
 const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
 const monthLabel = (key) => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
 // A different hello each visit.
@@ -38,22 +44,40 @@ export default function PartnerPortalPage() {
     load();
   }, [load]);
 
+  const gate = data && data.agreement.required && !data.agreement.signed;
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="mx-auto flex max-w-md items-center justify-between px-4 pt-5">
-        <span className="text-sm font-extrabold tracking-tight text-slate-900">insuredbycam <span className="font-semibold text-slate-400">· Partner</span></span>
-      </header>
-      <main className="mx-auto max-w-md px-4 pt-6 pb-12">
-        {error ? <p className="rounded-xl bg-white p-4 text-slate-700 ring-1 ring-slate-200">{error}</p>
-          : !data ? <p className="flex items-center gap-2 text-slate-500"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading…</p>
-          : !data.agreement.signed ? <SignAgreement token={token} data={data} greet={greet} onSigned={load} />
-          : <Earnings token={token} data={data} greet={greet} onChange={load} />}
+      <div style={{ background: HERO_BG }}>
+        <div className="mx-auto max-w-md px-4 pt-5 pb-20">
+          <header className="flex items-center justify-between">
+            <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam.com</span>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white">Partner portal</span>
+          </header>
+          {data && (
+            <>
+              <h1 className="mt-7 text-[28px] font-extrabold leading-tight tracking-tight text-white">
+                {greet(data.first_name)}{gate && <> — sign to turn on your link</>}
+              </h1>
+              <p className="mt-1.5 flex items-center gap-1.5 text-sm text-blue-100">
+                {gate ? <>Read the agreement with {sentence(data.agency_name)} Your link starts earning as soon as you sign.</>
+                  : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: ACCENT }} aria-hidden="true" /> Agreement signed {longDate(data.agreement.signed_at)}</>
+                  : <><span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" /> Your link is live</>}
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+      <main className="mx-auto -mt-12 max-w-md px-4 pb-12">
+        {error ? <p className="rounded-2xl bg-white p-4 text-slate-700 shadow-sm ring-1 ring-slate-200">{error}</p>
+          : !data ? <p className="flex items-center gap-2 rounded-2xl bg-white p-4 text-slate-500 shadow-sm ring-1 ring-slate-200"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Loading…</p>
+          : gate ? <SignAgreement token={token} data={data} onSigned={load} />
+          : <Earnings token={token} data={data} onChange={load} />}
       </main>
     </div>
   );
 }
 
-function SignAgreement({ token, data, greet, onSigned }) {
+function SignAgreement({ token, data, onSigned }) {
   const [name, setName] = useState('');
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -68,18 +92,14 @@ function SignAgreement({ token, data, greet, onSigned }) {
 
   return (
     <>
-      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">{greet(data.first_name)} — sign to turn on your link</h1>
-      <p className="mt-2 text-slate-600">
-        Read the agreement with {data.agency_name}. Your link starts earning as soon as you sign.
-      </p>
-      {!data.active && <p className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900">This partner link is paused. Contact {data.agency_name}.</p>}
+      {!data.active && <p className="mb-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200">This partner link is paused. Contact {sentence(data.agency_name)}</p>}
 
-      <div className="mt-5 max-h-[46vh] overflow-y-auto whitespace-pre-wrap rounded-xl bg-white p-4 text-sm leading-relaxed text-slate-700 ring-1 ring-slate-200"
+      <div className="max-h-[46vh] overflow-y-auto whitespace-pre-wrap rounded-2xl bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-sm ring-1 ring-slate-200"
         tabIndex={0} aria-label="Partner agreement">{data.agreement.text}</div>
 
       <label htmlFor="pp-name" className="mt-5 block text-sm font-semibold text-slate-800">Your full legal name</label>
       <input id="pp-name" autoComplete="name" value={name} onChange={e => setName(e.target.value)} placeholder="First and last name"
-        className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" />
+        className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-[#0F2D6B] focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100" />
       <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed text-slate-700">
         <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
         <span>I have read this agreement and agree to it. Typing my name above is my signature.</span>
@@ -95,7 +115,7 @@ function SignAgreement({ token, data, greet, onSigned }) {
 
 // IRS Form W-9, needed before the first payment. The function fills the real form
 // and keeps the PDF privately; the portal only ever shows the last 4 of the TIN.
-const INPUT = 'mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
+const INPUT = 'mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-base text-[#0F2D6B] focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
 const CERT = [
   'The number shown on this form is my correct taxpayer identification number (or I am waiting for a number to be issued to me);',
   'I am not subject to backup withholding because (a) I am exempt from backup withholding, or (b) I have not been notified by the IRS that I am subject to backup withholding as a result of a failure to report all interest or dividends, or (c) the IRS has notified me that I am no longer subject to backup withholding;',
@@ -131,6 +151,16 @@ function W9Section({ token, data, onChange }) {
     setBusy(false);
   };
 
+  if (!w9.on_file && !open) {
+    return (
+      <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+        <p className="text-xs font-bold uppercase tracking-[0.12em] text-amber-700">W-9 · needed before your first payment</p>
+        <p className="mt-1 text-sm leading-relaxed text-slate-600">Takes about two minutes. Your tax ID is sent once, kept only in the finished form, and never shown here again.</p>
+        <button type="button" onClick={() => setOpen(true)} className="mt-3 h-12 w-full rounded-xl bg-blue-700 font-semibold text-white active:bg-blue-800">Fill out my W-9</button>
+      </section>
+    );
+  }
+
   if (w9.on_file && !open) {
     return (
       <section className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
@@ -162,7 +192,7 @@ function W9Section({ token, data, onChange }) {
         {TAX_CLASSES.map(t => (
           <label key={t.value} className={`flex items-start gap-3 rounded-xl border p-3 text-sm ${form.tax_class === t.value ? 'border-blue-600 bg-blue-50' : 'border-slate-200'}`}>
             <input type="radio" name="w9-class" value={t.value} checked={form.tax_class === t.value} onChange={set('tax_class')} className="mt-0.5 h-5 w-5 accent-blue-700" />
-            <span><span className="block font-semibold text-slate-900">{t.label}</span>{t.hint && <span className="block text-xs text-slate-500">{t.hint}</span>}</span>
+            <span><span className="block font-semibold text-[#0F2D6B]">{t.label}</span>{t.hint && <span className="block text-xs text-slate-500">{t.hint}</span>}</span>
           </label>
         ))}
       </div>
@@ -222,7 +252,7 @@ function W9Section({ token, data, onChange }) {
       {show('accept')}
       {error && <p className="mt-3 text-sm text-red-600" role="alert">{error}</p>}
       <div className="mt-4 flex gap-2">
-        {w9.on_file && <button type="button" onClick={() => setOpen(false)} className="h-14 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-700">Cancel</button>}
+        <button type="button" onClick={() => setOpen(false)} className="h-14 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-700">Cancel</button>
         <button type="submit" disabled={busy} className="h-14 flex-1 rounded-xl bg-blue-700 text-lg font-bold text-white disabled:bg-slate-300">{busy ? 'Sending…' : 'Sign W-9'}</button>
       </div>
     </form>
@@ -295,7 +325,7 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
   );
 }
 
-function Earnings({ token, data, greet, onChange }) {
+function Earnings({ token, data, onChange }) {
   const url = inviteUrl(data.code);
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -309,34 +339,27 @@ function Earnings({ token, data, greet, onChange }) {
 
   return (
     <>
-      <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">{greet(data.first_name)}</h1>
-      <p className="mt-1 flex items-center gap-1.5 text-sm text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> Agreement signed {new Date(data.agreement.signed_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-
-      <section className="mt-5 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Your link</p>
-        <p className="mt-1 truncate font-mono text-sm text-blue-800">{url}</p>
-        <div className="mt-3 flex gap-2">
-          <button type="button" onClick={copy} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-800">
+      <section className="rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20" style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
+        <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: ACCENT }}>Your link</p>
+        <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
+        <div className="mt-4 flex gap-2">
+          <button type="button" onClick={copy} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl font-bold transition active:brightness-95" style={{ background: ACCENT, color: DEEP }}>
             {copied ? <><Check className="h-4 w-4" aria-hidden="true" /> Copied</> : <><Copy className="h-4 w-4" aria-hidden="true" /> Copy link</>}
           </button>
           {typeof navigator !== 'undefined' && navigator.share && (
-            <button type="button" onClick={share} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-700 font-semibold text-white">
+            <button type="button" onClick={share} className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-white/15 font-semibold text-white ring-1 ring-white/25">
               <Share2 className="h-4 w-4" aria-hidden="true" /> Share
             </button>
           )}
         </div>
-        <p className="mt-3 text-xs leading-relaxed text-slate-500">When you post or message your link, say you get a referral fee. Don&apos;t talk about coverage or prices — just share the link.</p>
+        <p className="mt-3 text-xs leading-relaxed text-blue-100">When you post or message your link, say you get a referral fee. Don&apos;t talk about coverage or prices. Just share the link.</p>
       </section>
-
-      <W9Section token={token} data={data} onChange={onChange} />
-
-      <PhotoSection token={token} name={data.first_name} photoUrl={data.photo_url} onChange={onChange} />
 
       <section className="mt-4 grid grid-cols-3 gap-2">
         {[[monthLabel(current.month).split(' ')[0], current.households, 'households'], ['Earned', money(current.earned), 'this month'], ['All time', money(lifetime), 'earned']].map(([k, v, sub]) => (
           <div key={k} className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">{k}</p>
-            <p className="text-xl font-extrabold tabular-nums text-slate-900">{v}</p>
+            <p className="text-xl font-extrabold tabular-nums text-[#0F2D6B]">{v}</p>
             <p className="text-xs text-slate-500">{sub}</p>
           </div>
         ))}
@@ -346,7 +369,7 @@ function Earnings({ token, data, greet, onChange }) {
       {months.map(m => (
         <section key={m.month} className="mt-5">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-bold text-slate-900">{monthLabel(m.month)}</h2>
+            <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)}</h2>
             <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
               {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? `${money(m.earned)} · not paid yet` : ''}
             </span>
@@ -356,10 +379,10 @@ function Earnings({ token, data, greet, onChange }) {
               {m.rows.map((r, i) => (
                 <li key={i} className="flex items-center justify-between gap-3 px-3 py-2.5">
                   <span className="min-w-0">
-                    <span className="block font-semibold text-slate-900">{r.first_name}</span>
+                    <span className="block font-semibold text-[#0F2D6B]">{r.first_name}</span>
                     <span className="block text-xs text-slate-500">{r.label}{r.over_cap ? ' · over this month’s limit' : ''}</span>
                   </span>
-                  <span className={`shrink-0 font-bold tabular-nums ${r.fee ? 'text-slate-900' : 'text-slate-400'}`}>{money(r.fee)}</span>
+                  <span className={`shrink-0 font-bold tabular-nums ${r.fee ? 'text-[#0F2D6B]' : 'text-slate-400'}`}>{money(r.fee)}</span>
                 </li>
               ))}
             </ul>
@@ -367,13 +390,17 @@ function Earnings({ token, data, greet, onChange }) {
         </section>
       ))}
 
-      <section className="mt-6 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      <W9Section token={token} data={data} onChange={onChange} />
+
+      <PhotoSection token={token} name={data.first_name} photoUrl={data.photo_url} onChange={onChange} />
+
+      <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">How you&apos;re paid · per household</h2>
         <dl className="mt-2 divide-y divide-slate-100 text-sm">
           {SCHEDULE_ROWS.map(([k, label]) => (
-            <div key={k} className="flex justify-between py-2"><dt className="text-slate-700">{label}</dt><dd className="font-bold tabular-nums text-slate-900">{money(data.schedule[k])}</dd></div>
+            <div key={k} className="flex justify-between py-2"><dt className="text-slate-700">{label}</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">{money(data.schedule[k])}</dd></div>
           ))}
-          <div className="flex justify-between py-2"><dt className="text-slate-700">Each extra line, up to 2</dt><dd className="font-bold tabular-nums text-slate-900">+{money(data.schedule.extra_line)}</dd></div>
+          <div className="flex justify-between py-2"><dt className="text-slate-700">Each extra line, up to 2</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(data.schedule.extra_line)}</dd></div>
         </dl>
         <p className="mt-2 text-xs leading-relaxed text-slate-500">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we&apos;ve quoted it (or 7 days after their first page). Pages that can&apos;t be read, repeats, expired pages and Allstate policies don&apos;t count. Paid monthly after your W-9 is on file; months under $50 carry over.</p>
       </section>

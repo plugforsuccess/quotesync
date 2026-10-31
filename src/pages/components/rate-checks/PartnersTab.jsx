@@ -16,6 +16,7 @@ import { downloadCSV } from '../../../lib/csvExport';
 import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
 import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
+import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
   TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, MIN_PAYOUT, QUOTE_DAYS, scheduleFrom, households, partnerSummary, applyCap,
@@ -96,7 +97,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         <div className="dark-card" style={{ padding: 20 }}>
           <h3 className="text-lg font-bold" style={{ color: 'var(--qs-bright)' }}>No partners yet</h3>
           <p className="mt-1 text-sm" style={{ color: 'var(--qs-text)' }}>
-            Add someone who&apos;ll share your Rate Check link. They get a private portal to sign the agreement, then their own link that pays per household.
+            Add someone who&apos;ll share your Rate Check link. {PARTNER_AGREEMENT_REQUIRED ? 'They get a private portal to sign the agreement, then their own link that pays per household.' : 'They get their own link that pays per household, and a private portal to see what they’ve earned.'}
           </p>
           {canEdit && !adding && (
             <button type="button" onClick={() => setAdding(true)} className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
@@ -150,18 +151,18 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>{[p.phone && formatPhone(p.phone), p.email].filter(Boolean).join(' · ') || 'No contact on file'}</p>
               </div>
               <span className="flex flex-wrap justify-end gap-1.5">
-                <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Agreement signed' : 'Agreement not signed'}</Pill>
+                {(PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at) && <Pill ok={!!p.agreement_signed_at}>{p.agreement_signed_at ? 'Agreement signed' : 'Agreement not signed'}</Pill>}
                 <Pill ok={!!p.w9_received_at}>{p.w9_received_at ? `W-9 on file${p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ''}` : 'W-9 needed'}</Pill>
               </span>
             </div>
-            {!p.agreement_signed_at && (
+            {PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at && (
               <p className="mt-3 rounded-lg px-3 py-2 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
                 Their link doesn&apos;t earn anything until they sign. Send them their portal link: they sign there, then see their link and earnings.
               </p>
             )}
 
             <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy portal link" />
-            <LinkRow label={p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={!p.agreement_signed_at} />
+            <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at} />
 
             <div className="mt-4 grid grid-cols-3 gap-3">
               <Stat label="Households" value={s.month.households} />
@@ -362,7 +363,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
       <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>
         {apps.length === 1 ? '1 person wants to be a partner' : `${apps.length} people want to be partners`}
       </h3>
-      <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>From the Drivers Ed page. Add them, then send their portal link to sign.</p>
+      <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>From the Drivers Ed page. Add them, then send them their portal link.</p>
       <ul className="mt-3 space-y-2">
         {apps.map(a => (
           <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2.5" style={{ background: 'var(--qs-elevated)' }}>
@@ -407,7 +408,7 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       <button type="submit" disabled={!ok || save.isPending} className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
         {save.isPending ? 'Adding…' : 'Add and make links'}
       </button>
-      <p className="text-xs md:col-span-4" style={{ color: 'var(--qs-subtle)' }}>Use their full legal name (it goes on the agreement and the 1099). Then send them their portal link to sign.</p>
+      <p className="text-xs md:col-span-4" style={{ color: 'var(--qs-subtle)' }}>Use their full legal name (it goes on their W-9 and 1099). Then send them their portal link.</p>
       {save.error && <p className="text-sm text-red-500 md:col-span-4">{save.error.message}</p>}
     </form>
   );

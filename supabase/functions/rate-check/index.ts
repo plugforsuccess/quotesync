@@ -723,19 +723,21 @@ async function resolveInvite(supabase: any, code: unknown) {
 }
 
 // A partner's permanent link (rate_check_promoters), same /r/CODE space as invites.
-// It only counts once the partner has signed the current agreement (rate-check-partner).
+// While the partner agreement is off (PARTNER_AGREEMENT_REQUIRED, in step with
+// AGREEMENT_REQUIRED in rate-check-partner) any active partner's link works; once
+// it's on, a link only counts after its partner signs the current agreement.
+const PARTNER_AGREEMENT_REQUIRED = false
 const PARTNER_AGREEMENT_VERSION = 'partner-v2'
 async function resolvePromoter(supabase: any, code: unknown) {
   const c = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '')
   if (c.length !== 8) return null
-  const { data } = await supabase
+  let q = supabase
     .from('rate_check_promoters')
     .select('id, agency_id, name, photo_url, photo_consent_at')
     .eq('code', c)
     .eq('active', true)
-    .eq('agreement_version', PARTNER_AGREEMENT_VERSION)
-    .not('agreement_signed_at', 'is', null)
-    .maybeSingle()
+  if (PARTNER_AGREEMENT_REQUIRED) q = q.eq('agreement_version', PARTNER_AGREEMENT_VERSION).not('agreement_signed_at', 'is', null)
+  const { data } = await q.maybeSingle()
   return data ?? null
 }
 
@@ -781,6 +783,8 @@ Deno.serve(async (req) => {
       if (promoter) {
         return jsonResponse({
           promoter_name: String(promoter.name).trim().split(/\s+/)[0],
+          // First + last initial for when there's no photo ("JS"); the last name itself stays private.
+          promoter_initials: (() => { const w = String(promoter.name).trim().split(/\s+/).filter(Boolean); return ((w[0]?.[0] || '') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() })(),
           // Only once the partner agreed to show it.
           promoter_photo_url: promoter.photo_consent_at ? promoter.photo_url : null,
         }, 200, corsHeaders)

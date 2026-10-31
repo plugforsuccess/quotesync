@@ -54,6 +54,7 @@ const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
 // right after the agent card, then alternating photo / story.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
+  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, the day he bought the agency', caption: 'Closing day in Covington, GA: the day I bought the agency', position: '50% 66%' },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
   { key: 'court', title: 'My story, on the court', paragraphs: [
@@ -426,25 +427,47 @@ export default function RateCheckPage() {
     </>
   );
 
-  const banner = (
+  // Who sent the link: a partner (with their photo once they've agreed to show it) or a producer.
+  const whoSent = invite?.promoter_name ? (
+    <div className="mb-5 flex items-center gap-3 rounded-2xl bg-blue-50 px-3 py-2.5">
+      {invite.promoter_photo_url && (
+        <img src={invite.promoter_photo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white" />
+      )}
+      <span className="min-w-0">
+        <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this with you</span>
+        <span className="block text-xs text-slate-600">{invite.promoter_name} gets a referral fee for sharing.</span>
+      </span>
+    </div>
+  ) : invite ? (
+    <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.event_name ? ` after ${invite.event_name}` : ''}.
+    </p>
+  ) : null;
+  // The same note on the landing page's blue hero.
+  const whoSentHero = invite?.promoter_name ? (
+    <div className="mb-6 flex items-center gap-3 rounded-2xl bg-white/10 p-3 pr-4 ring-1 ring-white/20 backdrop-blur-sm lg:max-w-md">
+      {invite.promoter_photo_url ? (
+        <img src={invite.promoter_photo_url} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2" style={{ '--tw-ring-color': ACCENT }} />
+      ) : (
+        <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
+          {invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()}
+        </span>
+      )}
+      <span className="min-w-0">
+        <span className="block text-[17px] font-bold text-white">{invite.promoter_name} shared this with you</span>
+        <span className="block text-xs text-blue-100">{invite.promoter_name} gets a referral fee for sharing.</span>
+      </span>
+    </div>
+  ) : invite ? (
+    <p className="mb-6 inline-block rounded-xl bg-white/10 px-3 py-2 text-sm text-white ring-1 ring-white/20">
+      {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
+      {invite.event_name ? ` after ${invite.event_name}` : ''}.
+    </p>
+  ) : null;
+
+  const notices = (
     <>
-      {invite?.promoter_name && (
-        <div className="mb-5 flex items-center gap-3 rounded-2xl bg-blue-50 px-3 py-2.5">
-          {invite.promoter_photo_url && (
-            <img src={invite.promoter_photo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white" />
-          )}
-          <span className="min-w-0">
-            <span className="block font-bold text-slate-900">{invite.promoter_name} shared this with you</span>
-            <span className="block text-xs text-slate-600">{invite.promoter_name} gets a referral fee for sharing.</span>
-          </span>
-        </div>
-      )}
-      {invite && !invite.promoter_name && (
-        <p className="mb-4 rounded-xl bg-blue-50 px-3 py-2 text-sm text-blue-900">
-          {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
-          {invite.event_name ? ` after ${invite.event_name}` : ''}.
-        </p>
-      )}
       {inviteExpired && (
         <p className="mb-4 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">That link has expired, but you can still check your rate below.</p>
       )}
@@ -456,6 +479,7 @@ export default function RateCheckPage() {
       )}
     </>
   );
+  const banner = <>{whoSent}{notices}</>;
 
   // ── Step 3: results ──
   if (step === 'results') {
@@ -666,7 +690,7 @@ export default function RateCheckPage() {
       </ActionBar>
     )}>
       {fileInputs}
-      {banner}
+      {drafts.length === 0 && !returning ? notices : banner}
       {returning && (
         <p className="mb-4 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2 text-sm text-slate-700">
           <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
@@ -694,7 +718,7 @@ export default function RateCheckPage() {
             </button>
           </>
         ) : (
-          <Landing onUpload={() => openFiles()} onCamera={() => openCamera()}
+          <Landing note={whoSentHero} onUpload={() => openFiles()} onCamera={() => openCamera()}
             onDropFiles={(files) => onPick({ target: { files, value: '' } })} />
         )
       ) : (
@@ -987,22 +1011,9 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
-// First slide of the Meet the Owner carousel.
-function AgentCard() {
-  return (
-    <div className="flex h-full min-h-[268px] flex-col items-center justify-center text-center">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Your licensed agent</p>
-      <p className="mt-0.5 text-2xl font-extrabold text-[#0F2D6B]">{AGENT.name}</p>
-      <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
-        className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
-        style={{ objectPosition: '50% 30%' }} />
-      {AGENT.license && <p className="mt-10 text-[11px] text-slate-400">GA License #: {AGENT.license}</p>}
-    </div>
-  );
-}
-
 function MeetCam() {
-  const slides = [{ key: 'agent', label: 'Your licensed agent', untitled: true, content: <AgentCard /> }, ...ABOUT.map(a => a.photo ? {
+  // The agent card already sits in the hero, so the carousel opens with a photo, then the story.
+  const slides = ABOUT.map(a => a.photo ? {
     key: a.key, label: a.caption, untitled: true, bare: true,
     content: (
       <figure className="relative h-full min-h-[300px]">
@@ -1020,7 +1031,7 @@ function MeetCam() {
         </div>
       </div>
     ),
-  })];
+  });
   return <Carousel slides={slides} label="Meet the Owner" />;
 }
 
@@ -1128,6 +1139,7 @@ const CARRIERS = [
   ['liberty-mutual', 'Liberty Mutual', '/logos/carriers/liberty-mutual.svg'],
   ['progressive', 'Progressive', '/logos/carriers/progressive.svg'],
   ['the-hartford', 'The Hartford', '/logos/carriers/the-hartford.jpg'],
+  ['berkshire-hathaway-guard', 'Berkshire Hathaway GUARD Insurance Companies', '/logos/carriers/berkshire-hathaway-guard.png'],
 ];
 
 function CarrierLogos() {
@@ -1142,15 +1154,15 @@ function CarrierLogos() {
     </ul>
   );
   return (
-    <section className="bg-white pt-14 lg:pt-20" aria-labelledby="rc-carriers">
+    <section className="border-y border-slate-200 bg-slate-50 py-12 lg:py-16" aria-labelledby="rc-carriers">
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       {/* The heading sits above the strip; the strip has its own band. */}
       <div className={wrap}>
         <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
       </div>
-      <div className="mt-6 border-y border-slate-200 bg-slate-50 py-6 lg:mt-8 lg:py-8">
+      <div className="mt-6 lg:mt-8">
         <div className={wrap}>
-          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 pb-4 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 py-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
             <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
           </div>
         </div>
@@ -1243,7 +1255,7 @@ const HOW = [
   ['3', MessageSquare, 'Get your quote', 'Usually within 30 minutes during business hours.'],
 ];
 
-function Landing({ onUpload, onCamera, onDropFiles }) {
+function Landing({ note, onUpload, onCamera, onDropFiles }) {
   const [howTo, setHowTo] = useState(false);
   return (
     <>
@@ -1255,6 +1267,7 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
           <ConsumerNav current="rate" />
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
             <div>
+              {note}
               <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="rc.eyebrow">Free rate check · Georgia</T></p>
               <h1 className="mt-3 text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
                 <T k="rc.headline">Get a **second opinion** on your insurance.</T>
@@ -1275,7 +1288,7 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* How it works */}
-      <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-how">
+      <section className="bg-white pt-14 pb-12 lg:pt-20 lg:pb-16" aria-labelledby="rc-how">
         <div className={wrap}>
           <h2 id="rc-how" className={sectionTitle}><T k="rc.how.heading">How it works</T></h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-3 lg:gap-6">
