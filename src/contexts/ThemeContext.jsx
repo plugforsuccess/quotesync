@@ -23,7 +23,10 @@ const ThemeContext = createContext({
   pushForceTheme: () => () => {},
 });
 
-const STORAGE_KEY = 'qs_theme_v2';
+// v3: the agency app moved to the light, website-matching palette. Devices that
+// stored a v2 preference start over on light (see the DB sync below).
+const STORAGE_KEY = 'qs_theme_v3';
+const DEFAULT_THEME = 'light';
 
 function getStoredTheme() {
   try {
@@ -32,7 +35,7 @@ function getStoredTheme() {
   } catch {
     // localStorage unavailable — fall back to default
   }
-  return 'dark';
+  return DEFAULT_THEME;
 }
 
 function applyTheme(theme) {
@@ -45,12 +48,15 @@ applyTheme(getStoredTheme());
 export function ThemeProvider({ children }) {
   const [theme, setThemeState] = useState(getStoredTheme);
   const [syncing, setSyncing] = useState(false);
+  // No v3 preference on this device yet: it's the first visit since the palette change.
+  const [fresh] = useState(() => { try { return !localStorage.getItem(STORAGE_KEY); } catch { return false; } });
   // Stack of forced themes — most-recent wins. Lets multiple components push
   // an override without clobbering each other; each pop cleanly restores.
   const [forceStack, setForceStack] = useState([]);
 
+  // The stack holds { token, theme } entries; the newest one's theme wins.
   const effectiveTheme = forceStack.length > 0
-    ? forceStack[forceStack.length - 1]
+    ? forceStack[forceStack.length - 1].theme
     : theme;
 
   // Apply effective theme whenever it changes
@@ -71,6 +77,12 @@ export function ThemeProvider({ children }) {
         .single();
 
       const dbTheme = profile?.theme_preference;
+      // First visit since the palette change: a saved 'dark' predates it, so move the
+      // account to the new default instead of pulling the old choice back in.
+      if (fresh && dbTheme !== DEFAULT_THEME) {
+        setTheme(DEFAULT_THEME);
+        return;
+      }
       if (dbTheme && THEMES.some(t => t.key === dbTheme) && dbTheme !== theme) {
         setThemeState(dbTheme);
         try { localStorage.setItem(STORAGE_KEY, dbTheme); } catch {

@@ -110,17 +110,18 @@
 [data-theme="light"] {
   /* Override both -rgb channels and derived vars so Tailwind's bg-qs-*
      and text-qs-* classes repaint along with inline var() consumers. */
-  --qs-dark-rgb:     244 247 251; /* #F4F7FB — Light Enterprise base */
-  --qs-card-rgb:     255 255 255; /* #FFFFFF — Light Enterprise card */
-  --qs-elevated-rgb: 238 242 248; /* #EEF2F8 — Light Enterprise elevated */
-  --qs-border-rgb:   220 227 238; /* #DCE3EE — Light Enterprise border */
-  /* Low-vision first: no faint greys. Every tier sits well past WCAG AA
-     on white — secondary text is slate-600+, body/headings near-black. */
-  --qs-muted-rgb:    71 85 105;   /* slate-600 — disabled/placeholder (~7.5:1) */
-  --qs-subtle-rgb:   51 65 85;    /* slate-700 — tertiary captions (~10:1) */
-  --qs-dim-rgb:      30 41 59;    /* slate-800 — secondary labels (~13:1) */
-  --qs-text-rgb:     15 23 42;    /* slate-900 — body (~16:1) */
-  --qs-bright-rgb:   2 6 23;      /* near-black — headings */
+  /* Brand light: the insuredbycam.com palette. A faint blue wash, white cards,
+     and navy text (no near-black), with royal blue for actions. */
+  --qs-dark-rgb:     243 246 252; /* #F3F6FC — blue-white page wash */
+  --qs-card-rgb:     255 255 255; /* #FFFFFF — cards */
+  --qs-elevated-rgb: 234 240 250; /* #EAF0FA — raised / segmented controls */
+  --qs-border-rgb:   216 225 240; /* #D8E1F0 — hairlines */
+  /* Low-vision first: no faint greys. Every tier sits well past WCAG AA on white. */
+  --qs-muted-rgb:    84 98 128;   /* #546280 — disabled/placeholder (~6:1) */
+  --qs-subtle-rgb:   62 77 110;   /* #3E4D6E — tertiary captions (~8.5:1) */
+  --qs-dim-rgb:      44 59 94;    /* #2C3B5E — secondary labels (~11:1) */
+  --qs-text-rgb:     23 37 84;    /* #172554 — body, navy (~14:1) */
+  --qs-bright-rgb:   15 45 107;   /* #0F2D6B — headings, brand deep navy */
   /* Option D — Light Enterprise: white cards on a faint cool wash */
 
   --qs-dark:     rgb(var(--qs-dark-rgb));
@@ -712,4 +713,27 @@ gmp-placeautocomplete input:focus {
 
 .ddc a:focus-visible, .ddc button:focus-visible, .ddc input:focus-visible, .ddc label:focus-within {
   outline: 2px solid var(--ddc-accent-solid); outline-offset: 2px; border-radius: 8px;
+}
+
+/* ════════════════════════════════════════════════════════════
+   BRAND BAR — the royal-blue header stays white-on-blue in every
+   theme. These undo the light theme's white→navy text flips inside it.
+════════════════════════════════════════════════════════════ */
+[data-theme] .qs-app-shell .qs-brand-bar .text-white,
+[data-theme] .qs-app-shell .qs-brand-bar .text-white\/90,
+[data-theme] .qs-app-shell .qs-brand-bar .text-white\/80,
+[data-theme] .qs-app-shell .qs-brand-bar .text-white\/70,
+[data-theme] .qs-app-shell .qs-brand-bar .text-white\/60 { color: #FFFFFF !important; }
+[data-theme] .qs-app-shell .qs-brand-bar .text-gray-200,
+[data-theme] .qs-app-shell .qs-brand-bar .text-gray-300,
+[data-theme] .qs-app-shell .qs-brand-bar .text-gray-400,
+[data-theme] .qs-app-shell .qs-brand-bar .text-slate-300,
+[data-theme] .qs-app-shell .qs-brand-bar .text-slate-400 { color: #DBEAFE !important; }
+[data-theme] .qs-app-shell .qs-brand-bar .bg-white\/5  { background-color: rgb(255 255 255 / 0.05) !important; }
+[data-theme] .qs-app-shell .qs-brand-bar .bg-white\/10 { background-color: rgb(255 255 255 / 0.10) !important; }
+[data-theme] .qs-app-shell .qs-brand-bar .border-white\/10 { border-color: rgb(255 255 255 / 0.15) !important; }
+[data-theme] .qs-app-shell .qs-brand-bar .border-white\/20 { border-color: rgb(255 255 255 / 0.25) !important; }
+[data-theme] .qs-app-shell .qs-brand-bar button[title^="Theme:"] {
+  background: rgb(255 255 255 / 0.12) !important;
+  border-color: rgb(255 255 255 / 0.25) !important;
 }

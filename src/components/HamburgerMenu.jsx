@@ -66,7 +66,7 @@ function HamburgerMenu({ items }) {
         className={[
           'relative p-2.5 rounded-full font-semibold transition-all text-sm group overflow-hidden',
           hasActiveSecondary
-            ? 'text-gray-900'
+            ? 'text-[#0F2D6B]'
             : 'text-gray-300 hover:text-white',
         ].join(' ')}
         aria-label="More pages"
@@ -82,10 +82,6 @@ function HamburgerMenu({ items }) {
           } rounded-full`}
         ></div>
 
-        {/* Active indicator dot */}
-        {hasActiveSecondary && (
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 rounded-full opacity-50 blur-sm animate-pulse"></div>
-        )}
 
         {/* Icon */}
         <span className="relative z-10">

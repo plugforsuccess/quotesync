@@ -117,11 +117,12 @@ const UserMenu = ({ activePlane, onTogglePlane }) => {
         className="flex items-center gap-2 pl-1 pr-3 py-1 bg-white/10 hover:bg-white/20 rounded-full transition-colors max-w-[200px]"
       >
         <span
-          className="flex items-center justify-center rounded-full text-xs font-bold text-blue-400 flex-shrink-0"
+          className="flex items-center justify-center rounded-full text-xs font-bold flex-shrink-0"
           style={{
             width: 28, height: 28,
-            background: 'rgba(59,130,246,0.2)',
-            border: '1px solid rgba(59,130,246,0.3)',
+            background: '#0F2D6B',
+            color: '#39FF88',
+            border: '1px solid rgba(255,255,255,0.3)',
           }}
         >
           {initials}
