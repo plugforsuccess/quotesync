@@ -565,7 +565,7 @@ function Layout({ forcePlane = null }) {
           81px value was right at the edge and let the nav overlap page
           headers (e.g. the "+ Upload Audit Report" button on /agency/cross-sell)
           whenever the user button rendered slightly taller than expected. */}
-      <div className="h-[72px] sm:h-[84px]"></div>
+      <div className="h-[60px] sm:h-[84px]"></div>
 
       {/* Verification overdue banner — admin only */}
       {!isFunnelRoute && <VerificationBanner />}

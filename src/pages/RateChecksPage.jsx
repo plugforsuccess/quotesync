@@ -290,9 +290,9 @@ function NotifyButton() {
   const [perm, setPerm] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'));
   if (perm !== 'default') return null;
   return (
-    <button onClick={() => Notification.requestPermission().then(setPerm)} title="Get a heads-up on this device when a policy comes in"
-      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold" style={inputStyle}>
-      <Bell className="w-4 h-4" /> Alert me here
+    <button onClick={() => Notification.requestPermission().then(setPerm)} title="Get a heads-up on this device when a policy comes in" aria-label="Alert me here"
+      className="hidden h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold sm:inline-flex" style={inputStyle}>
+      <Bell className="h-4 w-4" aria-hidden="true" /><span className="hidden lg:inline">Alert me here</span>
     </button>
   );
 }
@@ -385,20 +385,23 @@ export default function RateChecksPage() {
 
   return (
     <div className="dark-page">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
-          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-dim)' }}>People who sent their policy to see if Allstate can beat it.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => setInviteOpen(true)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
-              <Send className="w-4 h-4" /> Send a link
-            </button>
-            <button onClick={() => setUploadOpen(true)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
-              <Upload className="w-4 h-4" /> Upload dec page
-            </button>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-6">
+        {/* Title and actions share one row, so the page reads title → tabs → list. */}
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="whitespace-nowrap text-xl font-bold sm:text-2xl" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
+            <p className="mt-0.5 hidden text-sm sm:block" style={{ color: 'var(--qs-dim)' }}>People who sent their policy to see if Allstate can beat it.</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             <NotifyButton />
+            <button onClick={() => setUploadOpen(true)} aria-label="Upload dec page" title="Upload dec page"
+              className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
+              <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Upload dec page</span>
+            </button>
+            <button onClick={() => setInviteOpen(true)}
+              className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
+              <Send className="h-4 w-4" aria-hidden="true" /> Send a link
+            </button>
           </div>
         </div>
 
