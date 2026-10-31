@@ -21,12 +21,12 @@ const PAGES = [
 
 export function ConsumerNav({ current }) {
   return (
-    <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-5 lg:pt-7">
-      <Link to="/" className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam</Link>
-      <nav aria-label="insuredbycam" className="-mr-1.5 flex items-center whitespace-nowrap text-[13px] font-semibold sm:mr-0 sm:gap-1 sm:text-sm">
+    <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-5 lg:pt-7">
+      <Link to="/" className="text-[14px] font-extrabold tracking-tight text-white sm:text-[15px]">insured<span style={{ color: ACCENT }}>by</span>cam.com</Link>
+      <nav aria-label="insuredbycam" className="-mr-1.5 flex items-center whitespace-nowrap text-[12.5px] font-semibold sm:mr-0 sm:gap-1 sm:text-sm">
         {PAGES.map(([key, to, label]) => (key === current
-          ? <span key={key} aria-current="page" className="rounded-full bg-white/10 px-2 py-1.5 text-white sm:px-3">{label}</span>
-          : <Link key={key} to={to} className="rounded-full px-2 py-1.5 text-white/70 hover:bg-white/10 hover:text-white sm:px-3">{label}</Link>))}
+          ? <span key={key} aria-current="page" className="rounded-full bg-white/10 px-[5px] py-1.5 text-white sm:px-3">{label}</span>
+          : <Link key={key} to={to} className="rounded-full px-[5px] py-1.5 text-white/70 hover:bg-white/10 hover:text-white sm:px-3">{label}</Link>))}
       </nav>
     </header>
   );

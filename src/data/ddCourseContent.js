@@ -631,6 +631,99 @@ export const ddModuleContent = {
       'Super Speeder: $200 fee for 75+ (two-lane) or 85+ mph; Move Over for stationary responders; stop for school buses; leaving an injury crash is a crime.',
     ],
   },
+  'm8-insurance-claims': {
+    summary:
+      'Every habit in this course shows up on your insurance bill. This module explains how your driving record affects what you pay, what Georgia requires you to carry, which coverages actually protect you and your family, and how to handle a claim after a crash so it goes smoothly.',
+    sections: [
+      {
+        heading: 'How your driving shapes your premium',
+        blocks: [
+          { type: 'p', text: 'Insurers price your policy on risk, and your own driving record is one of the strongest signals they have. When a policy is written or renewed, the insurer can review your motor vehicle record (MVR) and claims history.' },
+          { type: 'ul', items: [
+            'Speeding tickets and other moving violations can raise your rate, typically for about three years.',
+            'At-fault crashes usually raise your rate more than a ticket, and can also cost you a claim-free discount.',
+            'A DUI is one of the most expensive entries a driving record can carry, and can make coverage much harder to get.',
+          ] },
+          { type: 'callout', variant: 'key', title: 'Clean records pay', text: 'Avoiding even one at-fault crash or ticket can save far more than the cost of any course. Safe-driving discounts, defensive-driving discounts, and usage-based (telematics) programs all reward the habits you are learning here.' },
+        ],
+        quiz: [
+          { q: 'Which usually raises an auto premium the most?', choices: [
+            { t: 'Taking a defensive driving course.', correct: false },
+            { t: 'An at-fault crash or a DUI on your record.', correct: true },
+            { t: 'Keeping a clean record for three years.', correct: false },
+          ], explain: 'At-fault crashes and serious violations like DUI are among the biggest premium drivers. Clean records and courses can earn discounts.' },
+        ],
+      },
+      {
+        heading: 'What Georgia requires you to carry',
+        blocks: [
+          { type: 'callout', variant: 'law', title: 'Georgia minimum liability', items: [
+            '$25,000 — bodily injury per person',
+            '$50,000 — bodily injury per accident',
+            '$25,000 — property damage per accident',
+          ] },
+          { type: 'p', text: 'Georgia is an at-fault state: the driver who causes a crash is responsible for the damage, and their liability insurance pays the other people involved. Insurers report coverage to the state electronically, so a lapse can be flagged even if you never get pulled over. Driving uninsured can lead to fines and suspension of your registration and license.' },
+          { type: 'callout', variant: 'warn', title: 'Minimums are a floor, not a target', text: 'A single serious crash can easily cost more than $25,000. If damages exceed your limits, you can be held personally responsible for the rest. Many drivers choose higher limits to protect their savings and income.' },
+        ],
+        quiz: [
+          { q: 'In Georgia’s at-fault system, who pays for the other driver’s damage after a crash?', choices: [
+            { t: 'Each driver’s own insurer, regardless of fault.', correct: false },
+            { t: 'The liability coverage of the driver who caused the crash.', correct: true },
+            { t: 'The State of Georgia.', correct: false },
+          ], explain: 'Georgia is an at-fault (tort) state: the at-fault driver’s liability coverage pays for the injuries and damage they cause.' },
+        ],
+      },
+      {
+        heading: 'Coverage that protects you',
+        blocks: [
+          { type: 'p', text: 'Liability covers what you do to others. These coverages protect you, your passengers, and your car:' },
+          { type: 'ul', items: [
+            'Collision: repairs your car after a crash with another vehicle or object, whoever is at fault.',
+            'Comprehensive: theft, hail, flood, fire, falling trees, and hitting a deer.',
+            'Uninsured / underinsured motorist (UM): pays you when the at-fault driver has no insurance or not enough.',
+            'Medical payments: helps with medical bills for you and your passengers.',
+            'Rental and roadside: keeps you moving while your car is in the shop or stranded.',
+          ] },
+          { type: 'callout', variant: 'tip', title: 'Don’t skip uninsured motorist', text: 'Many drivers on Georgia roads carry no insurance or only the minimum. Georgia insurers must offer UM coverage, and you have to reject it in writing to go without it. It is often one of the best values on a policy.' },
+        ],
+        quiz: [
+          { q: 'An uninsured driver runs a red light and injures you. Which coverage helps pay for your injuries?', choices: [
+            { t: 'Your uninsured motorist (UM) coverage.', correct: true },
+            { t: 'Your comprehensive coverage.', correct: false },
+            { t: 'Nothing — you cannot recover anything.', correct: false },
+          ], explain: 'Uninsured / underinsured motorist coverage pays you when the at-fault driver has no insurance or not enough to cover your losses.' },
+        ],
+      },
+      {
+        heading: 'After a crash: making a claim',
+        blocks: [
+          { type: 'p', text: 'Once everyone is safe and the legal duties from Module 6 and Module 7 are handled, a few habits make the insurance side go smoothly.' },
+          { type: 'ol', items: [
+            'Take photos of all vehicles, plates, the scene, road conditions, and any injuries.',
+            'Get the other driver’s name, phone, insurer, and policy number, plus names and numbers of witnesses.',
+            'Get the police report number before you leave the scene.',
+            'Stick to the facts. Don’t argue or admit fault at the scene; let the insurers and police sort out responsibility.',
+            'Notify your insurer or agent promptly, even if the crash seems minor.',
+            'See a doctor if you are hurt at all; some injuries show up days later. Keep every bill and receipt.',
+          ] },
+          { type: 'callout', variant: 'key', title: 'Your agent is on your side', text: 'Your insurance agent can explain your coverage, help you start the claim, and answer questions along the way. Keep their number in your phone and your proof of insurance in the car.' },
+        ],
+        quiz: [
+          { q: 'Right after a minor crash, what should you avoid?', choices: [
+            { t: 'Taking photos of the scene and vehicles.', correct: false },
+            { t: 'Arguing about or admitting fault at the scene.', correct: true },
+            { t: 'Notifying your insurer promptly.', correct: false },
+          ], explain: 'Document the scene, exchange information, and report the claim promptly, but stick to the facts and let the insurers determine fault.' },
+        ],
+      },
+    ],
+    takeaways: [
+      'Tickets, at-fault crashes, and DUIs raise premiums for years; clean records earn discounts.',
+      'Georgia minimum liability is 25/50/25, and Georgia is an at-fault state. Minimums are a floor, not a target.',
+      'Collision, comprehensive, uninsured motorist, and medical payments protect you; UM must be rejected in writing.',
+      'After a crash: photos, information, police report number, facts only, and tell your insurer promptly.',
+    ],
+  },
 };
 
 export function getModuleContent(contentRef) {
