@@ -6,6 +6,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { SiteCopyProvider } from './components/SiteCopy';
+import { ConsumerShell } from './components/ConsumerNav';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -190,6 +191,14 @@ function App() {
           <Route path="/r/:inviteCode" element={<ErrorBoundary fallback={<PageError />}><RateCheckPage /></ErrorBoundary>} />
           <Route path="/partner/:token" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PartnerPortalPage /></Suspense></ErrorBoundary>} />
           <Route path="/ratecheck-privacy" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><RateCheckPrivacyPage /></Suspense></ErrorBoundary>} />
+          {/* Consumer pages in the Rate Check look (royal blue, no app chrome). Drivers Ed draws
+              its own hero and footer; the Newsroom gets the shared blue bar and footer. */}
+            <Route path="/courses" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
+            <Route path="/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
+          <Route element={<ConsumerShell />}>
+            <Route path="/news" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense></ErrorBoundary>} />
+            <Route path="/news/:slug" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><StoryDetailPage /></Suspense></ErrorBoundary>} />
+          </Route>
 
           {/* Defensive Driving course — full-screen, no consumer nav (its own chrome) */}
           <Route path="/courses/defensive-driving/portal" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPortalPage /></Suspense></ErrorBoundary>} />
@@ -232,11 +241,7 @@ function App() {
             <Route path="save/confirmation" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><SaveConfirmationPage /></Suspense></ErrorBoundary>} />
             <Route path="success" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><ThankYouPage /></Suspense></ErrorBoundary>} />
 
-            {/* Drivers Ed tab */}
-            <Route path="courses" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
 
-            {/* Keep your old route working too if it's already linked */}
-            <Route path="defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DriversEdPage /></Suspense></ErrorBoundary>} />
 
             {/* In-house Georgia 6-Hour Defensive Driving — enrollment + checkout */}
             <Route path="courses/defensive-driving" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveDrivingPage /></Suspense></ErrorBoundary>} />
@@ -246,8 +251,6 @@ function App() {
             <Route path="defensive-driving/overview" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><DefensiveOverviewPage /></Suspense></ErrorBoundary>} />
 
             {/* Newsroom - Insurance News Feed */}
-            <Route path="news" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><NewsroomPage /></Suspense></ErrorBoundary>} />
-            <Route path="news/:slug" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><StoryDetailPage /></Suspense></ErrorBoundary>} />
 
             {/* Story Preview (Protected - Editor/Admin only) */}
             <Route

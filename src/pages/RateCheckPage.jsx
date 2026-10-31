@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
+import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem,
@@ -1170,18 +1171,6 @@ const ACCEPTS = (f) => /^image\//.test(f.type) || f.type === 'application/pdf' |
 const wrap = 'mx-auto max-w-6xl px-4 lg:px-8';
 const sectionTitle = 'text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] lg:text-[36px]';
 
-function SiteNav() {
-  return (
-    <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 pt-5 lg:pt-7">
-      <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam</span>
-      <nav aria-label="insuredbycam" className="-mr-1.5 flex items-center whitespace-nowrap text-[13px] font-semibold sm:mr-0 sm:gap-1 sm:text-sm">
-        <span aria-current="page" className="rounded-full bg-white/10 px-2 py-1.5 text-white sm:px-3">Rate Check</span>
-        <Link to="/courses" className="rounded-full px-2 py-1.5 text-white/70 hover:bg-white/10 hover:text-white sm:px-3">Drivers Ed</Link>
-        <Link to="/news" className="rounded-full px-2 py-1.5 text-white/70 hover:bg-white/10 hover:text-white sm:px-3">Newsroom</Link>
-      </nav>
-    </header>
-  );
-}
 
 const PROMISES = [
   ['free', 'Free, no obligation'],
@@ -1263,7 +1252,7 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
           style={{ background: 'radial-gradient(55% 50% at 5% 0%, rgba(96,165,250,0.35), transparent 70%), radial-gradient(45% 45% at 100% 100%, rgba(57,255,136,0.18), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
-          <SiteNav />
+          <ConsumerNav current="rate" />
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="rc.eyebrow">Free rate check · Georgia</T></p>
@@ -1402,23 +1391,3 @@ function Shell({ children, step, bar, center = false, wide = false }) {
   );
 }
 
-export function RateCheckFooter({ padForBar = false, wide = false }) {
-  return (
-    <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'} ${wide ? 'sm:max-w-6xl lg:px-8' : ''}`}>
-      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
-        <Link to="/courses" className="font-semibold text-slate-600 underline">Drivers Ed</Link>
-        <Link to="/news" className="font-semibold text-slate-600 underline">Newsroom</Link>
-      </nav>
-      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legal">
-        <Link to="/ratecheck-privacy" className="underline">Rate Check privacy notice</Link>
-        <Link to="/privacy" className="underline">Privacy policy</Link>
-        <Link to="/terms" className="underline">Terms</Link>
-      </nav>
-      {/* TODO(compliance): confirm the Allstate agency disclosure wording before launch. */}
-      <p>
-        <T k="rc.footer.disclosure">{`${AGENCY.name} is an Allstate Insurance Agency. Quotes and savings vary and are subject to underwriting and eligibility; not all applicants qualify.`}</T>
-      </p>
-      <p className="mt-1">Agency Resident License #: {AGENCY.license}</p>
-    </footer>
-  );
-}

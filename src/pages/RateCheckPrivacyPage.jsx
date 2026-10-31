@@ -5,7 +5,8 @@
 
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RateCheckFooter, LEGAL_OPERATOR } from './RateCheckPage';
+import { LEGAL_OPERATOR } from './RateCheckPage';
+import { RateCheckFooter } from '../components/ConsumerNav';
 
 export default function RateCheckPrivacyPage() {
   useEffect(() => {
