@@ -21,7 +21,7 @@ import { HOUSING_LABEL } from '../lib/rateCheckApi';
 import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone, CARD_STYLE } from './components/rate-checks/ui';
 import {
-  STATUS, CONFIDENCE_WARNING, TERM_HINT, DECISION, decisionLabel,
+  STATUS, CONFIDENCE_WARNING, TERM_HINT, DECISION,
   isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
 } from './components/rate-checks/format';
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
@@ -256,10 +256,9 @@ function InboxCard({ h, now, onOpen }) {
           ? <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
           : <StatusChip status={h.status} quiet />}
       </div>
-      {(open && (h.decision || (late && h.lead.phone))) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name ? (
+      {(open && late && h.lead.phone) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name ? (
         <div className="mt-1.5 flex items-center justify-between gap-2">
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-            {open && h.decision && <QuietDecision rc={h.decision} policies={h.policies} />}
             <OriginTag rc={h.lead} />
           </span>
           {open && late && h.lead.phone && (
@@ -271,18 +270,6 @@ function InboxCard({ h, now, onOpen }) {
         </div>
       ) : null}
     </li>
-  );
-}
-
-// The routing result as a small label, so it doesn't read as a button.
-const DECISION_DOT = { success: 'var(--qs-success)', info: 'var(--qs-info)', warning: 'var(--qs-warning)', neutral: 'var(--qs-subtle)' };
-function QuietDecision({ rc, policies }) {
-  const d = DECISION[rc.decision];
-  if (!d) return null;
-  return (
-    <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: 'var(--qs-text)' }}>
-      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: DECISION_DOT[d.tone] }} />{decisionLabel(rc, policies)}
-    </span>
   );
 }
 
