@@ -49,7 +49,7 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // names him); the agency's resident license goes in the footer next to the agency name.
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
-// "Meet Cam" carousel: the agent card first, then these photos and short bio cards, in order.
+// "Meet the Owner" carousel: the agent card first, then these photos and short bio cards, in order.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
   { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
@@ -674,8 +674,10 @@ export default function RateCheckPage() {
       )}
 
       {drafts.length === 0 ? (
-        // Desktop: hero, buttons and trust on the left; Meet Cam and the how-to on the right.
-        // Phones keep one column in this order.
+        // Order, for conversion: the ask (headline + upload) with trust right under it, then
+        // proof (carriers, the owner), then answers (how to get the page, what we insure),
+        // then the ask again. Desktop: the ask on the left; Meet the Owner and the how-to on
+        // the right; carriers, products and the closing ask full width. Phones: one column.
         <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-14">
           <div className="lg:col-start-1 lg:row-start-1">
           {returning ? (
@@ -710,24 +712,27 @@ export default function RateCheckPage() {
               <Paperclip className="h-4 w-4" aria-hidden="true" /> <T k="rc.multiple">Multiple policies? Upload them together.</T>
             </span>
           </p>
-          {/* Trust, kept quiet: one line, not cards. Desktop: here, under the buttons. */}
-          <ul className="mt-6 hidden flex-wrap lg:flex lg:justify-start items-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500">
+          {/* Trust, kept quiet: one line right under the buttons. */}
+          <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500 lg:justify-start">
             <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
             <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
             <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
           </ul>
           </div>
 
-          <div className="lg:col-start-2">
-          <MeetCam />
-          {/* Phones: the trust line sits between the story and the how-to. */}
-          <ul className="mt-5 flex flex-wrap lg:hidden items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500">
-            <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
-            <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
-            <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
-          </ul>
+          <div className="lg:col-span-2 lg:row-start-2">
+            <CarrierLogos />
+          </div>
 
-          <details open className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
+          {/* Desktop: Meet the Owner and the how-to share the right column, beside the ask. */}
+          <div className="lg:col-start-2 lg:row-start-1">
+          <section className="mt-12 lg:mt-0" aria-labelledby="rc-owner">
+            <h2 id="rc-owner" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.owner.heading">Meet the Owner</T></h2>
+            <MeetCam />
+          </section>
+
+          <div className="mt-12 lg:mt-8">
+          <details open className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
             <summary className="cursor-pointer font-semibold text-slate-800"><T k="rc.howto.title">How to get your declarations page</T></summary>
             <ol className="mt-3 list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700">
               <li><T k="rc.howto.1">Log in to your insurer’s website or app.</T></li>
@@ -742,11 +747,26 @@ export default function RateCheckPage() {
             <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
           </details>
           </div>
-
-          <div className="lg:col-span-2">
-          <ProductsWeInsure />
-          <CarrierLogos />
           </div>
+
+          <div className="lg:col-span-2 lg:row-start-3">
+            <ProductsWeInsure />
+          </div>
+
+          {!returning && (
+            <section className="mt-12 rounded-3xl bg-slate-900 px-6 py-8 text-center text-white lg:col-span-2 lg:row-start-4 lg:mt-16 lg:py-12" aria-labelledby="rc-closing">
+              <h2 id="rc-closing" className="text-[26px] font-extrabold leading-tight tracking-tight lg:text-[32px]"><T k="rc.closing.heading">Ready for a second opinion?</T></h2>
+              <p className="mx-auto mt-2 max-w-md text-slate-300"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
+              <div className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
+                <button type="button" onClick={() => openFiles()} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-lg font-bold text-white active:bg-blue-700">
+                  <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
+                </button>
+                <button type="button" onClick={() => openCamera()} className="flex items-center justify-center gap-2 rounded-2xl border border-white/25 px-5 py-4 font-semibold text-white active:bg-white/10">
+                  <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.photos">Take photos</T>
+                </button>
+              </div>
+            </section>
+          )}
         </div>
       ) : (
         <>
@@ -1038,7 +1058,7 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
-// First slide of the Meet Cam carousel.
+// First slide of the Meet the Owner carousel.
 function AgentCard() {
   return (
     <div className="flex h-full min-h-[268px] flex-col items-center justify-center text-center">
@@ -1072,7 +1092,7 @@ function MeetCam() {
       </div>
     ),
   })];
-  return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-6 lg:mt-0" />;
+  return <Carousel slides={slides} label="Meet the Owner" className="mt-4" />;
 }
 
 function Trust({ icon: Icon, k, label }) {
@@ -1193,7 +1213,7 @@ function CarrierLogos() {
     </ul>
   );
   return (
-    <section className="mt-12 lg:mt-16" aria-labelledby="rc-carriers">
+    <section className="mt-10 lg:mt-16" aria-labelledby="rc-carriers">
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       <h2 id="rc-carriers" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.carriers.heading">Carriers we write</T></h2>
       <div className="rc-marquee-wrap -mx-4 mt-2 overflow-hidden px-4 pb-6 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
