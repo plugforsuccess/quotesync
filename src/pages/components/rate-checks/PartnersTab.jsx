@@ -363,7 +363,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
             <div className="min-w-0">
               <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>
                 {[a.first_name, a.last_name].filter(Boolean).join(' ')}
-                {a.is_customer === 'yes' && <span className="ml-2 rounded px-1.5 py-0.5 text-[11px] font-bold" style={{ color: 'var(--qs-success)', background: 'var(--qs-success-subtle)' }}>Customer</span>}
+                {a.is_customer === 'yes' && <span className="ml-2 rounded px-1.5 py-0.5 text-[11px] font-bold" style={{ color: 'var(--qs-success)', background: 'var(--qs-success-subtle)' }}>Allstate customer</span>}
               </p>
               <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
                 {[formatPhone(a.phone), a.email, a.audience, `applied ${formatDate(a.created_at)}`].filter(Boolean).join(' · ')}

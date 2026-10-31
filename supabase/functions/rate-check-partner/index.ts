@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
     if (principals?.length) {
       await supabase.from('notifications').insert(principals.map((m: any) => ({
         user_id: m.user_id, type: 'PARTNER_APPLICATION', title: `${name} wants to be a referral partner`,
-        message: `${body.is_customer === 'yes' ? 'Current customer' : 'Not a customer yet'} · from Drivers Ed. Add them in Rate Checks → Partners.`,
+        message: `${body.is_customer === 'yes' ? 'Allstate customer' : 'Not an Allstate customer yet'} · from Drivers Ed. Add them in Rate Checks → Partners.`,
         metadata: { phone },
       })))
     }

@@ -110,7 +110,7 @@ function PartnerProgram() {
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="de.partner.eyebrow">Referral partner program</T></p>
           <h2 id="de-partners" className={`mt-2 ${sectionTitle}`}><T k="de.partner.heading">Taking the course for your discount? Get paid to share the savings.</T></h2>
           <p className="mt-4 text-lg leading-relaxed text-slate-600">
-            <T k="de.partner.body">You’re already saving. The people you know are probably overpaying too. As a referral partner you share your own Rate Check link, and you’re paid for every household that sends their declarations page through it—whether or not they buy.</T>
+            <T k="de.partner.body">Already with Allstate and saving with the course? The people you know are probably overpaying too. As a Cam Wiley Agency referral partner you share your own Rate Check link, and you’re paid for every household that sends their declarations page through it—whether or not they buy.</T>
           </p>
           <ol className="mt-8 space-y-4">
             {PARTNER_STEPS.map(([n, Icon, title, line]) => (
@@ -126,7 +126,7 @@ function PartnerProgram() {
             ))}
           </ol>
           <p className="mt-8 text-xs leading-relaxed text-slate-500">
-            <T k="de.partner.fine">Customers and non-customers are welcome. Partners don’t discuss coverage or prices—Cam’s licensed team handles every quote. Payment follows the partner agreement you sign, and a W-9 is needed before your first payment.</T>
+            <T k="de.partner.fine">Allstate customers and non-customers are welcome. Partners don’t discuss coverage or prices—Cam’s licensed team handles every quote. Payment follows the partner agreement you sign, and a W-9 is needed before your first payment.</T>
           </p>
         </div>
 
@@ -157,7 +157,7 @@ function PartnerProgram() {
                 <input className={input} type="email" inputMode="email" autoComplete="email" value={f.email} onChange={set('email')} maxLength={160} />
               </label>
               <fieldset className="mt-4">
-                <legend className="text-sm font-semibold text-slate-700">Are you a Cam Wiley Insurance customer?</legend>
+                <legend className="text-sm font-semibold text-slate-700">Are you an Allstate customer?</legend>
                 <div className="mt-1.5 grid grid-cols-2 gap-2">
                   {[['yes', 'Yes'], ['no', 'Not yet']].map(([v, l]) => (
                     <label key={v} className={`flex cursor-pointer items-center justify-center rounded-xl border px-3 py-2.5 text-sm font-semibold ${f.customer === v ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-slate-300 bg-white text-slate-700'}`}>
