@@ -457,7 +457,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     placeholder="e.g. Tracy Peacock"
                   />
                 </Field>
-                <Field label="Punch PIN (4 digits, optional)">
+                <Field label="Quick Send PIN (4 digits)">
                   <Input
                     type="text"
                     inputMode="numeric"
@@ -471,7 +471,7 @@ export default function EmployeeFormModal({ open, onClose, onSave, saving, emplo
                     pattern="\d{4}"
                   />
                   <p style={{ fontSize: 11, color: 'var(--qs-subtle)', marginTop: 4 }}>
-                    Used at /punch to clock in and out.
+                    Signs them in to Quick Send (insuredbycam.com/qs) to text upload links. Must be unique.
                   </p>
                 </Field>
               </div>

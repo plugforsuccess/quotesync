@@ -1,4 +1,4 @@
-// Quick Send (/qs): logged out, a producer signs in with their PIN, sends the upload
+// Quick Send (/qs): no QuoteSync login — a producer signs in with their Quick Send PIN, sends the upload
 // link, and follows it to Delivered. The edge function is mocked; nothing is texted.
 import { test, expect } from '@playwright/test';
 
@@ -15,6 +15,7 @@ function mockFunction(page, { blocked = false } = {}) {
     const body = route.request().postDataJSON();
     calls.push(body);
     const json = (b, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(b) });
+    if (body.mode === 'pin') expect(body.remember).toBe(true);
     if (body.mode === 'pin') return body.pin === '1234' ? json({ device_key: 'k'.repeat(43), producer_first: 'Cam' }) : json({ error: 'That PIN didn’t work.' }, 401);
     if (body.mode === 'whoami') return json({ producer_first: 'Cam', enabled: true, pin: true });
     if (body.mode === 'recent') return json({ invites: calls.some(c => c.mode === 'send') ? [invite(blocked ? 'blocked' : 'delivered')] : [] });
@@ -28,18 +29,19 @@ function mockFunction(page, { blocked = false } = {}) {
   return calls;
 }
 
-test('logged out: PIN, name and number, one text, followed to Delivered', async ({ page }) => {
+test('no login: PIN, name and number, one text, followed to Delivered', async ({ page }) => {
   const calls = mockFunction(page);
   await page.goto('/qs');
   await expect(page.getByRole('heading', { name: 'Quick Send' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Set up Quick Send on this phone' })).toHaveCount(0); // not logged in
-  await page.getByLabel('Your time-clock PIN').fill('9999');
+  await expect(page.getByRole('checkbox', { name: /Keep me signed in/ })).toBeChecked();
+  await page.getByLabel('Your Quick Send PIN').fill('9999');
   await expect(page.getByRole('alert')).toHaveText('That PIN didn’t work.');
-  await page.getByLabel('Your time-clock PIN').fill('1234');
+  await page.getByLabel('Your Quick Send PIN').fill('1234');
 
   const send = page.getByRole('button', { name: 'Send Requested DEC Link' });
   await expect(page.getByText(/operated by Cam Wiley Agency, Inc./)).toBeVisible();
   await expect(page.getByRole('checkbox')).toHaveCount(0); // never an opt-in here
+  expect(await page.evaluate(() => localStorage.getItem('qs_quick_send_key'))).toBeTruthy(); // kept on this phone
   await expect(send).toBeDisabled();
   await page.getByLabel('Name', { exact: true }).fill('Keisha');
   await page.getByLabel('Mobile number').fill('4045551212');
@@ -62,7 +64,7 @@ test('logged out: PIN, name and number, one text, followed to Delivered', async 
 test('a number that texted STOP is not texted; the link is offered instead', async ({ page }) => {
   mockFunction(page, { blocked: true });
   await page.goto('/qs');
-  await page.getByLabel('Your time-clock PIN').fill('1234');
+  await page.getByLabel('Your Quick Send PIN').fill('1234');
   await page.getByLabel('Name', { exact: true }).fill('Keisha');
   await page.getByLabel('Mobile number').fill('4045551212');
   await page.getByRole('button', { name: 'Send Requested DEC Link' }).click();

@@ -1,6 +1,7 @@
 // src/pages/GeorgiaDriverEducationPage.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { T } from '../components/SiteCopy';
 
 const JOSHUAS_LAW_LINK =
   "https://insuredbycam.nationaldrivered.com/dc/100038";
@@ -42,10 +43,10 @@ export default function GeorgiaDriverEducationPage() {
         {/* Hero */}
         <header className="mb-12">
           <h1 className="text-3xl md:text-4xl font-black tracking-tight mb-3">
-            Georgia Driver Education &amp; Insurance Discounts
+            <T k="de.headline">Georgia Driver Education & Insurance Discounts</T>
           </h1>
           <p className="text-sm md:text-base text-gray-300 max-w-3xl">
-            Complete your driver education online—whether you're earning your license or looking to save on insurance. Both courses are 100% online and state-approved.
+            <T k="de.subhead">Complete your driver education online—whether you’re earning your license or looking to save on insurance. Both courses are 100% online and state-approved.</T>
           </p>
         </header>
 

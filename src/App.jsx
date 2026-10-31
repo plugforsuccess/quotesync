@@ -5,6 +5,7 @@ import { ShieldOff, Home, Building2 as Building2Icon } from 'lucide-react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Analytics } from '@vercel/analytics/react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { SiteCopyProvider } from './components/SiteCopy';
 import Layout from './components/Layout';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -171,6 +172,7 @@ function App() {
       <BrowserRouter>
         <ErrorBoundary>
           <AuthProvider>
+          <SiteCopyProvider>
             <ScrollToTop />
             <Routes>
           {/* Admin login page (no layout) - obscured path for security */}
@@ -678,6 +680,7 @@ function App() {
             <Route path="time-attendance" element={<Navigate to="/agency/time-attendance" replace />} />
           </Route>
           </Routes>
+          </SiteCopyProvider>
           </AuthProvider>
           <Analytics />
         </ErrorBoundary>

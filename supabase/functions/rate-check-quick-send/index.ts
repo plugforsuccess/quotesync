@@ -2,24 +2,20 @@
 // POST /functions/v1/rate-check-quick-send   (verify_jwt = false — /qs works logged out)
 //
 // Quick Send: while talking to someone, a producer texts them a link to upload their
-// dec page, from the agency's Twilio number. The /qs page proves who the producer is
-// with a key, never a login:
-//   - a phone set up once (mode 'pair', from a logged-in session) keeps a permanent key;
-//   - a borrowed phone signs in with the producer's time-clock PIN (mode 'pin') and gets
-//     a key that lasts one shift (12 hours).
+// dec page, from the agency's Twilio number. Nobody logs in to QuoteSync: the /qs page
+// signs in with the producer's Quick Send PIN (employees.punch_pin — the old time-clock
+// PIN) and gets a key. "Keep me signed in" (their own phone) keeps the key until the
+// phone is removed in the app; otherwise it lasts one shift (12 hours).
 // Each send is a rate_check_invites row (source 'quick_send'), so the upload lands in
 // the Rate Checks inbox credited to the producer, like any invite link.
 //
 // Modes:
-//   pair         (logged-in JWT) { label }                  → { device_key, producer_first }
-//   pin          { pin, label }                              → { device_key, producer_first, expires_at }
-//   whoami       { device_key }                              → { producer_first, enabled }
+//   pin          { pin, label, remember }                    → { device_key, producer_first, expires_at }
+//   whoami       { device_key }                              → { producer_first, remembered }
 //   send         { device_key, request_id, first_name, phone } → { invite, link, status }
 //   status       { device_key, invite_id }                   → { invite }
 //   recent       { device_key }                              → { invites }
-//   sign_out     { device_key }                              → ends a PIN sign-in (set-up phones are removed in the app)
-//   settings     (logged-in JWT)                             → { enabled, can_change }
-//   set_enabled  (logged-in JWT, principal) { enabled }      → { enabled }
+//   sign_out     { device_key }                              → ends this phone's sign-in
 // Twilio delivery callbacks (form-encoded, signed) update sms_status.
 //
 // The text is a one-time link the person asked for during the conversation. Pressing
@@ -116,23 +112,6 @@ async function fromKey(supabase: any, key: unknown) {
   return { deviceId: d.id, agencyId: d.agency_id, userId: d.user_id, producerName: d.producer_name, pin: !!d.expires_at }
 }
 
-async function fromJwt(supabase: any, req: Request) {
-  const token = (req.headers.get('authorization') || '').replace(/^Bearer\s+/i, '')
-  if (!token) return null
-  const { data } = await supabase.auth.getUser(token)
-  const user = data?.user
-  if (!user) return null
-  const { data: m } = await supabase.from('agency_memberships')
-    .select('agency_id, agency_role').eq('user_id', user.id).eq('status', 'active').order('created_at').limit(1)
-  if (!m?.[0]) return null
-  return { userId: user.id, agencyId: m[0].agency_id, role: m[0].agency_role }
-}
-
-async function enabled(supabase: any, agencyId: string) {
-  const { data } = await supabase.from('agencies').select('quick_send_enabled').eq('id', agencyId).maybeSingle()
-  return !!data?.quick_send_enabled
-}
-
 const INVITE_COLS = 'id, code, producer_name, first_name, phone, created_at, expires_at, opened_at, open_count, upload_count, last_rate_check_id, sms_status, sms_status_at, sms_error'
 
 // ── Twilio delivery callbacks ────────────────────────────────────────────────
@@ -217,33 +196,7 @@ Deno.serve(async (req) => {
   try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400, cors) }
   const mode = String(body?.mode || '')
 
-  // ── Logged-in modes (the app) ──
-  if (mode === 'pair' || mode === 'settings' || mode === 'set_enabled') {
-    const caller = await fromJwt(supabase, req)
-    if (!caller) return json({ error: 'Log in to QuoteSync first.' }, 401, cors)
-
-    if (mode === 'settings') {
-      return json({ enabled: await enabled(supabase, caller.agencyId), can_change: caller.role === 'principal' }, 200, cors)
-    }
-    if (mode === 'set_enabled') {
-      if (caller.role !== 'principal') return json({ error: 'Only the agency principal can turn Quick Send on or off.' }, 403, cors)
-      const on = body.enabled === true
-      const { error } = await supabase.from('agencies').update({ quick_send_enabled: on }).eq('id', caller.agencyId)
-      if (error) return json({ error: 'Couldn’t save that. Try again.' }, 500, cors)
-      return json({ enabled: on }, 200, cors)
-    }
-    // pair: this phone gets a permanent key for this producer.
-    const key = newKey()
-    const name = await producerName(supabase, caller.userId, null)
-    const { error } = await supabase.from('rate_check_qs_devices').insert({
-      agency_id: caller.agencyId, user_id: caller.userId, producer_name: name,
-      label: cleanText(body.label, 80) || 'Phone', key_hash: await sha256Hex(key),
-    })
-    if (error) { console.error('[QUICK_SEND] pair failed:', error.message); return json({ error: 'Couldn’t set up this phone. Try again.' }, 500, cors) }
-    return json({ device_key: key, producer_first: firstOf(name) }, 200, cors)
-  }
-
-  // ── PIN sign-in (a borrowed phone) → a key for one shift ──
+  // ── PIN sign-in → a key: kept on their own phone, one shift on a shared one ──
   if (mode === 'pin') {
     const pin = String(body.pin || '')
     if (!/^\d{4}$/.test(pin)) return json({ error: 'Enter your 4-digit PIN.' }, 400, cors)
@@ -256,11 +209,12 @@ Deno.serve(async (req) => {
     const emp = emps?.length === 1 ? emps[0] : null
     if (!emp || !(await activeMember(supabase, emp.auth_user_id, emp.org_id))) return json({ error: 'That PIN didn’t work.' }, 401, cors)
     const key = newKey()
-    const expires = new Date(Date.now() + PIN_HOURS * 3600_000).toISOString()
+    const remember = body.remember !== false
+    const expires = remember ? null : new Date(Date.now() + PIN_HOURS * 3600_000).toISOString()
     const name = await producerName(supabase, emp.auth_user_id, [emp.preferred_name || emp.first_name, emp.last_name].filter(Boolean).join(' ') || null)
     const { error } = await supabase.from('rate_check_qs_devices').insert({
       agency_id: emp.org_id, user_id: emp.auth_user_id, producer_name: name,
-      label: `PIN · ${cleanText(body.label, 60) || 'Phone'}`, key_hash: await sha256Hex(key), expires_at: expires,
+      label: cleanText(body.label, 60) || 'Phone', key_hash: await sha256Hex(key), expires_at: expires,
     })
     if (error) { console.error('[QUICK_SEND] pin sign-in failed:', error.message); return json({ error: 'Something went wrong. Try again.' }, 500, cors) }
     return json({ device_key: key, producer_first: firstOf(name), expires_at: expires }, 200, cors)
@@ -268,14 +222,14 @@ Deno.serve(async (req) => {
 
   // ── Everything else needs a key ──
   const who = await fromKey(supabase, body.device_key)
-  if (!who) return json({ error: 'This phone isn’t set up for Quick Send. Sign in with your PIN.', code: 'no_device' }, 401, cors)
+  if (!who) return json({ error: 'Sign in with your Quick Send PIN.', code: 'no_device' }, 401, cors)
 
   if (mode === 'whoami') {
-    return json({ producer_first: firstOf(who.producerName), enabled: await enabled(supabase, who.agencyId), pin: who.pin }, 200, cors)
+    return json({ producer_first: firstOf(who.producerName), remembered: !who.pin }, 200, cors)
   }
 
   if (mode === 'sign_out') {
-    if (who.pin) await supabase.from('rate_check_qs_devices').update({ revoked_at: new Date().toISOString() }).eq('id', who.deviceId)
+    await supabase.from('rate_check_qs_devices').update({ revoked_at: new Date().toISOString() }).eq('id', who.deviceId)
     return json({ ok: true }, 200, cors)
   }
 
@@ -296,7 +250,6 @@ Deno.serve(async (req) => {
   if (mode !== 'send') return json({ error: 'Unknown mode' }, 400, cors)
 
   // ── Send ──
-  if (!(await enabled(supabase, who.agencyId))) return json({ error: 'Quick Send is turned off for your agency.', code: 'disabled' }, 403, cors)
   const requestId = String(body.request_id || '')
   if (!/^[0-9a-f-]{36}$/i.test(requestId)) return json({ error: 'request_id is required' }, 400, cors)
   const firstName = cleanText(body.first_name, 80)

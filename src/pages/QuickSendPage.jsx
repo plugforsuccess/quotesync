@@ -1,15 +1,14 @@
 // src/pages/QuickSendPage.jsx
 // Quick Send (/qs): while talking to someone, text them a link to upload their dec page —
-// name, mobile, Send. Works logged out: this phone was set up once (it keeps a key), or
-// the producer signs in with their time-clock PIN for the shift. Uploads land in the
-// Rate Checks inbox credited to the producer. Not indexed.
+// name, mobile, Send. No QuoteSync login: the producer signs in with their Quick Send PIN,
+// and "Keep me signed in" keeps this phone signed in. Uploads land in the Rate Checks
+// inbox credited to the producer. Not indexed.
 
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import { Check, Copy, Loader2, QrCode, Send, X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import {
-  quickSend, savedKey, keepPhoneKey, keepPinKey, forgetKeys, deviceLabel,
+  quickSend, savedKey, keepKey, forgetKeys, deviceLabel,
   sendProgress, sendSteps, STEPS, shortAgo, isFinal, formatPhoneInput, phoneDigits, validMobile,
 } from '../lib/quickSend';
 
@@ -24,23 +23,18 @@ const field = 'mt-1.5 block w-full rounded-xl border border-slate-300 bg-white p
 const label = 'text-sm font-semibold text-slate-700';
 
 export default function QuickSendPage() {
-  const [screen, setScreen] = useState('loading'); // loading | signin | off | ready
-  const [me, setMe] = useState(null);              // { producer_first, pin }
-  const [loggedIn, setLoggedIn] = useState(false);
+  const [screen, setScreen] = useState('loading'); // loading | signin | ready
+  const [me, setMe] = useState(null);              // { producer_first, remembered }
 
   useEffect(() => {
     document.title = 'Quick Send | insuredbycam';
     let gone = false;
     (async () => {
-      const { data } = await supabase.auth.getSession().catch(() => ({ data: null }));
-      if (!gone) setLoggedIn(!!data?.session);
       const key = savedKey();
-      if (!key) { if (!gone) setScreen('signin'); return; }
+      if (!key) { setScreen('signin'); return; }
       try {
         const who = await quickSend('whoami', { device_key: key });
-        if (gone) return;
-        setMe(who);
-        setScreen(who.enabled ? 'ready' : 'off');
+        if (!gone) { setMe(who); setScreen('ready'); }
       } catch (e) {
         if (gone) return;
         if (e.status === 401) forgetKeys();
@@ -50,10 +44,10 @@ export default function QuickSendPage() {
     return () => { gone = true; };
   }, []);
 
-  const signedIn = (who) => { setMe(who); setScreen(who.enabled === false ? 'off' : 'ready'); };
+  const signedIn = (who) => { setMe(who); setScreen('ready'); };
   const signOut = async () => {
     const key = savedKey();
-    if (me?.pin && key) await quickSend('sign_out', { device_key: key }).catch(() => {});
+    if (key) await quickSend('sign_out', { device_key: key }).catch(() => {});
     forgetKeys();
     setMe(null);
     setScreen('signin');
@@ -68,78 +62,53 @@ export default function QuickSendPage() {
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">insuredbycam</p>
             <h1 className="mt-0.5 text-[28px] font-extrabold leading-none tracking-tight text-slate-900">Quick Send</h1>
           </div>
-          {screen === 'ready' && me?.producer_first && (
+          {screen === 'ready' && (
             <p className="flex items-center gap-2 text-sm text-slate-500">
-              <span className="font-semibold text-slate-700">{me.producer_first}</span>
-              {me.pin && <><span aria-hidden="true">·</span><button type="button" onClick={signOut} className="font-semibold text-blue-700">Sign out</button></>}
+              {me?.producer_first && <><span className="font-semibold text-slate-700">{me.producer_first}</span><span aria-hidden="true">·</span></>}
+              <button type="button" onClick={signOut} className="font-semibold text-blue-700">Sign out</button>
             </p>
           )}
         </header>
         {screen === 'loading' && <Loader2 className="mx-auto mt-16 h-6 w-6 animate-spin text-slate-400" aria-label="Loading" />}
-        {screen === 'signin' && <SignIn loggedIn={loggedIn} onDone={signedIn} />}
-        {screen === 'off' && (
-          <p className="rounded-2xl border border-slate-200 bg-white p-5 text-slate-700">
-            Quick Send is turned off for the agency right now. The agency principal can turn it on in Rate Checks → Links sent.
-          </p>
-        )}
+        {screen === 'signin' && <SignIn onDone={signedIn} />}
         {screen === 'ready' && <SendForm onSignedOut={signOut} />}
       </main>
     </div>
   );
 }
 
-function SignIn({ loggedIn, onDone }) {
+function SignIn({ onDone }) {
   const [pin, setPin] = useState('');
+  const [remember, setRemember] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const signInWithPin = async (value) => {
+  const signIn = async (value) => {
     setBusy(true); setError('');
     try {
-      const r = await quickSend('pin', { pin: value, label: deviceLabel() });
-      keepPinKey(r.device_key);
-      const who = await quickSend('whoami', { device_key: r.device_key });
-      onDone(who);
+      const r = await quickSend('pin', { pin: value, label: deviceLabel(), remember });
+      keepKey(r.device_key, remember);
+      onDone(await quickSend('whoami', { device_key: r.device_key }));
     } catch (e) {
       setError(e.message); setPin('');
     } finally { setBusy(false); }
   };
-  const setUpPhone = async () => {
-    setBusy(true); setError('');
-    try {
-      const r = await quickSend('pair', { label: deviceLabel() }, { withLogin: true });
-      keepPhoneKey(r.device_key);
-      const who = await quickSend('whoami', { device_key: r.device_key });
-      onDone(who);
-    } catch (e) { setError(e.message); } finally { setBusy(false); }
-  };
 
   return (
-    <div className="space-y-4">
-      {loggedIn && (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-          <p className="font-semibold text-slate-900">Your phone?</p>
-          <p className="mt-1 text-sm text-slate-600">Set it up once and Quick Send opens without a PIN or a login from now on.</p>
-          <button type="button" onClick={setUpPhone} disabled={busy}
-            className="mt-3 w-full rounded-xl bg-blue-700 px-4 py-3 font-semibold text-white disabled:opacity-60">
-            Set up Quick Send on this phone
-          </button>
-        </div>
-      )}
-      <form className="rounded-2xl border border-slate-200 bg-white p-4" onSubmit={e => { e.preventDefault(); if (pin.length === 4) signInWithPin(pin); }}>
-        <label htmlFor="qs-pin" className="font-semibold text-slate-900">{loggedIn ? 'Or use your time-clock PIN' : 'Your time-clock PIN'}</label>
-        <p className="mt-1 text-sm text-slate-600">Signs you in on this phone until you close it, or for 12 hours.</p>
-        <input id="qs-pin" inputMode="numeric" autoComplete="one-time-code" maxLength={4} value={pin} autoFocus={!loggedIn}
-          onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 4); setPin(v); if (v.length === 4) signInWithPin(v); }}
-          className={`${field} text-center font-mono text-2xl tracking-[0.6em]`} placeholder="••••" aria-describedby="qs-pin-error" disabled={busy} />
-        {error && <p id="qs-pin-error" className="mt-2 text-sm text-red-700" role="alert">{error}</p>}
-      </form>
-      {!loggedIn && (
-        <p className="px-1 text-sm text-slate-500">
-          Your own phone? Log in to QuoteSync on it once, open this page, and tap “Set up Quick Send on this phone.”
-        </p>
-      )}
-    </div>
+    <form className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" onSubmit={e => { e.preventDefault(); if (pin.length === 4) signIn(pin); }}>
+      <label htmlFor="qs-pin" className="block text-lg font-bold text-slate-900">Your Quick Send PIN</label>
+      <input id="qs-pin" inputMode="numeric" autoComplete="one-time-code" maxLength={4} value={pin} autoFocus
+        onChange={e => { const v = e.target.value.replace(/\D/g, '').slice(0, 4); setPin(v); if (v.length === 4) signIn(v); }}
+        className={`${field} mt-3 text-center font-mono text-3xl tracking-[0.6em]`} placeholder="••••" aria-describedby="qs-pin-error" disabled={busy} />
+      {error && <p id="qs-pin-error" className="mt-2 text-sm font-medium text-red-700" role="alert">{error}</p>}
+      <label className="mt-4 flex cursor-pointer items-start gap-3">
+        <input type="checkbox" checked={remember} onChange={e => setRemember(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
+        <span>
+          <span className="block font-semibold text-slate-900">Keep me signed in</span>
+          <span className="block text-sm text-slate-500">On your own phone. Leave it off on a shared one, and it signs out when you close it.</span>
+        </span>
+      </label>
+    </form>
   );
 }
 

@@ -1,26 +1,10 @@
 // src/hooks/useQuickSend.js
-// Quick Send settings in the app: the agency's on/off switch (principal only) and the
-// phones that can send — set-up phones, plus PIN sign-ins still within their shift.
+// Quick Send in the app: the phones signed in to send — kept-signed-in phones, plus
+// shared-phone sign-ins still within their shift. Removing one signs it out at once.
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '../lib/supabase';
 import { queryKeys } from '../lib/queryKeys';
-import { quickSend } from '../lib/quickSend';
-
-export const useQuickSendSettings = (agencyId) =>
-  useQuery({
-    queryKey: queryKeys.rateChecks.quickSendSettings(agencyId),
-    queryFn: () => quickSend('settings', {}, { withLogin: true }),
-    enabled: !!agencyId,
-  });
-
-export function useSetQuickSendEnabled(agencyId) {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (enabled) => quickSend('set_enabled', { enabled }, { withLogin: true }),
-    onSuccess: (r) => qc.setQueryData(queryKeys.rateChecks.quickSendSettings(agencyId), old => ({ ...(old || {}), enabled: r.enabled })),
-  });
-}
 
 export const useQuickSendDevices = (agencyId) =>
   useQuery({

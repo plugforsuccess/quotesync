@@ -12,6 +12,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { T, CopyImage } from '../components/SiteCopy';
 import {
   AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
 } from 'lucide-react';
@@ -505,14 +506,14 @@ export default function RateCheckPage() {
         {banner}
         <div role="status" aria-live="polite" className="text-center">
           <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">
-            {reading ? 'Reading your policies…' : 'Got it — Cam is on it.'}
+            {reading ? <T k="rc.results.reading">Reading your policies…</T> : <T k="rc.results.done">Got it — Cam is on it.</T>}
           </h1>
           <p className="mx-auto mt-2 max-w-xs text-slate-600">
             {reading
-              ? 'Each one takes about 10–20 seconds. Keep this screen open.'
+              ? <T k="rc.results.reading.line">Each one takes about 10–20 seconds. Keep this screen open.</T>
               : given?.consentGivenAt
-                ? 'Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.'
-                : 'Cam’s team will reach out when your quote is ready—typically within 30 mins during business hours.'}
+                ? <T k="rc.results.done.text">Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.</T>
+                : <T k="rc.results.done.reach">Cam’s team will reach out when your quote is ready—typically within 30 mins during business hours.</T>}
           </p>
         </div>
 
@@ -555,8 +556,8 @@ export default function RateCheckPage() {
         <button type="button" onClick={() => setStep('policies')} className="-ml-1 mb-3 inline-flex items-center gap-1 text-sm font-semibold text-slate-600">
           <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {drafts.length === 1 ? '1 policy' : `${drafts.length} policies`}
         </button>
-        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">How can Cam reach you?</h1>
-        <p className="mt-2 text-slate-600">Cam&apos;s team only reaches out if Allstate can beat your price. No call centers, ever.</p>
+        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.contact.heading">How can Cam reach you?</T></h1>
+        <p className="mt-2 text-slate-600"><T k="rc.contact.line">Cam’s team only reaches out if Allstate can beat your price. No call centers, ever.</T></p>
 
         <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="mt-6 space-y-4" noValidate>
           <Field label="First name" htmlFor="rc-first">
@@ -632,7 +633,7 @@ export default function RateCheckPage() {
             </div>
           </fieldset>
           <p className="flex items-center gap-2 px-1 text-xs text-slate-500">
-            <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Your photos go only to Cam&apos;s office and are deleted after 90 days.
+            <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> <T k="rc.contact.private">Your photos go only to Cam’s office and are deleted after 90 days.</T>
           </p>
           <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
         </form>
@@ -677,13 +678,12 @@ export default function RateCheckPage() {
             <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add another policy</h1>
           ) : (
             <>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Free rate check · Georgia</p>
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.eyebrow">Free rate check · Georgia</T></p>
               <h1 className="mt-2 text-[32px] font-extrabold leading-[1.1] tracking-tight text-slate-900">
-                Get a second opinion on your insurance.
+                <T k="rc.headline">Get a second opinion on your insurance.</T>
               </h1>
               <p className="mt-3 text-slate-600">
-                Upload your auto, home or umbrella declarations pages. A licensed agent on Cam&apos;s team will check your
-                rate and text you when your quote is ready—typically within 30 mins during business hours.
+                <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
               </p>
             </>
           )}
@@ -693,17 +693,17 @@ export default function RateCheckPage() {
             <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
               <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
             </span>
-            <span className="text-xl font-bold">Upload my policy</span>
-            <span className="text-sm text-blue-100">PDF, photos or screenshots</span>
+            <span className="text-xl font-bold"><T k="rc.upload.title">Upload my policy</T></span>
+            <span className="text-sm text-blue-100"><T k="rc.upload.line">PDF, photos or screenshots</T></span>
           </button>
           <button type="button" onClick={() => openCamera()}
             className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-700 active:bg-slate-50">
-            <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> Take photos instead</span>
-            <span className="mt-0.5 text-xs text-slate-500">Photograph every page of the declarations</span>
+            <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T></span>
+            <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Photograph every page of the declarations</T></span>
           </button>
           <p className="mt-4 flex justify-center">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF2FF] px-3.5 py-1.5 text-sm font-semibold text-blue-700">
-              <Paperclip className="h-4 w-4" aria-hidden="true" /> Multiple policies? Upload them together.
+              <Paperclip className="h-4 w-4" aria-hidden="true" /> <T k="rc.multiple">Multiple policies? Upload them together.</T>
             </span>
           </p>
 
@@ -711,28 +711,28 @@ export default function RateCheckPage() {
 
           {/* Trust, kept quiet: one line, not cards, so it doesn't break up the story. */}
           <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500">
-            <Trust icon={Sparkles} label="Read in seconds" />
-            <Trust icon={ShieldCheck} label="No spam calls" />
-            <Trust icon={Lock} label="Private & secure" />
+            <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
+            <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
+            <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
           </ul>
 
           <details open className="mt-6 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            <summary className="cursor-pointer font-semibold text-slate-800">How to get your declarations page</summary>
+            <summary className="cursor-pointer font-semibold text-slate-800"><T k="rc.howto.title">How to get your declarations page</T></summary>
             <ol className="mt-3 list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700">
-              <li>Log in to your insurer&apos;s website or app.</li>
-              <li>Open <b>Documents</b>. Some insurers call it <b>Policy Documents</b> or <b>Documents &amp; ID Cards</b>.</li>
-              <li>Find the most recent declarations page for each policy.</li>
-              <li>Download the PDF. On iPhone, tap <b>Share</b>, then <b>Save to Files</b>. On Android, it goes to <b>Downloads</b>.</li>
-              <li>Come back here and tap <b>Upload my policy</b>.</li>
+              <li><T k="rc.howto.1">Log in to your insurer’s website or app.</T></li>
+              <li><T k="rc.howto.2">Open **Documents**. Some insurers call it **Policy Documents** or **Documents & ID Cards**.</T></li>
+              <li><T k="rc.howto.3">Find the most recent declarations page for each policy.</T></li>
+              <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
+              <li><T k="rc.howto.5">Come back here and tap **Upload my policy**.</T></li>
             </ol>
-            <p className="mt-4 font-semibold text-slate-800">Have a paper copy?</p>
-            <p className="mt-1">Tap <b>Take photos instead</b> and photograph every page of the declarations. Lay it flat in good light.</p>
-            <p className="mt-4 font-semibold text-slate-800">Can&apos;t download it?</p>
-            <p className="mt-1">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</p>
+            <p className="mt-4 font-semibold text-slate-800"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
+            <p className="mt-1"><T k="rc.howto.paper">Tap **Take photos instead** and photograph every page of the declarations. Lay it flat in good light.</T></p>
+            <p className="mt-4 font-semibold text-slate-800"><T k="rc.howto.screens.title">Can’t download it?</T></p>
+            <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
           </details>
 
-          <WhatIWrite />
-          <Carriers />
+          <ProductsWeInsure />
+          <CarrierLogos />
 
         </>
       ) : (
@@ -1045,7 +1045,7 @@ function MeetCam() {
     content: (
       <figure className="relative h-full min-h-[300px]">
         <img src={a.photo} alt={a.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.position }} />
-        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-left text-sm font-semibold text-white">{a.caption}</figcaption>
+        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-left text-sm font-semibold text-white"><T k={`rc.about.${a.key}.caption`}>{a.caption}</T></figcaption>
       </figure>
     ),
   } : {
@@ -1054,7 +1054,7 @@ function MeetCam() {
       <div className="flex h-full min-h-[268px] flex-col text-left">
         {/* No visible header: the bold first line is the headline. The title names the slide for screen readers. */}
         <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
-          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-slate-900' : ''}>{t}</p>)}
+          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-slate-900' : ''}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
         </div>
       </div>
     ),
@@ -1062,11 +1062,11 @@ function MeetCam() {
   return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-6" />;
 }
 
-function Trust({ icon: Icon, label }) {
+function Trust({ icon: Icon, k, label }) {
   return (
     <li className="inline-flex items-center gap-1.5">
       <Icon className="h-3.5 w-3.5 text-blue-700" aria-hidden="true" />
-      {label}
+      <T k={k}>{label}</T>
     </li>
   );
 }
@@ -1114,27 +1114,31 @@ function Field({ label, htmlFor, children }) {
   );
 }
 
-// ── What Cam writes, and with whom (landing page, below the how-to) ──────────
+// ── Products we insure, and the carriers (landing page, below the how-to) ────
+// Titles and lines are editable in place (copy editor); keys are stable, so reorder freely.
 const PRODUCTS = [
-  ['Auto', 'Cars, trucks and SUVs'],
-  ['Home', 'Homeowners, including high-value homes'],
-  ['Condo', 'Your unit and what’s in it'],
-  ['Renters', 'Your things and your liability'],
-  ['Landlord', 'Homes you rent out'],
-  ['Umbrella', 'Extra liability over home and auto'],
-  ['Motorcycle & boat', 'Bikes, boats and other toys'],
-  ['Business', 'Commercial auto, liability and workers’ comp'],
+  ['auto', 'Auto', 'Cars, trucks and SUVs'],
+  ['home', 'Home', 'Homeowners, including high-value homes'],
+  ['condo', 'Condo', 'Your unit and what’s in it'],
+  ['renters', 'Renters', 'Your things and your liability'],
+  ['landlord', 'Landlord', 'Homes you rent out'],
+  ['umbrella', 'Umbrella', 'Extra liability over home and auto'],
+  ['motorcycle', 'Motorcycle', 'Street bikes, cruisers and touring'],
+  ['boat', 'Boat', 'Boats, personal watercraft and trailers'],
+  ['mobile-home', 'Mobile homes', 'Manufactured and mobile homes'],
+  ['life', 'Life', 'Term and permanent life insurance'],
+  ['commercial', 'Commercial', 'Business owners, commercial auto, liability and workers’ comp'],
 ];
 
-function WhatIWrite() {
+function ProductsWeInsure() {
   return (
     <section className="mt-10" aria-labelledby="rc-products">
-      <h2 id="rc-products" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">What Cam writes</h2>
+      <h2 id="rc-products" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.products.heading">Products we insure</T></h2>
       <ul className="mt-3 divide-y divide-slate-200">
-        {PRODUCTS.map(([name, sub]) => (
-          <li key={name} className="py-3">
-            <p className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">{name}</p>
-            <p className="text-sm text-slate-500">{sub}</p>
+        {PRODUCTS.map(([key, name, sub]) => (
+          <li key={key} className="py-3">
+            <p className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900"><T k={`rc.products.${key}.title`}>{name}</T></p>
+            <p className="text-sm text-slate-500"><T k={`rc.products.${key}.line`}>{sub}</T></p>
           </li>
         ))}
       </ul>
@@ -1142,40 +1146,38 @@ function WhatIWrite() {
   );
 }
 
-// Allstate first; the rest are expanded markets or commercial only.
-/* TODO(compliance): confirm with Allstate marketing how other carriers may be shown on the agency site. */
+// Official logos in public/logos/carriers; a logo uploaded in the copy editor replaces it.
+// Until a carrier has one, its name shows in its place.
+/* TODO(compliance): confirm with Allstate marketing how other carriers' logos may be shown on the agency site. */
 const CARRIERS = [
-  ['Allstate', 'Primary'],
-  ['Chubb', 'Expanded markets'],
-  ['American Modern', 'Expanded markets'],
-  ['National General', 'Expanded markets'],
-  ['Foremost', 'Expanded markets'],
-  ['Liberty Mutual', 'Commercial'],
-  ['Progressive', 'Commercial'],
-  ['The Hartford', 'Commercial'],
+  ['allstate', 'Allstate', null],
+  ['chubb', 'Chubb', null],
+  ['american-modern', 'American Modern', null],
+  ['national-general', 'National General', null],
+  ['foremost', 'Foremost', null],
+  ['liberty-mutual', 'Liberty Mutual', '/logos/carriers/liberty-mutual.webp'],
+  ['progressive', 'Progressive', '/logos/carriers/progressive.webp'],
+  ['the-hartford', 'The Hartford', null],
 ];
 
-function Carriers() {
+function CarrierLogos() {
   const row = (hidden) => (
-    <ul className="flex shrink-0 gap-3 pr-3" aria-hidden={hidden || undefined}>
-      {CARRIERS.map(([name, tag]) => (
-        <li key={name} className="flex shrink-0 flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 py-3">
-          <span className={`whitespace-nowrap text-lg font-extrabold tracking-tight ${name === 'Allstate' ? 'text-blue-800' : 'text-slate-800'}`}>{name}</span>
-          <span className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400">{tag}</span>
+    <ul className="flex shrink-0 items-center gap-12 pr-12" aria-hidden={hidden || undefined}>
+      {CARRIERS.map(([key, name, src]) => (
+        <li key={key} className="flex h-12 shrink-0 items-center">
+          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-10 w-auto max-w-[150px] object-contain"
+            fallback={<span className="whitespace-nowrap text-xl font-extrabold tracking-tight text-slate-700">{name}</span>} />
         </li>
       ))}
     </ul>
   );
   return (
     <section className="mt-10" aria-labelledby="rc-carriers">
-      <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 32s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;flex-wrap:wrap;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;row-gap:.75rem}}'}</style>
-      <h2 id="rc-carriers" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">Carriers Cam writes</h2>
-      <div className="rc-marquee-wrap -mx-4 mt-3 overflow-hidden px-4 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+      <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;row-gap:1rem}}'}</style>
+      <h2 id="rc-carriers" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.carriers.heading">Carriers we write</T></h2>
+      <div className="rc-marquee-wrap -mx-4 mt-2 overflow-hidden px-4 pb-6 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
         <div className="rc-marquee flex w-max">{row(false)}{row(true)}</div>
       </div>
-      <p className="mt-3 text-sm text-slate-500">
-        Allstate first. When Allstate isn&apos;t the right fit, Cam can quote other carriers through expanded markets, and for business insurance.
-      </p>
     </section>
   );
 }
@@ -1218,8 +1220,7 @@ export function RateCheckFooter({ padForBar = false }) {
       </nav>
       {/* TODO(compliance): confirm the Allstate agency disclosure wording before launch. */}
       <p>
-        {AGENCY.name} is an Allstate Insurance Agency. Quotes and savings vary and are subject to underwriting and
-        eligibility; not all applicants qualify.
+        <T k="rc.footer.disclosure">{`${AGENCY.name} is an Allstate Insurance Agency. Quotes and savings vary and are subject to underwriting and eligibility; not all applicants qualify.`}</T>
       </p>
       <p className="mt-1">Agency Resident License #: {AGENCY.license}</p>
     </footer>

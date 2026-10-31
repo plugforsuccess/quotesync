@@ -166,10 +166,10 @@ export const principalPersonaNav = {
     ],
     secondary: [
       primaryItems.customers,
-      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
+      { to: '/qs', label: 'Quick Send', icon: '📲' },
     ],
   },
-  // Service hat: retention queues + retention scorecard + time clock.
+  // Service hat: retention queues + retention scorecard + Quick Send.
   service: {
     primary: [
       primaryItems.today,
@@ -179,23 +179,24 @@ export const principalPersonaNav = {
     ],
     secondary: [
       primaryItems.customers,
-      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
+      { to: '/qs', label: 'Quick Send', icon: '📲' },
     ],
   },
   // Unlicensed (front desk) hat: clerical intake only. Just the Service Batch
-  // and the time clock — no licensed retention queues, no customer/coverage data.
+  // and Quick Send — no licensed retention queues, no customer/coverage data.
   unlicensed: {
     primary: [
       primaryItems.serviceBatch,
     ],
     secondary: [
-      { to: '/punch', label: 'Time Clock', icon: '⏱️' },
+      { to: '/qs', label: 'Quick Send', icon: '📲' },
     ],
   },
 };
 
 // ── Employee plane navigation (service_inbound / service_outbound) ──────────
-// Employees see only their personal queue, scorecard, and punch clock.
+// Employees see only their personal queue, scorecard, and Quick Send.
+// The time clock (/punch) is retired from the nav; its PIN now signs into Quick Send.
 
 export const employeeNav = {
   primary: [
@@ -203,7 +204,7 @@ export const employeeNav = {
     { to: '/my/service-batch', label: 'Service Batch', icon: '\uD83D\uDDC2\uFE0F', isPrimary: true },
     { to: '/my/leads',     label: 'Leads',     icon: '\uD83C\uDFAF', isPrimary: true },
     { to: '/my/scorecard', label: 'Scorecard', icon: '\uD83D\uDCCA', isPrimary: true },
-    { to: '/punch',        label: 'Punch',     icon: '\u23F1\uFE0F', isPrimary: true },
+    { to: '/qs',           label: 'Quick Send', icon: '\uD83D\uDCF2', isPrimary: true },
   ],
   secondary: [],
 };
@@ -274,6 +275,7 @@ export function personaForPath(pathname) {
   // the scorecard render the sales OR service view based on the live persona).
   if (pathname.startsWith('/my/scorecard')) return null;
   if (pathname === '/punch' || pathname.startsWith('/punch/')) return null;
+  if (pathname === '/qs') return null;
   if (pathname.startsWith('/agency/referrals')) return null;
   if (pathname.startsWith('/my/referrals')) return null;
   // Customer Search is in both producer hats — don't flip the pill.
