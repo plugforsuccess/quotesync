@@ -54,6 +54,7 @@ const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
 // right after the agent card, then alternating photo / story.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
+  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley with two people in an office', caption: 'Face to face, every time', position: '50% 66%' },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
   { key: 'court', title: 'My story, on the court', paragraphs: [
@@ -1010,22 +1011,9 @@ function Monogram({ name }) {
   return <div className={`flex h-14 w-11 shrink-0 items-center justify-center rounded-lg text-base font-extrabold ${tone}`} aria-hidden="true">{initials}</div>;
 }
 
-// First slide of the Meet the Owner carousel.
-function AgentCard() {
-  return (
-    <div className="flex h-full min-h-[268px] flex-col items-center justify-center text-center">
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Your licensed agent</p>
-      <p className="mt-0.5 text-2xl font-extrabold text-[#0F2D6B]">{AGENT.name}</p>
-      <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
-        className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
-        style={{ objectPosition: '50% 30%' }} />
-      {AGENT.license && <p className="mt-10 text-[11px] text-slate-400">GA License #: {AGENT.license}</p>}
-    </div>
-  );
-}
-
 function MeetCam() {
-  const slides = [{ key: 'agent', label: 'Your licensed agent', untitled: true, content: <AgentCard /> }, ...ABOUT.map(a => a.photo ? {
+  // The agent card already sits in the hero, so the carousel opens with a photo, then the story.
+  const slides = ABOUT.map(a => a.photo ? {
     key: a.key, label: a.caption, untitled: true, bare: true,
     content: (
       <figure className="relative h-full min-h-[300px]">
@@ -1043,7 +1031,7 @@ function MeetCam() {
         </div>
       </div>
     ),
-  })];
+  });
   return <Carousel slides={slides} label="Meet the Owner" />;
 }
 
@@ -1151,6 +1139,7 @@ const CARRIERS = [
   ['liberty-mutual', 'Liberty Mutual', '/logos/carriers/liberty-mutual.svg'],
   ['progressive', 'Progressive', '/logos/carriers/progressive.svg'],
   ['the-hartford', 'The Hartford', '/logos/carriers/the-hartford.jpg'],
+  ['berkshire-hathaway-guard', 'Berkshire Hathaway GUARD Insurance Companies', '/logos/carriers/berkshire-hathaway-guard.png'],
 ];
 
 function CarrierLogos() {
