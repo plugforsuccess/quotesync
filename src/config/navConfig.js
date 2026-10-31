@@ -119,21 +119,20 @@ export const platformNav = {
 export const agencyNav = {
   principal: {
     primary: [
-      // Rate Checks is the lead source, so it's first and where principals land.
-      // Hidden (still work by URL, just not linked): the funnel Dashboard, which tracked
-      // the retired /save wizard, and the tools with no recent use — Weekly Review,
-      // Planning, Staff Performance, Cross-Sell, Referrals, Time & Attendance,
+      // Focus: Rate Check partner referrals, plus the retention desk. Rate Checks is
+      // first and where principals land.
+      // Hidden (still work by URL, just not linked): Leads, Customers, Reason Aliases,
+      // the funnel Dashboard (it tracked the retired /save wizard), Weekly Review,
+      // Planning, Staff Performance, Cross-Sell, Referrals, Time & Attendance and
       // Comp Schedules. Add them back here when they're in use again.
       primaryItems.rateChecks,
-      primaryItems.leads,
       primaryItems.winbacks,
       primaryItems.retention,
     ],
     secondary: [
-      primaryItems.customers,
       // Opens the public Rate Check page with the copy editor already on.
       { to: '/?edit=1', label: 'Edit website', icon: '✏️' },
-      { to: '/agency/settings/termination-aliases', label: 'Reason Aliases', icon: '🏷️' },
+      { to: '/qs', label: 'Quick Send', icon: '📲' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },
     ],
@@ -141,7 +140,6 @@ export const agencyNav = {
   producer: {
     primary: [
       primaryItems.rateChecks,
-      primaryItems.leads,
       primaryItems.winbacks,
     ],
     secondary: [],

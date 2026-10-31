@@ -162,10 +162,12 @@ function householdLine(h) {
   return h.policies.map(p => [carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ')).join(' + ');
 }
 
-// Work tabs are always in view; the weekly and set-up tabs sit behind More.
+// Work tabs are always in view (Partners too: partner referrals are the focus);
+// the weekly and set-up tabs sit behind More.
 const WORK_TABS = [
   { v: 'inbox', label: 'Inbox', Icon: Camera },
-  { v: 'invites', label: 'Links sent', Icon: Send },
+  { v: 'invites', label: 'Links sent', short: 'Links', Icon: Send },
+  { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
 ];
 const MORE_GROUPS = [
   { title: 'Insights', tabs: [
@@ -174,7 +176,6 @@ const MORE_GROUPS = [
   ] },
   { title: 'Setup', tabs: [
     { v: 'rules', label: 'Rules', hint: 'Where each scan goes', Icon: SlidersHorizontal },
-    { v: 'promoters', label: 'Partners', hint: 'People paid to share your link', Icon: BadgeDollarSign },
     { v: 'partners', label: 'Referral agencies', short: 'Referrals', hint: 'Who writes what Allstate can’t', Icon: Handshake },
   ] },
 ];
@@ -185,11 +186,11 @@ function TabBar({ tab, setTab }) {
   const segment = (active) => `flex min-h-[44px] items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold ${active ? 'bg-primary-600 text-white' : ''}`;
   return (
     <>
-      <div className="mb-4 grid grid-cols-3 gap-1 rounded-lg p-1 sm:max-w-md" style={{ background: 'var(--qs-elevated)' }} role="tablist">
-        {WORK_TABS.map(({ v, label, Icon }) => (
+      <div className="mb-4 grid grid-cols-4 gap-1 rounded-lg p-1 sm:max-w-xl" style={{ background: 'var(--qs-elevated)' }} role="tablist">
+        {WORK_TABS.map(({ v, label, short, Icon }) => (
           <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)} className={segment(tab === v)}
             style={tab === v ? undefined : { color: 'var(--qs-text)' }}>
-            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> <span className="truncate">{label}</span>
+            <Icon className="hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" /> <span className="truncate sm:hidden">{short || label}</span><span className="hidden truncate sm:inline">{label}</span>
           </button>
         ))}
         <button type="button" aria-haspopup="dialog" aria-expanded={sheet} onClick={() => setSheet(true)} className={segment(!!moreTab)}
@@ -386,10 +387,7 @@ export default function RateChecksPage() {
     <div className="dark-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
         <div className="mb-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
-            <Link to="/agency/leads" className="shrink-0 text-sm font-medium text-primary-600 hover:underline">All leads ›</Link>
-          </div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
           <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-dim)' }}>People who sent their policy to see if Allstate can beat it.</p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button onClick={() => setInviteOpen(true)}

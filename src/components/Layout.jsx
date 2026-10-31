@@ -212,7 +212,6 @@ function Layout({ forcePlane = null }) {
   // Bottom tab bar routes (items shown in tab bar, excluded from drawer)
   const bottomTabRoutes = [
     '/agency/leads/rate-checks',
-    '/agency/leads',
     '/agency/winbacks',
     '/agency/retention',
   ];

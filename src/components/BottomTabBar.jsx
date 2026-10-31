@@ -2,11 +2,11 @@
 // Mobile-only bottom tab bar for primary navigation (hidden on md: and above)
 
 import { NavLink, useLocation } from 'react-router-dom';
-import { Camera, ClipboardList, RotateCcw, Shield, Grid } from 'lucide-react';
+import { Camera, RotateCcw, Shield, Grid } from 'lucide-react';
 
+// Leads is hidden while the agency focuses on Rate Check partner referrals (the page still works by URL).
 const TABS = [
   { to: '/agency/leads/rate-checks', label: 'Rate Checks', icon: Camera },
-  { to: '/agency/leads', label: 'Leads', icon: ClipboardList },
   { to: '/agency/winbacks', label: 'Winbacks', icon: RotateCcw },
   { to: '/agency/retention', label: 'Retention', icon: Shield, principalOnly: true },
 ];
