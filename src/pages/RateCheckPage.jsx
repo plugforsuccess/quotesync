@@ -449,8 +449,8 @@ export default function RateCheckPage() {
       {invite.promoter_photo_url ? (
         <img src={invite.promoter_photo_url} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2" style={{ '--tw-ring-color': ACCENT }} />
       ) : (
-        <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-extrabold ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
-          {invite.promoter_name.charAt(0).toUpperCase()}
+        <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
+          {invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()}
         </span>
       )}
       <span className="min-w-0">

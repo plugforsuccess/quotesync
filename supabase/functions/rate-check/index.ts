@@ -783,6 +783,8 @@ Deno.serve(async (req) => {
       if (promoter) {
         return jsonResponse({
           promoter_name: String(promoter.name).trim().split(/\s+/)[0],
+          // First + last initial for when there's no photo ("JS"); the last name itself stays private.
+          promoter_initials: (() => { const w = String(promoter.name).trim().split(/\s+/).filter(Boolean); return ((w[0]?.[0] || '') + (w.length > 1 ? w[w.length - 1][0] : '')).toUpperCase() })(),
           // Only once the partner agreed to show it.
           promoter_photo_url: promoter.photo_consent_at ? promoter.photo_url : null,
         }, 200, corsHeaders)
