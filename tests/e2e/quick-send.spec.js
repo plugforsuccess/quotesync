@@ -38,15 +38,16 @@ test('logged out: PIN, name and number, one text, followed to Delivered', async 
   await page.getByLabel('Your time-clock PIN').fill('1234');
 
   const send = page.getByRole('button', { name: 'Send Requested DEC Link' });
-  await expect(page.getByText(/This is insuredbycam.com, operated by Cam Wiley Agency, Inc./)).toBeVisible();
+  await expect(page.getByText(/operated by Cam Wiley Agency, Inc./)).toBeVisible();
   await expect(page.getByRole('checkbox')).toHaveCount(0); // never an opt-in here
   await expect(send).toBeDisabled();
-  await page.getByLabel('Their name').fill('Keisha');
-  await page.getByLabel('Their mobile').fill('4045551212');
-  await expect(page.getByLabel('Their mobile')).toHaveValue('(404) 555-1212');
+  await page.getByLabel('Name', { exact: true }).fill('Keisha');
+  await page.getByLabel('Mobile number').fill('4045551212');
+  await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
   await send.dblclick();
 
-  await expect(page.getByText('Delivered', { exact: true }).first()).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText('Texted Keisha')).toBeVisible();
+  await expect(page.getByRole('list', { name: /Progress: 2 of 4/ })).toBeVisible({ timeout: 15_000 });
   const sends = calls.filter(c => c.mode === 'send');
   expect(sends).toHaveLength(1);
   expect(sends[0]).toMatchObject({ first_name: 'Keisha', phone: '4045551212' });
@@ -54,19 +55,19 @@ test('logged out: PIN, name and number, one text, followed to Delivered', async 
 
   // Send another starts a fresh request.
   await page.getByRole('button', { name: 'Send another' }).click();
-  await expect(page.getByLabel('Their name')).toHaveValue('');
-  await expect(page.getByText('Your recent sends')).toBeVisible();
+  await expect(page.getByLabel('Name', { exact: true })).toHaveValue('');
+  await expect(page.getByRole('heading', { name: 'Recent' })).toBeVisible();
 });
 
 test('a number that texted STOP is not texted; the link is offered instead', async ({ page }) => {
   mockFunction(page, { blocked: true });
   await page.goto('/qs');
   await page.getByLabel('Your time-clock PIN').fill('1234');
-  await page.getByLabel('Their name').fill('Keisha');
-  await page.getByLabel('Their mobile').fill('4045551212');
+  await page.getByLabel('Name', { exact: true }).fill('Keisha');
+  await page.getByLabel('Mobile number').fill('4045551212');
   await page.getByRole('button', { name: 'Send Requested DEC Link' }).click();
-  await expect(page.getByText('Not sent — this number texted STOP').first()).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Show QR' })).toBeVisible();
-  await page.getByRole('button', { name: 'Show QR' }).click();
+  await expect(page.getByText('Keisha opted out of texts')).toBeVisible();
+  // The code to scan comes up on its own when the text can't go.
   await expect(page.getByLabel('QR code for the upload link')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Hide QR code' })).toBeVisible();
 });

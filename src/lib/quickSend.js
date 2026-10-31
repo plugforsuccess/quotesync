@@ -39,4 +39,4 @@ export async function quickSend(mode, payload = {}, { withLogin = false } = {}) 
   return data;
 }
 
-export { deviceLabel, SEND_STATUS, isFinal, sendProgress, formatPhoneInput, phoneDigits, validMobile } from './quickSendFormat';
+export { deviceLabel, SEND_STATUS, isFinal, sendProgress, sendSteps, STEPS, shortAgo, formatPhoneInput, phoneDigits, validMobile } from './quickSendFormat';

@@ -6,28 +6,22 @@
 
 import { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { Check, Copy, Loader2, MessageSquare, QrCode, X } from 'lucide-react';
+import { Check, Copy, Loader2, QrCode, Send, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import {
   quickSend, savedKey, keepPhoneKey, keepPinKey, forgetKeys, deviceLabel,
-  sendProgress, isFinal, formatPhoneInput, phoneDigits, validMobile,
+  sendProgress, sendSteps, STEPS, shortAgo, isFinal, formatPhoneInput, phoneDigits, validMobile,
 } from '../lib/quickSend';
 
+// What the producer says before sending (recorded on each send as qs-script-v1 by the edge function).
 const SCRIPT =
-  'This is insuredbycam.com, operated by Cam Wiley Agency, Inc. Would you like me to text a secure link to upload ' +
-  'your current declarations page? This sends the link only; optional quote updates can be selected later when you submit it.';
+  'Can I text you a secure link to upload your current dec page? It comes from insuredbycam.com, operated by ' +
+  'Cam Wiley Agency, Inc. It\'s just the link, nothing else.';
 
-const TONE = {
-  good: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  bad: 'bg-red-50 text-red-800 border-red-200',
-  pending: 'bg-blue-50 text-blue-800 border-blue-200',
-  muted: 'bg-slate-50 text-slate-600 border-slate-200',
-};
-const field = 'mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-lg text-slate-900 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20';
-const ago = (iso) => {
-  const m = Math.round((Date.now() - Date.parse(iso)) / 60000);
-  return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
-};
+// One dot colour per state, used in the recent list and the result's headline.
+const DOT = { good: 'bg-emerald-500', bad: 'bg-red-500', pending: 'bg-blue-500', muted: 'bg-slate-300' };
+const field = 'mt-1.5 block w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-lg text-slate-900 placeholder:text-slate-400 focus:border-blue-600 focus:outline-none focus:ring-4 focus:ring-blue-100';
+const label = 'text-sm font-semibold text-slate-700';
 
 export default function QuickSendPage() {
   const [screen, setScreen] = useState('loading'); // loading | signin | off | ready
@@ -69,13 +63,16 @@ export default function QuickSendPage() {
     <div className="min-h-screen bg-slate-50">
       <meta name="robots" content="noindex, nofollow" />
       <main className="mx-auto max-w-md px-4 pb-10 pt-6">
-        <header className="mb-5 flex items-center justify-between">
+        <header className="mb-6 flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">insuredbycam.com</p>
-            <h1 className="text-2xl font-extrabold tracking-tight text-slate-900">Quick Send</h1>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700">insuredbycam</p>
+            <h1 className="mt-0.5 text-[28px] font-extrabold leading-none tracking-tight text-slate-900">Quick Send</h1>
           </div>
-          {screen === 'ready' && me?.pin && (
-            <button type="button" onClick={signOut} className="rounded-lg px-3 py-2 text-sm font-semibold text-slate-600">Sign out</button>
+          {screen === 'ready' && me?.producer_first && (
+            <p className="flex items-center gap-2 text-sm text-slate-500">
+              <span className="font-semibold text-slate-700">{me.producer_first}</span>
+              {me.pin && <><span aria-hidden="true">·</span><button type="button" onClick={signOut} className="font-semibold text-blue-700">Sign out</button></>}
+            </p>
           )}
         </header>
         {screen === 'loading' && <Loader2 className="mx-auto mt-16 h-6 w-6 animate-spin text-slate-400" aria-label="Loading" />}
@@ -85,7 +82,7 @@ export default function QuickSendPage() {
             Quick Send is turned off for the agency right now. The agency principal can turn it on in Rate Checks → Links sent.
           </p>
         )}
-        {screen === 'ready' && <SendForm me={me} onSignedOut={signOut} />}
+        {screen === 'ready' && <SendForm onSignedOut={signOut} />}
       </main>
     </div>
   );
@@ -146,7 +143,7 @@ function SignIn({ loggedIn, onDone }) {
   );
 }
 
-function SendForm({ me, onSignedOut }) {
+function SendForm({ onSignedOut }) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
@@ -197,46 +194,49 @@ function SendForm({ me, onSignedOut }) {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {result ? <SendResult result={result} onAnother={another} /> : (
-        <form onSubmit={send} className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-sm text-slate-600">{me?.producer_first ? `Hi ${me.producer_first}. ` : ''}Ask first, then send:</p>
-          <blockquote className="rounded-xl bg-slate-100 p-3 text-[15px] leading-relaxed text-slate-800">“{SCRIPT}”</blockquote>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Their name</span>
-            <input ref={nameInput} className={field} autoComplete="off" autoCapitalize="words" maxLength={80}
-              value={name} onChange={e => setName(e.target.value)} placeholder="Keisha" />
-          </label>
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Their mobile</span>
-            <input className={field} type="tel" inputMode="tel" autoComplete="off" value={phone}
-              onChange={e => setPhone(formatPhoneInput(e.target.value))} placeholder="(404) 555-1212" />
-          </label>
-          {error && <p className="text-sm text-red-700" role="alert">{error}</p>}
+        <form onSubmit={send} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Ask first</p>
+          <p className="mt-2 border-l-4 border-blue-200 pl-3 text-[15px] leading-relaxed text-slate-700">“{SCRIPT}”</p>
+
+          <div className="mt-5 space-y-4">
+            <label className="block">
+              <span className={label}>Name</span>
+              <input ref={nameInput} className={field} autoComplete="off" autoCapitalize="words" maxLength={80}
+                value={name} onChange={e => setName(e.target.value)} placeholder="First name" />
+            </label>
+            <label className="block">
+              <span className={label}>Mobile number</span>
+              <input className={field} type="tel" inputMode="tel" autoComplete="off" value={phone}
+                onChange={e => setPhone(formatPhoneInput(e.target.value))} placeholder="(404) 555-1212" />
+            </label>
+          </div>
+          {error && <p className="mt-3 text-sm font-medium text-red-700" role="alert">{error}</p>}
           <button type="submit" disabled={!ok || busy}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-4 text-lg font-bold text-white disabled:opacity-50">
-            {busy ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <MessageSquare className="h-5 w-5" aria-hidden="true" />}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-700 px-4 py-4 text-lg font-bold text-white shadow-sm active:bg-blue-800 disabled:bg-slate-300 disabled:shadow-none">
+            {busy ? <Loader2 className="h-5 w-5 animate-spin" aria-hidden="true" /> : <Send className="h-5 w-5" aria-hidden="true" />}
             Send Requested DEC Link
           </button>
-          <p className="text-xs leading-relaxed text-slate-500">
-            Pressing Send confirms they asked for this one text. It sends the upload link only — it doesn&apos;t sign them up for other texts.
-          </p>
+          <p className="mt-3 text-center text-xs text-slate-500">Only send if they said yes. Sending records that they asked for this text.</p>
         </form>
       )}
 
       {recent.length > 0 && (
-        <section>
-          <h2 className="px-1 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">Your recent sends</h2>
-          <ul className="mt-2 divide-y divide-slate-200 rounded-2xl border border-slate-200 bg-white">
+        <section aria-labelledby="qs-recent">
+          <h2 id="qs-recent" className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Recent</h2>
+          <ul className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
             {recent.map(inv => {
               const p = sendProgress(inv);
               return (
-                <li key={inv.id} className="flex items-center justify-between gap-3 px-4 py-3">
-                  <div className="min-w-0">
+                <li key={inv.id} className="flex items-center gap-3 px-4 py-3">
+                  <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-slate-900">{inv.first_name || 'No name'}</p>
-                    <p className="text-sm text-slate-500">{formatPhoneInput(inv.phone)} · {ago(inv.created_at)}</p>
+                    <p className="whitespace-nowrap text-sm tabular-nums text-slate-500">{formatPhoneInput(inv.phone)} · {shortAgo(inv.created_at)}</p>
                   </div>
-                  <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${TONE[p.tone]}`}>{p.label}</span>
+                  <span className="flex shrink-0 items-center gap-1.5 text-sm font-semibold text-slate-700">
+                    <span className={`h-2 w-2 rounded-full ${DOT[p.tone]}`} aria-hidden="true" />{p.short}
+                  </span>
                 </li>
               );
             })}
@@ -249,45 +249,68 @@ function SendForm({ me, onSignedOut }) {
 
 function SendResult({ result, onAnother }) {
   const { invite, link, already_sent: already } = result;
-  const p = already ? { label: 'Already texted today — no second text sent', tone: 'muted' } : sendProgress(invite);
   const status = invite?.sms_status;
-  const fallback = already || status === 'failed' || status === 'blocked';
+  const name = invite?.first_name || 'them';
+  const { done, stopped } = sendSteps(invite);
+  const blocked = status === 'blocked';
+  const failed = status === 'failed' && stopped;
+  const sending = !already && !stopped && done === 0;
   const [copied, setCopied] = useState(false);
-  const [showQr, setShowQr] = useState(false);
+  const [showQr, setShowQr] = useState(blocked || failed);
   const canvas = useRef(null);
+  useEffect(() => { if (blocked || failed) setShowQr(true); }, [blocked, failed]);
   useEffect(() => {
-    if (showQr && canvas.current) QRCode.toCanvas(canvas.current, link, { width: 220, margin: 1 }).catch(() => {});
+    if (showQr && canvas.current) QRCode.toCanvas(canvas.current, link, { width: 200, margin: 1 }).catch(() => {});
   }, [showQr, link]);
   const copy = async () => {
-    try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* shown below */ }
+    try { await navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* clipboard blocked */ }
   };
 
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4" role="status" aria-live="polite">
-      <p className="text-sm text-slate-600">
-        {invite?.first_name} · {formatPhoneInput(invite?.phone)}
-        {already && invite?.producer_name ? ` · sent by ${invite.producer_name}` : ''}
-      </p>
-      <p className={`mt-2 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 font-semibold ${TONE[p.tone]}`}>
-        {p.tone === 'pending' && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}
-        {p.tone === 'good' && <Check className="h-4 w-4" aria-hidden="true" />}
-        {p.tone === 'bad' && <X className="h-4 w-4" aria-hidden="true" />}
-        {p.label}
-      </p>
-      {status === 'failed' && invite?.sms_error && <p className="mt-2 text-sm text-slate-600">{invite.sms_error}</p>}
-      {!fallback && <p className="mt-2 text-sm text-slate-600">Tell them to check their texts. The link works for 7 days.</p>}
-      {fallback && <p className="mt-2 text-sm text-slate-600">Show them the code to scan, or copy the link.</p>}
+  const headline = already ? `${name} already has a link` : blocked ? `${name} opted out of texts`
+    : failed ? `Couldn’t text ${name}` : sending ? `Texting ${name}…` : `Texted ${name}`;
+  const note = already
+    ? `${invite?.producer_name ? `${invite.producer_name} sent it` : 'It was sent'} in the last day, so no second text went out. Show the code or copy the link if they need it again.`
+    : blocked ? 'They replied STOP to an earlier text, so we can’t text them. Have them scan the code instead.'
+      : failed ? `${invite?.sms_error ? `${invite.sms_error}. ` : ''}Have them scan the code instead, or check the number and send again.`
+        : `Tell ${name} to open the text from insuredbycam.com. The link works for 7 days.`;
+  const tone = blocked || failed ? 'bad' : sending ? 'pending' : 'good';
 
-      <div className="mt-4 grid grid-cols-2 gap-2">
-        <button type="button" onClick={copy} className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-3 font-semibold text-slate-800">
-          {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />} {copied ? 'Copied' : 'Copy link'}
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" role="status" aria-live="polite">
+      <div className="flex items-start gap-3">
+        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tone === 'bad' ? 'bg-red-50 text-red-600' : tone === 'pending' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-600'}`}>
+          {tone === 'bad' ? <X className="h-6 w-6" aria-hidden="true" /> : tone === 'pending' ? <Loader2 className="h-6 w-6 animate-spin" aria-hidden="true" /> : <Check className="h-6 w-6" aria-hidden="true" />}
+        </span>
+        <div className="min-w-0">
+          <p className="text-xl font-extrabold leading-tight tracking-tight text-slate-900">{headline}</p>
+          <p className="mt-0.5 text-sm tabular-nums text-slate-500">{formatPhoneInput(invite?.phone)}</p>
+        </div>
+      </div>
+
+      {!blocked && !failed && (
+        <ol className="mt-5 grid grid-cols-4 gap-1.5" aria-label={`Progress: ${done} of 4 steps`}>
+          {STEPS.map((step, i) => (
+            <li key={step} className="min-w-0">
+              <span className={`block h-1.5 rounded-full ${i < done ? 'bg-emerald-500' : i === done && !already ? 'animate-pulse bg-blue-200' : 'bg-slate-200'}`} />
+              <span className={`mt-1.5 block truncate text-xs font-semibold ${i < done ? 'text-slate-800' : 'text-slate-400'}`}>{step}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <p className="mt-4 text-sm leading-relaxed text-slate-600">{note}</p>
+
+      {showQr && <canvas ref={canvas} className="mx-auto mt-4 block rounded-lg border border-slate-200" aria-label="QR code for the upload link" />}
+
+      <button type="button" onClick={onAnother} className="mt-5 w-full rounded-xl bg-blue-700 px-4 py-3.5 text-base font-bold text-white shadow-sm active:bg-blue-800">Send another</button>
+      <div className="mt-3 flex items-center justify-center gap-6 text-sm font-semibold text-blue-700">
+        <button type="button" onClick={copy} className="inline-flex items-center gap-1.5 py-1">
+          {copied ? <Check className="h-4 w-4" aria-hidden="true" /> : <Copy className="h-4 w-4" aria-hidden="true" />}{copied ? 'Copied' : 'Copy link'}
         </button>
-        <button type="button" onClick={() => setShowQr(v => !v)} aria-expanded={showQr} className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-3 py-3 font-semibold text-slate-800">
-          <QrCode className="h-4 w-4" aria-hidden="true" /> {showQr ? 'Hide code' : 'Show QR'}
+        <button type="button" onClick={() => setShowQr(v => !v)} aria-expanded={showQr} className="inline-flex items-center gap-1.5 py-1">
+          <QrCode className="h-4 w-4" aria-hidden="true" />{showQr ? 'Hide QR code' : 'Show QR code'}
         </button>
       </div>
-      {showQr && <canvas ref={canvas} className="mx-auto mt-4 block" aria-label="QR code for the upload link" />}
-      <button type="button" onClick={onAnother} className="mt-4 w-full rounded-xl bg-blue-700 px-4 py-3 font-semibold text-white">Send another</button>
     </div>
   );
 }

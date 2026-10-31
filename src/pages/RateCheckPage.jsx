@@ -24,18 +24,18 @@ import {
 // The legal operator, as it must appear on consent and privacy text (not the brand name in the footer).
 export const LEGAL_OPERATOR = 'Cam Wiley Agency, Inc. d/b/a insuredbycam.com';
 
-// Optional, unchecked by default, and not required to submit (shown only on this final step).
-// Changing the wording? Bump RATE_CHECK_CONSENT_VERSION in rateCheckApi.js.
-const CONSENT_TEXT =
-  `Optional: text me about my quote. I agree to receive automated text messages from ${LEGAL_OPERATOR} at the ` +
-  'phone number I gave about my insurance quote, when it is ready, and my quote-review callback or appointment. ' +
-  'Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out or HELP for help. Not a condition ' +
-  'of getting a quote.';
-
-// Optional, unchecked by default, and not required to submit.
-const REFERRAL_CONSENT_TEXT =
-  "Optional: if Allstate can't help, Cam Wiley Agency, Inc. may share my name, number and policy details " +
-  'with a trusted partner agency so they can quote me.';
+// The two optional boxes on the last step: unchecked by default, never required to submit.
+// Changing the wording? Bump the versions in rateCheckApi.js.
+const CONSENT = {
+  title: 'Text me when my quote is ready',
+  fine: `By checking this, you agree to receive automated texts from ${LEGAL_OPERATOR} at the number above about ` +
+    'your insurance quote, when it’s ready, and your callback or quote-review appointment. Message frequency varies. ' +
+    'Message and data rates may apply. Reply STOP to opt out or HELP for help. Not required to get a quote.',
+};
+const REFERRAL_CONSENT = {
+  title: 'If Allstate can’t help, refer me to a partner',
+  fine: 'Cam Wiley Agency, Inc. may share your name, number and policy details with one partner agency so they can quote you.',
+};
 
 const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', umbrella: 'Umbrella', commercial_auto: 'Commercial auto', commercial: 'Business' };
 
@@ -555,8 +555,8 @@ export default function RateCheckPage() {
         <button type="button" onClick={() => setStep('policies')} className="-ml-1 mb-3 inline-flex items-center gap-1 text-sm font-semibold text-slate-600">
           <ChevronLeft className="h-4 w-4" aria-hidden="true" /> {drafts.length === 1 ? '1 policy' : `${drafts.length} policies`}
         </button>
-        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Where should Cam text you?</h1>
-        <p className="mt-2 text-slate-600">Only if we can beat your price. No call centers, ever.</p>
+        <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">How can Cam reach you?</h1>
+        <p className="mt-2 text-slate-600">Cam&apos;s team only reaches out if Allstate can beat your price. No call centers, ever.</p>
 
         <form onSubmit={(e) => { e.preventDefault(); submit(); }} className="mt-6 space-y-4" noValidate>
           <Field label="First name" htmlFor="rc-first">
@@ -621,18 +621,16 @@ export default function RateCheckPage() {
             </Field>
           </div>
 
-          <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-600">
-            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
-            <span>
-              {CONSENT_TEXT}{' '}
-              <Link to="/ratecheck-privacy#sms-terms" className="underline">Text terms</Link>{' · '}
-              <Link to="/privacy" className="underline">Privacy policy</Link>
-            </span>
-          </label>
-          <label className="flex items-start gap-3 px-3 text-xs leading-relaxed text-slate-500">
-            <input type="checkbox" checked={referralConsent} onChange={e => setReferralConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
-            <span>{REFERRAL_CONSENT_TEXT}</span>
-          </label>
+          <fieldset className="pt-2">
+            <legend className="px-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-500">Optional</legend>
+            <div className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+              <Choice checked={consent} onChange={setConsent} {...CONSENT}>
+                {' '}<Link to="/ratecheck-privacy#sms-terms" className="underline">Text terms</Link>
+                {' · '}<Link to="/privacy" className="underline">Privacy</Link>
+              </Choice>
+              <Choice checked={referralConsent} onChange={setReferralConsent} {...REFERRAL_CONSENT} />
+            </div>
+          </fieldset>
           <p className="flex items-center gap-2 px-1 text-xs text-slate-500">
             <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" /> Your photos go only to Cam&apos;s office and are deleted after 90 days.
           </p>
@@ -1092,6 +1090,19 @@ const inputCls =
 
 function Step({ n }) {
   return <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-800" aria-hidden="true">{n}</span>;
+}
+
+// A checkbox with a plain-language title and its fine print underneath.
+function Choice({ checked, onChange, title, fine, children }) {
+  return (
+    <label className="flex cursor-pointer items-start gap-3 p-4">
+      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
+      <span className="min-w-0">
+        <span className="block text-[15px] font-semibold leading-snug text-slate-900">{title}</span>
+        <span className="mt-1 block text-xs leading-relaxed text-slate-500">{fine}{children}</span>
+      </span>
+    </label>
+  );
 }
 
 function Field({ label, htmlFor, children }) {

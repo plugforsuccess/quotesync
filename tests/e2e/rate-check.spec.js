@@ -93,7 +93,7 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   await expect(page.getByText('Does this policy have more pages?')).toBeVisible();
   await page.getByRole('button', { name: /Continue/ }).click();
 
-  await expect(page.getByRole('heading', { name: 'Where should Cam text you?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
   const submit = page.getByRole('button', { name: 'Check my rate' });
   await expect(submit).toBeDisabled();
   await fillContact(page);
