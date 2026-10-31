@@ -197,7 +197,7 @@ const NewsroomPage = () => {
           </div>
 
           {/* Category Filter - Editorial sections style */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-2 pt-2 border-t border-gray-200/50">
+          <div className="flex items-center gap-1 overflow-x-auto pb-2 pt-2 border-t border-gray-200/50 lg:flex-wrap lg:overflow-visible">
             <span className="text-xs font-bold text-gray-500 uppercase tracking-wide mr-2 flex-shrink-0">Sections</span>
             {categories.map((cat) => (
               <button

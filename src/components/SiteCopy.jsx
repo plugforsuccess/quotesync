@@ -142,7 +142,7 @@ function EditableText({ k, text, fallback, edited, save }) {
 export function CopyImage({ k, src, alt, className, fallback = null }) {
   const { values, editing, upload } = useContext(Ctx);
   const url = values[k] || src;
-  const img = url ? <img src={url} alt={alt} className={className} loading="lazy" /> : fallback;
+  const img = url ? <img src={url} alt={alt} className={className} /> : fallback;
   if (!editing) return img;
   return (
     <label className="relative inline-flex cursor-pointer items-center rounded-md outline-dashed outline-2 outline-offset-4 outline-amber-300" title={`Upload a logo for ${alt}`}>

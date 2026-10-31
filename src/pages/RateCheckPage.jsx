@@ -651,7 +651,7 @@ export default function RateCheckPage() {
     window.scrollTo(0, 0);
   };
   return (
-    <Shell step={1} bar={drafts.length > 0 && (
+    <Shell step={1} wide={drafts.length === 0 && !returning} bar={drafts.length > 0 && (
       <ActionBar hint={drafts.some(d => d.pages.some(pg => pg.quality?.issue)) ? 'Blurry or dark? Retake that page, or send anyway.' : null}>
         <button type="button" onClick={newPolicyPhoto} aria-label="Add another policy"
           className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-slate-300 bg-white text-slate-700">
@@ -674,16 +674,19 @@ export default function RateCheckPage() {
       )}
 
       {drafts.length === 0 ? (
-        <>
+        // Desktop: hero, buttons and trust on the left; Meet Cam and the how-to on the right.
+        // Phones keep one column in this order.
+        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-14">
+          <div className="lg:col-start-1 lg:row-start-1">
           {returning ? (
             <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add another policy</h1>
           ) : (
             <>
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.eyebrow">Free rate check · Georgia</T></p>
-              <h1 className="mt-2 text-[32px] font-extrabold leading-[1.1] tracking-tight text-slate-900">
+              <h1 className="mt-2 text-[32px] font-extrabold leading-[1.1] tracking-tight text-slate-900 lg:text-[46px]">
                 <T k="rc.headline">Get a second opinion on your insurance.</T>
               </h1>
-              <p className="mt-3 text-slate-600">
+              <p className="mt-3 text-slate-600 lg:mt-4 lg:text-lg">
                 <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
               </p>
             </>
@@ -707,11 +710,18 @@ export default function RateCheckPage() {
               <Paperclip className="h-4 w-4" aria-hidden="true" /> <T k="rc.multiple">Multiple policies? Upload them together.</T>
             </span>
           </p>
+          {/* Trust, kept quiet: one line, not cards. Desktop: here, under the buttons. */}
+          <ul className="mt-6 hidden flex-wrap lg:flex lg:justify-start items-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500">
+            <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
+            <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
+            <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
+          </ul>
+          </div>
 
+          <div className="lg:col-start-2">
           <MeetCam />
-
-          {/* Trust, kept quiet: one line, not cards, so it doesn't break up the story. */}
-          <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500">
+          {/* Phones: the trust line sits between the story and the how-to. */}
+          <ul className="mt-5 flex flex-wrap lg:hidden items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500">
             <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
             <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
             <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
@@ -731,11 +741,13 @@ export default function RateCheckPage() {
             <p className="mt-4 font-semibold text-slate-800"><T k="rc.howto.screens.title">Can’t download it?</T></p>
             <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
           </details>
+          </div>
 
+          <div className="lg:col-span-2">
           <ProductsWeInsure />
           <CarrierLogos />
-
-        </>
+          </div>
+        </div>
       ) : (
         <>
           <div className="flex items-end justify-between">
@@ -1060,7 +1072,7 @@ function MeetCam() {
       </div>
     ),
   })];
-  return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-6" />;
+  return <Carousel slides={slides} label={`Meet ${AGENT.name}`} className="mt-6 lg:mt-0" />;
 }
 
 function Trust({ icon: Icon, k, label }) {
@@ -1136,9 +1148,9 @@ const PRODUCTS = [
 // Three tiles to a row: filled brand blue with a fluorescent border.
 function ProductsWeInsure() {
   return (
-    <section className="mt-12" aria-labelledby="rc-products">
+    <section className="mt-12 lg:mt-20" aria-labelledby="rc-products">
       <h2 id="rc-products" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.products.heading">Products we insure</T></h2>
-      <ul className="mt-4 grid grid-cols-3 gap-2">
+      <ul className="mt-4 grid grid-cols-3 gap-2 lg:grid-cols-6 lg:gap-3">
         {PRODUCTS.map(([key, Icon, name, sub]) => (
           <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
             <Icon className="h-6 w-6 text-[#39FF88]" aria-hidden="true" strokeWidth={1.75} />
@@ -1174,14 +1186,14 @@ function CarrierLogos() {
     <ul className="flex shrink-0 items-center gap-12 pr-12" aria-hidden={hidden || undefined}>
       {CARRIERS.map(([key, name, src]) => (
         <li key={key} className="flex h-12 shrink-0 items-center">
-          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-10 w-auto max-w-[180px] object-contain mix-blend-multiply"
+          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-10 w-auto max-w-[180px] object-contain mix-blend-multiply lg:h-12 lg:max-w-[220px]"
             fallback={<span className="whitespace-nowrap text-xl font-extrabold tracking-tight text-slate-700">{name}</span>} />
         </li>
       ))}
     </ul>
   );
   return (
-    <section className="mt-12" aria-labelledby="rc-carriers">
+    <section className="mt-12 lg:mt-16" aria-labelledby="rc-carriers">
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       <h2 id="rc-carriers" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.carriers.heading">Carriers we write</T></h2>
       <div className="rc-marquee-wrap -mx-4 mt-2 overflow-hidden px-4 pb-6 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
@@ -1192,11 +1204,13 @@ function CarrierLogos() {
 }
 
 const STEPS = ['Policies', 'You', 'Results'];
-function Shell({ children, step, bar, center = false }) {
+// `wide`: the landing page spreads out on desktop (two columns, wider grids); the
+// steps stay one narrow column, which reads better for forms.
+function Shell({ children, step, bar, center = false, wide = false }) {
   return (
     <div className="min-h-screen bg-slate-50">
       <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}.rc-track{scrollbar-width:none}.rc-track::-webkit-scrollbar{display:none}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>
-      <header className="mx-auto flex max-w-md items-center justify-between px-4 pt-5">
+      <header className={`mx-auto flex max-w-md items-center justify-between px-4 pt-5 ${wide ? 'lg:max-w-5xl lg:px-8 lg:pt-8' : ''}`}>
         <span className="text-sm font-extrabold tracking-tight text-slate-900">insuredbycam <span className="font-semibold text-slate-400">· Rate Check</span></span>
         {step && (
           <ol className="flex items-center gap-1.5" aria-label={`Step ${step} of 3: ${STEPS[step - 1]}`}>
@@ -1208,16 +1222,16 @@ function Shell({ children, step, bar, center = false }) {
       </header>
       <main className={center
         ? 'mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-md flex-col justify-center px-4 py-6'
-        : 'mx-auto max-w-md px-4 pt-6 pb-10'}>{children}</main>
-      <RateCheckFooter padForBar={!!bar} />
+        : `mx-auto max-w-md px-4 pt-6 pb-10 ${wide ? 'lg:max-w-5xl lg:px-8 lg:pt-12' : ''}`}>{children}</main>
+      <RateCheckFooter padForBar={!!bar} wide={wide} />
       {bar}
     </div>
   );
 }
 
-export function RateCheckFooter({ padForBar = false }) {
+export function RateCheckFooter({ padForBar = false, wide = false }) {
   return (
-    <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'}`}>
+    <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'} ${wide ? 'lg:max-w-5xl lg:px-8' : ''}`}>
       <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
         <Link to="/courses" className="font-semibold text-slate-600 underline">Drivers Ed</Link>
         <Link to="/news" className="font-semibold text-slate-600 underline">Insurance news</Link>

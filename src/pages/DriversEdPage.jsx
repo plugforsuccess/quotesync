@@ -19,6 +19,7 @@ export default function GeorgiaDriverEducationPage() {
 
   return (
     <div className="bg-gray-950 text-gray-50 min-h-screen">
+      <title>Georgia Driver Education &amp; Insurance Discounts | insuredbycam</title>
       <div className="max-w-6xl mx-auto px-4 py-12 lg:py-16">
         {/* Returning Customer Banner */}
         <div className="mb-8 -mt-4">
