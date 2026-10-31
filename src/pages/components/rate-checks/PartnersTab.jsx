@@ -10,6 +10,7 @@ import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
+  usePartnerApplications, useCloseApplication,
 } from '../../../hooks/useRateChecks';
 import { downloadCSV } from '../../../lib/csvExport';
 import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
@@ -82,6 +83,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 
   return (
     <div className="space-y-4">
+      <Applications agencyId={agencyId} userId={userId} canEdit={canEdit} savePromoter={savePromoter} />
+
       <p className="flex items-start gap-2 rounded-lg p-3 text-sm" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
         <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" style={{ color: 'var(--qs-warning)' }} aria-hidden="true" />
         <span>Partners are paid per qualified household they send, never per sale, and they don&apos;t discuss coverage or price.
@@ -330,6 +333,63 @@ function CapControl({ value, onSave }) {
         className="w-14 rounded px-1.5 py-0.5 text-right tabular-nums" style={inputStyle} placeholder="none" />
       <button type="button" onClick={() => { onSave(draft ? Number(draft) : null); setEditing(false); }} className="font-semibold text-primary-600">Save</button>
     </span>
+  );
+}
+
+// What applicants said about being with Allstate (and with us).
+const CUSTOMER_BADGE = {
+  agency: 'Cam Wiley Agency customer', yes: 'Allstate customer', allstate_other: 'Allstate · another agent',
+  allstate_unsure: 'Allstate · agent unknown', no: 'Not with Allstate',
+};
+
+// People who asked to join from the Drivers Ed page. "Add as partner" makes the partner
+// (same as Add partner) and closes the application; then send them their portal link.
+function Applications({ agencyId, userId, canEdit, savePromoter }) {
+  const { data: apps = [] } = usePartnerApplications(agencyId);
+  const close = useCloseApplication();
+  const [busy, setBusy] = useState(null);
+  if (!apps.length) return null;
+  const add = (a) => {
+    setBusy(a.id);
+    const name = [a.first_name, a.last_name].filter(Boolean).join(' ');
+    savePromoter.mutate({ agencyId, userId, name, phone: a.phone, email: a.email || '' }, {
+      onSuccess: (row) => close.mutate({ id: a.id, status: 'added', promoterId: row?.id, agencyId }, { onSettled: () => setBusy(null) }),
+      onError: () => setBusy(null),
+    });
+  };
+  return (
+    <section className="dark-card" style={{ padding: 16 }} aria-label="Partner applications">
+      <h3 className="text-base font-bold" style={{ color: 'var(--qs-bright)' }}>
+        {apps.length === 1 ? '1 person wants to be a partner' : `${apps.length} people want to be partners`}
+      </h3>
+      <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-subtle)' }}>From the Drivers Ed page. Add them, then send their portal link to sign.</p>
+      <ul className="mt-3 space-y-2">
+        {apps.map(a => (
+          <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg px-3 py-2.5" style={{ background: 'var(--qs-elevated)' }}>
+            <div className="min-w-0">
+              <p className="font-semibold" style={{ color: 'var(--qs-bright)' }}>
+                {[a.first_name, a.last_name].filter(Boolean).join(' ')}
+                {CUSTOMER_BADGE[a.is_customer] && <span className="ml-2 rounded px-1.5 py-0.5 text-[11px] font-bold" style={a.is_customer === 'agency' ? { color: 'var(--qs-success)', background: 'var(--qs-success-subtle)' } : { color: 'var(--qs-text)', background: 'var(--qs-card)' }}>{CUSTOMER_BADGE[a.is_customer]}</span>}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
+                {[formatPhone(a.phone), a.email, a.audience, `applied ${formatDate(a.created_at)}`].filter(Boolean).join(' · ')}
+              </p>
+            </div>
+            {canEdit && (
+              <div className="flex shrink-0 gap-2">
+                <button type="button" onClick={() => close.mutate({ id: a.id, status: 'dismissed', agencyId })} disabled={busy === a.id}
+                  className="min-h-[36px] rounded-lg px-3 text-sm font-semibold" style={inputStyle}>Dismiss</button>
+                <button type="button" onClick={() => add(a)} disabled={busy === a.id}
+                  className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white disabled:opacity-60">
+                  <Plus className="h-4 w-4" aria-hidden="true" /> {busy === a.id ? 'Adding…' : 'Add as partner'}
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      {(savePromoter.error || close.error) && <p className="mt-2 text-sm text-red-500">{(savePromoter.error || close.error).message}</p>}
+    </section>
   );
 }
 

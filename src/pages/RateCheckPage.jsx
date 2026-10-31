@@ -13,8 +13,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
+import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
-  AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
@@ -49,10 +50,10 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // names him); the agency's resident license goes in the footer next to the agency name.
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
-// "Meet the Owner" carousel: the agent card first, then these photos and short bio cards, in order.
+// "Meet the Owner" carousel: the agent card first, then these in order. A story card comes
+// right after the agent card, then alternating photo / story.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
-  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
   { key: 'court', title: 'My story, on the court', paragraphs: [
@@ -60,13 +61,14 @@ const ABOUT = [
     'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
   ] },
-  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his family', caption: 'My family', position: '50% 35%' },
+  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
   { key: 'today', title: 'My story, today', paragraphs: [
     'Family comes first for me. So I treat your household the way I’d treat mine.',
     'Today I run Cam Wiley Insurance, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
+  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam and family', caption: 'My family', position: '50% 35%' },
 ];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -674,100 +676,27 @@ export default function RateCheckPage() {
       )}
 
       {drafts.length === 0 ? (
-        // Order, for conversion: the ask (headline + upload) with trust right under it, then
-        // proof (carriers, the owner), then answers (how to get the page, what we insure),
-        // then the ask again. Desktop: the ask on the left; Meet the Owner and the how-to on
-        // the right; carriers, products and the closing ask full width. Phones: one column.
-        <div className="lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-14">
-          <div className="lg:col-start-1 lg:row-start-1">
-          {returning ? (
+        returning ? (
+          <>
             <h1 className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900">Add another policy</h1>
-          ) : (
-            <>
-              <p className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.eyebrow">Free rate check · Georgia</T></p>
-              <h1 className="mt-2 text-[32px] font-extrabold leading-[1.1] tracking-tight text-slate-900 lg:text-[46px]">
-                <T k="rc.headline">Get a second opinion on your insurance.</T>
-              </h1>
-              <p className="mt-3 text-slate-600 lg:mt-4 lg:text-lg">
-                <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
-              </p>
-            </>
-          )}
-
-          <button type="button" onClick={() => openFiles()}
-            className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-8 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
-            <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
-              <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
-            </span>
-            <span className="text-xl font-bold"><T k="rc.upload.title">Upload my policy</T></span>
-            <span className="text-sm text-blue-100"><T k="rc.upload.line">PDF, photos or screenshots</T></span>
-          </button>
-          <button type="button" onClick={() => openCamera()}
-            className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-700 active:bg-slate-50">
-            <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T></span>
-            <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Photograph every page of the declarations</T></span>
-          </button>
-          <p className="mt-4 flex justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#EEF2FF] px-3.5 py-1.5 text-sm font-semibold text-blue-700">
-              <Paperclip className="h-4 w-4" aria-hidden="true" /> <T k="rc.multiple">Multiple policies? Upload them together.</T>
-            </span>
-          </p>
-          {/* Trust, kept quiet: one line right under the buttons. */}
-          <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-slate-500 lg:justify-start">
-            <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
-            <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
-            <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
-          </ul>
-          </div>
-
-          <div className="lg:col-span-2 lg:row-start-2">
-            <CarrierLogos />
-          </div>
-
-          {/* Desktop: Meet the Owner and the how-to share the right column, beside the ask. */}
-          <div className="lg:col-start-2 lg:row-start-1">
-          <section className="mt-12 lg:mt-0" aria-labelledby="rc-owner">
-            <h2 id="rc-owner" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.owner.heading">Meet the Owner</T></h2>
-            <MeetCam />
-          </section>
-
-          <div className="mt-12 lg:mt-8">
-          <details open className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700">
-            <summary className="cursor-pointer font-semibold text-slate-800"><T k="rc.howto.title">How to get your declarations page</T></summary>
-            <ol className="mt-3 list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700">
-              <li><T k="rc.howto.1">Log in to your insurer’s website or app.</T></li>
-              <li><T k="rc.howto.2">Open **Documents**. Some insurers call it **Policy Documents** or **Documents & ID Cards**.</T></li>
-              <li><T k="rc.howto.3">Find the most recent declarations page for each policy.</T></li>
-              <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
-              <li><T k="rc.howto.5">Come back here and tap **Upload my policy**.</T></li>
-            </ol>
-            <p className="mt-4 font-semibold text-slate-800"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
-            <p className="mt-1"><T k="rc.howto.paper">Tap **Take photos instead** and photograph every page of the declarations. Lay it flat in good light.</T></p>
-            <p className="mt-4 font-semibold text-slate-800"><T k="rc.howto.screens.title">Can’t download it?</T></p>
-            <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
-          </details>
-          </div>
-          </div>
-
-          <div className="lg:col-span-2 lg:row-start-3">
-            <ProductsWeInsure />
-          </div>
-
-          {!returning && (
-            <section className="mt-12 rounded-3xl bg-slate-900 px-6 py-8 text-center text-white lg:col-span-2 lg:row-start-4 lg:mt-16 lg:py-12" aria-labelledby="rc-closing">
-              <h2 id="rc-closing" className="text-[26px] font-extrabold leading-tight tracking-tight lg:text-[32px]"><T k="rc.closing.heading">Ready for a second opinion?</T></h2>
-              <p className="mx-auto mt-2 max-w-md text-slate-300"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
-              <div className="mx-auto mt-6 flex max-w-md flex-col gap-3 sm:flex-row">
-                <button type="button" onClick={() => openFiles()} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-lg font-bold text-white active:bg-blue-700">
-                  <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
-                </button>
-                <button type="button" onClick={() => openCamera()} className="flex items-center justify-center gap-2 rounded-2xl border border-white/25 px-5 py-4 font-semibold text-white active:bg-white/10">
-                  <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.photos">Take photos</T>
-                </button>
-              </div>
-            </section>
-          )}
-        </div>
+            <button type="button" onClick={() => openFiles()}
+              className="mt-6 flex w-full flex-col items-center justify-center gap-3 rounded-3xl bg-blue-700 px-6 py-8 text-white shadow-lg shadow-blue-700/20 active:scale-[0.99] active:bg-blue-800">
+              <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/15">
+                <Upload className="h-8 w-8" aria-hidden="true" strokeWidth={1.75} />
+              </span>
+              <span className="text-xl font-bold"><T k="rc.upload.title">Upload my policy</T></span>
+              <span className="text-sm text-blue-100"><T k="rc.upload.line">PDF, photos or screenshots</T></span>
+            </button>
+            <button type="button" onClick={() => openCamera()}
+              className="mt-3 flex w-full flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white px-4 py-3.5 text-slate-700 active:bg-slate-50">
+              <span className="flex items-center gap-2 font-semibold"><Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T></span>
+              <span className="mt-0.5 text-xs text-slate-500"><T k="rc.photos.line">Photograph every page of the declarations</T></span>
+            </button>
+          </>
+        ) : (
+          <Landing onUpload={() => openFiles()} onCamera={() => openCamera()}
+            onDropFiles={(files) => onPick({ target: { files, value: '' } })} />
+        )
       ) : (
         <>
           <div className="flex items-end justify-between">
@@ -1063,7 +992,7 @@ function AgentCard() {
   return (
     <div className="flex h-full min-h-[268px] flex-col items-center justify-center text-center">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Your licensed agent</p>
-      <p className="mt-0.5 text-2xl font-extrabold text-slate-900">{AGENT.name}</p>
+      <p className="mt-0.5 text-2xl font-extrabold text-[#0F2D6B]">{AGENT.name}</p>
       <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
         className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
         style={{ objectPosition: '50% 30%' }} />
@@ -1087,18 +1016,18 @@ function MeetCam() {
       <div className="flex h-full min-h-[268px] flex-col text-left">
         {/* No visible header: the bold first line is the headline. The title names the slide for screen readers. */}
         <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
-          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-slate-900' : ''}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
+          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-[#0F2D6B]' : ''}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
         </div>
       </div>
     ),
   })];
-  return <Carousel slides={slides} label="Meet the Owner" className="mt-4" />;
+  return <Carousel slides={slides} label="Meet the Owner" />;
 }
 
 function Trust({ icon: Icon, k, label }) {
   return (
     <li className="inline-flex items-center gap-1.5">
-      <Icon className="h-3.5 w-3.5 text-blue-700" aria-hidden="true" />
+      <Icon className="h-4 w-4 text-[#39FF88]" aria-hidden="true" />
       <T k={k}>{label}</T>
     </li>
   );
@@ -1168,9 +1097,9 @@ const PRODUCTS = [
 // Three tiles to a row: filled brand blue with a fluorescent border.
 function ProductsWeInsure() {
   return (
-    <section className="mt-12 lg:mt-20" aria-labelledby="rc-products">
-      <h2 id="rc-products" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.products.heading">Products we insure</T></h2>
-      <ul className="mt-4 grid grid-cols-3 gap-2 lg:grid-cols-6 lg:gap-3">
+    <section aria-labelledby="rc-products">
+      <h2 id="rc-products" className={sectionTitle}><T k="rc.products.heading">Products we insure</T></h2>
+      <ul className="mt-6 grid grid-cols-3 gap-2 lg:mt-8 lg:grid-cols-6 lg:gap-3">
         {PRODUCTS.map(([key, Icon, name, sub]) => (
           <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
             <Icon className="h-6 w-6 text-[#39FF88]" aria-hidden="true" strokeWidth={1.75} />
@@ -1213,13 +1142,214 @@ function CarrierLogos() {
     </ul>
   );
   return (
-    <section className="mt-10 lg:mt-16" aria-labelledby="rc-carriers">
+    <section className="bg-white pt-14 lg:pt-20" aria-labelledby="rc-carriers">
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
-      <h2 id="rc-carriers" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.carriers.heading">Carriers we write</T></h2>
-      <div className="rc-marquee-wrap -mx-4 mt-2 overflow-hidden px-4 pb-6 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
-        <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
+      {/* The heading sits above the strip; the strip has its own band. */}
+      <div className={wrap}>
+        <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
+      </div>
+      <div className="mt-6 border-y border-slate-200 bg-slate-50 py-6 lg:mt-8 lg:py-8">
+        <div className={wrap}>
+          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 pb-4 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+            <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
+          </div>
+        </div>
       </div>
     </section>
+  );
+}
+
+// ── The landing page (first visit, nothing added yet) ────────────────────────
+// Built for conversion: the ask (headline + upload, with Cam's face beside it), the
+// steps, proof (carriers, the owner), what we insure, then the ask again. Royal blue and
+// the fluorescent green are the brand pair; the green marks what matters. No black:
+// dark surfaces are deep blue, headings are deep blue, body text is slate gray.
+const ACCENT = '#39FF88';
+const NAVY = '#0F2D6B'; // deep royal blue (headings, step numbers)
+const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
+const ACCEPTS = (f) => /^image\//.test(f.type) || f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+const wrap = 'mx-auto max-w-6xl px-4 lg:px-8';
+const sectionTitle = 'text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] lg:text-[36px]';
+
+
+const PROMISES = [
+  ['free', 'Free, no obligation'],
+  ['fast', 'Your quote in about 30 minutes'],
+  ['calls', 'No call centers, ever'],
+];
+
+// Cam beside the ask: a compact row on phones, a full card on desktop.
+function OwnerCard() {
+  return (
+    <aside aria-label={`Your agent, ${AGENT.name}`} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
+      <div className="flex items-center gap-4 lg:flex-col lg:text-center">
+        <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
+          className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-offset-2 ring-offset-[#1E3A8A] lg:h-40 lg:w-40 lg:ring-4 lg:ring-offset-4"
+          style={{ objectPosition: '50% 30%', '--tw-ring-color': ACCENT }} />
+        <div className="min-w-0">
+          <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: ACCENT }}><T k="rc.owner.badge">Owner &amp; licensed agent</T></p>
+          <p className="mt-0.5 text-xl font-extrabold text-white lg:mt-1 lg:text-2xl">{AGENT.name}</p>
+          <p className="text-sm text-blue-100"><T k="rc.owner.line">Allstate agent · Serving all of Georgia</T></p>
+          {AGENT.license && <p className="mt-0.5 text-xs text-blue-200">GA License #: {AGENT.license}</p>}
+        </div>
+      </div>
+      <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">
+        {PROMISES.map(([k, text]) => (
+          <li key={k} className="flex items-center gap-2.5 text-[15px] text-white">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(57,255,136,0.15)' }}>
+              <Check className="h-4 w-4" style={{ color: ACCENT }} aria-hidden="true" strokeWidth={3} />
+            </span>
+            <T k={`rc.promise.${k}`}>{text}</T>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+function UploadCard({ onUpload, onCamera, onDropFiles }) {
+  const [dragging, setDragging] = useState(false);
+  const drop = (e) => {
+    e.preventDefault(); setDragging(false);
+    const files = Array.from(e.dataTransfer?.files || []).filter(ACCEPTS);
+    if (files.length) onDropFiles(files);
+  };
+  return (
+    <div className="mt-7 rounded-3xl bg-white p-4 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 sm:p-5"
+      onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
+      <div className={`rounded-2xl border-2 border-dashed p-4 text-center transition-colors sm:p-5 ${dragging ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50/60'}`}>
+        <button type="button" onClick={onUpload}
+          className="flex w-full items-center justify-center gap-2.5 rounded-2xl bg-blue-700 px-5 py-4 text-lg font-bold text-white shadow-lg shadow-blue-700/30 active:scale-[0.99] active:bg-blue-800">
+          <Upload className="h-5 w-5" aria-hidden="true" strokeWidth={2.25} /> <T k="rc.upload.title">Upload my policy</T>
+        </button>
+        <p className="mt-2.5 text-sm text-slate-500">
+          <T k="rc.upload.line">PDF, photos or screenshots</T><span className="hidden lg:inline"> · or drag your PDF here</span>
+        </p>
+      </div>
+      <button type="button" onClick={onCamera}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 active:bg-slate-50">
+        <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T>
+      </button>
+      <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-blue-700">
+        <Paperclip className="h-4 w-4" aria-hidden="true" /> <T k="rc.multiple">Multiple policies? Upload them together.</T>
+      </p>
+    </div>
+  );
+}
+
+const HOW = [
+  ['1', Upload, 'Upload your dec page', 'A PDF, photo or screenshot of your current policy.'],
+  ['2', ShieldCheck, 'A licensed agent compares', 'Cam’s team prices the same coverage with Allstate.'],
+  ['3', MessageSquare, 'Get your quote', 'Usually within 30 minutes during business hours.'],
+];
+
+function Landing({ onUpload, onCamera, onDropFiles }) {
+  const [howTo, setHowTo] = useState(false);
+  return (
+    <>
+      {/* The ask */}
+      <section className="relative overflow-hidden text-white" style={{ background: HERO_BG }}>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(55% 50% at 5% 0%, rgba(96,165,250,0.35), transparent 70%), radial-gradient(45% 45% at 100% 100%, rgba(57,255,136,0.18), transparent 70%)' }} />
+        <div className={`relative ${wrap}`}>
+          <ConsumerNav current="rate" />
+          <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="rc.eyebrow">Free rate check · Georgia</T></p>
+              <h1 className="mt-3 text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
+                <T k="rc.headline">Get a **second opinion** on your insurance.</T>
+              </h1>
+              <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
+                <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
+              </p>
+              <UploadCard onUpload={onUpload} onCamera={onCamera} onDropFiles={onDropFiles} />
+              <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-blue-100 lg:justify-start">
+                <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
+                <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
+                <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
+              </ul>
+            </div>
+            <OwnerCard />
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-how">
+        <div className={wrap}>
+          <h2 id="rc-how" className={sectionTitle}><T k="rc.how.heading">How it works</T></h2>
+          <ol className="mt-8 grid gap-4 sm:grid-cols-3 lg:gap-6">
+            {HOW.map(([n, Icon, title, line]) => (
+              <li key={n} className="relative rounded-3xl border border-slate-200 bg-slate-50 p-6">
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-extrabold" style={{ background: NAVY, color: ACCENT }}>{n}</span>
+                <Icon className="absolute right-6 top-6 h-6 w-6 text-slate-300" aria-hidden="true" />
+                <p className="mt-4 text-lg font-extrabold text-[#0F2D6B]"><T k={`rc.how.${n}.title`}>{title}</T></p>
+                <p className="mt-1 text-slate-600"><T k={`rc.how.${n}.line`}>{line}</T></p>
+              </li>
+            ))}
+          </ol>
+          <button type="button" onClick={() => setHowTo(v => !v)} aria-expanded={howTo}
+            className="mt-6 inline-flex items-center gap-1.5 font-semibold text-blue-700">
+            <T k="rc.howto.toggle">Can’t find your declarations page?</T>
+            <ChevronDown className={`h-4 w-4 transition-transform ${howTo ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+          {howTo && (
+            <div className="mt-4 max-w-3xl rounded-3xl border border-slate-200 bg-white p-6 text-slate-700">
+              <ol className="list-decimal space-y-2 pl-5 marker:font-semibold marker:text-blue-700">
+                <li><T k="rc.howto.1">Log in to your insurer’s website or app.</T></li>
+                <li><T k="rc.howto.2">Open **Documents**. Some insurers call it **Policy Documents** or **Documents & ID Cards**.</T></li>
+                <li><T k="rc.howto.3">Find the most recent declarations page for each policy.</T></li>
+                <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
+                <li><T k="rc.howto.5">Come back here and tap **Upload my policy**.</T></li>
+              </ol>
+              <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
+              <p className="mt-1"><T k="rc.howto.paper">Tap **Take photos instead** and photograph every page of the declarations. Lay it flat in good light.</T></p>
+              <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.screens.title">Can’t download it?</T></p>
+              <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Proof: carriers */}
+      <CarrierLogos />
+
+      {/* Proof: the owner */}
+      <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-owner">
+        <div className={`${wrap} grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-center lg:gap-16`}>
+          <div>
+            <h2 id="rc-owner" className={sectionTitle}><T k="rc.owner.heading">Meet the Owner</T></h2>
+            <p className="mt-3 text-lg leading-relaxed text-slate-600">
+              <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Insurance, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
+            </p>
+          </div>
+          <div className="min-w-0"><MeetCam /></div>
+        </div>
+      </section>
+
+      {/* What we insure */}
+      <section className="bg-slate-50 py-14 lg:py-20">
+        <div className={wrap}><ProductsWeInsure /></div>
+      </section>
+
+      {/* The ask, again */}
+      <section className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: HERO_BG }} aria-labelledby="rc-closing">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0"
+          style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(96,165,250,0.35), transparent 70%)' }} />
+        <div className={`relative ${wrap}`}>
+          <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#39FF88]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
+          <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
+            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#39FF88] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-emerald-500/30 active:bg-[#2ee87a]">
+              <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
+            </button>
+            <button type="button" onClick={onCamera} className="flex items-center justify-center gap-2 rounded-2xl border border-white/40 px-5 py-4 font-semibold text-white active:bg-white/10">
+              <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.photos">Take photos</T>
+            </button>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }
 
@@ -1227,45 +1357,37 @@ const STEPS = ['Policies', 'You', 'Results'];
 // `wide`: the landing page spreads out on desktop (two columns, wider grids); the
 // steps stay one narrow column, which reads better for forms.
 function Shell({ children, step, bar, center = false, wide = false }) {
+  const styles = <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}.rc-track{scrollbar-width:none}.rc-track::-webkit-scrollbar{display:none}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>;
+  // The landing page is full width and draws its own header (see Landing).
+  if (wide) {
+    return (
+      <div className="min-h-screen bg-white">
+        {styles}
+        <main>{children}</main>
+        <div className="border-t border-slate-200 bg-slate-50 pt-8"><RateCheckFooter padForBar={!!bar} wide /></div>
+        {bar}
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-slate-50">
-      <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}.rc-track{scrollbar-width:none}.rc-track::-webkit-scrollbar{display:none}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>
-      <header className={`mx-auto flex max-w-md items-center justify-between px-4 pt-5 ${wide ? 'lg:max-w-5xl lg:px-8 lg:pt-8' : ''}`}>
-        <span className="text-sm font-extrabold tracking-tight text-slate-900">insuredbycam <span className="font-semibold text-slate-400">· Rate Check</span></span>
+      {styles}
+      <header className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 pt-5">
+        <span className="shrink-0 text-sm font-extrabold tracking-tight text-slate-900">insuredbycam <span className="font-semibold text-slate-400">· Rate Check</span></span>
         {step && (
           <ol className="flex items-center gap-1.5" aria-label={`Step ${step} of 3: ${STEPS[step - 1]}`}>
-            {STEPS.map((s, i) => (
-              <li key={s} className={`h-1.5 rounded-full transition-all ${i + 1 === step ? 'w-6 bg-blue-700' : i + 1 < step ? 'w-3 bg-blue-300' : 'w-3 bg-slate-300'}`} />
+            {STEPS.map((st, i) => (
+              <li key={st} className={`h-1.5 rounded-full transition-all ${i + 1 === step ? 'w-6 bg-blue-700' : i + 1 < step ? 'w-3 bg-blue-300' : 'w-3 bg-slate-300'}`} />
             ))}
           </ol>
         )}
       </header>
       <main className={center
         ? 'mx-auto flex min-h-[calc(100dvh-3.25rem)] max-w-md flex-col justify-center px-4 py-6'
-        : `mx-auto max-w-md px-4 pt-6 pb-10 ${wide ? 'lg:max-w-5xl lg:px-8 lg:pt-12' : ''}`}>{children}</main>
-      <RateCheckFooter padForBar={!!bar} wide={wide} />
+        : 'mx-auto max-w-md px-4 pt-6 pb-10'}>{children}</main>
+      <RateCheckFooter padForBar={!!bar} />
       {bar}
     </div>
   );
 }
 
-export function RateCheckFooter({ padForBar = false, wide = false }) {
-  return (
-    <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'} ${wide ? 'lg:max-w-5xl lg:px-8' : ''}`}>
-      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
-        <Link to="/courses" className="font-semibold text-slate-600 underline">Drivers Ed</Link>
-        <Link to="/news" className="font-semibold text-slate-600 underline">Insurance news</Link>
-      </nav>
-      <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legal">
-        <Link to="/ratecheck-privacy" className="underline">Rate Check privacy notice</Link>
-        <Link to="/privacy" className="underline">Privacy policy</Link>
-        <Link to="/terms" className="underline">Terms</Link>
-      </nav>
-      {/* TODO(compliance): confirm the Allstate agency disclosure wording before launch. */}
-      <p>
-        <T k="rc.footer.disclosure">{`${AGENCY.name} is an Allstate Insurance Agency. Quotes and savings vary and are subject to underwriting and eligibility; not all applicants qualify.`}</T>
-      </p>
-      <p className="mt-1">Agency Resident License #: {AGENCY.license}</p>
-    </footer>
-  );
-}

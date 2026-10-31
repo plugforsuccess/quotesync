@@ -577,6 +577,37 @@ export const useSavePromoter = () => {
   });
 };
 
+// People who asked to become partners from the Drivers Ed page, newest first (open ones only).
+export const usePartnerApplications = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.partnerApplications(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('rate_check_partner_applications')
+        .select('id, first_name, last_name, phone, email, is_customer, audience, source, status, created_at')
+        .eq('agency_id', agencyId)
+        .eq('status', 'new')
+        .order('created_at', { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!agencyId,
+  });
+
+/** Close an application: 'added' (with the new partner's id) or 'dismissed'. */
+export const useCloseApplication = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, status, promoterId = null }) => {
+      const { error } = await supabase.from('rate_check_partner_applications')
+        .update({ status, promoter_id: promoterId }).eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.partnerApplications(v.agencyId) }),
+  });
+};
+
 /** A short-lived link to a partner's completed W-9 (private bucket; owners, principals and managers). */
 export async function partnerW9Url(path) {
   const { data, error } = await supabase.storage.from('partner-w9').createSignedUrl(path, 300);
