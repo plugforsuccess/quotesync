@@ -4,6 +4,8 @@
 // Also accepts staff uploads from the Rate Checks inbox ({ mode: 'agent' } plus the
 // agent's own JWT): the caller's agency membership is verified, no consumer consent
 // is recorded (so no auto-texts), and the lead's existing consent is never touched.
+// Consumer uploads: the automated-text box is optional. Only a checked box sets
+// consent_given_at (what every auto-text checks); the decision is kept as sms_consent.
 //
 // A consumer uploads a photo/PDF of their current declarations page. We:
 //   1. store a rate_checks row (status 'pending') + the image in the private dec-pages bucket,
@@ -877,8 +879,9 @@ Deno.serve(async (req) => {
   if (email && !EMAIL_RE.test(email)) errors.push('email is not valid')
   // ZIP is optional for staff uploads (an emailed dec page may not need it typed in).
   if (staff ? (zip && !/^\d{5}$/.test(zip)) : !/^\d{5}$/.test(zip)) errors.push('zip must be 5 digits')
-  if (!staff && (!body.consent_given_at || Number.isNaN(Date.parse(body.consent_given_at)))) {
-    errors.push('consent_given_at is required')
+  // The text-message box is optional: a time means they checked it; none means they left it unchecked.
+  if (!staff && body.consent_given_at && Number.isNaN(Date.parse(body.consent_given_at))) {
+    errors.push('consent_given_at is not a valid time')
   }
   if (!staff && !['own', 'rent', 'family', 'retirement'].includes(String(body.housing_situation || ''))) errors.push('housing_situation is required')
   if (!MEDIA_TYPES[mediaType]) errors.push('media_type not allowed')
@@ -901,12 +904,19 @@ Deno.serve(async (req) => {
     utm_term: sanitizeUtm(body.utm_term),
   }
   // Staff uploads carry no consumer consent — never record (or overwrite) any.
-  const consent = staff ? {} : {
+  // `consent` (only when they checked the optional text box) goes on the rate check and the lead;
+  // the decision itself — checked or not, and which wording — is kept on the rate check either way.
+  // An unchecked box never clears consent a lead already gave (or turns an opt-out back on).
+  const optedIn = !staff && !!body.consent_given_at
+  const consent = optedIn ? {
     consent_given_at: new Date(body.consent_given_at).toISOString(),
     consent_ip: consentIp,
     consent_version: cleanText(body.consent_version, 64),
     consent_user_agent: cleanText(body.consent_user_agent || req.headers.get('user-agent'), 512),
-  }
+  } : {}
+  const consentDecision = staff ? {} : optedIn
+    ? { sms_consent: 'opted_in' }
+    : { sms_consent: 'declined', consent_version: cleanText(body.consent_version, 64) }
   // Separate, optional opt-in for partner referrals (#5) — never implied by the call/text consent.
   const referralConsent = !staff && body.referral_consent_given_at && !Number.isNaN(Date.parse(body.referral_consent_given_at))
     ? {
@@ -969,6 +979,7 @@ Deno.serve(async (req) => {
         ...origin,
         ...(promoter ? { promoter_id: promoter.id } : {}),
         ...consent,
+        ...consentDecision,
         ...referralConsent,
         ...sanitizedUtm,
         landing_page: landingPage,

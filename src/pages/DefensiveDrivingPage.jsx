@@ -63,6 +63,7 @@ export default function DefensiveDrivingPage() {
 
   return (
     <div className="bg-gray-950 text-gray-50 min-h-screen">
+      <title>Georgia 6-Hour Defensive Driving Course | insuredbycam</title>
       {/* ── Hero ───────────────────────────────────────────── */}
       <section className="relative overflow-hidden border-b border-gray-800">
         <div className="absolute inset-0 bg-gradient-to-b from-success-500/10 via-gray-950 to-gray-950 pointer-events-none" />

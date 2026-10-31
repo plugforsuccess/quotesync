@@ -93,12 +93,13 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   await expect(page.getByText('Does this policy have more pages?')).toBeVisible();
   await page.getByRole('button', { name: /Continue/ }).click();
 
-  await expect(page.getByRole('heading', { name: 'Where should Cam text you?' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'How can Cam reach you?' })).toBeVisible();
   const submit = page.getByRole('button', { name: 'Check my rate' });
   await expect(submit).toBeDisabled();
   await fillContact(page);
-  await expect(submit).toBeDisabled(); // consent still unchecked
-  // First checkbox = required call/text consent; second = optional partner referral (left unchecked).
+  // Both boxes are optional and start unchecked: automated texts first, partner referral second.
+  await expect(page.getByRole('checkbox').nth(0)).not.toBeChecked();
+  await expect(submit).toBeEnabled();
   await page.getByRole('checkbox').nth(0).check();
   await expect(page.getByRole('checkbox').nth(1)).not.toBeChecked();
 
@@ -120,7 +121,8 @@ test('downscales a 4 MB photo and shows what it read', async ({ page }, testInfo
   expect(posted.zip).toBe('30094');
   expect(posted.email).toBe('keisha@example.com');
   expect(posted.housing_situation).toBe('own');
-  expect(posted.consent_version).toBe('ratecheck-v1');
+  expect(posted.consent_version).toBe('ratecheck-v2');
+  expect(posted.sms_consent).toBe('opted_in');
   expect(Date.parse(posted.consent_given_at)).not.toBeNaN();
   expect(posted.session_id).toMatch(/^[0-9a-f-]{36}$/);
   expect(posted.landing_page).toBe('/ratecheck');
@@ -168,7 +170,7 @@ test('a household sends any number of policies, retries a throttled one, and add
   await page.getByRole('button', { name: /Continue/ }).click();
 
   await fillContact(page);
-  await page.getByRole('checkbox').nth(0).check();
+  // Leave the optional text box unchecked: the policies still go through.
   await page.getByRole('button', { name: 'Check my 3 policies' }).click();
 
   await expect(page.getByRole('heading', { name: 'Reading your policies…' })).toBeVisible();
@@ -183,16 +185,16 @@ test('a household sends any number of policies, retries a throttled one, and add
   await expect(page.getByTestId('rc-total')).toHaveText('$4,000');
   expect(posts).toHaveLength(3);
   expect(new Set(posts.map(p => p.session_id)).size).toBe(1);
-  expect(new Set(posts.map(p => p.consent_given_at)).size).toBe(1);
+  expect(posts.every(p => p.consent_given_at === undefined && p.sms_consent === 'declined')).toBe(true);
 
-  // Add one more later: no second contact step, same consent.
+  // Add one more later: no second contact step, same (declined) choice.
   await page.getByRole('button', { name: 'Add more policies' }).click();
   await expect(page.getByText('3 policies already sent.')).toBeVisible();
   await page.getByTestId('rc-files').setInputFiles(files[3]);
   await page.getByRole('button', { name: /Send it/ }).click();
   await expect(page.getByText('Auto · $980/yr')).toBeVisible({ timeout: 15_000 });
   expect(posts).toHaveLength(4);
-  expect(posts[3].consent_given_at).toBe(posts[0].consent_given_at);
+  expect(posts[3].sms_consent).toBe('declined');
   await expect(page.getByTestId('rc-total')).toHaveText('$4,980');
 
   // Reloading the tab keeps what was sent; "Start over" wipes it.

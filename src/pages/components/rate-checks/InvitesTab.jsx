@@ -10,6 +10,7 @@ import { useRateCheckInvites, useRateCheckInviteStats } from '../../../hooks/use
 import { inputStyle, formatPhone, formatDate, money } from './ui';
 import { InviteShare } from './InviteDialog';
 import { inviteUrl, smsUrl } from './invite';
+import QuickSendCard from './QuickSendCard';
 
 function ago(ts) {
   const mins = Math.max(0, Math.round((Date.now() - new Date(ts).getTime()) / 60000));
@@ -26,6 +27,11 @@ const PILL = {
   sent: { label: () => 'Not opened yet', color: 'var(--qs-subtle)', bg: 'var(--qs-elevated)', border: 'var(--qs-border)' },
   expired: { label: () => 'Expired', color: 'var(--qs-subtle)', bg: 'var(--qs-elevated)', border: 'var(--qs-border)' },
 };
+
+// A Quick Send text that never reached them: worth a call or a QR in person instead.
+const textProblem = (i) => (i.source !== 'quick_send' || i.upload_count > 0 ? null
+  : i.sms_status === 'blocked' ? 'Not texted — this number texted STOP'
+    : i.sms_status === 'failed' ? 'Text didn’t go through' : null);
 
 const nudgeText = (i) => `Hi${i.first_name ? ` ${i.first_name}` : ''}, saw you opened the link — just snap a photo of your dec page and I'll do the rest: ${inviteUrl(i.code)}`;
 
@@ -68,6 +74,7 @@ export default function InvitesTab({ agencyId, producerName, onOpenRateCheck }) 
 
   return (
     <div className="space-y-4">
+      <QuickSendCard agencyId={agencyId} />
       {tally.length > 0 && (
         <div className="dark-card" style={{ padding: 16 }}>
           <div className="grid grid-cols-4 gap-2">
@@ -166,8 +173,9 @@ function InviteRow({ i, onOpen, onResend }) {
             {i.phone && <span className="ml-1.5 whitespace-nowrap font-normal" style={{ color: 'var(--qs-text)' }}>{formatPhone(i.phone)}</span>}
           </p>
           <span className="mt-1 inline-block rounded px-2 py-0.5 text-xs font-semibold" style={{ color: pill.color, background: pill.bg, border: `1px solid ${pill.border}` }}>{pill.label(i)}</span>
+          {textProblem(i) && <p className="mt-1 text-xs font-semibold text-red-600">{textProblem(i)}</p>}
           <p className="mt-1 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-            {[i.event_name || 'Direct link', i.producer_name && `sent by ${i.producer_name}`, ago(i.created_at)].filter(Boolean).join(' · ')}
+            {[i.source === 'quick_send' ? 'Quick Send' : i.event_name || 'Direct link', i.producer_name && `sent by ${i.producer_name}`, ago(i.created_at)].filter(Boolean).join(' · ')}
           </p>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
