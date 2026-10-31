@@ -1136,9 +1136,9 @@ const PRODUCTS = [
 // Three tiles to a row: filled brand blue with a fluorescent border.
 function ProductsWeInsure() {
   return (
-    <section className="mt-10" aria-labelledby="rc-products">
-      <h2 id="rc-products" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.products.heading">Products we insure</T></h2>
-      <ul className="mt-3 grid grid-cols-3 gap-2">
+    <section className="mt-12" aria-labelledby="rc-products">
+      <h2 id="rc-products" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.products.heading">Products we insure</T></h2>
+      <ul className="mt-4 grid grid-cols-3 gap-2">
         {PRODUCTS.map(([key, Icon, name, sub]) => (
           <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
             <Icon className="h-6 w-6 text-[#39FF88]" aria-hidden="true" strokeWidth={1.75} />
@@ -1155,14 +1155,14 @@ function ProductsWeInsure() {
 // Until a carrier has one, its name shows in its place.
 /* TODO(compliance): confirm with Allstate marketing how other carriers' logos may be shown on the agency site. */
 const CARRIERS = [
-  ['allstate', 'Allstate', null],
-  ['chubb', 'Chubb', null],
-  ['american-modern', 'American Modern', null],
-  ['national-general', 'National General', null],
-  ['foremost', 'Foremost', null],
+  ['allstate', 'Allstate', '/logos/carriers/allstate.svg'],
+  ['chubb', 'Chubb', '/logos/carriers/chubb.svg'],
+  ['american-modern', 'American Modern', '/logos/carriers/american-modern.svg'],
+  ['national-general', 'National General', '/logos/carriers/national-general.svg'],
+  ['foremost', 'Foremost', '/logos/carriers/foremost.svg'],
   ['liberty-mutual', 'Liberty Mutual', '/logos/carriers/liberty-mutual.webp'],
   ['progressive', 'Progressive', '/logos/carriers/progressive.webp'],
-  ['the-hartford', 'The Hartford', null],
+  ['the-hartford', 'The Hartford', '/logos/carriers/the-hartford.svg'],
 ];
 
 function CarrierLogos() {
@@ -1170,16 +1170,16 @@ function CarrierLogos() {
     <ul className="flex shrink-0 items-center gap-12 pr-12" aria-hidden={hidden || undefined}>
       {CARRIERS.map(([key, name, src]) => (
         <li key={key} className="flex h-12 shrink-0 items-center">
-          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-10 w-auto max-w-[150px] object-contain"
+          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-9 w-auto max-w-[180px] object-contain"
             fallback={<span className="whitespace-nowrap text-xl font-extrabold tracking-tight text-slate-700">{name}</span>} />
         </li>
       ))}
     </ul>
   );
   return (
-    <section className="mt-10" aria-labelledby="rc-carriers">
-      <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;row-gap:1rem}}'}</style>
-      <h2 id="rc-carriers" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.carriers.heading">Carriers we write</T></h2>
+    <section className="mt-12" aria-labelledby="rc-carriers">
+      <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
+      <h2 id="rc-carriers" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.carriers.heading">Carriers we write</T></h2>
       <div className="rc-marquee-wrap -mx-4 mt-2 overflow-hidden px-4 pb-6 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
         <div className="rc-marquee flex w-max">{row(false)}{row(true)}</div>
       </div>
