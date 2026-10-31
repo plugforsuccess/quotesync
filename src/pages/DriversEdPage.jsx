@@ -175,7 +175,7 @@ function PartnerProgram() {
               <Choice legend="Are you an Allstate customer?" name="allstate" value={f.allstate}
                 options={[['yes', 'Yes'], ['no', 'No']]} onChange={v => setF(x => ({ ...x, allstate: v, agent: v === 'yes' ? x.agent : '' }))} />
               {f.allstate === 'yes' && (
-                <Choice legend="Is Cam Wiley Agency your agent?" name="agent" value={f.agent}
+                <Choice legend="Is Cam Wiley your agent?" name="agent" value={f.agent}
                   options={[['agency', 'Yes'], ['allstate_other', 'No'], ['allstate_unsure', 'Not sure']]} onChange={v => setF(x => ({ ...x, agent: v }))} />
               )}
               <label className="mt-4 block text-sm font-semibold text-slate-700">Who would you share it with? <span className="font-normal text-slate-400">(optional)</span>

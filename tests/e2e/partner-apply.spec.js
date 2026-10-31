@@ -17,9 +17,9 @@ test('apply to be a referral partner from Drivers Ed', async ({ page }) => {
   await page.getByLabel('First name').fill('Dana');
   await page.getByLabel('Mobile number').fill('4045551212');
   await expect(page.getByLabel('Mobile number')).toHaveValue('(404) 555-1212');
-  await expect(page.getByText('Is Cam Wiley Agency your agent?')).toHaveCount(0);
+  await expect(page.getByText('Is Cam Wiley your agent?')).toHaveCount(0);
   await page.getByRole('group', { name: 'Are you an Allstate customer?' }).getByText('Yes', { exact: true }).click();
-  await page.getByRole('group', { name: 'Is Cam Wiley Agency your agent?' }).getByText('Not sure', { exact: true }).click();
+  await page.getByRole('group', { name: 'Is Cam Wiley your agent?' }).getByText('Not sure', { exact: true }).click();
   await page.getByLabel(/Who would you share it with/).selectOption('Coworkers');
   await apply.click();
 
