@@ -68,6 +68,7 @@ const NewsroomPage = lazyWithRetry(() => import('./pages/NewsroomPage'));
 const StoryDetailPage = lazyWithRetry(() => import('./pages/StoryDetailPage'));
 const LoginPage = lazyWithRetry(() => import('./pages/LoginPage'));
 const PunchPage = lazyWithRetry(() => import('./pages/PunchPage'));
+const QuickSendPage = lazyWithRetry(() => import('./pages/QuickSendPage'));
 // Hidden, kept for later: the old quote home page and the /save wizard. Not linked
 // from anywhere (Rate Check at / is the lead path), but their URLs still work.
 const InsuranceQuotesPage = lazyWithRetry(() => import('./pages/InsuranceQuotesPage'));
@@ -177,6 +178,8 @@ function App() {
 
           {/* Employee punch clock — public, no auth required */}
           <Route path="/punch" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><PunchPage /></Suspense></ErrorBoundary>} />
+          {/* Quick Send works logged out: the page knows the producer by a set-up phone or a PIN. */}
+          <Route path="/qs" element={<ErrorBoundary fallback={<PageError />}><Suspense fallback={<PageLoader />}><QuickSendPage /></Suspense></ErrorBoundary>} />
 
           {/* Rate Check — the public home page: one dec-page scan that converts. Standalone
               (no site Layout) to stay light on mobile. /ratecheck and /r/:code are the same page. */}

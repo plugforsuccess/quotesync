@@ -9,9 +9,9 @@ const RATE_CHECK_URL = import.meta.env.VITE_SUPABASE_URL
   ? `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rate-check`
   : '/functions/v1/rate-check';
 
-export const RATE_CHECK_CONSENT_VERSION = 'ratecheck-v1';
-// Separate, optional opt-in for partner referrals — never bundled with the call/text consent.
-export const RATE_CHECK_REFERRAL_CONSENT_VERSION = 'ratecheck-referral-v2';
+export const RATE_CHECK_CONSENT_VERSION = 'ratecheck-v2';
+// Separate, optional opt-in for partner referrals — never bundled with the text consent.
+export const RATE_CHECK_REFERRAL_CONSENT_VERSION = 'ratecheck-referral-v3';
 
 const DOWNSCALE_OVER_BYTES = 2 * 1024 * 1024;
 const MAX_LONG_EDGE = 1600;
@@ -170,7 +170,9 @@ export async function submitRateCheck({ prepared, firstName, phone, email, zip, 
       email: String(email || '').trim(),
       zip,
       housing_situation: housingSituation,
-      consent_given_at: consentGivenAt,
+      // The optional text box: its wording version is sent either way; the time only if they checked it.
+      ...(consentGivenAt ? { consent_given_at: consentGivenAt } : {}),
+      sms_consent: consentGivenAt ? 'opted_in' : 'declined',
       consent_version: RATE_CHECK_CONSENT_VERSION,
       consent_user_agent: navigator.userAgent,
       ...(referralConsentGivenAt ? {

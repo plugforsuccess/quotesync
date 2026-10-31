@@ -5,7 +5,7 @@
 
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { RateCheckFooter } from './RateCheckPage';
+import { RateCheckFooter, LEGAL_OPERATOR } from './RateCheckPage';
 
 export default function RateCheckPrivacyPage() {
   useEffect(() => {
@@ -18,6 +18,9 @@ export default function RateCheckPrivacyPage() {
       <main className="mx-auto max-w-md px-4 pt-8 pb-8 text-gray-700">
         <Link to="/ratecheck" className="text-sm font-semibold text-blue-700">← Back to Rate Check</Link>
         <h1 className="mt-4 text-2xl font-bold text-gray-900">Rate Check privacy notice</h1>
+        <p className="mt-2 text-sm">
+          Rate Check is operated by {LEGAL_OPERATOR}, an Allstate agency.
+        </p>
 
         <h2 className="mt-6 font-semibold text-gray-900">What we store</h2>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
@@ -27,7 +30,7 @@ export default function RateCheckPrivacyPage() {
             Policy details we read from it: carrier, policy number, policy type, premium and term, dates,
             coverages, vehicles (year, make, model and VIN), and the agent or agency listed on the page.
           </li>
-          <li>Your consent to be contacted, with the time, your IP address, and your browser.</li>
+          <li>Whether you chose to get text messages about your quote, with the time, your IP address, and your browser.</li>
         </ul>
 
         <h2 className="mt-6 font-semibold text-gray-900">How we use it</h2>
@@ -36,6 +39,16 @@ export default function RateCheckPrivacyPage() {
           service to read the document. We don&apos;t sell your information. We also use the agent and agency
           listed on dec pages, combined across many customers, to understand our local market; we never contact
           another agent about you.
+        </p>
+
+        <h2 id="sms-terms" className="mt-6 font-semibold text-gray-900">Text messages (only if you opt in)</h2>
+        <p className="mt-2 text-sm">
+          If you check the optional text box when you send your policy, {LEGAL_OPERATOR} may send automated texts
+          to the mobile number you gave about your quote: when it&apos;s ready, and your callback or quote-review
+          appointment. Message frequency varies. Message and data rates may apply. Reply <strong>STOP</strong> to
+          opt out or <strong>HELP</strong> for help. It&apos;s optional and not a condition of getting a quote; if
+          you leave it unchecked, we&apos;ll still prepare your quote and reach you another way. We never use it
+          for unrelated marketing.
         </p>
 
         <h2 className="mt-6 font-semibold text-gray-900">Partner referrals (only if you opt in)</h2>

@@ -21,14 +21,20 @@ import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
 } from '../lib/rateCheckDraft';
 
+// The legal operator, as it must appear on consent and privacy text (not the brand name in the footer).
+export const LEGAL_OPERATOR = 'Cam Wiley Agency, Inc. d/b/a insuredbycam.com';
+
+// Optional, unchecked by default, and not required to submit (shown only on this final step).
+// Changing the wording? Bump RATE_CHECK_CONSENT_VERSION in rateCheckApi.js.
 const CONSENT_TEXT =
-  'I agree to receive a call and text messages about my insurance quote from Wiley-Wilson Agency / ' +
-  'Allstate at the number provided. Msg & data rates may apply. Reply STOP to opt out. Consent is not ' +
-  'a condition of purchase.';
+  `Optional: text me about my quote. I agree to receive automated text messages from ${LEGAL_OPERATOR} at the ` +
+  'phone number I gave about my insurance quote, when it is ready, and my quote-review callback or appointment. ' +
+  'Msg frequency varies. Msg & data rates may apply. Reply STOP to opt out or HELP for help. Not a condition ' +
+  'of getting a quote.';
 
 // Optional, unchecked by default, and not required to submit.
 const REFERRAL_CONSENT_TEXT =
-  "Optional: if Allstate can't help, Wiley-Wilson Agency may share my name, number and policy details " +
+  "Optional: if Allstate can't help, Cam Wiley Agency, Inc. may share my name, number and policy details " +
   'with a trusted partner agency so they can quote me.';
 
 const POLICY_LABELS = { auto: 'Auto', home: 'Home', renters: 'Renters', condo: 'Condo', umbrella: 'Umbrella', commercial_auto: 'Commercial auto', commercial: 'Business' };
@@ -398,9 +404,9 @@ export default function RateCheckPage() {
 
   const submit = () => {
     if (!contactOk || !drafts.length) return;
-    if (!given && !consent) return;
     const now = new Date().toISOString();
-    const grant = given || { consentGivenAt: now, referralConsentGivenAt: referralConsent ? now : null };
+    // The decision is made once per visit; later policies in the same visit reuse it.
+    const grant = given || { consentGivenAt: consent ? now : null, referralConsentGivenAt: referralConsent ? now : null };
     setGiven(grant);
     const ids = drafts.map(d => d.id);
     updateItems(list => list.map(i => (ids.includes(i.id) ? { ...i, status: 'queued' } : i)));
@@ -504,7 +510,9 @@ export default function RateCheckPage() {
           <p className="mx-auto mt-2 max-w-xs text-slate-600">
             {reading
               ? 'Each one takes about 10–20 seconds. Keep this screen open.'
-              : 'Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.'}
+              : given?.consentGivenAt
+                ? 'Cam’s team will text you when your quote is ready—typically within 30 mins during business hours.'
+                : 'Cam’s team will reach out when your quote is ready—typically within 30 mins during business hours.'}
           </p>
         </div>
 
@@ -531,10 +539,10 @@ export default function RateCheckPage() {
 
   // ── Step 2: contact ──
   if (step === 'you') {
-    const canSend = contactOk && consent && drafts.length > 0;
+    const canSend = contactOk && drafts.length > 0;
     const hint = missing.length
-      ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}${consent ? '' : ', then tick the box'}.`
-      : !consent ? 'Tick the box so we can text you.' : '';
+      ? `Add ${missing.length > 1 ? `${missing.slice(0, -1).join(', ')} and ${missing.at(-1)}` : missing[0]}.`
+      : '';
     return (
       <Shell step={2} bar={
         <ActionBar hint={canSend ? null : hint}>
@@ -614,8 +622,12 @@ export default function RateCheckPage() {
           </div>
 
           <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-xs leading-relaxed text-slate-600">
-            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" required />
-            <span>{CONSENT_TEXT}</span>
+            <input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
+            <span>
+              {CONSENT_TEXT}{' '}
+              <Link to="/ratecheck-privacy#sms-terms" className="underline">Text terms</Link>{' · '}
+              <Link to="/privacy" className="underline">Privacy policy</Link>
+            </span>
           </label>
           <label className="flex items-start gap-3 px-3 text-xs leading-relaxed text-slate-500">
             <input type="checkbox" checked={referralConsent} onChange={e => setReferralConsent(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
