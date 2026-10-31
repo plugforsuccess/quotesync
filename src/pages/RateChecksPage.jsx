@@ -227,8 +227,8 @@ function TabBar({ tab, setTab }) {
   );
 }
 
-// Start quote and Text now: full-width buttons, side by side when both show.
-const CARD_BTN = 'inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg text-sm font-semibold';
+// Start quote and Text now: same height and width, so they stack as a pair.
+const CARD_BTN = 'inline-flex h-11 w-36 shrink-0 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold';
 
 // One household in the inbox: who, what they have, what it costs, and the next step.
 function InboxCard({ h, now, onOpen }) {
@@ -247,44 +247,41 @@ function InboxCard({ h, now, onOpen }) {
         <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
       </div>
       <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{householdLine(h)}</p>
-      {/* What it costs, with the next step and where it came from as small pills underneath. */}
-      <p className="mt-2 text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>
-        {h.pays != null ? `${money(h.pays)}/yr` : '—'}
-        {!open && h.delta != null && <span className="ml-2 text-sm font-semibold"><Savings delta={h.delta} /></span>}
-      </p>
-      {((open && h.decision) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name) && (
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-          {open && h.decision && <QuietDecision rc={h.decision} policies={h.policies} pill />}
-          <OriginTag rc={h.lead} />
-        </div>
-      )}
-      {open ? (
-        <div className={`mt-3 grid gap-2 ${late && h.lead.phone ? 'grid-cols-2' : 'grid-cols-1'}`}>
-          {late && h.lead.phone && (
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <span className="min-w-0">
+          <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
+          {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
+        </span>
+        {open
+          ? <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
+          : <StatusChip status={h.status} quiet />}
+      </div>
+      {(open && (h.decision || (late && h.lead.phone))) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name ? (
+        <div className="mt-1.5 flex items-center justify-between gap-2">
+          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
+            {open && h.decision && <QuietDecision rc={h.decision} policies={h.policies} />}
+            <OriginTag rc={h.lead} />
+          </span>
+          {open && late && h.lead.phone && (
             <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
               className={CARD_BTN} style={inputStyle}>
               <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text now
             </a>
           )}
-          <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
         </div>
-      ) : (
-        <div className="mt-2"><StatusChip status={h.status} quiet /></div>
-      )}
+      ) : null}
     </li>
   );
 }
 
 // The routing result as a small label, so it doesn't read as a button.
 const DECISION_DOT = { success: 'var(--qs-success)', info: 'var(--qs-info)', warning: 'var(--qs-warning)', neutral: 'var(--qs-subtle)' };
-function QuietDecision({ rc, policies, pill = false }) {
+function QuietDecision({ rc, policies }) {
   const d = DECISION[rc.decision];
   if (!d) return null;
   return (
-    <span className={`inline-flex max-w-full items-center gap-1.5 font-medium ${pill ? 'rounded-full px-2.5 py-1' : ''}`}
-      style={{ color: 'var(--qs-text)', ...(pill ? { background: 'var(--qs-elevated)' } : {}) }}>
-      <span aria-hidden="true" className="h-2 w-2 shrink-0 rounded-full" style={{ background: DECISION_DOT[d.tone] }} />
-      <span className={pill ? 'truncate' : ''}>{decisionLabel(rc, policies)}</span>
+    <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: 'var(--qs-text)' }}>
+      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: DECISION_DOT[d.tone] }} />{decisionLabel(rc, policies)}
     </span>
   );
 }
