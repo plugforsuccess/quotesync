@@ -135,7 +135,7 @@ export default function DefensiveDrivingPage() {
           <SectionHeading eyebrow="How it works" title="From sign-in to certificate in four steps" />
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Step n={1} icon={ShieldCheck} title="Create your login" body="Just an email and a password — no codes or links to chase down." />
-            <Step n={2} icon={GraduationCap} title="Complete the modules" body="Seven short modules with quick section checks." />
+            <Step n={2} icon={GraduationCap} title="Complete the modules" body="Eight short modules with quick section checks." />
             <Step n={3} icon={BadgeCheck} title="Pass the final exam" body={`${course.exam_question_count} questions · ${course.pass_threshold_pct}% to pass.`} />
             <Step n={4} icon={FileText} title="Get your certificate" body="Download it instantly — and it’s forwarded to the agency." />
           </div>
@@ -145,10 +145,9 @@ export default function DefensiveDrivingPage() {
       {/* ── What you'll learn ──────────────────────────────── */}
       <section className="max-w-6xl mx-auto px-4 py-16">
         <SectionHeading eyebrow="The curriculum" title="What you’ll learn" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
-          {(modules.length ? modules : FALLBACK_MODULES).map((m, i, all) => (
-            <ModuleCard key={m.id || i} m={m} index={i}
-              wide={i === all.length - 1 && all.length % 3 === 1} />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-5">
+          {(modules.length ? modules : FALLBACK_MODULES).map((m, i) => (
+            <ModuleCard key={m.id || i} m={m} index={i} />
           ))}
         </div>
       </section>
@@ -164,7 +163,7 @@ export default function DefensiveDrivingPage() {
             </div>
             <ul className="space-y-2.5 text-left max-w-sm mx-auto mb-7">
               {[
-                'All 7 modules and the final exam',
+                'All 8 modules and the final exam',
                 'Instant, downloadable certificate of completion',
                 'Certificate automatically forwarded to the agency',
                 'Valid for three years',
@@ -209,10 +208,11 @@ const FALLBACK_MODULES = [
   { ordinal: 5, title: 'Sharing the Road', content_ref: 'm5-sharing-road' },
   { ordinal: 6, title: 'Conditions, Emergencies & Crash Response', content_ref: 'm6-emergencies' },
   { ordinal: 7, title: 'Georgia Traffic Laws', content_ref: 'm7-georgia-laws' },
+  { ordinal: 8, title: 'Insurance, Claims & Your Record', content_ref: 'm8-insurance-claims' },
 ];
 
 // Curriculum tile: a numbered badge, a topic icon, the module's summary and its lessons.
-// A lone last tile (7 modules in rows of 3) spans the row so the grid ends evenly.
+// Eight modules sit in an even 4 × 2 grid on desktop (2 columns on tablets).
 const MODULE_ICONS = {
   'm1-foundations': ShieldCheck,
   'm2-human-factors': Brain,
@@ -221,37 +221,36 @@ const MODULE_ICONS = {
   'm5-sharing-road': Users,
   'm6-emergencies': CloudLightning,
   'm7-georgia-laws': Scale,
+  'm8-insurance-claims': FileText,
 };
 
-function ModuleCard({ m, index, wide }) {
+function ModuleCard({ m, index }) {
   const content = getModuleContent(m.content_ref);
   const lessons = (content?.sections || []).map((x) => x.heading).filter(Boolean);
   const Icon = MODULE_ICONS[m.content_ref] || BookOpen;
   const n = String(m.ordinal || index + 1).padStart(2, '0');
   const georgia = /georgia/i.test(m.title || '');
   return (
-    <article className={`group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-900/10 ${wide ? 'sm:col-span-2 lg:col-span-3 lg:grid lg:grid-cols-[1.1fr_1fr] lg:gap-10 lg:p-8' : ''}`}>
+    <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-900/10 lg:p-5">
       <span aria-hidden="true" className="absolute inset-x-0 top-0 h-1" style={{ background: `linear-gradient(90deg, #1D4ED8, ${ACCENT})` }} />
-      <div className={`flex flex-col pb-5 ${wide ? 'lg:pb-0' : ''}`}>
-        <div className="mb-5 flex items-center justify-between">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-extrabold tracking-tight shadow-md shadow-blue-900/20" style={{ background: DEEP, color: ACCENT }}>{n}</span>
-          <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100 transition group-hover:bg-blue-700 group-hover:text-white">
-            <Icon className="h-5 w-5" />
-          </span>
-        </div>
-        <p className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-blue-700">
-          Module {m.ordinal || index + 1}
-          {georgia && <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.1em]" style={{ background: 'rgba(57,255,136,0.18)', color: DEEP }}>Georgia-specific</span>}
-        </p>
-        <h3 className="text-lg font-extrabold leading-snug tracking-tight text-[#0F2D6B] lg:text-xl">{m.title}</h3>
-        {content?.summary && <p className="mt-2.5 text-sm leading-relaxed text-slate-600">{content.summary}</p>}
+      <div className="mb-5 flex items-center justify-between">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl text-lg font-extrabold tracking-tight shadow-md shadow-blue-900/20" style={{ background: DEEP, color: ACCENT }}>{n}</span>
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-100 transition group-hover:bg-blue-700 group-hover:text-white">
+          <Icon className="h-5 w-5" />
+        </span>
       </div>
+      <p className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-blue-700">
+        Module {m.ordinal || index + 1}
+        {georgia && <span className="rounded-full px-2 py-0.5 text-[10px] tracking-[0.1em]" style={{ background: 'rgba(57,255,136,0.18)', color: DEEP }}>Georgia law</span>}
+      </p>
+      <h3 className="text-lg font-extrabold leading-snug tracking-tight text-[#0F2D6B]">{m.title}</h3>
+      {content?.summary && <p className="mt-2.5 pb-5 text-sm leading-relaxed text-slate-600">{content.summary}</p>}
       {lessons.length > 0 && (
-        <div className={`mt-auto border-t border-slate-100 pt-4 ${wide ? 'lg:mt-0 lg:border-t-0 lg:border-l lg:pl-10 lg:pt-0' : ''}`}>
+        <div className="mt-auto border-t border-slate-100 pt-4">
           <p className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-700">
             <BookOpen className="h-3.5 w-3.5" /> {lessons.length} lessons
           </p>
-          <ul className={`grid gap-1.5 ${wide ? 'sm:grid-cols-2 sm:gap-x-6' : ''}`}>
+          <ul className="grid gap-1.5">
             {lessons.map((l) => (
               <li key={l} className="flex items-start gap-2 text-[13px] leading-snug text-slate-700">
                 <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-700" strokeWidth={3} /> {l}
@@ -266,7 +265,7 @@ function ModuleCard({ m, index, wide }) {
 
 const FAQ_ITEMS = [
   { q: 'Who is this course for?', a: 'Georgia drivers who want to earn an auto-insurance premium discount and brush up on safe-driving skills. Check with your insurer about discount eligibility.' },
-  { q: 'How long does it take?', a: 'It’s fully self-paced. Work through the seven modules and the final exam at your own speed — your progress is saved, so you can stop and resume anytime.' },
+  { q: 'How long does it take?', a: 'It’s fully self-paced. Work through the eight modules and the final exam at your own speed — your progress is saved, so you can stop and resume anytime.' },
   { q: 'How do I get my certificate?', a: 'As soon as you pass the final exam, your certificate of completion is generated. You can download it immediately, and it’s automatically forwarded to the agency for your discount review.' },
   { q: 'How often do I need to take it?', a: 'Once every three years. Your discount stays on your auto policy for the full three-year period.' },
   { q: 'Do I have to finish it all at once?', a: 'No. Sign back in anytime with a secure email link and pick up exactly where you left off.' },
