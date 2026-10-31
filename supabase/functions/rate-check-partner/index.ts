@@ -14,6 +14,11 @@
 //                                                     the fields, keeps the PDF in the private
 //                                                     partner-w9 bucket; the row keeps TIN type
 //                                                     and last 4 only. The TIN is never logged.
+//   { mode: 'apply', first_name, last_name, phone, email, is_customer, audience, source }
+//                                                   → (no token) someone asks to become a partner from
+//                                                     the Drivers Ed page; saved to
+//                                                     rate_check_partner_applications and the agency's
+//                                                     principals are notified. The agency adds them.
 // The agreement text below is a DRAFT for the agency's attorney and Allstate compliance
 // to review. Changing it means bumping AGREEMENT_VERSION, which asks every partner to
 // sign again before their link pays.
@@ -158,6 +163,45 @@ Deno.serve(async (req) => {
 
   let body: any
   try { body = await req.json() } catch { return json({ error: 'Invalid JSON body' }, 400, cors) }
+
+  // ── Apply to be a partner (public, no token) ──
+  if (body?.mode === 'apply') {
+    const { data: ok } = await supabase.rpc('rate_limit_hit', { p_key: `partner_apply:${clientIp}`, p_limit: 5, p_window_seconds: 3600 })
+    if (ok !== true) return json({ error: 'Too many applications from here. Try again later.' }, 429, cors)
+    const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) || null : null)
+    const firstName = text(body.first_name, 60)
+    const phone = String(body.phone || '').replace(/\D/g, '').replace(/^1(\d{10})$/, '$1')
+    const email = text(body.email, 160)?.toLowerCase() || null
+    if (!firstName) return json({ error: 'Add your first name.' }, 400, cors)
+    if (!/^[2-9]\d{2}[2-9]\d{6}$/.test(phone)) return json({ error: 'Enter a 10-digit US mobile number.' }, 400, cors)
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return json({ error: 'That email doesn’t look right.' }, 400, cors)
+    const { data: agency } = await supabase.from('agencies').select('id').eq('is_default', true).limit(1).maybeSingle()
+    if (!agency) return json({ error: 'Something went wrong. Try again.' }, 500, cors)
+    // Applied already (same number, still open)? Don't make a second one.
+    const { data: open } = await supabase.from('rate_check_partner_applications').select('id')
+      .eq('agency_id', agency.id).eq('phone', phone).eq('status', 'new').limit(1)
+    if (open?.length) return json({ applied: true }, 200, cors)
+    const lastName = text(body.last_name, 60)
+    const { error: insErr } = await supabase.from('rate_check_partner_applications').insert({
+      agency_id: agency.id, first_name: firstName, last_name: lastName, phone, email,
+      is_customer: ['yes', 'no'].includes(body.is_customer) ? body.is_customer : null,
+      audience: text(body.audience, 60), source: text(body.source, 40) || 'drivers_ed',
+      ip_address: clientIp !== 'unknown' ? clientIp : null,
+    })
+    if (insErr) { console.error('[RATE_CHECK_PARTNER] apply insert failed:', insErr.message); return json({ error: 'Something went wrong. Try again.' }, 500, cors) }
+    const { data: principals } = await supabase.from('agency_memberships').select('user_id')
+      .eq('agency_id', agency.id).eq('status', 'active').eq('agency_role', 'principal')
+    const name = [firstName, lastName].filter(Boolean).join(' ')
+    if (principals?.length) {
+      await supabase.from('notifications').insert(principals.map((m: any) => ({
+        user_id: m.user_id, type: 'PARTNER_APPLICATION', title: `${name} wants to be a referral partner`,
+        message: `${body.is_customer === 'yes' ? 'Current customer' : 'Not a customer yet'} · from Drivers Ed. Add them in Rate Checks → Partners.`,
+        metadata: { phone },
+      })))
+    }
+    return json({ applied: true }, 200, cors)
+  }
+
   const token = String(body?.token || '').replace(/[^a-f0-9]/gi, '').toLowerCase()
   if (token.length !== 48) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
