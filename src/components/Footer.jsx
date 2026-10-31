@@ -38,7 +38,7 @@ const Footer = () => {
               </li>
               <li>
                 <Link to="/news" className="text-gray-400 hover:text-white transition-colors text-sm">
-                  Insurance news
+                  Newsroom
                 </Link>
               </li>
             </ul>

@@ -49,10 +49,10 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // names him); the agency's resident license goes in the footer next to the agency name.
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
-// "Meet the Owner" carousel: the agent card first, then these photos and short bio cards, in order.
+// "Meet the Owner" carousel: the agent card first, then these in order. A story card comes
+// right after the agent card, then alternating photo / story.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
 const ABOUT = [
-  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
   // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
   // the Swarthmore Phoenix season recap.
   { key: 'court', title: 'My story, on the court', paragraphs: [
@@ -60,13 +60,14 @@ const ABOUT = [
     'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
   ] },
-  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his family', caption: 'My family', position: '50% 35%' },
+  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
   { key: 'today', title: 'My story, today', paragraphs: [
     'Family comes first for me. So I treat your household the way I’d treat mine.',
     'Today I run Cam Wiley Insurance, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
+  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam and family', caption: 'My family', position: '50% 35%' },
 ];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -1230,12 +1231,19 @@ function Shell({ children, step, bar, center = false, wide = false }) {
   return (
     <div className="min-h-screen bg-slate-50">
       <style>{'@keyframes rc-scan{0%{top:-25%}100%{top:100%}}.rc-scan{animation:rc-scan 1.4s ease-in-out infinite}.rc-track{scrollbar-width:none}.rc-track::-webkit-scrollbar{display:none}@media (prefers-reduced-motion: reduce){.rc-scan{animation:none;top:40%}}'}</style>
-      <header className={`mx-auto flex max-w-md items-center justify-between px-4 pt-5 ${wide ? 'lg:max-w-5xl lg:px-8 lg:pt-8' : ''}`}>
-        <span className="text-sm font-extrabold tracking-tight text-slate-900">insuredbycam <span className="font-semibold text-slate-400">· Rate Check</span></span>
-        {step && (
+      <header className={`mx-auto flex max-w-md flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 pt-5 ${wide ? 'lg:max-w-5xl lg:px-8 lg:pt-8' : ''}`}>
+        <span className="shrink-0 text-[13px] font-extrabold tracking-tight text-slate-900 sm:text-sm">insuredbycam{!wide && <span className="font-semibold text-slate-400"> · Rate Check</span>}</span>
+        {wide ? (
+          // The landing page links the three consumer pages; the steps show progress instead.
+          <nav aria-label="insuredbycam" className="-mr-1.5 flex items-center whitespace-nowrap text-[13px] font-semibold sm:mr-0 sm:gap-1 sm:text-sm">
+            <span aria-current="page" className="rounded-full bg-blue-50 px-1.5 py-1.5 text-blue-700 sm:px-3">Rate Check</span>
+            <Link to="/courses" className="rounded-full px-1.5 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:px-3">Drivers Ed</Link>
+            <Link to="/news" className="rounded-full px-1.5 py-1.5 text-slate-600 hover:bg-slate-100 hover:text-slate-900 sm:px-3">Newsroom</Link>
+          </nav>
+        ) : step && (
           <ol className="flex items-center gap-1.5" aria-label={`Step ${step} of 3: ${STEPS[step - 1]}`}>
-            {STEPS.map((s, i) => (
-              <li key={s} className={`h-1.5 rounded-full transition-all ${i + 1 === step ? 'w-6 bg-blue-700' : i + 1 < step ? 'w-3 bg-blue-300' : 'w-3 bg-slate-300'}`} />
+            {STEPS.map((st, i) => (
+              <li key={st} className={`h-1.5 rounded-full transition-all ${i + 1 === step ? 'w-6 bg-blue-700' : i + 1 < step ? 'w-3 bg-blue-300' : 'w-3 bg-slate-300'}`} />
             ))}
           </ol>
         )}
@@ -1254,7 +1262,7 @@ export function RateCheckFooter({ padForBar = false, wide = false }) {
     <footer className={`mx-auto max-w-md px-4 text-xs leading-relaxed text-slate-500 ${padForBar ? 'pb-36' : 'pb-10'} ${wide ? 'lg:max-w-5xl lg:px-8' : ''}`}>
       <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="More from insuredbycam">
         <Link to="/courses" className="font-semibold text-slate-600 underline">Drivers Ed</Link>
-        <Link to="/news" className="font-semibold text-slate-600 underline">Insurance news</Link>
+        <Link to="/news" className="font-semibold text-slate-600 underline">Newsroom</Link>
       </nav>
       <nav className="mb-3 flex flex-wrap gap-x-4 gap-y-1" aria-label="Legal">
         <Link to="/ratecheck-privacy" className="underline">Rate Check privacy notice</Link>

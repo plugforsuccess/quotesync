@@ -15,7 +15,7 @@ export const PLANES = {
 export const consumerNav = [
   { to: '/', label: 'Check my rate', icon: '📸', isPrimary: true, end: true },
   { to: '/courses', label: 'Drivers Ed', icon: '🚗' },
-  { to: '/news', label: 'News', icon: '📰' },
+  { to: '/news', label: 'Newsroom', icon: '📰' },
 ];
 
 // ── Primary nav items (always visible in top bar) ────────────────────────────
@@ -75,6 +75,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.newsroom,
+      { to: '/?edit=1', label: 'Edit website', icon: '✏️' },
     ],
   },
   platform_admin: {
@@ -86,6 +87,7 @@ export const platformNav = {
     ],
     secondary: [
       secondaryItems.newsroom,
+      { to: '/?edit=1', label: 'Edit website', icon: '✏️' },
     ],
   },
   platform_support: {
@@ -129,6 +131,8 @@ export const agencyNav = {
     ],
     secondary: [
       primaryItems.customers,
+      // Opens the public Rate Check page with the copy editor already on.
+      { to: '/?edit=1', label: 'Edit website', icon: '✏️' },
       { to: '/agency/settings/termination-aliases', label: 'Reason Aliases', icon: '🏷️' },
       { to: '/agency/team', label: 'Team', icon: '👥' },
       { to: '/agency/settings', label: 'Settings', icon: '⚙️' },

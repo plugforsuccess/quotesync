@@ -8,7 +8,7 @@
 // Legal and consent wording is deliberately not wrapped — it's versioned for consent records.
 
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check, Pencil } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -27,14 +27,17 @@ function rich(text) {
 }
 
 export function SiteCopyProvider({ children }) {
-  const { user, platformRole, agencyMemberships } = useAuth();
-  const { pathname } = useLocation();
+  const { user, platformRole, agencyMemberships, loading, authzResolved } = useAuth();
+  const { pathname, search } = useLocation();
+  // "Edit website" in the agency menu opens a page with ?edit=1: editing starts on.
+  const askedToEdit = new URLSearchParams(search).get('edit') === '1';
   const qc = useQueryClient();
   const canEdit = !!user && (
     ['platform_admin', 'platform_master_admin'].includes(platformRole) ||
     (agencyMemberships || []).some(m => m.agency_role === 'principal' && (m.status ?? 'active') === 'active'));
   const onEditablePage = EDITABLE.some(re => re.test(pathname));
   const [editing, setEditing] = useState(false);
+  useEffect(() => { if (askedToEdit && canEdit) setEditing(true); }, [askedToEdit, canEdit]);
   const [error, setError] = useState('');
 
   const { data: rows = [] } = useQuery({
@@ -80,6 +83,12 @@ export function SiteCopyProvider({ children }) {
   return (
     <Ctx.Provider value={{ values, editing: on, save, upload }}>
       {children}
+      {askedToEdit && onEditablePage && !canEdit && !loading && (user ? authzResolved !== false : true) && (
+        <div className="fixed inset-x-0 top-0 z-[90] bg-slate-900 px-4 py-2.5 text-center text-sm text-white shadow-lg">
+          <style>{'body{padding-top:44px}@media (max-width:640px){body{padding-top:64px}}'}</style>
+          {user ? 'Only the agency principal can edit the website.' : <>To edit the website, <Link to="/admin-access-8by2X" className="font-semibold text-amber-300 underline">log in</Link> as the agency principal on this site, then choose <b>Edit website</b> in the menu.</>}
+        </div>
+      )}
       {canEdit && onEditablePage && (on ? (
         <div className="fixed inset-x-0 top-0 z-[90] bg-slate-900 text-white shadow-lg">
           <style>{'.qs-copy-editing{padding-top:64px}.qs-copy-editing .rc-marquee{animation-play-state:paused}'}</style>
