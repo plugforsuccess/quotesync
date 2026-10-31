@@ -991,7 +991,7 @@ function AgentCard() {
   return (
     <div className="flex h-full min-h-[268px] flex-col items-center justify-center text-center">
       <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Your licensed agent</p>
-      <p className="mt-0.5 text-2xl font-extrabold text-slate-900">{AGENT.name}</p>
+      <p className="mt-0.5 text-2xl font-extrabold text-[#0F2D6B]">{AGENT.name}</p>
       <img src={AGENT.photo} alt={AGENT.name} width="128" height="128" loading="lazy"
         className="mx-auto mt-4 h-32 w-32 rounded-full object-cover ring-[3px] ring-blue-700 ring-offset-[3px]"
         style={{ objectPosition: '50% 30%' }} />
@@ -1015,7 +1015,7 @@ function MeetCam() {
       <div className="flex h-full min-h-[268px] flex-col text-left">
         {/* No visible header: the bold first line is the headline. The title names the slide for screen readers. */}
         <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
-          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-slate-900' : ''}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
+          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-[#0F2D6B]' : ''}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
         </div>
       </div>
     ),
@@ -1097,7 +1097,7 @@ const PRODUCTS = [
 function ProductsWeInsure() {
   return (
     <section aria-labelledby="rc-products">
-      <h2 id="rc-products" className="text-[28px] font-extrabold leading-tight tracking-tight text-slate-900 lg:text-[36px]"><T k="rc.products.heading">Products we insure</T></h2>
+      <h2 id="rc-products" className={sectionTitle}><T k="rc.products.heading">Products we insure</T></h2>
       <ul className="mt-6 grid grid-cols-3 gap-2 lg:mt-8 lg:grid-cols-6 lg:gap-3">
         {PRODUCTS.map(([key, Icon, name, sub]) => (
           <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
@@ -1141,11 +1141,18 @@ function CarrierLogos() {
     </ul>
   );
   return (
-    <section aria-labelledby="rc-carriers">
+    <section className="bg-white pt-14 lg:pt-20" aria-labelledby="rc-carriers">
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
-      <h2 id="rc-carriers" className="text-center text-[28px] font-extrabold leading-tight tracking-tight text-slate-900 lg:text-[36px]"><T k="rc.carriers.heading">Carriers we write</T></h2>
-      <div className="rc-marquee-wrap -mx-4 mt-2 overflow-hidden px-4 pb-6 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
-        <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
+      {/* The heading sits above the strip; the strip has its own band. */}
+      <div className={wrap}>
+        <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
+      </div>
+      <div className="mt-6 border-y border-slate-200 bg-slate-50 py-6 lg:mt-8 lg:py-8">
+        <div className={wrap}>
+          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 pb-4 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+            <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -1153,13 +1160,15 @@ function CarrierLogos() {
 
 // ── The landing page (first visit, nothing added yet) ────────────────────────
 // Built for conversion: the ask (headline + upload, with Cam's face beside it), the
-// steps, proof (carriers, the owner), what we insure, then the ask again. Navy and the
-// fluorescent green are the brand pair; the green marks what matters.
+// steps, proof (carriers, the owner), what we insure, then the ask again. Royal blue and
+// the fluorescent green are the brand pair; the green marks what matters. No black:
+// dark surfaces are deep blue, headings are deep blue, body text is slate gray.
 const ACCENT = '#39FF88';
-const NAVY = '#071330';
+const NAVY = '#0F2D6B'; // deep royal blue (headings, step numbers)
+const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const ACCEPTS = (f) => /^image\//.test(f.type) || f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
 const wrap = 'mx-auto max-w-6xl px-4 lg:px-8';
-const sectionTitle = 'text-[28px] font-extrabold leading-tight tracking-tight text-slate-900 lg:text-[36px]';
+const sectionTitle = 'text-[28px] font-extrabold leading-tight tracking-tight text-[#0F2D6B] lg:text-[36px]';
 
 function SiteNav() {
   return (
@@ -1183,21 +1192,21 @@ const PROMISES = [
 // Cam beside the ask: a compact row on phones, a full card on desktop.
 function OwnerCard() {
   return (
-    <aside aria-label={`Your agent, ${AGENT.name}`} className="rounded-3xl border border-white/10 bg-white/[0.06] p-5 backdrop-blur lg:p-8">
+    <aside aria-label={`Your agent, ${AGENT.name}`} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
       <div className="flex items-center gap-4 lg:flex-col lg:text-center">
         <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
-          className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-offset-2 ring-offset-[#0b1d45] lg:h-40 lg:w-40 lg:ring-4 lg:ring-offset-4"
+          className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-offset-2 ring-offset-[#1E3A8A] lg:h-40 lg:w-40 lg:ring-4 lg:ring-offset-4"
           style={{ objectPosition: '50% 30%', '--tw-ring-color': ACCENT }} />
         <div className="min-w-0">
           <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: ACCENT }}><T k="rc.owner.badge">Owner &amp; licensed agent</T></p>
           <p className="mt-0.5 text-xl font-extrabold text-white lg:mt-1 lg:text-2xl">{AGENT.name}</p>
-          <p className="text-sm text-slate-300"><T k="rc.owner.line">Allstate agent · Serving all of Georgia</T></p>
-          {AGENT.license && <p className="mt-0.5 text-xs text-slate-400">GA License #: {AGENT.license}</p>}
+          <p className="text-sm text-blue-100"><T k="rc.owner.line">Allstate agent · Serving all of Georgia</T></p>
+          {AGENT.license && <p className="mt-0.5 text-xs text-blue-200">GA License #: {AGENT.license}</p>}
         </div>
       </div>
-      <ul className="mt-5 hidden space-y-2.5 border-t border-white/10 pt-5 text-left lg:block">
+      <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">
         {PROMISES.map(([k, text]) => (
-          <li key={k} className="flex items-center gap-2.5 text-[15px] text-slate-100">
+          <li key={k} className="flex items-center gap-2.5 text-[15px] text-white">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full" style={{ background: 'rgba(57,255,136,0.15)' }}>
               <Check className="h-4 w-4" style={{ color: ACCENT }} aria-hidden="true" strokeWidth={3} />
             </span>
@@ -1217,7 +1226,7 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
     if (files.length) onDropFiles(files);
   };
   return (
-    <div className="mt-7 rounded-3xl bg-white p-4 text-slate-900 shadow-2xl shadow-black/30 sm:p-5"
+    <div className="mt-7 rounded-3xl bg-white p-4 text-[#0F2D6B] shadow-2xl shadow-blue-950/30 sm:p-5"
       onDragOver={e => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={drop}>
       <div className={`rounded-2xl border-2 border-dashed p-4 text-center transition-colors sm:p-5 ${dragging ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-slate-50/60'}`}>
         <button type="button" onClick={onUpload}
@@ -1250,9 +1259,9 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
   return (
     <>
       {/* The ask */}
-      <section className="relative overflow-hidden text-white" style={{ background: NAVY }}>
+      <section className="relative overflow-hidden text-white" style={{ background: HERO_BG }}>
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(60% 55% at 10% 0%, rgba(37,99,235,0.55), transparent 70%), radial-gradient(45% 45% at 100% 100%, rgba(57,255,136,0.16), transparent 70%)' }} />
+          style={{ background: 'radial-gradient(55% 50% at 5% 0%, rgba(96,165,250,0.35), transparent 70%), radial-gradient(45% 45% at 100% 100%, rgba(57,255,136,0.18), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
           <SiteNav />
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
@@ -1261,11 +1270,11 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
               <h1 className="mt-3 text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
                 <T k="rc.headline">Get a **second opinion** on your insurance.</T>
               </h1>
-              <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-slate-300 lg:text-lg">
+              <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
                 <T k="rc.subhead">Upload your auto, home or umbrella declarations pages. A licensed agent on Cam’s team will check your rate and text you when your quote is ready—typically within 30 mins during business hours.</T>
               </p>
               <UploadCard onUpload={onUpload} onCamera={onCamera} onDropFiles={onDropFiles} />
-              <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-slate-300 lg:justify-start">
+              <ul className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-blue-100 lg:justify-start">
                 <Trust icon={Sparkles} k="rc.trust.fast" label="Read in seconds" />
                 <Trust icon={ShieldCheck} k="rc.trust.spam" label="No spam calls" />
                 <Trust icon={Lock} k="rc.trust.private" label="Private & secure" />
@@ -1285,7 +1294,7 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
               <li key={n} className="relative rounded-3xl border border-slate-200 bg-slate-50 p-6">
                 <span className="flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-extrabold" style={{ background: NAVY, color: ACCENT }}>{n}</span>
                 <Icon className="absolute right-6 top-6 h-6 w-6 text-slate-300" aria-hidden="true" />
-                <p className="mt-4 text-lg font-extrabold text-slate-900"><T k={`rc.how.${n}.title`}>{title}</T></p>
+                <p className="mt-4 text-lg font-extrabold text-[#0F2D6B]"><T k={`rc.how.${n}.title`}>{title}</T></p>
                 <p className="mt-1 text-slate-600"><T k={`rc.how.${n}.line`}>{line}</T></p>
               </li>
             ))}
@@ -1304,9 +1313,9 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
                 <li><T k="rc.howto.4">Download the PDF. On iPhone, tap **Share**, then **Save to Files**. On Android, it goes to **Downloads**.</T></li>
                 <li><T k="rc.howto.5">Come back here and tap **Upload my policy**.</T></li>
               </ol>
-              <p className="mt-4 font-semibold text-slate-900"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
+              <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.paper.title">Have a paper copy?</T></p>
               <p className="mt-1"><T k="rc.howto.paper">Tap **Take photos instead** and photograph every page of the declarations. Lay it flat in good light.</T></p>
-              <p className="mt-4 font-semibold text-slate-900"><T k="rc.howto.screens.title">Can’t download it?</T></p>
+              <p className="mt-4 font-semibold text-[#0F2D6B]"><T k="rc.howto.screens.title">Can’t download it?</T></p>
               <p className="mt-1"><T k="rc.howto.screens">Screenshot every page of the declarations, not just the first. Most run 2 to 4 pages and list every vehicle, driver and coverage limit.</T></p>
             </div>
           )}
@@ -1314,9 +1323,7 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* Proof: carriers */}
-      <section className="border-y border-slate-200 bg-slate-50 py-12 lg:py-16">
-        <div className={wrap}><CarrierLogos /></div>
-      </section>
+      <CarrierLogos />
 
       {/* Proof: the owner */}
       <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-owner">
@@ -1337,17 +1344,17 @@ function Landing({ onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* The ask, again */}
-      <section className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: NAVY }} aria-labelledby="rc-closing">
+      <section className="relative overflow-hidden py-16 text-center text-white lg:py-24" style={{ background: HERO_BG }} aria-labelledby="rc-closing">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0"
-          style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(37,99,235,0.45), transparent 70%)' }} />
+          style={{ background: 'radial-gradient(50% 60% at 50% 0%, rgba(96,165,250,0.35), transparent 70%)' }} />
         <div className={`relative ${wrap}`}>
           <h2 id="rc-closing" className="text-[32px] font-extrabold leading-tight tracking-tight lg:text-[44px] [&_b]:text-[#39FF88]"><T k="rc.closing.heading">Ready for a **second opinion**?</T></h2>
-          <p className="mx-auto mt-3 max-w-xl text-lg text-slate-300"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-blue-100"><T k="rc.closing.line">Upload your declarations page. A licensed agent checks your rate, usually within 30 minutes during business hours.</T></p>
           <div className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
-            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-4 text-lg font-bold text-white shadow-lg shadow-blue-600/30 active:bg-blue-700">
+            <button type="button" onClick={onUpload} className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[#39FF88] px-5 py-4 text-lg font-bold text-[#0F2D6B] shadow-lg shadow-emerald-500/30 active:bg-[#2ee87a]">
               <Upload className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.upload">Upload my policy</T>
             </button>
-            <button type="button" onClick={onCamera} className="flex items-center justify-center gap-2 rounded-2xl border border-white/25 px-5 py-4 font-semibold text-white active:bg-white/10">
+            <button type="button" onClick={onCamera} className="flex items-center justify-center gap-2 rounded-2xl border border-white/40 px-5 py-4 font-semibold text-white active:bg-white/10">
               <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.closing.photos">Take photos</T>
             </button>
           </div>
