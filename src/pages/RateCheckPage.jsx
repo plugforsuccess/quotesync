@@ -15,7 +15,7 @@ import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
 import {
   AlertTriangle, Camera, Check, ChevronLeft, FileText, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
-  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase,
+  Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem,
 } from 'lucide-react';
 import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
@@ -1117,31 +1117,33 @@ function Field({ label, htmlFor, children }) {
 
 // ── Products we insure, and the carriers (landing page, below the how-to) ────
 // Titles and lines are editable in place (copy editor); keys are stable, so reorder freely.
+// Every title and note fits on one line, so the tiles line up.
 const PRODUCTS = [
   ['auto', Car, 'Auto', 'Cars & trucks'],
   ['home', House, 'Home', 'Homeowners'],
-  ['condo', Building2, 'Condo', 'Unit & belongings'],
-  ['renters', Sofa, 'Renters', 'Your belongings'],
-  ['landlord', KeyRound, 'Landlord', 'Homes you rent out'],
+  ['condo', Building2, 'Condo', 'Your unit'],
+  ['renters', Sofa, 'Renters', 'Your things'],
+  ['landlord', KeyRound, 'Landlord', 'Rentals'],
   ['umbrella', Umbrella, 'Umbrella', 'Extra liability'],
-  ['motorcycle', Motorbike, 'Motorcycle', 'Bikes & cruisers'],
-  ['boat', Sailboat, 'Boat', 'Boats & watercraft'],
-  ['mobile-home', Caravan, 'Mobile homes', 'Manufactured homes'],
-  ['life', HeartPulse, 'Life', 'Term & permanent'],
-  ['commercial', Briefcase, 'Commercial', 'Business insurance'],
+  ['motorcycle', Motorbike, 'Motorcycle', 'Bikes'],
+  ['boat', Sailboat, 'Boat', 'Watercraft'],
+  ['mobile-home', Caravan, 'Mobile home', 'Manufactured'],
+  ['life', HeartPulse, 'Life', 'Term & whole'],
+  ['commercial', Briefcase, 'Commercial', 'Business'],
+  ['specialty', Gem, 'Specialty', 'Hard-to-place'],
 ];
 
-// Three tiles to a row; a short last row is centred.
+// Three tiles to a row: filled brand blue with a fluorescent border.
 function ProductsWeInsure() {
   return (
     <section className="mt-10" aria-labelledby="rc-products">
       <h2 id="rc-products" className="text-xs font-bold uppercase tracking-[0.14em] text-blue-700"><T k="rc.products.heading">Products we insure</T></h2>
-      <ul className="mt-3 flex flex-wrap justify-center gap-2">
+      <ul className="mt-3 grid grid-cols-3 gap-2">
         {PRODUCTS.map(([key, Icon, name, sub]) => (
-          <li key={key} className="flex w-[calc((100%-1rem)/3)] flex-col items-center rounded-2xl border border-slate-200 bg-white px-1.5 py-3.5 text-center">
-            <Icon className="h-6 w-6 text-blue-700" aria-hidden="true" strokeWidth={1.75} />
-            <p className="mt-2 text-[15px] font-extrabold leading-tight tracking-tight text-slate-900"><T k={`rc.products.${key}.title`}>{name}</T></p>
-            <p className="mt-0.5 text-[11px] leading-snug text-slate-500"><T k={`rc.products.${key}.line`}>{sub}</T></p>
+          <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
+            <Icon className="h-6 w-6 text-[#39FF88]" aria-hidden="true" strokeWidth={1.75} />
+            <p className="mt-2 max-w-full truncate whitespace-nowrap text-[15px] font-extrabold leading-5 tracking-tight text-white"><T k={`rc.products.${key}.title`}>{name}</T></p>
+            <p className="mt-0.5 max-w-full truncate whitespace-nowrap text-[11px] leading-4 text-blue-100"><T k={`rc.products.${key}.line`}>{sub}</T></p>
           </li>
         ))}
       </ul>
