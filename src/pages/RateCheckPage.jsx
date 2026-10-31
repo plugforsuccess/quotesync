@@ -1165,15 +1165,15 @@ function CarrierLogos() {
     </ul>
   );
   return (
-    <section className="bg-white pt-14 lg:pt-20" aria-labelledby="rc-carriers">
+    <section className="border-y border-slate-200 bg-slate-50 py-12 lg:py-16" aria-labelledby="rc-carriers">
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       {/* The heading sits above the strip; the strip has its own band. */}
       <div className={wrap}>
         <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
       </div>
-      <div className="mt-6 border-y border-slate-200 bg-slate-50 py-6 lg:mt-8 lg:py-8">
+      <div className="mt-6 lg:mt-8">
         <div className={wrap}>
-          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 pb-4 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
+          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 py-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
             <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
           </div>
         </div>
@@ -1299,7 +1299,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
       </section>
 
       {/* How it works */}
-      <section className="bg-white py-14 lg:py-20" aria-labelledby="rc-how">
+      <section className="bg-white pt-14 pb-12 lg:pt-20 lg:pb-16" aria-labelledby="rc-how">
         <div className={wrap}>
           <h2 id="rc-how" className={sectionTitle}><T k="rc.how.heading">How it works</T></h2>
           <ol className="mt-8 grid gap-4 sm:grid-cols-3 lg:gap-6">

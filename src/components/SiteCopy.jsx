@@ -164,9 +164,10 @@ export function SiteCopyProvider({ children }) {
           {error && <p className="bg-red-600 px-4 py-1.5 text-center text-xs text-white" role="alert">{error}</p>}
         </div>
       ) : (
-        <button type="button" onClick={() => setEditing(true)}
-          className="fixed bottom-24 left-3 z-[90] inline-flex items-center gap-1.5 rounded-full bg-[#0F2D6B] px-3.5 py-2 text-sm font-semibold text-white shadow-lg">
-          <Pencil className="h-4 w-4" aria-hidden="true" /> Edit copy
+        // A small round button in the corner so it doesn't sit on the page's text; "Edit copy" shows on wider screens.
+        <button type="button" onClick={() => setEditing(true)} aria-label="Edit copy" title="Edit copy"
+          className="fixed bottom-24 right-4 z-[90] inline-flex h-12 w-12 items-center justify-center gap-1.5 rounded-full bg-[#0F2D6B] text-sm font-semibold text-white shadow-lg ring-2 ring-white sm:w-auto sm:px-4">
+          <Pencil className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Edit copy</span>
         </button>
       ))}
     </Ctx.Provider>
