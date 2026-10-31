@@ -1151,18 +1151,20 @@ function ProductsWeInsure() {
   );
 }
 
-// Official logos in public/logos/carriers; a logo uploaded in the copy editor replaces it.
-// Until a carrier has one, its name shows in its place.
+// Each carrier's own published logo file (public/logos/carriers), only trimmed and resized.
+// No redraws: a carrier without its official file shows its name until one is added
+// (here, or uploaded in the copy editor). JPGs keep their white background; the page
+// blends it away (mix-blend-multiply) rather than editing the artwork.
 /* TODO(compliance): confirm with Allstate marketing how other carriers' logos may be shown on the agency site. */
 const CARRIERS = [
-  ['allstate', 'Allstate', '/logos/carriers/allstate.svg'],
-  ['chubb', 'Chubb', '/logos/carriers/chubb.svg'],
-  ['american-modern', 'American Modern', '/logos/carriers/american-modern.svg'],
-  ['national-general', 'National General', '/logos/carriers/national-general.svg'],
-  ['foremost', 'Foremost', '/logos/carriers/foremost.svg'],
-  ['liberty-mutual', 'Liberty Mutual', '/logos/carriers/liberty-mutual.webp'],
-  ['progressive', 'Progressive', '/logos/carriers/progressive.webp'],
-  ['the-hartford', 'The Hartford', '/logos/carriers/the-hartford.svg'],
+  ['allstate', 'Allstate', '/logos/carriers/allstate.jpg'],
+  ['chubb', 'Chubb', '/logos/carriers/chubb.png'],
+  ['american-modern', 'American Modern', '/logos/carriers/american-modern.png'],
+  ['national-general', 'National General', null],
+  ['foremost', 'Foremost', null],
+  ['liberty-mutual', 'Liberty Mutual', '/logos/carriers/liberty-mutual.svg'],
+  ['progressive', 'Progressive', '/logos/carriers/progressive.svg'],
+  ['the-hartford', 'The Hartford', '/logos/carriers/the-hartford.jpg'],
 ];
 
 function CarrierLogos() {
@@ -1170,7 +1172,7 @@ function CarrierLogos() {
     <ul className="flex shrink-0 items-center gap-12 pr-12" aria-hidden={hidden || undefined}>
       {CARRIERS.map(([key, name, src]) => (
         <li key={key} className="flex h-12 shrink-0 items-center">
-          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-9 w-auto max-w-[180px] object-contain"
+          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-10 w-auto max-w-[180px] object-contain mix-blend-multiply"
             fallback={<span className="whitespace-nowrap text-xl font-extrabold tracking-tight text-slate-700">{name}</span>} />
         </li>
       ))}
@@ -1181,7 +1183,7 @@ function CarrierLogos() {
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       <h2 id="rc-carriers" className="text-[26px] font-extrabold leading-tight tracking-tight text-slate-900"><T k="rc.carriers.heading">Carriers we write</T></h2>
       <div className="rc-marquee-wrap -mx-4 mt-2 overflow-hidden px-4 pb-6 pt-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
-        <div className="rc-marquee flex w-max">{row(false)}{row(true)}</div>
+        <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
       </div>
     </section>
   );
