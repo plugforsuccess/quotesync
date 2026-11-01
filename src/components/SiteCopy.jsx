@@ -30,7 +30,7 @@ const writeCache = (rows) => { try { localStorage.setItem(CACHE, JSON.stringify(
 const IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml'];
 const IMAGE_MAX = 2 * 1024 * 1024;
 
-const Ctx = createContext({ values: {}, editing: false, save: () => {}, upload: async () => {}, fail: () => {} });
+const Ctx = createContext({ values: {}, editing: false, save: () => {}, upload: async () => {}, fail: () => {}, canStartEditing: false, startEditing: () => {} });
 
 /** "**bold** text" → text with <b> parts. */
 function rich(text) {
@@ -140,7 +140,7 @@ export function SiteCopyProvider({ children }) {
   }, [on, notice]);
 
   return (
-    <Ctx.Provider value={{ values, editing: on, save, upload, fail: setError }}>
+    <Ctx.Provider value={{ values, editing: on, save, upload, fail: setError, canStartEditing: canEdit && onEditablePage && !on, startEditing: () => setEditing(true) }}>
       {children}
       {(on || notice) && barHeight > 0 && <style>{`body{padding-top:${barHeight}px}.qs-copy-editing .rc-marquee{animation-play-state:paused}`}</style>}
       {notice && (
@@ -164,13 +164,29 @@ export function SiteCopyProvider({ children }) {
           {error && <p className="bg-red-600 px-4 py-1.5 text-center text-xs text-white" role="alert">{error}</p>}
         </div>
       ) : (
-        // A small round button in the corner so it doesn't sit on the page's text; "Edit copy" shows on wider screens.
-        <button type="button" onClick={() => setEditing(true)} aria-label="Edit copy" title="Edit copy"
-          className="fixed bottom-24 right-4 z-[90] inline-flex h-12 w-12 items-center justify-center gap-1.5 rounded-full bg-[#0F2D6B] text-sm font-semibold text-white shadow-lg ring-2 ring-white sm:w-auto sm:px-4">
-          <Pencil className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Edit copy</span>
-        </button>
+        // Pages with the consumer nav show the pencil in its top-right corner (EditPagePencil);
+        // the privacy page has no nav, so it keeps a corner button.
+        !/^\/ratecheck-privacy$/.test(pathname) ? null : (
+          <button type="button" onClick={() => setEditing(true)} aria-label="Edit this page" title="Edit this page"
+            className="fixed right-4 top-4 z-[90] inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#0F2D6B] text-white shadow-lg ring-2 ring-white">
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+          </button>
+        )
       ))}
     </Ctx.Provider>
+  );
+}
+
+/** The pencil in the consumer nav's top-right corner: edits the page you're on. Only
+ * the principal (or a platform admin) sees it, and only on pages with editable copy. */
+export function EditPagePencil({ className = '' }) {
+  const { canStartEditing, startEditing } = useContext(Ctx);
+  if (!canStartEditing) return null;
+  return (
+    <button type="button" onClick={startEditing} aria-label="Edit this page" title="Edit this page"
+      className={`qs-edit-pencil inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/80 hover:bg-white/10 hover:text-white ${className}`}>
+      <Pencil className="h-[18px] w-[18px]" aria-hidden="true" />
+    </button>
   );
 }
 

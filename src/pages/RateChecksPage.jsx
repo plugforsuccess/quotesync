@@ -472,15 +472,16 @@ export default function RateChecksPage() {
           <>
             {overdue > 0 && (
               <button type="button" onClick={() => { setOverdueOnly(o => !o); setFilter('open'); setSearch(''); }}
+                title="The Rate Check page tells customers we typically text within 30 minutes."
                 className="mb-3 flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm"
                 style={{ background: 'var(--qs-danger-subtle)', border: '1px solid var(--qs-danger-border)', color: 'var(--qs-bright)' }}>
-                <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
-                <span className="min-w-0 flex-1">
+                <Clock className="h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
+                <span className="min-w-0 flex-1 font-medium">
                   {overdueOnly
-                    ? <>Showing the {overdue} who waited over 30 minutes.</>
-                    : <>{overdue} {overdue === 1 ? 'person has' : 'people have'} waited over 30 minutes. The page says we typically text within 30.</>}
+                    ? <>Showing {overdue} waiting 30+ min</>
+                    : <>{overdue} waiting 30+ min for a quote</>}
                 </span>
-                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show all' : 'Show them ›'}</span>
+                <span className="shrink-0 font-semibold text-primary-600">{overdueOnly ? 'Show all' : 'Show'}</span>
               </button>
             )}
 

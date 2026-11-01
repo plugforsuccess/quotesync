@@ -43,13 +43,13 @@ test('saved copy shows for visitors, with no edit button', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'A second look at your insurance.' })).toBeVisible();
   await expect(page.locator('h1 b')).toHaveText('second look');
-  await expect(page.getByRole('button', { name: 'Edit copy' })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Edit this page' })).toHaveCount(0);
 });
 
 test('a principal edits a line in place and it saves', async ({ page }) => {
   const writes = await mock(page, { loggedIn: true });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Edit copy' }).click();
+  await page.getByRole('button', { name: 'Edit this page' }).click();
   const eyebrow = page.getByRole('textbox', { name: /Edit text: Free rate check/ });
   await eyebrow.click();
   await page.keyboard.press('ControlOrMeta+a');
