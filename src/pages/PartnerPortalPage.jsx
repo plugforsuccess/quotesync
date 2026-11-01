@@ -447,7 +447,7 @@ function Earnings({ token, data, onChange }) {
           <div className="flex items-baseline justify-between">
             <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} activity</h2>
             <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Paid ${money(m.paid.amount)}` : pendingIn(m) > 0 ? `${pendingIn(m)} ${pendingIn(m) === 1 ? 'household' : 'households'} pending` : ''}
+              {m.paid ? `Earnings: ${money(m.paid.amount)}` : pendingIn(m) > 0 ? `${pendingIn(m)} ${pendingIn(m) === 1 ? 'household' : 'households'} pending` : ''}
             </span>
           </div>
           {m.rows.length ? (

@@ -155,7 +155,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
   // No projections: unpaid months show a household count, paid months what was paid.
   await expect(page.getByText('2 households pending')).toBeVisible();
-  await expect(page.getByText('Paid $15', { exact: true })).toBeVisible();
+  await expect(page.getByText('Earnings: $15', { exact: true })).toBeVisible();
   await expect(page.getByText('Stephen')).toBeVisible();
   await expect(page.getByText('$45')).toHaveCount(0);
   await expect(page.getByText('$55')).toHaveCount(0);
