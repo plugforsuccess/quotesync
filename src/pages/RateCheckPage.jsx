@@ -1247,17 +1247,24 @@ const PROMISES = [
 // Cam beside the ask: a compact row on phones, a full card on desktop.
 function OwnerCard() {
   return (
-    <aside aria-label={AGENCY.short} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
+    <aside aria-label={AGENCY.name} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
       <div className="flex items-center gap-4 lg:flex-col lg:text-center">
         <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
           className="h-16 w-16 shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
           style={{ objectPosition: '50% 30%' }} />
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: ACCENT }}>{AGENCY.short}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: ACCENT }}>{AGENCY.name}</p>
           <p className="mt-0.5 text-lg font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-1 lg:text-2xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
-          <p className="mt-0.5 text-xs text-blue-200">
-            <span className="whitespace-nowrap">{AGENT.name}, owner</span> · <span className="whitespace-nowrap">Agency License #{AGENCY.license}</span>
-          </p>
+          <dl className="mt-3 flex gap-x-6 border-t border-white/15 pt-3 lg:justify-center lg:border-0 lg:pt-0">
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Owner</dt>
+              <dd className="text-sm font-semibold text-white">{AGENT.name}</dd>
+            </div>
+            <div>
+              <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Agency license</dt>
+              <dd className="text-sm font-semibold tabular-nums text-white">#{AGENCY.license}</dd>
+            </div>
+          </dl>
         </div>
       </div>
       <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">
