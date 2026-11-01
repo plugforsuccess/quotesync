@@ -20,6 +20,7 @@ import { sanitizeMoneyInput, parseMoney } from '../lib/money';
 import { HOUSING_LABEL } from '../lib/rateCheckApi';
 import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone, CARD_STYLE } from './components/rate-checks/ui';
+import { insuredName } from './components/rate-checks/policyView';
 import {
   STATUS, CONFIDENCE_WARNING, TERM_HINT, DECISION,
   isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
@@ -126,6 +127,19 @@ function renewalSoon(policies, now) {
   const days = Math.max(0, Math.ceil((soonest - now) / DAY));
   if (days > 30) return null;
   return days === 0 ? 'Renews today' : `Renews in ${days} day${days === 1 ? '' : 's'}`;
+}
+
+// "Stephen Pearson": the first name they typed plus the last name off their dec page
+// ("PEARSON, STEPHEN & JOCELYN" → Pearson). Falls back to whichever part we have.
+const properCase = (w) => w.toLowerCase().replace(/(^|[-'])([a-z])/g, (m, sep, c) => sep + c.toUpperCase());
+function personName(first, policies) {
+  const raw = (policies || []).map(p => p.extracted?.insured_name).find(Boolean);
+  const words = raw ? String(insuredName(raw) || '').replace(/[.,]/g, ' ').split(/\s+/).filter(Boolean) : [];
+  const core = words.filter(w => !/^(JR|SR|II|III|IV)$/i.test(w));
+  const last = core.length > 1 ? properCase(core[core.length - 1]) : null;
+  const firstName = first ? properCase(String(first).trim().split(/\s+/)[0]) : (core[0] ? properCase(core[0]) : null);
+  if (!firstName) return last;
+  return last && last.toLowerCase() !== firstName.toLowerCase() ? `${firstName} ${last}` : firstName;
 }
 
 function OriginTag({ rc, className = '' }) {
@@ -259,7 +273,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
     <li onClick={onOpen} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          {h.lead.first_name || 'No name'}
+          {personName(h.lead.first_name, h.policies) || 'No name'}
           {h.lead.upload_source === 'agent' && <StaffTag />}
         </span>
         <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
@@ -502,7 +516,7 @@ export default function RateChecksPage() {
                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
                             <td className="px-4 py-3 text-sm">
                               <div className="font-medium whitespace-nowrap" style={{ color: 'var(--qs-bright)' }}>
-                                {h.lead.first_name || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} policies</span>}{h.lead.upload_source === 'agent' && <StaffTag />}
+                                {personName(h.lead.first_name, h.policies) || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} policies</span>}{h.lead.upload_source === 'agent' && <StaffTag />}
                               </div>
                               {h.lead.phone && (
                                 <a href={`tel:+1${h.lead.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-primary-600 hover:underline whitespace-nowrap">
@@ -566,7 +580,6 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
     onQuoted(res);
   };
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
-  const insuredName = rc.extracted?.insured_name;
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
   const multi = household.length > 1;
@@ -598,7 +611,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)', transform: headerHidden ? 'translateY(-100%)' : 'none' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{rc.first_name || insuredName || 'Rate check'}</h2>
+              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || 'Rate check'}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
                 {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>
