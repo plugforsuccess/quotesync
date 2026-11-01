@@ -6,7 +6,7 @@
 // schedule, and a yearly export of what was paid, for 1099s. Math lives in partnerPay.js.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
@@ -170,7 +170,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </p>
             )}
 
-            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy portal link" />
+            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy"
+              extra={p.phone && !p.w9_received_at && (
+                <a href={portalSms(p)} aria-label={`Text ${p.name.split(' ')[0]} the portal link`} title={`Text ${p.name.split(' ')[0]} the portal link`}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded bg-primary-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-700">
+                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" /> Text {p.name.split(' ')[0]}
+                </a>
+              )} />
             <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at} />
 
             <div className="mt-4 grid grid-cols-3 gap-3">
@@ -274,6 +280,9 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
 }
 
 const portalUrl = (token) => `${window.location.origin}/partner/${token}`;
+// Opens the Messages app with the partner's portal link written in.
+const portalSms = (p) => `sms:+1${p.phone}?&body=${encodeURIComponent(
+  `Hi ${p.name.split(' ')[0]}, it's Cam. Here's your insuredbycam.com partner portal: ${portalUrl(p.portal_token)}\nSign your W-9 there (takes 30 seconds) and copy your share link. Keep this link private.`)}`;
 
 // The photo on their share link's landing page. Partners can add their own in the
 // portal; staff add one here only with the partner's OK.
@@ -326,13 +335,14 @@ function Pill({ ok, children }) {
   );
 }
 
-function LinkRow({ label, url, copyLabel, muted = false }) {
+function LinkRow({ label, url, copyLabel, muted = false, extra = null }) {
   return (
     <div className="mt-3">
       <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{label}</p>
       <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', opacity: muted ? 0.55 : 1 }}>
         <span className="min-w-0 flex-1 truncate font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</span>
         <CopyTextButton text={url} className="shrink-0 rounded px-2 py-1 text-xs font-semibold" style={inputStyle}>{copyLabel}</CopyTextButton>
+        {extra}
       </div>
     </div>
   );
@@ -435,23 +445,54 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
 }
 
 function AddPartner({ agencyId, userId, save, onDone }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', mailing_address: '', mailing_city_state_zip: '' });
-  const set = (k) => (e) => setForm(f => ({ ...f, [k]: k === 'phone' ? formatPhoneInput(e.target.value) : e.target.value }));
-  const ok = form.name.trim() && (!form.email || isEmail(form.email)) && (!form.phone || form.phone.replace(/\D/g, '').length === 10);
-  const field = 'w-full rounded px-2 py-2 text-sm';
+  const [form, setForm] = useState({ name: '', phone: '', email: '', street: '', city: '', state: 'GA', zip: '' });
+  const set = (k) => (e) => {
+    let v = e.target.value;
+    if (k === 'phone') v = formatPhoneInput(v);
+    if (k === 'state') v = v.replace(/[^a-z]/gi, '').slice(0, 2).toUpperCase();
+    if (k === 'zip') v = v.replace(/\D/g, '').slice(0, 5);
+    setForm(f => ({ ...f, [k]: v }));
+  };
+  const anyAddress = form.street.trim() || form.city.trim() || form.zip;
+  const fullAddress = form.street.trim() && form.city.trim() && /^[A-Z]{2}$/.test(form.state) && form.zip.length === 5;
+  const ok = form.name.trim() && (!form.email || isEmail(form.email)) && (!form.phone || form.phone.replace(/\D/g, '').length === 10)
+    && (!anyAddress || fullAddress);
+  const field = 'w-full rounded-lg px-3 py-2.5 text-sm';
+  const Label = ({ htmlFor, children }) => <label htmlFor={htmlFor} className="mb-1 block text-xs font-semibold" style={{ color: 'var(--qs-dim)' }}>{children}</label>;
+  const submit = (e) => {
+    e.preventDefault();
+    if (!ok) return;
+    save.mutate({
+      agencyId, userId, name: form.name, phone: form.phone, email: form.email,
+      mailing_address: fullAddress ? form.street : '',
+      mailing_city_state_zip: fullAddress ? `${form.city.trim()}, ${form.state} ${form.zip}` : '',
+    }, { onSuccess: onDone });
+  };
   return (
-    <form className="mt-4 grid gap-2 rounded-lg p-3 md:grid-cols-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}
-      onSubmit={(e) => { e.preventDefault(); if (ok) save.mutate({ agencyId, userId, ...form }, { onSuccess: onDone }); }}>
-      <input className={field} style={inputStyle} placeholder="Full legal name *" value={form.name} onChange={set('name')} aria-label="Partner name" required autoComplete="off" />
-      <input className={field} style={inputStyle} placeholder="Mobile" inputMode="tel" value={form.phone} onChange={set('phone')} aria-label="Partner mobile" autoComplete="off" />
-      <input className={field} style={inputStyle} placeholder="Email" type="email" value={form.email} onChange={set('email')} aria-label="Partner email" autoComplete="off" />
-      <p className="mt-1 text-xs font-semibold md:col-span-3" style={{ color: 'var(--qs-dim)' }}>Mailing address <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>(optional · pre-fills their W-9)</span></p>
-      <input className={`${field} md:col-span-2`} style={inputStyle} placeholder="Street address" value={form.mailing_address} onChange={set('mailing_address')} aria-label="Partner street address" autoComplete="off" />
-      <input className={field} style={inputStyle} placeholder="City, state, ZIP" value={form.mailing_city_state_zip} onChange={set('mailing_city_state_zip')} aria-label="Partner city, state, ZIP" autoComplete="off" />
-      <button type="submit" disabled={!ok || save.isPending} className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50 md:col-start-3">
-        {save.isPending ? 'Adding…' : 'Add and make links'}
+    <form className="mt-4 grid gap-3 rounded-lg p-3 md:grid-cols-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }} onSubmit={submit}>
+      <div><Label htmlFor="ap-name">Full legal name *</Label>
+        <input id="ap-name" className={field} style={inputStyle} value={form.name} onChange={set('name')} required autoComplete="off" /></div>
+      <div><Label htmlFor="ap-phone">Mobile</Label>
+        <input id="ap-phone" className={field} style={inputStyle} inputMode="tel" value={form.phone} onChange={set('phone')} autoComplete="off" /></div>
+      <div><Label htmlFor="ap-email">Email</Label>
+        <input id="ap-email" className={field} style={inputStyle} type="email" value={form.email} onChange={set('email')} autoComplete="off" /></div>
+
+      <p className="-mb-1 mt-1 text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Mailing address (optional): fills in their W-9 so they only add their SSN and sign.</p>
+      <div className="md:col-span-3"><Label htmlFor="ap-street">Street address</Label>
+        <input id="ap-street" className={field} style={inputStyle} value={form.street} onChange={set('street')} autoComplete="off" /></div>
+      <div className="grid grid-cols-[1fr_4.5rem_6rem] gap-2 md:col-span-3">
+        <div><Label htmlFor="ap-city">City</Label>
+          <input id="ap-city" className={field} style={inputStyle} value={form.city} onChange={set('city')} autoComplete="off" /></div>
+        <div><Label htmlFor="ap-state">State</Label>
+          <input id="ap-state" className={`${field} uppercase`} style={inputStyle} value={form.state} onChange={set('state')} autoComplete="off" /></div>
+        <div><Label htmlFor="ap-zip">ZIP</Label>
+          <input id="ap-zip" className={`${field} tabular-nums`} style={inputStyle} inputMode="numeric" value={form.zip} onChange={set('zip')} autoComplete="off" /></div>
+      </div>
+      {anyAddress && !fullAddress && <p className="text-xs md:col-span-3" style={{ color: 'var(--qs-warning)' }}>Finish the address (street, city, state and 5-digit ZIP), or clear it.</p>}
+
+      <button type="submit" disabled={!ok || save.isPending} className="h-11 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white disabled:opacity-50 md:col-start-3">
+        {save.isPending ? 'Adding…' : 'Add partner'}
       </button>
-      <p className="text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Their W-9 opens with this name and address filled in; they only add their SSN and sign. Then send them their portal link.</p>
       {save.error && <p className="text-sm text-red-500 md:col-span-3">{save.error.message}</p>}
     </form>
   );
