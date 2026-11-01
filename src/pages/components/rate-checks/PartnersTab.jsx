@@ -5,7 +5,7 @@
 // what they're owed this month, their close rate and cost per win, the pay
 // schedule, and a yearly export of what was paid, for 1099s. Math lives in partnerPay.js.
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
@@ -35,7 +35,7 @@ function Stat({ label, value, tone }) {
   );
 }
 
-export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck }) {
+export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck, focusId = null }) {
   const { data: promoters = [], isLoading, error } = usePromoters(agencyId);
   const { data: scans = [] } = usePromoterScans(agencyId);
   const { data: rateRows = [] } = usePromoterRates(agencyId);
@@ -47,7 +47,16 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const now = currentMonth();
   const [month, setMonth] = useState(now);
   const [adding, setAdding] = useState(false);
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useState(focusId);
+
+  // Opened from a partner's name on a lead: expand their card and bring it into view.
+  useEffect(() => {
+    if (!focusId || isLoading) return;
+    setOpen(focusId);
+    // Scroll after the applications list above has had a moment to load and push the card down.
+    const t = setTimeout(() => document.getElementById(`partner-${focusId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 450);
+    return () => clearTimeout(t);
+  }, [focusId, isLoading]);
 
   const byPartner = useMemo(() => {
     const all = households(scans, schedule);
@@ -143,7 +152,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         const expanded = open === p.id;
         const monthRows = hh.filter(h => h.month === month);
         return (
-          <section key={p.id} className="dark-card" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
+          <section key={p.id} id={`partner-${p.id}`} className="dark-card scroll-mt-24" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <PartnerPhoto promoter={p} canEdit={canEdit} />
               <div className="min-w-0 flex-1">
