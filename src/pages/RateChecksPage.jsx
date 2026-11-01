@@ -194,39 +194,26 @@ const CARRIER_LOGO = {
   'Foremost': '/logos/carriers/foremost.png', 'Chubb': '/logos/carriers/chubb.svg', 'The Hartford': '/logos/carriers/the-hartford.jpg',
 };
 
-// Who they're with now, up to three across: each company's logo (or name) with what
-// they have there underneath. Tapping one opens that company's policy brief.
+// Who they're with now: each company's logo (or name), filling the row evenly
+// (up to three across). Tapping one opens that company's policy brief.
 function CarrierMarks({ h, onPolicy }) {
   const byCarrier = new Map();
-  h.policies.forEach(p => {
-    const c = carrierLabel(p);
-    if (!c) return;
-    if (!byCarrier.has(c)) byCarrier.set(c, { first: p, types: new Map() });
-    const g = byCarrier.get(c);
-    const t = policyTypeLabel(p.policy_type);
-    if (t) g.types.set(t, (g.types.get(t) || 0) + 1);
-  });
+  h.policies.forEach(p => { const c = carrierLabel(p); if (c && !byCarrier.has(c)) byCarrier.set(c, p); });
   if (!byCarrier.size) return null;
-  const tiles = [...byCarrier.entries()];
+  const marks = [...byCarrier.entries()];
   return (
-    <div className="mt-2.5 grid grid-cols-3 gap-3">
-      {tiles.slice(0, 3).map(([c, g]) => (
+    <div className="mt-3 grid grid-cols-3 gap-2">
+      {marks.slice(0, 3).map(([c, p]) => (
         <button key={c} type="button" title={`Open the ${c} policy`} aria-label={`Open the ${c} policy`}
-          onClick={e => { e.stopPropagation(); onPolicy?.(g.first); }}
-          className="flex min-w-0 flex-col items-start gap-0.5 text-left">
-          <span className="flex h-5 w-full items-center">
-            {CARRIER_LOGO[c]
-              ? <img src={CARRIER_LOGO[c]} alt="" className="h-4 w-auto max-w-full object-contain object-left mix-blend-multiply" />
-              : <span className="truncate text-sm font-bold leading-5 tracking-tight" style={{ color: 'var(--qs-bright)' }}>{c}</span>}
-          </span>
-          <span className="w-full truncate text-xs" style={{ color: 'var(--qs-dim)' }}>
-            {[...g.types.entries()].map(([t, n]) => (n > 1 ? `${t} ×${n}` : t)).join(' + ') || 'Policy'}
-          </span>
+          onClick={e => { e.stopPropagation(); onPolicy?.(p); }}
+          className="flex h-12 min-w-0 items-center justify-center rounded-xl px-2 transition hover:brightness-95"
+          style={{ background: 'var(--qs-elevated)' }}>
+          {CARRIER_LOGO[c]
+            ? <img src={CARRIER_LOGO[c]} alt="" className="max-h-6 w-auto max-w-full object-contain mix-blend-multiply" />
+            : <span className={`text-center font-extrabold leading-tight tracking-tight ${c.length > 9 ? 'text-[13px]' : 'text-[15px]'}`} style={{ color: 'var(--qs-bright)' }}>{c}</span>}
         </button>
       ))}
-      {tiles.length > 3 && (
-        <span className="col-span-3 text-xs" style={{ color: 'var(--qs-subtle)' }}>+{tiles.length - 3} more in the quote</span>
-      )}
+      {marks.length > 3 && <span className="col-span-3 text-xs" style={{ color: 'var(--qs-subtle)' }}>+{marks.length - 3} more in the quote</span>}
     </div>
   );
 }
