@@ -179,7 +179,12 @@ test('month headings say activity; a paused link says so', async ({ page }) => {
   }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText(/Your link is paused/)).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^[A-Z][a-z]+ \d{4} Activity$/ })).toBeVisible();
+  // One table: Name and Products columns, a heading row per month.
+  const table = page.getByRole('table', { name: 'Your referrals by month' });
+  await expect(table.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: 'Products' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: /^[A-Z][a-z]+ \d{4} Activity$/ })).toBeVisible();
+  await expect(table.getByRole('row', { name: 'Stephen Auto + Home or Condo' })).toBeVisible();
   await expect(page.getByText('$45')).toHaveCount(0);
   await expect(page.getByText(/on the way/)).toHaveCount(0);
 });

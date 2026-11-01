@@ -34,7 +34,7 @@ const SCHEDULE_ROWS = [
 ];
 
 // Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".
-const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella)\b/g, w => w[0].toUpperCase() + w.slice(1));
+const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella|only|extra)\b/g, w => w[0].toUpperCase() + w.slice(1));
 // Dates in the agency's time zone (Georgia), the same as the payouts.
 const todayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
@@ -444,28 +444,39 @@ function Earnings({ token, data, onChange }) {
       </section>
       {data.monthly_cap && <p className="mt-2 text-xs text-slate-500">Up to {data.monthly_cap} households are paid each month.</p>}
 
-      {months.map(m => (
-        <section key={m.month} className="mt-5">
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</h2>
-            <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Earnings: ${money(m.paid.amount)}` : ''}
-            </span>
-          </div>
-          {m.rows.length ? (
-            <ul className="mt-2 divide-y divide-slate-200 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
-              {m.rows.map((r, i) => (
-                <li key={i} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-[#0F2D6B]">{r.first_name}</span>
-                    <span className="block text-xs text-slate-500">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</span>
+      {/* All referrals in one table: a heading row per month, then name and what they sent. */}
+      <section className="mt-5 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
+        <table className="w-full text-sm">
+          <caption className="sr-only">Your referrals by month</caption>
+          <thead>
+            <tr className="text-left text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
+              <th scope="col" className="w-[40%] px-3 py-2.5">Name</th>
+              <th scope="col" className="px-3 py-2.5">Products</th>
+            </tr>
+          </thead>
+          {months.map(m => (
+            <tbody key={m.month}>
+              <tr className="border-t border-slate-200 bg-slate-50">
+                <th scope="colgroup" colSpan={2} className="px-3 py-2.5 text-left">
+                  <span className="flex items-baseline justify-between gap-3">
+                    <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</span>
+                    {m.paid && <span className="text-sm font-semibold text-emerald-700">Earnings: {money(m.paid.amount)}</span>}
                   </span>
-                </li>
+                </th>
+              </tr>
+              {m.rows.map((r, i) => (
+                <tr key={i} className="border-t border-slate-100">
+                  <td className="px-3 py-2.5 font-semibold text-[#0F2D6B]">{r.first_name}</td>
+                  <td className="px-3 py-2.5 text-slate-600">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</td>
+                </tr>
               ))}
-            </ul>
-          ) : !m.pending && <p className="mt-2 text-sm text-slate-500">No households yet this month.</p>}
-        </section>
-      ))}
+              {!m.rows.length && !m.pending && (
+                <tr className="border-t border-slate-100"><td colSpan={2} className="px-3 py-2.5 text-slate-500">No referrals yet this month.</td></tr>
+              )}
+            </tbody>
+          ))}
+        </table>
+      </section>
 
       {data.w9?.on_file && <W9Section token={token} data={data} onChange={onChange} />}
 
