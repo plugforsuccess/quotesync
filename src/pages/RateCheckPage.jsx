@@ -435,7 +435,6 @@ export default function RateCheckPage() {
       )}
       <span className="min-w-0">
         <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this with you</span>
-        <span className="block text-xs text-slate-600">A referral fee is paid if you check your rate.</span>
       </span>
     </div>
   ) : invite ? (
@@ -448,7 +447,7 @@ export default function RateCheckPage() {
   const whoSentHero = invite?.promoter_name ? (
     <div className="mb-6 flex items-center gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-4 ring-1 ring-white/20 backdrop-blur-sm lg:max-w-md">
       {invite.promoter_photo_url ? (
-        <img src={invite.promoter_photo_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover ring-2" style={{ '--tw-ring-color': ACCENT }} />
+        <img src={invite.promoter_photo_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
       ) : (
         <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
           {invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()}
@@ -456,7 +455,6 @@ export default function RateCheckPage() {
       )}
       <span className="min-w-0">
         <span className="block text-[15px] font-bold leading-tight text-white">{invite.promoter_name} shared this with you</span>
-        <span className="block text-xs leading-snug text-blue-100">A referral fee is paid if you check your rate.</span>
       </span>
     </div>
   ) : invite ? (
