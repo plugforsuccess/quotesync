@@ -283,7 +283,8 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       <div className="mt-2 flex items-stretch justify-between gap-3">
         {/* Price at the top; renewal + partner sit at the bottom, level with Text now. */}
         <span className="flex min-w-0 flex-col">
-          <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
+          {/* Same height as Start quote, so the price sits level with it. */}
+          <span className="flex h-11 items-center text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
           {(renewal || (h.lead.promoter_name && h.lead.promoter_id)) && (
             <span className="mt-auto block pt-1 text-sm leading-5">
