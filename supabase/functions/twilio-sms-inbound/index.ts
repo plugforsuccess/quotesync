@@ -1,7 +1,8 @@
 // Supabase Edge Function: twilio-sms-inbound
 // POST /functions/v1/twilio-sms-inbound
 // Handles inbound SMS replies from leads via Twilio webhook
-// Processes keywords (STOP, START, HELP, QUOTE, YES) and forwards other messages to agent
+// Processes keywords (STOP, START, HELP, QUOTE, YES, Y) and forwards other messages to agent.
+// Y/YES after a Rate Check quote-ready text sets rate_checks.call_confirmed_at.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { sendSMS, normalizePhoneForStorage, validateTwilioSignature, checkRequiredEnvVars } from '../_shared/twilio.ts'
@@ -181,12 +182,38 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Handle QUOTE or YES — mark as interested + notify agent
-    if (keyword === 'QUOTE' || keyword === 'YES') {
+    // Handle Y / YES / QUOTE — mark as interested + notify agent
+    if (keyword === 'QUOTE' || keyword === 'YES' || keyword === 'Y') {
       await supabase
         .from('leads')
         .update({ status: 'interested', contacted_at: new Date().toISOString() })
         .eq('id', lead.id)
+
+      // A reply to the Rate Check "your quote is ready, reply Y" text: record the call
+      // confirmation on the household's rate checks (it can make a partner referral payable).
+      const { data: confirmed } = (lead.agency_id && normalizedPhone)
+        ? await supabase
+            .from('rate_checks')
+            .update({ call_confirmed_at: new Date().toISOString() })
+            .eq('agency_id', lead.agency_id)
+            .eq('phone', normalizedPhone)
+            .not('quote_ready_texted_at', 'is', null)
+            .is('call_confirmed_at', null)
+            .select('id')
+        : { data: null }
+      if (confirmed && confirmed.length > 0) {
+        const leadName = lead.first_name || 'A customer'
+        await sendSMS(
+          TWILIO_ACCOUNT_SID,
+          TWILIO_AUTH_TOKEN,
+          twilioFromNumber,
+          agentPhoneNumber,
+          `${leadName} replied Y to their Rate Check quote and wants a call. Phone: ${fromNumber}. Call them now.`
+        )
+        return twimlResponse(
+          `Got it, ${lead.first_name || 'there'}! ${agentName} will call you shortly to go over your quote.`
+        )
+      }
 
       // Notify agent
       const leadName = lead.first_name || 'A lead'

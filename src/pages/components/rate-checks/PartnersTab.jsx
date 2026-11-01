@@ -10,7 +10,7 @@ import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquar
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
-  usePartnerApplications, useCloseApplication,
+  usePartnerApplications, useCloseApplication, usePartnerRules, useSavePartnerRules,
 } from '../../../hooks/useRateChecks';
 import { downloadCSV } from '../../../lib/csvExport';
 import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckApi';
@@ -19,7 +19,7 @@ import { inviteUrl } from './invite';
 import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
-  TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, MIN_PAYOUT, QUOTE_DAYS, scheduleFrom, households, partnerSummary, applyCap,
+  TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, rulesFrom, households, partnerSummary, applyCap,
   monthsWithActivity, monthLabel, monthStart, currentMonth, payoutPlan, paidInYear,
 } from './partnerPay';
 
@@ -40,6 +40,8 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const { data: scans = [] } = usePromoterScans(agencyId);
   const { data: rateRows = [] } = usePromoterRates(agencyId);
   const { data: payouts = [] } = usePromoterPayouts(agencyId);
+  const { data: rulesRow } = usePartnerRules(agencyId);
+  const rules = useMemo(() => rulesFrom(rulesRow), [rulesRow]);
   const savePromoter = useSavePromoter();
   const recordPayout = useRecordPromoterPayout();
 
@@ -59,14 +61,14 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   }, [focusId, isLoading]);
 
   const byPartner = useMemo(() => {
-    const all = households(scans, schedule);
+    const all = households(scans, schedule, Date.now(), rules);
     return Object.fromEntries(promoters.map(p => {
       const hh = applyCap(all.filter(h => h.promoterId === p.id), p.monthly_cap);
       const mine = payouts.filter(x => x.promoter_id === p.id);
-      return [p.id, { hh, summary: partnerSummary(hh, month), plan: payoutPlan(hh, mine, month) }];
+      return [p.id, { hh, summary: partnerSummary(hh, month), plan: payoutPlan(hh, mine, month, rules.minPayout) }];
     }));
-  }, [scans, schedule, promoters, month, payouts]);
-  const months = useMemo(() => monthsWithActivity(households(scans, schedule), now), [scans, schedule, now]);
+  }, [scans, schedule, promoters, month, payouts, rules]);
+  const months = useMemo(() => monthsWithActivity(households(scans, schedule, Date.now(), rules), now), [scans, schedule, now, rules]);
   const paidFor = (promoterId) => payouts.find(x => x.promoter_id === promoterId && x.period === monthStart(month));
   const monthOwed = promoters.reduce((t, p) => t + (byPartner[p.id]?.summary.month.owed || 0), 0);
   const monthHouseholds = promoters.reduce((t, p) => t + (byPartner[p.id]?.summary.month.households || 0), 0);
@@ -118,29 +120,37 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       ) : (
         /* This month, across partners */
         <div className="dark-card" style={{ padding: 16 }}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <select value={month} onChange={e => setMonth(e.target.value)} className="dark-select -ml-1 border-0 bg-transparent text-base font-bold"
-              style={{ width: 'auto', color: 'var(--qs-bright)', background: 'transparent' }} aria-label="Month">
-              {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
-            </select>
+          <div className="flex items-center justify-between gap-3">
+            <label className="relative inline-flex items-center">
+              <span className="sr-only">Month</span>
+              <select value={month} onChange={e => setMonth(e.target.value)}
+                className="h-9 appearance-none rounded-full py-0 pl-3.5 pr-9 text-sm font-semibold"
+                style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+                {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
+            </label>
             {canEdit && (
-              <button type="button" onClick={() => setAdding(a => !a)} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
+              <button type="button" onClick={() => setAdding(a => !a)} aria-expanded={adding}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
                 <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
               </button>
             )}
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            <Stat label="Partners" value={promoters.filter(p => p.active).length} />
-            <Stat label="Households" value={monthHouseholds} />
-            <Stat label="Owed" value={dollars(monthOwed)} tone="var(--qs-warning)" />
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button type="button" onClick={exportYear} disabled={!Object.keys(paidThisYear).length}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-medium disabled:opacity-50" style={inputStyle}>
-              <Download className="h-4 w-4" aria-hidden="true" /> Export {year} for 1099s
+          <dl className="mt-4 grid grid-cols-3 divide-x overflow-hidden rounded-xl" style={{ background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)' }}>
+            {[['Partners', promoters.filter(p => p.active).length], ['Households', monthHouseholds], ['Owed', dollars(monthOwed)]].map(([k, v]) => (
+              <div key={k} className="px-3 py-3 text-center" style={{ borderColor: 'var(--qs-border)' }}>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}>{k}</dt>
+                <dd className="mt-0.5 text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          {Object.keys(paidThisYear).length > 0 && (
+            <button type="button" onClick={exportYear} title={`What each partner was paid in ${year}, by payment date`}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:underline">
+              <Download className="h-4 w-4" aria-hidden="true" /> Export {year} payments for 1099s
             </button>
-            <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>{Object.keys(paidThisYear).length ? `What each partner was paid in ${year}, by payment date` : `Available once a partner is paid in ${year}`}</span>
-          </div>
+          )}
           {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
         </div>
       )}
@@ -182,12 +192,14 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
             <div className="mt-4 grid grid-cols-3 gap-3">
               <Stat label="Households" value={s.month.households} />
               <Stat label="Owed" value={dollars(paid ? Number(paid.amount) : plan.amount)} tone="var(--qs-warning)" />
-              <Stat label="Status" value={paid ? 'Paid' : plan.underMinimum ? `Under ${dollars(MIN_PAYOUT)}` : plan.amount > 0 ? 'Unpaid' : '—'} tone={paid ? 'var(--qs-success)' : undefined} />
+              <Stat label="Status" value={paid ? 'Paid' : plan.underMinimum ? `Under ${dollars(rules.minPayout)}` : plan.amount > 0 ? 'Unpaid' : '—'} tone={paid ? 'var(--qs-success)' : undefined} />
             </div>
             {(s.month.pending > 0 || s.month.overCap > 0 || (!paid && plan.carried > 0) || (!paid && plan.underMinimum)) && (
               <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
                 {[
-                  s.month.pending > 0 && `${s.month.pending} waiting on a quote (pays in ${QUOTE_DAYS} days either way)`,
+                  s.month.pending > 0 && (rules.requireCallConfirm
+                    ? `${s.month.pending} waiting on a Y reply`
+                    : `${s.month.pending} waiting on a quote (pays in ${rules.quoteDays} days either way)`),
                   s.month.overCap > 0 && `${s.month.overCap} over the monthly cap`,
                   !paid && plan.carried > 0 && `includes ${dollars(plan.carried)} carried from ${plan.months.filter(m => m.month !== month).map(m => monthLabel(m.month).split(' ')[0]).join(', ')}`,
                   !paid && plan.underMinimum && 'carries to next month',
@@ -225,7 +237,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                   Mark {dollars(plan.amount)} paid{plan.carried ? ` (${plan.months.length} months)` : ''}
                 </button>
               ) : plan.underMinimum ? (
-                <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(MIN_PAYOUT)} · carries over</span>
+                <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(rules.minPayout)} · carries over</span>
               ) : null)}
             </div>
 
@@ -263,6 +275,11 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                         {h.tier ? TIER_LABEL[h.tier] : 'Not qualified'}{h.extras ? ` + ${h.extras} extra ${h.extras === 1 ? 'line' : 'lines'}` : ''}
                         {h.overCap && <span style={{ color: 'var(--qs-warning)' }}> · over the monthly cap</span>}
                         {' · '}<span style={{ color: h.won ? 'var(--qs-success)' : undefined }}>{h.won ? 'Won' : h.quoted ? 'Quoted' : 'Not quoted yet'}</span>
+                        {rules.requireCallConfirm && h.tier && (
+                          <span style={{ color: h.confirmed ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>
+                            {' · '}{h.confirmed ? 'Replied Y' : h.texted ? 'Waiting on Y' : 'Not texted yet'}
+                          </span>
+                        )}
                       </p>
                     </div>
                     <span className="shrink-0 text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{dollars(h.fee)}</span>
@@ -275,14 +292,28 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       })}
 
       <PaySchedule agencyId={agencyId} schedule={schedule} canEdit={canEdit} />
+      <PayoutRules agencyId={agencyId} userId={userId} rules={rules} canEdit={canEdit} />
     </div>
   );
 }
 
 const portalUrl = (token) => `${window.location.origin}/partner/${token}`;
 // Opens the Messages app with the partner's portal link written in.
-const portalSms = (p) => `sms:+1${p.phone}?&body=${encodeURIComponent(
-  `Hi ${p.name.split(' ')[0]}, it's Cam. Here's your insuredbycam.com partner portal: ${portalUrl(p.portal_token)}\nSign your W-9 there (takes 30 seconds) and copy your share link. Keep this link private.`)}`;
+const portalSms = (p) => {
+  const first = p.name.split(' ')[0];
+  const msg = [
+    `Hi ${first}, it's Cam with Cam Wiley Agency. Welcome aboard as a referral partner!`,
+    '',
+    `Your private partner page: ${portalUrl(p.portal_token)}`,
+    '',
+    '1. Tap the link. There\'s no username or password: the link is your login, so don\'t share it.',
+    '2. Tap "Sign my W-9" and add your Social Security number (about 30 seconds) so we can pay you.',
+    '3. Tap "Copy link" to get your referral link, and send it to friends, family and people in your network. Let them know you get a referral fee.',
+    '',
+    'Save the page to check what you\'ve earned anytime. Questions? Just reply here.',
+  ].join('\n');
+  return `sms:+1${p.phone}?&body=${encodeURIComponent(msg)}`;
+};
 
 // The photo on their share link's landing page. Partners can add their own in the
 // portal; staff add one here only with the partner's OK.
@@ -473,9 +504,11 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       <div><Label htmlFor="ap-name">Full legal name *</Label>
         <input id="ap-name" className={field} style={inputStyle} value={form.name} onChange={set('name')} required autoComplete="off" /></div>
       <div><Label htmlFor="ap-phone">Mobile</Label>
-        <input id="ap-phone" className={field} style={inputStyle} inputMode="tel" value={form.phone} onChange={set('phone')} autoComplete="off" /></div>
+        <input id="ap-phone" className={field} style={inputStyle} inputMode="tel" value={form.phone} onChange={set('phone')} autoComplete="off" />
+        {form.phone && form.phone.replace(/\D/g, '').length !== 10 && <p className="mt-1 text-xs" style={{ color: 'var(--qs-warning)' }}>Enter all 10 digits.</p>}</div>
       <div><Label htmlFor="ap-email">Email</Label>
-        <input id="ap-email" className={field} style={inputStyle} type="email" value={form.email} onChange={set('email')} autoComplete="off" /></div>
+        <input id="ap-email" className={field} style={inputStyle} type="email" value={form.email} onChange={set('email')} autoComplete="off" />
+        {form.email && !isEmail(form.email) && <p className="mt-1 text-xs" style={{ color: 'var(--qs-warning)' }}>That email doesn&apos;t look right, like name@yahoo.com.</p>}</div>
 
       <p className="-mb-1 mt-1 text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Mailing address (optional): fills in their W-9 so they only add their SSN and sign.</p>
       <div className="md:col-span-3"><Label htmlFor="ap-street">Street address</Label>
@@ -495,6 +528,79 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       </button>
       {save.error && <p className="text-sm text-red-500 md:col-span-3">{save.error.message}</p>}
     </form>
+  );
+}
+
+// The agency's payout rules: when a household becomes payable, which pages count,
+// and the smallest payout. The fixed rules (what a household is, what never counts)
+// are listed underneath so the whole policy reads in one place.
+function RuleRow({ title, hint, children }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5" style={{ borderTop: '1px solid var(--qs-border)' }}>
+      <div className="min-w-0">
+        <p className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{title}</p>
+        {hint && <p className="text-xs leading-snug" style={{ color: 'var(--qs-subtle)' }}>{hint}</p>}
+      </div>
+      <div className="shrink-0">{children}</div>
+    </div>
+  );
+}
+
+function PayoutRules({ agencyId, userId, rules, canEdit }) {
+  const saveRules = useSavePartnerRules();
+  const [draft, setDraft] = useState(null);
+  const v = draft || rules;
+  const set = (k) => (e) => setDraft(d => ({ ...(d || rules), [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value.replace(/[^\d.]/g, '') }));
+  const num = (k, aria, prefix = '', suffix = '') => (draft
+    ? <span className="inline-flex items-center gap-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>{prefix}
+        <input inputMode="decimal" value={v[k]} onChange={set(k)} aria-label={aria}
+          className="w-16 rounded px-2 py-1 text-right text-sm tabular-nums" style={inputStyle} />{suffix}</span>
+    : <span className="text-base font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{prefix}{v[k]}{suffix}</span>);
+  return (
+    <section className="dark-card" style={{ padding: 16 }} aria-label="Payout rules">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: 'var(--qs-subtle)' }}>Payout rules</h3>
+        {canEdit && !draft && <button type="button" onClick={() => setDraft({ ...rules })} className="text-sm font-semibold text-primary-600">Edit</button>}
+      </div>
+      <div className="mt-2">
+        <RuleRow title="Pay only after the customer replies Y"
+          hint="When their quote is ready we text them; a household pays once they reply Y to set up a call.">
+          {draft
+            ? <input type="checkbox" checked={!!v.requireCallConfirm} onChange={set('requireCallConfirm')} aria-label="Pay only after the customer replies Y" className="h-5 w-5 accent-blue-600" />
+            : <span className="text-sm font-bold" style={{ color: v.requireCallConfirm ? 'var(--qs-success)' : 'var(--qs-subtle)' }}>{v.requireCallConfirm ? 'On' : 'Off'}</span>}
+        </RuleRow>
+        {!v.requireCallConfirm && (
+          <RuleRow title="Otherwise pays once quoted, or after" hint="So a slow week at the desk doesn't cost the partner.">
+            {num('quoteDays', 'Days before an unquoted household pays', '', ' days')}
+          </RuleRow>
+        )}
+        <RuleRow title="Expired pages count for" hint="A dec page expired longer ago than this doesn't count.">
+          {num('expiredDays', 'Days an expired page still counts', '', ' days')}
+        </RuleRow>
+        <RuleRow title="Smallest payout" hint="Months under this carry over to the next payout.">
+          {num('minPayout', 'Smallest payout', '$')}
+        </RuleRow>
+      </div>
+      {v.requireCallConfirm && (
+        <p className="mt-2 rounded-lg px-3 py-2 text-xs leading-snug" style={{ background: 'var(--qs-warning-subtle)', border: '1px solid var(--qs-warning-border)', color: 'var(--qs-text)' }}>
+          Needs texting set up: until the agency has a Twilio number, the quote-ready text can&apos;t go out, so no one can reply Y and partners aren&apos;t paid.
+        </p>
+      )}
+      <ul className="mt-3 list-disc space-y-1 pl-4 text-xs leading-snug" style={{ color: 'var(--qs-subtle)' }}>
+        <li>A household is one phone number, address or policy, paid once, in the month its first page arrives.</li>
+        <li>Unreadable pages, repeats, current Allstate policies and thrown-out scans never count.</li>
+        <li>Pay is on what the household sends, never on what it buys.</li>
+      </ul>
+      {draft && (
+        <div className="mt-3 flex justify-end gap-2">
+          <button type="button" onClick={() => setDraft(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>Cancel</button>
+          <button type="button" disabled={saveRules.isPending}
+            onClick={() => saveRules.mutate({ agencyId, userId, rules: draft }, { onSuccess: () => setDraft(null) })}
+            className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50">Save rules</button>
+        </div>
+      )}
+      {saveRules.error && <p className="mt-2 text-sm text-red-500">{saveRules.error.message}</p>}
+    </section>
   );
 }
 
@@ -529,11 +635,6 @@ function PaySchedule({ agencyId, schedule, canEdit }) {
           </div>
         ))}
       </dl>
-      <p className="mt-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-        A household is one phone number, address or policy, paid once, in the month its first page arrives. It pays once you&apos;ve
-        quoted it, or after {QUOTE_DAYS} days if nobody got to it. Pages that couldn&apos;t be read, repeats, Allstate policies, pages
-        expired over 30 days and thrown-out scans don&apos;t count. Pay is on what they send, never on what they buy. Months under {dollars(MIN_PAYOUT)} carry over.
-      </p>
       {draft && (
         <div className="mt-3 flex justify-end gap-2">
           <button type="button" onClick={() => setDraft(null)} className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>Cancel</button>

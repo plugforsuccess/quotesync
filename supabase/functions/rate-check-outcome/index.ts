@@ -6,7 +6,9 @@
 // Records the agent's Allstate quote on a rate check. The rate_checks trigger
 // computes delta / delta_pct and flips status to won or lost; this function then
 // moves the linked lead:
-//   won  → lead 'interested' + a case note with the savings, delta returned for the call script
+//   won  → lead 'interested' + a case note with the savings, delta returned for the call script,
+//          and (once per household, with texting consent) a "your quote is ready, reply Y
+//          for a call" text; the Y reply sets rate_checks.call_confirmed_at
 //   lost → lead 'closed_lost' + a polite auto-text via send-manual-sms (if not opted out
 //          and the agency has a Twilio number)
 
@@ -186,6 +188,45 @@ Deno.serve(async (req) => {
         author_name: profile?.full_name || user.email || null,
       })
       if (noteErr) console.error('[RATE_CHECK_OUTCOME] case note failed:', noteErr.message)
+
+      // Quote ready: text the customer once per household, asking them to reply Y for a
+      // call. Their Y (twilio-sms-inbound) sets call_confirmed_at, which is what makes a
+      // partner-referred household payable when the agency requires it.
+      const { data: textedAlready } = await supabase
+        .from('rate_checks').select('id').eq('agency_id', rc.agency_id).eq('phone', rc.phone)
+        .not('quote_ready_texted_at', 'is', null).limit(1)
+      const [{ data: lead }, { data: agency }] = await Promise.all([
+        supabase.from('leads').select('sms_opted_out, phone').eq('id', rc.lead_id).single(),
+        supabase.from('agencies').select('twilio_from_number').eq('id', rc.agency_id).single(),
+      ])
+      let readySms: Record<string, unknown>
+      if (textedAlready && textedAlready.length > 0) readySms = { attempted: false, reason: 'household already texted' }
+      else if (!rc.consent_given_at) readySms = { attempted: false, reason: 'no texting consent on file (agent-uploaded rate check)' }
+      else if (lead?.sms_opted_out) readySms = { attempted: false, reason: 'sms_opted_out' }
+      else if (!agency?.twilio_from_number) readySms = { attempted: false, reason: 'agency has no twilio_from_number' }
+      else if (!lead?.phone) readySms = { attempted: false, reason: 'lead has no phone' }
+      else {
+        const readyBody =
+          `Hi ${rc.first_name || 'there'}, it's Cam Wiley's office. Your Allstate quote is ready and it looks like we can save you money. ` +
+          `Reply Y and we'll call you to go over it. Reply STOP to opt out.`
+        try {
+          const smsRes = await fetch(`${supabaseUrl}/functions/v1/send-manual-sms`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: authHeader, apikey: anonKey },
+            body: JSON.stringify({ lead_id: rc.lead_id, body: readyBody }),
+          })
+          const smsJson = await smsRes.json().catch(() => ({}))
+          readySms = { attempted: true, ok: smsRes.ok, status: smsRes.status, ...(smsRes.ok ? {} : { error: smsJson.error }) }
+          if (smsRes.ok) {
+            await supabase.from('rate_checks').update({ quote_ready_texted_at: new Date().toISOString() }).eq('id', rc.id)
+          } else console.error('[RATE_CHECK_OUTCOME] quote-ready SMS failed:', smsRes.status, smsJson.error)
+        } catch (e) {
+          readySms = { attempted: true, ok: false, error: (e as Error).message }
+          console.error('[RATE_CHECK_OUTCOME] quote-ready SMS error:', (e as Error).message)
+        }
+      }
+      if (!readySms.attempted) console.log('[RATE_CHECK_OUTCOME] quote-ready SMS skipped:', readySms.reason)
+      result.sms = readySms
     }
 
     if (rc.status === 'lost' && rc.lead_id) {

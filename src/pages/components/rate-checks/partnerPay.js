@@ -16,6 +16,7 @@ export const EXTRA_LINE = { key: 'extra_line', label: 'Each extra line (umbrella
 export const EXTRA_LINE_CAP = 2;
 export const TIER_LABEL = Object.fromEntries([...TIERS, EXTRA_LINE].map(t => [t.key, t.label]));
 
+// The agency's payout rules (rate_check_partner_rules) override these defaults.
 // A household pays once the agency has quoted it, or after this long if the
 // agency never got to it — a slow week at the desk shouldn't cost the partner.
 export const QUOTE_DAYS = 7;
@@ -23,6 +24,23 @@ export const QUOTE_DAYS = 7;
 export const EXPIRED_DAYS = 30;
 // Months under this carry over to the next payout.
 export const MIN_PAYOUT = 50;
+
+/** The rules when only a quote is needed (the original behavior). */
+export const QUOTED_RULES = { requireCallConfirm: false, quoteDays: QUOTE_DAYS, expiredDays: EXPIRED_DAYS, minPayout: MIN_PAYOUT };
+/** An agency with no saved rules: the customer must reply Y to the quote-ready text. */
+export const DEFAULT_RULES = { ...QUOTED_RULES, requireCallConfirm: true };
+
+/** The saved rules row (rate_check_partner_rules), falling back to DEFAULT_RULES. */
+export function rulesFrom(row) {
+  if (!row) return { ...DEFAULT_RULES };
+  const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
+  return {
+    requireCallConfirm: row.require_call_confirm ?? DEFAULT_RULES.requireCallConfirm,
+    quoteDays: num(row.quote_days, QUOTE_DAYS),
+    expiredDays: num(row.expired_days, EXPIRED_DAYS),
+    minPayout: num(row.min_payout, MIN_PAYOUT),
+  };
+}
 
 const DAY = 86400000;
 
@@ -39,14 +57,14 @@ const RENTERS = new Set(['renters']);
 
 /**
  * A scan counts toward pay: read, not a repeat, not thrown out, not already an
- * Allstate policy, and current (expired no more than EXPIRED_DAYS ago).
+ * Allstate policy, and current (expired no more than `expiredDays` ago).
  */
-export function qualifies(rc, now = Date.now()) {
+export function qualifies(rc, now = Date.now(), expiredDays = EXPIRED_DAYS) {
   if (!rc?.policy_type || rc.duplicate_of != null || ['pending', 'extract_failed', 'declined'].includes(rc.status)) return false;
   if (String(rc.carrier || '').toLowerCase() === 'allstate') return false;
   if (rc.expiration_date) {
     const exp = new Date(rc.expiration_date).getTime();
-    if (Number.isFinite(exp) && exp < now - EXPIRED_DAYS * DAY) return false;
+    if (Number.isFinite(exp) && exp < now - expiredDays * DAY) return false;
   }
   return true;
 }
@@ -54,9 +72,12 @@ export function qualifies(rc, now = Date.now()) {
 /** Quoted by the agency: an Allstate price was entered (won or lost both count). */
 export const quoted = (rc) => rc.allstate_premium != null || !!rc.quoted_at || ['quoted', 'won', 'lost', 'bound'].includes(rc.status);
 
+/** The customer replied Y to the quote-ready text. */
+export const callConfirmed = (rc) => !!rc.call_confirmed_at;
+
 /** Which tier a household's qualifying pages earn, and how many extra lines on top. */
-export function householdTier(scans, now = Date.now()) {
-  const pages = (scans || []).filter(s => qualifies(s, now));
+export function householdTier(scans, now = Date.now(), expiredDays = EXPIRED_DAYS) {
+  const pages = (scans || []).filter(s => qualifies(s, now, expiredDays));
   const has = (set) => pages.some(p => set.has(p.policy_type));
   let tier = null, base = 0;
   if (has(AUTO) && has(HOME)) { tier = 'auto_home'; base = 2; }
@@ -106,17 +127,23 @@ export function groupHouseholds(scans) {
 /**
  * Every household a partner sent. A household is paid once, in the month its
  * first qualifying page arrived, at the tier all its pages earn — and only once
- * the agency has quoted it or QUOTE_DAYS have passed (`pays`; until then `pending`).
+ * it clears the agency's rules (`pays`; until then `pending`): with
+ * requireCallConfirm, once the customer replied Y to the quote-ready text;
+ * otherwise once quoted or `quoteDays` after its first page.
  * Households with nothing that qualifies are listed with no fee.
  */
-export function households(scans, schedule, now = Date.now()) {
+export function households(scans, schedule, now = Date.now(), rules = QUOTED_RULES) {
+  const qualify = (s) => qualifies(s, now, rules.expiredDays);
   return groupHouseholds(scans).map(list => {
     const sorted = [...list].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const firstQualifying = sorted.find(s => qualifies(s, now));
-    const { tier, extras, pages } = householdTier(sorted, now);
+    const firstQualifying = sorted.find(qualify);
+    const { tier, extras, pages } = householdTier(sorted, now, rules.expiredDays);
     const fee = tier ? (schedule[tier] ?? 0) + extras * (schedule.extra_line ?? 0) : 0;
     const firstAt = firstQualifying ? firstQualifying.created_at : null;
-    const pays = !!tier && (sorted.some(quoted) || now - new Date(firstAt).getTime() >= QUOTE_DAYS * DAY);
+    const confirmed = sorted.some(callConfirmed);
+    const pays = !!tier && (rules.requireCallConfirm
+      ? confirmed
+      : (sorted.some(quoted) || now - new Date(firstAt).getTime() >= rules.quoteDays * DAY));
     return {
       key: sorted[0].phone || sorted[0].id,
       firstAt,
@@ -125,9 +152,11 @@ export function households(scans, schedule, now = Date.now()) {
       phone: sorted[0].phone || null,
       scans: sorted,
       pages,
-      types: [...new Set(sorted.filter(s => qualifies(s, now)).map(s => s.policy_type))],
+      types: [...new Set(sorted.filter(qualify).map(s => s.policy_type))],
       tier, extras, fee,
       pays, pending: !!tier && !pays,
+      confirmed,
+      texted: sorted.some(s => !!s.quote_ready_texted_at),
       month: firstQualifying ? monthKey(firstQualifying.created_at) : null,
       quoted: sorted.some(s => QUOTED.has(s.status)),
       won: sorted.some(s => WON.has(s.status)),
@@ -183,7 +212,7 @@ export function partnerSummary(hh, month) {
  * (small months carry over). `payouts` are the recorded payouts (period = YYYY-MM-01).
  * Returns { months: [{ month, households, amount }], amount, carried, underMinimum }.
  */
-export function payoutPlan(hh, payouts, month) {
+export function payoutPlan(hh, payouts, month, minPayout = MIN_PAYOUT) {
   const paidMonths = new Set((payouts || []).map(p => String(p.period).slice(0, 7)));
   const owedBy = {};
   for (const h of hh) if (h.tier && h.pays && h.month && h.month <= month && !paidMonths.has(h.month)) {
@@ -193,7 +222,7 @@ export function payoutPlan(hh, payouts, month) {
   }
   const months = Object.values(owedBy).filter(m => m.amount > 0).sort((a, b) => a.month.localeCompare(b.month));
   const amount = months.reduce((t, m) => t + m.amount, 0);
-  return { months, amount, carried: months.filter(m => m.month !== month).reduce((t, m) => t + m.amount, 0), underMinimum: amount > 0 && amount < MIN_PAYOUT };
+  return { months, amount, carried: months.filter(m => m.month !== month).reduce((t, m) => t + m.amount, 0), underMinimum: amount > 0 && amount < minPayout };
 }
 
 /** Months that have at least one paid household, newest first (always includes `current`). */

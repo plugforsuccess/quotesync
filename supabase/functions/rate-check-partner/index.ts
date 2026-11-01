@@ -100,10 +100,23 @@ async function rateLimited(supabase: any, key: string, limit: number) {
 }
 
 // ── Earnings (same rules as partnerPay.js) ───────────────────────────────────
-const QUALIFIES = (rc: any, now: number) => {
+// The agency's payout rules (rate_check_partner_rules); no row = these defaults,
+// the same as rulesFrom() in partnerPay.js.
+type Rules = { requireCallConfirm: boolean; quoteDays: number; expiredDays: number; minPayout: number }
+function rulesFrom(row: any): Rules {
+  const num = (v: unknown, d: number) => (Number.isFinite(Number(v)) && v != null ? Number(v) : d)
+  return {
+    requireCallConfirm: row ? row.require_call_confirm !== false : true,
+    quoteDays: num(row?.quote_days, QUOTE_DAYS),
+    expiredDays: num(row?.expired_days, EXPIRED_DAYS),
+    minPayout: num(row?.min_payout, MIN_PAYOUT),
+  }
+}
+
+const QUALIFIES = (rc: any, now: number, expiredDays = EXPIRED_DAYS) => {
   if (!rc.policy_type || rc.duplicate_of != null || ['pending', 'extract_failed', 'declined'].includes(rc.status)) return false
   if (String(rc.carrier || '').toLowerCase() === 'allstate') return false
-  if (rc.expiration_date) { const exp = new Date(rc.expiration_date).getTime(); if (Number.isFinite(exp) && exp < now - EXPIRED_DAYS * DAY) return false }
+  if (rc.expiration_date) { const exp = new Date(rc.expiration_date).getTime(); if (Number.isFinite(exp) && exp < now - expiredDays * DAY) return false }
   return true
 }
 const QUOTED = (rc: any) => rc.allstate_premium != null || !!rc.quoted_at || ['quoted', 'won', 'lost', 'bound'].includes(rc.status)
@@ -134,11 +147,12 @@ function tierOf(pages: any[]) {
   return { tier: null, base: 0 }
 }
 
-// Households that pay (quoted, or QUOTE_DAYS old); pending ones aren't listed yet.
-function earnings(scans: any[], schedule: Record<string, number>, cap: number | null) {
+// Households that pay under the agency's rules (replied Y, or quoted / quoteDays old);
+// pending ones aren't listed yet.
+function earnings(scans: any[], schedule: Record<string, number>, cap: number | null, rules: Rules) {
   const now = Date.now()
   const hh = groupHouseholds(scans).map(list => {
-    const pages = list.filter(rc => QUALIFIES(rc, now)).sort((a, b) => a.created_at.localeCompare(b.created_at))
+    const pages = list.filter(rc => QUALIFIES(rc, now, rules.expiredDays)).sort((a, b) => a.created_at.localeCompare(b.created_at))
     const { tier, base } = tierOf(pages)
     if (!tier) return null
     const extras = Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base))
@@ -147,7 +161,9 @@ function earnings(scans: any[], schedule: Record<string, number>, cap: number | 
       tier, label: LABEL[tier] + (extras ? ` + ${extras} extra` : ''),
       fee: schedule[tier] + extras * schedule.extra_line,
       firstAt: pages[0].created_at, month: monthKey(pages[0].created_at),
-      pending: !list.some(QUOTED) && now - new Date(pages[0].created_at).getTime() < QUOTE_DAYS * DAY,
+      pending: rules.requireCallConfirm
+        ? !list.some((rc: any) => !!rc.call_confirmed_at)
+        : !list.some(QUOTED) && now - new Date(pages[0].created_at).getTime() < rules.quoteDays * DAY,
     }
   }).filter(Boolean) as any[]
   const months: Record<string, any[]> = {}
@@ -224,10 +240,12 @@ Deno.serve(async (req) => {
     .eq('portal_token', token).maybeSingle()
   if (!p) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
-  const [{ data: agency }, { data: rateRows }] = await Promise.all([
+  const [{ data: agency }, { data: rateRows }, { data: rulesRow }] = await Promise.all([
     supabase.from('agencies').select('name, brand_name').eq('id', p.agency_id).single(),
     supabase.from('rate_check_promoter_rates').select('tier, amount').eq('agency_id', p.agency_id),
+    supabase.from('rate_check_partner_rules').select('*').eq('agency_id', p.agency_id).maybeSingle(),
   ])
+  const rules = rulesFrom(rulesRow)
   const schedule: Record<string, number> = { ...Object.fromEntries(TIERS.map(([k, , fee]) => [k, fee])), extra_line: EXTRA_LINE_FEE }
   for (const r of rateRows || []) if (r.tier in schedule) schedule[r.tier] = Number(r.amount)
   const agencyName = agency?.name || agency?.brand_name || 'the Agency'
@@ -316,13 +334,13 @@ Deno.serve(async (req) => {
     }
     if (!cleared) return json(base, 200, cors)
     const [{ data: scans }, { data: payouts }] = await Promise.all([
-      supabase.from('rate_checks').select('id, phone, first_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at')
+      supabase.from('rate_checks').select('id, phone, first_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at, call_confirmed_at')
         .eq('promoter_id', p.id).order('created_at', { ascending: true }).limit(5000),
       supabase.from('rate_check_promoter_payouts').select('period, amount, paid_at').eq('promoter_id', p.id),
     ])
     const paid = Object.fromEntries((payouts || []).map((x: any) => [String(x.period).slice(0, 7), { amount: Number(x.amount), paid_at: x.paid_at }]))
     // Only first names and what each household sent: no phone numbers, no quotes or outcomes.
-    const months = earnings(scans || [], schedule, p.monthly_cap).map(m => ({ ...m, paid: paid[m.month] || null }))
+    const months = earnings(scans || [], schedule, p.monthly_cap, rules).map(m => ({ ...m, paid: paid[m.month] || null }))
     return json({ ...base, code: p.code, months }, 200, cors)
   }
 
