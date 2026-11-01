@@ -814,6 +814,8 @@ function Thumb({ item, scanning = false, small = false }) {
 // add-page tile. Right after a photo it asks whether the policy has more pages.
 function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
+  const [picked, setPicked] = useState(null); // the page tapped for retake / remove
+  const pickedIndex = pages.findIndex(pg => pg.id === picked);
   const bad = pages.findIndex(pg => pg.quality?.issue);
   const n = index + 1;
   // A downloaded PDF is the whole policy already: count the pages inside it, and
@@ -852,47 +854,61 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
   }
   return (
     <li className={`rounded-2xl border bg-white p-3 shadow-sm ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-slate-50 text-slate-500 ring-1 ring-slate-200">
+          <Camera className="h-5 w-5" />
+          <span className="text-[9px] font-extrabold tracking-wide">PHOTOS</span>
+        </span>
+        <div className="min-w-0 flex-1">
           <p className="font-semibold text-slate-900">Policy {n}</p>
-          <p className="mt-0.5 text-sm text-slate-500">
+          <p className="mt-0.5 truncate text-sm text-slate-500">
             {counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}
             {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
           </p>
         </div>
         <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
-          className="-mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500">
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
+      {/* Tap a page to retake or remove it. */}
       <ul className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label={`Pages of policy ${n}`}>
-        {pages.map((pg, k) => (
-          <li key={pg.id} className="flex w-16 shrink-0 flex-col items-center">
-            <div className={`rounded-lg ${pg.quality?.issue ? 'ring-2 ring-amber-400' : ''}`}><Thumb item={pg} /></div>
-            <span className="mt-1 whitespace-nowrap text-xs font-medium text-slate-600">
-              {isPdfName(pg.file) ? 'PDF' : `Page ${k + 1}`}
-            </span>
-            <span className="flex">
-              <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Retake page ${k + 1} of policy ${n}`}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg ${pg.quality?.issue ? 'text-amber-800' : 'text-slate-500'}`}>
-                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+        {pages.map((pg, k) => {
+          const on = picked === pg.id;
+          return (
+            <li key={pg.id} className="shrink-0">
+              <button type="button" onClick={() => setPicked(on ? null : pg.id)} aria-pressed={on}
+                aria-label={`Page ${k + 1} of policy ${n}${pg.quality?.issue ? ` (looks ${pg.quality.issue === 'dark' ? 'too dark' : 'blurry'})` : ''}`}
+                className={`relative block rounded-lg ${on ? 'ring-2 ring-blue-600 ring-offset-1' : pg.quality?.issue ? 'ring-2 ring-amber-400' : ''}`}>
+                <Thumb item={pg} small />
+                <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1 text-[10px] font-bold leading-4 text-slate-700 shadow-sm">{isPdfName(pg.file) ? 'PDF' : k + 1}</span>
               </button>
-              <button type="button" onClick={() => onRemovePage(pg.id)} aria-label={`Remove page ${k + 1} of policy ${n}`}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500">
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </span>
-          </li>
-        ))}
-        {!allPdf && <li className="flex w-16 shrink-0 flex-col items-center">
+            </li>
+          );
+        })}
+        <li className="shrink-0">
           <button type="button" onClick={onAddPage} aria-label={`Add page ${pages.length + 1} to policy ${n}`}
-            className="flex h-[72px] w-14 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
-            <Plus className="h-5 w-5" aria-hidden="true" />
+            className="flex h-14 w-11 flex-col items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span className="text-[10px] font-bold leading-3">Page</span>
           </button>
-          <span className="mt-1 text-xs font-medium text-blue-700">Add page</span>
-        </li>}
+        </li>
       </ul>
+
+      {pickedIndex >= 0 && (
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-slate-50 p-2 pl-3 ring-1 ring-slate-200">
+          <span className="flex-1 text-sm font-semibold text-slate-700">Page {pickedIndex + 1}</span>
+          <button type="button" onClick={() => { setPicked(null); onRetakePage(picked); }} aria-label={`Retake page ${pickedIndex + 1} of policy ${n}`}
+            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+            <RotateCcw className="h-4 w-4" aria-hidden="true" /> Retake
+          </button>
+          <button type="button" onClick={() => { setPicked(null); onRemovePage(picked); }} aria-label={`Remove page ${pickedIndex + 1} of policy ${n}`}
+            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-slate-200">
+            <X className="h-4 w-4" aria-hidden="true" /> Remove
+          </button>
+        </div>
+      )}
 
       {onMergeUp && (
         <button type="button" onClick={onMergeUp}
