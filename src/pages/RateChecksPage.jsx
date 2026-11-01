@@ -126,7 +126,21 @@ function renewalSoon(policies, now) {
   if (soonest == null) return null;
   const days = Math.max(0, Math.ceil((soonest - now) / DAY));
   if (days > 30) return null;
-  return days === 0 ? 'Renews today' : `Renews in ${days} day${days === 1 ? '' : 's'}`;
+  return { text: days === 0 ? 'Renews today' : `Renews in ${days} day${days === 1 ? '' : 's'}`, urgent: days <= 14 };
+}
+
+// How long they've been waiting on us for a quote: red once it's past the 30 minutes
+// the page promises, neutral before.
+function WaitPill({ rc, now }) {
+  const mins = minutesSince(rc.created_at, now);
+  const late = mins >= OVERDUE_MINUTES;
+  return (
+    <span className={`rounded-full px-2.5 py-1 font-semibold ${late ? 'bg-red-50 text-red-700' : ''}`}
+      style={late ? undefined : { background: 'var(--qs-elevated)', color: 'var(--qs-dim)' }}
+      title="How long they've been waiting on us for a quote">
+      Waiting on us · {mins < 1 ? 'just now' : ageText(mins)}
+    </span>
+  );
 }
 
 // "Stephen Pearson": the first name they typed plus the last name off their dec page
@@ -259,47 +273,60 @@ function InboxCard({ h, now, onOpen, onPartner }) {
   const holdText = `Hi ${first}, it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly.`;
   const renewal = open ? renewalSoon(h.policies, now) : null;
   return (
-    <li onClick={onOpen} className="cursor-pointer px-4 py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      {/* Who, and who sent them. */}
-      <p className="min-w-0 text-base" style={{ color: 'var(--qs-dim)' }}>
-        <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{personName(h.lead.first_name, h.policies) || 'No name'}</span>
-        {h.lead.upload_source === 'agent' && <StaffTag />}
-        {h.lead.promoter_name && h.lead.promoter_id && (
-          <span className="text-sm"> via{' '}
-            <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
-              className="font-semibold text-primary-600 underline decoration-primary-300 underline-offset-2 hover:decoration-primary-600">
-              {partnerName(h.lead.promoter_name)}
-            </button>
-          </span>
+    <li onClick={onOpen} className="cursor-pointer px-4 pb-3 pt-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
+      {/* Who; who referred them (quiet); a small text button when they've waited. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
+            {personName(h.lead.first_name, h.policies) || 'No name'}
+            {h.lead.upload_source === 'agent' && <StaffTag />}
+          </p>
+          {h.lead.promoter_name && h.lead.promoter_id && (
+            <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
+              Referred by{' '}
+              <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
+                title={`Open ${partnerName(h.lead.promoter_name)}'s partner card`}
+                className="underline decoration-dotted underline-offset-2 hover:decoration-solid" style={{ color: 'var(--qs-dim)' }}>
+                {partnerName(h.lead.promoter_name)}
+              </button>
+            </p>
+          )}
+          {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
+        </div>
+        {open && late && h.lead.phone && (
+          <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
+            aria-label="Text them a quick update" title="Text them a quick update"
+            className="-mr-1.5 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-[var(--qs-elevated)]" style={{ color: 'var(--qs-dim)' }}>
+            <MessageSquare className="h-5 w-5" aria-hidden="true" />
+          </a>
         )}
-      </p>
-      {/* What they pay, and the action. */}
-      <div className="mt-3 flex items-center justify-between gap-3">
+      </div>
+
+      {/* What they pay now (labeled), with the one action level with the number. */}
+      <div className="mt-3 flex items-center gap-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
+        <span>{h.policies.length > 1 ? 'Pays now, all policies' : 'Pays now'}</span>
+        {new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1 && (
+          <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-dim)' }}>Bundle opportunity</span>
+        )}
+      </div>
+      <div className="flex items-center justify-between gap-3">
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</span>
-          {/* Two or more kinds of policy: a chance to win them as an Allstate bundle. */}
-          {new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1 && <span className="block text-xs font-semibold text-emerald-700">Bundle opportunity</span>}
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
         </span>
-        {open ? (
-          <span className="flex shrink-0 items-center gap-2">
-            {late && h.lead.phone && (
-              <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
-                aria-label="Text now" title="Text now"
-                className="inline-flex h-11 w-11 items-center justify-center rounded-lg" style={inputStyle}>
-                <MessageSquare className="h-5 w-5" aria-hidden="true" />
-              </a>
-            )}
-            <span className="inline-flex h-11 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote ›</span>
-          </span>
-        ) : <StatusChip status={h.status} quiet />}
+        {open
+          ? <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote</span>
+          : <StatusChip status={h.status} quiet />}
       </div>
-      {/* Quiet footer: how long they've waited, and the renewal when it's close. */}
-      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2.5 text-sm" style={{ borderColor: 'var(--qs-border)' }}>
-        <Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} />
-        {renewal && <span className="font-semibold text-amber-600">{renewal}</span>}
-        {(h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
-      </div>
+
+      {/* Status as separate pills; red is the only urgency color. */}
+      {(open || renewal) && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3 text-xs" style={{ borderColor: 'var(--qs-border)' }}>
+          {open && <WaitPill rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} />}
+          {renewal && <span className={`rounded-full px-2.5 py-1 font-semibold ${renewal.urgent ? 'bg-red-50 text-red-700' : ''}`}
+            style={renewal.urgent ? undefined : { background: 'var(--qs-elevated)', color: 'var(--qs-dim)' }}>{renewal.text}</span>}
+        </div>
+      )}
     </li>
   );
 }
