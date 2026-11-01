@@ -448,7 +448,7 @@ export default function RateCheckPage() {
   ) : null;
   // The same note on the landing page's blue hero.
   const whoSentHero = invite?.promoter_name ? (
-    <div className="mb-6 flex items-center gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-4 ring-1 ring-white/20 backdrop-blur-sm lg:max-w-md">
+    <div className="mb-6 flex w-fit max-w-full items-center gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-5 ring-1 ring-white/20 backdrop-blur-sm">
       {invite.promoter_photo_url ? (
         <img src={invite.promoter_photo_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
       ) : (
