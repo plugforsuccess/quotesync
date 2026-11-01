@@ -1259,6 +1259,14 @@ function CarrierLogos() {
 // the fluorescent green are the brand pair; the green marks what matters. No black:
 // dark surfaces are deep blue, headings are deep blue, body text is slate gray.
 const ACCENT = '#39FF88';
+// The agency name on its card: white letters with a navy outline and drop shadow.
+const AGENCY_TITLE = {
+  color: '#FFFFFF',
+  WebkitTextStroke: '1.5px #0F2D6B',
+  paintOrder: 'stroke fill',
+  textShadow: '0 2px 0 #0F2D6B, 0 4px 10px rgba(15,45,107,0.55)',
+  letterSpacing: '0.01em',
+};
 const NAVY = '#0F2D6B'; // deep royal blue (headings, step numbers)
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 const ACCEPTS = (f) => /^image\//.test(f.type) || f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
@@ -1293,13 +1301,13 @@ function OwnerCard() {
   return (
     <aside aria-label={AGENCY.name} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
       {/* Phones: the name centered across the top, then a big headshot with the rest beside it. */}
-      <h2 className="mb-4 whitespace-nowrap text-center text-[clamp(18px,5.8vw,23px)] font-black uppercase leading-none tracking-tight lg:hidden" style={{ color: ACCENT }}>{AGENCY.name}</h2>
+      <h2 className="mb-4 whitespace-nowrap text-center text-[clamp(18px,5.8vw,23px)] font-black uppercase leading-none tracking-tight lg:hidden" style={AGENCY_TITLE}>{AGENCY.name}</h2>
       <div className="flex items-center gap-3.5 lg:flex-col lg:gap-4 lg:text-center">
         <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
           className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
           style={{ objectPosition: '50% 30%' }} />
         <div className="min-w-0 flex-1">
-          <h2 className="hidden whitespace-nowrap font-black uppercase leading-none tracking-tight lg:block lg:text-[26px]" style={{ color: ACCENT }}>{AGENCY.name}</h2>
+          <h2 className="hidden whitespace-nowrap font-black uppercase leading-none tracking-tight lg:block lg:text-[26px]" style={AGENCY_TITLE}>{AGENCY.name}</h2>
           <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-2.5 lg:text-xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
           <OwnerDetails className="mt-2.5 flex gap-x-5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:gap-x-8 lg:border-0 lg:pt-0" />
         </div>
