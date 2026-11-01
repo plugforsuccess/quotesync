@@ -186,24 +186,32 @@ function groupHouseholds(rows) {
 const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h.newest, now) >= OVERDUE_MINUTES;
 
 // "State Farm Auto + Home" when one carrier has everything, else "State Farm auto + Progressive home".
-// What the household has, grouped by company: "State Farm Auto + Home" for one company,
-// "State Farm auto + home · Progressive auto · GEICO umbrella" for several (first three, then "+2 more").
-function householdLine(h) {
-  const types = h.policies.map(p => policyTypeLabel(p.policy_type)).filter(Boolean);
-  if (!types.length) return 'Policy not read yet';
-  // Two autos with one company read "auto ×2".
+const householdGroups = (byCarrier) => [...byCarrier.entries()].map(([c, m]) => [c, [...m.entries()].map(([t, n]) => (n > 1 ? `${t} ×${n}` : t))]);
+
+// One line per company for the phone card: "State Farm   Auto + Home", "Progressive   Auto"…
+// (first three companies, then "+2 more").
+function HouseholdPolicies({ h }) {
   const byCarrier = new Map();
   h.policies.forEach(p => {
-    const c = carrierLabel(p) || '';
     const t = policyTypeLabel(p.policy_type);
     if (!t) return;
+    const c = carrierLabel(p) || 'Unknown company';
     if (!byCarrier.has(c)) byCarrier.set(c, new Map());
     byCarrier.get(c).set(t, (byCarrier.get(c).get(t) || 0) + 1);
   });
-  const groups = [...byCarrier.entries()].map(([c, m]) => [c, [...m.entries()].map(([t, n]) => (n > 1 ? `${t} ×${n}` : t))]);
-  if (groups.length === 1) return [groups[0][0], groups[0][1].join(' + ')].filter(Boolean).join(' ');
-  const shown = groups.slice(0, 3).map(([c, ts]) => [c, ts.map(t => t.toLowerCase()).join(' + ')].filter(Boolean).join(' '));
-  return shown.join(' · ') + (groups.length > 3 ? ` · +${groups.length - 3} more` : '');
+  const groups = householdGroups(byCarrier);
+  if (!groups.length) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Policy not read yet</p>;
+  return (
+    <ul className="mt-0.5 space-y-0.5 text-sm">
+      {groups.slice(0, 3).map(([c, ts]) => (
+        <li key={c} className="flex gap-1.5">
+          <span className="shrink-0 font-semibold" style={{ color: 'var(--qs-text)' }}>{c}</span>
+          <span className="min-w-0 truncate" style={{ color: 'var(--qs-dim)' }}>{ts.join(' + ')}</span>
+        </li>
+      ))}
+      {groups.length > 3 && <li className="text-xs" style={{ color: 'var(--qs-subtle)' }}>+{groups.length - 3} more {groups.length - 3 === 1 ? 'company' : 'companies'}</li>}
+    </ul>
+  );
 }
 
 // Work tabs are always in view (Partners too: partner referrals are the focus);
@@ -290,7 +298,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
         </span>
         <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
       </div>
-      <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{householdLine(h)}</p>
+      <HouseholdPolicies h={h} />
       {/* Left: price, when it renews, who sent it. Right: the actions, stacked. */}
       <div className="mt-2 flex items-stretch justify-between gap-3">
         {/* Price at the top; renewal + partner sit at the bottom, level with Text now. */}
