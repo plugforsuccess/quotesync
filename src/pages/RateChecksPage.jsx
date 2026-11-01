@@ -110,15 +110,27 @@ function StaffTag() {
 }
 
 // "via Marcus · Gwinnett expo" — where a rate check came from.
-// A partner as first name + last initial: "Javon S."
-const partnerShort = (name) => {
-  const w = String(name || '').trim().split(/\s+/).filter(Boolean);
-  return w.length > 1 ? `${w[0]} ${w[w.length - 1][0].toUpperCase()}.` : (w[0] || '');
-};
+// A partner's full name as entered: "Javon Smith" (staff screens only; the public
+// share-link page shows just their first name).
+const partnerName = (name) => String(name || '').trim().replace(/\s+/g, ' ');
+
+// Only when it's close: the soonest renewal within 30 days ("Renews in 12 days").
+// Further out, or unknown, shows nothing.
+function renewalSoon(policies, now) {
+  const DAY = 86400000;
+  const soonest = policies.map(p => p.expiration_date).filter(Boolean)
+    .map(d => { const [y, m, dd] = String(d).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, dd).getTime(); })
+    .filter(t => Number.isFinite(t) && t >= now - DAY)
+    .sort((a, b) => a - b)[0];
+  if (soonest == null) return null;
+  const days = Math.max(0, Math.ceil((soonest - now) / DAY));
+  if (days > 30) return null;
+  return days === 0 ? 'Renews today' : `Renews in ${days} day${days === 1 ? '' : 's'}`;
+}
 
 function OriginTag({ rc, className = '' }) {
   if (!rc.producer_name && !rc.event_name && !rc.promoter_name) return null;
-  const text = [rc.promoter_name && `Referred by ${partnerShort(rc.promoter_name)}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
+  const text = [rc.promoter_name && `Referred by ${partnerName(rc.promoter_name)}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${className}`} style={{ color: 'var(--qs-subtle)' }} title={[rc.event_name, rc.producer_name].filter(Boolean).join(' — ')}>
       <Link2 className="h-3 w-3" /> {text}
@@ -242,12 +254,12 @@ function InboxCard({ h, now, onOpen, onPartner }) {
   const late = isOverdue(h, now);
   const first = h.lead.first_name || 'there';
   const holdText = `Hi ${first}, it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly.`;
+  const renewal = open ? renewalSoon(h.policies, now) : null;
   return (
     <li onClick={onOpen} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <div className="flex items-baseline justify-between gap-3">
         <span className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
           {h.lead.first_name || 'No name'}
-          {h.policies.length > 1 && <span className="ml-1.5 text-sm font-normal" style={{ color: 'var(--qs-subtle)' }}>· {h.policies.length} policies</span>}
           {h.lead.upload_source === 'agent' && <StaffTag />}
         </span>
         <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
@@ -258,12 +270,13 @@ function InboxCard({ h, now, onOpen, onPartner }) {
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
+          {renewal && <span className="mt-1 block text-sm font-semibold text-amber-600">{renewal}</span>}
           {h.lead.promoter_name && h.lead.promoter_id && (
-            <span className="mt-1 block text-sm" style={{ color: 'var(--qs-dim)' }}>
+            <span className={`${renewal ? '' : 'mt-1 '}block text-sm`} style={{ color: 'var(--qs-dim)' }}>
               via{' '}
               <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
                 className="font-semibold text-primary-600 underline decoration-primary-300 underline-offset-2 hover:decoration-primary-600">
-                {partnerShort(h.lead.promoter_name)}
+                {partnerName(h.lead.promoter_name)}
               </button>
             </span>
           )}
