@@ -6,7 +6,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
+  AlertCircle, AlertTriangle, ArrowRight, BadgeDollarSign, Bell, Camera, Check, ChevronDown, ChevronRight, Clock, ExternalLink, Handshake, Link2, Mail, Map as MapIcon,
   MessageSquare, Pencil, Phone, RefreshCw, Search, Send, SlidersHorizontal, Upload, Users, X,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -136,8 +136,8 @@ const PILL_TONE = {
   red: { background: '#FEF2F2', color: '#B91C1C' },
   amber: { background: '#FFFBEB', color: '#B45309' },
 };
-function CardPill({ tone = 'neutral', title, children }) {
-  return <span className="inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold leading-5" style={PILL_TONE[tone]} title={title}>{children}</span>;
+function CardPill({ tone = 'neutral', title, label, children }) {
+  return <span className="inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold leading-5" style={PILL_TONE[tone]} title={title} aria-label={label}>{children}</span>;
 }
 
 // How long they've been waiting on us for a quote: red once it's past the 30 minutes
@@ -145,8 +145,8 @@ function CardPill({ tone = 'neutral', title, children }) {
 function WaitPill({ rc, now }) {
   const mins = minutesSince(rc.created_at, now);
   return (
-    <CardPill tone={mins >= OVERDUE_MINUTES ? 'red' : 'neutral'} title="How long they've been waiting on us for a quote">
-      Waiting on us · {mins < 1 ? 'just now' : ageText(mins)}
+    <CardPill tone={mins >= OVERDUE_MINUTES ? 'red' : 'neutral'} title="How long they've been waiting on us for a quote" label={`Waiting on us for a quote: ${ageText(mins)}`}>
+      <Clock className="mr-1 h-3.5 w-3.5" aria-hidden="true" />{mins < 1 ? 'Just now' : `Waiting ${ageText(mins)}`}
     </CardPill>
   );
 }
@@ -283,51 +283,51 @@ function InboxCard({ h, now, onOpen, onPartner }) {
   const bundle = new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1;
   return (
     <li onClick={onOpen} className="cursor-pointer px-4 py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      {/* Who; who referred them (quiet); a small text button when they've waited. */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
-            {personName(h.lead.first_name, h.policies) || 'No name'}
-            {h.lead.upload_source === 'agent' && <StaffTag />}
-          </p>
-          {h.lead.promoter_name && h.lead.promoter_id && (
-            <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
-              Referred by{' '}
-              <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
-                title={`Open ${partnerName(h.lead.promoter_name)}'s partner card`}
-                className="font-medium underline underline-offset-2" style={{ color: 'var(--qs-dim)' }}>
-                {partnerName(h.lead.promoter_name)}
-              </button>
-            </p>
-          )}
-          {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
-        </div>
-        {open && late && h.lead.phone && (
-          <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
-            aria-label="Text them a quick update" title="Text them a quick update"
-            className="-mr-1.5 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-[var(--qs-elevated)]" style={{ color: 'var(--qs-dim)' }}>
-            <MessageSquare className="h-5 w-5" aria-hidden="true" />
-          </a>
-        )}
+      {/* Who, and how long they've waited on us (top right). */}
+      <div className="flex items-center justify-between gap-3">
+        <p className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
+          {personName(h.lead.first_name, h.policies) || 'No name'}
+          {h.lead.upload_source === 'agent' && <StaffTag />}
+        </p>
+        {open && <span className="shrink-0"><WaitPill rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>}
       </div>
+      {h.lead.promoter_name && h.lead.promoter_id && (
+        <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
+          Referred by{' '}
+          <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
+            title={`Open ${partnerName(h.lead.promoter_name)}'s partner card`}
+            className="font-medium underline underline-offset-2" style={{ color: 'var(--qs-dim)' }}>
+            {partnerName(h.lead.promoter_name)}
+          </button>
+        </p>
+      )}
+      {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
 
-      {/* What they pay now (labeled), and the one action, bottom-aligned with the number. */}
-      <div className="mt-3 flex items-end justify-between gap-3">
+      {/* What they pay now (labeled), then the price with the text button and Start quote. */}
+      <p className="mt-3 text-xs" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
+      <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
-          <p className="mt-0.5 text-lg font-bold leading-7 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
+          <p className="text-lg font-bold leading-7 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
           {!open && h.delta != null && <p className="text-sm"><Savings delta={h.delta} /></p>}
         </div>
-        {open
-          ? <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote</span>
-          : <StatusChip status={h.status} quiet />}
+        {open ? (
+          <span className="flex shrink-0 items-center gap-1">
+            {late && h.lead.phone && (
+              <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
+                aria-label="Text them a quick update" title="Text them a quick update"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-[var(--qs-elevated)]" style={{ color: 'var(--qs-dim)' }}>
+                <MessageSquare className="h-5 w-5" aria-hidden="true" />
+              </a>
+            )}
+            <span className="inline-flex h-10 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote</span>
+          </span>
+        ) : <StatusChip status={h.status} quiet />}
       </div>
 
       {/* Status: red means we owe them a reply; the renewal is context (amber when close);
           the bundle is a neutral note. */}
-      {(open || renewal || bundle) && (
+      {(renewal || bundle) && (
         <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t pt-4" style={{ borderColor: 'var(--qs-border)' }}>
-          {open && <WaitPill rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} />}
           {renewal && <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>}
           {bundle && <CardPill>Bundle opportunity</CardPill>}
         </div>
