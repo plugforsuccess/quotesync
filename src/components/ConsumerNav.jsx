@@ -15,9 +15,9 @@ const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)'
 // The agency's display name and license, as shown in every consumer page's footer.
 const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
 
+// The logo goes home (the Rate Check page); the menu lists the other pages.
 const PAGES = [
-  ['rate', '/', 'Rate Check'],
-  ['drivers', '/courses', 'Drivers Ed'],
+  ['drivers', '/courses', 'Drivers Education'],
   ['news', '/news', 'Newsroom'],
 ];
 
