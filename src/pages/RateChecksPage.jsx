@@ -194,29 +194,26 @@ const CARRIER_LOGO = {
   'Foremost': '/logos/carriers/foremost.png', 'Chubb': '/logos/carriers/chubb.svg', 'The Hartford': '/logos/carriers/the-hartford.jpg',
 };
 
-// Who they're with now, one tile per company (up to three across): logo or name,
-// what they have there, and what it costs. Tapping a tile opens that policy brief.
+// Who they're with now, up to three across: each company's logo (or name) with what
+// they have there underneath. Tapping one opens that company's policy brief.
 function CarrierMarks({ h, onPolicy }) {
   const byCarrier = new Map();
   h.policies.forEach(p => {
     const c = carrierLabel(p);
     if (!c) return;
-    if (!byCarrier.has(c)) byCarrier.set(c, { first: p, types: new Map(), amt: 0, known: true });
+    if (!byCarrier.has(c)) byCarrier.set(c, { first: p, types: new Map() });
     const g = byCarrier.get(c);
     const t = policyTypeLabel(p.policy_type);
     if (t) g.types.set(t, (g.types.get(t) || 0) + 1);
-    g.amt += Number(p.annual_premium) || 0;
-    g.known = g.known && p.annual_premium != null;
   });
   if (!byCarrier.size) return null;
   const tiles = [...byCarrier.entries()];
   return (
-    <div className="mt-2.5 grid grid-cols-3 gap-2">
+    <div className="mt-2.5 grid grid-cols-3 gap-3">
       {tiles.slice(0, 3).map(([c, g]) => (
         <button key={c} type="button" title={`Open the ${c} policy`} aria-label={`Open the ${c} policy`}
           onClick={e => { e.stopPropagation(); onPolicy?.(g.first); }}
-          className="flex min-w-0 flex-col items-start gap-0.5 rounded-lg px-2 py-1.5 text-left transition hover:bg-[var(--qs-elevated)]"
-          style={{ border: '1px solid var(--qs-border)' }}>
+          className="flex min-w-0 flex-col items-start gap-0.5 text-left">
           <span className="flex h-5 w-full items-center">
             {CARRIER_LOGO[c]
               ? <img src={CARRIER_LOGO[c]} alt="" className="h-4 w-auto max-w-full object-contain object-left mix-blend-multiply" />
@@ -225,7 +222,6 @@ function CarrierMarks({ h, onPolicy }) {
           <span className="w-full truncate text-xs" style={{ color: 'var(--qs-dim)' }}>
             {[...g.types.entries()].map(([t, n]) => (n > 1 ? `${t} ×${n}` : t)).join(' + ') || 'Policy'}
           </span>
-          {g.known && <span className="text-xs font-semibold tabular-nums" style={{ color: 'var(--qs-text)' }}>{money(g.amt)}</span>}
         </button>
       ))}
       {tiles.length > 3 && (
@@ -327,7 +323,6 @@ function InboxCard({ h, now, onOpen, onPartner, onPolicy }) {
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</span>
-          {new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1 && <span className="block text-xs font-semibold text-emerald-700">Bundle opportunity</span>}
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
         </span>
         {open ? (
