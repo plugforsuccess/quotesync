@@ -33,6 +33,8 @@ const SCHEDULE_ROWS = [
   ['auto_only', 'Auto only'], ['renters_only', 'Renters only'],
 ];
 
+// Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".
+const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella)\b/g, w => w[0].toUpperCase() + w.slice(1));
 // Dates in the agency's time zone (Georgia), the same as the payouts.
 const todayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
 
@@ -171,7 +173,7 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <section className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <p className="text-sm text-slate-700">
           <span className="flex items-center gap-1.5 font-semibold text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> W-9 on file</span>
-          {w9.tin_type === 'ein' ? 'EIN' : 'SSN'} ending {w9.last4} · signed {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          Signed {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </p>
         <button type="button" onClick={() => setOpen(true)} className="min-h-[40px] shrink-0 text-sm font-semibold text-blue-700">Update</button>
       </section>
@@ -445,9 +447,9 @@ function Earnings({ token, data, onChange }) {
       {months.map(m => (
         <section key={m.month} className="mt-5">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} activity</h2>
+            <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</h2>
             <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Earnings: ${money(m.paid.amount)}` : pendingIn(m) > 0 ? `${pendingIn(m)} ${pendingIn(m) === 1 ? 'household' : 'households'} pending` : ''}
+              {m.paid ? `Earnings: ${money(m.paid.amount)}` : ''}
             </span>
           </div>
           {m.rows.length ? (
@@ -456,7 +458,7 @@ function Earnings({ token, data, onChange }) {
                 <li key={i} className="flex items-center justify-between gap-3 px-3 py-2.5">
                   <span className="min-w-0">
                     <span className="block font-semibold text-[#0F2D6B]">{r.first_name}</span>
-                    <span className="block text-xs text-slate-500">{r.label}{r.over_cap ? ' · over this month’s limit' : ''}</span>
+                    <span className="block text-xs text-slate-500">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</span>
                   </span>
                 </li>
               ))}

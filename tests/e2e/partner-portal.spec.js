@@ -112,7 +112,8 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
   // On file: the checklist is gone and only the last 4 show.
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
   await expect(page.getByText('W-9 on file')).toBeVisible();
-  await expect(page.getByText(/SSN ending 1234/)).toBeVisible();
+  await expect(page.getByText(/Signed \w{3} \d{1,2}, \d{4}/)).toBeVisible();
+  await expect(page.getByText(/1234/)).toHaveCount(0);
   await expect(page.getByText('412-55-1234')).toHaveCount(0);
 });
 
@@ -154,7 +155,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
   // No projections: unpaid months show a household count, paid months what was paid.
-  await expect(page.getByText('2 households pending')).toBeVisible();
+  await expect(page.getByText('Auto + Home or Condo')).toBeVisible();
   await expect(page.getByText('Earnings: $15', { exact: true })).toBeVisible();
   await expect(page.getByText('Stephen')).toBeVisible();
   await expect(page.getByText('$45')).toHaveCount(0);
@@ -178,8 +179,7 @@ test('month headings say activity; a paused link says so', async ({ page }) => {
   }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText(/Your link is paused/)).toBeVisible();
-  await expect(page.getByText('3 households pending')).toBeVisible();
-  await expect(page.getByRole('heading', { name: /^[A-Z][a-z]+ \d{4} activity$/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^[A-Z][a-z]+ \d{4} Activity$/ })).toBeVisible();
   await expect(page.getByText('$45')).toHaveCount(0);
   await expect(page.getByText(/on the way/)).toHaveCount(0);
 });
