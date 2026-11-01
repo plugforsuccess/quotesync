@@ -49,7 +49,7 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // licenses: Cam's individual resident license goes under his headshot (the card
 // names him); the agency's resident license goes in the footer next to the agency name.
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
-const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
+const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', license: '209488' };
 // "Meet the Owner" carousel: the agent card first, then these in order. A story card comes
 // right after the agent card, then alternating photo / story.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
@@ -66,7 +66,7 @@ const ABOUT = [
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
   { key: 'today', title: 'My story, today', paragraphs: [
     'Family comes first for me. So I treat your household the way I’d treat mine.',
-    'Today I run Cam Wiley Insurance, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
+    'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam and family', caption: 'My family', position: '50% 35%' },
@@ -1247,16 +1247,17 @@ const PROMISES = [
 // Cam beside the ask: a compact row on phones, a full card on desktop.
 function OwnerCard() {
   return (
-    <aside aria-label={`Your agent, ${AGENT.name}`} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
+    <aside aria-label={AGENCY.short} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
       <div className="flex items-center gap-4 lg:flex-col lg:text-center">
         <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
-          className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-offset-2 ring-offset-[#1E3A8A] lg:h-40 lg:w-40 lg:ring-4 lg:ring-offset-4"
-          style={{ objectPosition: '50% 30%', '--tw-ring-color': ACCENT }} />
+          className="h-16 w-16 shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
+          style={{ objectPosition: '50% 30%' }} />
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: ACCENT }}><T k="rc.owner.badge">Owner &amp; licensed agent</T></p>
-          <p className="mt-0.5 text-xl font-extrabold text-white lg:mt-1 lg:text-2xl">{AGENT.name}</p>
-          <p className="text-sm text-blue-100"><T k="rc.owner.line">Allstate agent · Serving all of Georgia</T></p>
-          {AGENT.license && <p className="mt-0.5 text-xs text-blue-200">GA License #: {AGENT.license}</p>}
+          <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: ACCENT }}>{AGENCY.short}</p>
+          <p className="mt-0.5 text-lg font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-1 lg:text-2xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
+          <p className="mt-0.5 text-xs text-blue-200">
+            <span className="whitespace-nowrap">{AGENT.name}, owner</span> · <span className="whitespace-nowrap">Agency License #{AGENCY.license}</span>
+          </p>
         </div>
       </div>
       <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">
@@ -1383,7 +1384,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <div>
             <h2 id="rc-owner" className={sectionTitle}><T k="rc.owner.heading">Meet the Owner</T></h2>
             <p className="mt-3 text-lg leading-relaxed text-slate-600">
-              <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Insurance, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
+              <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Agency, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
             </p>
           </div>
           <div className="min-w-0"><MeetCam /></div>
