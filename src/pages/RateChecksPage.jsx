@@ -272,7 +272,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
           {renewal && <span className="mt-1 block text-sm font-semibold text-amber-600">{renewal}</span>}
           {h.lead.promoter_name && h.lead.promoter_id && (
-            <span className={`${renewal ? '' : 'mt-1 '}block text-sm`} style={{ color: 'var(--qs-dim)' }}>
+            <span className={`${renewal ? 'mt-2' : 'mt-1'} block text-sm`} style={{ color: 'var(--qs-dim)' }}>
               via{' '}
               <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
                 className="font-semibold text-primary-600 underline decoration-primary-300 underline-offset-2 hover:decoration-primary-600">
