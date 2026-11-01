@@ -110,9 +110,30 @@ function StaffTag() {
 }
 
 // "via Marcus · Gwinnett expo" — where a rate check came from.
+// A partner as first name + last initial: "Javon S."
+const partnerShort = (name) => {
+  const w = String(name || '').trim().split(/\s+/).filter(Boolean);
+  return w.length > 1 ? `${w[0]} ${w[w.length - 1][0].toUpperCase()}.` : (w[0] || '');
+};
+
+// When the household's current policy renews: the soonest expiration date that hasn't
+// long passed. "Renews in 12 days" inside a month, else "Renews Mar 14".
+function renewalOf(policies, now) {
+  const DAY = 86400000;
+  const dates = policies.map(p => p.expiration_date).filter(Boolean)
+    .map(d => { const [y, m, dd] = String(d).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, dd); })
+    .filter(d => !Number.isNaN(d.getTime()) && d.getTime() > now - 30 * DAY)
+    .sort((a, b) => a - b);
+  if (!dates.length) return null;
+  const days = Math.ceil((dates[0].getTime() - now) / DAY);
+  if (days < 0) return { text: `Renewed ${dates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, soon: true };
+  if (days <= 30) return { text: days === 0 ? 'Renews today' : `Renews in ${days} day${days === 1 ? '' : 's'}`, soon: true };
+  return { text: `Renews ${dates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(dates[0].getFullYear() !== new Date(now).getFullYear() ? { year: 'numeric' } : {}) })}`, soon: false };
+}
+
 function OriginTag({ rc, className = '' }) {
   if (!rc.producer_name && !rc.event_name && !rc.promoter_name) return null;
-  const text = [rc.promoter_name && `Referred by ${rc.promoter_name.split(' ')[0]}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
+  const text = [rc.promoter_name && `Referred by ${partnerShort(rc.promoter_name)}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${className}`} style={{ color: 'var(--qs-subtle)' }} title={[rc.event_name, rc.producer_name].filter(Boolean).join(' — ')}>
       <Link2 className="h-3 w-3" /> {text}
@@ -236,6 +257,7 @@ function InboxCard({ h, now, onOpen }) {
   const late = isOverdue(h, now);
   const first = h.lead.first_name || 'there';
   const holdText = `Hi ${first}, it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly.`;
+  const renewal = renewalOf(h.policies, now);
   return (
     <li onClick={onOpen} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <div className="flex items-baseline justify-between gap-3">
@@ -247,28 +269,36 @@ function InboxCard({ h, now, onOpen }) {
         <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
       </div>
       <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{householdLine(h)}</p>
-      <div className="mt-2 flex items-center justify-between gap-2">
+      {/* Left: price, when it renews, who sent it. Right: the actions, stacked. */}
+      <div className="mt-2 flex items-start justify-between gap-3">
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
-        </span>
-        {open
-          ? <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
-          : <StatusChip status={h.status} quiet />}
-      </div>
-      {(open && late && h.lead.phone) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name ? (
-        <div className="mt-1.5 flex items-center justify-between gap-2">
-          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-            <OriginTag rc={h.lead} />
-          </span>
-          {open && late && h.lead.phone && (
-            <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
-              className={CARD_BTN} style={inputStyle}>
-              <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text now
-            </a>
+          {renewal && (
+            <span className={`mt-1 block text-sm ${renewal.soon ? 'font-semibold text-amber-600' : ''}`} style={renewal.soon ? undefined : { color: 'var(--qs-dim)' }}>{renewal.text}</span>
           )}
+          {h.lead.promoter_name && (
+            <span className="block text-sm" style={{ color: 'var(--qs-dim)' }}>via <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{partnerShort(h.lead.promoter_name)}</span></span>
+          )}
+        </span>
+        {open ? (
+          <span className="flex shrink-0 flex-col gap-2">
+            <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
+            {late && h.lead.phone && (
+              <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
+                className={CARD_BTN} style={inputStyle}>
+                <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text now
+              </a>
+            )}
+          </span>
+        ) : <StatusChip status={h.status} quiet />}
+      </div>
+      {(h.lead.producer_name || h.lead.event_name) && (
+        <div className="mt-1.5 text-xs">
+          {/* The partner is already shown under the price. */}
+          <OriginTag rc={{ ...h.lead, promoter_name: null }} />
         </div>
-      ) : null}
+      )}
     </li>
   );
 }
