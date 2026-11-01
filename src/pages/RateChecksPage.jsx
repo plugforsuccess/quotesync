@@ -186,38 +186,6 @@ function groupHouseholds(rows) {
 const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h.newest, now) >= OVERDUE_MINUTES;
 
 // "State Farm Auto + Home" when one carrier has everything, else "State Farm auto + Progressive home".
-// Official logos for the carriers we have files for (public/logos/carriers);
-// any other carrier shows its name in the same spot until its logo is added.
-const CARRIER_LOGO = {
-  'Allstate': '/logos/carriers/allstate.jpg', 'Progressive': '/logos/carriers/progressive.svg',
-  'Liberty Mutual': '/logos/carriers/liberty-mutual.svg', 'National General': '/logos/carriers/national-general.png',
-  'Foremost': '/logos/carriers/foremost.png', 'Chubb': '/logos/carriers/chubb.svg', 'The Hartford': '/logos/carriers/the-hartford.jpg',
-};
-
-// Who they're with now: each company's logo (or name), filling the row evenly
-// (up to three across). Tapping one opens that company's policy brief.
-function CarrierMarks({ h, onPolicy }) {
-  const byCarrier = new Map();
-  h.policies.forEach(p => { const c = carrierLabel(p); if (c && !byCarrier.has(c)) byCarrier.set(c, p); });
-  if (!byCarrier.size) return null;
-  const marks = [...byCarrier.entries()];
-  return (
-    <div className="mt-3 grid grid-cols-3 gap-2">
-      {marks.slice(0, 3).map(([c, p]) => (
-        <button key={c} type="button" title={`Open the ${c} policy`} aria-label={`Open the ${c} policy`}
-          onClick={e => { e.stopPropagation(); onPolicy?.(p); }}
-          className="flex h-12 min-w-0 items-center justify-center rounded-xl px-2 transition hover:brightness-95"
-          style={{ background: 'var(--qs-elevated)' }}>
-          {CARRIER_LOGO[c]
-            ? <img src={CARRIER_LOGO[c]} alt="" className="max-h-6 w-auto max-w-full object-contain mix-blend-multiply" />
-            : <span className={`text-center font-extrabold leading-tight tracking-tight ${c.length > 9 ? 'text-[13px]' : 'text-[15px]'}`} style={{ color: 'var(--qs-bright)' }}>{c}</span>}
-        </button>
-      ))}
-      {marks.length > 3 && <span className="col-span-3 text-xs" style={{ color: 'var(--qs-subtle)' }}>+{marks.length - 3} more in the quote</span>}
-    </div>
-  );
-}
-
 // Work tabs are always in view (Partners too: partner referrals are the focus);
 // the weekly and set-up tabs sit behind More.
 const WORK_TABS = [
@@ -284,7 +252,7 @@ function TabBar({ tab, setTab }) {
 }
 
 // One household in the inbox: who, what they have, what it costs, and the next step.
-function InboxCard({ h, now, onOpen, onPartner, onPolicy }) {
+function InboxCard({ h, now, onOpen, onPartner }) {
   const open = OPEN_STATUSES.includes(h.status);
   const late = isOverdue(h, now);
   const first = h.lead.first_name || 'there';
@@ -305,7 +273,6 @@ function InboxCard({ h, now, onOpen, onPartner, onPolicy }) {
           </span>
         )}
       </p>
-      <CarrierMarks h={h} onPolicy={onPolicy} />
       {/* What they pay, and the action. */}
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="min-w-0">
@@ -516,7 +483,7 @@ export default function RateChecksPage() {
                 <>
                   {/* Phones: cards. The whole card opens the quote; Start quote says so. */}
                   <ul className="md:hidden">
-                    {households.map(h => <InboxCard key={h.key} h={h} now={now} onOpen={() => openRowFromList(h.lead)} onPolicy={(p) => openRowFromList(p)} onPartner={(id) => { setPartnerFocus(id); setTab('promoters'); window.scrollTo({ top: 0 }); }} />)}
+                    {households.map(h => <InboxCard key={h.key} h={h} now={now} onOpen={() => openRowFromList(h.lead)} onPartner={(id) => { setPartnerFocus(id); setTab('promoters'); window.scrollTo({ top: 0 }); }} />)}
                   </ul>
 
                   {/* Desktop: table */}
