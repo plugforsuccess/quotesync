@@ -181,7 +181,7 @@ export default function RateCheckPage() {
     if (!inviteCode) return;
     let cancelled = false;
     lookupInvite(inviteCode).then(data => {
-      if (cancelled) return;
+      if (cancelled || data === undefined) return; // couldn't check it: no note, the upload still carries the code
       if (!data) { setInviteExpired(true); return; }
       setInvite(data);
       setFields(f => ({ ...f, firstName: f.firstName || data.first_name || '', phone: f.phone || (data.phone ? formatPhoneInput(data.phone) : '') }));
@@ -217,7 +217,9 @@ export default function RateCheckPage() {
         const data = await submitWithRetry(() => submitRateCheck({
           prepared, firstName: f.firstName, phone: f.phone.replace(/\D/g, ''), email: f.email, zip: f.zip,
           housingSituation: f.housing, consentGivenAt: grant.consentGivenAt,
-          referralConsentGivenAt: grant.referralConsentGivenAt, inviteCode: invite ? inviteCode : null,
+          referralConsentGivenAt: grant.referralConsentGivenAt,
+          // Always the link's code: the server credits it (or ignores an expired one), so a failed lookup never loses the credit.
+          inviteCode: inviteCode || null,
         }));
         const unreadable = !data?.carrier && !data?.policy_type && data?.annual_premium == null;
         patch(id, { status: unreadable ? 'unreadable' : 'read', result: data });

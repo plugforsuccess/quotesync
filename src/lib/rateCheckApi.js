@@ -287,18 +287,25 @@ export async function squarePhoto(file, size = 400) {
 export const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(s || '').trim());
 
 /**
- * A producer's tagged link (/r/CODE): who sent it and what to pre-fill.
- * Resolves to { first_name, phone, event_name, producer_name }, or null if the
- * link is unknown or expired (the page still works, just untagged).
+ * A producer's or partner's tagged link (/r/CODE): who sent it and what to pre-fill.
+ * Resolves to the link's details, null if the link is unknown or expired, or
+ * undefined if it couldn't be checked (busy, offline): the upload still sends the
+ * code, so the server credits the link either way.
  */
 export async function lookupInvite(code) {
-  const res = await fetch(RATE_CHECK_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
-    body: JSON.stringify({ mode: 'invite_lookup', code }),
-  });
-  if (!res.ok) return null;
-  return res.json().catch(() => null);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(RATE_CHECK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY || '' },
+        body: JSON.stringify({ mode: 'invite_lookup', code }),
+      });
+      if (res.ok) return await res.json().catch(() => undefined);
+      if (res.status === 404) return null;
+    } catch { /* offline: try once more */ }
+    if (attempt === 0) await new Promise(r => setTimeout(r, 1500));
+  }
+  return undefined;
 }
 
 /** "(404) 555-1212" as the user types. */
