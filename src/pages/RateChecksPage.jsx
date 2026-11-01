@@ -186,28 +186,30 @@ function groupHouseholds(rows) {
 const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h.newest, now) >= OVERDUE_MINUTES;
 
 // "State Farm Auto + Home" when one carrier has everything, else "State Farm auto + Progressive home".
-// One line that never wraps, so every card is the same height.
-// One company: "State Farm Auto + Home". Several: "Auto, Home, Umbrella · 3 companies"
-// (lines of business first, since they decide the bundle; the drawer has each policy).
+// One chip per policy type: [Auto ×2] [Home] [Umbrella]. One company keeps its name
+// in front ("State Farm  [Auto] [Home]"); with several, the companies are in the quote.
 function HouseholdPolicies({ h }) {
-  const byCarrier = new Map();
+  const carriers = new Set();
   const lines = new Map();
   h.policies.forEach(p => {
     const t = policyTypeLabel(p.policy_type);
     if (!t) return;
-    const c = carrierLabel(p) || '';
-    if (!byCarrier.has(c)) byCarrier.set(c, new Map());
-    byCarrier.get(c).set(t, (byCarrier.get(c).get(t) || 0) + 1);
+    carriers.add(carrierLabel(p) || '');
     lines.set(t, (lines.get(t) || 0) + 1);
   });
-  const withCount = ([t, n]) => (n > 1 ? `${t} ×${n}` : t);
-  let text;
-  if (!lines.size) text = 'Policy not read yet';
-  else if (byCarrier.size === 1) {
-    const [[c, m]] = [...byCarrier.entries()];
-    text = [c, [...m.entries()].map(withCount).join(' + ')].filter(Boolean).join(' ');
-  } else text = `${[...lines.entries()].map(withCount).join(', ')} · ${byCarrier.size} companies`;
-  return <p className="truncate text-sm" style={{ color: 'var(--qs-text)' }} title={text}>{text}</p>;
+  if (!lines.size) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Policy not read yet</p>;
+  const one = carriers.size === 1 ? [...carriers][0] : null;
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-1.5">
+      {one && <span className="mr-0.5 text-sm" style={{ color: 'var(--qs-text)' }}>{one}</span>}
+      {[...lines.entries()].map(([t, n]) => (
+        <span key={t} className="rounded-full px-2 py-0.5 text-xs font-semibold"
+          style={{ background: 'var(--qs-elevated)', color: 'var(--qs-bright)', border: '1px solid var(--qs-border)' }}>
+          {t}{n > 1 ? ` ×${n}` : ''}
+        </span>
+      ))}
+    </div>
+  );
 }
 
 // Work tabs are always in view (Partners too: partner referrals are the focus);
