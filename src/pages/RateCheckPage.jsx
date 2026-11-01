@@ -821,13 +821,42 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
   const allPdf = pages.length > 0 && pages.every(pg => isPdfName(pg.file));
   const total = pages.reduce((t, pg) => t + (pg.pdfPages || 1), 0);
   const counting = pages.some(pg => isPdfName(pg.file) && pg.pdfPages === undefined);
+
+  // One downloaded PDF: a single file row, not the photo tiles.
+  if (allPdf && pages.length === 1) {
+    const pg = pages[0];
+    const name = String(pg.file?.name || '').replace(/\.pdf$/i, '') || 'Policy PDF';
+    const size = pg.file?.size ? (pg.file.size >= 1048576 ? `${(pg.file.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(pg.file.size / 1024))} KB`) : null;
+    return (
+      <li className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+          <FileText className="h-5 w-5" />
+          <span className="text-[9px] font-extrabold tracking-wide">PDF</span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-slate-900">{name}</p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Policy {n} · <span>{counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}</span>{size && ` · ${size}`}
+          </p>
+        </div>
+        <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Replace policy ${n}`}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+          <RotateCcw className="h-[18px] w-[18px]" aria-hidden="true" />
+        </button>
+        <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
+          className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </li>
+    );
+  }
   return (
     <li className={`rounded-2xl border bg-white p-3 shadow-sm ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-slate-900">Policy {n}</p>
           <p className="mt-0.5 text-sm text-slate-500">
-            {allPdf && 'PDF · '}{counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}
+            {counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}
             {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
           </p>
         </div>

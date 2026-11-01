@@ -294,15 +294,16 @@ test('a downloaded PDF counts its own pages and goes up whole', async ({ page },
 
   await page.goto('/ratecheck');
   await page.getByTestId('rc-files').setInputFiles(file);
-  await expect(page.getByText('PDF · 3 pages', { exact: true })).toBeVisible();
+  await expect(page.getByText('3 pages', { exact: true })).toBeVisible();
   await expect(page.getByText('1 added')).toBeVisible();
+  await expect(page.getByText('statefarm-auto', { exact: true })).toBeVisible();
   // The PDF is the whole policy: no "more pages?" nudge and no add-page tile.
   await expect(page.getByText('Does this policy have more pages?')).toHaveCount(0);
   await expect(page.getByRole('button', { name: /Add page/ })).toHaveCount(0);
 
   // Still counted after a reload (restored from the device draft).
   await page.reload();
-  await expect(page.getByText('PDF · 3 pages', { exact: true })).toBeVisible();
+  await expect(page.getByText('3 pages', { exact: true })).toBeVisible();
 
   await page.getByRole('button', { name: /Continue/ }).click();
   await fillContact(page);
