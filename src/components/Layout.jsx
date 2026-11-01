@@ -2,7 +2,7 @@
 // Updated: Primary/secondary nav split with hamburger menu for secondary pages
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon, Bell, LogOut } from 'lucide-react';
+import { Menu, X, Sparkles, Clock, Shield, Building2, Users, Newspaper, Search, Settings, Phone as PhoneIcon, Bell, LogOut, Pencil } from 'lucide-react';
 import { signOutAndExit } from '../lib/signOut';
 import Footer from './Footer';
 import UserMenu from './newsroom/UserMenu';
@@ -339,6 +339,9 @@ function Layout({ forcePlane = null }) {
               {/* Persona switcher — principals only, hidden if only one persona is available */}
               <PersonaSwitcher compact />
 
+              {/* Edit website — opens the public Rate Check page with the copy editor on. */}
+              {currentAgencyRole === 'principal' && <EditWebsiteButton />}
+
               {/* Checklist bell — principals only (desktop) */}
               {currentAgencyRole === 'principal' && (
                 <ChecklistBell
@@ -362,7 +365,8 @@ function Layout({ forcePlane = null }) {
 
             {/* Mobile checklist bell — principals only, visible on mobile */}
             {currentAgencyRole === 'principal' && (
-              <div className="md:hidden flex items-center">
+              <div className="md:hidden flex items-center gap-1">
+                <EditWebsiteButton />
                 <ChecklistBell
                   count={actionableCount}
                   onClick={() => setChecklistOpen(true)}
@@ -609,6 +613,15 @@ function Layout({ forcePlane = null }) {
 }
 
 // ── Checklist bell icon with badge ──────────────────────────────────────────
+function EditWebsiteButton() {
+  return (
+    <NavLink to="/?edit=1" aria-label="Edit website" title="Edit website"
+      className="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200">
+      <Pencil className="w-5 h-5" />
+    </NavLink>
+  );
+}
+
 function ChecklistBell({ count, onClick, compact = false }) {
   const badgeColor = count > 3 ? '#EF4444' : '#F59E0B';
   const iconSize = compact ? 'w-5 h-5' : 'w-5 h-5';
