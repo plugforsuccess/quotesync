@@ -15,10 +15,10 @@ import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 import {
-  AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
+  AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem,
 } from 'lucide-react';
-import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
+import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
@@ -49,7 +49,7 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // licenses: Cam's individual resident license goes under his headshot (the card
 // names him); the agency's resident license goes in the footer next to the agency name.
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
-const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
+const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', license: '209488' };
 // "Meet the Owner" carousel: the agent card first, then these in order. A story card comes
 // right after the agent card, then alternating photo / story.
 // Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
@@ -66,7 +66,7 @@ const ABOUT = [
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
   { key: 'today', title: 'My story, today', paragraphs: [
     'Family comes first for me. So I treat your household the way I’d treat mine.',
-    'Today I run Cam Wiley Insurance, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
+    'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam and family', caption: 'My family', position: '50% 35%' },
@@ -120,6 +120,8 @@ export default function RateCheckPage() {
     i.pages?.some(pg => pg.id === pageId) ? withPages(i, i.pages.map(pg => (pg.id === pageId ? { ...pg, ...change } : pg))) : i
   ))), [updateItems]);
   const checkQuality = useCallback((pageId, file) => {
+    // A downloaded PDF already holds the whole policy: count its pages for the card.
+    if (isPdfName(file)) { pdfPageCount(file).then(n => patchPage(pageId, { pdfPages: n })); return; }
     assessPhoto(file).then(q => patchPage(pageId, { quality: q }));
   }, [patchPage]);
   // Save every page of a draft policy, in order (the order is what gets sent).
@@ -434,7 +436,8 @@ export default function RateCheckPage() {
         <img src={invite.promoter_photo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white" />
       )}
       <span className="min-w-0">
-        <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this link with you</span>
+        <span className="block truncate font-bold text-[#0F2D6B]">{invite.promoter_full_name || invite.promoter_name}</span>
+        <span className="block text-xs text-slate-600">shared this with you</span>
       </span>
     </div>
   ) : invite ? (
@@ -454,7 +457,8 @@ export default function RateCheckPage() {
         </span>
       )}
       <span className="min-w-0">
-        <span className="block text-[15px] font-bold leading-tight text-white">{invite.promoter_name} shared this link with you</span>
+        <span className="block truncate text-[15px] font-bold leading-tight text-white">{invite.promoter_full_name || invite.promoter_name}</span>
+        <span className="block text-[13px] leading-snug text-blue-100">shared this with you</span>
       </span>
     </div>
   ) : invite ? (
@@ -812,49 +816,101 @@ function Thumb({ item, scanning = false, small = false }) {
 // add-page tile. Right after a photo it asks whether the policy has more pages.
 function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage, onRemovePage, onRemove, onMergeUp }) {
   const { pages } = item;
+  const [picked, setPicked] = useState(null); // the page tapped for retake / remove
+  const pickedIndex = pages.findIndex(pg => pg.id === picked);
   const bad = pages.findIndex(pg => pg.quality?.issue);
   const n = index + 1;
+  // A downloaded PDF is the whole policy already: count the pages inside it, and
+  // don't nudge for more pages.
+  const allPdf = pages.length > 0 && pages.every(pg => isPdfName(pg.file));
+  const total = pages.reduce((t, pg) => t + (pg.pdfPages || 1), 0);
+  const counting = pages.some(pg => isPdfName(pg.file) && pg.pdfPages === undefined);
+
+  // One downloaded PDF: a single file row, not the photo tiles.
+  if (allPdf && pages.length === 1) {
+    const pg = pages[0];
+    const name = String(pg.file?.name || '').replace(/\.pdf$/i, '') || 'Policy PDF';
+    const size = pg.file?.size ? (pg.file.size >= 1048576 ? `${(pg.file.size / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(pg.file.size / 1024))} KB`) : null;
+    return (
+      <li className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+          <FileText className="h-5 w-5" />
+          <span className="text-[9px] font-extrabold tracking-wide">PDF</span>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-slate-900">{name}</p>
+          <p className="mt-0.5 text-sm text-slate-500">
+            Policy {n} · <span>{counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}</span>{size && ` · ${size}`}
+          </p>
+        </div>
+        <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Replace policy ${n}`}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+          <RotateCcw className="h-[18px] w-[18px]" aria-hidden="true" />
+        </button>
+        <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
+          className="-ml-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
+          <X className="h-5 w-5" aria-hidden="true" />
+        </button>
+      </li>
+    );
+  }
   return (
     <li className={`rounded-2xl border bg-white p-3 shadow-sm ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="flex items-center gap-3">
+        <span aria-hidden="true" className="flex h-12 w-10 shrink-0 flex-col items-center justify-center gap-0.5 rounded-lg bg-slate-50 text-slate-500 ring-1 ring-slate-200">
+          <Camera className="h-5 w-5" />
+          <span className="text-[9px] font-extrabold tracking-wide">PHOTOS</span>
+        </span>
+        <div className="min-w-0 flex-1">
           <p className="font-semibold text-slate-900">Policy {n}</p>
-          <p className="mt-0.5 text-sm text-slate-500">
-            {pages.length === 1 ? '1 page' : `${pages.length} pages`}
+          <p className="mt-0.5 truncate text-sm text-slate-500">
+            {counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}
             {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
           </p>
         </div>
         <button type="button" onClick={onRemove} aria-label={`Remove policy ${n}`}
-          className="-mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500">
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100">
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
       </div>
 
+      {/* Tap a page to retake or remove it. */}
       <ul className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label={`Pages of policy ${n}`}>
-        {pages.map((pg, k) => (
-          <li key={pg.id} className="flex w-16 shrink-0 flex-col items-center">
-            <div className={`rounded-lg ${pg.quality?.issue ? 'ring-2 ring-amber-400' : ''}`}><Thumb item={pg} /></div>
-            <span className="mt-1 text-xs font-medium text-slate-600">Page {k + 1}</span>
-            <span className="flex">
-              <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Retake page ${k + 1} of policy ${n}`}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg ${pg.quality?.issue ? 'text-amber-800' : 'text-slate-500'}`}>
-                <RotateCcw className="h-4 w-4" aria-hidden="true" />
+        {pages.map((pg, k) => {
+          const on = picked === pg.id;
+          return (
+            <li key={pg.id} className="shrink-0">
+              <button type="button" onClick={() => setPicked(on ? null : pg.id)} aria-pressed={on}
+                aria-label={`Page ${k + 1} of policy ${n}${pg.quality?.issue ? ` (looks ${pg.quality.issue === 'dark' ? 'too dark' : 'blurry'})` : ''}`}
+                className={`relative block rounded-lg ${on ? 'ring-2 ring-blue-600 ring-offset-1' : pg.quality?.issue ? 'ring-2 ring-amber-400' : ''}`}>
+                <Thumb item={pg} small />
+                <span className="absolute bottom-1 left-1 rounded bg-white/90 px-1 text-[10px] font-bold leading-4 text-slate-700 shadow-sm">{isPdfName(pg.file) ? 'PDF' : k + 1}</span>
               </button>
-              <button type="button" onClick={() => onRemovePage(pg.id)} aria-label={`Remove page ${k + 1} of policy ${n}`}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500">
-                <X className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </span>
-          </li>
-        ))}
-        <li className="flex w-16 shrink-0 flex-col items-center">
+            </li>
+          );
+        })}
+        <li className="shrink-0">
           <button type="button" onClick={onAddPage} aria-label={`Add page ${pages.length + 1} to policy ${n}`}
-            className="flex h-[72px] w-14 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
-            <Plus className="h-5 w-5" aria-hidden="true" />
+            className="flex h-14 w-11 flex-col items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            <span className="text-[10px] font-bold leading-3">Page</span>
           </button>
-          <span className="mt-1 text-xs font-medium text-blue-700">Add page</span>
         </li>
       </ul>
+
+      {pickedIndex >= 0 && (
+        <div className="mt-2 flex items-center gap-2 rounded-xl bg-slate-50 p-2 pl-3 ring-1 ring-slate-200">
+          <span className="flex-1 text-sm font-semibold text-slate-700">Page {pickedIndex + 1}</span>
+          <button type="button" onClick={() => { setPicked(null); onRetakePage(picked); }} aria-label={`Retake page ${pickedIndex + 1} of policy ${n}`}
+            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-700 ring-1 ring-slate-200">
+            <RotateCcw className="h-4 w-4" aria-hidden="true" /> Retake
+          </button>
+          <button type="button" onClick={() => { setPicked(null); onRemovePage(picked); }} aria-label={`Remove page ${pickedIndex + 1} of policy ${n}`}
+            className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-red-700 ring-1 ring-slate-200">
+            <X className="h-4 w-4" aria-hidden="true" /> Remove
+          </button>
+        </div>
+      )}
 
       {onMergeUp && (
         <button type="button" onClick={onMergeUp}
@@ -1188,19 +1244,36 @@ const PROMISES = [
   ['calls', 'No call centers, ever'],
 ];
 
-// Cam beside the ask: a compact row on phones, a full card on desktop.
+// Owner and agency license, as two labelled details.
+function OwnerDetails({ className }) {
+  return (
+    <dl className={className}>
+      <div>
+        <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Owner</dt>
+        <dd className="whitespace-nowrap text-sm font-semibold text-white">{AGENT.name}</dd>
+      </div>
+      <div>
+        <dt className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Agency license</dt>
+        <dd className="text-sm font-semibold tabular-nums text-white">#{AGENCY.license}</dd>
+      </div>
+    </dl>
+  );
+}
+
+// The agency beside the ask: a compact card on phones, a full card on desktop.
 function OwnerCard() {
   return (
-    <aside aria-label={`Your agent, ${AGENT.name}`} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
-      <div className="flex items-center gap-4 lg:flex-col lg:text-center">
+    <aside aria-label={AGENCY.name} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
+      {/* Phones: the name centered across the top, then a big headshot with the rest beside it. */}
+      <p className="mb-4 whitespace-nowrap text-center text-[clamp(14px,4.4vw,17px)] font-extrabold uppercase tracking-[0.08em] lg:hidden" style={{ color: ACCENT }}>{AGENCY.name}</p>
+      <div className="flex items-center gap-3.5 lg:flex-col lg:gap-4 lg:text-center">
         <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
-          className="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-offset-2 ring-offset-[#1E3A8A] lg:h-40 lg:w-40 lg:ring-4 lg:ring-offset-4"
-          style={{ objectPosition: '50% 30%', '--tw-ring-color': ACCENT }} />
-        <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.14em]" style={{ color: ACCENT }}><T k="rc.owner.badge">Owner &amp; licensed agent</T></p>
-          <p className="mt-0.5 text-xl font-extrabold text-white lg:mt-1 lg:text-2xl">{AGENT.name}</p>
-          <p className="text-sm text-blue-100"><T k="rc.owner.line">Allstate agent · Serving all of Georgia</T></p>
-          {AGENT.license && <p className="mt-0.5 text-xs text-blue-200">GA License #: {AGENT.license}</p>}
+          className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
+          style={{ objectPosition: '50% 30%' }} />
+        <div className="min-w-0 flex-1">
+          <p className="hidden whitespace-nowrap font-extrabold uppercase lg:block lg:text-lg lg:tracking-[0.1em]" style={{ color: ACCENT }}>{AGENCY.name}</p>
+          <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-1.5 lg:text-2xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
+          <OwnerDetails className="mt-2.5 flex gap-x-5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:gap-x-8 lg:border-0 lg:pt-0" />
         </div>
       </div>
       <ul className="mt-5 hidden space-y-2.5 border-t border-white/15 pt-5 text-left lg:block">
@@ -1240,9 +1313,6 @@ function UploadCard({ onUpload, onCamera, onDropFiles }) {
         className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 px-4 py-3 font-semibold text-slate-700 active:bg-slate-50">
         <Camera className="h-5 w-5" aria-hidden="true" /> <T k="rc.photos.title">Take photos instead</T>
       </button>
-      <p className="mt-3 flex items-center justify-center gap-1.5 text-sm font-semibold text-blue-700">
-        <Paperclip className="h-4 w-4" aria-hidden="true" /> <T k="rc.multiple">Multiple policies? Upload them together.</T>
-      </p>
     </div>
   );
 }
@@ -1330,7 +1400,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <div>
             <h2 id="rc-owner" className={sectionTitle}><T k="rc.owner.heading">Meet the Owner</T></h2>
             <p className="mt-3 text-lg leading-relaxed text-slate-600">
-              <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Insurance, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
+              <T k="rc.owner.intro">I’m Cam Wiley. I run Cam Wiley Agency, an Allstate agency serving families all across Georgia. Family comes first for me, so I treat your household the way I’d treat mine.</T>
             </p>
           </div>
           <div className="min-w-0"><MeetCam /></div>

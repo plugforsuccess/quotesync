@@ -292,7 +292,7 @@ function W9Modal({ title, onClose, children }) {
   );
 }
 
-// Their photo next to "Javon shared this link with you" on their link's landing page.
+// Their photo next to "Javon Yarbrough shared this with you" on their link's landing page.
 function PhotoSection({ token, name, photoUrl, onChange }) {
   const input = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -324,7 +324,7 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
         </button>
         <p className="text-sm leading-relaxed text-slate-600">
           {photoUrl && !preview
-            ? 'People who open your link see your photo next to “' + name + ' shared this link with you”'
+            ? 'People who open your link see your photo next to “' + name + ' shared this with you”'
             : 'Add a photo so people who open your link know it came from you.'}
         </p>
       </div>
@@ -461,7 +461,7 @@ function Earnings({ token, data, onChange }) {
 
       {data.w9?.on_file && <W9Section token={token} data={data} onChange={onChange} />}
 
-      <PhotoSection token={token} name={data.first_name} photoUrl={data.photo_url} onChange={onChange} />
+      <PhotoSection token={token} name={data.name || data.first_name} photoUrl={data.photo_url} onChange={onChange} />
 
       {SHOW_PAY_SCHEDULE && <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">How you&apos;re paid · per household</h2>

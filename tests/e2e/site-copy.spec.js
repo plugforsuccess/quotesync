@@ -121,3 +121,20 @@ test('logged out, ?edit=1 explains how to edit instead of doing nothing', async 
   await expect(page.getByText(/To edit the website,/)).toBeVisible();
   await expect(page.getByRole('textbox', { name: /Edit text/ })).toHaveCount(0);
 });
+
+test('typing a space in a button label edits the text and does not press the button', async ({ page }) => {
+  const writes = await mock(page, { loggedIn: true });
+  await page.goto('/?edit=1');
+  let pickers = 0;
+  page.on('filechooser', () => { pickers += 1; });
+  const label = page.getByRole('textbox', { name: /Edit text: Upload my policy/ }).first();
+  await label.click();
+  await page.keyboard.press('ControlOrMeta+a');
+  await page.keyboard.type('Upload my 2 policies');
+  await expect(label).toHaveText('Upload my 2 policies');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => writes.length).toBe(1);
+  expect(writes[0].body).toMatchObject({ key: 'rc.upload.title', value: 'Upload my 2 policies' });
+  await page.waitForTimeout(300);
+  expect(pickers).toBe(0);
+});

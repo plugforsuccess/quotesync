@@ -13,7 +13,7 @@ const ACCENT = '#39FF88';
 const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)';
 
 // The agency's display name and license, as shown in every consumer page's footer.
-const AGENCY = { name: 'Cam Wiley Insurance', license: '209488' };
+const AGENCY = { name: 'Cam Wiley Agency, Inc.', license: '209488' };
 
 // The logo goes home (the Rate Check page); the menu lists the other pages.
 const PAGES = [
