@@ -308,7 +308,7 @@ const portalSms = (p) => {
     '',
     '1. Tap the link. There\'s no username or password: the link is your login, so don\'t share it.',
     '2. Tap "Sign my W-9" and add your Social Security number (about 30 seconds) so we can pay you.',
-    '3. Tap "Copy link" to get your referral link, and send it to friends, family and people in your network. Let them know you get a referral fee.',
+    '3. Tap "Copy link" to share your referral link with friends, family and people in your network. Let them know you get a referral fee.',
     '',
     'Save the page to check what you\'ve earned anytime. Questions? Just reply here.',
   ].join('\n');
