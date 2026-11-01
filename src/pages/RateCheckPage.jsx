@@ -435,7 +435,7 @@ export default function RateCheckPage() {
       )}
       <span className="min-w-0">
         <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this with you</span>
-        <span className="block text-xs text-slate-600">{invite.promoter_name} is paid a referral fee for sharing.</span>
+        <span className="block text-xs text-slate-600">{invite.promoter_name} earns a referral fee if you check your rate.</span>
       </span>
     </div>
   ) : invite ? (
@@ -456,7 +456,7 @@ export default function RateCheckPage() {
       )}
       <span className="min-w-0">
         <span className="block text-[15px] font-bold leading-tight text-white">{invite.promoter_name} shared this with you</span>
-        <span className="block text-xs leading-snug text-blue-100">{invite.promoter_name} is paid a referral fee for sharing.</span>
+        <span className="block text-xs leading-snug text-blue-100">{invite.promoter_name} earns a referral fee if you check your rate.</span>
       </span>
     </div>
   ) : invite ? (
