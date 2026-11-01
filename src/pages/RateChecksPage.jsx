@@ -323,6 +323,8 @@ function InboxCard({ h, now, onOpen, onPartner, onPolicy }) {
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</span>
+          {/* Two or more kinds of policy: a chance to win them as an Allstate bundle. */}
+          {new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1 && <span className="block text-xs font-semibold text-emerald-700">Bundle opportunity</span>}
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
         </span>
         {open ? (
