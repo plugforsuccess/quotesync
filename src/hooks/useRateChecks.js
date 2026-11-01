@@ -630,7 +630,10 @@ export const useSetPromoterPhoto = () => {
         if (error) throw error;
         return;
       }
-      const blob = await (await fetch(dataUrl)).blob();
+      // Decoded here, not with fetch(dataUrl): the site's CSP (connect-src) blocks data:
+      // URLs, which Safari reports as "Load failed".
+      const bin = atob(dataUrl.split(',')[1] || '');
+      const blob = new Blob([Uint8Array.from(bin, (c) => c.charCodeAt(0))], { type: 'image/jpeg' });
       const { error: upErr } = await bucket.upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
       if (upErr) throw upErr;
       const { data: { publicUrl } } = bucket.getPublicUrl(path);

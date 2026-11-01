@@ -435,7 +435,7 @@ export default function RateCheckPage() {
       )}
       <span className="min-w-0">
         <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this with you</span>
-        <span className="block text-xs text-slate-600">{invite.promoter_name} gets a referral fee for sharing.</span>
+        <span className="block text-xs text-slate-600">A referral fee is paid if you check your rate.</span>
       </span>
     </div>
   ) : invite ? (
@@ -446,17 +446,17 @@ export default function RateCheckPage() {
   ) : null;
   // The same note on the landing page's blue hero.
   const whoSentHero = invite?.promoter_name ? (
-    <div className="mb-6 flex items-center gap-3 rounded-2xl bg-white/10 p-3 pr-4 ring-1 ring-white/20 backdrop-blur-sm lg:max-w-md">
+    <div className="mb-6 flex items-center gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-4 ring-1 ring-white/20 backdrop-blur-sm lg:max-w-md">
       {invite.promoter_photo_url ? (
-        <img src={invite.promoter_photo_url} alt="" className="h-14 w-14 shrink-0 rounded-full object-cover ring-2" style={{ '--tw-ring-color': ACCENT }} />
+        <img src={invite.promoter_photo_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover ring-2" style={{ '--tw-ring-color': ACCENT }} />
       ) : (
-        <span aria-hidden="true" className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-lg font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
+        <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
           {invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()}
         </span>
       )}
       <span className="min-w-0">
-        <span className="block text-[17px] font-bold text-white">{invite.promoter_name} shared this with you</span>
-        <span className="block text-xs text-blue-100">{invite.promoter_name} gets a referral fee for sharing.</span>
+        <span className="block text-[15px] font-bold leading-tight text-white">{invite.promoter_name} shared this with you</span>
+        <span className="block text-xs leading-snug text-blue-100">A referral fee is paid if you check your rate.</span>
       </span>
     </div>
   ) : invite ? (
@@ -1268,8 +1268,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
             <div>
               {note}
-              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="rc.eyebrow">Free rate check · Georgia</T></p>
-              <h1 className="mt-3 text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
+              <h1 className="text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
                 <T k="rc.headline">Get a **second opinion** on your insurance.</T>
               </h1>
               <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
