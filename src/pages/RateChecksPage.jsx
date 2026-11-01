@@ -131,6 +131,16 @@ function renewalOf(policies, now) {
   return { text: `Renews ${dates[0].toLocaleDateString('en-US', { month: 'short', day: 'numeric', ...(dates[0].getFullYear() !== new Date(now).getFullYear() ? { year: 'numeric' } : {}) })}`, soon: false };
 }
 
+// What a producer needs before quoting: cars and drivers on the auto policy
+// (or the ZIP when there's no auto), short enough to stay on one line.
+function quoteFacts(h) {
+  const auto = h.policies.find(p => p.policy_type === 'auto' && (p.vehicle_count || p.driver_count));
+  const n = (v, one, many) => (v ? `${v} ${v === 1 ? one : many}` : null);
+  if (auto) return [n(auto.vehicle_count, 'car', 'cars'), n(auto.driver_count, 'driver', 'drivers')].filter(Boolean).join(' · ');
+  const zip = h.lead.zip || h.policies.find(p => p.zip)?.zip;
+  return zip ? `ZIP ${zip}` : null;
+}
+
 function OriginTag({ rc, className = '' }) {
   if (!rc.producer_name && !rc.event_name && !rc.promoter_name) return null;
   const text = [rc.promoter_name && `Referred by ${partnerShort(rc.promoter_name)}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
@@ -258,6 +268,7 @@ function InboxCard({ h, now, onOpen }) {
   const first = h.lead.first_name || 'there';
   const holdText = `Hi ${first}, it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly.`;
   const renewal = renewalOf(h.policies, now);
+  const facts = quoteFacts(h);
   return (
     <li onClick={onOpen} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
       <div className="flex items-baseline justify-between gap-3">
@@ -274,8 +285,9 @@ function InboxCard({ h, now, onOpen }) {
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
+          {facts && <span className="mt-1 block whitespace-nowrap text-sm" style={{ color: 'var(--qs-dim)' }}>{facts}</span>}
           {renewal && (
-            <span className={`mt-1 block text-sm ${renewal.soon ? 'font-semibold text-amber-600' : ''}`} style={renewal.soon ? undefined : { color: 'var(--qs-dim)' }}>{renewal.text}</span>
+            <span className={`${facts ? '' : 'mt-1 '}block text-sm ${renewal.soon ? 'font-semibold text-amber-600' : ''}`} style={renewal.soon ? undefined : { color: 'var(--qs-dim)' }}>{renewal.text}</span>
           )}
           {h.lead.promoter_name && (
             <span className="block text-sm" style={{ color: 'var(--qs-dim)' }}>via <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{partnerShort(h.lead.promoter_name)}</span></span>
