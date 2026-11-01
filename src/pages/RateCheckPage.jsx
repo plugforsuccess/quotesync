@@ -1268,8 +1268,7 @@ function Landing({ note, onUpload, onCamera, onDropFiles }) {
           <div className="grid gap-8 pb-14 pt-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:gap-16 lg:pb-24 lg:pt-16">
             <div>
               {note}
-              <p className="text-xs font-bold uppercase tracking-[0.16em]" style={{ color: ACCENT }}><T k="rc.eyebrow">Free rate check · Georgia</T></p>
-              <h1 className="mt-3 text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
+              <h1 className="text-[38px] font-extrabold leading-[1.05] tracking-tight lg:text-[60px] [&_b]:font-extrabold [&_b]:text-[#39FF88]">
                 <T k="rc.headline">Get a **second opinion** on your insurance.</T>
               </h1>
               <p className="mt-4 max-w-xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">

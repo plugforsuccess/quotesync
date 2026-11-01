@@ -50,17 +50,17 @@ test('a principal edits a line in place and it saves', async ({ page }) => {
   const writes = await mock(page, { loggedIn: true });
   await page.goto('/');
   await page.getByRole('button', { name: 'Edit this page' }).click();
-  const eyebrow = page.getByRole('textbox', { name: /Edit text: Free rate check/ });
+  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
   await eyebrow.click();
   await page.keyboard.press('ControlOrMeta+a');
-  await page.keyboard.type('Free rate check · Statewide');
+  await page.keyboard.type('Products we cover');
   await page.keyboard.press('Enter');
   await expect.poll(() => writes.length).toBe(1);
   expect(writes[0].method).toBe('POST');
-  expect(writes[0].body).toMatchObject({ key: 'rc.eyebrow', value: 'Free rate check · Statewide' });
+  expect(writes[0].body).toMatchObject({ key: 'rc.products.heading', value: 'Products we cover' });
 
   await page.getByRole('button', { name: 'Done editing' }).click();
-  await expect(page.getByText('Free rate check · Statewide')).toBeVisible();
+  await expect(page.getByText('Products we cover')).toBeVisible();
   await expect(page.getByRole('textbox', { name: /Edit text/ })).toHaveCount(0);
 });
 
@@ -68,7 +68,7 @@ test('edits confirm with "Saved"; pasted text loses its formatting; overlong lin
   const writes = await mock(page, { loggedIn: true });
   await page.goto('/?edit=1');
   await expect(page.getByRole('button', { name: 'Done editing' })).toBeVisible(); // ?edit=1 turns editing on
-  const eyebrow = page.getByRole('textbox', { name: /Edit text: Free rate check/ });
+  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
 
   // Paste rich HTML: only its text goes in.
   await eyebrow.click();
@@ -82,7 +82,7 @@ test('edits confirm with "Saved"; pasted text loses its formatting; overlong lin
   await expect(eyebrow.locator('b, a, span')).toHaveCount(0);
   await page.keyboard.press('Enter');
   await expect.poll(() => writes.length).toBe(1);
-  expect(writes[0].body).toMatchObject({ key: 'rc.eyebrow', value: 'Pasted text' });
+  expect(writes[0].body).toMatchObject({ key: 'rc.products.heading', value: 'Pasted text' });
   await expect(page.getByText('Saved. It’s live.')).toBeVisible();
 
   // Far too long for this line: an explanation, no save, and Esc puts it back.
@@ -100,10 +100,10 @@ test('edits confirm with "Saved"; pasted text loses its formatting; overlong lin
 test('a failed save says why in plain words', async ({ page }) => {
   await mock(page, { loggedIn: true, failWrites: true });
   await page.goto('/?edit=1');
-  const eyebrow = page.getByRole('textbox', { name: /Edit text: Free rate check/ });
+  const eyebrow = page.getByRole('textbox', { name: /Edit text: Products we insure/ });
   await eyebrow.click();
   await page.keyboard.press('ControlOrMeta+a');
-  await page.keyboard.type('Free rate check · Statewide');
+  await page.keyboard.type('Products we cover');
   await page.keyboard.press('Enter');
   await expect(page.getByRole('alert')).toHaveText('Your login expired. Log in again, then try that edit again.');
 });
