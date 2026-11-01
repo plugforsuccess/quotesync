@@ -194,42 +194,55 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               <Stat label="Cost per win" value={dollars(s.costPerWin)} />
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => setOpen(expanded ? null : p.id)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
-                {expanded ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
-                {monthRows.length ? `${monthRows.length} ${monthRows.length === 1 ? 'household' : 'households'} in ${monthLabel(month)}` : `Nothing in ${monthLabel(month)}`}
-              </button>
-              {canEdit && (
-                <span className="ml-auto flex flex-wrap gap-2">
-                  {paid ? (
-                    <button type="button" disabled={recordPayout.isPending}
-                      onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, months: [{ period: monthStart(month) }], userId, remove: true })}
-                      className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}>Mark unpaid</button>
-                  ) : plan.amount > 0 && !plan.underMinimum && !p.w9_received_at ? (
-                    <span className="self-center text-xs font-semibold" style={{ color: 'var(--qs-warning)' }}>W-9 needed before paying {dollars(plan.amount)}</span>
-                  ) : plan.amount > 0 && !plan.underMinimum ? (
-                    <button type="button" disabled={recordPayout.isPending}
-                      onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, userId,
-                        months: plan.months.map(m => ({ period: monthStart(m.month), households: m.households, amount: m.amount })) })}
-                      className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
-                      Mark {dollars(plan.amount)} paid{plan.carried ? ` (${plan.months.length} months)` : ''}
-                    </button>
-                  ) : plan.underMinimum ? (
-                    <span className="self-center text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(MIN_PAYOUT)} · carries over</span>
-                  ) : null}
-                  {p.w9_pdf_path ? (
-                    <button type="button" onClick={() => partnerW9Url(p.w9_pdf_path).then(url => window.open(url, '_blank', 'noopener')).catch(err => window.alert(err.message))}
-                      className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>Open W-9</button>
-                  ) : (
-                    <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}
-                      className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.w9_received_at ? 'Clear W-9' : 'Paper W-9 received'}</button>
-                  )}
-                  <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
-                  <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.active ? 'Pause link' : 'Turn link on'}</button>
-                </span>
+            {/* This month's households (tap to list them), and the payout action when one is due. */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              {monthRows.length ? (
+                <button type="button" onClick={() => setOpen(expanded ? null : p.id)} aria-expanded={expanded}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
+                  {expanded ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
+                  {monthRows.length} {monthRows.length === 1 ? 'household' : 'households'} in {monthLabel(month)}
+                </button>
+              ) : (
+                <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No households in {monthLabel(month)} yet.</span>
               )}
+              {canEdit && (paid ? (
+                <button type="button" disabled={recordPayout.isPending}
+                  onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, months: [{ period: monthStart(month) }], userId, remove: true })}
+                  className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}>Mark unpaid</button>
+              ) : plan.amount > 0 && !plan.underMinimum && !p.w9_received_at ? (
+                <span className="text-xs font-semibold" style={{ color: 'var(--qs-warning)' }}>W-9 needed before paying {dollars(plan.amount)}</span>
+              ) : plan.amount > 0 && !plan.underMinimum ? (
+                <button type="button" disabled={recordPayout.isPending}
+                  onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, userId,
+                    months: plan.months.map(m => ({ period: monthStart(m.month), households: m.households, amount: m.amount })) })}
+                  className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
+                  Mark {dollars(plan.amount)} paid{plan.carried ? ` (${plan.months.length} months)` : ''}
+                </button>
+              ) : plan.underMinimum ? (
+                <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(MIN_PAYOUT)} · carries over</span>
+              ) : null)}
             </div>
+
+            {/* Partner settings: what each one means, and one action each. */}
+            {canEdit && (
+              <dl className="mt-4 divide-y overflow-hidden rounded-xl" style={{ border: '1px solid var(--qs-border)', borderColor: 'var(--qs-border)' }}>
+                <SettingRow label="W-9"
+                  value={p.w9_received_at
+                    ? `On file${p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ' (paper copy)'}`
+                    : `Needed before the first payment. ${p.name.split(' ')[0]} can sign it in the portal.`}
+                  tone={p.w9_received_at ? 'ok' : 'warn'}
+                  action={p.w9_pdf_path
+                    ? <SettingButton onClick={() => partnerW9Url(p.w9_pdf_path).then(url => window.open(url, '_blank', 'noopener')).catch(err => window.alert(err.message))}>Open</SettingButton>
+                    : <SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}>
+                        {p.w9_received_at ? 'Clear' : 'Got paper W-9'}
+                      </SettingButton>} />
+                <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
+                <SettingRow label="Share link"
+                  value={p.active ? 'On. New scans from the link count toward pay.' : 'Paused. The link doesn\u2019t take new scans.'}
+                  tone={p.active ? 'ok' : 'warn'}
+                  action={<SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}>{p.active ? 'Pause' : 'Turn on'}</SettingButton>} />
+              </dl>
+            )}
 
             {expanded && monthRows.length > 0 && (
               <ul className="mt-3 overflow-hidden rounded-lg" style={{ border: '1px solid var(--qs-border)' }}>
@@ -325,24 +338,42 @@ function LinkRow({ label, url, copyLabel, muted = false }) {
   );
 }
 
-// Most households paid per month; blank means no cap.
+// One labeled setting on a partner's card: what it is, where it stands, one action.
+function SettingRow({ label, value, tone, action, children }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderColor: 'var(--qs-border)' }}>
+      <div className="min-w-0">
+        <dt className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{label}</dt>
+        <dd className="text-xs leading-snug" style={{ color: tone === 'warn' ? 'var(--qs-warning)' : 'var(--qs-subtle)' }}>{value}</dd>
+        {children}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+function SettingButton({ onClick, children }) {
+  return (
+    <button type="button" onClick={onClick} className="min-h-[36px] rounded-lg px-3 text-sm font-semibold text-primary-600" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+      {children}
+    </button>
+  );
+}
+
+// Most households paid per month; blank means no limit.
 function CapControl({ value, onSave }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
-  if (!editing) {
-    return (
-      <button type="button" onClick={() => { setDraft(value ?? ''); setEditing(true); }} className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>
-        {value ? `Cap ${value}/month` : 'No cap'}
-      </button>
-    );
-  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm" style={inputStyle}>
-      Cap
-      <input inputMode="numeric" value={draft} onChange={e => setDraft(e.target.value.replace(/\D/g, '').slice(0, 4))} aria-label="Monthly cap"
-        className="w-14 rounded px-1.5 py-0.5 text-right tabular-nums" style={inputStyle} placeholder="none" />
-      <button type="button" onClick={() => { onSave(draft ? Number(draft) : null); setEditing(false); }} className="font-semibold text-primary-600">Save</button>
-    </span>
+    <SettingRow label="Monthly limit"
+      value={value ? `Pays up to ${value} households a month; the rest are logged but not paid.` : 'No limit. Every qualified household is paid.'}
+      action={editing ? (
+        <span className="inline-flex items-center gap-1.5">
+          <input inputMode="numeric" value={draft} onChange={e => setDraft(e.target.value.replace(/\D/g, '').slice(0, 4))} aria-label="Households paid per month"
+            className="h-9 w-16 rounded-lg px-2 text-right text-sm tabular-nums" style={inputStyle} placeholder="none" autoFocus />
+          <SettingButton onClick={() => { onSave(draft ? Number(draft) : null); setEditing(false); }}>Save</SettingButton>
+        </span>
+      ) : <SettingButton onClick={() => { setDraft(value ?? ''); setEditing(true); }}>{value ? 'Change' : 'Set limit'}</SettingButton>} />
   );
 }
 
