@@ -120,29 +120,37 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       ) : (
         /* This month, across partners */
         <div className="dark-card" style={{ padding: 16 }}>
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <select value={month} onChange={e => setMonth(e.target.value)} className="dark-select -ml-1 border-0 bg-transparent text-base font-bold"
-              style={{ width: 'auto', color: 'var(--qs-bright)', background: 'transparent' }} aria-label="Month">
-              {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
-            </select>
+          <div className="flex items-center justify-between gap-3">
+            <label className="relative inline-flex items-center">
+              <span className="sr-only">Month</span>
+              <select value={month} onChange={e => setMonth(e.target.value)}
+                className="h-9 appearance-none rounded-full py-0 pl-3.5 pr-9 text-sm font-semibold"
+                style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', color: 'var(--qs-bright)' }}>
+                {months.map(m => <option key={m} value={m}>{monthLabel(m)}</option>)}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
+            </label>
             {canEdit && (
-              <button type="button" onClick={() => setAdding(a => !a)} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
+              <button type="button" onClick={() => setAdding(a => !a)} aria-expanded={adding}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
                 <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
               </button>
             )}
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            <Stat label="Partners" value={promoters.filter(p => p.active).length} />
-            <Stat label="Households" value={monthHouseholds} />
-            <Stat label="Owed" value={dollars(monthOwed)} tone="var(--qs-warning)" />
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
-            <button type="button" onClick={exportYear} disabled={!Object.keys(paidThisYear).length}
-              className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg px-3 text-sm font-medium disabled:opacity-50" style={inputStyle}>
-              <Download className="h-4 w-4" aria-hidden="true" /> Export {year} for 1099s
+          <dl className="mt-4 grid grid-cols-3 divide-x overflow-hidden rounded-xl" style={{ background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)' }}>
+            {[['Partners', promoters.filter(p => p.active).length], ['Households', monthHouseholds], ['Owed', dollars(monthOwed)]].map(([k, v]) => (
+              <div key={k} className="px-3 py-3 text-center" style={{ borderColor: 'var(--qs-border)' }}>
+                <dt className="text-[11px] font-semibold uppercase tracking-[0.08em]" style={{ color: 'var(--qs-subtle)' }}>{k}</dt>
+                <dd className="mt-0.5 text-xl font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{v}</dd>
+              </div>
+            ))}
+          </dl>
+          {Object.keys(paidThisYear).length > 0 && (
+            <button type="button" onClick={exportYear} title={`What each partner was paid in ${year}, by payment date`}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 hover:underline">
+              <Download className="h-4 w-4" aria-hidden="true" /> Export {year} payments for 1099s
             </button>
-            <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>{Object.keys(paidThisYear).length ? `What each partner was paid in ${year}, by payment date` : `Available once a partner is paid in ${year}`}</span>
-          </div>
+          )}
           {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
         </div>
       )}
