@@ -118,7 +118,7 @@ test('$50 minimum: small months carry over into the next payout', () => {
   ], schedule, NOW);
   // Paying on Nov 25: August, September and October are all past their pay day.
   const NOV25 = new Date('2026-11-25T15:00:00Z').getTime();
-  assert.deepEqual(payoutPlan(hh, [], '2026-08', 50, NOV25), { months: [{ month: '2026-08', households: 1, amount: 2 }], amount: 2, carried: 0, underMinimum: true, upcoming: 0, upcomingPayDay: null });
+  assert.deepEqual(payoutPlan(hh, [], '2026-08', 50, NOV25), { months: [{ month: '2026-08', households: 1, amount: 2 }], amount: 2, carried: 0, underMinimum: true, upcoming: 0, upcomingPayDay: null, later: [] });
   assert.deepEqual(payoutPlan(hh, [], '2026-09', 50, NOV25).amount, 12);
   const oct = payoutPlan(hh, [], '2026-10', 50, NOV25);
   assert.deepEqual([oct.amount, oct.carried, oct.underMinimum, oct.months.length], [82, 12, false, 3]);

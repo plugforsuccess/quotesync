@@ -443,9 +443,9 @@ function Earnings({ token, data, onChange }) {
       {months.map(m => (
         <section key={m.month} className="mt-5">
           <div className="flex items-baseline justify-between">
-            <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)}</h2>
+            <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} activity</h2>
             <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? `${money(m.earned)} · ${m.pay_day && todayKey() < m.pay_day ? `paid ${shortDay(m.pay_day)}` : 'not paid yet'}` : ''}
+              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? `${money(m.earned)} · ${m.pay_day && todayKey() < m.pay_day ? `pays ${shortDay(m.pay_day)}` : 'not paid yet'}` : ''}
             </span>
           </div>
           {m.rows.length ? (

@@ -176,6 +176,7 @@ test('pay day, households still on the way, and a paused link', async ({ page })
   }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText(/Your link is paused/)).toBeVisible();
-  await expect(page.getByText(/^\$45 · paid \w{3} 21$/)).toBeVisible();
+  await expect(page.getByText(/^\$45 · pays \w{3} 21$/)).toBeVisible();
+  await expect(page.getByRole('heading', { name: /^[A-Z][a-z]+ \d{4} activity$/ })).toBeVisible();
   await expect(page.getByText('+ 2 more households on the way: they count once they reply to set up a call about their quote.')).toBeVisible();
 });

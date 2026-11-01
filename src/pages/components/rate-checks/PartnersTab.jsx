@@ -20,7 +20,7 @@ import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
   TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, rulesFrom, households, partnerSummary, applyCap,
-  monthsWithActivity, monthLabel, monthStart, currentMonth, payoutPlan, paidInYear, shortDate, PAY_DAY,
+  monthsWithActivity, monthLabel, monthName, monthStart, currentMonth, payoutPlan, paidInYear, shortDate, PAY_DAY,
 } from './partnerPay';
 
 const pct = (n) => (n == null ? '—' : `${Math.round(n * 100)}%`);
@@ -203,7 +203,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                   s.month.overCap > 0 && `${s.month.overCap} over the monthly cap`,
                   !paid && plan.carried > 0 && `includes ${dollars(plan.carried)} carried from ${plan.months.filter(m => m.month !== month).map(m => monthLabel(m.month).split(' ')[0]).join(', ')}`,
                   !paid && plan.underMinimum && 'carries to next month',
-                  !paid && plan.amount > 0 && plan.upcoming > 0 && `${dollars(plan.upcoming)} more pays ${shortDate(plan.upcomingPayDay)}`,
+                  !paid && plan.amount > 0 && plan.upcoming > 0 && plan.later.map(m => `${monthName(m.month)} activity ${dollars(m.amount)} · pays ${shortDate(m.payDay)}`).join(' · '),
                 ].filter(Boolean).join(' · ')}
               </p>
             )}
@@ -235,13 +235,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                   onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, userId,
                     months: plan.months.map(m => ({ period: monthStart(m.month), households: m.households, amount: m.amount })) })}
                   className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
-                  Mark {dollars(plan.amount)} paid ({plan.months.map(m => monthLabel(m.month).split(' ')[0]).join(', ')})
+                  Mark {dollars(plan.amount)} paid ({plan.months.map(m => monthName(m.month)).join(', ')} activity)
                 </button>
               ) : plan.underMinimum ? (
                 <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(rules.minPayout)} · carries over</span>
               ) : plan.upcoming > 0 ? (
                 <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                  {dollars(plan.upcoming)} pays {shortDate(plan.upcomingPayDay)}{!p.w9_received_at ? ' · W-9 needed first' : ''}
+                  {plan.later.map(m => `${monthName(m.month)} activity ${dollars(m.amount)} · pays ${shortDate(m.payDay)}`).join(' · ')}{!p.w9_received_at ? ' · W-9 needed first' : ''}
                 </span>
               ) : null)}
             </div>
@@ -607,7 +607,7 @@ function PayoutRules({ agencyId, userId, rules, canEdit }) {
         <li>A household is one phone number, address or policy, paid once, in the month its first page arrives.</li>
         <li>Unreadable pages, repeats, current Allstate policies and thrown-out scans never count.</li>
         <li>Pay is on what the household sends, never on what it buys.</li>
-        <li>Each month is paid on the {PAY_DAY}st of the following month (October&apos;s households on November {PAY_DAY}).</li>
+        <li>Each month&apos;s activity is paid on the {PAY_DAY}st of the following month: October activity pays November {PAY_DAY}, November activity pays December {PAY_DAY}.</li>
       </ul>
       {draft && (
         <div className="mt-3 flex justify-end gap-2">

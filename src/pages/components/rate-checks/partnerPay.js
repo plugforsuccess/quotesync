@@ -106,6 +106,8 @@ export const today = (now = Date.now()) => new Date(now).toLocaleDateString('en-
 export const isDue = (key, now = Date.now()) => today(now) >= payDay(key);
 /** "2026-11-21" → "Nov 21" */
 export const shortDate = (ymd) => new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+/** "2026-10" → "October" (the month's name, for "October activity") */
+export const monthName = (key) => monthLabel(key).split(' ')[0];
 /** "2026-10" → "October 2026" */
 export const monthLabel = (key) => {
   const [y, m] = key.split('-').map(Number);
@@ -228,7 +230,8 @@ export function partnerSummary(hh, month) {
  * Returns {
  *   months: [{ month, households, amount }]  due now (record these when paying),
  *   amount, carried (the part from months before `month`), underMinimum (under the
- *   minimum: carries to the next pay day), upcoming (owed, not due yet), upcomingPayDay
+ *   minimum: carries to the next pay day), upcoming (owed, not due yet), upcomingPayDay,
+ *   later: [{ month, households, amount, payDay }] (the not-yet-due months)
  * }.
  */
 export function payoutPlan(hh, payouts, month, minPayout = MIN_PAYOUT, now = Date.now()) {
@@ -249,6 +252,8 @@ export function payoutPlan(hh, payouts, month, minPayout = MIN_PAYOUT, now = Dat
     underMinimum: amount > 0 && amount < minPayout,
     upcoming: later.reduce((t, m) => t + m.amount, 0),
     upcomingPayDay: later.length ? payDay(later[0].month) : null,
+    // Each not-yet-due month on its own: "November activity · $45 · pays Dec 21".
+    later: later.map(m => ({ ...m, payDay: payDay(m.month) })),
   };
 }
 
