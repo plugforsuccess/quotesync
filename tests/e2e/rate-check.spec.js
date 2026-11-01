@@ -278,3 +278,40 @@ test('a policy with several pages goes up as one PDF, and asks about more pages'
   const { PDFDocument } = await import('pdf-lib');
   expect((await PDFDocument.load(pdf)).getPageCount()).toBe(2);
 });
+
+test('a downloaded PDF counts its own pages and goes up whole', async ({ page }, testInfo) => {
+  const { PDFDocument } = await import('pdf-lib');
+  const doc = await PDFDocument.create();
+  for (let i = 0; i < 3; i++) doc.addPage([612, 792]).drawText(`State Farm auto, page ${i + 1}`, { x: 50, y: 700 });
+  const file = testInfo.outputPath('statefarm-auto.pdf');
+  fs.writeFileSync(file, await doc.save());
+  const posts = [];
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    posts.push(route.request().postDataJSON());
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ status: 'received', rate_check_id: 't1', carrier: 'State Farm', policy_type: 'auto', annual_premium: 1560 }) });
+  });
+
+  await page.goto('/ratecheck');
+  await page.getByTestId('rc-files').setInputFiles(file);
+  await expect(page.getByText('PDF · 3 pages', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 added')).toBeVisible();
+  // The PDF is the whole policy: no "more pages?" nudge and no add-page tile.
+  await expect(page.getByText('Does this policy have more pages?')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: /Add page/ })).toHaveCount(0);
+
+  // Still counted after a reload (restored from the device draft).
+  await page.reload();
+  await expect(page.getByText('PDF · 3 pages', { exact: true })).toBeVisible();
+
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await fillContact(page);
+  await page.getByRole('checkbox').nth(0).check();
+  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
+
+  expect(posts).toHaveLength(1);
+  expect(posts[0].media_type).toBe('application/pdf');
+  const sent = await PDFDocument.load(Buffer.from(posts[0].image_base64, 'base64'));
+  expect(sent.getPageCount()).toBe(3);
+});

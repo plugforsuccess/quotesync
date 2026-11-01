@@ -110,6 +110,17 @@ function bytesToBase64(bytes) {
   return btoa(bin);
 }
 
+/** How many pages a PDF holds (null if it can't be opened). Read on the device, nothing is sent. */
+export async function pdfPageCount(file) {
+  try {
+    const { PDFDocument } = await import('pdf-lib');
+    const doc = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true, updateMetadata: false });
+    return doc.getPageCount();
+  } catch {
+    return null;
+  }
+}
+
 /**
  * One policy can be several pages (an auto dec page often runs 2–4). One page goes
  * up as before; several are combined into a single PDF, in order, so the scanner

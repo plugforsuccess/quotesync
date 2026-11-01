@@ -18,7 +18,7 @@ import {
   AlertTriangle, Camera, Check, ChevronDown, ChevronLeft, FileText, MessageSquare, Loader2, Lock, Paperclip, Plus, RotateCcw, ShieldCheck, Sparkles, Upload, X,
   Car, House, Building2, Sofa, KeyRound, Umbrella, Motorbike, Sailboat, Caravan, HeartPulse, Briefcase, Gem,
 } from 'lucide-react';
-import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill } from '../lib/rateCheckApi';
+import { preparePolicy, submitRateCheck, formatPhoneInput, lookupInvite, sendOtp, verifyOtp, isEmail, HOUSING_OPTIONS, takeScannerPrefill, pdfPageCount } from '../lib/rateCheckApi';
 import { assessPhoto } from '../lib/photoQuality';
 import {
   saveDraftFields, saveDraftPhoto, removeDraftPhoto, loadDraft, clearDraft, saveSession, loadSession, clearSession,
@@ -120,6 +120,8 @@ export default function RateCheckPage() {
     i.pages?.some(pg => pg.id === pageId) ? withPages(i, i.pages.map(pg => (pg.id === pageId ? { ...pg, ...change } : pg))) : i
   ))), [updateItems]);
   const checkQuality = useCallback((pageId, file) => {
+    // A downloaded PDF already holds the whole policy: count its pages for the card.
+    if (isPdfName(file)) { pdfPageCount(file).then(n => patchPage(pageId, { pdfPages: n })); return; }
     assessPhoto(file).then(q => patchPage(pageId, { quality: q }));
   }, [patchPage]);
   // Save every page of a draft policy, in order (the order is what gets sent).
@@ -814,13 +816,18 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
   const { pages } = item;
   const bad = pages.findIndex(pg => pg.quality?.issue);
   const n = index + 1;
+  // A downloaded PDF is the whole policy already: count the pages inside it, and
+  // don't nudge for more pages.
+  const allPdf = pages.length > 0 && pages.every(pg => isPdfName(pg.file));
+  const total = pages.reduce((t, pg) => t + (pg.pdfPages || 1), 0);
+  const counting = pages.some(pg => isPdfName(pg.file) && pg.pdfPages === undefined);
   return (
     <li className={`rounded-2xl border bg-white p-3 shadow-sm ${bad >= 0 ? 'border-amber-300' : asking ? 'border-blue-300 ring-2 ring-blue-100' : 'border-slate-200'}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold text-slate-900">Policy {n}</p>
           <p className="mt-0.5 text-sm text-slate-500">
-            {pages.length === 1 ? '1 page' : `${pages.length} pages`}
+            {allPdf && 'PDF · '}{counting ? 'Counting pages…' : total === 1 ? '1 page' : `${total} pages`}
             {bad >= 0 && <span className="text-amber-700"> · Page {bad + 1} looks {pages[bad].quality.issue === 'dark' ? 'too dark' : 'blurry'}</span>}
           </p>
         </div>
@@ -834,7 +841,9 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
         {pages.map((pg, k) => (
           <li key={pg.id} className="flex w-16 shrink-0 flex-col items-center">
             <div className={`rounded-lg ${pg.quality?.issue ? 'ring-2 ring-amber-400' : ''}`}><Thumb item={pg} /></div>
-            <span className="mt-1 text-xs font-medium text-slate-600">Page {k + 1}</span>
+            <span className="mt-1 whitespace-nowrap text-xs font-medium text-slate-600">
+              {isPdfName(pg.file) ? 'PDF' : `Page ${k + 1}`}
+            </span>
             <span className="flex">
               <button type="button" onClick={() => onRetakePage(pg.id)} aria-label={`Retake page ${k + 1} of policy ${n}`}
                 className={`flex h-8 w-8 items-center justify-center rounded-lg ${pg.quality?.issue ? 'text-amber-800' : 'text-slate-500'}`}>
@@ -847,13 +856,13 @@ function DraftCard({ item, index, asking, onAddPage, onDoneAdding, onRetakePage,
             </span>
           </li>
         ))}
-        <li className="flex w-16 shrink-0 flex-col items-center">
+        {!allPdf && <li className="flex w-16 shrink-0 flex-col items-center">
           <button type="button" onClick={onAddPage} aria-label={`Add page ${pages.length + 1} to policy ${n}`}
             className="flex h-[72px] w-14 items-center justify-center rounded-lg border-2 border-dashed border-blue-300 bg-blue-50/60 text-blue-700">
             <Plus className="h-5 w-5" aria-hidden="true" />
           </button>
           <span className="mt-1 text-xs font-medium text-blue-700">Add page</span>
-        </li>
+        </li>}
       </ul>
 
       {onMergeUp && (
