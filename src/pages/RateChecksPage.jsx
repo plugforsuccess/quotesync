@@ -280,23 +280,28 @@ function InboxCard({ h, now, onOpen, onPartner }) {
       </div>
       <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{householdLine(h)}</p>
       {/* Left: price, when it renews, who sent it. Right: the actions, stacked. */}
-      <div className="mt-2 flex items-start justify-between gap-3">
-        <span className="min-w-0">
+      <div className="mt-2 flex items-stretch justify-between gap-3">
+        {/* Price at the top; renewal + partner sit at the bottom, level with Text now. */}
+        <span className="flex min-w-0 flex-col">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
           {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
-          {renewal && <span className="mt-1 block text-sm font-semibold text-amber-600">{renewal}</span>}
-          {h.lead.promoter_name && h.lead.promoter_id && (
-            <span className={`${renewal ? 'mt-2' : 'mt-1'} block text-sm`} style={{ color: 'var(--qs-dim)' }}>
-              via{' '}
-              <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
-                className="font-semibold text-primary-600 underline decoration-primary-300 underline-offset-2 hover:decoration-primary-600">
-                {partnerName(h.lead.promoter_name)}
-              </button>
+          {(renewal || (h.lead.promoter_name && h.lead.promoter_id)) && (
+            <span className="mt-auto block pt-1 text-sm leading-5">
+              {renewal && <span className="block font-semibold text-amber-600">{renewal}</span>}
+              {h.lead.promoter_name && h.lead.promoter_id && (
+                <span className="block" style={{ color: 'var(--qs-dim)' }}>
+                  via{' '}
+                  <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
+                    className="font-semibold text-primary-600 underline decoration-primary-300 underline-offset-2 hover:decoration-primary-600">
+                    {partnerName(h.lead.promoter_name)}
+                  </button>
+                </span>
+              )}
             </span>
           )}
         </span>
         {open ? (
-          <span className="flex shrink-0 flex-col gap-2">
+          <span className="flex shrink-0 flex-col justify-start gap-2">
             <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
             {late && h.lead.phone && (
               <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
