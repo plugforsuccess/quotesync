@@ -4,7 +4,9 @@
 // ConsumerShell wraps pages that don't draw their own hero (the Newsroom) with the
 // same bar on its own blue band and the light footer.
 
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
 import { T, EditPagePencil } from './SiteCopy';
 
 const ACCENT = '#39FF88';
@@ -20,17 +22,64 @@ const PAGES = [
 ];
 
 export function ConsumerNav({ current }) {
-  // The principal gets a pencil in the top-right corner that edits this page. On phones
-  // it takes the logo row's right side and the page links drop to a row of their own.
+  // Wide screens: the page links inline. Phones: a ☰ button that opens a drawer.
+  // The principal's pencil (edits this page) sits just left of it.
+  const [open, setOpen] = useState(false);
+  const { pathname } = useLocation();
+  useEffect(() => { setOpen(false); }, [pathname]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('keydown', onKey);
+    return () => { document.body.style.overflow = prev; document.removeEventListener('keydown', onKey); };
+  }, [open]);
+
   return (
-    <header className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 pt-5 lg:pt-7 [&:has(.qs-edit-pencil)>nav]:order-3 [&:has(.qs-edit-pencil)>nav]:-ml-[5px] [&:has(.qs-edit-pencil)>nav]:w-full sm:[&:has(.qs-edit-pencil)>nav]:order-2 sm:[&:has(.qs-edit-pencil)>nav]:ml-auto sm:[&:has(.qs-edit-pencil)>nav]:w-auto">
-      <Link to="/" className="text-[14px] font-extrabold tracking-tight text-white sm:text-[15px]">insured<span style={{ color: ACCENT }}>by</span>cam.com</Link>
-      <nav aria-label="insuredbycam" className="-mr-1.5 flex items-center whitespace-nowrap text-[12.5px] font-semibold sm:mr-0 sm:gap-1 sm:text-sm">
-        {PAGES.map(([key, to, label]) => (key === current
-          ? <span key={key} aria-current="page" className="rounded-full bg-white/10 px-[5px] py-1.5 text-white sm:px-3">{label}</span>
-          : <Link key={key} to={to} className="rounded-full px-[5px] py-1.5 text-white/70 hover:bg-white/10 hover:text-white sm:px-3">{label}</Link>))}
-      </nav>
-      <EditPagePencil className="order-2 -mr-1.5 sm:order-3 sm:mr-0" />
+    <header className="flex items-center justify-between gap-2 pt-5 lg:pt-7">
+      <Link to="/" className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam.com</Link>
+      <div className="flex items-center gap-1">
+        <nav aria-label="insuredbycam" className="hidden items-center gap-1 whitespace-nowrap text-sm font-semibold sm:flex">
+          {PAGES.map(([key, to, label]) => (key === current
+            ? <span key={key} aria-current="page" className="rounded-full bg-white/10 px-3 py-1.5 text-white">{label}</span>
+            : <Link key={key} to={to} className="rounded-full px-3 py-1.5 text-white/70 hover:bg-white/10 hover:text-white">{label}</Link>))}
+        </nav>
+        <EditPagePencil />
+        <button type="button" onClick={() => setOpen(true)} aria-label="Open menu" aria-expanded={open}
+          className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10 sm:hidden">
+          <Menu className="h-6 w-6" aria-hidden="true" />
+        </button>
+      </div>
+
+      {open && (
+        <div className="fixed inset-0 z-[80] sm:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="absolute inset-0" style={{ background: 'rgba(15,45,107,0.55)' }} onClick={() => setOpen(false)} aria-hidden="true" />
+          <div className="absolute inset-y-0 right-0 flex w-[82%] max-w-xs flex-col shadow-2xl" style={{ background: HERO_BG }}>
+            <div className="flex items-center justify-between px-5 pt-5">
+              <span className="text-[15px] font-extrabold tracking-tight text-white">insured<span style={{ color: ACCENT }}>by</span>cam.com</span>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Close menu"
+                className="-mr-2 inline-flex h-10 w-10 items-center justify-center rounded-full text-white hover:bg-white/10">
+                <X className="h-6 w-6" aria-hidden="true" />
+              </button>
+            </div>
+            <nav aria-label="insuredbycam" className="mt-6 flex flex-col gap-1 px-3">
+              {PAGES.map(([key, to, label]) => (
+                <Link key={key} to={to} onClick={() => setOpen(false)} aria-current={key === current ? 'page' : undefined}
+                  className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-lg font-bold ${key === current ? 'bg-white/10 text-white' : 'text-white/80 hover:bg-white/10 hover:text-white'}`}>
+                  {label}
+                  {key === current && <span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" />}
+                </Link>
+              ))}
+            </nav>
+            <div className="mt-auto px-5 pb-8">
+              <Link to="/" onClick={() => setOpen(false)} className="flex h-12 items-center justify-center rounded-xl text-base font-bold" style={{ background: ACCENT, color: '#0F2D6B' }}>
+                Check my rate
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
