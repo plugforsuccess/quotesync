@@ -116,13 +116,18 @@ test('$50 minimum: small months carry over into the next payout', () => {
     scan({ phone: '4045550005', policy_type: 'auto', created_at: '2026-10-07T10:00:00Z' }), // $10
     scan({ phone: '4045550005', policy_type: 'home', created_at: '2026-10-07T10:00:00Z' }), // → $45
   ], schedule, NOW);
-  assert.deepEqual(payoutPlan(hh, [], '2026-08'), { months: [{ month: '2026-08', households: 1, amount: 2 }], amount: 2, carried: 0, underMinimum: true });
-  assert.deepEqual(payoutPlan(hh, [], '2026-09'), { months: [{ month: '2026-08', households: 1, amount: 2 }, { month: '2026-09', households: 1, amount: 10 }], amount: 12, carried: 2, underMinimum: true });
-  const oct = payoutPlan(hh, [], '2026-10');
+  // Paying on Nov 25: August, September and October are all past their pay day.
+  const NOV25 = new Date('2026-11-25T15:00:00Z').getTime();
+  assert.deepEqual(payoutPlan(hh, [], '2026-08', 50, NOV25), { months: [{ month: '2026-08', households: 1, amount: 2 }], amount: 2, carried: 0, underMinimum: true, upcoming: 0, upcomingPayDay: null });
+  assert.deepEqual(payoutPlan(hh, [], '2026-09', 50, NOV25).amount, 12);
+  const oct = payoutPlan(hh, [], '2026-10', 50, NOV25);
   assert.deepEqual([oct.amount, oct.carried, oct.underMinimum, oct.months.length], [82, 12, false, 3]);
   // Once September is paid (and August with it), October stands alone.
-  const after = payoutPlan(hh, [{ period: '2026-08-01' }, { period: '2026-09-01' }], '2026-10');
+  const after = payoutPlan(hh, [{ period: '2026-08-01' }, { period: '2026-09-01' }], '2026-10', 50, NOV25);
   assert.deepEqual([after.amount, after.carried], [70, 0]);
+  // On Oct 20, only August is due (Sep 21); September waits for Oct 21, October for Nov 21.
+  const oct20 = payoutPlan(hh, [], '2026-10', 50, NOW);
+  assert.deepEqual([oct20.amount, oct20.upcoming, oct20.upcomingPayDay], [2, 80, '2026-10-21']);
 });
 
 test('1099 totals: what was paid in the year, by payment date', async () => {
@@ -168,6 +173,45 @@ test('rules change the expired-page window and the payout minimum', () => {
   const rules = { ...rulesFrom(null), requireCallConfirm: false, expiredDays: 120, minPayout: 5 };
   const hh = households([scan({ phone: '4045550003', policy_type: 'auto', expiration_date: '2026-08-01', status: 'quoted', allstate_premium: 1 })], schedule, NOW, rules);
   assert.equal(hh[0].tier, 'auto_only'); // 80 days expired: counts under a 120-day window
-  assert.equal(payoutPlan(hh, [], '2026-10', rules.minPayout).underMinimum, false);
-  assert.equal(payoutPlan(hh, [], '2026-10').underMinimum, true);
+  assert.equal(payoutPlan(hh, [], '2026-10', rules.minPayout, new Date('2026-11-25T15:00:00Z').getTime()).underMinimum, false);
+  assert.equal(payoutPlan(hh, [], '2026-10', undefined, new Date('2026-11-25T15:00:00Z').getTime()).underMinimum, true);
+});
+
+test('a month is paid on the 21st of the following month', async () => {
+  const { payDay, isDue } = await import('../../src/pages/components/rate-checks/partnerPay.js');
+  assert.equal(payDay('2026-10'), '2026-11-21');
+  assert.equal(payDay('2026-12'), '2027-01-21');
+  assert.equal(isDue('2026-10', new Date('2026-11-20T12:00:00Z').getTime()), false);
+  assert.equal(isDue('2026-10', new Date('2026-11-21T12:00:00Z').getTime()), true);
+  // Before pay day the plan shows what it comes to so far, but isn't due.
+  const hh = households([scan({ phone: '4045550010', policy_type: 'auto', created_at: '2026-10-05T10:00:00Z', quoted_at: '2026-10-05T11:00:00Z' })], schedule, NOW);
+  const early = payoutPlan(hh, [], '2026-10', 0, NOW);
+  assert.deepEqual([early.amount, early.upcoming, early.upcomingPayDay], [0, 10, '2026-11-21']);
+  assert.equal(payoutPlan(hh, [], '2026-10', 0, new Date('2026-11-21T15:00:00Z').getTime()).amount, 10);
+  // Looking at November on Nov 25: October (due Nov 21) is payable, November waits for Dec 21.
+  const hh2 = households([
+    scan({ phone: '4045550011', policy_type: 'auto', created_at: '2026-10-05T10:00:00Z', quoted_at: '2026-10-05T11:00:00Z' }),
+    scan({ phone: '4045550012', policy_type: 'home', created_at: '2026-11-05T10:00:00Z', quoted_at: '2026-11-05T11:00:00Z' }),
+  ], schedule, new Date('2026-11-25T15:00:00Z').getTime());
+  const nov = payoutPlan(hh2, [], '2026-11', 0, new Date('2026-11-25T15:00:00Z').getTime());
+  assert.deepEqual([nov.months.map(m => m.month), nov.amount, nov.upcoming, nov.upcomingPayDay], [['2026-10'], 10, 15, '2026-12-21']);
+});
+
+test('the cap counts only households that pay, not ones still waiting', () => {
+  const ph = (n) => `40455500${String(n).padStart(2, '0')}`;
+  // With the reply-Y rule: the first two never replied, the next two did.
+  const hh = households([
+    scan({ phone: ph(1), policy_type: 'auto', created_at: '2026-10-01T10:00:00Z' }),
+    scan({ phone: ph(2), policy_type: 'auto', created_at: '2026-10-02T10:00:00Z' }),
+    scan({ phone: ph(3), policy_type: 'auto', created_at: '2026-10-03T10:00:00Z', call_confirmed_at: '2026-10-04T10:00:00Z' }),
+    scan({ phone: ph(4), policy_type: 'auto', created_at: '2026-10-04T10:00:00Z', call_confirmed_at: '2026-10-05T10:00:00Z' }),
+  ], schedule, NOW, DEFAULT_RULES);
+  const capped = applyCap(hh, 2);
+  assert.deepEqual(capped.filter(h => h.pays).map(h => [h.phone, h.fee, h.overCap]), [[ph(3), 10, false], [ph(4), 10, false]]);
+});
+
+test('months follow Georgia time, not the computer\'s', () => {
+  // 11:30pm Oct 31 in Georgia is Nov 1 in UTC: still October.
+  const hh = households([scan({ phone: '4045550020', policy_type: 'auto', created_at: '2026-11-01T03:30:00Z' })], schedule, NOW);
+  assert.equal(hh[0].month, '2026-10');
 });

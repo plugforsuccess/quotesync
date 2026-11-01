@@ -1,7 +1,7 @@
 // Supabase Edge Function: twilio-sms-inbound
 // POST /functions/v1/twilio-sms-inbound
 // Handles inbound SMS replies from leads via Twilio webhook
-// Processes keywords (STOP, START, HELP, QUOTE, YES, Y) and forwards other messages to agent.
+// Processes keywords (STOP, START, HELP, and yes-replies: Y, YES, YEP, OK, QUOTE, 👍 …) and forwards other messages to agent.
 // Y/YES after a Rate Check quote-ready text sets rate_checks.call_confirmed_at.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -182,8 +182,10 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Handle Y / YES / QUOTE — mark as interested + notify agent
-    if (keyword === 'QUOTE' || keyword === 'YES' || keyword === 'Y') {
+    // Handle Y / YES / QUOTE — mark as interested + notify agent. Replies come as "Yes!",
+    // "y.", "Yes please", "Yep", "OK" or a thumbs-up, so match the start, any case.
+    const saidYes = /^(y|ya|yes|yeah|yea|yep|yup|ok|okay|sure|quote)\b/i.test(body.replace(/^[^a-z0-9]+/i, '')) || /^\s*\u{1F44D}/u.test(body)
+    if (saidYes) {
       await supabase
         .from('leads')
         .update({ status: 'interested', contacted_at: new Date().toISOString() })

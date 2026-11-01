@@ -89,10 +89,23 @@ export function householdTier(scans, now = Date.now(), expiredDays = EXPIRED_DAY
   return { tier, extras, pages: pages.length };
 }
 
-const monthKey = (iso) => {
-  const d = new Date(iso);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+// Months are in the agency's time zone (Georgia), the same as the partner portal.
+const TZ = 'America/New_York';
+const monthKey = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ }).slice(0, 7);
+// A month is paid on this day of the following month, so late quotes and replies are in.
+export const PAY_DAY = 21;
+/** "2026-10" → "2026-11-21": the day that month's households are paid. */
+export const payDay = (key) => {
+  const [y, m] = key.split('-').map(Number);
+  const next = m === 12 ? [y + 1, 1] : [y, m + 1];
+  return `${next[0]}-${String(next[1]).padStart(2, '0')}-${PAY_DAY}`;
 };
+/** Today in the agency's time zone, "2026-11-01". */
+export const today = (now = Date.now()) => new Date(now).toLocaleDateString('en-CA', { timeZone: TZ });
+/** Whether a month's pay day has come. */
+export const isDue = (key, now = Date.now()) => today(now) >= payDay(key);
+/** "2026-11-21" → "Nov 21" */
+export const shortDate = (ymd) => new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 /** "2026-10" → "October 2026" */
 export const monthLabel = (key) => {
   const [y, m] = key.split('-').map(Number);
@@ -166,7 +179,7 @@ export function households(scans, schedule, now = Date.now(), rules = QUOTED_RUL
 }
 
 /**
- * A partner's monthly cap: in each month, the first `cap` qualifying households (by
+ * A partner's monthly cap: in each month, the first `cap` payable households (by
  * when their first page arrived) are paid; the rest keep their tier but pay $0 and
  * are marked overCap. A null cap pays every household.
  */
@@ -174,7 +187,8 @@ export function applyCap(hh, cap) {
   if (!cap) return hh.map(h => ({ ...h, overCap: false }));
   const rank = new Map();
   const byMonth = {};
-  for (const h of hh.filter(x => x.tier && x.month)) (byMonth[h.month] ||= []).push(h);
+  // Only households that pay take a slot: ones still waiting (on a quote or a Y reply) don't use up the cap.
+  for (const h of hh.filter(x => x.tier && x.month && x.pays)) (byMonth[h.month] ||= []).push(h);
   for (const list of Object.values(byMonth)) {
     list.sort((a, b) => new Date(a.firstAt) - new Date(b.firstAt)).forEach((h, i) => rank.set(h, i));
   }
@@ -208,11 +222,16 @@ export function partnerSummary(hh, month) {
 }
 
 /**
- * What to pay a partner for `month`: that month plus any earlier unpaid months
- * (small months carry over). `payouts` are the recorded payouts (period = YYYY-MM-01).
- * Returns { months: [{ month, households, amount }], amount, carried, underMinimum }.
+ * What to pay a partner, looking at `month`: every unpaid month up to it whose pay day
+ * (the 21st of the following month) has come, and what's still to come.
+ * `payouts` are the recorded payouts (period = YYYY-MM-01).
+ * Returns {
+ *   months: [{ month, households, amount }]  due now (record these when paying),
+ *   amount, carried (the part from months before `month`), underMinimum (under the
+ *   minimum: carries to the next pay day), upcoming (owed, not due yet), upcomingPayDay
+ * }.
  */
-export function payoutPlan(hh, payouts, month, minPayout = MIN_PAYOUT) {
+export function payoutPlan(hh, payouts, month, minPayout = MIN_PAYOUT, now = Date.now()) {
   const paidMonths = new Set((payouts || []).map(p => String(p.period).slice(0, 7)));
   const owedBy = {};
   for (const h of hh) if (h.tier && h.pays && h.month && h.month <= month && !paidMonths.has(h.month)) {
@@ -220,9 +239,17 @@ export function payoutPlan(hh, payouts, month, minPayout = MIN_PAYOUT) {
     owedBy[h.month].households += 1;
     owedBy[h.month].amount += h.fee;
   }
-  const months = Object.values(owedBy).filter(m => m.amount > 0).sort((a, b) => a.month.localeCompare(b.month));
+  const all = Object.values(owedBy).filter(m => m.amount > 0).sort((a, b) => a.month.localeCompare(b.month));
+  const months = all.filter(m => isDue(m.month, now));
+  const later = all.filter(m => !isDue(m.month, now));
   const amount = months.reduce((t, m) => t + m.amount, 0);
-  return { months, amount, carried: months.filter(m => m.month !== month).reduce((t, m) => t + m.amount, 0), underMinimum: amount > 0 && amount < minPayout };
+  return {
+    months, amount,
+    carried: months.filter(m => m.month !== month).reduce((t, m) => t + m.amount, 0),
+    underMinimum: amount > 0 && amount < minPayout,
+    upcoming: later.reduce((t, m) => t + m.amount, 0),
+    upcomingPayDay: later.length ? payDay(later[0].month) : null,
+  };
 }
 
 /** Months that have at least one paid household, newest first (always includes `current`). */

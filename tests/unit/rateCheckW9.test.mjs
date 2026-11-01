@@ -15,7 +15,10 @@ test('TIN rules', () => {
   assert.equal(tinProblem('123-45-6789', 'ssn'), 'That doesn’t look like a real number.');
   assert.equal(tinProblem('078-05-1120', 'ssn'), null);
   assert.equal(tinProblem('666-05-1120', 'ssn'), 'That isn’t a valid SSN (check the first 3 digits).');
-  assert.equal(tinProblem('900-05-1120', 'ssn'), 'That isn’t a valid SSN (check the first 3 digits).');
+  assert.equal(tinProblem('900-05-1120', 'ssn'), 'That isn’t a valid SSN or ITIN (check the first 5 digits).');
+  // ITINs (9XX, middle pair 50–65, 70–88, 90–92, 94–99) are accepted in the SSN box.
+  assert.equal(tinProblem('912-70-1234', 'ssn'), null);
+  assert.equal(tinProblem('912-93-1234', 'ssn'), 'That isn’t a valid SSN or ITIN (check the first 5 digits).');
   assert.equal(tinProblem('078-00-1120', 'ssn'), 'That isn’t a valid SSN.');
   assert.equal(tinProblem('111111111', 'ssn'), 'That doesn’t look like a real number.');
   assert.equal(tinProblem('12-345', 'ssn'), 'Enter all 9 digits of your SSN.');

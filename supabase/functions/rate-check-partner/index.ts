@@ -84,7 +84,7 @@ function agreementText(agencyName: string, partnerName: string, schedule: Record
     `   - Each extra line (umbrella, a second auto policy): +${money(schedule.extra_line)}, up to ${EXTRA_LINE_CAP}`,
     '   You are paid the same whether or not anyone buys anything. Fees are never a share of commission or premium.',
     `4. What qualifies. A household is one phone number, address or policy, paid once, in the month its first page arrives. A household pays once the Agency has quoted it, or ${QUOTE_DAYS} days after its first page if the Agency hasn't got to it. Pages that can't be read, repeats, pages expired more than ${EXPIRED_DAYS} days, current Allstate policies, test or fake uploads, and anyone who was already the Agency's customer don't count. The Agency decides what qualifies.${cap ? ` At most ${cap} households are paid per month.` : ''}`,
-    `5. Payment. Paid monthly for the previous month; a month under ${money(MIN_PAYOUT)} is carried into the next payment. The Agency needs your completed IRS Form W-9 before the first payment and may issue you a Form 1099. Fees for self-referrals, fake or copied uploads, or anything that breaks this agreement are not owed and may be taken back.`,
+    `5. Payment. Each month is paid on the ${PAY_DAY}st of the following month; a month under ${money(MIN_PAYOUT)} is carried into the next payment. The Agency needs your completed IRS Form W-9 before the first payment and may issue you a Form 1099. Fees for self-referrals, fake or copied uploads, or anything that breaks this agreement are not owed and may be taken back.`,
     '6. Honest promotion. When you post or message about your link, you say clearly that you are paid for referrals (for example, "I get a referral fee"). You only share with people you know or with your own followers: no buying lists, no mass or automated texts, calls or emails.',
     '7. No sharing your fee. You don\'t give any part of your fee, or anything else of value, to the people you refer.',
     '8. Independent. You are an independent contractor, not an employee or agent of the Agency or of Allstate. You can\'t make promises on their behalf.',
@@ -147,34 +147,48 @@ function tierOf(pages: any[]) {
   return { tier: null, base: 0 }
 }
 
-// Households that pay under the agency's rules (replied Y, or quoted / quoteDays old);
-// pending ones aren't listed yet.
-function earnings(scans: any[], schedule: Record<string, number>, cap: number | null, rules: Rules) {
+// A month is paid on this day of the following month (same as PAY_DAY in partnerPay.js).
+const PAY_DAY = 21
+const payDay = (key: string) => {
+  const [y, m] = key.split('-').map(Number)
+  const [ny, nm] = m === 12 ? [y + 1, 1] : [y, m + 1]
+  return `${ny}-${String(nm).padStart(2, '0')}-${PAY_DAY}`
+}
+
+// This partner's households, the same way the staff Partners tab counts them: every
+// partner-tagged scan in the agency is grouped into households, and a household
+// belongs to the partner whose link sent its first page. Households still waiting
+// (on a quote or a Y reply) are counted, not listed, and don't take cap slots.
+function earnings(agencyScans: any[], promoterId: string, schedule: Record<string, number>, cap: number | null, rules: Rules) {
   const now = Date.now()
-  const hh = groupHouseholds(scans).map(list => {
-    const pages = list.filter(rc => QUALIFIES(rc, now, rules.expiredDays)).sort((a, b) => a.created_at.localeCompare(b.created_at))
+  const hh = groupHouseholds(agencyScans).map(list => {
+    const sorted = [...list].sort((a, b) => a.created_at.localeCompare(b.created_at))
+    if (sorted[0].promoter_id !== promoterId) return null
+    const pages = sorted.filter(rc => QUALIFIES(rc, now, rules.expiredDays))
     const { tier, base } = tierOf(pages)
     if (!tier) return null
     const extras = Math.min(EXTRA_LINE_CAP, Math.max(0, pages.length - base))
     return {
-      first_name: (list.find(s => s.first_name)?.first_name || 'Someone').split(/\s+/)[0],
+      first_name: (sorted.find(s => s.first_name)?.first_name || 'Someone').split(/\s+/)[0],
       tier, label: LABEL[tier] + (extras ? ` + ${extras} extra` : ''),
       fee: schedule[tier] + extras * schedule.extra_line,
       firstAt: pages[0].created_at, month: monthKey(pages[0].created_at),
       pending: rules.requireCallConfirm
-        ? !list.some((rc: any) => !!rc.call_confirmed_at)
-        : !list.some(QUOTED) && now - new Date(pages[0].created_at).getTime() < rules.quoteDays * DAY,
+        ? !sorted.some((rc: any) => !!rc.call_confirmed_at)
+        : !sorted.some(QUOTED) && now - new Date(pages[0].created_at).getTime() < rules.quoteDays * DAY,
     }
   }).filter(Boolean) as any[]
   const months: Record<string, any[]> = {}
   for (const h of hh.sort((a, b) => a.firstAt.localeCompare(b.firstAt))) (months[h.month] ||= []).push(h)
   return Object.entries(months).map(([month, list]) => {
-    // The cap counts every qualifying household in arrival order (pending ones hold their place), like the staff tab.
-    const rows = list.map((h, i) => ({ ...h, fee: cap && i >= cap ? 0 : h.fee, over_cap: !!(cap && i >= cap) }))
-      .filter(h => !h.pending)
-      .map(h => ({ first_name: h.first_name, label: h.label, fee: h.fee, over_cap: h.over_cap, at: h.firstAt }))
-    return { month, households: rows.length, earned: rows.reduce((t, r) => t + r.fee, 0), rows: rows.reverse() }
-  }).filter(m => m.households > 0).sort((a, b) => b.month.localeCompare(a.month))
+    const paying = list.filter(h => !h.pending)
+    // The cap counts payable households in arrival order, like the staff tab.
+    const rows = paying.map((h, i) => ({ first_name: h.first_name, label: h.label, fee: cap && i >= cap ? 0 : h.fee, over_cap: !!(cap && i >= cap), at: h.firstAt }))
+    return {
+      month, households: rows.length, pending: list.length - paying.length,
+      earned: rows.reduce((t, r) => t + r.fee, 0), rows: rows.reverse(), pay_day: payDay(month),
+    }
+  }).sort((a, b) => b.month.localeCompare(a.month))
 }
 
 Deno.serve(async (req) => {
@@ -327,6 +341,8 @@ Deno.serve(async (req) => {
       // The draft text is only sent once the agreement is live.
       agreement: { required: AGREEMENT_REQUIRED, version: AGREEMENT_VERSION, text: AGREEMENT_REQUIRED ? text : null, signed, signed_at: signed ? p.agreement_signed_at : null },
       schedule, monthly_cap: p.monthly_cap,
+      // What a household waits on before it counts: a reply to the quote-ready text, or a quote.
+      pay_rule: rules.requireCallConfirm ? 'reply' : 'quote',
       photo_url: p.photo_consent_at ? p.photo_url : null,
       w9: { on_file: !!p.w9_received_at, tin_type: p.w9_tin_type, last4: p.w9_tin_last4, signed_at: p.w9_received_at, revision: W9_REVISION,
         // Pre-fills the form; the tax ID is never stored or sent back.
@@ -334,13 +350,15 @@ Deno.serve(async (req) => {
     }
     if (!cleared) return json(base, 200, cors)
     const [{ data: scans }, { data: payouts }] = await Promise.all([
-      supabase.from('rate_checks').select('id, phone, first_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at, call_confirmed_at')
-        .eq('promoter_id', p.id).order('created_at', { ascending: true }).limit(5000),
+      // Every partner-tagged scan in the agency (not test uploads): a household is credited
+      // to the partner whose link sent its first page, as on the staff Partners tab.
+      supabase.from('rate_checks').select('id, promoter_id, phone, first_name, policy_type, status, duplicate_of, created_at, carrier, expiration_date, insured_address, policy_number, allstate_premium, quoted_at, call_confirmed_at')
+        .eq('agency_id', p.agency_id).eq('is_test', false).not('promoter_id', 'is', null).order('created_at', { ascending: true }).limit(5000),
       supabase.from('rate_check_promoter_payouts').select('period, amount, paid_at').eq('promoter_id', p.id),
     ])
     const paid = Object.fromEntries((payouts || []).map((x: any) => [String(x.period).slice(0, 7), { amount: Number(x.amount), paid_at: x.paid_at }]))
     // Only first names and what each household sent: no phone numbers, no quotes or outcomes.
-    const months = earnings(scans || [], schedule, p.monthly_cap, rules).map(m => ({ ...m, paid: paid[m.month] || null }))
+    const months = earnings(scans || [], p.id, schedule, p.monthly_cap, rules).map(m => ({ ...m, paid: paid[m.month] || null }))
     return json({ ...base, code: p.code, months }, 200, cors)
   }
 
@@ -369,7 +387,10 @@ function checkW9(b: any): W9 | { error: string } {
   if (tin.length !== 9 || /^(\d)\1{8}$/.test(tin) || tin === '123456789') return { error: 'That doesn’t look like a real number.' }
   if (tinType === 'ssn') {
     const area = tin.slice(0, 3)
-    if (area === '000' || area === '666' || area >= '900' || tin.slice(3, 5) === '00' || tin.slice(5) === '0000') return { error: 'That isn’t a valid SSN.' }
+    // An ITIN (9XX, middle pair 50–65, 70–88, 90–92 or 94–99) goes in the SSN box too.
+    const g = Number(tin.slice(3, 5))
+    const itin = area.startsWith('9') && ((g >= 50 && g <= 65) || (g >= 70 && g <= 88) || (g >= 90 && g <= 92) || (g >= 94 && g <= 99))
+    if (!itin && (area === '000' || area === '666' || area >= '900' || tin.slice(3, 5) === '00' || tin.slice(5) === '0000')) return { error: 'That isn’t a valid SSN or ITIN.' }
   } else if (tin.startsWith('00')) return { error: 'An EIN can’t start with 00.' }
   if (signed.length < 3 || !signed.includes(' ')) return { error: 'Type your full name as your signature.' }
   return {

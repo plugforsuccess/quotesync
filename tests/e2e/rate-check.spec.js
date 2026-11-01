@@ -316,3 +316,48 @@ test('a downloaded PDF counts its own pages and goes up whole', async ({ page },
   const sent = await PDFDocument.load(Buffer.from(posts[0].image_base64, 'base64'));
   expect(sent.getPageCount()).toBe(3);
 });
+
+// A customer opening a referral partner's link: the strip says who shared it, and the
+// upload carries the link's code so the partner is credited.
+async function partnerLinkUpload(page, testInfo, lookup) {
+  const photo = testInfo.outputPath('partner-dec.png');
+  fs.writeFileSync(photo, noisePng(900, 1200));
+  const posts = [];
+  await page.route('**/functions/v1/rate-check', async (route) => {
+    const body = route.request().postDataJSON();
+    if (body.mode === 'invite_lookup') return lookup(route);
+    posts.push(body);
+    await route.fulfill({ status: 200, contentType: 'application/json',
+      body: JSON.stringify({ status: 'received', rate_check_id: 't1', carrier: 'GEICO', policy_type: 'auto', annual_premium: 1500 }) });
+  });
+  await page.goto('/r/JVN7K2QX', { waitUntil: 'networkidle' });
+  return { photo, posts };
+}
+async function sendOne(page, photo) {
+  await page.getByTestId('rc-files').setInputFiles(photo);
+  await page.getByRole('button', { name: "That's all" }).click();
+  await page.getByRole('button', { name: /Continue/ }).click();
+  await fillContact(page);
+  await page.getByRole('checkbox').nth(0).check();
+  await page.getByRole('button', { name: 'Check my rate' }).click();
+  await expect(page.getByRole('heading', { name: 'Got it — Cam is on it.' })).toBeVisible({ timeout: 15_000 });
+}
+
+test('a partner link: says who shared it and credits the partner', async ({ page }, testInfo) => {
+  const { photo, posts } = await partnerLinkUpload(page, testInfo, route => route.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify({ promoter_name: 'Javon', promoter_full_name: 'Javon Yarbrough', promoter_initials: 'JY', promoter_photo_url: null }) }));
+  await expect(page.getByText('Javon Yarbrough', { exact: true })).toBeVisible();
+  await expect(page.getByText(/shared this with you/).first()).toBeVisible();
+  await sendOne(page, photo);
+  expect(posts).toHaveLength(1);
+  expect(posts[0].invite_code).toBe('JVN7K2QX');
+});
+
+test('a partner link still credits the partner when the link check fails', async ({ page }, testInfo) => {
+  let lookups = 0;
+  const { photo, posts } = await partnerLinkUpload(page, testInfo, route => { lookups += 1; return route.fulfill({ status: 429, contentType: 'application/json', body: '{"error":"Rate limit exceeded"}' }); });
+  await expect.poll(() => lookups).toBe(2); // tried twice
+  await expect(page.getByText('That link has expired')).toHaveCount(0);
+  await sendOne(page, photo);
+  expect(posts[0].invite_code).toBe('JVN7K2QX');
+});
