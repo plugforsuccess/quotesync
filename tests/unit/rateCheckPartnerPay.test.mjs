@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   scheduleFrom, householdTier, households, partnerSummary, qualifies, monthsWithActivity, applyCap, groupHouseholds, payoutPlan,
+  rulesFrom, DEFAULT_RULES,
 } from '../../src/pages/components/rate-checks/partnerPay.js';
 
 const NOW = new Date('2026-10-20T12:00:00Z').getTime();
@@ -141,4 +142,32 @@ test('1099 totals: what was paid in the year, by payment date', async () => {
   assert.equal(y.p2.amount, 55.5);
   assert.deepEqual(Object.keys(paidInYear(payouts, 2027)), ['p1']);
   assert.equal(paidInYear(payouts, 2027).p1.amount, 60);
+});
+
+test('payout rules: saved row overrides the defaults, Y required when nothing is saved', () => {
+  assert.deepEqual(rulesFrom(null), DEFAULT_RULES);
+  assert.equal(DEFAULT_RULES.requireCallConfirm, true);
+  assert.deepEqual(rulesFrom({ require_call_confirm: false, quote_days: 5, expired_days: 60, min_payout: '25.00' }),
+    { requireCallConfirm: false, quoteDays: 5, expiredDays: 60, minPayout: 25 });
+});
+
+test('with the Y rule, a household pays only after the customer replies Y', () => {
+  const rules = rulesFrom(null);
+  const old = '2026-09-01T12:00:00Z'; // long past the quote-or-7-days window
+  const hh = households([
+    scan({ phone: '4045550001', policy_type: 'auto', created_at: old, status: 'won', allstate_premium: 900, quote_ready_texted_at: old }),
+    scan({ phone: '4045550002', policy_type: 'auto', created_at: old, status: 'won', allstate_premium: 900, quote_ready_texted_at: old, call_confirmed_at: old }),
+  ], schedule, NOW, rules);
+  const waiting = hh.find(h => h.phone === '4045550001');
+  const confirmed = hh.find(h => h.phone === '4045550002');
+  assert.deepEqual([waiting.pays, waiting.pending, waiting.texted, waiting.confirmed], [false, true, true, false]);
+  assert.deepEqual([confirmed.pays, confirmed.pending, confirmed.confirmed], [true, false, true]);
+});
+
+test('rules change the expired-page window and the payout minimum', () => {
+  const rules = { ...rulesFrom(null), requireCallConfirm: false, expiredDays: 120, minPayout: 5 };
+  const hh = households([scan({ phone: '4045550003', policy_type: 'auto', expiration_date: '2026-08-01', status: 'quoted', allstate_premium: 1 })], schedule, NOW, rules);
+  assert.equal(hh[0].tier, 'auto_only'); // 80 days expired: counts under a 120-day window
+  assert.equal(payoutPlan(hh, [], '2026-10', rules.minPayout).underMinimum, false);
+  assert.equal(payoutPlan(hh, [], '2026-10').underMinimum, true);
 });

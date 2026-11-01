@@ -43,6 +43,7 @@ export const queryKeys = {
     partnerApplications: (agencyId) => ['rate_checks', 'partner_applications', agencyId],
     promoterScans: (agencyId) => ['rate_checks', 'promoter_scans', agencyId],
     promoterRates: (agencyId) => ['rate_checks', 'promoter_rates', agencyId],
+    partnerRules: (agencyId) => ['rate_checks', 'partner_rules', agencyId],
     promoterPayouts: (agencyId) => ['rate_checks', 'promoter_payouts', agencyId],
   },
 

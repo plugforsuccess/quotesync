@@ -515,7 +515,7 @@ export const usePromoterScans = (agencyId) =>
     queryFn: async () => {
       const { data, error } = await supabase
         .from('rate_checks')
-        .select('id, promoter_id, phone, first_name, policy_type, carrier, status, duplicate_of, created_at, annual_premium, allstate_premium, bound_premium, quoted_at, expiration_date, insured_address, policy_number')
+        .select('id, promoter_id, phone, first_name, policy_type, carrier, status, duplicate_of, created_at, annual_premium, allstate_premium, bound_premium, quoted_at, expiration_date, insured_address, policy_number, quote_ready_texted_at, call_confirmed_at')
         .eq('agency_id', agencyId)
         .eq('is_test', false)
         .not('promoter_id', 'is', null)
@@ -639,6 +639,40 @@ export const useSetPromoterPhoto = () => {
       if (error) throw error;
     },
     onSuccess: (_d, v) => queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.promoters(v.promoter.agency_id) }),
+  });
+};
+
+// The agency's partner payout rules (rate_check_partner_rules); null = the defaults.
+export const usePartnerRules = (agencyId) =>
+  useQuery({
+    queryKey: queryKeys.rateChecks.partnerRules(agencyId),
+    queryFn: async () => {
+      const { data, error } = await supabase.from('rate_check_partner_rules').select('*').eq('agency_id', agencyId).maybeSingle();
+      if (error) throw error;
+      return data || null;
+    },
+    enabled: !!agencyId,
+  });
+
+export const useSavePartnerRules = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ agencyId, userId, rules }) => {
+      const { error } = await supabase.from('rate_check_partner_rules').upsert({
+        agency_id: agencyId,
+        require_call_confirm: !!rules.requireCallConfirm,
+        quote_days: Math.max(0, Math.min(90, Math.round(Number(rules.quoteDays) || 0))),
+        expired_days: Math.max(0, Math.min(365, Math.round(Number(rules.expiredDays) || 0))),
+        min_payout: Math.max(0, Math.min(10000, Number(rules.minPayout) || 0)),
+        updated_at: new Date().toISOString(),
+        updated_by: userId || null,
+      }, { onConflict: 'agency_id' });
+      if (error) throw error;
+    },
+    onSuccess: (_d, v) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.partnerRules(v.agencyId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.rateChecks.promoterScans(v.agencyId) });
+    },
   });
 };
 
