@@ -63,6 +63,17 @@ export function SiteCopyProvider({ children }) {
   const onEditablePage = EDITABLE.some(re => re.test(pathname));
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (askedToEdit && canEdit) setEditing(true); }, [askedToEdit, canEdit]);
+  // While editing, a button or link whose label is editable text doesn't act: tapping
+  // or typing a space in its label would otherwise open the camera, a file picker, a page.
+  useEffect(() => {
+    if (!editing) return undefined;
+    const block = (e) => {
+      const host = e.target instanceof Element ? e.target.closest('button, a, label') : null;
+      if (host && host.querySelector('[role="textbox"][contenteditable]')) { e.preventDefault(); e.stopPropagation(); }
+    };
+    document.addEventListener('click', block, true);
+    return () => document.removeEventListener('click', block, true);
+  }, [editing]);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(0); // time of the last save, for the "Saved" note
 
@@ -230,9 +241,15 @@ function EditableText({ k, text, fallback, edited, save, fail }) {
       onDrop={e => e.preventDefault()}
       onKeyDown={e => {
         e.stopPropagation();
+        // Space inside a button's label would press the button (open the camera, etc.):
+        // type the space ourselves and keep the key from reaching the button.
+        if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); document.execCommand('insertText', false, ' '); return; }
         if (e.key === 'Enter') { e.preventDefault(); ref.current?.blur(); }
         if (e.key === 'Escape') { if (ref.current) ref.current.textContent = text; fail(''); ref.current?.blur(); }
       }}
+      // Buttons act on the space key's release: block that too.
+      onKeyUp={e => { e.stopPropagation(); if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter') e.preventDefault(); }}
+      onKeyPress={e => { e.stopPropagation(); if (e.key === ' ' || e.key === 'Enter') e.preventDefault(); }}
       onBlur={finish}
       className={`cursor-text rounded-sm outline-dashed outline-2 outline-offset-2 ${edited ? 'outline-amber-500' : 'outline-amber-300'}`} />
   );
