@@ -194,19 +194,6 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               <Stat label="Owed" value={dollars(paid ? Number(paid.amount) : plan.amount + plan.upcoming)} tone="var(--qs-warning)" />
               <Stat label="Status" value={paid ? 'Paid' : plan.amount > 0 ? (plan.underMinimum ? `Under ${dollars(rules.minPayout)}` : 'Due now') : plan.upcoming > 0 ? `Pays ${shortDate(plan.upcomingPayDay)}` : '—'} tone={paid ? 'var(--qs-success)' : undefined} />
             </div>
-            {(s.month.pending > 0 || s.month.overCap > 0 || (!paid && plan.carried > 0) || (!paid && plan.underMinimum) || (!paid && plan.amount > 0 && plan.upcoming > 0)) && (
-              <p className="mt-1.5 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                {[
-                  s.month.pending > 0 && (rules.requireCallConfirm
-                    ? `${s.month.pending} waiting on a Y reply`
-                    : `${s.month.pending} waiting on a quote (pays in ${rules.quoteDays} days either way)`),
-                  s.month.overCap > 0 && `${s.month.overCap} over the monthly cap`,
-                  !paid && plan.carried > 0 && `includes ${dollars(plan.carried)} carried from ${plan.months.filter(m => m.month !== month).map(m => monthLabel(m.month).split(' ')[0]).join(', ')}`,
-                  !paid && plan.underMinimum && 'carries to next month',
-                  !paid && plan.amount > 0 && plan.upcoming > 0 && plan.later.map(m => `${monthName(m.month)} activity ${dollars(m.amount)} · pays ${shortDate(m.payDay)}`).join(' · '),
-                ].filter(Boolean).join(' · ')}
-              </p>
-            )}
             <div className="mt-3 grid grid-cols-3 gap-3 pt-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
               <Stat label="All time" value={s.households} />
               <Stat label="Won" value={s.won ? `${s.won} · ${pct(s.closeRate)}` : '0'} />
@@ -239,10 +226,6 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
                 </button>
               ) : plan.underMinimum ? (
                 <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(rules.minPayout)} · carries over</span>
-              ) : plan.upcoming > 0 ? (
-                <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>
-                  {plan.later.map(m => `${monthName(m.month)} activity ${dollars(m.amount)} · pays ${shortDate(m.payDay)}`).join(' · ')}{!p.w9_received_at ? ' · W-9 needed first' : ''}
-                </span>
               ) : null)}
             </div>
 

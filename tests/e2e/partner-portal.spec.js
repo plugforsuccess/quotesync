@@ -153,7 +153,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
   }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
-  await expect(page.getByText('$55 · not paid yet')).toBeVisible();
+  await expect(page.getByText('$55', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Paid $15')).toBeVisible();
   await expect(page.getByText('Stephen')).toBeVisible();
   await expect(page.getByText('$70')).toBeVisible(); // all time
@@ -165,7 +165,7 @@ test('a wrong or old link says so', async ({ page }) => {
   await expect(page.getByText('This link isn’t valid.')).toBeVisible();
 });
 
-test('pay day, households still on the way, and a paused link', async ({ page }) => {
+test('month headings say activity; a paused link says so', async ({ page }) => {
   const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
   const nextMonth21 = `${d.toLocaleDateString('en-CA').slice(0, 7)}-21`;
   await mockPartner(page, { data: portal({
@@ -176,7 +176,7 @@ test('pay day, households still on the way, and a paused link', async ({ page })
   }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText(/Your link is paused/)).toBeVisible();
-  await expect(page.getByText(/^\$45 · pays \w{3} 21$/)).toBeVisible();
+  await expect(page.getByText('$45', { exact: true }).first()).toBeVisible();
   await expect(page.getByRole('heading', { name: /^[A-Z][a-z]+ \d{4} activity$/ })).toBeVisible();
-  await expect(page.getByText('+ 2 more households on the way: they count once they reply to set up a call about their quote.')).toBeVisible();
+  await expect(page.getByText(/on the way/)).toHaveCount(0);
 });

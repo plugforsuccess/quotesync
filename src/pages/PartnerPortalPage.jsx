@@ -35,7 +35,6 @@ const SCHEDULE_ROWS = [
 
 // Dates in the agency's time zone (Georgia), the same as the payouts.
 const todayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-const shortDay = (ymd) => new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 export default function PartnerPortalPage() {
   const { token } = useParams();
@@ -445,7 +444,7 @@ function Earnings({ token, data, onChange }) {
           <div className="flex items-baseline justify-between">
             <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} activity</h2>
             <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? `${money(m.earned)} · ${m.pay_day && todayKey() < m.pay_day ? `pays ${shortDay(m.pay_day)}` : 'not paid yet'}` : ''}
+              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? money(m.earned) : ''}
             </span>
           </div>
           {m.rows.length ? (
@@ -460,12 +459,7 @@ function Earnings({ token, data, onChange }) {
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-2 text-sm text-slate-500">{m.pending ? 'None qualified yet.' : 'No households yet this month.'}</p>}
-          {m.pending > 0 && (
-            <p className="mt-1.5 text-xs text-slate-500">
-              + {m.pending} more {m.pending === 1 ? 'household' : 'households'} on the way: {m.pending === 1 ? 'it counts' : 'they count'} once {data.pay_rule === 'reply' ? 'they reply to set up a call about their quote' : 'we’ve quoted them'}.
-            </p>
-          )}
+          ) : <p className="mt-2 text-sm text-slate-500">No households yet this month.</p>}
         </section>
       ))}
 
