@@ -129,17 +129,25 @@ function renewalSoon(policies, now) {
   return { text: days === 0 ? 'Renews today' : `Renews in ${days} day${days === 1 ? '' : 's'}`, urgent: days <= 14 };
 }
 
+// One small pill style for the card: neutral by default, red for "we owe a reply",
+// amber for a renewal that's close.
+const PILL_TONE = {
+  neutral: { background: 'var(--qs-elevated)', color: 'var(--qs-dim)' },
+  red: { background: '#FEF2F2', color: '#B91C1C' },
+  amber: { background: '#FFFBEB', color: '#B45309' },
+};
+function CardPill({ tone = 'neutral', title, children }) {
+  return <span className="inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold leading-5" style={PILL_TONE[tone]} title={title}>{children}</span>;
+}
+
 // How long they've been waiting on us for a quote: red once it's past the 30 minutes
 // the page promises, neutral before.
 function WaitPill({ rc, now }) {
   const mins = minutesSince(rc.created_at, now);
-  const late = mins >= OVERDUE_MINUTES;
   return (
-    <span className={`rounded-full px-2.5 py-1 font-semibold ${late ? 'bg-red-50 text-red-700' : ''}`}
-      style={late ? undefined : { background: 'var(--qs-elevated)', color: 'var(--qs-dim)' }}
-      title="How long they've been waiting on us for a quote">
+    <CardPill tone={mins >= OVERDUE_MINUTES ? 'red' : 'neutral'} title="How long they've been waiting on us for a quote">
       Waiting on us · {mins < 1 ? 'just now' : ageText(mins)}
-    </span>
+    </CardPill>
   );
 }
 
@@ -272,8 +280,9 @@ function InboxCard({ h, now, onOpen, onPartner }) {
   const first = h.lead.first_name || 'there';
   const holdText = `Hi ${first}, it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly.`;
   const renewal = open ? renewalSoon(h.policies, now) : null;
+  const bundle = new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1;
   return (
-    <li onClick={onOpen} className="cursor-pointer px-4 pb-3 pt-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
+    <li onClick={onOpen} className="cursor-pointer px-4 py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
       {/* Who; who referred them (quiet); a small text button when they've waited. */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -286,7 +295,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
               Referred by{' '}
               <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
                 title={`Open ${partnerName(h.lead.promoter_name)}'s partner card`}
-                className="underline decoration-dotted underline-offset-2 hover:decoration-solid" style={{ color: 'var(--qs-dim)' }}>
+                className="font-medium underline underline-offset-2" style={{ color: 'var(--qs-dim)' }}>
                 {partnerName(h.lead.promoter_name)}
               </button>
             </p>
@@ -302,29 +311,25 @@ function InboxCard({ h, now, onOpen, onPartner }) {
         )}
       </div>
 
-      {/* What they pay now (labeled), with the one action level with the number. */}
-      <div className="mt-3 flex items-center gap-2 text-xs" style={{ color: 'var(--qs-subtle)' }}>
-        <span>{h.policies.length > 1 ? 'Pays now, all policies' : 'Pays now'}</span>
-        {new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1 && (
-          <span className="rounded-full px-2 py-0.5 font-semibold" style={{ background: 'var(--qs-elevated)', color: 'var(--qs-dim)' }}>Bundle opportunity</span>
-        )}
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0">
-          <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</span>
-          {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
-        </span>
+      {/* What they pay now (labeled), and the one action, bottom-aligned with the number. */}
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
+          <p className="mt-0.5 text-lg font-bold leading-7 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
+          {!open && h.delta != null && <p className="text-sm"><Savings delta={h.delta} /></p>}
+        </div>
         {open
           ? <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote</span>
           : <StatusChip status={h.status} quiet />}
       </div>
 
-      {/* Status as separate pills; red is the only urgency color. */}
-      {(open || renewal) && (
-        <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t pt-3 text-xs" style={{ borderColor: 'var(--qs-border)' }}>
+      {/* Status: red means we owe them a reply; the renewal is context (amber when close);
+          the bundle is a neutral note. */}
+      {(open || renewal || bundle) && (
+        <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t pt-4" style={{ borderColor: 'var(--qs-border)' }}>
           {open && <WaitPill rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} />}
-          {renewal && <span className={`rounded-full px-2.5 py-1 font-semibold ${renewal.urgent ? 'bg-red-50 text-red-700' : ''}`}
-            style={renewal.urgent ? undefined : { background: 'var(--qs-elevated)', color: 'var(--qs-dim)' }}>{renewal.text}</span>}
+          {renewal && <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>}
+          {bundle && <CardPill>Bundle opportunity</CardPill>}
         </div>
       )}
     </li>
