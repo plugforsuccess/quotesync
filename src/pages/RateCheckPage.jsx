@@ -1192,7 +1192,7 @@ function ProductsWeInsure() {
   return (
     <section aria-labelledby="rc-products">
       <h2 id="rc-products" className={sectionTitle}><T k="rc.products.heading">Products we insure</T></h2>
-      <ul className="mt-6 grid grid-cols-3 gap-2 lg:mt-8 lg:grid-cols-6 lg:gap-3">
+      <ul className="mt-6 grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:mt-8 lg:grid-cols-6 lg:gap-3">
         {PRODUCTS.map(([key, Icon, name, sub]) => (
           <li key={key} className="flex min-w-0 flex-col items-center rounded-2xl border-2 border-[#39FF88] bg-gradient-to-b from-blue-700 to-blue-900 px-1 py-3.5 text-center shadow-[0_0_10px_rgba(57,255,136,0.35)]">
             <Icon className="h-6 w-6 text-[#39FF88]" aria-hidden="true" strokeWidth={1.75} />
@@ -1293,14 +1293,14 @@ function OwnerCard() {
   return (
     <aside aria-label={AGENCY.name} className="rounded-3xl border border-white/15 bg-white/10 p-5 backdrop-blur lg:p-8">
       {/* Phones: the name centered across the top, then a big headshot with the rest beside it. */}
-      <p className="mb-4 whitespace-nowrap text-center text-[clamp(14px,4.4vw,17px)] font-extrabold uppercase tracking-[0.08em] lg:hidden" style={{ color: ACCENT }}>{AGENCY.name}</p>
+      <h2 className="mb-4 whitespace-nowrap text-center text-[clamp(18px,5.8vw,23px)] font-black uppercase leading-none tracking-tight lg:hidden" style={{ color: ACCENT }}>{AGENCY.short}</h2>
       <div className="flex items-center gap-3.5 lg:flex-col lg:gap-4 lg:text-center">
         <img src={AGENT.photo} alt={AGENT.name} width="160" height="160"
           className="h-[clamp(84px,26vw,104px)] w-[clamp(84px,26vw,104px)] shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
           style={{ objectPosition: '50% 30%' }} />
         <div className="min-w-0 flex-1">
-          <p className="hidden whitespace-nowrap font-extrabold uppercase lg:block lg:text-lg lg:tracking-[0.1em]" style={{ color: ACCENT }}>{AGENCY.name}</p>
-          <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-1.5 lg:text-2xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
+          <h2 className="hidden whitespace-nowrap font-black uppercase leading-none tracking-tight lg:block lg:text-[26px]" style={{ color: ACCENT }}>{AGENCY.short}</h2>
+          <p className="text-[17px] font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-2.5 lg:text-xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
           <OwnerDetails className="mt-2.5 flex gap-x-5 border-t border-white/15 pt-2.5 lg:mt-3 lg:justify-center lg:gap-x-8 lg:border-0 lg:pt-0" />
         </div>
       </div>
