@@ -473,9 +473,11 @@ function AddPartner({ agencyId, userId, save, onDone }) {
       <div><Label htmlFor="ap-name">Full legal name *</Label>
         <input id="ap-name" className={field} style={inputStyle} value={form.name} onChange={set('name')} required autoComplete="off" /></div>
       <div><Label htmlFor="ap-phone">Mobile</Label>
-        <input id="ap-phone" className={field} style={inputStyle} inputMode="tel" value={form.phone} onChange={set('phone')} autoComplete="off" /></div>
+        <input id="ap-phone" className={field} style={inputStyle} inputMode="tel" value={form.phone} onChange={set('phone')} autoComplete="off" />
+        {form.phone && form.phone.replace(/\D/g, '').length !== 10 && <p className="mt-1 text-xs" style={{ color: 'var(--qs-warning)' }}>Enter all 10 digits.</p>}</div>
       <div><Label htmlFor="ap-email">Email</Label>
-        <input id="ap-email" className={field} style={inputStyle} type="email" value={form.email} onChange={set('email')} autoComplete="off" /></div>
+        <input id="ap-email" className={field} style={inputStyle} type="email" value={form.email} onChange={set('email')} autoComplete="off" />
+        {form.email && !isEmail(form.email) && <p className="mt-1 text-xs" style={{ color: 'var(--qs-warning)' }}>That email doesn&apos;t look right, like name@yahoo.com.</p>}</div>
 
       <p className="-mb-1 mt-1 text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Mailing address (optional): fills in their W-9 so they only add their SSN and sign.</p>
       <div className="md:col-span-3"><Label htmlFor="ap-street">Street address</Label>
