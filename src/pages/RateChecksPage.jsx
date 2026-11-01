@@ -186,12 +186,24 @@ function groupHouseholds(rows) {
 const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h.newest, now) >= OVERDUE_MINUTES;
 
 // "State Farm Auto + Home" when one carrier has everything, else "State Farm auto + Progressive home".
+// What the household has, grouped by company: "State Farm Auto + Home" for one company,
+// "State Farm auto + home · Progressive auto · GEICO umbrella" for several (first three, then "+2 more").
 function householdLine(h) {
-  const carriers = [...new Set(h.policies.map(p => carrierLabel(p)).filter(Boolean))];
   const types = h.policies.map(p => policyTypeLabel(p.policy_type)).filter(Boolean);
   if (!types.length) return 'Policy not read yet';
-  if (carriers.length <= 1) return [carriers[0], types.join(' + ')].filter(Boolean).join(' ');
-  return h.policies.map(p => [carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ')).join(' + ');
+  // Two autos with one company read "auto ×2".
+  const byCarrier = new Map();
+  h.policies.forEach(p => {
+    const c = carrierLabel(p) || '';
+    const t = policyTypeLabel(p.policy_type);
+    if (!t) return;
+    if (!byCarrier.has(c)) byCarrier.set(c, new Map());
+    byCarrier.get(c).set(t, (byCarrier.get(c).get(t) || 0) + 1);
+  });
+  const groups = [...byCarrier.entries()].map(([c, m]) => [c, [...m.entries()].map(([t, n]) => (n > 1 ? `${t} ×${n}` : t))]);
+  if (groups.length === 1) return [groups[0][0], groups[0][1].join(' + ')].filter(Boolean).join(' ');
+  const shown = groups.slice(0, 3).map(([c, ts]) => [c, ts.map(t => t.toLowerCase()).join(' + ')].filter(Boolean).join(' '));
+  return shown.join(' · ') + (groups.length > 3 ? ` · +${groups.length - 3} more` : '');
 }
 
 // Work tabs are always in view (Partners too: partner referrals are the focus);
@@ -367,8 +379,9 @@ export default function RateChecksPage() {
   }, [rawRows, promoters]);
   const open = openRow ? (allRows.find(r => r.id === openRow.id) || openRow) : null;
 
+  // Households, not dec pages: 4 pages from one family is 1, the same as the cards.
   const counts = useMemo(() => Object.fromEntries(FILTERS.map(f => [
-    f.value, f.statuses ? allRows.filter(r => f.statuses.includes(r.status)).length : allRows.length,
+    f.value, groupHouseholds(f.statuses ? allRows.filter(r => f.statuses.includes(r.status)) : allRows).length,
   ])), [allRows]);
   // Counted by household, the same way the cards are listed.
   const overdue = useMemo(() => groupHouseholds(allRows.filter(r => OPEN_STATUSES.includes(r.status)))
