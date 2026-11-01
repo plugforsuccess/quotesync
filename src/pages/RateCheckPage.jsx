@@ -10,7 +10,7 @@
 
 /* COPY REVIEW: submit this page to Allstate marketing compliance before paid traffic */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { T, CopyImage } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
@@ -448,19 +448,8 @@ export default function RateCheckPage() {
   ) : null;
   // The same note on the landing page's blue hero.
   const whoSentHero = invite?.promoter_name ? (
-    <div className="mb-6 flex w-fit max-w-full items-center gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-5 ring-1 ring-white/20 backdrop-blur-sm">
-      {invite.promoter_photo_url ? (
-        <img src={invite.promoter_photo_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
-      ) : (
-        <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
-          {invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()}
-        </span>
-      )}
-      <span className="min-w-0">
-        <span className="block truncate text-[15px] font-bold leading-tight text-white">{invite.promoter_full_name || invite.promoter_name}</span>
-        <span className="block text-[13px] leading-snug text-blue-100">shared this with you</span>
-      </span>
-    </div>
+    <PartnerHeroStrip name={invite.promoter_full_name || invite.promoter_name} photo={invite.promoter_photo_url}
+      initials={invite.promoter_initials || invite.promoter_name.charAt(0).toUpperCase()} />
   ) : invite ? (
     <p className="mb-6 inline-block rounded-xl bg-white/10 px-3 py-2 text-sm text-white ring-1 ring-white/20">
       {invite.producer_name ? `${invite.producer_name.split(' ')[0]} with Allstate` : 'Your Allstate agent'} sent you this link
@@ -795,6 +784,45 @@ async function submitWithRetry(send, tries = 4) {
 }
 
 // ── Pieces ──
+
+// "Javon Yarbrough shared this with you" on the hero: one line when it fits, otherwise
+// "shared this with you" under the name. The strip is only as wide as its text either way
+// (a wrapping row would stretch it to full width), so the fit is measured, not left to CSS.
+function PartnerHeroStrip({ name, photo, initials }) {
+  const box = useRef(null);
+  const probe = useRef(null);
+  const [stacked, setStacked] = useState(false);
+  useLayoutEffect(() => {
+    const host = box.current?.parentElement;
+    if (!host || !probe.current) return undefined;
+    // Photo 40 + gap 10 + padding 10 + 20 + border 2.
+    const fit = () => setStacked(probe.current.offsetWidth + 82 > host.clientWidth);
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(host);
+    return () => ro.disconnect();
+  }, [name]);
+  return (
+    <div ref={box} className="relative mb-6 flex w-fit max-w-full items-center overflow-hidden gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-5 ring-1 ring-white/20 backdrop-blur-sm">
+      {photo ? (
+        <img src={photo} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+      ) : (
+        <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
+          {initials}
+        </span>
+      )}
+      <span className={`min-w-0 text-[15px] leading-snug ${stacked ? '' : 'whitespace-nowrap'}`}>
+        <span className={`font-bold text-white ${stacked ? 'block truncate' : ''}`}>{name}</span>
+        {stacked ? <span className="block text-blue-100">shared this with you</span> : <span className="text-blue-100"> shared this with you</span>}
+      </span>
+      {/* The one-line version, measured off-screen. */}
+      <span ref={probe} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap text-[15px] font-bold leading-snug">
+        {name} <span className="font-normal">shared this with you</span>
+      </span>
+    </div>
+  );
+}
+
 
 function Thumb({ item, scanning = false, small = false }) {
   return (
