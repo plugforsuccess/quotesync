@@ -406,7 +406,10 @@ function Earnings({ token, data, onChange }) {
   const thisMonth = todayKey().slice(0, 7);
   const months = data.months?.length ? data.months : [{ month: thisMonth, households: 0, earned: 0, rows: [], paid: null }];
   const current = months.find(m => m.month === thisMonth) || { month: thisMonth, households: 0, earned: 0, rows: [], paid: null };
-  const lifetime = months.reduce((t, m) => t + m.earned, 0);
+  // Households not paid yet: ones that qualified (paid on pay day) and ones still waiting.
+  const pendingIn = (m) => (m.paid ? 0 : (m.households || 0) + (m.pending || 0));
+  const pendingAll = months.reduce((t, m) => t + pendingIn(m), 0);
+  const paidAll = months.reduce((t, m) => t + (m.paid ? Number(m.paid.amount) || 0 : 0), 0);
 
   return (
     <>
@@ -429,7 +432,7 @@ function Earnings({ token, data, onChange }) {
       </section>
 
       <section className="mt-4 grid grid-cols-3 gap-2">
-        {[[monthLabel(current.month).split(' ')[0], current.households, 'households'], ['Earned', money(current.earned), 'this month'], ['All time', money(lifetime), 'earned']].map(([k, v, sub]) => (
+        {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', money(paidAll), 'all time']].map(([k, v, sub]) => (
           <div key={k} className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">{k}</p>
             <p className="text-xl font-extrabold tabular-nums text-[#0F2D6B]">{v}</p>
@@ -444,7 +447,7 @@ function Earnings({ token, data, onChange }) {
           <div className="flex items-baseline justify-between">
             <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} activity</h2>
             <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? money(m.earned) : ''}
+              {m.paid ? `Paid ${money(m.paid.amount)}` : pendingIn(m) > 0 ? `${pendingIn(m)} ${pendingIn(m) === 1 ? 'household' : 'households'} pending` : ''}
             </span>
           </div>
           {m.rows.length ? (
@@ -455,11 +458,10 @@ function Earnings({ token, data, onChange }) {
                     <span className="block font-semibold text-[#0F2D6B]">{r.first_name}</span>
                     <span className="block text-xs text-slate-500">{r.label}{r.over_cap ? ' · over this month’s limit' : ''}</span>
                   </span>
-                  <span className={`shrink-0 font-bold tabular-nums ${r.fee ? 'text-[#0F2D6B]' : 'text-slate-400'}`}>{money(r.fee)}</span>
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-2 text-sm text-slate-500">No households yet this month.</p>}
+          ) : !m.pending && <p className="mt-2 text-sm text-slate-500">No households yet this month.</p>}
         </section>
       ))}
 
