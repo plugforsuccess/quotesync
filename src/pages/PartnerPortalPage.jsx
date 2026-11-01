@@ -123,13 +123,19 @@ const CERT = [
   'The FATCA code(s) entered on this form (if any) indicating that I am exempt from FATCA reporting is correct.',
 ];
 
-function W9Section({ token, data, onChange }) {
+// Opens pre-filled: their legal name, "Individual / sole proprietor", and the mailing
+// address the agency entered (or from their last W-9). They add the tax ID and sign.
+function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp, embedded = false }) {
   const w9 = data.w9 || {};
-  const [open, setOpen] = useState(false);
+  const [openOwn, setOpenOwn] = useState(false);
+  const open = openProp ?? openOwn;
+  const setOpen = setOpenProp ?? setOpenOwn;
   const [form, setForm] = useState(() => ({
     name: data.name || '', business_name: '', tax_class: 'individual', llc_class: '', other_text: '',
-    address: '', city_state_zip: '', tin_type: 'ssn', tin: '', signed_name: data.name || '', accept: false,
+    address: w9.prefill?.address || '', city_state_zip: w9.prefill?.city_state_zip || '',
+    tin_type: 'ssn', tin: '', signed_name: data.name || '', accept: false,
   }));
+  const prefilled = !!(data.name && w9.prefill?.address && w9.prefill?.city_state_zip);
   const [tried, setTried] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -151,15 +157,7 @@ function W9Section({ token, data, onChange }) {
     setBusy(false);
   };
 
-  if (!w9.on_file && !open) {
-    return (
-      <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-amber-700">W-9 · needed before your first payment</p>
-        <p className="mt-1 text-sm leading-relaxed text-slate-600">Takes about two minutes. Your tax ID is sent once, kept only in the finished form, and never shown here again.</p>
-        <button type="button" onClick={() => setOpen(true)} className="mt-3 h-12 w-full rounded-xl bg-blue-700 font-semibold text-white active:bg-blue-800">Fill out my W-9</button>
-      </section>
-    );
-  }
+  if (!w9.on_file && !open) return null; // the Get set up checklist opens it
 
   if (w9.on_file && !open) {
     return (
@@ -174,10 +172,13 @@ function W9Section({ token, data, onChange }) {
   }
 
   return (
-    <form onSubmit={submit} className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200" noValidate>
-      <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{w9.on_file ? 'Update your W-9' : 'W-9 · needed before your first payment'}</p>
-      <p className="mt-1 text-sm text-slate-600">
-        This fills IRS Form W-9 for you. Your tax ID is sent once, kept only in the finished form, and never shown here again.
+    <form onSubmit={submit} className={embedded ? 'mt-3 border-t border-slate-100 pt-4' : 'mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200'} noValidate>
+      {!embedded && <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">{w9.on_file ? 'Update your W-9' : 'W-9 · needed before your first payment'}</p>}
+      <p className={`${embedded ? '' : 'mt-1 '}text-sm text-slate-600`}>
+        {embedded ? null : prefilled && !w9.on_file
+          ? <>Your name and address are already filled in. Check them, add your Social Security number, and sign.{' '}</>
+          : <>This fills IRS Form W-9 for you.{' '}</>}
+        Your tax ID is sent once, kept only in the finished form, and never shown here again.
       </p>
 
       <label htmlFor="w9-name" className="mt-4 block text-sm font-semibold text-slate-800">Name on your tax return</label>
@@ -325,13 +326,48 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
   );
 }
 
+// First visits: two steps to get paid. Goes away once the W-9 is on file.
+function GetSetUp({ token, data, onChange, shared }) {
+  const [w9Open, setW9Open] = useState(false);
+  const Step = ({ n, done, title, line, children }) => (
+    <li className="flex gap-3 py-3 first:pt-0">
+      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${done ? 'bg-emerald-600 text-white' : 'bg-blue-50 text-blue-700 ring-1 ring-blue-200'}`}>
+        {done ? <Check className="h-4 w-4" aria-hidden="true" /> : n}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className={`font-semibold ${done ? 'text-slate-500 line-through decoration-slate-300' : 'text-[#0F2D6B]'}`}>{title}</p>
+        {line && !done && <p className="text-sm leading-relaxed text-slate-600">{line}</p>}
+        {children}
+      </div>
+    </li>
+  );
+  return (
+    <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-200">
+      <p className="text-xs font-bold uppercase tracking-[0.12em] text-blue-700">Get set up · 2 steps</p>
+      <ol className="mt-3 divide-y divide-slate-100">
+        <Step n={1} done={shared} title="Share your link" line="Copy it below and send it to people you know. Say you get a referral fee." />
+        <Step n={2} done={false} title="Sign your W-9 · about 30 seconds"
+          line={data.w9?.prefill?.address ? 'Your name and address are filled in. Add your SSN and sign.' : 'Needed before your first payment.'}>
+          {!w9Open
+            ? <button type="button" onClick={() => setW9Open(true)} className="mt-2.5 h-11 w-full rounded-xl bg-blue-700 font-semibold text-white active:bg-blue-800">Sign my W-9</button>
+            : <W9Section token={token} data={data} onChange={onChange} open={w9Open} setOpen={setW9Open} embedded />}
+        </Step>
+      </ol>
+    </section>
+  );
+}
+
 function Earnings({ token, data, onChange }) {
   const url = inviteUrl(data.code);
   const [copied, setCopied] = useState(false);
+  // "Share your link" in Get set up is done once they've copied or shared it on this device.
+  const sharedKey = `qs_partner_shared_${token.slice(0, 12)}`;
+  const [shared, setShared] = useState(() => { try { return !!localStorage.getItem(sharedKey); } catch { return false; } });
+  const markShared = () => { setShared(true); try { localStorage.setItem(sharedKey, '1'); } catch { /* private mode */ } };
   const copy = async () => {
-    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
+    try { await navigator.clipboard.writeText(url); setCopied(true); markShared(); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
   };
-  const share = () => navigator.share?.({ title: 'Rate Check', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).catch(() => {});
+  const share = () => navigator.share?.({ title: 'Rate Check', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).then(markShared).catch(() => {});
   const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
   const months = data.months?.length ? data.months : [{ month: thisMonth, households: 0, earned: 0, rows: [], paid: null }];
   const current = months.find(m => m.month === thisMonth) || { month: thisMonth, households: 0, earned: 0, rows: [], paid: null };
@@ -339,7 +375,9 @@ function Earnings({ token, data, onChange }) {
 
   return (
     <>
-      <section className="rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20" style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
+      {!data.w9?.on_file && <GetSetUp token={token} data={data} onChange={onChange} shared={shared} />}
+
+      <section className={`${data.w9?.on_file ? '' : 'mt-4 '}rounded-2xl p-5 text-white shadow-xl shadow-blue-900/20`} style={{ background: `linear-gradient(135deg, #1E40AF 0%, ${DEEP} 100%)` }}>
         <p className="text-xs font-bold uppercase tracking-[0.12em]" style={{ color: ACCENT }}>Your link</p>
         <p className="mt-1.5 truncate font-mono text-[15px] text-white">{url.replace(/^https?:\/\//, '')}</p>
         <div className="mt-4 flex gap-2">
@@ -390,7 +428,7 @@ function Earnings({ token, data, onChange }) {
         </section>
       ))}
 
-      <W9Section token={token} data={data} onChange={onChange} />
+      {data.w9?.on_file && <W9Section token={token} data={data} onChange={onChange} />}
 
       <PhotoSection token={token} name={data.first_name} photoUrl={data.photo_url} onChange={onChange} />
 

@@ -220,7 +220,7 @@ Deno.serve(async (req) => {
   if (token.length !== 48) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
   const { data: p } = await supabase.from('rate_check_promoters')
-    .select('id, agency_id, name, code, active, monthly_cap, agreement_version, agreement_signed_at, photo_url, photo_consent_at, w9_received_at, w9_tin_type, w9_tin_last4')
+    .select('id, agency_id, name, code, active, monthly_cap, agreement_version, agreement_signed_at, photo_url, photo_consent_at, w9_received_at, w9_tin_type, w9_tin_last4, mailing_address, mailing_city_state_zip')
     .eq('portal_token', token).maybeSingle()
   if (!p) return json({ error: 'This link isn’t valid.' }, 404, cors)
 
@@ -295,6 +295,8 @@ Deno.serve(async (req) => {
     const row = {
       w9_received_at: when.toISOString(), w9_tin_type: w9.tin_type, w9_tin_last4: w9.tin.slice(-4),
       w9_tax_class: w9.tax_class === 'llc' ? `llc-${w9.llc_class}` : w9.tax_class, w9_signed_name: w9.signed_name, w9_pdf_path: path,
+      // Kept so the next W-9 (an update) starts pre-filled.
+      mailing_address: w9.address, mailing_city_state_zip: w9.city_state_zip,
     }
     const { error: rowErr } = await supabase.from('rate_check_promoters').update(row).eq('id', p.id)
     if (rowErr) { console.error('[RATE_CHECK_PARTNER] w9 row update failed:', rowErr.message); return json({ error: 'Something went wrong. Please try again.' }, 500, cors) }
@@ -308,7 +310,9 @@ Deno.serve(async (req) => {
       agreement: { required: AGREEMENT_REQUIRED, version: AGREEMENT_VERSION, text: AGREEMENT_REQUIRED ? text : null, signed, signed_at: signed ? p.agreement_signed_at : null },
       schedule, monthly_cap: p.monthly_cap,
       photo_url: p.photo_consent_at ? p.photo_url : null,
-      w9: { on_file: !!p.w9_received_at, tin_type: p.w9_tin_type, last4: p.w9_tin_last4, signed_at: p.w9_received_at, revision: W9_REVISION },
+      w9: { on_file: !!p.w9_received_at, tin_type: p.w9_tin_type, last4: p.w9_tin_last4, signed_at: p.w9_received_at, revision: W9_REVISION,
+        // Pre-fills the form; the tax ID is never stored or sent back.
+        prefill: { address: p.mailing_address || '', city_state_zip: p.mailing_city_state_zip || '' } },
     }
     if (!cleared) return json(base, 200, cors)
     const [{ data: scans }, { data: payouts }] = await Promise.all([

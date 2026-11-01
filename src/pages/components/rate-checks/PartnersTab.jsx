@@ -435,21 +435,24 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
 }
 
 function AddPartner({ agencyId, userId, save, onDone }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', mailing_address: '', mailing_city_state_zip: '' });
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: k === 'phone' ? formatPhoneInput(e.target.value) : e.target.value }));
   const ok = form.name.trim() && (!form.email || isEmail(form.email)) && (!form.phone || form.phone.replace(/\D/g, '').length === 10);
   const field = 'w-full rounded px-2 py-2 text-sm';
   return (
-    <form className="mt-4 grid gap-2 rounded-lg p-3 md:grid-cols-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}
+    <form className="mt-4 grid gap-2 rounded-lg p-3 md:grid-cols-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}
       onSubmit={(e) => { e.preventDefault(); if (ok) save.mutate({ agencyId, userId, ...form }, { onSuccess: onDone }); }}>
-      <input className={field} style={inputStyle} placeholder="Name *" value={form.name} onChange={set('name')} aria-label="Partner name" required />
-      <input className={field} style={inputStyle} placeholder="Mobile" inputMode="tel" value={form.phone} onChange={set('phone')} aria-label="Partner mobile" />
-      <input className={field} style={inputStyle} placeholder="Email" type="email" value={form.email} onChange={set('email')} aria-label="Partner email" />
-      <button type="submit" disabled={!ok || save.isPending} className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+      <input className={field} style={inputStyle} placeholder="Full legal name *" value={form.name} onChange={set('name')} aria-label="Partner name" required autoComplete="off" />
+      <input className={field} style={inputStyle} placeholder="Mobile" inputMode="tel" value={form.phone} onChange={set('phone')} aria-label="Partner mobile" autoComplete="off" />
+      <input className={field} style={inputStyle} placeholder="Email" type="email" value={form.email} onChange={set('email')} aria-label="Partner email" autoComplete="off" />
+      <p className="mt-1 text-xs font-semibold md:col-span-3" style={{ color: 'var(--qs-dim)' }}>Mailing address <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>(optional · pre-fills their W-9)</span></p>
+      <input className={`${field} md:col-span-2`} style={inputStyle} placeholder="Street address" value={form.mailing_address} onChange={set('mailing_address')} aria-label="Partner street address" autoComplete="off" />
+      <input className={field} style={inputStyle} placeholder="City, state, ZIP" value={form.mailing_city_state_zip} onChange={set('mailing_city_state_zip')} aria-label="Partner city, state, ZIP" autoComplete="off" />
+      <button type="submit" disabled={!ok || save.isPending} className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50 md:col-start-3">
         {save.isPending ? 'Adding…' : 'Add and make links'}
       </button>
-      <p className="text-xs md:col-span-4" style={{ color: 'var(--qs-subtle)' }}>Use their full legal name (it goes on their W-9 and 1099). Then send them their portal link.</p>
-      {save.error && <p className="text-sm text-red-500 md:col-span-4">{save.error.message}</p>}
+      <p className="text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Their W-9 opens with this name and address filled in; they only add their SSN and sign. Then send them their portal link.</p>
+      {save.error && <p className="text-sm text-red-500 md:col-span-3">{save.error.message}</p>}
     </form>
   );
 }
