@@ -292,7 +292,7 @@ function W9Modal({ title, onClose, children }) {
   );
 }
 
-// Their photo next to "Javon shared this with you" on their link's landing page.
+// Their photo next to "Javon shared this link with you" on their link's landing page.
 function PhotoSection({ token, name, photoUrl, onChange }) {
   const input = useRef(null);
   const [preview, setPreview] = useState(null);
@@ -324,7 +324,7 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
         </button>
         <p className="text-sm leading-relaxed text-slate-600">
           {photoUrl && !preview
-            ? 'People who open your link see your photo next to “' + name + ' shared this with you.”'
+            ? 'People who open your link see your photo next to “' + name + ' shared this link with you”'
             : 'Add a photo so people who open your link know it came from you.'}
         </p>
       </div>
