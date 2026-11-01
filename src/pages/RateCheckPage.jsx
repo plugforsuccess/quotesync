@@ -434,7 +434,7 @@ export default function RateCheckPage() {
         <img src={invite.promoter_photo_url} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white" />
       )}
       <span className="min-w-0">
-        <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this link with you.</span>
+        <span className="block font-bold text-[#0F2D6B]">{invite.promoter_name} shared this link with you</span>
       </span>
     </div>
   ) : invite ? (
@@ -454,7 +454,7 @@ export default function RateCheckPage() {
         </span>
       )}
       <span className="min-w-0">
-        <span className="block text-[15px] font-bold leading-tight text-white">{invite.promoter_name} shared this link with you.</span>
+        <span className="block text-[15px] font-bold leading-tight text-white">{invite.promoter_name} shared this link with you</span>
       </span>
     </div>
   ) : invite ? (
