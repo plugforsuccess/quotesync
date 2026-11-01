@@ -1253,8 +1253,8 @@ function OwnerCard() {
           className="h-14 w-14 shrink-0 rounded-full object-cover lg:h-40 lg:w-40"
           style={{ objectPosition: '50% 30%' }} />
         <div className="min-w-0">
-          <p className="text-[19px] font-extrabold leading-tight tracking-tight text-white [text-wrap:balance] lg:text-[28px]">{AGENCY.name}</p>
-          <p className="mt-1 text-sm leading-snug text-blue-100 [text-wrap:balance] lg:text-base"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
+          <p className="whitespace-nowrap text-[clamp(13px,4vw,15px)] font-extrabold uppercase tracking-[0.08em] lg:text-lg lg:tracking-[0.1em]" style={{ color: ACCENT }}>{AGENCY.name}</p>
+          <p className="mt-1 text-lg font-extrabold leading-snug text-white [text-wrap:balance] lg:mt-1.5 lg:text-2xl"><T k="rc.agency.line">Licensed agents serving all of Georgia</T></p>
           <dl className="mt-3 flex gap-x-6 border-t border-white/15 pt-3 lg:justify-center lg:border-0 lg:pt-0">
             <div>
               <dt className="text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-200/80">Owner</dt>
