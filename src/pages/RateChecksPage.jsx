@@ -186,26 +186,45 @@ function groupHouseholds(rows) {
 const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h.newest, now) >= OVERDUE_MINUTES;
 
 // "State Farm Auto + Home" when one carrier has everything, else "State Farm auto + Progressive home".
-// One chip per policy type: [Auto ×2] [Home] [Umbrella]. One company keeps its name
-// in front ("State Farm  [Auto] [Home]"); with several, the companies are in the quote.
-function HouseholdPolicies({ h }) {
-  const carriers = new Set();
+// Official logos for the carriers we have files for (public/logos/carriers);
+// any other carrier shows its name in the same spot until its logo is added.
+const CARRIER_LOGO = {
+  'Allstate': '/logos/carriers/allstate.jpg', 'Progressive': '/logos/carriers/progressive.svg',
+  'Liberty Mutual': '/logos/carriers/liberty-mutual.svg', 'National General': '/logos/carriers/national-general.png',
+  'Foremost': '/logos/carriers/foremost.png', 'Chubb': '/logos/carriers/chubb.svg', 'The Hartford': '/logos/carriers/the-hartford.jpg',
+};
+
+// Who they're with now: one logo (or name) per company.
+function CarrierMarks({ h }) {
+  const carriers = [...new Set(h.policies.map(p => carrierLabel(p)).filter(Boolean))];
+  if (!carriers.length) return null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
+      {carriers.map(c => (CARRIER_LOGO[c]
+        ? <img key={c} src={CARRIER_LOGO[c]} alt={c} title={c} className="h-5 w-auto max-w-[96px] object-contain mix-blend-multiply" />
+        : <span key={c} className="text-sm font-bold tracking-tight" style={{ color: 'var(--qs-dim)' }}>{c}</span>))}
+    </div>
+  );
+}
+
+// What they pay per line of business, and whether it's a bundle to win:
+// "Bundle · Auto $8,620 · Home $2,936 · Umbrella $310".
+function LinePrices({ h }) {
   const lines = new Map();
   h.policies.forEach(p => {
     const t = policyTypeLabel(p.policy_type);
     if (!t) return;
-    carriers.add(carrierLabel(p) || '');
-    lines.set(t, (lines.get(t) || 0) + 1);
+    const prev = lines.get(t) || { n: 0, amt: 0, known: true };
+    lines.set(t, { n: prev.n + 1, amt: prev.amt + (Number(p.annual_premium) || 0), known: prev.known && p.annual_premium != null });
   });
-  if (!lines.size) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Policy not read yet</p>;
-  const one = carriers.size === 1 ? [...carriers][0] : null;
+  if (!lines.size) return <p className="mt-1 text-sm" style={{ color: 'var(--qs-subtle)' }}>Policy not read yet</p>;
   return (
-    <div className="mt-1 flex flex-wrap items-center gap-1.5">
-      {one && <span className="mr-0.5 text-sm" style={{ color: 'var(--qs-text)' }}>{one}</span>}
-      {[...lines.entries()].map(([t, n]) => (
-        <span key={t} className="rounded-full px-2 py-0.5 text-xs font-semibold"
-          style={{ background: 'var(--qs-elevated)', color: 'var(--qs-bright)', border: '1px solid var(--qs-border)' }}>
-          {t}{n > 1 ? ` ×${n}` : ''}
+    <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm" style={{ color: 'var(--qs-dim)' }}>
+      {lines.size > 1 && <span className="font-semibold text-emerald-700">Bundle</span>}
+      {[...lines.entries()].map(([t, l], i) => (
+        <span key={t} className="inline-flex items-baseline gap-2 whitespace-nowrap">
+          {(i > 0 || lines.size > 1) && <span aria-hidden="true" style={{ color: 'var(--qs-subtle)' }}>·</span>}
+          <span>{t}{l.n > 1 ? ` ×${l.n}` : ''}{l.known && lines.size > 1 && <span className="tabular-nums" style={{ color: 'var(--qs-text)' }}> {money(l.amt)}</span>}</span>
         </span>
       ))}
     </div>
@@ -286,16 +305,21 @@ function InboxCard({ h, now, onOpen, onPartner }) {
   const renewal = open ? renewalSoon(h.policies, now) : null;
   return (
     <li onClick={onOpen} className="cursor-pointer px-4 py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      {/* Who and how long they've waited. */}
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          {personName(h.lead.first_name, h.policies) || 'No name'}
-          {h.lead.upload_source === 'agent' && <StaffTag />}
-        </span>
-        <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
-      </div>
-      <HouseholdPolicies h={h} />
-      {/* What they pay, and the one action (plus a small text button when they've waited). */}
+      {/* Who, and who sent them. */}
+      <p className="min-w-0 text-base" style={{ color: 'var(--qs-dim)' }}>
+        <span className="font-semibold" style={{ color: 'var(--qs-bright)' }}>{personName(h.lead.first_name, h.policies) || 'No name'}</span>
+        {h.lead.upload_source === 'agent' && <StaffTag />}
+        {h.lead.promoter_name && h.lead.promoter_id && (
+          <span className="text-sm"> via{' '}
+            <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
+              className="font-semibold text-primary-600 underline decoration-primary-300 underline-offset-2 hover:decoration-primary-600">
+              {partnerName(h.lead.promoter_name)}
+            </button>
+          </span>
+        )}
+      </p>
+      <CarrierMarks h={h} />
+      {/* What they pay, and the action. */}
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="min-w-0">
           <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</span>
@@ -314,22 +338,13 @@ function InboxCard({ h, now, onOpen, onPartner }) {
           </span>
         ) : <StatusChip status={h.status} quiet />}
       </div>
-      {/* Quiet footer: renewal when close, and who sent it. */}
-      {(renewal || (h.lead.promoter_name && h.lead.promoter_id) || h.lead.producer_name || h.lead.event_name) && (
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2.5 text-sm" style={{ borderColor: 'var(--qs-border)' }}>
-          {renewal && <span className="font-semibold text-amber-600">{renewal}</span>}
-          {h.lead.promoter_name && h.lead.promoter_id && (
-            <span style={{ color: 'var(--qs-dim)' }}>
-              via{' '}
-              <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
-                className="font-semibold text-primary-600 underline decoration-primary-300 underline-offset-2 hover:decoration-primary-600">
-                {partnerName(h.lead.promoter_name)}
-              </button>
-            </span>
-          )}
-          {(h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
-        </div>
-      )}
+      <LinePrices h={h} />
+      {/* Quiet footer: how long they've waited, and the renewal when it's close. */}
+      <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t pt-2.5 text-sm" style={{ borderColor: 'var(--qs-border)' }}>
+        <Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} />
+        {renewal && <span className="font-semibold text-amber-600">{renewal}</span>}
+        {(h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
+      </div>
     </li>
   );
 }
