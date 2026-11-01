@@ -194,15 +194,23 @@ const CARRIER_LOGO = {
   'Foremost': '/logos/carriers/foremost.png', 'Chubb': '/logos/carriers/chubb.svg', 'The Hartford': '/logos/carriers/the-hartford.jpg',
 };
 
-// Who they're with now: one logo (or name) per company.
-function CarrierMarks({ h }) {
-  const carriers = [...new Set(h.policies.map(p => carrierLabel(p)).filter(Boolean))];
-  if (!carriers.length) return null;
+// Who they're with now: one logo (or name) per company. Tapping one opens that
+// company's policy brief (its first policy, when they have several there).
+function CarrierMarks({ h, onPolicy }) {
+  const byCarrier = new Map();
+  h.policies.forEach(p => { const c = carrierLabel(p); if (c && !byCarrier.has(c)) byCarrier.set(c, p); });
+  if (!byCarrier.size) return null;
   return (
-    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-      {carriers.map(c => (CARRIER_LOGO[c]
-        ? <img key={c} src={CARRIER_LOGO[c]} alt={c} title={c} className="h-5 w-auto max-w-[96px] object-contain mix-blend-multiply" />
-        : <span key={c} className="text-sm font-bold tracking-tight" style={{ color: 'var(--qs-dim)' }}>{c}</span>))}
+    <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5">
+      {[...byCarrier.entries()].map(([c, p]) => (
+        <button key={c} type="button" title={`Open the ${c} policy`} aria-label={`Open the ${c} policy`}
+          onClick={e => { e.stopPropagation(); onPolicy?.(p); }}
+          className="inline-flex h-8 items-center rounded-lg px-2 transition hover:bg-[var(--qs-elevated)] focus-visible:bg-[var(--qs-elevated)]">
+          {CARRIER_LOGO[c]
+            ? <img src={CARRIER_LOGO[c]} alt="" className="h-5 w-auto max-w-[96px] object-contain mix-blend-multiply" />
+            : <span className="text-sm font-bold tracking-tight" style={{ color: 'var(--qs-dim)' }}>{c}</span>}
+        </button>
+      ))}
     </div>
   );
 }
@@ -297,7 +305,7 @@ function TabBar({ tab, setTab }) {
 }
 
 // One household in the inbox: who, what they have, what it costs, and the next step.
-function InboxCard({ h, now, onOpen, onPartner }) {
+function InboxCard({ h, now, onOpen, onPartner, onPolicy }) {
   const open = OPEN_STATUSES.includes(h.status);
   const late = isOverdue(h, now);
   const first = h.lead.first_name || 'there';
@@ -318,7 +326,7 @@ function InboxCard({ h, now, onOpen, onPartner }) {
           </span>
         )}
       </p>
-      <CarrierMarks h={h} />
+      <div className="-mx-2"><CarrierMarks h={h} onPolicy={onPolicy} /></div>
       {/* What they pay, and the action. */}
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="min-w-0">
@@ -528,7 +536,7 @@ export default function RateChecksPage() {
                 <>
                   {/* Phones: cards. The whole card opens the quote; Start quote says so. */}
                   <ul className="md:hidden">
-                    {households.map(h => <InboxCard key={h.key} h={h} now={now} onOpen={() => openRowFromList(h.lead)} onPartner={(id) => { setPartnerFocus(id); setTab('promoters'); window.scrollTo({ top: 0 }); }} />)}
+                    {households.map(h => <InboxCard key={h.key} h={h} now={now} onOpen={() => openRowFromList(h.lead)} onPolicy={(p) => openRowFromList(p)} onPartner={(id) => { setPartnerFocus(id); setTab('promoters'); window.scrollTo({ top: 0 }); }} />)}
                   </ul>
 
                   {/* Desktop: table */}
