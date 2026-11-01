@@ -613,12 +613,48 @@ function Layout({ forcePlane = null }) {
 }
 
 // ── Checklist bell icon with badge ──────────────────────────────────────────
+// The public pages with editable copy; the pencil asks which one to open in editing mode.
+const EDIT_PAGES = [
+  ['/?edit=1', 'Rate Check page', 'The homepage people upload to'],
+  ['/courses?edit=1', 'Drivers Ed', 'Courses and the partner program'],
+];
+
 function EditWebsiteButton() {
+  const [open, setOpen] = useState(false);
+  const wrap = useRef(null);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => { if (wrap.current && !wrap.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('touchstart', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('touchstart', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
   return (
-    <NavLink to="/?edit=1" aria-label="Edit website" title="Edit website"
-      className="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200">
-      <Pencil className="w-5 h-5" />
-    </NavLink>
+    <div ref={wrap} className="relative">
+      <button type="button" onClick={() => setOpen(o => !o)} aria-label="Edit website" title="Edit website" aria-haspopup="menu" aria-expanded={open}
+        className="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200">
+        <Pencil className="w-5 h-5" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl shadow-xl"
+          style={{ background: '#FFFFFF', border: '1px solid #D8E1F0' }}>
+          <p className="px-4 pb-1 pt-3 text-[11px] font-bold uppercase tracking-[0.12em]" style={{ color: '#546280' }}>Edit which page?</p>
+          {EDIT_PAGES.map(([to, label, hint]) => (
+            <NavLink key={to} to={to} role="menuitem" onClick={() => setOpen(false)}
+              className="block px-4 py-2.5 hover:bg-blue-50">
+              <span className="block text-sm font-semibold" style={{ color: '#0F2D6B' }}>{label}</span>
+              <span className="block text-xs" style={{ color: '#546280' }}>{hint}</span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
