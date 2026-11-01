@@ -25,6 +25,9 @@ const GREETINGS = [
   (n) => `Hi, ${n}`, (n) => `Hey, ${n}`, (n) => `Hello, ${n}`,
   (n) => `Hey there, ${n}`, (n) => `Good to see you, ${n}`, (n) => `What’s good, ${n}`,
 ];
+// The fee schedule is hidden from partners for now (they still see what each
+// household earned them). Set to true to show it again.
+const SHOW_PAY_SCHEDULE = false;
 const SCHEDULE_ROWS = [
   ['auto_home', 'Auto + home or condo'], ['auto_renters', 'Auto + renters'], ['home_only', 'Home or condo only'],
   ['auto_only', 'Auto only'], ['renters_only', 'Renters only'],
@@ -460,7 +463,7 @@ function Earnings({ token, data, onChange }) {
 
       <PhotoSection token={token} name={data.first_name} photoUrl={data.photo_url} onChange={onChange} />
 
-      <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
+      {SHOW_PAY_SCHEDULE && <section className="mt-4 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <h2 className="text-xs font-bold uppercase tracking-[0.12em] text-slate-500">How you&apos;re paid · per household</h2>
         <dl className="mt-2 divide-y divide-slate-100 text-sm">
           {SCHEDULE_ROWS.map(([k, label]) => (
@@ -469,7 +472,7 @@ function Earnings({ token, data, onChange }) {
           <div className="flex justify-between py-2"><dt className="text-slate-700">Each extra line, up to 2</dt><dd className="font-bold tabular-nums text-[#0F2D6B]">+{money(data.schedule.extra_line)}</dd></div>
         </dl>
         <p className="mt-2 text-xs leading-relaxed text-slate-500">Paid the same whether or not they buy. A household is one phone number, address or policy, paid once, after we&apos;ve quoted it (or 7 days after their first page). Pages that can&apos;t be read, repeats, expired pages and Allstate policies don&apos;t count. Paid monthly after your W-9 is on file; months under $50 carry over.</p>
-      </section>
+      </section>}
     </>
   );
 }
