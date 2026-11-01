@@ -1262,7 +1262,7 @@ const ACCENT = '#39FF88';
 // The agency name on its card: white letters with a navy outline and drop shadow.
 const AGENCY_TITLE = {
   color: '#FFFFFF',
-  WebkitTextStroke: '1.5px #0F2D6B',
+  WebkitTextStroke: '6px #0F2D6B',
   paintOrder: 'stroke fill',
   textShadow: '0 2px 0 #0F2D6B, 0 4px 10px rgba(15,45,107,0.55)',
   letterSpacing: '0.01em',
