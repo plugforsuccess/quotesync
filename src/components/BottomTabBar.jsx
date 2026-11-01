@@ -2,11 +2,11 @@
 // Mobile-only bottom tab bar for primary navigation (hidden on md: and above)
 
 import { NavLink, useLocation } from 'react-router-dom';
-import { Camera, ClipboardList, RotateCcw, Shield, Grid } from 'lucide-react';
+import { Camera, RotateCcw, Shield, Grid } from 'lucide-react';
 
+// Leads is hidden while the agency focuses on Rate Check partner referrals (the page still works by URL).
 const TABS = [
   { to: '/agency/leads/rate-checks', label: 'Rate Checks', icon: Camera },
-  { to: '/agency/leads', label: 'Leads', icon: ClipboardList },
   { to: '/agency/winbacks', label: 'Winbacks', icon: RotateCcw },
   { to: '/agency/retention', label: 'Retention', icon: Shield, principalOnly: true },
 ];
@@ -28,7 +28,7 @@ function BottomTabBar({ onMorePress, moreActive, drawerOpen = false, agencyRole 
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-white/10 bg-[#0f172a]/95 backdrop-blur-xl"
+      className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t border-[#D8E1F0] bg-white/95 backdrop-blur-xl"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <nav className="flex items-center justify-around h-16">
@@ -43,24 +43,24 @@ function BottomTabBar({ onMorePress, moreActive, drawerOpen = false, agencyRole 
             >
               {/* Active pill highlight */}
               {active && (
-                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-[3px] rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" />
+                <div className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-[3px] rounded-full bg-[#1D4ED8]" />
               )}
               <div
                 className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all duration-200 ${
                   active
-                    ? 'bg-emerald-500/15'
+                    ? 'bg-blue-50'
                     : ''
                 }`}
               >
                 <Icon
                   className={`w-5 h-5 transition-colors duration-200 ${
-                    active ? 'text-emerald-400' : 'text-white/60'
+                    active ? 'text-[#1D4ED8]' : 'text-[#546280]'
                   }`}
                   strokeWidth={active ? 2.2 : 1.8}
                 />
                 <span
                   className={`text-[10px] leading-tight font-medium truncate max-w-[64px] transition-colors duration-200 ${
-                    active ? 'text-emerald-400' : 'text-white/60'
+                    active ? 'text-[#1D4ED8]' : 'text-[#546280]'
                   }`}
                 >
                   {tab.label}
@@ -76,22 +76,22 @@ function BottomTabBar({ onMorePress, moreActive, drawerOpen = false, agencyRole 
           className="flex flex-col items-center justify-center flex-1 h-full relative"
         >
           {moreOn && (
-            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-[3px] rounded-full bg-gradient-to-r from-emerald-400 to-teal-500" />
+            <div className="absolute top-1 left-1/2 -translate-x-1/2 w-12 h-[3px] rounded-full bg-[#1D4ED8]" />
           )}
           <div
             className={`flex flex-col items-center justify-center gap-0.5 px-3 py-1 rounded-xl transition-all duration-200 ${
-              moreOn ? 'bg-emerald-500/15' : ''
+              moreOn ? 'bg-blue-50' : ''
             }`}
           >
             <Grid
               className={`w-5 h-5 transition-colors duration-200 ${
-                moreOn ? 'text-emerald-400' : 'text-white/60'
+                moreOn ? 'text-[#1D4ED8]' : 'text-[#546280]'
               }`}
               strokeWidth={moreOn ? 2.2 : 1.8}
             />
             <span
               className={`text-[10px] leading-tight font-medium transition-colors duration-200 ${
-                moreOn ? 'text-emerald-400' : 'text-white/60'
+                moreOn ? 'text-[#1D4ED8]' : 'text-[#546280]'
               }`}
             >
               More

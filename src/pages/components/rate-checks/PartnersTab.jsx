@@ -5,7 +5,7 @@
 // what they're owed this month, their close rate and cost per win, the pay
 // schedule, and a yearly export of what was paid, for 1099s. Math lives in partnerPay.js.
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, Plus } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
@@ -35,7 +35,7 @@ function Stat({ label, value, tone }) {
   );
 }
 
-export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck }) {
+export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck, focusId = null }) {
   const { data: promoters = [], isLoading, error } = usePromoters(agencyId);
   const { data: scans = [] } = usePromoterScans(agencyId);
   const { data: rateRows = [] } = usePromoterRates(agencyId);
@@ -47,7 +47,16 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
   const now = currentMonth();
   const [month, setMonth] = useState(now);
   const [adding, setAdding] = useState(false);
-  const [open, setOpen] = useState(null);
+  const [open, setOpen] = useState(focusId);
+
+  // Opened from a partner's name on a lead: expand their card and bring it into view.
+  useEffect(() => {
+    if (!focusId || isLoading) return;
+    setOpen(focusId);
+    // Scroll after the applications list above has had a moment to load and push the card down.
+    const t = setTimeout(() => document.getElementById(`partner-${focusId}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 450);
+    return () => clearTimeout(t);
+  }, [focusId, isLoading]);
 
   const byPartner = useMemo(() => {
     const all = households(scans, schedule);
@@ -143,7 +152,7 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
         const expanded = open === p.id;
         const monthRows = hh.filter(h => h.month === month);
         return (
-          <section key={p.id} className="dark-card" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
+          <section key={p.id} id={`partner-${p.id}`} className="dark-card scroll-mt-24" style={{ padding: 16, opacity: p.active ? 1 : 0.6 }}>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <PartnerPhoto promoter={p} canEdit={canEdit} />
               <div className="min-w-0 flex-1">
@@ -185,42 +194,55 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               <Stat label="Cost per win" value={dollars(s.costPerWin)} />
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button type="button" onClick={() => setOpen(expanded ? null : p.id)} className="inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
-                {expanded ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
-                {monthRows.length ? `${monthRows.length} ${monthRows.length === 1 ? 'household' : 'households'} in ${monthLabel(month)}` : `Nothing in ${monthLabel(month)}`}
-              </button>
-              {canEdit && (
-                <span className="ml-auto flex flex-wrap gap-2">
-                  {paid ? (
-                    <button type="button" disabled={recordPayout.isPending}
-                      onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, months: [{ period: monthStart(month) }], userId, remove: true })}
-                      className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}>Mark unpaid</button>
-                  ) : plan.amount > 0 && !plan.underMinimum && !p.w9_received_at ? (
-                    <span className="self-center text-xs font-semibold" style={{ color: 'var(--qs-warning)' }}>W-9 needed before paying {dollars(plan.amount)}</span>
-                  ) : plan.amount > 0 && !plan.underMinimum ? (
-                    <button type="button" disabled={recordPayout.isPending}
-                      onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, userId,
-                        months: plan.months.map(m => ({ period: monthStart(m.month), households: m.households, amount: m.amount })) })}
-                      className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
-                      Mark {dollars(plan.amount)} paid{plan.carried ? ` (${plan.months.length} months)` : ''}
-                    </button>
-                  ) : plan.underMinimum ? (
-                    <span className="self-center text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(MIN_PAYOUT)} · carries over</span>
-                  ) : null}
-                  {p.w9_pdf_path ? (
-                    <button type="button" onClick={() => partnerW9Url(p.w9_pdf_path).then(url => window.open(url, '_blank', 'noopener')).catch(err => window.alert(err.message))}
-                      className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>Open W-9</button>
-                  ) : (
-                    <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}
-                      className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.w9_received_at ? 'Clear W-9' : 'Paper W-9 received'}</button>
-                  )}
-                  <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
-                  <button type="button" onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}
-                    className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>{p.active ? 'Pause link' : 'Turn link on'}</button>
-                </span>
+            {/* This month's households (tap to list them), and the payout action when one is due. */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+              {monthRows.length ? (
+                <button type="button" onClick={() => setOpen(expanded ? null : p.id)} aria-expanded={expanded}
+                  className="inline-flex items-center gap-1 text-sm font-semibold text-primary-600">
+                  {expanded ? <ChevronDown className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" />}
+                  {monthRows.length} {monthRows.length === 1 ? 'household' : 'households'} in {monthLabel(month)}
+                </button>
+              ) : (
+                <span className="text-sm" style={{ color: 'var(--qs-subtle)' }}>No households in {monthLabel(month)} yet.</span>
               )}
+              {canEdit && (paid ? (
+                <button type="button" disabled={recordPayout.isPending}
+                  onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, months: [{ period: monthStart(month) }], userId, remove: true })}
+                  className="rounded-lg px-3 py-1.5 text-sm font-semibold" style={inputStyle}>Mark unpaid</button>
+              ) : plan.amount > 0 && !plan.underMinimum && !p.w9_received_at ? (
+                <span className="text-xs font-semibold" style={{ color: 'var(--qs-warning)' }}>W-9 needed before paying {dollars(plan.amount)}</span>
+              ) : plan.amount > 0 && !plan.underMinimum ? (
+                <button type="button" disabled={recordPayout.isPending}
+                  onClick={() => recordPayout.mutate({ agencyId, promoterId: p.id, userId,
+                    months: plan.months.map(m => ({ period: monthStart(m.month), households: m.households, amount: m.amount })) })}
+                  className="rounded-lg bg-primary-600 px-3 py-1.5 text-sm font-semibold text-white">
+                  Mark {dollars(plan.amount)} paid{plan.carried ? ` (${plan.months.length} months)` : ''}
+                </button>
+              ) : plan.underMinimum ? (
+                <span className="text-xs" style={{ color: 'var(--qs-subtle)' }}>Under {dollars(MIN_PAYOUT)} · carries over</span>
+              ) : null)}
             </div>
+
+            {/* Partner settings: what each one means, and one action each. */}
+            {canEdit && (
+              <dl className="mt-4 divide-y overflow-hidden rounded-xl" style={{ border: '1px solid var(--qs-border)', borderColor: 'var(--qs-border)' }}>
+                <SettingRow label="W-9"
+                  value={p.w9_received_at
+                    ? `On file${p.w9_tin_last4 ? ` · ${p.w9_tin_type === 'ein' ? 'EIN' : 'SSN'} …${p.w9_tin_last4}` : ' (paper copy)'}`
+                    : `Needed before the first payment. ${p.name.split(' ')[0]} can sign it in the portal.`}
+                  tone={p.w9_received_at ? 'ok' : 'warn'}
+                  action={p.w9_pdf_path
+                    ? <SettingButton onClick={() => partnerW9Url(p.w9_pdf_path).then(url => window.open(url, '_blank', 'noopener')).catch(err => window.alert(err.message))}>Open</SettingButton>
+                    : <SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, w9_received_at: p.w9_received_at ? null : new Date().toISOString() })}>
+                        {p.w9_received_at ? 'Clear' : 'Got paper W-9'}
+                      </SettingButton>} />
+                <CapControl value={p.monthly_cap} onSave={(cap) => savePromoter.mutate({ id: p.id, agencyId, monthly_cap: cap })} />
+                <SettingRow label="Share link"
+                  value={p.active ? 'On. New scans from the link count toward pay.' : 'Paused. The link doesn\u2019t take new scans.'}
+                  tone={p.active ? 'ok' : 'warn'}
+                  action={<SettingButton onClick={() => savePromoter.mutate({ id: p.id, agencyId, active: !p.active })}>{p.active ? 'Pause' : 'Turn on'}</SettingButton>} />
+              </dl>
+            )}
 
             {expanded && monthRows.length > 0 && (
               <ul className="mt-3 overflow-hidden rounded-lg" style={{ border: '1px solid var(--qs-border)' }}>
@@ -316,24 +338,42 @@ function LinkRow({ label, url, copyLabel, muted = false }) {
   );
 }
 
-// Most households paid per month; blank means no cap.
+// One labeled setting on a partner's card: what it is, where it stands, one action.
+function SettingRow({ label, value, tone, action, children }) {
+  return (
+    <div className="flex items-center justify-between gap-3 px-3 py-2.5" style={{ borderColor: 'var(--qs-border)' }}>
+      <div className="min-w-0">
+        <dt className="text-sm font-semibold" style={{ color: 'var(--qs-bright)' }}>{label}</dt>
+        <dd className="text-xs leading-snug" style={{ color: tone === 'warn' ? 'var(--qs-warning)' : 'var(--qs-subtle)' }}>{value}</dd>
+        {children}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  );
+}
+
+function SettingButton({ onClick, children }) {
+  return (
+    <button type="button" onClick={onClick} className="min-h-[36px] rounded-lg px-3 text-sm font-semibold text-primary-600" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+      {children}
+    </button>
+  );
+}
+
+// Most households paid per month; blank means no limit.
 function CapControl({ value, onSave }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value ?? '');
-  if (!editing) {
-    return (
-      <button type="button" onClick={() => { setDraft(value ?? ''); setEditing(true); }} className="rounded-lg px-3 py-1.5 text-sm font-medium" style={inputStyle}>
-        {value ? `Cap ${value}/month` : 'No cap'}
-      </button>
-    );
-  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm" style={inputStyle}>
-      Cap
-      <input inputMode="numeric" value={draft} onChange={e => setDraft(e.target.value.replace(/\D/g, '').slice(0, 4))} aria-label="Monthly cap"
-        className="w-14 rounded px-1.5 py-0.5 text-right tabular-nums" style={inputStyle} placeholder="none" />
-      <button type="button" onClick={() => { onSave(draft ? Number(draft) : null); setEditing(false); }} className="font-semibold text-primary-600">Save</button>
-    </span>
+    <SettingRow label="Monthly limit"
+      value={value ? `Pays up to ${value} households a month; the rest are logged but not paid.` : 'No limit. Every qualified household is paid.'}
+      action={editing ? (
+        <span className="inline-flex items-center gap-1.5">
+          <input inputMode="numeric" value={draft} onChange={e => setDraft(e.target.value.replace(/\D/g, '').slice(0, 4))} aria-label="Households paid per month"
+            className="h-9 w-16 rounded-lg px-2 text-right text-sm tabular-nums" style={inputStyle} placeholder="none" autoFocus />
+          <SettingButton onClick={() => { onSave(draft ? Number(draft) : null); setEditing(false); }}>Save</SettingButton>
+        </span>
+      ) : <SettingButton onClick={() => { setDraft(value ?? ''); setEditing(true); }}>{value ? 'Change' : 'Set limit'}</SettingButton>} />
   );
 }
 
@@ -395,21 +435,24 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
 }
 
 function AddPartner({ agencyId, userId, save, onDone }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '' });
+  const [form, setForm] = useState({ name: '', phone: '', email: '', mailing_address: '', mailing_city_state_zip: '' });
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: k === 'phone' ? formatPhoneInput(e.target.value) : e.target.value }));
   const ok = form.name.trim() && (!form.email || isEmail(form.email)) && (!form.phone || form.phone.replace(/\D/g, '').length === 10);
   const field = 'w-full rounded px-2 py-2 text-sm';
   return (
-    <form className="mt-4 grid gap-2 rounded-lg p-3 md:grid-cols-4" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}
+    <form className="mt-4 grid gap-2 rounded-lg p-3 md:grid-cols-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}
       onSubmit={(e) => { e.preventDefault(); if (ok) save.mutate({ agencyId, userId, ...form }, { onSuccess: onDone }); }}>
-      <input className={field} style={inputStyle} placeholder="Name *" value={form.name} onChange={set('name')} aria-label="Partner name" required />
-      <input className={field} style={inputStyle} placeholder="Mobile" inputMode="tel" value={form.phone} onChange={set('phone')} aria-label="Partner mobile" />
-      <input className={field} style={inputStyle} placeholder="Email" type="email" value={form.email} onChange={set('email')} aria-label="Partner email" />
-      <button type="submit" disabled={!ok || save.isPending} className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+      <input className={field} style={inputStyle} placeholder="Full legal name *" value={form.name} onChange={set('name')} aria-label="Partner name" required autoComplete="off" />
+      <input className={field} style={inputStyle} placeholder="Mobile" inputMode="tel" value={form.phone} onChange={set('phone')} aria-label="Partner mobile" autoComplete="off" />
+      <input className={field} style={inputStyle} placeholder="Email" type="email" value={form.email} onChange={set('email')} aria-label="Partner email" autoComplete="off" />
+      <p className="mt-1 text-xs font-semibold md:col-span-3" style={{ color: 'var(--qs-dim)' }}>Mailing address <span className="font-normal" style={{ color: 'var(--qs-subtle)' }}>(optional · pre-fills their W-9)</span></p>
+      <input className={`${field} md:col-span-2`} style={inputStyle} placeholder="Street address" value={form.mailing_address} onChange={set('mailing_address')} aria-label="Partner street address" autoComplete="off" />
+      <input className={field} style={inputStyle} placeholder="City, state, ZIP" value={form.mailing_city_state_zip} onChange={set('mailing_city_state_zip')} aria-label="Partner city, state, ZIP" autoComplete="off" />
+      <button type="submit" disabled={!ok || save.isPending} className="rounded-lg bg-primary-600 px-3 py-2 text-sm font-semibold text-white disabled:opacity-50 md:col-start-3">
         {save.isPending ? 'Adding…' : 'Add and make links'}
       </button>
-      <p className="text-xs md:col-span-4" style={{ color: 'var(--qs-subtle)' }}>Use their full legal name (it goes on their W-9 and 1099). Then send them their portal link.</p>
-      {save.error && <p className="text-sm text-red-500 md:col-span-4">{save.error.message}</p>}
+      <p className="text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Their W-9 opens with this name and address filled in; they only add their SSN and sign. Then send them their portal link.</p>
+      {save.error && <p className="text-sm text-red-500 md:col-span-3">{save.error.message}</p>}
     </form>
   );
 }

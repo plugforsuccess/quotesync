@@ -20,8 +20,9 @@ import { sanitizeMoneyInput, parseMoney } from '../lib/money';
 import { HOUSING_LABEL } from '../lib/rateCheckApi';
 import PageSpinner from '../components/PageSpinner';
 import { thCls, thStyle, inputStyle, money, formatPhone, CARD_STYLE } from './components/rate-checks/ui';
+import { insuredName } from './components/rate-checks/policyView';
 import {
-  STATUS, CONFIDENCE_WARNING, TERM_HINT, DECISION, decisionLabel,
+  STATUS, CONFIDENCE_WARNING, TERM_HINT, DECISION,
   isSelectingText, POLICY_TYPES, policyTypeLabel, CARRIERS, carrierLabel,
 } from './components/rate-checks/format';
 import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copyable';
@@ -110,9 +111,62 @@ function StaffTag() {
 }
 
 // "via Marcus · Gwinnett expo" — where a rate check came from.
+// A partner's full name as entered: "Javon Smith" (staff screens only; the public
+// share-link page shows just their first name).
+const partnerName = (name) => String(name || '').trim().replace(/\s+/g, ' ');
+
+// Only when it's close: the soonest renewal within 30 days ("Renews in 12 days").
+// Further out, or unknown, shows nothing.
+function renewalSoon(policies, now) {
+  const DAY = 86400000;
+  const soonest = policies.map(p => p.expiration_date).filter(Boolean)
+    .map(d => { const [y, m, dd] = String(d).slice(0, 10).split('-').map(Number); return new Date(y, m - 1, dd).getTime(); })
+    .filter(t => Number.isFinite(t) && t >= now - DAY)
+    .sort((a, b) => a - b)[0];
+  if (soonest == null) return null;
+  const days = Math.max(0, Math.ceil((soonest - now) / DAY));
+  if (days > 30) return null;
+  return { text: days === 0 ? 'Renews today' : `Renews in ${days} day${days === 1 ? '' : 's'}`, urgent: days <= 14 };
+}
+
+// One small pill style for the card: neutral by default, red for "we owe a reply",
+// amber for a renewal that's close.
+const PILL_TONE = {
+  neutral: { background: 'var(--qs-elevated)', color: 'var(--qs-dim)' },
+  red: { background: '#FEF2F2', color: '#B91C1C' },
+  amber: { background: '#FFFBEB', color: '#B45309' },
+};
+function CardPill({ tone = 'neutral', title, children }) {
+  return <span className="inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-semibold leading-5" style={PILL_TONE[tone]} title={title}>{children}</span>;
+}
+
+// How long they've been waiting on us for a quote: red once it's past the 30 minutes
+// the page promises, neutral before.
+function WaitPill({ rc, now }) {
+  const mins = minutesSince(rc.created_at, now);
+  return (
+    <CardPill tone={mins >= OVERDUE_MINUTES ? 'red' : 'neutral'} title="How long they've been waiting on us for a quote">
+      Waiting on us · {mins < 1 ? 'just now' : ageText(mins)}
+    </CardPill>
+  );
+}
+
+// "Stephen Pearson": the first name they typed plus the last name off their dec page
+// ("PEARSON, STEPHEN & JOCELYN" → Pearson). Falls back to whichever part we have.
+const properCase = (w) => w.toLowerCase().replace(/(^|[-'])([a-z])/g, (m, sep, c) => sep + c.toUpperCase());
+function personName(first, policies) {
+  const raw = (policies || []).map(p => p.extracted?.insured_name).find(Boolean);
+  const words = raw ? String(insuredName(raw) || '').replace(/[.,]/g, ' ').split(/\s+/).filter(Boolean) : [];
+  const core = words.filter(w => !/^(JR|SR|II|III|IV)$/i.test(w));
+  const last = core.length > 1 ? properCase(core[core.length - 1]) : null;
+  const firstName = first ? properCase(String(first).trim().split(/\s+/)[0]) : (core[0] ? properCase(core[0]) : null);
+  if (!firstName) return last;
+  return last && last.toLowerCase() !== firstName.toLowerCase() ? `${firstName} ${last}` : firstName;
+}
+
 function OriginTag({ rc, className = '' }) {
   if (!rc.producer_name && !rc.event_name && !rc.promoter_name) return null;
-  const text = [rc.promoter_name && `Referred by ${rc.promoter_name.split(' ')[0]}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
+  const text = [rc.promoter_name && `Referred by ${partnerName(rc.promoter_name)}`, rc.event_name, rc.producer_name && `via ${rc.producer_name.split(' ')[0]}`].filter(Boolean).join(' · ');
   return (
     <span className={`inline-flex items-center gap-1 text-xs ${className}`} style={{ color: 'var(--qs-subtle)' }} title={[rc.event_name, rc.producer_name].filter(Boolean).join(' — ')}>
       <Link2 className="h-3 w-3" /> {text}
@@ -154,18 +208,12 @@ function groupHouseholds(rows) {
 const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h.newest, now) >= OVERDUE_MINUTES;
 
 // "State Farm Auto + Home" when one carrier has everything, else "State Farm auto + Progressive home".
-function householdLine(h) {
-  const carriers = [...new Set(h.policies.map(p => carrierLabel(p)).filter(Boolean))];
-  const types = h.policies.map(p => policyTypeLabel(p.policy_type)).filter(Boolean);
-  if (!types.length) return 'Policy not read yet';
-  if (carriers.length <= 1) return [carriers[0], types.join(' + ')].filter(Boolean).join(' ');
-  return h.policies.map(p => [carrierLabel(p), policyTypeLabel(p.policy_type).toLowerCase()].filter(Boolean).join(' ')).join(' + ');
-}
-
-// Work tabs are always in view; the weekly and set-up tabs sit behind More.
+// Work tabs are always in view (Partners too: partner referrals are the focus);
+// the weekly and set-up tabs sit behind More.
 const WORK_TABS = [
   { v: 'inbox', label: 'Inbox', Icon: Camera },
-  { v: 'invites', label: 'Links sent', Icon: Send },
+  { v: 'invites', label: 'Links sent', short: 'Links', Icon: Send },
+  { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
 ];
 const MORE_GROUPS = [
   { title: 'Insights', tabs: [
@@ -174,7 +222,6 @@ const MORE_GROUPS = [
   ] },
   { title: 'Setup', tabs: [
     { v: 'rules', label: 'Rules', hint: 'Where each scan goes', Icon: SlidersHorizontal },
-    { v: 'promoters', label: 'Partners', hint: 'People paid to share your link', Icon: BadgeDollarSign },
     { v: 'partners', label: 'Referral agencies', short: 'Referrals', hint: 'Who writes what Allstate can’t', Icon: Handshake },
   ] },
 ];
@@ -185,11 +232,11 @@ function TabBar({ tab, setTab }) {
   const segment = (active) => `flex min-h-[44px] items-center justify-center gap-1.5 rounded-md px-2 text-sm font-semibold ${active ? 'bg-primary-600 text-white' : ''}`;
   return (
     <>
-      <div className="mb-4 grid grid-cols-3 gap-1 rounded-lg p-1 sm:max-w-md" style={{ background: 'var(--qs-elevated)' }} role="tablist">
-        {WORK_TABS.map(({ v, label, Icon }) => (
+      <div className="mb-4 grid grid-cols-4 gap-1 rounded-lg p-1 sm:max-w-xl" style={{ background: 'var(--qs-elevated)' }} role="tablist">
+        {WORK_TABS.map(({ v, label, short, Icon }) => (
           <button key={v} role="tab" aria-selected={tab === v} onClick={() => setTab(v)} className={segment(tab === v)}
             style={tab === v ? undefined : { color: 'var(--qs-text)' }}>
-            <Icon className="h-4 w-4 shrink-0" aria-hidden="true" /> <span className="truncate">{label}</span>
+            <Icon className="hidden h-4 w-4 shrink-0 sm:block" aria-hidden="true" /> <span className="truncate sm:hidden">{short || label}</span><span className="hidden truncate sm:inline">{label}</span>
           </button>
         ))}
         <button type="button" aria-haspopup="dialog" aria-expanded={sheet} onClick={() => setSheet(true)} className={segment(!!moreTab)}
@@ -226,62 +273,66 @@ function TabBar({ tab, setTab }) {
   );
 }
 
-// Start quote and Text now: same height and width, so they stack as a pair.
-const CARD_BTN = 'inline-flex h-11 w-36 shrink-0 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold';
-
 // One household in the inbox: who, what they have, what it costs, and the next step.
-function InboxCard({ h, now, onOpen }) {
+function InboxCard({ h, now, onOpen, onPartner }) {
   const open = OPEN_STATUSES.includes(h.status);
   const late = isOverdue(h, now);
   const first = h.lead.first_name || 'there';
   const holdText = `Hi ${first}, it's Cam with Allstate. I'm working on your quote now and I'll have it to you shortly.`;
+  const renewal = open ? renewalSoon(h.policies, now) : null;
+  const bundle = new Set(h.policies.map(p => p.policy_type).filter(Boolean)).size > 1;
   return (
-    <li onClick={onOpen} className="cursor-pointer px-4 py-3" style={{ borderTop: '1px solid var(--qs-border)' }}>
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
-          {h.lead.first_name || 'No name'}
-          {h.policies.length > 1 && <span className="ml-1.5 text-sm font-normal" style={{ color: 'var(--qs-subtle)' }}>· {h.policies.length} policies</span>}
-          {h.lead.upload_source === 'agent' && <StaffTag />}
-        </span>
-        <span className="shrink-0 whitespace-nowrap text-sm"><Age rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} /></span>
+    <li onClick={onOpen} className="cursor-pointer px-4 py-4" style={{ borderTop: '1px solid var(--qs-border)' }}>
+      {/* Who; who referred them (quiet); a small text button when they've waited. */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-base font-semibold" style={{ color: 'var(--qs-bright)' }}>
+            {personName(h.lead.first_name, h.policies) || 'No name'}
+            {h.lead.upload_source === 'agent' && <StaffTag />}
+          </p>
+          {h.lead.promoter_name && h.lead.promoter_id && (
+            <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
+              Referred by{' '}
+              <button type="button" onClick={e => { e.stopPropagation(); onPartner?.(h.lead.promoter_id); }}
+                title={`Open ${partnerName(h.lead.promoter_name)}'s partner card`}
+                className="font-medium underline underline-offset-2" style={{ color: 'var(--qs-dim)' }}>
+                {partnerName(h.lead.promoter_name)}
+              </button>
+            </p>
+          )}
+          {!h.lead.promoter_name && (h.lead.producer_name || h.lead.event_name) && <OriginTag rc={{ ...h.lead, promoter_name: null }} />}
+        </div>
+        {open && late && h.lead.phone && (
+          <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
+            aria-label="Text them a quick update" title="Text them a quick update"
+            className="-mr-1.5 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full hover:bg-[var(--qs-elevated)]" style={{ color: 'var(--qs-dim)' }}>
+            <MessageSquare className="h-5 w-5" aria-hidden="true" />
+          </a>
+        )}
       </div>
-      <p className="text-sm" style={{ color: 'var(--qs-text)' }}>{householdLine(h)}</p>
-      <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="min-w-0">
-          <span className="block text-lg font-bold tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/yr` : '—'}</span>
-          {!open && h.delta != null && <span className="block text-sm"><Savings delta={h.delta} /></span>}
-        </span>
+
+      {/* What they pay now (labeled), and the one action, bottom-aligned with the number. */}
+      <div className="mt-3 flex items-end justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs" style={{ color: 'var(--qs-dim)' }}>{h.policies.length > 1 ? 'Total premium · all policies' : 'Current premium'}</p>
+          <p className="mt-0.5 text-lg font-bold leading-7 tabular-nums" style={{ color: 'var(--qs-bright)' }}>{h.pays != null ? `${money(h.pays)}/year` : '—'}</p>
+          {!open && h.delta != null && <p className="text-sm"><Savings delta={h.delta} /></p>}
+        </div>
         {open
-          ? <span className={`${CARD_BTN} bg-primary-600 text-white`}>Start quote ›</span>
+          ? <span className="inline-flex h-10 shrink-0 items-center justify-center rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">Start quote</span>
           : <StatusChip status={h.status} quiet />}
       </div>
-      {(open && (h.decision || (late && h.lead.phone))) || h.lead.producer_name || h.lead.event_name || h.lead.promoter_name ? (
-        <div className="mt-1.5 flex items-center justify-between gap-2">
-          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-xs">
-            {open && h.decision && <QuietDecision rc={h.decision} policies={h.policies} />}
-            <OriginTag rc={h.lead} />
-          </span>
-          {open && late && h.lead.phone && (
-            <a href={`sms:+1${h.lead.phone}?&body=${encodeURIComponent(holdText)}`} onClick={e => e.stopPropagation()}
-              className={CARD_BTN} style={inputStyle}>
-              <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text now
-            </a>
-          )}
-        </div>
-      ) : null}
-    </li>
-  );
-}
 
-// The routing result as a small label, so it doesn't read as a button.
-const DECISION_DOT = { success: 'var(--qs-success)', info: 'var(--qs-info)', warning: 'var(--qs-warning)', neutral: 'var(--qs-subtle)' };
-function QuietDecision({ rc, policies }) {
-  const d = DECISION[rc.decision];
-  if (!d) return null;
-  return (
-    <span className="inline-flex items-center gap-1.5 font-medium" style={{ color: 'var(--qs-text)' }}>
-      <span aria-hidden="true" className="h-2 w-2 rounded-full" style={{ background: DECISION_DOT[d.tone] }} />{decisionLabel(rc, policies)}
-    </span>
+      {/* Status: red means we owe them a reply; the renewal is context (amber when close);
+          the bundle is a neutral note. */}
+      {(open || renewal || bundle) && (
+        <div className="mt-4 flex flex-wrap items-center gap-1.5 border-t pt-4" style={{ borderColor: 'var(--qs-border)' }}>
+          {open && <WaitPill rc={{ ...h.lead, created_at: h.newest, status: h.status }} now={now} />}
+          {renewal && <CardPill tone={renewal.urgent ? 'amber' : 'neutral'}>{renewal.text}</CardPill>}
+          {bundle && <CardPill>Bundle opportunity</CardPill>}
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -289,9 +340,9 @@ function NotifyButton() {
   const [perm, setPerm] = useState(() => (typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'));
   if (perm !== 'default') return null;
   return (
-    <button onClick={() => Notification.requestPermission().then(setPerm)} title="Get a heads-up on this device when a policy comes in"
-      className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold" style={inputStyle}>
-      <Bell className="w-4 h-4" /> Alert me here
+    <button onClick={() => Notification.requestPermission().then(setPerm)} title="Get a heads-up on this device when a policy comes in" aria-label="Alert me here"
+      className="hidden h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold sm:inline-flex" style={inputStyle}>
+      <Bell className="h-4 w-4" aria-hidden="true" /><span className="hidden lg:inline">Alert me here</span>
     </button>
   );
 }
@@ -313,6 +364,8 @@ export default function RateChecksPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [pendingOpenId, setPendingOpenId] = useState(null);
+  // A partner's name on a lead opens the Partners tab on their card.
+  const [partnerFocus, setPartnerFocus] = useState(null);
   const producerName = profile?.full_name || user?.email || null;
   const now = useNow();
 
@@ -327,8 +380,9 @@ export default function RateChecksPage() {
   }, [rawRows, promoters]);
   const open = openRow ? (allRows.find(r => r.id === openRow.id) || openRow) : null;
 
+  // Households, not dec pages: 4 pages from one family is 1, the same as the cards.
   const counts = useMemo(() => Object.fromEntries(FILTERS.map(f => [
-    f.value, f.statuses ? allRows.filter(r => f.statuses.includes(r.status)).length : allRows.length,
+    f.value, groupHouseholds(f.statuses ? allRows.filter(r => f.statuses.includes(r.status)) : allRows).length,
   ])), [allRows]);
   // Counted by household, the same way the cards are listed.
   const overdue = useMemo(() => groupHouseholds(allRows.filter(r => OPEN_STATUSES.includes(r.status)))
@@ -384,31 +438,31 @@ export default function RateChecksPage() {
 
   return (
     <div className="dark-page">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8">
-        <div className="mb-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
-            <Link to="/agency/leads" className="shrink-0 text-sm font-medium text-primary-600 hover:underline">All leads ›</Link>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-6">
+        {/* Title and actions share one row, so the page reads title → tabs → list. */}
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="whitespace-nowrap text-xl font-bold sm:text-2xl" style={{ color: 'var(--qs-bright)' }}>Rate Checks</h1>
+            <p className="mt-0.5 hidden text-sm sm:block" style={{ color: 'var(--qs-dim)' }}>People who sent their policy to see if Allstate can beat it.</p>
           </div>
-          <p className="mt-0.5 text-sm" style={{ color: 'var(--qs-dim)' }}>People who sent their policy to see if Allstate can beat it.</p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button onClick={() => setInviteOpen(true)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white">
-              <Send className="w-4 h-4" /> Send a link
-            </button>
-            <button onClick={() => setUploadOpen(true)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
-              <Upload className="w-4 h-4" /> Upload dec page
-            </button>
+          <div className="flex shrink-0 items-center gap-2">
             <NotifyButton />
+            <button onClick={() => setUploadOpen(true)} aria-label="Upload dec page" title="Upload dec page"
+              className="inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-lg px-3 text-sm font-semibold" style={inputStyle}>
+              <Upload className="h-4 w-4" aria-hidden="true" /><span className="hidden sm:inline">Upload dec page</span>
+            </button>
+            <button onClick={() => setInviteOpen(true)}
+              className="inline-flex h-11 items-center gap-1.5 whitespace-nowrap rounded-lg bg-primary-600 px-3 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 sm:px-4">
+              <Send className="h-4 w-4" aria-hidden="true" /> Send a link
+            </button>
           </div>
         </div>
 
-        <TabBar tab={tab} setTab={setTab} />
+        <TabBar tab={tab} setTab={(v) => { setPartnerFocus(null); setTab(v); }} />
 
         {tab === 'map' ? <WinMap agencyId={agencyId} />
           : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} scans={allRows} />
-          : tab === 'promoters' ? <PartnersTab agencyId={agencyId} userId={user?.id} canEdit={canEditRules}
+          : tab === 'promoters' ? <PartnersTab agencyId={agencyId} userId={user?.id} canEdit={canEditRules} focusId={partnerFocus}
               onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); }} />
           : tab === 'partners' ? <ReferralPartners agencyId={agencyId} />
           : tab === 'rules' ? <RulesTab agencyId={agencyId} canEdit={canEditRules} />
@@ -461,7 +515,7 @@ export default function RateChecksPage() {
                 <>
                   {/* Phones: cards. The whole card opens the quote; Start quote says so. */}
                   <ul className="md:hidden">
-                    {households.map(h => <InboxCard key={h.key} h={h} now={now} onOpen={() => openRowFromList(h.lead)} />)}
+                    {households.map(h => <InboxCard key={h.key} h={h} now={now} onOpen={() => openRowFromList(h.lead)} onPartner={(id) => { setPartnerFocus(id); setTab('promoters'); window.scrollTo({ top: 0 }); }} />)}
                   </ul>
 
                   {/* Desktop: table */}
@@ -482,7 +536,7 @@ export default function RateChecksPage() {
                             onMouseLeave={e => { e.currentTarget.style.background = ''; }}>
                             <td className="px-4 py-3 text-sm">
                               <div className="font-medium whitespace-nowrap" style={{ color: 'var(--qs-bright)' }}>
-                                {h.lead.first_name || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} policies</span>}{h.lead.upload_source === 'agent' && <StaffTag />}
+                                {personName(h.lead.first_name, h.policies) || 'No name'}{h.policies.length > 1 && <span className="ml-1.5 text-xs font-normal" style={{ color: 'var(--qs-subtle)' }}>{h.policies.length} policies</span>}{h.lead.upload_source === 'agent' && <StaffTag />}
                               </div>
                               {h.lead.phone && (
                                 <a href={`tel:+1${h.lead.phone}`} onClick={e => e.stopPropagation()} className="text-xs text-primary-600 hover:underline whitespace-nowrap">
@@ -546,7 +600,6 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
     onQuoted(res);
   };
   const warning = CONFIDENCE_WARNING[rc.extract_confidence];
-  const insuredName = rc.extracted?.insured_name;
   const rescan = useRescanRateCheck();
   const canRescan = !!rc.image_path && !['won', 'lost', 'bound', 'declined'].includes(rc.status);
   const multi = household.length > 1;
@@ -578,7 +631,7 @@ function RateCheckDrawer({ rc, household: rows, now, onClose, onSelect, onQuoted
           style={{ background: 'var(--qs-card)', borderBottom: '1px solid var(--qs-border)', transform: headerHidden ? 'translateY(-100%)' : 'none' }}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{rc.first_name || insuredName || 'Rate check'}</h2>
+              <h2 className="truncate text-xl font-bold" style={{ color: 'var(--qs-bright)' }}>{personName(rc.first_name, [rc]) || 'Rate check'}</h2>
               <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>
                 {[carrierLabel(rc), policyTypeLabel(rc.policy_type).toLowerCase()].filter(Boolean).join(' ') || 'Policy not read yet'} · <Age rc={rc} now={now} />
               </p>

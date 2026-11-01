@@ -212,7 +212,6 @@ function Layout({ forcePlane = null }) {
   // Bottom tab bar routes (items shown in tab bar, excluded from drawer)
   const bottomTabRoutes = [
     '/agency/leads/rate-checks',
-    '/agency/leads',
     '/agency/winbacks',
     '/agency/retention',
   ];
@@ -288,41 +287,20 @@ function Layout({ forcePlane = null }) {
       ) : (
       /* ── Full QuoteSync nav ── */
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-          scrolled
-            ? 'bg-[#0f172a]/80 backdrop-blur-2xl shadow-2xl border-b border-white/10'
-            : 'bg-[#0f172a]/50 backdrop-blur-xl border-b border-white/5'
-        }`}
+        className={`qs-brand-bar fixed top-0 left-0 right-0 z-50 transition-shadow duration-300 ${scrolled ? 'shadow-lg shadow-blue-950/20' : ''}`}
+        style={{ background: 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)' }}
       >
-        {/* Animated gradient line at top */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 animate-gradient-x"></div>
-
         {/* Collapses to one compact row once the page scrolls. */}
-        <div className={`max-w-7xl mx-auto px-4 sm:px-6 transition-all duration-300 ${scrolled ? 'py-2' : 'py-4 sm:py-5'}`}>
+        <div className={`max-w-7xl mx-auto px-4 sm:px-6 transition-all duration-300 ${scrolled ? 'py-2' : 'py-3 sm:py-4'}`}>
           <div className="flex items-center justify-between">
-            {/* Brand with Advanced Styling */}
-            <NavLink to="/" className="flex items-center gap-2 sm:gap-3 group">
-              {/* Animated Logo */}
-              <div className="relative">
-                <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg opacity-75 group-hover:opacity-100 blur transition duration-300 animate-pulse"></div>
-                <div className="relative w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                  <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Brand Text with Gradient */}
-              <div>
-                <div className="font-black text-lg sm:text-xl tracking-tight bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-transparent group-hover:from-emerald-400 group-hover:via-teal-400 group-hover:to-cyan-400 transition-all duration-300">
-                  insuredbycam
-                </div>
-                {!scrolled && (
-                  <div className="text-xs sm:text-sm text-gray-400 group-hover:text-gray-300 transition-colors">
-                    {agencyBrandName || 'Insurance shopping, simplified'}
-                  </div>
-                )}
-              </div>
+            {/* The insuredbycam.com wordmark, as on the public site; the agency's own name underneath when it differs. */}
+            <NavLink to="/" className="flex flex-col leading-tight">
+              <span className="text-lg sm:text-xl font-extrabold tracking-tight text-white">
+                insured<span style={{ color: '#39FF88' }}>by</span>cam.com
+              </span>
+              {!scrolled && agencyBrandName && !/^insuredbycam(\.com)?$/i.test(agencyBrandName.trim()) && (
+                <span className="text-xs text-blue-100">{agencyBrandName}</span>
+              )}
             </NavLink>
 
             {/* Bland AI Inbound Phone CTA — "Call for a Quote" */}
@@ -514,7 +492,7 @@ function Layout({ forcePlane = null }) {
                 <div key={group.label}>
                   {/* Section header */}
                   <div className="px-4 py-2">
-                    <span className="text-[11px] uppercase tracking-wider font-semibold text-white/40">
+                    <span className="text-[11px] uppercase tracking-wider font-semibold text-[color:var(--qs-muted)]">
                       {group.label}
                     </span>
                   </div>
@@ -587,7 +565,7 @@ function Layout({ forcePlane = null }) {
           81px value was right at the edge and let the nav overlap page
           headers (e.g. the "+ Upload Audit Report" button on /agency/cross-sell)
           whenever the user button rendered slightly taller than expected. */}
-      <div className="h-[80px] sm:h-[96px]"></div>
+      <div className="h-[60px] sm:h-[84px]"></div>
 
       {/* Verification overdue banner — admin only */}
       {!isFunnelRoute && <VerificationBanner />}
@@ -680,46 +658,12 @@ function TabLink({ to, label, end, scrollToQuote, isPrimary }) {
       to={to}
       end={end}
       onClick={handleClick}
-      className={({ isActive }) => {
-        return [
-          'relative px-4 lg:px-6 py-2.5 rounded-full font-semibold transition-all text-sm lg:text-base whitespace-nowrap group overflow-hidden',
-          isPrimary
-            ? isActive
-              ? 'text-white'
-              : 'text-white hover:text-white'
-            : isActive
-            ? 'text-slate-900'
-            : 'text-gray-300 hover:text-white',
-        ].join(' ');
-      }}
+      className={({ isActive }) => [
+        'rounded-full px-4 lg:px-5 py-2 text-sm lg:text-[15px] font-semibold whitespace-nowrap transition-colors',
+        isActive ? 'bg-white text-[#0F2D6B] shadow-sm' : isPrimary ? 'bg-white/15 text-white hover:bg-white/25' : 'text-blue-50 hover:bg-white/10 hover:text-white',
+      ].join(' ')}
     >
-      {({ isActive }) => (
-        <>
-          {/* Animated Background */}
-          <div
-            className={`absolute inset-0 transition-all duration-500 ${
-              isPrimary
-                ? isActive
-                  ? 'bg-gradient-to-r from-primary-600 to-secondary-600 shadow-xl scale-100'
-                  : 'bg-gradient-to-r from-primary-600 to-secondary-600 opacity-90 group-hover:opacity-100 scale-100'
-                : isActive
-                ? 'bg-white shadow-lg scale-100'
-                : 'bg-white/0 group-hover:bg-white/10 scale-95 group-hover:scale-100'
-            } rounded-full`}
-          ></div>
-
-          {/* Gradient Border on Active */}
-          {isActive && !isPrimary && (
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-400 via-teal-500 to-cyan-500 rounded-full opacity-50 blur-sm animate-pulse"></div>
-          )}
-
-          {/* Shine Effect on Hover */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 rounded-full"></div>
-
-          {/* Text */}
-          <span className="relative z-10">{label}</span>
-        </>
-      )}
+      {label}
     </NavLink>
   );
 }
