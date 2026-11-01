@@ -795,28 +795,28 @@ function PartnerHeroStrip({ name, photo, initials }) {
   useLayoutEffect(() => {
     const host = box.current?.parentElement;
     if (!host || !probe.current) return undefined;
-    // Photo 40 + gap 10 + padding 10 + 20 + border 2.
-    const fit = () => setStacked(probe.current.offsetWidth + 82 > host.clientWidth);
+    // Photo 36 + gap 10 + padding 10 + 16 + border 2.
+    const fit = () => setStacked(probe.current.offsetWidth + 74 > host.clientWidth);
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(host);
     return () => ro.disconnect();
   }, [name]);
   return (
-    <div ref={box} className="relative mb-6 flex w-fit max-w-full items-center overflow-hidden gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-5 ring-1 ring-white/20 backdrop-blur-sm">
+    <div ref={box} className="relative mb-6 flex w-fit max-w-full items-center overflow-hidden gap-2.5 rounded-xl bg-white/10 px-2.5 py-2 pr-4 ring-1 ring-white/20 backdrop-blur-sm">
       {photo ? (
-        <img src={photo} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+        <img src={photo} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
       ) : (
-        <span aria-hidden="true" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
+        <span aria-hidden="true" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-extrabold tracking-tight ring-2 ring-white/30" style={{ background: '#0F2D6B', color: ACCENT }}>
           {initials}
         </span>
       )}
-      <span className={`min-w-0 text-[15px] leading-snug ${stacked ? '' : 'whitespace-nowrap'}`}>
+      <span className={`min-w-0 text-[14px] leading-snug ${stacked ? '' : 'whitespace-nowrap'}`}>
         <span className={`font-bold text-white ${stacked ? 'block truncate' : ''}`}>{name}</span>
         {stacked ? <span className="block text-blue-100">shared this with you</span> : <span className="text-blue-100"> shared this with you</span>}
       </span>
       {/* The one-line version, measured off-screen. */}
-      <span ref={probe} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap text-[15px] font-bold leading-snug">
+      <span ref={probe} aria-hidden="true" className="pointer-events-none invisible absolute left-0 top-0 whitespace-nowrap text-[14px] font-bold leading-snug">
         {name} <span className="font-normal">shared this with you</span>
       </span>
     </div>
