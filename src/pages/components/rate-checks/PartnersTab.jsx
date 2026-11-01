@@ -170,12 +170,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               </p>
             )}
 
-            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy portal link" />
-            {p.phone && !p.w9_received_at && (
-              <a href={portalSms(p)} className="mt-2 inline-flex h-10 items-center gap-2 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white hover:bg-primary-700">
-                <MessageSquare className="h-4 w-4" aria-hidden="true" /> Text {p.name.split(' ')[0]} the portal link
-              </a>
-            )}
+            <LinkRow label="Portal (private: send only to them)" url={portalUrl(p.portal_token)} copyLabel="Copy"
+              extra={p.phone && !p.w9_received_at && (
+                <a href={portalSms(p)} aria-label={`Text ${p.name.split(' ')[0]} the portal link`} title={`Text ${p.name.split(' ')[0]} the portal link`}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded bg-primary-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-primary-700">
+                  <MessageSquare className="h-3.5 w-3.5" aria-hidden="true" /> Text {p.name.split(' ')[0]}
+                </a>
+              )} />
             <LinkRow label={!PARTNER_AGREEMENT_REQUIRED || p.agreement_signed_at ? 'Share link' : 'Share link · off until signed'} url={inviteUrl(p.code)} copyLabel="Copy link" muted={PARTNER_AGREEMENT_REQUIRED && !p.agreement_signed_at} />
 
             <div className="mt-4 grid grid-cols-3 gap-3">
@@ -334,13 +335,14 @@ function Pill({ ok, children }) {
   );
 }
 
-function LinkRow({ label, url, copyLabel, muted = false }) {
+function LinkRow({ label, url, copyLabel, muted = false, extra = null }) {
   return (
     <div className="mt-3">
       <p className="mb-1 text-[11px] font-bold uppercase tracking-[0.1em]" style={{ color: 'var(--qs-subtle)' }}>{label}</p>
       <div className="flex items-center gap-2 rounded-lg px-3 py-2" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)', opacity: muted ? 0.55 : 1 }}>
         <span className="min-w-0 flex-1 truncate font-mono text-sm" style={{ color: 'var(--qs-cyan)' }}>{url}</span>
         <CopyTextButton text={url} className="shrink-0 rounded px-2 py-1 text-xs font-semibold" style={inputStyle}>{copyLabel}</CopyTextButton>
+        {extra}
       </div>
     </div>
   );
