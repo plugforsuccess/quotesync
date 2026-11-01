@@ -164,3 +164,18 @@ test('a wrong or old link says so', async ({ page }) => {
   await page.goto(`/partner/${'b'.repeat(48)}`);
   await expect(page.getByText('This link isn’t valid.')).toBeVisible();
 });
+
+test('pay day, households still on the way, and a paused link', async ({ page }) => {
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
+  const nextMonth21 = `${d.toLocaleDateString('en-CA').slice(0, 7)}-21`;
+  await mockPartner(page, { data: portal({
+    active: false, pay_rule: 'reply',
+    w9: { on_file: true, tin_type: 'ssn', last4: '1234', signed_at: '2026-10-01T12:00:00Z', revision: 'Rev. March 2024', prefill: {} },
+    months: [{ month: thisMonth, households: 1, pending: 2, earned: 45, paid: null, pay_day: nextMonth21,
+      rows: [{ first_name: 'Stephen', label: 'Auto + home or condo', fee: 45, over_cap: false }] }],
+  }) });
+  await page.goto(`/partner/${TOKEN}`);
+  await expect(page.getByText(/Your link is paused/)).toBeVisible();
+  await expect(page.getByText(/^\$45 · paid \w{3} 21$/)).toBeVisible();
+  await expect(page.getByText('+ 2 more households on the way: they count once they reply to set up a call about their quote.')).toBeVisible();
+});

@@ -24,10 +24,13 @@ const partner = (over = {}) => ({
   mailing_address: null, mailing_city_state_zip: null, created_at: iso(30), ...over,
 });
 // Two households this month: Stephen sent auto + home and replied Y; Ana sent auto, was quoted, never texted.
-const scans = [
-  { id: 'r1', promoter_id: PID, phone: '4045550001', first_name: 'Stephen', policy_type: 'auto', carrier: 'State Farm', status: 'won', duplicate_of: null, created_at: iso(0), annual_premium: 2400, allstate_premium: 2000, bound_premium: 2000, quoted_at: iso(1), expiration_date: null, insured_address: '1 Main St Covington GA', policy_number: 'SF123456', quote_ready_texted_at: iso(1), call_confirmed_at: iso(1) },
-  { id: 'r2', promoter_id: PID, phone: '4045550001', first_name: 'Stephen', policy_type: 'home', carrier: 'State Farm', status: 'won', duplicate_of: null, created_at: iso(0), annual_premium: 1800, allstate_premium: 1500, bound_premium: null, quoted_at: iso(1), expiration_date: null, insured_address: '1 Main St Covington GA', policy_number: 'SF654321', quote_ready_texted_at: iso(1), call_confirmed_at: iso(1) },
-  { id: 'r3', promoter_id: PID, phone: '4045550002', first_name: 'Ana', policy_type: 'auto', carrier: 'GEICO', status: 'quoted', duplicate_of: null, created_at: iso(0), annual_premium: 1500, allstate_premium: 1300, bound_premium: null, quoted_at: iso(0), expiration_date: null, insured_address: '9 Elm St Atlanta GA', policy_number: 'GE998877', quote_ready_texted_at: null, call_confirmed_at: null },
+// Two months back is always past its pay day (the 21st of the following month).
+const twoMonthsAgo = () => { const d = new Date(); d.setDate(5); d.setMonth(d.getMonth() - 2); d.setHours(15, 0, 0, 0); return d.toISOString(); };
+const makeScans = (at) => scansAt(at);
+const scansAt = (at) => [
+  { id: 'r1', promoter_id: PID, phone: '4045550001', first_name: 'Stephen', policy_type: 'auto', carrier: 'State Farm', status: 'won', duplicate_of: null, created_at: at, annual_premium: 2400, allstate_premium: 2000, bound_premium: 2000, quoted_at: at, expiration_date: null, insured_address: '1 Main St Covington GA', policy_number: 'SF123456', quote_ready_texted_at: at, call_confirmed_at: at },
+  { id: 'r2', promoter_id: PID, phone: '4045550001', first_name: 'Stephen', policy_type: 'home', carrier: 'State Farm', status: 'won', duplicate_of: null, created_at: at, annual_premium: 1800, allstate_premium: 1500, bound_premium: null, quoted_at: at, expiration_date: null, insured_address: '1 Main St Covington GA', policy_number: 'SF654321', quote_ready_texted_at: at, call_confirmed_at: at },
+  { id: 'r3', promoter_id: PID, phone: '4045550002', first_name: 'Ana', policy_type: 'auto', carrier: 'GEICO', status: 'quoted', duplicate_of: null, created_at: at, annual_premium: 1500, allstate_premium: 1300, bound_premium: null, quoted_at: at, expiration_date: null, insured_address: '9 Elm St Atlanta GA', policy_number: 'GE998877', quote_ready_texted_at: null, call_confirmed_at: null },
 ];
 
 async function mock(page, state) {
@@ -56,7 +59,7 @@ async function mock(page, state) {
       return route.fulfill({ status: 201, contentType: 'application/json', body: one ? '{}' : '[]' });
     }
     if (p === '/rest/v1/rate_check_promoters') return json(state.partners);
-    if (p === '/rest/v1/rate_checks' && url.searchParams.get('promoter_id') === 'not.is.null') return json(scans);
+    if (p === '/rest/v1/rate_checks' && url.searchParams.get('promoter_id') === 'not.is.null') return json(state.scans || makeScans(iso(0)));
     if (p === '/rest/v1/rate_check_partner_rules') return one ? (state.rules ? json(state.rules) : json(null)) : json(state.rules ? [state.rules] : []);
     if (p === '/rest/v1/rate_check_promoter_payouts') return json(state.payouts);
     return one ? json(null) : json([]);
@@ -76,8 +79,8 @@ test('with the reply-Y rule on, only households that replied Y are owed', async 
   const card = page.locator('#partner-' + PID);
   await expect(card.getByText('2 households in')).toBeVisible();
   await expect(card.getByText('1 waiting on a Y reply')).toBeVisible();
-  // Stephen (auto + home, replied Y) is $45; Ana is waiting. Under the $50 minimum, it carries over.
-  await expect(card.getByText('Under $50 · carries over')).toBeVisible();
+  // Stephen (auto + home, replied Y) is $45; Ana is waiting. This month pays on the 21st of next month.
+  await expect(card.getByText(/^\$45 pays \w{3} 21$/)).toBeVisible();
   await card.getByRole('button', { name: /2 households in/ }).click();
   await expect(card.getByText('Replied Y')).toBeVisible();
   await expect(card.getByText('Not texted yet')).toBeVisible();
@@ -86,7 +89,8 @@ test('with the reply-Y rule on, only households that replied Y are owed', async 
 });
 
 test('turning the reply-Y rule off saves it, and quoted households become payable', async ({ page }) => {
-  const state = { partners: [partner()], rules: null, payouts: [] };
+  // Households from two months ago: past their pay day, so they can be marked paid.
+  const state = { partners: [partner()], rules: null, payouts: [], scans: makeScans(twoMonthsAgo()) };
   const writes = await mock(page, state);
   await openPartners(page);
   const rules = page.getByRole('region', { name: 'Payout rules' });
@@ -97,19 +101,21 @@ test('turning the reply-Y rule off saves it, and quoted households become payabl
   expect(writes.find(w => w.table.startsWith('rate_check_partner_rules')).body).toMatchObject({ agency_id: AG, require_call_confirm: false, quote_days: 7, expired_days: 30, min_payout: 50 });
   // $45 (auto + home) + $10 (auto) = $55, W-9 on file → can be marked paid.
   const card = page.locator('#partner-' + PID);
-  await expect(card.getByRole('button', { name: 'Mark $55 paid' })).toBeVisible();
-  await card.getByRole('button', { name: 'Mark $55 paid' }).click();
+  const pay = card.getByRole('button', { name: /^Mark \$55 paid/ });
+  await expect(pay).toBeVisible();
+  await pay.click();
   await expect.poll(() => writes.filter(w => w.table.startsWith('rate_check_promoter_payouts')).length).toBe(1);
-  const pay = writes.find(w => w.table.startsWith('rate_check_promoter_payouts')).body;
-  expect(pay).toHaveLength(1);
-  expect(pay[0]).toMatchObject({ agency_id: AG, promoter_id: PID, households: 2, amount: 55, paid_by: UID });
+  const rows = writes.find(w => w.table.startsWith('rate_check_promoter_payouts')).body;
+  expect(rows).toHaveLength(1);
+  expect(rows[0]).toMatchObject({ agency_id: AG, promoter_id: PID, households: 2, amount: 55, paid_by: UID });
 });
 
 test('no W-9 on file: the payout is held', async ({ page }) => {
   await mock(page, { partners: [partner({ w9_received_at: null, w9_tin_last4: null })], rules: { agency_id: AG, require_call_confirm: false, quote_days: 7, expired_days: 30, min_payout: 50 }, payouts: [] });
   await openPartners(page);
   const card = page.locator('#partner-' + PID);
-  await expect(card.getByText('W-9 needed before paying $55')).toBeVisible();
+  // This month's households pay on the 21st of next month; the W-9 is flagged ahead of time.
+  await expect(card.getByText(/^\$55 pays \w{3} 21 · W-9 needed first$/)).toBeVisible();
   await expect(card.getByRole('button', { name: /Mark .* paid/ })).toHaveCount(0);
   // The welcome text to the partner is ready to send, with the portal link and the three steps.
   const sms = await card.getByRole('link', { name: 'Text Javon the portal link' }).getAttribute('href');

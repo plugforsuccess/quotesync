@@ -23,6 +23,13 @@ export function formatTin(value, type) {
   return [d.slice(0, 3), d.slice(3, 5), d.slice(5)].filter(Boolean).join('-');
 }
 
+/** An IRS Individual Taxpayer Identification Number: 9XX-[50–65|70–88|90–92|94–99]-XXXX. */
+export function isItin(d) {
+  if (!/^9\d{8}$/.test(d)) return false;
+  const g = Number(d.slice(3, 5));
+  return (g >= 50 && g <= 65) || (g >= 70 && g <= 88) || (g >= 90 && g <= 92) || (g >= 94 && g <= 99);
+}
+
 /** Why a TIN can't be right, or null. Mirrors the IRS's own ranges, not just "9 digits". */
 export function tinProblem(value, type) {
   const d = digits(value);
@@ -33,7 +40,9 @@ export function tinProblem(value, type) {
     return null;
   }
   const area = d.slice(0, 3), group = d.slice(3, 5), serial = d.slice(5);
-  if (area === '000' || area === '666' || area >= '900') return 'That isn’t a valid SSN (check the first 3 digits).';
+  // An ITIN (for people without an SSN) starts with 9 and has a middle pair of 50–65, 70–88, 90–92 or 94–99.
+  if (d.startsWith('9')) return isItin(d) ? null : 'That isn’t a valid SSN or ITIN (check the first 5 digits).';
+  if (area === '000' || area === '666') return 'That isn’t a valid SSN (check the first 3 digits).';
   if (group === '00' || serial === '0000') return 'That isn’t a valid SSN.';
   if (d === '123456789') return 'That doesn’t look like a real number.';
   return null;

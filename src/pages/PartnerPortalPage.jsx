@@ -33,6 +33,10 @@ const SCHEDULE_ROWS = [
   ['auto_only', 'Auto only'], ['renters_only', 'Renters only'],
 ];
 
+// Dates in the agency's time zone (Georgia), the same as the payouts.
+const todayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+const shortDay = (ymd) => new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
 export default function PartnerPortalPage() {
   const { token } = useParams();
   const [data, setData] = useState(null);
@@ -64,6 +68,7 @@ export default function PartnerPortalPage() {
               <p className="mt-1.5 flex items-center gap-1.5 text-sm text-blue-100">
                 {gate ? <>Read the agreement with {sentence(data.agency_name)} Your link starts earning as soon as you sign.</>
                   : data.agreement.signed ? <><Check className="h-4 w-4" style={{ color: ACCENT }} aria-hidden="true" /> Agreement signed {longDate(data.agreement.signed_at)}</>
+                  : data.active === false ? <><span className="h-2 w-2 rounded-full bg-amber-300" aria-hidden="true" /> Your link is paused. Contact {data.agency_name} to turn it back on.</>
                   : <><span className="h-2 w-2 rounded-full" style={{ background: ACCENT }} aria-hidden="true" /> Your link is live</>}
               </p>
             </>
@@ -332,7 +337,7 @@ function PhotoSection({ token, name, photoUrl, onChange }) {
         <>
           <label className="mt-4 flex items-start gap-3 rounded-xl border border-slate-200 p-3 text-sm leading-relaxed text-slate-700">
             <input type="checkbox" checked={agree} onChange={e => setAgree(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-blue-700" />
-            <span>Show this photo with my first name on my link&apos;s page. I can take it off any time.</span>
+            <span>Show this photo with my name on my link&apos;s page. I can take it off any time.</span>
           </label>
           <div className="mt-3 flex gap-2">
             <button type="button" onClick={() => { setPreview(null); setAgree(false); }} className="h-12 flex-1 rounded-xl border border-slate-300 font-semibold text-slate-700">Cancel</button>
@@ -399,7 +404,7 @@ function Earnings({ token, data, onChange }) {
     try { await navigator.clipboard.writeText(url); setCopied(true); markShared(); setTimeout(() => setCopied(false), 1800); } catch { /* old browser */ }
   };
   const share = () => navigator.share?.({ title: 'Rate Check', text: 'Get a second opinion on your insurance (I get a referral fee):', url }).then(markShared).catch(() => {});
-  const thisMonth = new Date().toLocaleDateString('en-CA').slice(0, 7);
+  const thisMonth = todayKey().slice(0, 7);
   const months = data.months?.length ? data.months : [{ month: thisMonth, households: 0, earned: 0, rows: [], paid: null }];
   const current = months.find(m => m.month === thisMonth) || { month: thisMonth, households: 0, earned: 0, rows: [], paid: null };
   const lifetime = months.reduce((t, m) => t + m.earned, 0);
@@ -440,7 +445,7 @@ function Earnings({ token, data, onChange }) {
           <div className="flex items-baseline justify-between">
             <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)}</h2>
             <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? `${money(m.earned)} · not paid yet` : ''}
+              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? `${money(m.earned)} · ${m.pay_day && todayKey() < m.pay_day ? `paid ${shortDay(m.pay_day)}` : 'not paid yet'}` : ''}
             </span>
           </div>
           {m.rows.length ? (
@@ -455,7 +460,12 @@ function Earnings({ token, data, onChange }) {
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-2 text-sm text-slate-500">No households yet this month.</p>}
+          ) : <p className="mt-2 text-sm text-slate-500">{m.pending ? 'None qualified yet.' : 'No households yet this month.'}</p>}
+          {m.pending > 0 && (
+            <p className="mt-1.5 text-xs text-slate-500">
+              + {m.pending} more {m.pending === 1 ? 'household' : 'households'} on the way: {m.pending === 1 ? 'it counts' : 'they count'} once {data.pay_rule === 'reply' ? 'they reply to set up a call about their quote' : 'we’ve quoted them'}.
+            </p>
+          )}
         </section>
       ))}
 
