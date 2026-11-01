@@ -476,7 +476,7 @@ function Applications({ agencyId, userId, canEdit, savePromoter }) {
 }
 
 function AddPartner({ agencyId, userId, save, onDone }) {
-  const [form, setForm] = useState({ name: '', phone: '', email: '', street: '', city: '', state: 'GA', zip: '' });
+  const [form, setForm] = useState({ first: '', last: '', phone: '', email: '', street: '', city: '', state: 'GA', zip: '' });
   const set = (k) => (e) => {
     let v = e.target.value;
     if (k === 'phone') v = formatPhoneInput(v);
@@ -486,7 +486,8 @@ function AddPartner({ agencyId, userId, save, onDone }) {
   };
   const anyAddress = form.street.trim() || form.city.trim() || form.zip;
   const fullAddress = form.street.trim() && form.city.trim() && /^[A-Z]{2}$/.test(form.state) && form.zip.length === 5;
-  const ok = form.name.trim() && (!form.email || isEmail(form.email)) && (!form.phone || form.phone.replace(/\D/g, '').length === 10)
+  const name = `${form.first.trim()} ${form.last.trim()}`.replace(/\s+/g, ' ').trim();
+  const ok = form.first.trim() && form.last.trim() && (!form.email || isEmail(form.email)) && (!form.phone || form.phone.replace(/\D/g, '').length === 10)
     && (!anyAddress || fullAddress);
   const field = 'w-full rounded-lg px-3 py-2.5 text-sm';
   const Label = ({ htmlFor, children }) => <label htmlFor={htmlFor} className="mb-1 block text-xs font-semibold" style={{ color: 'var(--qs-dim)' }}>{children}</label>;
@@ -494,21 +495,28 @@ function AddPartner({ agencyId, userId, save, onDone }) {
     e.preventDefault();
     if (!ok) return;
     save.mutate({
-      agencyId, userId, name: form.name, phone: form.phone, email: form.email,
+      agencyId, userId, name, phone: form.phone, email: form.email,
       mailing_address: fullAddress ? form.street : '',
       mailing_city_state_zip: fullAddress ? `${form.city.trim()}, ${form.state} ${form.zip}` : '',
     }, { onSuccess: onDone });
   };
   return (
     <form className="mt-4 grid gap-3 rounded-lg p-3 md:grid-cols-3" style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }} onSubmit={submit}>
-      <div><Label htmlFor="ap-name">Full legal name *</Label>
-        <input id="ap-name" className={field} style={inputStyle} value={form.name} onChange={set('name')} required autoComplete="off" /></div>
+      <div className="grid gap-3 sm:grid-cols-2 md:col-span-3">
+        <div><Label htmlFor="ap-first">First name *</Label>
+          <input id="ap-first" className={field} style={inputStyle} value={form.first} onChange={set('first')} required autoComplete="off" /></div>
+        <div><Label htmlFor="ap-last">Last name *</Label>
+          <input id="ap-last" className={field} style={inputStyle} value={form.last} onChange={set('last')} required autoComplete="off" /></div>
+      </div>
+      <p className="-mt-1 text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Use their legal name: it goes on their W-9 and 1099.</p>
+      <div className="grid gap-3 sm:grid-cols-2 md:col-span-3">
       <div><Label htmlFor="ap-phone">Mobile</Label>
         <input id="ap-phone" className={field} style={inputStyle} inputMode="tel" value={form.phone} onChange={set('phone')} autoComplete="off" />
         {form.phone && form.phone.replace(/\D/g, '').length !== 10 && <p className="mt-1 text-xs" style={{ color: 'var(--qs-warning)' }}>Enter all 10 digits.</p>}</div>
       <div><Label htmlFor="ap-email">Email</Label>
         <input id="ap-email" className={field} style={inputStyle} type="email" value={form.email} onChange={set('email')} autoComplete="off" />
         {form.email && !isEmail(form.email) && <p className="mt-1 text-xs" style={{ color: 'var(--qs-warning)' }}>That email doesn&apos;t look right, like name@yahoo.com.</p>}</div>
+      </div>
 
       <p className="-mb-1 mt-1 text-xs md:col-span-3" style={{ color: 'var(--qs-subtle)' }}>Mailing address (optional): fills in their W-9 so they only add their SSN and sign.</p>
       <div className="md:col-span-3"><Label htmlFor="ap-street">Street address</Label>

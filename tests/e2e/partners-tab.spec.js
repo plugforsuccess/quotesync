@@ -125,8 +125,10 @@ test('adding a partner: checks the fields and saves the mailing address for thei
   const writes = await mock(page, state);
   await openPartners(page);
   await page.getByRole('button', { name: 'Add partner' }).first().click();
-  const add = page.locator('form').filter({ has: page.getByLabel('Full legal name *') });
-  await add.getByLabel('Full legal name *').fill('Stephen Pearson');
+  const add = page.locator('form').filter({ has: page.getByLabel('First name *') });
+  await add.getByLabel('First name *').fill('Stephen');
+  await expect(add.getByRole('button', { name: 'Add partner' })).toBeDisabled(); // last name still missing
+  await add.getByLabel('Last name *').fill(' Pearson ');
   await add.getByLabel('Email').fill('stephen@yahoo@com');
   await expect(add.getByText("That email doesn't look right", { exact: false })).toBeVisible();
   await expect(add.getByRole('button', { name: 'Add partner' })).toBeDisabled();
