@@ -186,32 +186,28 @@ function groupHouseholds(rows) {
 const isOverdue = (h, now) => OPEN_STATUSES.includes(h.status) && minutesSince(h.newest, now) >= OVERDUE_MINUTES;
 
 // "State Farm Auto + Home" when one carrier has everything, else "State Farm auto + Progressive home".
-const householdGroups = (byCarrier) => [...byCarrier.entries()].map(([c, m]) => [c, [...m.entries()].map(([t, n]) => (n > 1 ? `${t} ×${n}` : t))]);
-
-// One line per company for the phone card: "State Farm   Auto + Home", "Progressive   Auto"…
-// (first three companies, then "+2 more").
+// One line that never wraps, so every card is the same height.
+// One company: "State Farm Auto + Home". Several: "Auto, Home, Umbrella · 3 companies"
+// (lines of business first, since they decide the bundle; the drawer has each policy).
 function HouseholdPolicies({ h }) {
   const byCarrier = new Map();
+  const lines = new Map();
   h.policies.forEach(p => {
     const t = policyTypeLabel(p.policy_type);
     if (!t) return;
-    const c = carrierLabel(p) || 'Unknown company';
+    const c = carrierLabel(p) || '';
     if (!byCarrier.has(c)) byCarrier.set(c, new Map());
     byCarrier.get(c).set(t, (byCarrier.get(c).get(t) || 0) + 1);
+    lines.set(t, (lines.get(t) || 0) + 1);
   });
-  const groups = householdGroups(byCarrier);
-  if (!groups.length) return <p className="text-sm" style={{ color: 'var(--qs-subtle)' }}>Policy not read yet</p>;
-  return (
-    <ul className="mt-0.5 space-y-0.5 text-sm">
-      {groups.slice(0, 3).map(([c, ts]) => (
-        <li key={c} className="flex gap-1.5">
-          <span className="shrink-0 font-semibold" style={{ color: 'var(--qs-text)' }}>{c}</span>
-          <span className="min-w-0 truncate" style={{ color: 'var(--qs-dim)' }}>{ts.join(' + ')}</span>
-        </li>
-      ))}
-      {groups.length > 3 && <li className="text-xs" style={{ color: 'var(--qs-subtle)' }}>+{groups.length - 3} more {groups.length - 3 === 1 ? 'company' : 'companies'}</li>}
-    </ul>
-  );
+  const withCount = ([t, n]) => (n > 1 ? `${t} ×${n}` : t);
+  let text;
+  if (!lines.size) text = 'Policy not read yet';
+  else if (byCarrier.size === 1) {
+    const [[c, m]] = [...byCarrier.entries()];
+    text = [c, [...m.entries()].map(withCount).join(' + ')].filter(Boolean).join(' ');
+  } else text = `${[...lines.entries()].map(withCount).join(', ')} · ${byCarrier.size} companies`;
+  return <p className="truncate text-sm" style={{ color: 'var(--qs-text)' }} title={text}>{text}</p>;
 }
 
 // Work tabs are always in view (Partners too: partner referrals are the focus);
