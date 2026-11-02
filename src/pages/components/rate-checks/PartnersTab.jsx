@@ -113,10 +113,10 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
           </p>
           {canEdit && !adding && (
             <div className="mt-4 flex flex-wrap gap-2">
-              <button type="button" onClick={() => setAdding(true)} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
+              <button type="button" onClick={() => setAdding(true)} className="inline-flex min-h-[44px] w-[9.5rem] items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
                 <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
               </button>
-              <SendPitch className="min-h-[44px] rounded-lg px-4" />
+              <SendPitch className="min-h-[44px] w-[9.5rem] justify-center rounded-lg px-4" />
             </div>
           )}
           {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
@@ -136,9 +136,9 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
             </label>
             {canEdit && (
               <span className="flex flex-wrap justify-end gap-2">
-                <SendPitch className="h-9 rounded-full px-3.5" />
+                <SendPitch className="h-9 w-[8.5rem] justify-center rounded-full px-3.5" />
                 <button type="button" onClick={() => setAdding(a => !a)} aria-expanded={adding}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
+                  className="inline-flex h-9 w-[8.5rem] items-center justify-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
                   <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
                 </button>
               </span>
