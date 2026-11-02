@@ -20,8 +20,6 @@ const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'lo
 const sentence = (name) => `${String(name || 'the agency').replace(/\.+$/, '')}.`;
 // Money that was paid, always with cents: "$30.00".
 const dollars2 = (n) => `$${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-// "2026-11-21T…" → "Nov 21" (Georgia time).
-const paidOn = (iso) => new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' });
 const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
 const monthLabel = (key) => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
 // A different hello each visit.
@@ -473,11 +471,8 @@ function Earnings({ token, data, onChange }) {
               ))}
               {m.paid && (
                 <tr className="border-t border-slate-200">
-                  <th scope="row" className="px-3 py-2.5 text-left align-top">
-                    <span className="block font-bold text-[#0F2D6B]">Earnings</span>
-                    {m.paid.paid_at && <span className="block text-xs font-normal text-slate-500">Paid {paidOn(m.paid.paid_at)}</span>}
-                  </th>
-                  <td className="px-3 py-2.5 text-right align-top text-base font-bold tabular-nums text-emerald-700">{dollars2(m.paid.amount)}</td>
+                  <th scope="row" className="px-3 py-2.5 text-left font-bold text-[#0F2D6B]">Earnings</th>
+                  <td className="px-3 py-2.5 text-right text-base font-bold tabular-nums text-emerald-700">{dollars2(m.paid.amount)}</td>
                 </tr>
               )}
               {!m.rows.length && !m.pending && (
