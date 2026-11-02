@@ -29,6 +29,7 @@ import { CopyButton, CopyTextButton, Field } from './components/rate-checks/Copy
 import CompetitorAgents from './components/rate-checks/CompetitorAgents';
 import ReferralPartners from './components/rate-checks/ReferralPartners';
 import PartnersTab from './components/rate-checks/PartnersTab';
+import ScriptsTab from './components/rate-checks/ScriptsTab';
 import { CurrentAgentBox, ReferralBox } from './components/rate-checks/DrawerExtras';
 import AgentUploadDialog from './components/rate-checks/AgentUploadDialog';
 import DecisionCard, { DecisionChip } from './components/rate-checks/DecisionCard';
@@ -216,6 +217,9 @@ const WORK_TABS = [
   { v: 'promoters', label: 'Partners', Icon: BadgeDollarSign },
 ];
 const MORE_GROUPS = [
+  { title: 'Selling', tabs: [
+    { v: 'scripts', label: 'Scripts', hint: 'What to say and text to get dec pages', Icon: MessageSquare },
+  ] },
   { title: 'Insights', tabs: [
     { v: 'map', label: 'Where we win', short: 'Win map', hint: 'Win rate by carrier and ZIP', Icon: MapIcon },
     { v: 'agents', label: 'Competing agents', short: 'Agents', hint: 'Whose customers send us their policy', Icon: Users },
@@ -460,7 +464,8 @@ export default function RateChecksPage() {
 
         <TabBar tab={tab} setTab={(v) => { setPartnerFocus(null); setTab(v); }} />
 
-        {tab === 'map' ? <WinMap agencyId={agencyId} />
+        {tab === 'scripts' ? <ScriptsTab />
+          : tab === 'map' ? <WinMap agencyId={agencyId} />
           : tab === 'agents' ? <CompetitorAgents agencyId={agencyId} scans={allRows} />
           : tab === 'promoters' ? <PartnersTab agencyId={agencyId} userId={user?.id} canEdit={canEditRules} focusId={partnerFocus}
               onOpenRateCheck={(id) => { const row = allRows.find(r => r.id === id); if (row) setOpenRow(row); }} />

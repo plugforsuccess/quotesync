@@ -6,7 +6,7 @@
 // schedule, and a yearly export of what was paid, for 1099s. Math lives in partnerPay.js.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus, Send } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
@@ -17,7 +17,7 @@ import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckAp
 import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
 import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
-import { sharePitch, pitchWithLinks } from './partnerPitch';
+import SendPitch from './SendPitch';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
   TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, rulesFrom, households, partnerSummary, applyCap,
@@ -293,25 +293,6 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       <PaySchedule agencyId={agencyId} schedule={schedule} canEdit={canEdit} />
       <PayoutRules agencyId={agencyId} userId={userId} rules={rules} canEdit={canEdit} />
     </div>
-  );
-}
-
-// Sends the partner pitch (a short text and four screenshots) to someone you'd like as a
-// partner: the phone's share sheet with the pictures attached, or else a text with links.
-function SendPitch({ className = '' }) {
-  const [busy, setBusy] = useState(false);
-  const send = async () => {
-    setBusy(true);
-    const result = await sharePitch();
-    setBusy(false);
-    if (result === 'unsupported') window.location.href = `sms:?&body=${encodeURIComponent(pitchWithLinks())}`;
-  };
-  return (
-    <button type="button" onClick={send} disabled={busy} aria-label="Send partner pitch" title="Text someone the partner pitch: a short message and 4 screenshots"
-      className={`inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 disabled:opacity-60 ${className}`}
-      style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
-      <Send className="h-4 w-4" aria-hidden="true" /> {busy ? 'Opening…' : 'Send pitch'}
-    </button>
   );
 }
 
