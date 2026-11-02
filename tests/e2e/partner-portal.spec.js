@@ -148,7 +148,7 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
       { month: thisMonth, households: 2, earned: 55, paid: null, rows: [
         { first_name: 'Stephen', label: 'Auto + home or condo', fee: 45, over_cap: false },
         { first_name: 'Ana', label: 'Auto only', fee: 10, over_cap: false }] },
-      { month: lastMonth, households: 1, earned: 15, paid: { amount: 15, paid_at: '2026-10-05' }, rows: [
+      { month: lastMonth, households: 1, earned: 15, paid: { amount: 15, paid_at: '2026-10-21T15:00:00Z' }, rows: [
         { first_name: 'Lee', label: 'Auto + renters', fee: 15, over_cap: false }] },
     ],
   }) });
@@ -156,7 +156,10 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
   // No projections: unpaid months show a household count, paid months what was paid.
   await expect(page.getByText('Auto + Home or Condo')).toBeVisible();
-  await expect(page.getByText('Earnings: $15', { exact: true })).toBeVisible();
+  // Paid months end with an Earnings row: the amount with cents and the day it was paid.
+  const earnings = page.getByRole('row', { name: /^Earnings Paid Oct 21 \$15\.00$/ });
+  await expect(earnings).toBeVisible();
+  await expect(page.getByText('$15.00', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Stephen')).toBeVisible();
   await expect(page.getByText('$45')).toHaveCount(0);
   await expect(page.getByText('$55')).toHaveCount(0);

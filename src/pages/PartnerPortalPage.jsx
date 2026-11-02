@@ -18,6 +18,10 @@ const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)'
 const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 // "Cam Wiley Agency, Inc." + "." without doubling the period.
 const sentence = (name) => `${String(name || 'the agency').replace(/\.+$/, '')}.`;
+// Money that was paid, always with cents: "$30.00".
+const dollars2 = (n) => `$${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+// "2026-11-21T…" → "Nov 21" (Georgia time).
+const paidOn = (iso) => new Date(iso).toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' });
 const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
 const monthLabel = (key) => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
 // A different hello each visit.
@@ -434,7 +438,7 @@ function Earnings({ token, data, onChange }) {
       </section>
 
       <section className="mt-4 grid grid-cols-3 gap-2">
-        {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', money(paidAll), 'all time']].map(([k, v, sub]) => (
+        {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', dollars2(paidAll), 'all time']].map(([k, v, sub]) => (
           <div key={k} className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">{k}</p>
             <p className="text-xl font-extrabold tabular-nums text-[#0F2D6B]">{v}</p>
@@ -458,10 +462,7 @@ function Earnings({ token, data, onChange }) {
             <tbody key={m.month}>
               <tr className="border-t border-slate-200 bg-slate-50">
                 <th scope="colgroup" colSpan={2} className="px-3 py-2.5 text-left">
-                  <span className="flex items-baseline justify-between gap-3">
-                    <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</span>
-                    {m.paid && <span className="text-sm font-semibold text-emerald-700">Earnings: {money(m.paid.amount)}</span>}
-                  </span>
+                  <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</span>
                 </th>
               </tr>
               {m.rows.map((r, i) => (
@@ -470,6 +471,15 @@ function Earnings({ token, data, onChange }) {
                   <td className="px-3 py-2.5 text-slate-600">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</td>
                 </tr>
               ))}
+              {m.paid && (
+                <tr className="border-t border-slate-200">
+                  <th scope="row" className="px-3 py-2.5 text-left align-top">
+                    <span className="block font-bold text-[#0F2D6B]">Earnings</span>
+                    {m.paid.paid_at && <span className="block text-xs font-normal text-slate-500">Paid {paidOn(m.paid.paid_at)}</span>}
+                  </th>
+                  <td className="px-3 py-2.5 text-right align-top text-base font-bold tabular-nums text-emerald-700">{dollars2(m.paid.amount)}</td>
+                </tr>
+              )}
               {!m.rows.length && !m.pending && (
                 <tr className="border-t border-slate-100"><td colSpan={2} className="px-3 py-2.5 text-slate-500">No referrals yet this month.</td></tr>
               )}
