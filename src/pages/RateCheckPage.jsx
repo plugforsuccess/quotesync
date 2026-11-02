@@ -50,26 +50,22 @@ const OTP_ENABLED = import.meta.env.VITE_RATE_CHECK_OTP === 'true';
 // names him); the agency's resident license goes in the footer next to the agency name.
 const AGENT = { name: 'Cam Wiley', photo: '/logos/cameron-headshot.webp', license: '3282384' };
 const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', license: '209488' };
-// "Meet the Owner" carousel: the agent card first, then these in order. A story card comes
-// right after the agent card, then alternating photo / story.
-// Photo: { photo, alt, caption, position }. Story: { title, paragraphs }.
+// "Meet the Owner" carousel: three photos, each with its story underneath.
+// Family first (it backs up "Family comes first" just above), then the agency, then the court.
+// { key, photo, alt, caption, position, paragraphs? }
 const ABOUT = [
-  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, the day he bought the agency', caption: 'Closing day in Covington, GA: the day I bought the agency', position: '50% 66%' },
-  // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
-  // the Swarthmore Phoenix season recap.
-  { key: 'court', title: 'My story, on the court', paragraphs: [
-    'March 9, 2019. I was on a ladder with a pair of scissors, cutting down the net. Swarthmore had just reached its first NCAA Final Four.',
-    'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
-    'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
-  ] },
-  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%' },
+  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam and family', caption: 'My family', position: '50% 35%' },
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
-  { key: 'today', title: 'My story, today', paragraphs: [
-    'Family comes first for me. So I treat your household the way I’d treat mine.',
+  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, the day he bought the agency', caption: 'Closing day in Covington, GA: the day I bought the agency', position: '50% 66%', paragraphs: [
     'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
-  { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam and family', caption: 'My family', position: '50% 35%' },
+  // Facts from Swarthmore Athletics (2019 NABC All-America and Final Four releases) and
+  // the Swarthmore Phoenix season recap.
+  { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%', paragraphs: [
+    'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
+    'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
+  ] },
 ];
 
 const newId = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
@@ -1096,26 +1092,23 @@ function Monogram({ name }) {
 }
 
 function MeetCam() {
-  // The agent card already sits in the hero, so the carousel opens with a photo, then the story.
-  const slides = ABOUT.map(a => a.photo ? {
+  // Each slide: the photo with its caption, then its story (if it has one) underneath.
+  const slides = ABOUT.map(a => ({
     key: a.key, label: a.caption, untitled: true, bare: true,
     content: (
-      <figure className="relative h-full min-h-[300px]">
-        <img src={a.photo} alt={a.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.position }} />
-        <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-left text-sm font-semibold text-white"><T k={`rc.about.${a.key}.caption`}>{a.caption}</T></figcaption>
+      <figure className="flex h-full min-h-[300px] flex-col text-left">
+        <div className={`relative ${a.paragraphs ? 'h-56 shrink-0' : 'flex-1'}`}>
+          <img src={a.photo} alt={a.alt} loading="lazy" className="absolute inset-0 h-full w-full object-cover" style={{ objectPosition: a.position }} />
+          <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-4 pb-3 pt-10 text-sm font-semibold text-white"><T k={`rc.about.${a.key}.caption`}>{a.caption}</T></figcaption>
+        </div>
+        {a.paragraphs && (
+          <div className="space-y-2.5 px-4 py-4 text-[15px] leading-relaxed text-slate-700">
+            {a.paragraphs.map((t, i) => <p key={i}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
+          </div>
+        )}
       </figure>
     ),
-  } : {
-    key: a.key, label: a.title, untitled: true,
-    content: (
-      <div className="flex h-full min-h-[268px] flex-col text-left">
-        {/* No visible header: the bold first line is the headline. The title names the slide for screen readers. */}
-        <div className="space-y-3 text-[15px] leading-relaxed text-slate-700">
-          {a.paragraphs.map((t, i) => <p key={i} className={i === 0 ? 'text-base font-semibold text-[#0F2D6B]' : ''}><T k={`rc.about.${a.key}.${i + 1}`}>{t}</T></p>)}
-        </div>
-      </div>
-    ),
-  });
+  }));
   return <Carousel slides={slides} label="Meet the Owner" />;
 }
 
