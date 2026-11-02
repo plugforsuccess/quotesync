@@ -6,7 +6,7 @@
 // schedule, and a yearly export of what was paid, for 1099s. Math lives in partnerPay.js.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus } from 'lucide-react';
+import { AlertTriangle, Check, ChevronDown, ChevronRight, Download, MessageSquare, Plus, Send } from 'lucide-react';
 import {
   usePromoters, usePromoterScans, usePromoterRates, usePromoterPayouts,
   useSavePromoter, useSavePromoterRates, useRecordPromoterPayout, useSetPromoterPhoto, partnerW9Url,
@@ -17,6 +17,7 @@ import { formatPhoneInput, isEmail, squarePhoto } from '../../../lib/rateCheckAp
 import { CopyTextButton } from './Copyable';
 import { inviteUrl } from './invite';
 import { PARTNER_AGREEMENT_REQUIRED } from '../../../lib/partnerProgram';
+import { sharePitch, pitchWithLinks } from './partnerPitch';
 import { inputStyle, money, formatPhone, formatDate } from './ui';
 import {
   TIERS, EXTRA_LINE, EXTRA_LINE_CAP, TIER_LABEL, scheduleFrom, rulesFrom, households, partnerSummary, applyCap,
@@ -111,9 +112,12 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
             Add someone who&apos;ll share your Rate Check link. {PARTNER_AGREEMENT_REQUIRED ? 'They get a private portal to sign the agreement, then their own link that pays per household.' : 'They get their own link that pays per household, and a private portal to see what they’ve earned.'}
           </p>
           {canEdit && !adding && (
-            <button type="button" onClick={() => setAdding(true)} className="mt-4 inline-flex min-h-[44px] items-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
-              <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
-            </button>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" onClick={() => setAdding(true)} className="inline-flex min-h-[44px] w-[9.5rem] items-center justify-center gap-1.5 rounded-lg bg-primary-600 px-4 text-sm font-semibold text-white">
+                <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
+              </button>
+              <SendPitch className="min-h-[44px] w-[9.5rem] justify-center rounded-lg px-4" />
+            </div>
           )}
           {adding && <AddPartner agencyId={agencyId} userId={userId} save={savePromoter} onDone={() => setAdding(false)} />}
         </div>
@@ -131,10 +135,13 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
               <ChevronDown className="pointer-events-none absolute right-3 h-4 w-4" style={{ color: 'var(--qs-subtle)' }} aria-hidden="true" />
             </label>
             {canEdit && (
-              <button type="button" onClick={() => setAdding(a => !a)} aria-expanded={adding}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
-                <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
-              </button>
+              <span className="flex flex-wrap justify-end gap-2">
+                <SendPitch className="h-9 w-[8.5rem] justify-center rounded-full px-3.5" />
+                <button type="button" onClick={() => setAdding(a => !a)} aria-expanded={adding}
+                  className="inline-flex h-9 w-[8.5rem] items-center justify-center gap-1.5 rounded-full bg-primary-600 px-3.5 text-sm font-semibold text-white hover:bg-primary-700">
+                  <Plus className="h-4 w-4" aria-hidden="true" /> Add partner
+                </button>
+              </span>
             )}
           </div>
           <dl className="mt-4 grid grid-cols-3 divide-x overflow-hidden rounded-xl" style={{ background: 'var(--qs-elevated)', borderColor: 'var(--qs-border)' }}>
@@ -286,6 +293,25 @@ export default function PartnersTab({ agencyId, userId, canEdit, onOpenRateCheck
       <PaySchedule agencyId={agencyId} schedule={schedule} canEdit={canEdit} />
       <PayoutRules agencyId={agencyId} userId={userId} rules={rules} canEdit={canEdit} />
     </div>
+  );
+}
+
+// Sends the partner pitch (a short text and four screenshots) to someone you'd like as a
+// partner: the phone's share sheet with the pictures attached, or else a text with links.
+function SendPitch({ className = '' }) {
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    setBusy(true);
+    const result = await sharePitch();
+    setBusy(false);
+    if (result === 'unsupported') window.location.href = `sms:?&body=${encodeURIComponent(pitchWithLinks())}`;
+  };
+  return (
+    <button type="button" onClick={send} disabled={busy} aria-label="Send partner pitch" title="Text someone the partner pitch: a short message and 4 screenshots"
+      className={`inline-flex items-center gap-1.5 text-sm font-semibold text-primary-600 disabled:opacity-60 ${className}`}
+      style={{ background: 'var(--qs-elevated)', border: '1px solid var(--qs-border)' }}>
+      <Send className="h-4 w-4" aria-hidden="true" /> {busy ? 'Opening…' : 'Send pitch'}
+    </button>
   );
 }
 
