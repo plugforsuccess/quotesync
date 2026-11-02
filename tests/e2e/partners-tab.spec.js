@@ -149,3 +149,18 @@ test('adding a partner: checks the fields and saves the mailing address for thei
   const saved = writes.find(w => w.table.startsWith('rate_check_promoters') && w.method === 'POST').body;
   expect(saved).toMatchObject({ agency_id: AG, name: 'Stephen Pearson', phone: '4045550199', email: 'stephen@yahoo.com', mailing_address: '22 Pine St', mailing_city_state_zip: 'Covington, GA 30014' });
 });
+
+test('Send pitch shares the message and the four screenshots', async ({ page }) => {
+  await page.addInitScript(() => {
+    navigator.canShare = () => true;
+    navigator.share = async (d) => { window.__shared = { text: d.text, files: (d.files || []).map(f => [f.name, f.type, f.size]) }; };
+  });
+  await mock(page, { partners: [partner()], rules: null, payouts: [] });
+  await openPartners(page);
+  await page.getByRole('button', { name: 'Send partner pitch' }).click();
+  await expect.poll(() => page.evaluate(() => window.__shared?.files?.length || 0)).toBe(4);
+  const shared = await page.evaluate(() => window.__shared);
+  expect(shared.text).toContain('extra pocket money');
+  expect(shared.files.map(f => f[0])).toEqual(['1-what-your-friends-see.jpg', '2-they-send-their-policy.jpg', '3-your-partner-page.jpg', '4-track-your-earnings.jpg']);
+  for (const [, type, size] of shared.files) { expect(type).toBe('image/jpeg'); expect(size).toBeGreaterThan(20000); }
+});
