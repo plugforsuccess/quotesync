@@ -112,7 +112,8 @@ test('signing the W-9: pre-filled, checked, sent once, then shown as on file', a
   // On file: the checklist is gone and only the last 4 show.
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
   await expect(page.getByText('W-9 on file')).toBeVisible();
-  await expect(page.getByText(/SSN ending 1234/)).toBeVisible();
+  await expect(page.getByText(/Signed \w{3} \d{1,2}, \d{4}/)).toBeVisible();
+  await expect(page.getByText(/1234/)).toHaveCount(0);
   await expect(page.getByText('412-55-1234')).toHaveCount(0);
 });
 
@@ -147,16 +148,21 @@ test('earnings: this month, past months, paid and unpaid', async ({ page }) => {
       { month: thisMonth, households: 2, earned: 55, paid: null, rows: [
         { first_name: 'Stephen', label: 'Auto + home or condo', fee: 45, over_cap: false },
         { first_name: 'Ana', label: 'Auto only', fee: 10, over_cap: false }] },
-      { month: lastMonth, households: 1, earned: 15, paid: { amount: 15, paid_at: '2026-10-05' }, rows: [
+      { month: lastMonth, households: 1, earned: 15, paid: { amount: 15, paid_at: '2026-10-21T15:00:00Z' }, rows: [
         { first_name: 'Lee', label: 'Auto + renters', fee: 15, over_cap: false }] },
     ],
   }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText('Get set up · 2 steps')).toHaveCount(0);
-  await expect(page.getByText('$55 · not paid yet')).toBeVisible();
-  await expect(page.getByText('Paid $15')).toBeVisible();
+  // No projections: unpaid months show a household count, paid months what was paid.
+  await expect(page.getByText('Auto + Home or Condo')).toBeVisible();
+  // Paid months end with an Earnings row: the amount, with cents.
+  const earnings = page.getByRole('row', { name: 'Earnings $15.00' });
+  await expect(earnings).toBeVisible();
+  await expect(page.getByText('$15.00', { exact: true }).first()).toBeVisible();
   await expect(page.getByText('Stephen')).toBeVisible();
-  await expect(page.getByText('$70')).toBeVisible(); // all time
+  await expect(page.getByText('$45')).toHaveCount(0);
+  await expect(page.getByText('$55')).toHaveCount(0);
 });
 
 test('a wrong or old link says so', async ({ page }) => {
@@ -165,7 +171,7 @@ test('a wrong or old link says so', async ({ page }) => {
   await expect(page.getByText('This link isn’t valid.')).toBeVisible();
 });
 
-test('pay day, households still on the way, and a paused link', async ({ page }) => {
+test('month headings say activity; a paused link says so', async ({ page }) => {
   const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + 1);
   const nextMonth21 = `${d.toLocaleDateString('en-CA').slice(0, 7)}-21`;
   await mockPartner(page, { data: portal({
@@ -176,6 +182,12 @@ test('pay day, households still on the way, and a paused link', async ({ page })
   }) });
   await page.goto(`/partner/${TOKEN}`);
   await expect(page.getByText(/Your link is paused/)).toBeVisible();
-  await expect(page.getByText(/^\$45 · paid \w{3} 21$/)).toBeVisible();
-  await expect(page.getByText('+ 2 more households on the way: they count once they reply to set up a call about their quote.')).toBeVisible();
+  // One table: Name and Products columns, a heading row per month.
+  const table = page.getByRole('table', { name: 'Your referrals by month' });
+  await expect(table.getByRole('columnheader', { name: 'Name' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: 'Products' })).toBeVisible();
+  await expect(table.getByRole('columnheader', { name: /^[A-Z][a-z]+ \d{4} Activity$/ })).toBeVisible();
+  await expect(table.getByRole('row', { name: 'Stephen Auto + Home or Condo' })).toBeVisible();
+  await expect(page.getByText('$45')).toHaveCount(0);
+  await expect(page.getByText(/on the way/)).toHaveCount(0);
 });

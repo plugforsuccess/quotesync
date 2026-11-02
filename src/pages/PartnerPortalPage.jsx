@@ -18,6 +18,8 @@ const HERO_BG = 'linear-gradient(135deg, #1D4ED8 0%, #1E3A8A 55%, #0F2D6B 100%)'
 const longDate = (iso) => new Date(iso).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 // "Cam Wiley Agency, Inc." + "." without doubling the period.
 const sentence = (name) => `${String(name || 'the agency').replace(/\.+$/, '')}.`;
+// Money that was paid, always with cents: "$30.00".
+const dollars2 = (n) => `$${(Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const money = (n) => `$${Number(n).toLocaleString('en-US', { minimumFractionDigits: Number.isInteger(Number(n)) ? 0 : 2, maximumFractionDigits: 2 })}`;
 const monthLabel = (key) => { const [y, m] = key.split('-').map(Number); return new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); };
 // A different hello each visit.
@@ -33,9 +35,10 @@ const SCHEDULE_ROWS = [
   ['auto_only', 'Auto only'], ['renters_only', 'Renters only'],
 ];
 
+// Product names capitalized: "Auto + home or condo" → "Auto + Home or Condo".
+const productCase = (s) => String(s || '').replace(/\b(auto|home|condo|renters|umbrella|only|extra)\b/g, w => w[0].toUpperCase() + w.slice(1));
 // Dates in the agency's time zone (Georgia), the same as the payouts.
 const todayKey = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
-const shortDay = (ymd) => new Date(`${ymd}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 export default function PartnerPortalPage() {
   const { token } = useParams();
@@ -172,7 +175,7 @@ function W9Section({ token, data, onChange, open: openProp, setOpen: setOpenProp
       <section className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-slate-200">
         <p className="text-sm text-slate-700">
           <span className="flex items-center gap-1.5 font-semibold text-emerald-700"><Check className="h-4 w-4" aria-hidden="true" /> W-9 on file</span>
-          {w9.tin_type === 'ein' ? 'EIN' : 'SSN'} ending {w9.last4} · signed {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+          Signed {new Date(w9.signed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
         </p>
         <button type="button" onClick={() => setOpen(true)} className="min-h-[40px] shrink-0 text-sm font-semibold text-blue-700">Update</button>
       </section>
@@ -407,7 +410,10 @@ function Earnings({ token, data, onChange }) {
   const thisMonth = todayKey().slice(0, 7);
   const months = data.months?.length ? data.months : [{ month: thisMonth, households: 0, earned: 0, rows: [], paid: null }];
   const current = months.find(m => m.month === thisMonth) || { month: thisMonth, households: 0, earned: 0, rows: [], paid: null };
-  const lifetime = months.reduce((t, m) => t + m.earned, 0);
+  // Households not paid yet: ones that qualified (paid on pay day) and ones still waiting.
+  const pendingIn = (m) => (m.paid ? 0 : (m.households || 0) + (m.pending || 0));
+  const pendingAll = months.reduce((t, m) => t + pendingIn(m), 0);
+  const paidAll = months.reduce((t, m) => t + (m.paid ? Number(m.paid.amount) || 0 : 0), 0);
 
   return (
     <>
@@ -430,7 +436,7 @@ function Earnings({ token, data, onChange }) {
       </section>
 
       <section className="mt-4 grid grid-cols-3 gap-2">
-        {[[monthLabel(current.month).split(' ')[0], current.households, 'households'], ['Earned', money(current.earned), 'this month'], ['All time', money(lifetime), 'earned']].map(([k, v, sub]) => (
+        {[[monthLabel(current.month).split(' ')[0], (current.households || 0) + (current.pending || 0), 'households'], ['Pending', pendingAll, pendingAll === 1 ? 'household' : 'households'], ['Paid', dollars2(paidAll), 'all time']].map(([k, v, sub]) => (
           <div key={k} className="rounded-xl bg-white p-3 ring-1 ring-slate-200">
             <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">{k}</p>
             <p className="text-xl font-extrabold tabular-nums text-[#0F2D6B]">{v}</p>
@@ -440,34 +446,42 @@ function Earnings({ token, data, onChange }) {
       </section>
       {data.monthly_cap && <p className="mt-2 text-xs text-slate-500">Up to {data.monthly_cap} households are paid each month.</p>}
 
-      {months.map(m => (
-        <section key={m.month} className="mt-5">
-          <div className="flex items-baseline justify-between">
-            <h2 className="font-bold text-[#0F2D6B]">{monthLabel(m.month)}</h2>
-            <span className={`text-sm font-semibold ${m.paid ? 'text-emerald-700' : 'text-slate-500'}`}>
-              {m.paid ? `Paid ${money(m.paid.amount)}` : m.earned > 0 ? `${money(m.earned)} · ${m.pay_day && todayKey() < m.pay_day ? `paid ${shortDay(m.pay_day)}` : 'not paid yet'}` : ''}
-            </span>
-          </div>
-          {m.rows.length ? (
-            <ul className="mt-2 divide-y divide-slate-200 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
+      {/* All referrals in one table: a heading row per month, then name and what they sent. */}
+      <section className="mt-5 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200">
+        <table className="w-full text-sm">
+          <caption className="sr-only">Your referrals by month</caption>
+          <thead>
+            <tr className="text-left text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500">
+              <th scope="col" className="w-[40%] px-3 py-2.5">Name</th>
+              <th scope="col" className="px-3 py-2.5">Products</th>
+            </tr>
+          </thead>
+          {months.map(m => (
+            <tbody key={m.month}>
+              <tr className="border-t border-slate-200 bg-slate-50">
+                <th scope="colgroup" colSpan={2} className="px-3 py-2.5 text-left">
+                  <span className="font-bold text-[#0F2D6B]">{monthLabel(m.month)} Activity</span>
+                </th>
+              </tr>
               {m.rows.map((r, i) => (
-                <li key={i} className="flex items-center justify-between gap-3 px-3 py-2.5">
-                  <span className="min-w-0">
-                    <span className="block font-semibold text-[#0F2D6B]">{r.first_name}</span>
-                    <span className="block text-xs text-slate-500">{r.label}{r.over_cap ? ' · over this month’s limit' : ''}</span>
-                  </span>
-                  <span className={`shrink-0 font-bold tabular-nums ${r.fee ? 'text-[#0F2D6B]' : 'text-slate-400'}`}>{money(r.fee)}</span>
-                </li>
+                <tr key={i} className="border-t border-slate-100">
+                  <td className="px-3 py-2.5 font-semibold text-[#0F2D6B]">{r.first_name}</td>
+                  <td className="px-3 py-2.5 text-slate-600">{productCase(r.label)}{r.over_cap ? ' · over this month’s limit' : ''}</td>
+                </tr>
               ))}
-            </ul>
-          ) : <p className="mt-2 text-sm text-slate-500">{m.pending ? 'None qualified yet.' : 'No households yet this month.'}</p>}
-          {m.pending > 0 && (
-            <p className="mt-1.5 text-xs text-slate-500">
-              + {m.pending} more {m.pending === 1 ? 'household' : 'households'} on the way: {m.pending === 1 ? 'it counts' : 'they count'} once {data.pay_rule === 'reply' ? 'they reply to set up a call about their quote' : 'we’ve quoted them'}.
-            </p>
-          )}
-        </section>
-      ))}
+              {m.paid && (
+                <tr className="border-t border-slate-200">
+                  <th scope="row" className="px-3 py-2.5 text-left font-bold text-[#0F2D6B]">Earnings</th>
+                  <td className="px-3 py-2.5 text-right text-base font-bold tabular-nums text-emerald-700">{dollars2(m.paid.amount)}</td>
+                </tr>
+              )}
+              {!m.rows.length && !m.pending && (
+                <tr className="border-t border-slate-100"><td colSpan={2} className="px-3 py-2.5 text-slate-500">No referrals yet this month.</td></tr>
+              )}
+            </tbody>
+          ))}
+        </table>
+      </section>
 
       {data.w9?.on_file && <W9Section token={token} data={data} onChange={onChange} />}
 
