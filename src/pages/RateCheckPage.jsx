@@ -56,7 +56,7 @@ const AGENCY = { name: 'Cam Wiley Agency, Inc.', short: 'Cam Wiley Agency', lice
 const ABOUT = [
   { key: 'family', photo: '/logos/cameron-family.webp', alt: 'Cam with his mom, dad and sister at his cousin’s wedding', caption: 'My family: Mom, Dad and my sister at my cousin’s wedding', position: '50% 35%' },
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
-  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, the day he bought the agency', caption: 'Closing day in Covington, GA: the day I bought the agency', position: '50% 66%', paragraphs: [
+  { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
     'Today I run Cam Wiley Agency, my Allstate agency serving families all across Georgia. Getting to know them and building those relationships is the best part of my job.',
     'You choose your car and your home to fit your life and your budget. Your insurance should fit the same way, and I’ll help you look at the big picture.',
   ] },
