@@ -53,7 +53,7 @@ function About({ title, steps, listTitle, list, q, a }) {
 }
 
 const FAQ = [
-  ['Can I take both courses?', 'Absolutely! If you’re a parent helping your teen, you can enroll in Defensive Driving for your own insurance discount while your teen completes Joshua’s Law.'],
+  ['Can I take both courses?', 'Absolutely! If you’re a parent helping your teen, you can take Defensive Driving yourself while your teen completes Joshua’s Law.'],
   ['How long do I have access?', 'Both courses give you extended access to complete at your own pace. You can log in and out as needed, and your progress is automatically saved.'],
   ['Are certificates sent automatically?', 'Joshua’s Law certificates are sent directly to Georgia DDS. Defensive Driving certificates are downloadable for you to submit to your insurer.'],
   ['What if I need help during the course?', 'Both course providers offer customer support via phone and email during extended business hours.'],
@@ -216,7 +216,7 @@ export default function GeorgiaDriverEducationPage() {
               <T k="de.headline">Georgia Driver Education & Insurance Discounts</T>
             </h1>
             <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
-              <T k="de.subhead">Complete your driver education online—whether you’re earning your license or looking to save on insurance. Both courses are 100% online and state-approved.</T>
+              <T k="de.subhead">Complete your driver education online—whether you’re earning your license or looking to save on insurance. Both courses are 100% online.</T>
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <a href={RETURNING_CUSTOMER_LINK} target="_blank" rel="noreferrer"
@@ -238,8 +238,8 @@ export default function GeorgiaDriverEducationPage() {
             <span className="absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider" style={{ background: ACCENT, color: DEEP }}>Most popular</span>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700">Insurance discount</p>
             <h2 className="mt-2 pr-28 text-2xl font-extrabold text-[#0F2D6B]">Defensive Driving Course</h2>
-            <p className="mt-2 text-[15px] text-slate-600">Save on your insurance premium by completing this 6-hour online defensive driving course. Many Georgia insurers offer recurring discounts.</p>
-            <div className="mt-5"><Ticks items={['6-hour online course, complete at your own pace', 'Eligible for insurance discounts with most carriers', 'Downloadable completion certificate', 'Available for all ages 18+']} /></div>
+            <p className="mt-2 text-[15px] text-slate-600">A 6-hour online defensive driving course. Many insurers offer a discount for completing one; check with yours.</p>
+            <div className="mt-5"><Ticks items={['6-hour online course, complete at your own pace', 'Ask your insurer about a completion discount', 'Downloadable completion certificate', 'Available for all ages 18+']} /></div>
             <p className="mt-6 text-3xl font-extrabold text-[#0F2D6B]">$24.95</p>
             <Link to="/courses/defensive-driving"
               className="mt-4 block rounded-2xl bg-blue-700 py-4 text-center text-base font-bold text-white shadow-lg shadow-blue-700/25 hover:bg-blue-800">
@@ -267,10 +267,10 @@ export default function GeorgiaDriverEducationPage() {
       <section className="bg-white py-14 lg:py-20">
         <div className={`${wrap} grid gap-6 lg:grid-cols-2`}>
           <About title="About Defensive Driving"
-            steps={['Check with your insurer to confirm they accept this course', 'Enroll and complete the 6-hour program at your own pace', 'Download your completion certificate', 'Submit certificate to your insurance company', 'Enjoy your premium discount']}
+            steps={['Check with your insurer to confirm they accept this course', 'Enroll and complete the 6-hour program at your own pace', 'Download your completion certificate', 'Submit certificate to your insurance company', 'Your insurer decides on any discount']}
             listTitle="Course features"
             list={['Works on mobile, tablet, or desktop', 'Mix of text, videos, and animations', 'Automatic progress saving', 'Optional audio read-along', '30-day money-back guarantee']}
-            q="Will I get a discount?" a="Most Georgia insurers offer defensive driving discounts, but you should always verify with your specific carrier before enrolling." />
+            q="Will I get a discount?" a="That’s up to your insurer. Many offer a defensive driving discount, but check with yours before enrolling. This course is not DDS-certified." />
           <About title="About Joshua’s Law"
             steps={['Enroll in the 30-hour online course', 'Complete interactive lessons and quizzes', 'Pass the final exam', 'Certificate automatically sent to Georgia DDS', 'You’re ready to schedule your road test']}
             listTitle="Requirements"
