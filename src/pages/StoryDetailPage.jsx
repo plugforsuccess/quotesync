@@ -8,16 +8,24 @@ import VideoEmbed from '../components/newsroom/VideoEmbed';
 import { supabase } from '../lib/supabase';
 import { trackReadMoreOpen, trackVideoPlay, trackNewsroomShare, trackNewsroomCTAClick } from '../lib/newsroomAnalytics';
 import PageSpinner from '../components/PageSpinner';
+import { getCategoryLabel, getCategoryContextMessage } from '../lib/categories';
+
+const AGENCY_SMS = '+17707861616';
 
 /**
  * Format body text with basic paragraph support
  */
+// Blank lines separate paragraphs; a single line break stays a line break, so
+// headings and lists written one per line don't run together.
 const formatBody = (body) => {
-  return body.split('\n\n').map((paragraph, index) => (
-    <p key={index} className="mb-4">
-      {paragraph}
-    </p>
-  ));
+  return (body || '').split(/\n\s*\n/).filter((p) => p.trim()).map((paragraph, index) => {
+    const lines = paragraph.split('\n');
+    return (
+      <p key={index} className="mb-4">
+        {lines.map((line, i) => <span key={i}>{i > 0 && <br />}{line}</span>)}
+      </p>
+    );
+  });
 };
 
 /**
@@ -128,7 +136,7 @@ const StoryDetailPage = () => {
           text: story.preview_hook,
           url: url
         });
-      } catch (err) {
+      } catch {
         copyToClipboard(url);
       }
     } else {
@@ -146,11 +154,7 @@ const StoryDetailPage = () => {
     if (!story) return;
     trackNewsroomCTAClick(story, ctaType);
 
-    if (ctaType === 'compare_policy') {
-      navigate('/');
-    } else if (ctaType === 'webinar') {
-      navigate('/courses');
-    }
+    if (ctaType === 'compare_policy') navigate('/');
   };
 
   if (loading) {
@@ -222,7 +226,7 @@ const StoryDetailPage = () => {
           {/* Meta */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6 pb-6 border-b border-gray-200">
             <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-              <span className="font-medium capitalize">{story.category}</span>
+              <span className="font-medium">{getCategoryLabel(story.category)}</span>
               {story.region && (
                 <>
                   <span>•</span>
@@ -280,15 +284,10 @@ const StoryDetailPage = () => {
           {/* Why This Matters */}
           <div className="bg-primary-50 border-l-4 border-primary-500 p-6 mb-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-3">
-              Why This Matters for Georgia Drivers
+              Why this matters
             </h2>
             <p className="text-gray-700 leading-relaxed text-lg">
-              Understanding these developments helps you make informed decisions about your coverage.
-              {story.category === 'litigation' && ' Legal changes can directly impact your rates and policy terms.'}
-              {story.category === 'accident' && ' Accident trends in your area can affect insurance premiums and coverage needs.'}
-              {story.category === 'policy' && ' Policy updates may create opportunities to save money or improve your protection.'}
-              {story.category === 'data' && ' Data-driven insights reveal how insurance markets are shifting in real-time.'}
-              {story.category === 'law' && ' New laws can change your rights and requirements as a driver.'}
+              {getCategoryContextMessage(story.category) || 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'}
             </p>
           </div>
 
@@ -314,24 +313,26 @@ const StoryDetailPage = () => {
             </div>
           )}
 
-          {/* CTA Block */}
+          {/* The ask */}
           <div className="bg-gray-50 rounded-lg p-8 border border-gray-200 mb-12">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">
-              Take Action
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">
+              Does this touch your policy?
             </h3>
+            <p className="text-gray-600 mb-5">Send your declarations page and a licensed agent will check it, usually within 30 minutes during business hours. Or just text Cam the question.</p>
             <div className="flex flex-col sm:flex-row gap-4">
               <button
                 onClick={() => handleCTAClick('compare_policy')}
                 className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors"
               >
-                Compare Your Policy
+                Upload my policy
               </button>
-              <button
-                onClick={() => handleCTAClick('webinar')}
-                className="flex-1 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-4 px-6 rounded-lg border border-gray-300 transition-colors"
+              <a
+                href={`sms:${AGENCY_SMS}?&body=${encodeURIComponent(`Hi Cam, I read "${story.title}" and have a question.`)}`}
+                onClick={() => trackNewsroomCTAClick(story, 'text_cam')}
+                className="flex-1 text-center bg-white hover:bg-gray-100 text-gray-800 font-semibold py-4 px-6 rounded-lg border border-gray-300 transition-colors"
               >
-                Join Next Live Breakdown
-              </button>
+                Text Cam
+              </a>
             </div>
           </div>
 

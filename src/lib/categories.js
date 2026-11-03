@@ -14,7 +14,31 @@
  * - contextMessage: "Why This Matters" section content for StoryModal
  */
 export const STORY_CATEGORIES = [
+  // The three sections readers see. New stories pick from these.
   {
+    slug: 'help',
+    label: 'Help',
+    description: 'A question people bring to the desk, answered in plain language, with one thing to do at the end',
+    color: 'bg-[#d1fae5] text-[#065f46] border border-[#a7f3d0]',
+    contextMessage: 'If this is your situation, check your own policy for the same thing, or send it to Cam and he’ll look.'
+  },
+  {
+    slug: 'real-stories',
+    label: 'Real stories',
+    description: 'What happened on the desk: the situation, what we found on the dec page, what we did, what it cost or saved',
+    color: 'bg-primary-100 text-primary-800 border border-primary-200',
+    contextMessage: 'Names and details are changed. The numbers and the lesson are real.'
+  },
+  {
+    slug: 'georgia-news',
+    label: 'Georgia news',
+    description: 'A change in Georgia law, rates or carriers, and what it means for your policy',
+    color: 'bg-[#fef3c7] text-[#92400e] border border-[#fcd34d]',
+    contextMessage: 'Rules and rates change; your policy doesn’t update itself. Check whether this touches your coverage.'
+  },
+  // Older sections, kept so existing stories keep their labels. Hidden from the feed and the editor.
+  {
+    legacy: true,
     slug: 'policy-regulation',
     label: 'Policy & Regulation',
     description: 'Insurance policy updates, regulatory changes, and government oversight',
@@ -22,6 +46,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Policy and regulatory changes can create opportunities to save money or improve your protection.'
   },
   {
+    legacy: true,
     slug: 'litigation-legal',
     label: 'Litigation & Legal',
     description: 'Lawsuits, court decisions, settlements, and legal precedents',
@@ -29,6 +54,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Legal changes can directly impact your rates, policy terms, and rights as a driver.'
   },
   {
+    legacy: true,
     slug: 'accidents-claims',
     label: 'Accidents & Claims',
     description: 'Accident trends, claims data, safety statistics, and incident reports',
@@ -36,6 +62,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Accident trends in your area can affect insurance premiums and coverage needs.'
   },
   {
+    legacy: true,
     slug: 'insurance-markets',
     label: 'Insurance Markets',
     description: 'Market trends, rate changes, carrier financials, and industry movements',
@@ -43,6 +70,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Market movements can signal upcoming rate changes and new coverage opportunities.'
   },
   {
+    legacy: true,
     slug: 'data-research',
     label: 'Data & Research',
     description: 'Data-driven insights, studies, statistics, and analytical reports',
@@ -50,6 +78,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Data-driven insights reveal how insurance markets are shifting in real-time.'
   },
   {
+    legacy: true,
     slug: 'consumer-guidance',
     label: 'Consumer Guidance',
     description: 'Tips, advice, how-tos, and educational content for policyholders',
@@ -57,6 +86,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Practical guidance helps you make smarter decisions about your coverage.'
   },
   {
+    legacy: true,
     slug: 'industry-carriers',
     label: 'Industry & Carriers',
     description: 'Insurance company news, mergers, executive moves, and industry updates',
@@ -64,6 +94,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Understanding carrier changes helps you evaluate the stability of your insurance provider.'
   },
   {
+    legacy: true,
     slug: 'weather-catastrophe',
     label: 'Weather & Catastrophe',
     description: 'Storm damage, natural disasters, climate impact, and catastrophe claims',
@@ -71,6 +102,7 @@ export const STORY_CATEGORIES = [
     contextMessage: 'Weather events and catastrophes can trigger rate changes and affect claim timelines.'
   },
   {
+    legacy: true,
     slug: 'technology-ai',
     label: 'Technology & AI',
     description: 'Insurtech, AI in insurance, telematics, digital tools, and innovation',
@@ -146,7 +178,7 @@ export const getAllCategorySlugs = () => {
  * @returns {Array} Array of { value, label } objects
  */
 export const getCategoryOptions = (includeAll = false) => {
-  const options = STORY_CATEGORIES.map(cat => ({
+  const options = STORY_CATEGORIES.filter(cat => !cat.legacy).map(cat => ({
     value: cat.slug,
     label: cat.label
   }));
@@ -161,7 +193,7 @@ export const getCategoryOptions = (includeAll = false) => {
 /**
  * Default category for new stories
  */
-export const DEFAULT_CATEGORY = 'policy-regulation';
+export const DEFAULT_CATEGORY = 'help';
 
 /**
  * Predefined Secondary Tags
