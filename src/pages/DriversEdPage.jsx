@@ -1,6 +1,6 @@
 // src/pages/DriversEdPage.jsx
-// Drivers Ed (/courses): the Georgia 6-hour defensive driving course and the Joshua's Law
-// teen course, plus the referral partner program (aimed at customers taking the course for
+// Drivers Ed (/courses): the Georgia 6-hour defensive driving course (and the Joshua's Law
+// teen course, hidden for now: SHOW_JOSHUAS_LAW), plus the referral partner program (aimed at customers taking the course for
 // their discount, with an apply form), in the consumer site's look — royal-blue hero with the shared nav, white
 // cards, deep-blue headings, the fluorescent green as the accent. No black.
 import { useState } from 'react';
@@ -10,6 +10,9 @@ import { T } from '../components/SiteCopy';
 import { ConsumerNav, RateCheckFooter } from '../components/ConsumerNav';
 
 const JOSHUAS_LAW_LINK = 'https://insuredbycam.nationaldrivered.com/dc/100038';
+// Joshua's Law (the teen course) is hidden for now, not deleted: true brings back its
+// card, its About panel and the FAQ answers that mention it.
+const SHOW_JOSHUAS_LAW = false;
 const RETURNING_CUSTOMER_LINK = 'https://insuredbycam.nationaldrivered.com/login?returnUrl=/CourseInfo';
 
 const ACCENT = '#39FF88';
@@ -52,7 +55,12 @@ function About({ title, steps, listTitle, list, q, a }) {
   );
 }
 
-const FAQ = [
+const FAQ_DD = [
+  ['How long do I have access?', 'You have extended access to finish at your own pace. Log in and out as you need to; your progress saves automatically.'],
+  ['How do I get my certificate?', 'When you pass the final exam, your certificate is ready to download, and a copy goes to Cam’s office for your discount.'],
+  ['What if I need help during the course?', 'Support is available by phone and email during business hours.'],
+];
+const FAQ_BOTH = [
   ['Can I take both courses?', 'Absolutely! If you’re a parent helping your teen, you can enroll in Defensive Driving for your own insurance discount while your teen completes Joshua’s Law.'],
   ['How long do I have access?', 'Both courses give you extended access to complete at your own pace. You can log in and out as needed, and your progress is automatically saved.'],
   ['Are certificates sent automatically?', 'Joshua’s Law certificates are sent directly to Georgia DDS. Defensive Driving certificates are downloadable for you to submit to your insurer.'],
@@ -216,7 +224,9 @@ export default function GeorgiaDriverEducationPage() {
               <T k="de.headline">Georgia Driver Education & Insurance Discounts</T>
             </h1>
             <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-blue-100 lg:text-lg">
-              <T k="de.subhead">Complete your driver education online—whether you’re earning your license or looking to save on insurance. Both courses are 100% online and state-approved.</T>
+              {SHOW_JOSHUAS_LAW
+                ? <T k="de.subhead">Complete your driver education online—whether you’re earning your license or looking to save on insurance. Both courses are 100% online and state-approved.</T>
+                : <T k="de.subhead.dd">Complete Georgia’s 6-hour defensive driving course 100% online, at your own pace, and save on your insurance.</T>}
             </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <a href={RETURNING_CUSTOMER_LINK} target="_blank" rel="noreferrer"
@@ -231,9 +241,9 @@ export default function GeorgiaDriverEducationPage() {
         </div>
       </section>
 
-      {/* The two courses */}
+      {/* The courses */}
       <section className="bg-slate-50 py-14 lg:py-20">
-        <div className={`${wrap} grid gap-6 lg:grid-cols-2`}>
+        <div className={`${wrap} grid gap-6 ${SHOW_JOSHUAS_LAW ? 'lg:grid-cols-2' : 'lg:max-w-3xl'}`}>
           <div className="relative flex flex-col rounded-3xl border-2 bg-white p-6 shadow-[0_0_0_4px_rgba(57,255,136,0.18)] lg:p-8" style={{ borderColor: ACCENT }}>
             <span className="absolute right-5 top-5 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider" style={{ background: ACCENT, color: DEEP }}><T k="pages.driversedpage.df430c">Most popular</T></span>
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="pages.driversedpage.e1e44e">Insurance discount</T></p>
@@ -247,7 +257,7 @@ export default function GeorgiaDriverEducationPage() {
             </Link>
           </div>
 
-          <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 lg:p-8">
+          {SHOW_JOSHUAS_LAW && <div className="flex flex-col rounded-3xl border border-slate-200 bg-white p-6 lg:p-8">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-blue-700"><T k="pages.driversedpage.e9eff1">Teen drivers (15–17)</T></p>
             <h2 className="mt-2 text-2xl font-extrabold text-[#0F2D6B]"><T k="pages.driversedpage.a9deaa">Joshua’s Law Course</T></h2>
             <p className="mt-2 text-[15px] text-slate-600"><T k="pages.driversedpage.299bdc">Required for Georgia teens to get their Class D license. Complete the 30-hour course online to fulfill your driver’s ed requirement.</T></p>
@@ -257,7 +267,7 @@ export default function GeorgiaDriverEducationPage() {
               className="mt-4 block rounded-2xl border-2 border-blue-700 py-3.5 text-center text-base font-bold text-blue-700 hover:bg-blue-50">
               <T k="pages.driversedpage.6f8ac7">Start Joshua’s Law Course</T>
             </a>
-          </div>
+          </div>}
         </div>
       </section>
 
@@ -265,17 +275,17 @@ export default function GeorgiaDriverEducationPage() {
 
       {/* Details */}
       <section className="bg-white py-14 lg:py-20">
-        <div className={`${wrap} grid gap-6 lg:grid-cols-2`}>
+        <div className={`${wrap} grid gap-6 ${SHOW_JOSHUAS_LAW ? 'lg:grid-cols-2' : 'lg:max-w-3xl'}`}>
           <About title="About Defensive Driving"
             steps={['Check with your insurer to confirm they accept this course', 'Enroll and complete the 6-hour program at your own pace', 'Download your completion certificate', 'Submit certificate to your insurance company', 'Enjoy your premium discount']}
             listTitle="Course features"
             list={['Works on mobile, tablet, or desktop', 'Mix of text, videos, and animations', 'Automatic progress saving', 'Optional audio read-along', '30-day money-back guarantee']}
             q="Will I get a discount?" a="Most Georgia insurers offer defensive driving discounts, but you should always verify with your specific carrier before enrolling." />
-          <About title="About Joshua’s Law"
+          {SHOW_JOSHUAS_LAW && <About title="About Joshua’s Law"
             steps={['Enroll in the 30-hour online course', 'Complete interactive lessons and quizzes', 'Pass the final exam', 'Certificate automatically sent to Georgia DDS', 'You’re ready to schedule your road test']}
             listTitle="Requirements"
             list={['Required for teens ages 15–17 in Georgia', 'Must complete before applying for Class D license', 'No in-person classroom attendance needed', 'Self-paced with 12-month access', '30-day money-back guarantee']}
-            q="Is this state-approved?" a="Yes, this course is fully approved by the Georgia Department of Driver Services and satisfies Joshua’s Law requirements." />
+            q="Is this state-approved?" a="Yes, this course is fully approved by the Georgia Department of Driver Services and satisfies Joshua’s Law requirements." />}
         </div>
       </section>
 
@@ -284,7 +294,7 @@ export default function GeorgiaDriverEducationPage() {
         <div className={wrap}>
           <h2 id="de-faq" className={sectionTitle}><T k="pages.driversedpage.af2a4d">Frequently asked questions</T></h2>
           <dl className="mt-8 grid gap-4 md:grid-cols-2">
-            {FAQ.map(([q, a]) => (
+            {(SHOW_JOSHUAS_LAW ? FAQ_BOTH : FAQ_DD).map(([q, a]) => (
               <div key={q} className="rounded-3xl border border-slate-200 bg-white p-6">
                 <dt className="font-bold text-[#0F2D6B]"><T>{q}</T></dt>
                 <dd className="mt-2 text-[15px] text-slate-600"><T>{a}</T></dd>
