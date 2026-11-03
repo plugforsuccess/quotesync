@@ -60,7 +60,7 @@ const ABOUT = [
   { key: 'hoops', photo: '/logos/cameron-swarthmore.webp', alt: 'Cam cutting down the net at Swarthmore', caption: 'Cutting the net, March 9, 2019: Swarthmore’s first NCAA Final Four', position: '52% 45%', paragraphs: [
     'In the Final Four I scored 23 against Christopher Newport, and we played for the Division III national title.',
     'That season I was Centennial Conference Player of the Year and the first NABC First Team All-American in program history.',
-    'Less than a year after that net came down, I was signing the papers on an agency of my own.',
+    'The next contract I signed wasn’t with a team. Less than a year after that net came down, it was for an agency of my own.',
   ] },
   // From Cam's Allstate agent bio, condensed; statewide, not one town.
   { key: 'office', photo: '/logos/cameron-office.webp', alt: 'Cam Wiley at the closing in Covington, Georgia, on February 27, 2020, the day he bought the agency', caption: 'Closing day in Covington, GA, February 27, 2020: the day I bought the agency', position: '50% 66%', paragraphs: [
