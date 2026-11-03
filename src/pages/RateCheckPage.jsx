@@ -1222,8 +1222,8 @@ function ProductsWeInsure() {
 // Chubb is its official vector (published in white) filled with Chubb turquoise, #01C1D6.
 // National General and Foremost came from the agent portals. No redraws: a carrier
 // without its official file shows its name until one is added
-// (here, or uploaded in the copy editor). JPGs keep their white background; the page
-// blends it away (mix-blend-multiply) rather than editing the artwork.
+// (here, or uploaded in the copy editor). JPGs keep their white background and sit on
+// the strip's white band (no blend modes: iPhone Safari drops them in a moving strip).
 /* TODO(compliance): confirm with Allstate marketing how other carriers' logos may be shown on the agency site. */
 const CARRIERS = [
   ['allstate', 'Allstate', '/logos/carriers/allstate.jpg'],
@@ -1239,26 +1239,28 @@ const CARRIERS = [
 
 function CarrierLogos() {
   const row = (hidden) => (
-    <ul className="flex shrink-0 items-center gap-12 pr-12" aria-hidden={hidden || undefined}>
+    <ul className="flex shrink-0 items-center gap-8 pr-8 lg:gap-12 lg:pr-12" aria-hidden={hidden || undefined}>
       {CARRIERS.map(([key, name, src]) => (
         <li key={key} className="flex h-12 shrink-0 items-center">
-          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-10 w-auto max-w-[180px] object-contain mix-blend-multiply lg:h-12 lg:max-w-[220px]"
+          <CopyImage k={`rc.carriers.${key}.logo`} src={src} alt={name} className="h-9 w-auto max-w-[150px] object-contain lg:h-12 lg:max-w-[220px]"
             fallback={<span className="whitespace-nowrap text-xl font-extrabold tracking-tight text-slate-700">{name}</span>} />
         </li>
       ))}
     </ul>
   );
   return (
-    <section className="border-y border-slate-200 bg-slate-50 py-12 lg:py-16" aria-labelledby="rc-carriers">
+    <section className="border-y border-slate-200 bg-slate-50 pt-10 lg:pt-16" aria-labelledby="rc-carriers">
       <style>{'@keyframes rc-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}.rc-marquee{animation:rc-marquee 36s linear infinite}.rc-marquee-wrap:hover .rc-marquee{animation-play-state:paused}@media (prefers-reduced-motion: reduce){.rc-marquee{animation:none;width:auto!important}.rc-marquee>ul[aria-hidden]{display:none}.rc-marquee>ul{flex-wrap:wrap;flex-shrink:1;width:100%;justify-content:center;column-gap:2rem;row-gap:1.25rem;padding-right:0}}'}</style>
       {/* The heading sits above the strip; the strip has its own band. */}
       <div className={wrap}>
         <h2 id="rc-carriers" className={sectionTitle}><T k="rc.carriers.heading">Carriers we write</T></h2>
       </div>
-      <div className="mt-6 lg:mt-8">
+      {/* A white band: logos with white backgrounds sit on it cleanly (no blend modes,
+          which iPhone Safari drops inside a moving strip, leaving empty gaps). */}
+      <div className="mt-6 border-t border-slate-200 bg-white lg:mt-8">
         <div className={wrap}>
-          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 py-2 [mask-image:linear-gradient(to_right,transparent,black_8%,black_92%,transparent)]">
-            <div className="rc-marquee flex w-max bg-slate-50">{row(false)}{row(true)}</div>
+          <div className="rc-marquee-wrap -mx-4 overflow-hidden px-4 py-4 [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]">
+            <div className="rc-marquee flex w-max">{row(false)}{row(true)}</div>
           </div>
         </div>
       </div>
